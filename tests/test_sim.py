@@ -127,7 +127,7 @@ class TestSimulator(unittest.TestCase):
                 "run_number": [0] * num_runs,
                 "config": [Config()],
                 "agent_init": [[wallet.Wallet(address) for address in range(2)]],
-                "market_init": [hyperdrive_market.MarketState()],
+                "market_init": [hyperdrive_market.HyperdriveMarketState()],
                 "time_step": [0.001],
                 "position_duration": [90],
             }

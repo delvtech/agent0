@@ -24,7 +24,7 @@ from elfpy.math import FixedPoint
 
 @types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
-class MarketState(BaseMarketState):
+class HyperdriveMarketState(BaseMarketState):
     r"""The state of an AMM
 
     Attributes
@@ -149,9 +149,9 @@ class MarketState(BaseMarketState):
         for mint_time, delta_supply in delta.total_supply_shorts.items():
             self.total_supply_shorts[mint_time] = self.total_supply_shorts.get(mint_time, FixedPoint(0)) + delta_supply
 
-    def copy(self) -> MarketState:
+    def copy(self) -> HyperdriveMarketState:
         """Returns a new copy of self"""
-        return MarketState(**copy.deepcopy(self.__dict__))
+        return HyperdriveMarketState(**copy.deepcopy(self.__dict__))
 
     def check_valid_market_state(self, dictionary: dict | None = None) -> None:
         """Test that all market state variables are greater than zero"""
@@ -162,7 +162,7 @@ class MarketState(BaseMarketState):
 
 class Market(
     BaseMarket[
-        MarketState,
+        HyperdriveMarketState,
         HyperdriveMarketDeltas,
         hyperdrive_pm.HyperdrivePricingModel,
     ]
@@ -177,7 +177,7 @@ class Market(
     def __init__(
         self,
         pricing_model: hyperdrive_pm.HyperdrivePricingModel,
-        market_state: MarketState,
+        market_state: HyperdriveMarketState,
         position_duration: time.StretchedTime,
         block_time: time.BlockTime,
     ):
@@ -353,7 +353,7 @@ class Market(
         bond_reserves = self.pricing_model.calc_initial_bond_reserves(
             target_apr=target_apr,
             time_remaining=self.position_duration,
-            market_state=MarketState(
+            market_state=HyperdriveMarketState(
                 share_reserves=share_reserves,
                 init_share_price=self.market_state.init_share_price,
                 share_price=self.market_state.share_price,

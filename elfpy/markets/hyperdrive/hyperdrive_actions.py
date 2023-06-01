@@ -94,7 +94,7 @@ def calculate_lp_allocation_adjustment(
 
 
 def calculate_short_adjustment(
-    market_state: hyperdrive_market.MarketState,
+    market_state: hyperdrive_market.HyperdriveMarketState,
     position_duration: time.StretchedTime,
     market_time: FixedPoint,
 ) -> FixedPoint:
@@ -131,7 +131,7 @@ def calculate_short_adjustment(
 
 
 def calculate_long_adjustment(
-    market_state: hyperdrive_market.MarketState,
+    market_state: hyperdrive_market.HyperdriveMarketState,
     position_duration: time.StretchedTime,
     market_time: FixedPoint,
 ) -> FixedPoint:
@@ -170,7 +170,7 @@ def calculate_long_adjustment(
 def calc_lp_out_given_tokens_in(
     base_in: FixedPoint,
     rate: FixedPoint,
-    market_state: hyperdrive_market.MarketState,
+    market_state: hyperdrive_market.HyperdriveMarketState,
     market_time: FixedPoint,
     position_duration: time.StretchedTime,
 ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
@@ -258,7 +258,7 @@ def calculate_base_volume(
 
 
 def calc_checkpoint_deltas(
-    market_state: hyperdrive_market.MarketState,
+    market_state: hyperdrive_market.HyperdriveMarketState,
     checkpoint_time: FixedPoint,
     bond_amount: FixedPoint,
     position: Literal["short", "long"],
@@ -309,7 +309,7 @@ def calc_checkpoint_deltas(
 def calc_open_short(
     wallet_address: int,
     bond_amount: FixedPoint,
-    market_state: hyperdrive_market.MarketState,
+    market_state: hyperdrive_market.HyperdriveMarketState,
     position_duration: time.StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
@@ -438,7 +438,7 @@ def calc_open_short(
 def calc_close_short(
     wallet_address: int,
     bond_amount: FixedPoint,
-    market_state: hyperdrive_market.MarketState,
+    market_state: hyperdrive_market.HyperdriveMarketState,
     position_duration: time.StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
@@ -595,7 +595,7 @@ def calc_close_short(
 def calc_open_long(
     wallet_address: int,
     base_amount: FixedPoint,
-    market_state: hyperdrive_market.MarketState,
+    market_state: hyperdrive_market.HyperdriveMarketState,
     position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     latest_checkpoint_time: FixedPoint,
@@ -686,7 +686,7 @@ def calc_open_long(
 def calc_close_long(
     wallet_address: int,
     bond_amount: FixedPoint,
-    market_state: hyperdrive_market.MarketState,
+    market_state: hyperdrive_market.HyperdriveMarketState,
     position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
@@ -967,7 +967,7 @@ def calc_short_proceeds(
 def calc_add_liquidity(
     wallet_address: int,
     base_in: FixedPoint,
-    market_state: hyperdrive_market.MarketState,
+    market_state: hyperdrive_market.HyperdriveMarketState,
     position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     fixed_apr: FixedPoint,
@@ -1037,7 +1037,7 @@ def calc_add_liquidity(
 def calc_remove_liquidity(
     wallet_address: int,
     lp_shares: FixedPoint,
-    market_state: hyperdrive_market.MarketState,
+    market_state: hyperdrive_market.HyperdriveMarketState,
     position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
 ) -> tuple[HyperdriveMarketDeltas, wallet.Wallet]:
@@ -1098,7 +1098,7 @@ def calc_remove_liquidity(
 
 
 def calc_free_margin(
-    market_state: hyperdrive_market.MarketState,
+    market_state: hyperdrive_market.HyperdriveMarketState,
     freed_capital: FixedPoint,
     max_capital: FixedPoint,
     interest: FixedPoint,

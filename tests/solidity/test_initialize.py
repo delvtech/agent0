@@ -46,7 +46,7 @@ class TestInitialize(unittest.TestCase):
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
         self.block_time = BlockTime()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.MarketState()
+        market_state = hyperdrive_market.HyperdriveMarketState()
         self.hyperdrive = hyperdrive_market.Market(
             pricing_model=self.pricing_model,
             market_state=market_state,

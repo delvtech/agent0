@@ -33,7 +33,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
     def calc_in_given_out(
         self,
         out: types.Quantity,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -181,7 +181,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
     def calc_out_given_in(
         self,
         in_: types.Quantity,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -324,7 +324,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
         )
 
     def calc_tokens_out_given_lp_in(
-        self, lp_in: FixedPoint, market_state: hyperdrive_market.MarketState
+        self, lp_in: FixedPoint, market_state: hyperdrive_market.HyperdriveMarketState
     ) -> tuple[FixedPoint, FixedPoint]:
         """
         Calculates the amount of base shares and bonds released from burning a specified amount of

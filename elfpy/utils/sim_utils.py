@@ -149,7 +149,7 @@ def get_initialized_hyperdrive_market(
     market = hyperdrive_market.Market(
         pricing_model=pricing_model,
         block_time=block_time,
-        market_state=hyperdrive_market.MarketState(
+        market_state=hyperdrive_market.HyperdriveMarketState(
             init_share_price=FixedPoint(config.init_share_price),
             share_price=FixedPoint(config.init_share_price),
             variable_apr=FixedPoint(config.variable_apr[0]),

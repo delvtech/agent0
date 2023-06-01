@@ -45,7 +45,7 @@ class SimUtilsTest(unittest.TestCase):
                         # then construct it by hand
                         market_direct = hyperdrive_market.Market(
                             pricing_model=market.pricing_model,
-                            market_state=hyperdrive_market.MarketState(
+                            market_state=hyperdrive_market.HyperdriveMarketState(
                                 base_buffer=market.market_state.base_buffer,
                                 bond_buffer=market.market_state.bond_buffer,
                                 variable_apr=market.market_state.variable_apr,

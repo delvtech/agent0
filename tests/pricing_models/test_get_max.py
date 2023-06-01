@@ -22,7 +22,7 @@ from elfpy.math import FixedPoint
 class TestCaseGetMax:
     """Dataclass for get_max_long test cases"""
 
-    market_state: hyperdrive_market.MarketState
+    market_state: hyperdrive_market.HyperdriveMarketState
     time_remaining: time.StretchedTime
 
     __test__ = False  # pytest: don't test this class
@@ -45,7 +45,7 @@ class TestGetMax(unittest.TestCase):
         ]
         test_cases: list[TestCaseGetMax] = [
             TestCaseGetMax(  # Test 0
-                market_state=hyperdrive_market.MarketState(
+                market_state=hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
                     base_buffer=FixedPoint("0.0"),
@@ -62,7 +62,7 @@ class TestGetMax(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(  # Test 1
-                market_state=hyperdrive_market.MarketState(
+                market_state=hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
                     base_buffer=FixedPoint("100_000.0"),
@@ -79,7 +79,7 @@ class TestGetMax(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(  # Test 2
-                market_state=hyperdrive_market.MarketState(
+                market_state=hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("100_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
                     base_buffer=FixedPoint("0.0"),
@@ -96,7 +96,7 @@ class TestGetMax(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(  # Test 3
-                market_state=hyperdrive_market.MarketState(
+                market_state=hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("834_954.0"),
                     base_buffer=FixedPoint("0.0"),
@@ -113,7 +113,7 @@ class TestGetMax(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(  # Test 4
-                market_state=hyperdrive_market.MarketState(
+                market_state=hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("500_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
                     base_buffer=FixedPoint("0.0"),
@@ -130,7 +130,7 @@ class TestGetMax(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(  # Test 5
-                market_state=hyperdrive_market.MarketState(
+                market_state=hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
                     base_buffer=FixedPoint("0.0"),
@@ -147,7 +147,7 @@ class TestGetMax(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(  # Test 6
-                market_state=hyperdrive_market.MarketState(
+                market_state=hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
                     base_buffer=FixedPoint("0.0"),
@@ -164,7 +164,7 @@ class TestGetMax(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(  # Test 7
-                market_state=hyperdrive_market.MarketState(
+                market_state=hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
                     base_buffer=FixedPoint("0.0"),
@@ -181,7 +181,7 @@ class TestGetMax(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(  # Test 8
-                market_state=hyperdrive_market.MarketState(
+                market_state=hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
                     base_buffer=FixedPoint("0.0"),

@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 import unittest
+from elfpy.markets.borrow.borrow_pricing_model import BorrowPricingModel
+from elfpy.markets.borrow.borrow_market_state import BorrowMarketState
 
 import elfpy.markets.hyperdrive.checkpoint
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.markets.borrow as borrow
 import elfpy.time as time
+
+from elfpy.markets.borrow.borrow_market import Market
 from elfpy.math import FixedPoint
 
 # TODO: remove this after FixedPoint PRs are finished
@@ -36,21 +39,21 @@ class MarketTest(unittest.TestCase):
         for pricing_model in [yieldspace_pm.YieldspacePricingModel(), hyperdrive_pm.HyperdrivePricingModel()]:
             _ = hyperdrive_market.Market(
                 pricing_model=pricing_model,
-                market_state=hyperdrive_market.MarketState(),
+                market_state=hyperdrive_market.HyperdriveMarketState(),
                 block_time=time.BlockTime(),
                 position_duration=pd_good,
             )
             with self.assertRaises(AssertionError):
                 _ = hyperdrive_market.Market(
                     pricing_model=pricing_model,
-                    market_state=hyperdrive_market.MarketState(),
+                    market_state=hyperdrive_market.HyperdriveMarketState(),
                     block_time=time.BlockTime(),
                     position_duration=pd_nonorm,
                 )
 
     def test_market_state_copy(self):
         """Test the market state ability to deep copy itself"""
-        market_state = hyperdrive_market.MarketState()
+        market_state = hyperdrive_market.HyperdriveMarketState()
         market_state_copy = market_state.copy()
         assert market_state is not market_state_copy  # not the same object
         assert market_state == market_state_copy  # they have the same attribute values
@@ -189,7 +192,7 @@ class MarketTest(unittest.TestCase):
             },
             # test 6:  Borrow market is initialized empty
             {
-                "pricing_model": borrow.PricingModel(),
+                "pricing_model": BorrowPricingModel(),
                 "borrow_amount": FixedPoint("0.0"),
                 "borrow_shares": FixedPoint("0.0"),
                 "borrow_outstanding": FixedPoint("0.0"),
@@ -197,11 +200,11 @@ class MarketTest(unittest.TestCase):
         ]
         # Loop through the test cases & pricing model
         for test_number, test_case in enumerate(test_cases):
-            if isinstance(test_case["pricing_model"], borrow.PricingModel):
-                market = borrow.Market(
+            if isinstance(test_case["pricing_model"], BorrowPricingModel):
+                market = Market(
                     pricing_model=test_case["pricing_model"],
                     block_time=time.BlockTime(),
-                    market_state=borrow.MarketState(),
+                    market_state=BorrowMarketState(),
                 )
                 market_deltas, _ = market.initialize(wallet_address=0)
                 market.market_state.apply_delta(market_deltas)
@@ -226,7 +229,7 @@ class MarketTest(unittest.TestCase):
             else:
                 market = hyperdrive_market.Market(
                     position_duration=test_case["position_duration"],
-                    market_state=hyperdrive_market.MarketState(
+                    market_state=hyperdrive_market.HyperdriveMarketState(
                         init_share_price=test_case["init_share_price"],
                         share_price=test_case["share_price"],
                     ),
@@ -261,95 +264,95 @@ class MarketTest(unittest.TestCase):
         """Test the MarkeState ability to verify none of the inputs are <=0"""
         # pylint: disable=too-many-statements
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(lp_total_supply=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(lp_total_supply=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(share_reserves=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(share_reserves=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(bond_reserves=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(bond_reserves=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(base_buffer=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(base_buffer=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(bond_buffer=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(bond_buffer=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(variable_apr=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(variable_apr=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(share_price=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(share_price=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(init_share_price=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(init_share_price=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(curve_fee_multiple=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(curve_fee_multiple=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(flat_fee_multiple=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(flat_fee_multiple=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(governance_fee_multiple=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(governance_fee_multiple=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(gov_fees_accrued=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(gov_fees_accrued=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(longs_outstanding=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(longs_outstanding=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(shorts_outstanding=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(shorts_outstanding=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(long_average_maturity_time=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(long_average_maturity_time=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(short_average_maturity_time=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(short_average_maturity_time=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(long_base_volume=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(long_base_volume=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(short_base_volume=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(short_base_volume=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(
+            market_state = hyperdrive_market.HyperdriveMarketState(
                 checkpoints={
                     FixedPoint(0): elfpy.markets.hyperdrive.checkpoint.Checkpoint(share_price=FixedPoint(-1.0))
                 },
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(
+            market_state = hyperdrive_market.HyperdriveMarketState(
                 checkpoints={
                     FixedPoint(0): elfpy.markets.hyperdrive.checkpoint.Checkpoint(long_share_price=FixedPoint(-1.0))
                 },
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(
+            market_state = hyperdrive_market.HyperdriveMarketState(
                 checkpoints={
                     FixedPoint(0): elfpy.markets.hyperdrive.checkpoint.Checkpoint(long_base_volume=FixedPoint(-1.0))
                 },
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(
+            market_state = hyperdrive_market.HyperdriveMarketState(
                 checkpoints={
                     FixedPoint(0): elfpy.markets.hyperdrive.checkpoint.Checkpoint(short_base_volume=FixedPoint(-1.0))
                 },
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(checkpoint_duration=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(checkpoint_duration=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(checkpoint_duration_days=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(checkpoint_duration_days=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(
+            market_state = hyperdrive_market.HyperdriveMarketState(
                 total_supply_longs={
                     FixedPoint(0): FixedPoint(0),
                     FixedPoint(1): FixedPoint(10.0),
@@ -358,17 +361,19 @@ class MarketTest(unittest.TestCase):
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(total_supply_shorts={FixedPoint(0): FixedPoint(-1.0)})
+            market_state = hyperdrive_market.HyperdriveMarketState(
+                total_supply_shorts={FixedPoint(0): FixedPoint(-1.0)}
+            )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(total_supply_withdraw_shares=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(total_supply_withdraw_shares=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(withdraw_shares_ready_to_withdraw=FixedPoint(-1.0))
+            market_state = hyperdrive_market.HyperdriveMarketState(withdraw_shares_ready_to_withdraw=FixedPoint(-1.0))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(withdraw_capital=FixedPoint(-1))
+            market_state = hyperdrive_market.HyperdriveMarketState(withdraw_capital=FixedPoint(-1))
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(withdraw_interest=FixedPoint(-1))
+            market_state = hyperdrive_market.HyperdriveMarketState(withdraw_interest=FixedPoint(-1))
             market_state.check_valid_market_state()

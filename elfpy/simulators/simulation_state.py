@@ -113,7 +113,7 @@ class RunSimVariables:
     # initial wallets for the agents
     agent_init: list[wallet.Wallet]
     # initial market state for this simulation run
-    market_init: hyperdrive_market.MarketState
+    market_init: hyperdrive_market.HyperdriveMarketState
     # minimum time discretization for time step in years
     time_step: float
     # time lapse between token mint and expiry in years

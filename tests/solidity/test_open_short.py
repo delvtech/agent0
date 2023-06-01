@@ -35,7 +35,7 @@ class TestOpenShort(unittest.TestCase):
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
         self.block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.MarketState()
+        market_state = hyperdrive_market.HyperdriveMarketState()
         self.hyperdrive = hyperdrive_market.Market(
             pricing_model=pricing_model,
             market_state=market_state,
@@ -53,7 +53,7 @@ class TestOpenShort(unittest.TestCase):
     def verify_open_short(
         self,
         user: elf_agent.Agent,
-        market_state_before: hyperdrive_market.MarketState,
+        market_state_before: hyperdrive_market.HyperdriveMarketState,
         base_amount: FixedPoint,  # max loss in base transferred from user to hyperdrive
         unsigned_bond_amount: FixedPoint,  # number of PTs shorted
         market_bond_delta: FixedPoint,

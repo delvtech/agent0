@@ -27,7 +27,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             # test 0: 500k share_reserves; 500k bond_reserves
             #   1 share price; 1 init_share_price; 3mo elapsed
             {
-                "market_state": hyperdrive_market.MarketState(
+                "market_state": hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("500_000.0"),  # z = 500000
                     bond_reserves=FixedPoint("500_000.0"),  # y = 500000
                     share_price=FixedPoint("1.0"),  # c = 1
@@ -42,7 +42,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             # test 1: 500k share_reserves; 500k bond_reserves
             #   1 share price; 1 init_share_price; 12mo elapsed
             {
-                "market_state": hyperdrive_market.MarketState(
+                "market_state": hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("500_000.0"),  # z = 500000
                     bond_reserves=FixedPoint("500_000.0"),  # y = 500000
                     share_price=FixedPoint("1.0"),  # c = 1
@@ -57,7 +57,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             # test 2: 5M share_reserves; 5M bond_reserves
             #   2 share price; 1.5 init_share_price; 6mo elapsed
             {
-                "market_state": hyperdrive_market.MarketState(
+                "market_state": hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("5_000_000.0"),  # z = 5000000
                     bond_reserves=FixedPoint("5_000_000.0"),  # y = 5000000
                     share_price=FixedPoint("2.0"),  # c = 2
@@ -72,7 +72,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             # test 3: 0M share_reserves; 5M bond_reserves
             #   2 share price; 1.5 init_share_price; 3mo elapsed
             {
-                "market_state": hyperdrive_market.MarketState(
+                "market_state": hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("0.0"),  # z = 0
                     bond_reserves=FixedPoint("5_000_000.0"),  # y = 5000000
                     share_price=FixedPoint("2.0"),  # c = 2
@@ -87,7 +87,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             # test 4: 0 share_reserves; 0 bond_reserves
             #   2 share price; 1.5 init_share_price; 3mo elapsed
             {
-                "market_state": hyperdrive_market.MarketState(
+                "market_state": hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("0.0"),  # z = 0
                     bond_reserves=FixedPoint("0.0"),  # y = 0
                     share_price=FixedPoint("2.0"),  # c = 2
@@ -103,7 +103,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             #   5M share_reserves; 5M bond_reserves
             #   2 share price; 1.5 init_share_price; 6mo elapsed
             {
-                "market_state": hyperdrive_market.MarketState(
+                "market_state": hyperdrive_market.HyperdriveMarketState(
                     share_reserves=FixedPoint("5_000_000.0"),  # z = 5000000
                     bond_reserves=FixedPoint("5_000_000.0"),  # y = 5000000
                     share_price=FixedPoint("2.0"),  # c = 2

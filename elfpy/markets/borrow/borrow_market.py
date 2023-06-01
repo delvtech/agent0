@@ -1,14 +1,16 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations
-
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 
 import elfpy.agents.wallet as wallet
-import elfpy.markets.base.base_pricing_model as base_pm
+from elfpy.markets.borrow.borrow_pricing_model import BorrowPricingModel
+from elfpy.markets.borrow.borrow_market_state import BorrowMarketState
+from elfpy.markets.borrow.borrow_market_deltas import BorrowMarketDeltas
 import elfpy.types as types
-from elfpy.markets.base.base_market import BaseMarket, BaseMarketDeltas, BaseMarketState, BaseMarketAction
+
+from elfpy.markets.base.base_market import BaseMarket, BaseMarketAction
 from elfpy.math import FixedPoint
 
 
@@ -19,113 +21,9 @@ class MarketActionType(Enum):
     CLOSE_BORROW = "close_borrow"
 
 
-@types.freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class MarketDeltas(BaseMarketDeltas):
-    r"""Specifies changes to values in the market"""
-
-    d_borrow_shares: FixedPoint = FixedPoint("0.0")  # borrow is always in DAI
-    d_collateral: types.Quantity = field(
-        default_factory=lambda: types.Quantity(amount=FixedPoint("0.0"), unit=types.TokenType.PT)
-    )
-    d_borrow_outstanding: FixedPoint = FixedPoint("0.0")  # changes based on borrow_shares * borrow_share_price
-    d_borrow_closed_interest: FixedPoint = FixedPoint("0.0")  # realized interest from closed borrows
-    d_borrow_share_price: FixedPoint = FixedPoint("0.0")  # used only when time ticks and interest accrues
-
-
-@types.freezable(frozen=False, no_new_attribs=False)
-@dataclass
-class MarketState(BaseMarketState):
-    r"""The state of an AMM
-
-    Implements a class for all that an AMM smart contract would hold or would have access to
-    For example, reserve numbers are local state variables of the AMM.  The borrow_rate will most
-    likely be accessible through the AMM as well.
-
-    Attributes
-    ----------
-    loan_to_value_ratio: FixedPoint
-        The maximum loan to value ratio a collateral can have before liquidations occur.
-    borrow_shares: FixedPoint
-        Accounting units for borrow assets that has been lent out by the market, allows tracking of interest
-    collateral: dict[TokenType, FixedPoint]
-        Amount of collateral that has been deposited into the market
-    borrow_outstanding: FixedPoint
-        The amount of borrowed asset that has been lent out by the market, without accounting for interest
-    borrow_share_price: FixedPoint
-        The "share price" of the borrowed asset tracks the cumulative amount owed over time, indexed to 1 at the start
-    borrow_closed_interest: FixedPoint
-        The interest that has been collected from closed borrows, to capture realized profit
-    collateral_spot_price: FixedPoint
-        The spot price of the collateral asset, to allow updating valuation across time
-    lending_rate: FixedPoint
-        The rate a user receives when lending out assets
-    spread_ratio: FixedPoint
-        The ratio of the borrow rate to the lending rate
-    """
-    # dataclasses can have many attributes
-    # pylint: disable=too-many-instance-attributes
-
-    # TODO: Should we be tracking the last time the dsr changed to evaluate the payout amount correctly?
-    # borrow ratios
-    loan_to_value_ratio: dict[types.TokenType, FixedPoint] = field(
-        default_factory=lambda: {token_type: FixedPoint("0.97") for token_type in types.TokenType}
-    )
-    # trading reserves
-    borrow_shares: FixedPoint = FixedPoint("0.0")  # allows tracking the increasing value of loans over time
-    collateral: dict[types.TokenType, FixedPoint] = field(default_factory=dict)
-    borrow_outstanding: FixedPoint = FixedPoint("0.0")  # sum of Dai that went out the door
-    borrow_closed_interest: FixedPoint = FixedPoint("0.0")  # interested collected from closed borrows
-    # share prices used to track amounts owed
-    borrow_share_price: FixedPoint = FixedPoint("1.0")
-    init_borrow_share_price: FixedPoint = field(default=borrow_share_price)  # allow not setting init_share_price
-    # number of TokenA you get for TokenB
-    collateral_spot_price: dict[types.TokenType, FixedPoint] = field(default_factory=dict)
-    # borrow and lending rates
-    lending_rate: FixedPoint = FixedPoint("0.01")  # 1% per year
-    # borrow rate is lending_rate * spread_ratio
-    spread_ratio: FixedPoint = FixedPoint("1.25")
-
-    @property
-    def borrow_amount(self) -> FixedPoint:
-        """The amount of borrowed asset in the market"""
-        return self.borrow_shares * self.borrow_share_price
-
-    @property
-    def deposit_amount(self) -> dict[types.TokenType, FixedPoint]:
-        """The amount of deposited asset in the market"""
-        return {key: value * self.collateral_spot_price[key] for key, value in self.collateral.items()}
-
-    def apply_delta(self, delta: MarketDeltas) -> None:
-        r"""Applies a delta to the market state."""
-        self.borrow_shares += delta.d_borrow_shares
-        collateral_unit = delta.d_collateral.unit
-        if collateral_unit not in self.collateral:  # key doesn't exist
-            self.collateral[collateral_unit] = delta.d_collateral.amount
-        else:  # key exists
-            self.collateral[collateral_unit] += delta.d_collateral.amount
-
-    def copy(self) -> MarketState:
-        """Returns a new copy of self"""
-        return MarketState(**self.__dict__)
-
-    def check_valid_market_state(self, dictionary: dict | None = None) -> None:
-        """Test that all market state variables are greater than zero"""
-        if dictionary is None:
-            self.check_valid_market_state(self.__dict__)
-        else:
-            for key, value in dictionary.items():
-                if isinstance(value, FixedPoint):
-                    assert value >= FixedPoint(0), f"{key} attribute with {value=} must be >= 0."
-                elif isinstance(value, dict):
-                    self.check_valid_market_state(value)
-                else:
-                    pass  # noop; frozen, etc
-
-
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class MarketAction(BaseMarketAction):
+class BorrowMarketAction(BaseMarketAction):
     r"""Market action specification"""
 
     # these two variables are required to be set by the strategy
@@ -135,24 +33,7 @@ class MarketAction(BaseMarketAction):
     spot_price: FixedPoint | None = None
 
 
-class PricingModel(base_pm.BasePricingModel):
-    """stores calculation functions use for the borrow market"""
-
-    def value_collateral(
-        self,
-        loan_to_value_ratio: dict[types.TokenType, FixedPoint],
-        collateral: types.Quantity,
-        spot_price: FixedPoint | None = None,
-    ):
-        """Values collateral and returns how much the agent can borrow against it"""
-        collateral_value_in_base = collateral.amount  # if collateral is BASE
-        if collateral.unit == types.TokenType.PT:
-            collateral_value_in_base = collateral.amount * (spot_price or FixedPoint("1.0"))
-        borrow_amount_in_base = collateral_value_in_base * loan_to_value_ratio[collateral.unit]  # type: ignore
-        return collateral_value_in_base, borrow_amount_in_base
-
-
-class Market(BaseMarket[MarketState, MarketDeltas, PricingModel]):
+class Market(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPricingModel]):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.
@@ -193,9 +74,9 @@ class Market(BaseMarket[MarketState, MarketDeltas, PricingModel]):
     def initialize(
         self,
         wallet_address: int,
-    ) -> tuple[MarketDeltas, wallet.Wallet]:
+    ) -> tuple[BorrowMarketDeltas, wallet.Wallet]:
         """Construct a borrow market."""
-        market_deltas = MarketDeltas()
+        market_deltas = BorrowMarketDeltas()
         borrow_summary = wallet.Borrow(
             borrow_token=types.TokenType.BASE,
             borrow_amount=FixedPoint(0),
@@ -207,7 +88,7 @@ class Market(BaseMarket[MarketState, MarketDeltas, PricingModel]):
         agent_deltas = wallet.Wallet(address=wallet_address, borrows={FixedPoint(0): borrow_summary})
         return market_deltas, agent_deltas
 
-    def check_action(self, agent_action: MarketAction) -> None:
+    def check_action(self, agent_action: BorrowMarketAction) -> None:
         r"""Ensure that the agent action is an allowed action for this market
 
         Arguments
@@ -222,7 +103,9 @@ class Market(BaseMarket[MarketState, MarketDeltas, PricingModel]):
         if agent_action.action_type not in self.available_actions:
             raise ValueError(f"ERROR: agent_action.action_type must be in {self.available_actions=}")
 
-    def perform_action(self, action_details: tuple[int, MarketAction]) -> tuple[int, wallet.Wallet, MarketDeltas]:
+    def perform_action(
+        self, action_details: tuple[int, BorrowMarketAction]
+    ) -> tuple[int, wallet.Wallet, BorrowMarketDeltas]:
         r"""
         Execute a trade in the Borrow Market
 
@@ -238,7 +121,7 @@ class Market(BaseMarket[MarketState, MarketDeltas, PricingModel]):
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
         # issue 216
         self.check_action(agent_action)
-        market_deltas = MarketDeltas()
+        market_deltas = BorrowMarketDeltas()
         # for each position, specify how to formulate trade and then execute
         # current assumption is that the user will borrow the maximum LTV against the collateral they are offering
         if agent_action.action_type == MarketActionType.OPEN_BORROW:  # open a borrow position
@@ -267,7 +150,7 @@ class Market(BaseMarket[MarketState, MarketDeltas, PricingModel]):
         wallet_address: int,
         collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
-    ) -> tuple[MarketDeltas, wallet.Wallet]:
+    ) -> tuple[BorrowMarketDeltas, wallet.Wallet]:
         """
         execute a borrow as requested by the agent, return the market and agent deltas
         agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them
@@ -280,7 +163,7 @@ class Market(BaseMarket[MarketState, MarketDeltas, PricingModel]):
         # market reserves are stored in shares, so we need to convert the amount to shares
         # borrow shares increase because they're being lent out
         # collateral increases because it's being deposited
-        market_deltas = MarketDeltas(
+        market_deltas = BorrowMarketDeltas(
             d_borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
             d_collateral=types.Quantity(
                 unit=collateral.unit,
@@ -307,7 +190,7 @@ class Market(BaseMarket[MarketState, MarketDeltas, PricingModel]):
         agent_wallet: wallet.Wallet,
         collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
-    ) -> tuple[MarketDeltas, wallet.Wallet]:
+    ) -> tuple[BorrowMarketDeltas, wallet.Wallet]:
         """Execute a borrow as requested by the agent and return the market and agent deltas.
         Agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them.
         """
@@ -321,7 +204,7 @@ class Market(BaseMarket[MarketState, MarketDeltas, PricingModel]):
         wallet_address: int,
         collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
-    ) -> tuple[MarketDeltas, wallet.Wallet]:
+    ) -> tuple[BorrowMarketDeltas, wallet.Wallet]:
         """
         close a borrow as requested by the agent, return the market and agent deltas
         agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it)
@@ -335,7 +218,7 @@ class Market(BaseMarket[MarketState, MarketDeltas, PricingModel]):
         # borrow shares increases because it's being repaid
         # collateral decreases because it's being sent back to the agent
         # TODO: why don't we decrease collateral amount?
-        market_deltas = MarketDeltas(
+        market_deltas = BorrowMarketDeltas(
             d_borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price, d_collateral=-collateral
         )
         borrow_summary = wallet.Borrow(
@@ -358,7 +241,7 @@ class Market(BaseMarket[MarketState, MarketDeltas, PricingModel]):
         agent_wallet: wallet.Wallet,
         collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
-    ) -> tuple[MarketDeltas, wallet.Wallet]:
+    ) -> tuple[BorrowMarketDeltas, wallet.Wallet]:
         """Close a borrow as requested by the agent and return the market and agent deltas.
         Agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it).
         """
@@ -373,7 +256,7 @@ class Market(BaseMarket[MarketState, MarketDeltas, PricingModel]):
             price_multiplier = self.market_state.borrow_share_price
         else:  # Apply return to starting price (no compounding)
             price_multiplier = self.market_state.init_borrow_share_price
-        delta = MarketDeltas(
+        delta = BorrowMarketDeltas(
             d_borrow_share_price=(
                 self.borrow_rate
                 / FixedPoint("365.0")

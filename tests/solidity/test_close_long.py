@@ -36,7 +36,7 @@ class TestCloseLong(unittest.TestCase):
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
         block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.MarketState(
+        market_state = hyperdrive_market.HyperdriveMarketState(
             curve_fee_multiple=FixedPoint(0),
             flat_fee_multiple=FixedPoint(0),
         )
@@ -56,7 +56,7 @@ class TestCloseLong(unittest.TestCase):
     def verify_close_long(
         self,
         example_agent: elf_agent.Agent,
-        market_state_before: hyperdrive_market.MarketState,
+        market_state_before: hyperdrive_market.HyperdriveMarketState,
         agent_base_paid: FixedPoint,
         agent_base_proceeds: FixedPoint,
         bond_amount: FixedPoint,
