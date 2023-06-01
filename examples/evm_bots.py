@@ -81,7 +81,8 @@ class FixedFrida(elfpy_agent.Agent):
 
         Returns
         -------
-        action_list : list[MarketAction]
+        action_list : list[types.Trade]
+            list of actions to take
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
         gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
@@ -163,7 +164,8 @@ class LongLouie(elfpy_agent.Agent):
 
         Returns
         -------
-        action_list : list[MarketAction]
+        action_list : list[types.Trade]
+            list of actions to take
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
         gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
@@ -240,6 +242,7 @@ def get_argparser() -> argparse.ArgumentParser:
     Returns
     -------
     parser : argparse.ArgumentParser
+        Argument parser with the above arguments defined.
     """
     parser = argparse.ArgumentParser(
         prog="TestnetBots",
@@ -409,7 +412,22 @@ def set_up_experiment(
 
 
 def get_devnet_addresses(experiment_config: Config, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
-    """Get devnet addresses from address file."""
+    """Get devnet addresses from address file.
+
+    Parameters
+    ----------
+    experiment_config : simulators.Config
+        The config object.
+    addresses : dict[str, str]
+        Dict of deployed addresses.
+
+    Returns
+    -------
+    addresses : dict[str, str]
+        Dict of deployed addresses.
+    address_file : str
+        The path to the address file.
+    """
     address_file = experiment_config.scratch["project_dir"] / "artifacts" / "addresses.json"
     # make parent folder if it doesn't exist
     os.makedirs(os.path.dirname(address_file), exist_ok=True)
@@ -431,7 +449,17 @@ def get_devnet_addresses(experiment_config: Config, addresses: dict[str, str]) -
 
 
 def get_accounts(experiment_config: Config) -> list[KeyfileAccount]:
-    """Generate dev accounts and turn on auto-sign."""
+    """Generate dev accounts and turn on auto-sign.
+
+    Parameters
+    ----------
+    experiment_config : simulators.Config
+        The config object.
+
+    Returns
+    -------
+    dev_accounts : list[KeyfileAccount]
+        List of dev accounts."""
     num = sum(experiment_config.scratch[f"num_{bot}"] for bot in experiment_config.scratch["bot_names"])
     assert (mnemonic := " ".join(["wolf"] * 24)), "You must provide a mnemonic in .env to run this script."
     keys = generate_dev_accounts(mnemonic=mnemonic, number_of_accounts=num)
@@ -668,8 +696,23 @@ def do_trade(
     ape_utils.ape_trade(**params)
 
 
-def set_days_without_crashing(current_streak, crash_file, reset: bool = False):
-    """Calculate the number of days without crashing."""
+def set_days_without_crashing(current_streak, crash_file, reset: bool = False) -> int:
+    """Calculate the number of days without crashing.
+
+    Parameters
+    ----------
+    current_streak : int
+        The current number of days without crashing.
+    crash_file : str
+        The path to the file that stores the number of days without crashing.
+    reset : bool, optional
+        Whether to reset the number of days without crashing, by default False
+
+    Returns
+    -------
+    streak : int
+        The number of days without crashing.
+    """
     streak = 0 if reset is True else current_streak + 1
     with open(crash_file, "w", encoding="utf-8") as file:
         file.write(f"{streak}")
@@ -708,7 +751,20 @@ def log_and_show_block_info(
 def get_simulator(
     experiment_config: Config, pricing_model: elfpy.pricing_models.base.PricingModel
 ) -> simulators.Simulator:
-    """Instantiate and return an initialized elfpy Simulator object."""
+    """Instantiate and return an initialized elfpy Simulator object.
+
+    Parameters
+    ----------
+    experiment_config : simulators.Config
+        The experiment configuration object.
+    pricing_model : elfpy.pricing_models.base.PricingModel
+        The pricing model to use for the simulation.
+
+    Returns
+    -------
+    simulators.Simulator
+        The initialized simulator object.
+    """
     market, _, _ = sim_utils.get_initialized_hyperdrive_market(
         pricing_model=pricing_model, block_time=time.BlockTime(), config=experiment_config
     )
@@ -936,7 +992,30 @@ def do_policy(
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
 ):  # pylint: disable=too-many-arguments
-    """Execute an agent's policy."""
+    """Execute an agent's policy.
+
+    Parameters
+    ----------
+    policy : elfpy.agents.policy.Policy
+        The policy to execute.
+    elfpy_market : elfpy.markets.base.Market
+        The market to execute the policy on.
+    no_crash_streak : int
+        The number of days without crashing.
+    crash_file : str
+        The path to the file containing the number of days without crashing.
+    sim_agents : dict[str, elfpy.agents.agent.Agent]
+        The agents that are simulated.
+    hyperdrive_instance : ContractInstance
+        The deployed Hyperdrive instance.
+    base_instance : ContractInstance
+        The deployed base token instance.
+
+    Returns
+    -------
+    no_crash_streak : int
+        The number of days without crashing.
+    """
     trades: list[types.Trade] = policy.get_trades(market=elfpy_market)
     for trade_object in trades:
         try:

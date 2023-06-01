@@ -77,14 +77,15 @@ limit-inference-results=100
 
 # List of plugins (as comma separated values of python module names) to load,
 # usually to register additional checkers.
-load-plugins=
+# load-plugins=pylint.extensions.docparams, pylint.extensions.docstyle
+load-plugins=pylint.extensions.docparams
 
 # Pickle collected data for later comparisons.
 persistent=yes
 
 # Minimum Python version to use for version dependent checks. Will default to
 # the version used to run pylint.
-py-version=3.8
+py-version=3.9
 
 # Discover python modules and packages in the file system subtree.
 recursive=no
@@ -617,3 +618,24 @@ variable-naming-style=snake_case
 # naming-style. If left empty, variable names will be checked with the set
 # naming style.
 #variable-rgx=
+
+[tool.pylint.parameter_documentation]
+# Whether to accept totally missing parameter documentation
+# in the docstring of a function that has parameters.
+accept-no-param-doc = false
+
+# Whether to accept totally missing raises documentation
+# in the docstring of a function that raises an exception.
+# accept-no-raise-doc = true
+
+# Whether to accept totally missing return documentation in
+# the docstring of a function that returns a statement.
+accept-no-return-doc = false
+
+# Whether to accept totally missing yields documentation
+# in the docstring of a generator.
+accept-no-yields-doc = false
+
+# If the docstring type cannot be guessed the
+# specified docstring type will be used.
+default-docstring-type = numpy
