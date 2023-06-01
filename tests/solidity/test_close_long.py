@@ -2,6 +2,7 @@
 import unittest
 
 import elfpy.agents.agent as elf_agent
+from elfpy.markets.hyperdrive.checkpoint import Checkpoint
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
@@ -125,11 +126,11 @@ class TestCloseLong(unittest.TestCase):
         )
         checkpoint_time = maturity_time - self.term_length
         self.assertEqual(  # checkpoint long base volume
-            self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume,
+            self.hyperdrive.market_state.checkpoints.get(checkpoint_time, Checkpoint()).long_base_volume,
             FixedPoint(0),
             msg=(
                 f"The long base volume at {checkpoint_time=} should be zero, "
-                f"not {self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume=}."
+                f"not {self.hyperdrive.market_state.checkpoints.get(checkpoint_time, Checkpoint()).long_base_volume=}."
             ),
         )
         self.assertEqual(  # shorts outstanding
@@ -151,11 +152,11 @@ class TestCloseLong(unittest.TestCase):
             msg=f"{self.hyperdrive.market_state.short_base_volume=} should be 0.",
         )
         self.assertEqual(  # checkpoint short base volume
-            self.hyperdrive.market_state.checkpoints[checkpoint_time].short_base_volume,
+            self.hyperdrive.market_state.checkpoints.get(checkpoint_time, Checkpoint()).short_base_volume,
             FixedPoint(0),
             msg=(
                 f"The short base volume should at {checkpoint_time=} be zero,"
-                f"not {self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume=}."
+                f"not {self.hyperdrive.market_state.checkpoints.get(checkpoint_time, Checkpoint()).long_base_volume=}."
             ),
         )
 
@@ -347,9 +348,8 @@ class TestCloseLong(unittest.TestCase):
         self.verify_close_long(
             example_agent=self.bob,
             market_state_before=market_state_before_close,
-            agent_base_paid=agent_deltas_open.longs[
-                FixedPoint(0)
-            ].balance,  # not starting amount since we're at maturity
+            # not starting amount since we're at maturity
+            agent_base_paid=agent_deltas_open.longs[FixedPoint(0)].balance,
             agent_base_proceeds=base_proceeds,
             bond_amount=agent_deltas_open.longs[FixedPoint(0)].balance,
             maturity_time=self.hyperdrive.position_duration.days / FixedPoint("365.0"),

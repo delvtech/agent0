@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Tuple
 
@@ -99,10 +99,10 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
         short_average_maturity_time=FixedPoint(pool_state["shortAverageMaturityTime"]),
         long_base_volume=FixedPoint(pool_state["longBaseVolume"]),
         short_base_volume=FixedPoint(pool_state["shortBaseVolume"]),
-        # TODO: checkpoints=defaultdict
+        # TODO: checkpoints=dict
         checkpoint_duration=FixedPoint(hyper_config["checkpointDuration"]),
-        total_supply_longs=defaultdict(FixedPoint, {FixedPoint(0): FixedPoint(pool_state["longsOutstanding"])}),
-        total_supply_shorts=defaultdict(FixedPoint, {FixedPoint(0): FixedPoint(pool_state["shortsOutstanding"])}),
+        total_supply_longs={FixedPoint(0): FixedPoint(pool_state["longsOutstanding"])},
+        total_supply_shorts={FixedPoint(0): FixedPoint(pool_state["shortsOutstanding"])},
         total_supply_withdraw_shares=FixedPoint(total_supply_withdraw_shares),
         withdraw_shares_ready_to_withdraw=FixedPoint(pool_state["withdrawalSharesReadyToWithdraw"]),
         withdraw_capital=FixedPoint(pool_state["capital"]),

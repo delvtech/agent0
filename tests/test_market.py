@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import unittest
-from collections import defaultdict
 
+import elfpy.markets.hyperdrive.checkpoint
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -316,34 +316,30 @@ class MarketTest(unittest.TestCase):
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
             market_state = hyperdrive_market.MarketState(
-                checkpoints=defaultdict(
-                    hyperdrive_market.Checkpoint,
-                    {FixedPoint(0): hyperdrive_market.Checkpoint(share_price=FixedPoint(-1.0))},
-                )
+                checkpoints={
+                    FixedPoint(0): elfpy.markets.hyperdrive.checkpoint.Checkpoint(share_price=FixedPoint(-1.0))
+                },
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
             market_state = hyperdrive_market.MarketState(
-                checkpoints=defaultdict(
-                    hyperdrive_market.Checkpoint,
-                    {FixedPoint(0): hyperdrive_market.Checkpoint(long_share_price=FixedPoint(-1.0))},
-                ),
+                checkpoints={
+                    FixedPoint(0): elfpy.markets.hyperdrive.checkpoint.Checkpoint(long_share_price=FixedPoint(-1.0))
+                },
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
             market_state = hyperdrive_market.MarketState(
-                checkpoints=defaultdict(
-                    hyperdrive_market.Checkpoint,
-                    {FixedPoint(0): hyperdrive_market.Checkpoint(long_base_volume=FixedPoint(-1.0))},
-                ),
+                checkpoints={
+                    FixedPoint(0): elfpy.markets.hyperdrive.checkpoint.Checkpoint(long_base_volume=FixedPoint(-1.0))
+                },
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
             market_state = hyperdrive_market.MarketState(
-                checkpoints=defaultdict(
-                    hyperdrive_market.Checkpoint,
-                    {FixedPoint(0): hyperdrive_market.Checkpoint(short_base_volume=FixedPoint(-1.0))},
-                )
+                checkpoints={
+                    FixedPoint(0): elfpy.markets.hyperdrive.checkpoint.Checkpoint(short_base_volume=FixedPoint(-1.0))
+                },
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
@@ -354,16 +350,15 @@ class MarketTest(unittest.TestCase):
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
             market_state = hyperdrive_market.MarketState(
-                total_supply_longs=defaultdict(
-                    FixedPoint,
-                    {FixedPoint(0): FixedPoint(0), FixedPoint(1): FixedPoint(10.0), FixedPoint(2): FixedPoint(-1.0)},
-                )
+                total_supply_longs={
+                    FixedPoint(0): FixedPoint(0),
+                    FixedPoint(1): FixedPoint(10.0),
+                    FixedPoint(2): FixedPoint(-1.0),
+                },
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
-            market_state = hyperdrive_market.MarketState(
-                total_supply_shorts=defaultdict(FixedPoint, {FixedPoint(0): FixedPoint(-1.0)})
-            )
+            market_state = hyperdrive_market.MarketState(total_supply_shorts={FixedPoint(0): FixedPoint(-1.0)})
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
             market_state = hyperdrive_market.MarketState(total_supply_withdraw_shares=FixedPoint(-1.0))
