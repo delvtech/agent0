@@ -40,7 +40,13 @@ line-length = "120"
 extend-exclude = "\\.ipynb"
 
 [tool.pyright]
-exclude = ["hyperdrive_solidity", "docs", ".venv"]
+exclude = [
+    ".venv",
+    ".vscode",
+    "docs",
+    "hyperdrive_solidity/.venv",
+    "hyperdrive_solidity",
+]
 
 [tool.ruff]
 # Default is: pycodestyle (E) and Pyflakes (F)
@@ -74,8 +80,10 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 # Assume Python 3.9.
 target-version = "py39"
+
 exclude = [
     ".venv",
+    ".vscode",
     "docs",
     "hyperdrive_solidity/.venv",
     "hyperdrive_solidity",
