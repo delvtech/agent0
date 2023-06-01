@@ -10,6 +10,12 @@ import elfpy.simulators as simulators
 import elfpy.time as time
 from elfpy.math import FixedPoint
 from elfpy.simulators import Config
+from elfpy.simulators.simulation_state import (
+    BlockSimVariables,
+    DaySimVariables,
+    RunSimVariables,
+    TradeSimVariables,
+)
 
 if TYPE_CHECKING:
     import elfpy.agents.wallet as wallet
@@ -51,7 +57,7 @@ def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulato
     if config.do_dataframe_states:
         # update state with day & block = 0 for the initialization trades
         simulator.new_simulation_state.update(
-            run_vars=simulators.RunSimVariables(
+            run_vars=RunSimVariables(
                 run_number=simulator.run_number,
                 config=config,
                 agent_init=[agent.wallet for agent in simulator.agents.values()],
@@ -59,13 +65,13 @@ def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulato
                 time_step=simulator.time_step,
                 position_duration=simulator.market.position_duration,
             ),
-            day_vars=simulators.DaySimVariables(
+            day_vars=DaySimVariables(
                 run_number=simulator.run_number,
                 day=simulator.day,
                 variable_apr=float(simulator.market.market_state.variable_apr),
                 share_price=float(simulator.market.market_state.share_price),
             ),
-            block_vars=simulators.BlockSimVariables(
+            block_vars=BlockSimVariables(
                 run_number=simulator.run_number,
                 day=simulator.day,
                 block_number=simulator.block_number,
@@ -77,7 +83,7 @@ def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulato
         if config.init_lp:
             if config.do_dataframe_states:
                 simulator.new_simulation_state.update(
-                    trade_vars=simulators.TradeSimVariables(
+                    trade_vars=TradeSimVariables(
                         run_number=simulator.run_number,
                         day=simulator.day,
                         block_number=simulator.block_number,

@@ -9,7 +9,6 @@ import pandas as pd
 import numpy as np
 from numpy.random import RandomState
 
-import elfpy.simulators.simulators as simulators
 import elfpy.agents.wallet as wallet
 import elfpy.agents.policies.single_long as single_long
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -19,6 +18,13 @@ import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulati
 import elfpy.types as types
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
+from elfpy.simulators.simulation_state import (
+    BlockSimVariables,
+    DaySimVariables,
+    NewSimulationState,
+    RunSimVariables,
+    TradeSimVariables,
+)
 
 
 class TestSimulator(unittest.TestCase):
@@ -167,16 +173,16 @@ class TestSimulator(unittest.TestCase):
             }
         )
         all_trades = trades.merge(blocks.merge(days.merge(runs)))
-        sim_state = simulators.NewSimulationState()
-        sim_state.update(run_vars=simulators.RunSimVariables(**runs.iloc[0].to_dict()))
+        sim_state = NewSimulationState()
+        sim_state.update(run_vars=RunSimVariables(**runs.iloc[0].to_dict()))
         block_number = 0  # this is a cumulative tracker across days
         trade_number = 0  # this is a cumulative tracker across blocks and days
         for day in range(num_days_per_run):
-            sim_state.update(day_vars=simulators.DaySimVariables(**days.iloc[day].to_dict()))
+            sim_state.update(day_vars=DaySimVariables(**days.iloc[day].to_dict()))
             for _ in range(num_blocks_per_day):
-                sim_state.update(block_vars=simulators.BlockSimVariables(**blocks.iloc[block_number].to_dict()))
+                sim_state.update(block_vars=BlockSimVariables(**blocks.iloc[block_number].to_dict()))
                 for _ in range(num_trades_per_block):
-                    sim_state.update(trade_vars=simulators.TradeSimVariables(**trades.iloc[trade_number].to_dict()))
+                    sim_state.update(trade_vars=TradeSimVariables(**trades.iloc[trade_number].to_dict()))
                     trade_number += 1
                 block_number += 1
         assert np.all(sim_state.run_updates == runs), f"{sim_state.run_updates=}\n{runs}"
