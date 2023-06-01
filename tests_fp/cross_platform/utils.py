@@ -29,7 +29,6 @@ def to_floating_point(int_var: int, decimal_places=18):
 
 
 def get_simulation_market_state_from_contract(
-    hyperdrive_contract: ContractInstance,
     hyperdrive_data_contract: ContractInstance,
     agent_address: HexAddress,
     position_duration_seconds: FixedPoint,

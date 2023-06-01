@@ -27,7 +27,6 @@ class TestInitialize(TestCaseWithHyperdriveFixture):
         checkpoint_duration_days = int(config.checkpoint_duration_seconds / 60 / 60 / 24)
 
         market_state_sol = utils.get_simulation_market_state_from_contract(
-            hyperdrive_contract=fx.contracts.hyperdrive_contract,
             hyperdrive_data_contract=fx.contracts.hyperdrive_data_contract,
             agent_address=deployer.address,
             position_duration_seconds=FixedPoint(position_duration_seconds),
@@ -59,7 +58,6 @@ def test_market_initialization(hyperdrive_fixture: HyperdriveFixture):
     checkpoint_duration_days = int(config.checkpoint_duration_seconds / 60 / 60 / 24)
 
     market_state_sol = utils.get_simulation_market_state_from_contract(
-        hyperdrive_contract=fx.contracts.hyperdrive_contract,
         hyperdrive_data_contract=fx.contracts.hyperdrive_data_contract,
         agent_address=fx.deployer.address,
         position_duration_seconds=FixedPoint(position_duration_seconds),
