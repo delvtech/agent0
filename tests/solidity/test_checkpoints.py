@@ -131,7 +131,6 @@ class TestCheckpoint(unittest.TestCase):
         )
         self.assertEqual(checkpoint.share_price, self.hyperdrive.market_state.share_price)
 
-    @unittest.skip("Checkpoint test breaking with mod bug fix")
     def test_checkpoint_in_the_past(self):
         """Test that checkpoints created in the past work as expected"""
         # Open a long and a short.
@@ -145,9 +144,8 @@ class TestCheckpoint(unittest.TestCase):
         self.hyperdrive.checkpoint(self.hyperdrive.latest_checkpoint_time)
         # Create a checkpoint in the past
         previous_checkpoint_time = (
-            self.hyperdrive.latest_checkpoint_time * FixedPoint("365.0")
-            - self.hyperdrive.market_state.checkpoint_duration_days
-        ) / FixedPoint("365.0")
+            self.hyperdrive.latest_checkpoint_time - self.hyperdrive.market_state.checkpoint_duration_days
+        )
         self.hyperdrive.checkpoint(previous_checkpoint_time)
 
         # TODO: This should be either removed or uncommented when we decide
