@@ -26,7 +26,7 @@ class SingleLongAgent(elf_agent.Agent):
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=longs[-1].balance,
                             wallet=self.wallet,
@@ -39,7 +39,7 @@ class SingleLongAgent(elf_agent.Agent):
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketAction(
+                    trade=hyperdrive_actions.HyperdriveMarketAction(
                         action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                         trade_amount=trade_amount,
                         wallet=self.wallet,

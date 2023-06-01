@@ -6,9 +6,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 import elfpy.agents.wallet as wallet
-import elfpy.markets.base_market as base_market
-import elfpy.markets.base_pricing_model as base_pm
+import elfpy.markets.base.base_pricing_model as base_pm
 import elfpy.types as types
+from elfpy.markets.base.base_market import BaseMarket, BaseMarketDeltas, BaseMarketState, BaseMarketAction
 from elfpy.math import FixedPoint
 
 
@@ -21,7 +21,7 @@ class MarketActionType(Enum):
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketDeltas(base_market.MarketDeltas):
+class MarketDeltas(BaseMarketDeltas):
     r"""Specifies changes to values in the market"""
 
     d_borrow_shares: FixedPoint = FixedPoint("0.0")  # borrow is always in DAI
@@ -35,7 +35,7 @@ class MarketDeltas(base_market.MarketDeltas):
 
 @types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
-class MarketState(base_market.BaseMarketState):
+class MarketState(BaseMarketState):
     r"""The state of an AMM
 
     Implements a class for all that an AMM smart contract would hold or would have access to
@@ -125,7 +125,7 @@ class MarketState(base_market.BaseMarketState):
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class MarketAction(base_market.MarketAction):
+class MarketAction(BaseMarketAction):
     r"""Market action specification"""
 
     # these two variables are required to be set by the strategy
@@ -135,7 +135,7 @@ class MarketAction(base_market.MarketAction):
     spot_price: FixedPoint | None = None
 
 
-class PricingModel(base_pm.PricingModel):
+class PricingModel(base_pm.BasePricingModel):
     """stores calculation functions use for the borrow market"""
 
     def value_collateral(
@@ -152,7 +152,7 @@ class PricingModel(base_pm.PricingModel):
         return collateral_value_in_base, borrow_amount_in_base
 
 
-class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
+class Market(BaseMarket[MarketState, MarketDeltas, PricingModel]):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.

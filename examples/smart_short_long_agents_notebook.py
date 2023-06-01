@@ -146,7 +146,7 @@ class FixedFrida(elf_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -169,7 +169,7 @@ class FixedFrida(elf_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -230,7 +230,7 @@ class LongLouie(elf_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -266,7 +266,7 @@ class LongLouie(elf_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -289,7 +289,7 @@ class LPAgent(elf_agent.Agent):
             action_list = [
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketAction(
+                    trade=hyperdrive_actions.HyperdriveMarketAction(
                         action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.budget,
                         wallet=self.wallet,

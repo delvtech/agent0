@@ -5,12 +5,12 @@ from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
 import elfpy.agents.wallet as wallet
-import elfpy.markets.base_market as base_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
 
+from elfpy.markets.base.base_market import BaseMarketAction
 from elfpy.markets.hyperdrive.checkpoint import Checkpoint
 from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
 from elfpy.math import FixedPoint, FixedPointMath
@@ -43,7 +43,7 @@ class MarketActionType(Enum):
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class MarketAction(base_market.MarketAction):
+class HyperdriveMarketAction(BaseMarketAction):
     r"""Market action specification"""
     # these two variables are required to be set by the strategy
     action_type: MarketActionType

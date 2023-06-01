@@ -24,7 +24,7 @@ import elfpy.utils.outputs as output_utils
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
-    import elfpy.markets.base_pricing_model as base_pm
+    from elfpy.markets.base.base_pricing_model import BasePricingModel
 
 # pylint: disable=too-many-lines
 
@@ -38,7 +38,7 @@ class TestCalcInGivenOut(unittest.TestCase):
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
         output_utils.setup_logging("test_calc_in_given_out_failure")
-        pricing_models: list[base_pm.PricingModel] = [
+        pricing_models: list[BasePricingModel] = [
             yieldspace_pm.YieldspacePricingModel(),
             hyperdrive_pm.HyperdrivePricingModel(),
         ]
@@ -110,7 +110,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         .. todo:: This should be multiple tests for base & pt trade type
         """
         output_utils.setup_logging("test_calc_in_given_out")
-        pricing_models: list[base_pm.PricingModel] = [
+        pricing_models: list[BasePricingModel] = [
             yieldspace_pm.YieldspacePricingModel(),
             hyperdrive_pm.HyperdrivePricingModel(),
         ]
@@ -178,7 +178,7 @@ class TestCalcInGivenOut(unittest.TestCase):
     def test_calc_in_given_out_failure(self):
         """Failure tests for calc_in_given_out"""
         output_utils.setup_logging("test_calc_in_given_out_success")
-        pricing_models: list[base_pm.PricingModel] = [
+        pricing_models: list[BasePricingModel] = [
             yieldspace_pm.YieldspacePricingModel(),
             hyperdrive_pm.HyperdrivePricingModel(),
         ]

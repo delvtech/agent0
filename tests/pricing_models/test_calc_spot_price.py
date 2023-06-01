@@ -4,7 +4,8 @@ import unittest
 import elfpy.utils.price as price_utils
 import elfpy.time as time
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.markets.base_pricing_model as base_pm
+
+from elfpy.markets.base.base_pricing_model import BasePricingModel
 from elfpy.math import FixedPoint
 
 
@@ -83,7 +84,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                 "expected_result": FixedPoint("0.4685364947185249"),
             },
         ]
-        pricing_model = base_pm.PricingModel()
+        pricing_model = BasePricingModel()
         for test_number, test_case in enumerate(test_cases):
             # TODO: convert these tests to use total supply, not the approximation
             # approximation of total supply
@@ -228,7 +229,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                 ),
             },
         ]
-        pricing_model = base_pm.PricingModel()
+        pricing_model = BasePricingModel()
         for test_number, test_case in enumerate(test_cases):
             # TODO: convert these tests to use total supply, not the approximation
             # approximation of total supply

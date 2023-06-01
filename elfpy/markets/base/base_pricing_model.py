@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
-class PricingModel(ABC):
+class BasePricingModel(ABC):
     """Contains functions for calculating AMM variables
 
     Base class should not be instantiated on its own; it is assumed that a user will instantiate a child class

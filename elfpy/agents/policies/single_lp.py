@@ -28,7 +28,7 @@ class SingleLpAgent(elf_agent.Agent):
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketAction(
+                    trade=hyperdrive_actions.HyperdriveMarketAction(
                         action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.amount_to_lp,
                         wallet=self.wallet,

@@ -7,13 +7,13 @@ from dataclasses import dataclass, field
 import elfpy
 import elfpy.agents.wallet as wallet
 import elfpy.errors.errors as errors
-import elfpy.markets.base_market as base_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
 
+from elfpy.markets.base.base_market import BaseMarketState, BaseMarket
 from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
 from elfpy.markets.hyperdrive.checkpoint import Checkpoint
 from elfpy.math import FixedPoint
@@ -24,7 +24,7 @@ from elfpy.math import FixedPoint
 
 @types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
-class MarketState(base_market.BaseMarketState):
+class MarketState(BaseMarketState):
     r"""The state of an AMM
 
     Attributes
@@ -161,7 +161,7 @@ class MarketState(base_market.BaseMarketState):
 
 
 class Market(
-    base_market.Market[
+    BaseMarket[
         MarketState,
         HyperdriveMarketDeltas,
         hyperdrive_pm.HyperdrivePricingModel,
@@ -231,7 +231,7 @@ class Market(
         return latest_checkpoint
 
     def perform_action(
-        self, action_details: tuple[int, hyperdrive_actions.MarketAction]
+        self, action_details: tuple[int, hyperdrive_actions.HyperdriveMarketAction]
     ) -> tuple[int, wallet.Wallet, HyperdriveMarketDeltas]:
         r"""Execute a trade in the simulated market
 

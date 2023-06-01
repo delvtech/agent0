@@ -10,7 +10,7 @@ from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.agents.wallet as wallet
-    import elfpy.markets.base_pricing_model as base_pm
+    import elfpy.markets.base.base_pricing_model as base_pm
     import elfpy.time as time
 
 
@@ -30,7 +30,7 @@ PricingModel = TypeVar("PricingModel", bound="base_pm.PricingModel")
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class MarketAction(Generic[Action]):
+class BaseMarketAction(Generic[Action]):
     r"""Market action specification"""
 
     action_type: Enum  # these two variables are required to be set by the strategy
@@ -39,13 +39,13 @@ class MarketAction(Generic[Action]):
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketDeltas:
+class BaseMarketDeltas:
     r"""Specifies changes to values in the market"""
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketActionResult:
+class BaseMarketActionResult:
     r"""The result to a market of performing a trade"""
 
 
@@ -58,7 +58,7 @@ class BaseMarketState:
     For example, reserve numbers are local state variables of the AMM.
     """
 
-    def apply_delta(self, delta: MarketDeltas) -> None:
+    def apply_delta(self, delta: BaseMarketDeltas) -> None:
         r"""Applies a delta to the market state."""
         raise NotImplementedError
 
@@ -71,7 +71,7 @@ class BaseMarketState:
         raise NotImplementedError
 
 
-class Market(Generic[State, Deltas, PricingModel]):
+class BaseMarket(Generic[State, Deltas, PricingModel]):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.

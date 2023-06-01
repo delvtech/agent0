@@ -2,15 +2,15 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 
-import elfpy.markets.base_market as base_market
 import elfpy.types as types
 
 from elfpy.math import FixedPoint
+from elfpy.markets.base.base_market import BaseMarketDeltas
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class HyperdriveMarketDeltas(base_market.MarketDeltas):
+class HyperdriveMarketDeltas(BaseMarketDeltas):
     r"""Specifies changes to values in the market"""
     # pylint: disable=too-many-instance-attributes
     d_base_asset: FixedPoint = FixedPoint(0)

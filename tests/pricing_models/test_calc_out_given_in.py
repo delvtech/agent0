@@ -14,12 +14,13 @@ from calc_test_dataclasses import (
 import elfpy.errors.errors as errors
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.markets.base_pricing_model as base_pm
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
+
+from elfpy.markets.base.base_pricing_model import BasePricingModel
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-lines
@@ -33,7 +34,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
     # TODO: Add tests for the full TradeResult object.
     def test_calc_out_given_in_success(self):
         """Success tests for calc_out_given_in"""
-        pricing_models: list[base_pm.PricingModel] = [
+        pricing_models: list[BasePricingModel] = [
             yieldspace_pm.YieldspacePricingModel(),
             hyperdrive_pm.HyperdrivePricingModel(),
         ]
@@ -1373,7 +1374,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
         This test ensures that the pricing model can handle very extreme inputs
         such as extremely small inputs with extremely large reserves.
         """
-        pricing_models: list[base_pm.PricingModel] = [
+        pricing_models: list[BasePricingModel] = [
             yieldspace_pm.YieldspacePricingModel(),
             hyperdrive_pm.HyperdrivePricingModel(),
         ]
@@ -1438,7 +1439,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
     def test_calc_out_given_in_failure(self):
         """Failure tests for calc_out_given_in"""
         output_utils.setup_logging("test_calc_out_given_in")
-        pricing_models: list[base_pm.PricingModel] = [
+        pricing_models: list[BasePricingModel] = [
             yieldspace_pm.YieldspacePricingModel(),
             hyperdrive_pm.HyperdrivePricingModel(),
         ]

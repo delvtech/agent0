@@ -26,7 +26,7 @@ class SingleShortAgent(elf_agent.Agent):
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketAction(
+                    trade=hyperdrive_actions.HyperdriveMarketAction(
                         action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                         trade_amount=self.amount_to_trade,
                         wallet=self.wallet,

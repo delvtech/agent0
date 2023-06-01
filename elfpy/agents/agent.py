@@ -10,8 +10,8 @@ import elfpy.types as types
 from elfpy.math import FixedPoint, FixedPointMath
 
 if TYPE_CHECKING:
-    import elfpy.markets.base_market as base_market
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from elfpy.markets.base.base_market import BaseMarket
 
 
 class Agent:
@@ -44,7 +44,7 @@ class Agent:
         else:  # agent was built in the namespace (e.g. a jupyter notebook)
             self.name = name.rsplit(".", maxsplit=1)[-1].split("'")[0]
 
-    def action(self, market: base_market.Market) -> list[types.Trade]:
+    def action(self, market: BaseMarket) -> list[types.Trade]:
         r"""Abstract method meant to be implemented by the specific policy
 
         Specify action from the policy
@@ -150,7 +150,7 @@ class Agent:
             last_maybe_max_short = max_short * bond_percent
         return last_maybe_max_short
 
-    def get_trades(self, market: base_market.Market) -> list[types.Trade]:
+    def get_trades(self, market: BaseMarket) -> list[types.Trade]:
         """Helper function for computing a agent trade
 
         direction is chosen based on this logic:
@@ -206,7 +206,7 @@ class Agent:
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=self.wallet,
@@ -220,7 +220,7 @@ class Agent:
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             wallet=self.wallet,
@@ -235,7 +235,7 @@ class Agent:
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketAction(
+                    trade=hyperdrive_actions.HyperdriveMarketAction(
                         action_type=hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
                         wallet=self.wallet,

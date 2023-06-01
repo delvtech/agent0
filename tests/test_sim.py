@@ -159,7 +159,7 @@ class TestSimulator(unittest.TestCase):
                 "trade_action": [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                             trade_amount=FixedPoint(10),
                             wallet=wallet.Wallet(0),

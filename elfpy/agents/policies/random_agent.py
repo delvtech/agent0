@@ -63,7 +63,7 @@ class RandomAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketAction(
+                trade=hyperdrive_actions.HyperdriveMarketAction(
                     action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                     trade_amount=FixedPoint(trade_amount),
                     wallet=self.wallet,
@@ -90,7 +90,7 @@ class RandomAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketAction(
+                trade=hyperdrive_actions.HyperdriveMarketAction(
                     action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                     trade_amount=FixedPoint(trade_amount),
                     wallet=self.wallet,
@@ -110,7 +110,7 @@ class RandomAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketAction(
+                trade=hyperdrive_actions.HyperdriveMarketAction(
                     action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                     trade_amount=trade_amount,
                     wallet=self.wallet,
@@ -130,7 +130,7 @@ class RandomAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketAction(
+                trade=hyperdrive_actions.HyperdriveMarketAction(
                     action_type=hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY,
                     trade_amount=trade_amount,
                     wallet=self.wallet,
@@ -146,7 +146,7 @@ class RandomAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketAction(
+                trade=hyperdrive_actions.HyperdriveMarketAction(
                     action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                     trade_amount=trade_amount,
                     wallet=self.wallet,
@@ -163,7 +163,7 @@ class RandomAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketAction(
+                trade=hyperdrive_actions.HyperdriveMarketAction(
                     action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                     trade_amount=trade_amount,
                     wallet=self.wallet,

@@ -10,10 +10,10 @@ import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
 import elfpy.time as time
 import elfpy.utils.outputs as output_utils
-import elfpy.markets.base_pricing_model as base_pm
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
 
+from elfpy.markets.base.base_pricing_model import BasePricingModel
 from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
 from elfpy.math import FixedPoint
 
@@ -39,7 +39,7 @@ class TestGetMax(unittest.TestCase):
             bond_reserves >= bond_buffer
         """
         output_utils.setup_logging(log_filename="test_get_max")
-        pricing_models: list[base_pm.PricingModel] = [
+        pricing_models: list[BasePricingModel] = [
             hyperdrive_pm.HyperdrivePricingModel(),
             yieldspace_pm.YieldspacePricingModel(),
         ]
@@ -252,7 +252,7 @@ class TestGetMax(unittest.TestCase):
 
     def _ensure_market_safety(
         self,
-        pricing_model: base_pm.PricingModel,
+        pricing_model: BasePricingModel,
         trade_result: trades.TradeResult,
         test_case: TestCaseGetMax,
         is_long: bool,

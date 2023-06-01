@@ -94,7 +94,7 @@ class FixedFrida(elfpy_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -119,7 +119,7 @@ class FixedFrida(elfpy_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -176,7 +176,7 @@ class LongLouie(elfpy_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -214,7 +214,7 @@ class LongLouie(elfpy_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
