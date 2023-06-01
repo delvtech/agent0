@@ -3,7 +3,7 @@ import unittest
 
 import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 from elfpy.math import FixedPoint, FixedPointMath
 
@@ -31,7 +31,7 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.MarketState(
+        market_state = hyperdrive_market.HyperdriveMarketState(
             curve_fee_multiple=FixedPoint("0.0"),
             flat_fee_multiple=FixedPoint("0.0"),
         )

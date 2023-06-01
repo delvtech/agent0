@@ -3,7 +3,7 @@ import unittest
 
 import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 from elfpy.math import FixedPoint, FixedPointMath
 
@@ -36,7 +36,7 @@ class TestWithdrawShares(unittest.TestCase):
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.budget)
         self.block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.MarketState()
+        market_state = hyperdrive_market.HyperdriveMarketState()
         self.hyperdrive = hyperdrive_market.Market(
             pricing_model=pricing_model,
             market_state=market_state,

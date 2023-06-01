@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 
 import elfpy.agents.agent_trade_result as agent_trade_result
 import elfpy.markets.hyperdrive.market_action_result as market_action_result
-import elfpy.pricing_models.base as base_pm
-import elfpy.pricing_models.trades as trades
+import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
+from elfpy.markets.base.base_pricing_model import BasePricingModel
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 # pylint: disable=too-many-arguments
 
 
-class YieldspacePricingModel(base_pm.PricingModel):
+class YieldspacePricingModel(BasePricingModel):
     """
     YieldSpace Pricing Model
 
@@ -42,7 +42,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         self,
         d_base: FixedPoint,
         rate: FixedPoint,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -117,7 +117,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
     def calc_in_given_out(
         self,
         out: types.Quantity,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -320,7 +320,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
     def calc_out_given_in(
         self,
         in_: types.Quantity,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -737,7 +737,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         ) ** time_elapsed
 
     def calc_tokens_out_given_lp_in(
-        self, lp_in: FixedPoint, market_state: hyperdrive_market.MarketState
+        self, lp_in: FixedPoint, market_state: hyperdrive_market.HyperdriveMarketState
     ) -> tuple[FixedPoint, FixedPoint]:
         """
         Calculates the amount of base shares and bonds released from burning a a specified amount of

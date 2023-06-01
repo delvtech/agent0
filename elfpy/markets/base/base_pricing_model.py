@@ -12,11 +12,11 @@ import elfpy.utils.price as price_utils
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
-    import elfpy.pricing_models.trades as trades
+    import elfpy.markets.trades as trades
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
-class PricingModel(ABC):
+class BasePricingModel(ABC):
     """Contains functions for calculating AMM variables
 
     Base class should not be instantiated on its own; it is assumed that a user will instantiate a child class
@@ -27,7 +27,7 @@ class PricingModel(ABC):
     def calc_in_given_out(
         self,
         out: types.Quantity,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
@@ -36,7 +36,7 @@ class PricingModel(ABC):
     def calc_out_given_in(
         self,
         in_: types.Quantity,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
@@ -46,7 +46,7 @@ class PricingModel(ABC):
         self,
         d_base: FixedPoint,
         rate: FixedPoint,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
@@ -55,7 +55,7 @@ class PricingModel(ABC):
     def calc_tokens_out_given_lp_in(
         self,
         lp_in: FixedPoint,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         """Calculate how many tokens should be returned for a given lp addition"""
         raise NotImplementedError
@@ -72,7 +72,7 @@ class PricingModel(ABC):
         self,
         target_apr: FixedPoint,
         time_remaining: time.StretchedTime,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
     ) -> FixedPoint:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR for an initialized market
@@ -113,7 +113,7 @@ class PricingModel(ABC):
         self,
         target_apr: FixedPoint,
         time_remaining: time.StretchedTime,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
     ) -> FixedPoint:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR
@@ -153,7 +153,7 @@ class PricingModel(ABC):
 
     def calc_spot_price_from_reserves(
         self,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> FixedPoint:
         r"""Calculates the spot price of base in terms of bonds.
@@ -188,7 +188,7 @@ class PricingModel(ABC):
 
     def calc_apr_from_reserves(
         self,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> FixedPoint:
         r"""Returns the apr given reserve amounts
@@ -208,7 +208,7 @@ class PricingModel(ABC):
 
     def get_max_long(
         self,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint]:
         r"""
@@ -250,7 +250,7 @@ class PricingModel(ABC):
 
     def get_max_short(
         self,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint]:
         r"""
@@ -300,7 +300,7 @@ class PricingModel(ABC):
     def check_input_assertions(
         self,
         quantity: types.Quantity,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ):
         """Applies a set of assertions to the input of a trading function."""

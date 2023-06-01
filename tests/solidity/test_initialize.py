@@ -3,7 +3,7 @@ import unittest
 
 import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 from elfpy.time.time import BlockTime
 from elfpy.math import FixedPoint
@@ -46,7 +46,7 @@ class TestInitialize(unittest.TestCase):
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
         self.block_time = BlockTime()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.MarketState()
+        market_state = hyperdrive_market.HyperdriveMarketState()
         self.hyperdrive = hyperdrive_market.Market(
             pricing_model=self.pricing_model,
             market_state=market_state,

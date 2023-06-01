@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 import elfpy.agents.agent_trade_result as agent_trade_result
 import elfpy.markets.hyperdrive.market_action_result as market_action_result
-import elfpy.pricing_models.trades as trades
-import elfpy.pricing_models.yieldspace as yieldspace_pm
+import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
+import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
 from elfpy.math import FixedPoint
@@ -33,7 +33,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
     def calc_in_given_out(
         self,
         out: types.Quantity,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -181,7 +181,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
     def calc_out_given_in(
         self,
         in_: types.Quantity,
-        market_state: hyperdrive_market.MarketState,
+        market_state: hyperdrive_market.HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -324,7 +324,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
         )
 
     def calc_tokens_out_given_lp_in(
-        self, lp_in: FixedPoint, market_state: hyperdrive_market.MarketState
+        self, lp_in: FixedPoint, market_state: hyperdrive_market.HyperdriveMarketState
     ) -> tuple[FixedPoint, FixedPoint]:
         """
         Calculates the amount of base shares and bonds released from burning a specified amount of

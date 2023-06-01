@@ -20,7 +20,7 @@ class InitializeLiquidityAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketAction(
+                trade=hyperdrive_actions.HyperdriveMarketAction(
                     action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                     trade_amount=self.budget,
                     wallet=self.wallet,

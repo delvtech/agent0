@@ -1,17 +1,17 @@
 """Testing for the ElfPy package modules"""
-from __future__ import annotations  # types are strings by default in 3.11
-
+from __future__ import annotations
 import logging
 import unittest
 
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.simulators.simulators as simulators
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
+
+from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
 from elfpy.math import FixedPoint
+from elfpy.simulators.config import Config
 
 # pylint: disable=too-many-locals
 
@@ -28,7 +28,7 @@ class SimUtilsTest(unittest.TestCase):
             for target_fixed_apr in (0.01, 0.03, 0.05, 0.10, 0.25, 0.5, 1.0, 1.1):
                 for num_position_days in [90, 365]:
                     for pricing_model_name in ["Hyperdrive"]:
-                        config = simulators.Config()
+                        config = Config()
                         config.pricing_model_name = pricing_model_name
                         config.target_liquidity = target_liquidity
                         config.curve_fee_multiple = 0.1
@@ -45,7 +45,7 @@ class SimUtilsTest(unittest.TestCase):
                         # then construct it by hand
                         market_direct = hyperdrive_market.Market(
                             pricing_model=market.pricing_model,
-                            market_state=hyperdrive_market.MarketState(
+                            market_state=hyperdrive_market.HyperdriveMarketState(
                                 base_buffer=market.market_state.base_buffer,
                                 bond_buffer=market.market_state.bond_buffer,
                                 variable_apr=market.market_state.variable_apr,
@@ -65,7 +65,7 @@ class SimUtilsTest(unittest.TestCase):
                             ** (FixedPoint("1.0") / market_direct.position_duration.stretched_time)
                             - market_direct.market_state.share_price
                         )
-                        market_deltas = hyperdrive_actions.MarketDeltas(
+                        market_deltas = HyperdriveMarketDeltas(
                             d_base_asset=FixedPoint(target_liquidity),
                             d_bond_asset=bond_reserves,
                             d_lp_total_supply=market_direct.market_state.share_price * share_reserves + bond_reserves,

@@ -11,7 +11,7 @@ import elfpy.agents.agent as elf_agent
 import elfpy.agents.policies as policies
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
 from elfpy.agents.get_wallet_state import get_wallet_state
@@ -43,7 +43,7 @@ class TestPolicy(elf_agent.Agent):
 class TestCaseGetMax:
     """Test case for get_max_long and get_max_short tests"""
 
-    market_state: hyperdrive_market.MarketState
+    market_state: hyperdrive_market.HyperdriveMarketState
     time_remaining: time.StretchedTime
 
     __test__ = False  # pytest: don't test this class
@@ -109,7 +109,7 @@ class TestAgent(unittest.TestCase):
         # Get a mock Market
         self.market = hyperdrive_market.Market(
             pricing_model=hyperdrive_pm.HyperdrivePricingModel(),
-            market_state=hyperdrive_market.MarketState(),
+            market_state=hyperdrive_market.HyperdriveMarketState(),
             position_duration=time.StretchedTime(
                 days=FixedPoint("365.0"), time_stretch=FixedPoint("10.0"), normalizing_constant=FixedPoint("365.0")
             ),

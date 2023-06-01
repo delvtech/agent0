@@ -9,7 +9,6 @@ import pandas as pd
 import numpy as np
 from numpy.random import RandomState
 
-import elfpy.simulators.simulators as simulators
 import elfpy.agents.wallet as wallet
 import elfpy.agents.policies.single_long as single_long
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -18,6 +17,14 @@ import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
 import elfpy.types as types
 from elfpy.math import FixedPoint
+from elfpy.simulators.config import Config
+from elfpy.simulators.simulation_state import (
+    BlockSimVariables,
+    DaySimVariables,
+    NewSimulationState,
+    RunSimVariables,
+    TradeSimVariables,
+)
 
 
 class TestSimulator(unittest.TestCase):
@@ -32,7 +39,7 @@ class TestSimulator(unittest.TestCase):
     def test_hyperdrive_sim(self):
         """Tests hyperdrive simulation"""
         self.setup_logging()
-        config = simulators.Config()
+        config = Config()
         config.pricing_model_name = "Hyperdrive"
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
@@ -44,7 +51,7 @@ class TestSimulator(unittest.TestCase):
     def test_yieldspace_sim(self):
         """Tests yieldspace simulation"""
         self.setup_logging()
-        config = simulators.Config()
+        config = Config()
         config.pricing_model_name = "Yieldspace"
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
@@ -56,7 +63,7 @@ class TestSimulator(unittest.TestCase):
     def test_set_rng(self):
         """Test error handling & resetting simulator random number generator"""
         self.setup_logging()
-        config = simulators.Config()
+        config = Config()
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
         config.variable_apr = [0.01] * config.num_trading_days
@@ -76,7 +83,7 @@ class TestSimulator(unittest.TestCase):
         has the correct number of logs per category.
         """
         self.setup_logging()
-        config = simulators.Config()
+        config = Config()
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
         config.variable_apr = [0.01] * config.num_trading_days
@@ -118,9 +125,9 @@ class TestSimulator(unittest.TestCase):
         runs = pd.DataFrame(
             {
                 "run_number": [0] * num_runs,
-                "config": [simulators.Config()],
+                "config": [Config()],
                 "agent_init": [[wallet.Wallet(address) for address in range(2)]],
-                "market_init": [hyperdrive_market.MarketState()],
+                "market_init": [hyperdrive_market.HyperdriveMarketState()],
                 "time_step": [0.001],
                 "position_duration": [90],
             }
@@ -152,7 +159,7 @@ class TestSimulator(unittest.TestCase):
                 "trade_action": [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                             trade_amount=FixedPoint(10),
                             wallet=wallet.Wallet(0),
@@ -166,16 +173,16 @@ class TestSimulator(unittest.TestCase):
             }
         )
         all_trades = trades.merge(blocks.merge(days.merge(runs)))
-        sim_state = simulators.NewSimulationState()
-        sim_state.update(run_vars=simulators.RunSimVariables(**runs.iloc[0].to_dict()))
+        sim_state = NewSimulationState()
+        sim_state.update(run_vars=RunSimVariables(**runs.iloc[0].to_dict()))
         block_number = 0  # this is a cumulative tracker across days
         trade_number = 0  # this is a cumulative tracker across blocks and days
         for day in range(num_days_per_run):
-            sim_state.update(day_vars=simulators.DaySimVariables(**days.iloc[day].to_dict()))
+            sim_state.update(day_vars=DaySimVariables(**days.iloc[day].to_dict()))
             for _ in range(num_blocks_per_day):
-                sim_state.update(block_vars=simulators.BlockSimVariables(**blocks.iloc[block_number].to_dict()))
+                sim_state.update(block_vars=BlockSimVariables(**blocks.iloc[block_number].to_dict()))
                 for _ in range(num_trades_per_block):
-                    sim_state.update(trade_vars=simulators.TradeSimVariables(**trades.iloc[trade_number].to_dict()))
+                    sim_state.update(trade_vars=TradeSimVariables(**trades.iloc[trade_number].to_dict()))
                     trade_number += 1
                 block_number += 1
         assert np.all(sim_state.run_updates == runs), f"{sim_state.run_updates=}\n{runs}"
@@ -187,7 +194,7 @@ class TestSimulator(unittest.TestCase):
     def test_aggregate_agent_and_market_states(self):
         """Tests tweet aggregation with new dataframe in a simulation"""
         self.setup_logging()
-        config = simulators.Config()
+        config = Config()
         config.num_trading_days = 4
         config.num_blocks_per_day = 4
         config.variable_apr = [0.01] * config.num_trading_days

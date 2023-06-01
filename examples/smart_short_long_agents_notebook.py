@@ -23,17 +23,17 @@ import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
 import elfpy.utils.sim_utils as sim_utils
-import elfpy.simulators as simulators
 import elfpy.types as types
 
 from elfpy import WEI
 from elfpy.math import FixedPoint, FixedPointMath
+from elfpy.simulators.config import Config
 
 # %% [markdown]
 # ### Setup experiment parameters
 
 # %%
-config = simulators.Config()
+config = Config()
 
 # General config parameters
 config.title = "Hyperdrive smart agent demo"
@@ -146,7 +146,7 @@ class FixedFrida(elf_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -169,7 +169,7 @@ class FixedFrida(elf_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -230,7 +230,7 @@ class LongLouie(elf_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -266,7 +266,7 @@ class LongLouie(elf_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -289,7 +289,7 @@ class LPAgent(elf_agent.Agent):
             action_list = [
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketAction(
+                    trade=hyperdrive_actions.HyperdriveMarketAction(
                         action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.budget,
                         wallet=self.wallet,
@@ -301,7 +301,7 @@ class LPAgent(elf_agent.Agent):
 
 # %%
 def get_example_agents(
-    rng: NumpyGenerator, experiment_config: simulators.Config, existing_agents: int = 0
+    rng: NumpyGenerator, experiment_config: Config, existing_agents: int = 0
 ) -> list[elf_agent.Agent]:
     """Instantiate a set of custom agents"""
     agents = []

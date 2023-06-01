@@ -5,7 +5,7 @@ import unittest
 import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.checkpoint
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_markets
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 from elfpy import types
 from elfpy.errors import errors
@@ -36,7 +36,7 @@ class TestCheckpoint(unittest.TestCase):
         self.block_time = time.BlockTime()
 
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_markets.MarketState()
+        market_state = hyperdrive_markets.HyperdriveMarketState()
 
         self.hyperdrive = hyperdrive_markets.Market(
             pricing_model=pricing_model,

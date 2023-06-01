@@ -17,7 +17,7 @@ import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
 
 from elfpy import WEI, PRECISION_THRESHOLD
-from elfpy.simulators import Config
+from elfpy.simulators.config import Config
 from elfpy.agents.agent import Agent
 from elfpy.utils import sim_utils
 from elfpy.math import FixedPoint
@@ -219,7 +219,7 @@ class RegularGuy(Agent):
         self.threshold = FixedPoint(self.rng.normal(loc=0, scale=0.005))
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.Market) -> list[hyperdrive_actions.MarketAction]:
+    def action(self, market: hyperdrive_market.Market) -> list[hyperdrive_actions.HyperdriveMarketAction]:
         """Implement a random user strategy
 
         The agent performs one of four possible trades:
@@ -286,7 +286,7 @@ class RegularGuy(Agent):
                         action_list = [
                             types.Trade(
                                 market=types.MarketType.HYPERDRIVE,
-                                trade=hyperdrive_actions.MarketAction(
+                                trade=hyperdrive_actions.HyperdriveMarketAction(
                                     action_type=action_type,
                                     trade_amount=trade_amount,
                                     wallet=self.wallet,
@@ -303,7 +303,7 @@ class RegularGuy(Agent):
                         action_list = [
                             types.Trade(
                                 market=types.MarketType.HYPERDRIVE,
-                                trade=hyperdrive_actions.MarketAction(
+                                trade=hyperdrive_actions.HyperdriveMarketAction(
                                     action_type=action_type,
                                     trade_amount=trade_amount,
                                     wallet=self.wallet,
@@ -317,7 +317,7 @@ class RegularGuy(Agent):
                     action_list = [
                         types.Trade(
                             market=types.MarketType.HYPERDRIVE,
-                            trade=hyperdrive_actions.MarketAction(
+                            trade=hyperdrive_actions.HyperdriveMarketAction(
                                 action_type=action_type,
                                 trade_amount=trade_amount,
                                 wallet=self.wallet,
@@ -333,7 +333,7 @@ class RegularGuy(Agent):
                     action_list = [
                         types.Trade(
                             market=types.MarketType.HYPERDRIVE,
-                            trade=hyperdrive_actions.MarketAction(
+                            trade=hyperdrive_actions.HyperdriveMarketAction(
                                 action_type=action_type,
                                 trade_amount=trade_amount,
                                 wallet=self.wallet,

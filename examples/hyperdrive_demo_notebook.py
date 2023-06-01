@@ -57,16 +57,17 @@ from numpy.random._generator import Generator as NumpyGenerator
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from elfpy.agents.agent import Agent
-from elfpy.utils import sim_utils
-from elfpy.simulators import Config
-from elfpy.utils.outputs import get_gridspec_subplots
-from elfpy.math import FixedPoint
-
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
 import elfpy.agents.policies.random_agent as random_agent
+
+from elfpy.agents.agent import Agent
+from elfpy.simulators.config import Config
+from elfpy.utils import sim_utils
+from elfpy.utils.outputs import get_gridspec_subplots
+from elfpy.math import FixedPoint
+
 
 # %% [markdown]
 # ### Setup experiment parameters
