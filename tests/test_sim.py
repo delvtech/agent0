@@ -18,6 +18,7 @@ import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
 import elfpy.types as types
 from elfpy.math import FixedPoint
+from elfpy.simulators.config import Config
 
 
 class TestSimulator(unittest.TestCase):
@@ -32,7 +33,7 @@ class TestSimulator(unittest.TestCase):
     def test_hyperdrive_sim(self):
         """Tests hyperdrive simulation"""
         self.setup_logging()
-        config = simulators.Config()
+        config = Config()
         config.pricing_model_name = "Hyperdrive"
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
@@ -44,7 +45,7 @@ class TestSimulator(unittest.TestCase):
     def test_yieldspace_sim(self):
         """Tests yieldspace simulation"""
         self.setup_logging()
-        config = simulators.Config()
+        config = Config()
         config.pricing_model_name = "Yieldspace"
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
@@ -56,7 +57,7 @@ class TestSimulator(unittest.TestCase):
     def test_set_rng(self):
         """Test error handling & resetting simulator random number generator"""
         self.setup_logging()
-        config = simulators.Config()
+        config = Config()
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
         config.variable_apr = [0.01] * config.num_trading_days
@@ -76,7 +77,7 @@ class TestSimulator(unittest.TestCase):
         has the correct number of logs per category.
         """
         self.setup_logging()
-        config = simulators.Config()
+        config = Config()
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
         config.variable_apr = [0.01] * config.num_trading_days
@@ -118,7 +119,7 @@ class TestSimulator(unittest.TestCase):
         runs = pd.DataFrame(
             {
                 "run_number": [0] * num_runs,
-                "config": [simulators.Config()],
+                "config": [Config()],
                 "agent_init": [[wallet.Wallet(address) for address in range(2)]],
                 "market_init": [hyperdrive_market.MarketState()],
                 "time_step": [0.001],
@@ -187,7 +188,7 @@ class TestSimulator(unittest.TestCase):
     def test_aggregate_agent_and_market_states(self):
         """Tests tweet aggregation with new dataframe in a simulation"""
         self.setup_logging()
-        config = simulators.Config()
+        config = Config()
         config.num_trading_days = 4
         config.num_blocks_per_day = 4
         config.variable_apr = [0.01] * config.num_trading_days

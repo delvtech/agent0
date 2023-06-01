@@ -7,9 +7,9 @@ import itertools
 import os
 import sys
 
-from elfpy.simulators import simulators
-from elfpy.utils import sim_utils
 import elfpy.utils.outputs as output_utils
+from elfpy.simulators.config import Config
+from elfpy.utils import sim_utils
 
 
 class TestLogging(unittest.TestCase):
@@ -43,7 +43,7 @@ class TestLogging(unittest.TestCase):
             logging.getLogger().handlers = [
                 handler,
             ]
-            config = simulators.Config()
+            config = Config()
             config.pricing_model_name = "Yieldspace"
             config.num_trading_days = 3
             config.num_blocks_per_day = 3
@@ -58,7 +58,7 @@ class TestLogging(unittest.TestCase):
         """Verfies that the config variables are successfully logged"""
         log_filename = ".logging/test_sim.log"
         output_utils.setup_logging(log_filename, log_level=logging.INFO)
-        config = simulators.Config()
+        config = Config()
         logging.info("%s", config)
         self.assertLogs(level=logging.INFO)
         output_utils.close_logging()

@@ -9,6 +9,7 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.simulators as simulators
 import elfpy.time as time
 from elfpy.math import FixedPoint
+from elfpy.simulators import Config
 
 if TYPE_CHECKING:
     import elfpy.agents.wallet as wallet
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
 
 
-def get_simulator(config: simulators.Config, agents: list[Agent] | None = None) -> simulators.Simulator:
+def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulators.Simulator:
     r"""Construct and initialize a simulator with sane defaults
 
     The simulated market is initialized with an initial LP.
@@ -100,7 +101,7 @@ def get_simulator(config: simulators.Config, agents: list[Agent] | None = None) 
 def get_initialized_hyperdrive_market(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: time.BlockTime,
-    config: simulators.Config,
+    config: Config,
 ) -> tuple[hyperdrive_market.Market, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
     r"""Setup market
 

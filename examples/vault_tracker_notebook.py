@@ -17,7 +17,7 @@ import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
 
 from elfpy import WEI, PRECISION_THRESHOLD
-from elfpy.simulators import Config
+from elfpy.simulators.config import Config
 from elfpy.agents.agent import Agent
 from elfpy.utils import sim_utils
 from elfpy.math import FixedPoint

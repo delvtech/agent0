@@ -39,6 +39,7 @@ from elfpy import simulators, time, types
 from elfpy.agents.policies import random_agent
 from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
 from elfpy.math import FixedPoint
+from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
@@ -315,7 +316,7 @@ class BotInfo:
         )
 
 
-def get_config(args: argparse.Namespace) -> simulators.Config:
+def get_config(args: argparse.Namespace) -> Config:
     """Instantiate a config object with elf-simulation parameters.
 
     Parameters
@@ -330,7 +331,7 @@ def get_config(args: argparse.Namespace) -> simulators.Config:
     """
     load_dotenv(dotenv_path=f"{Path.cwd() if Path.cwd().name != 'examples' else Path.cwd().parent}/.env")
     ape_logger.set_level(logging.ERROR)
-    config = simulators.Config()
+    config = Config()
     config.log_level = output_utils.text_to_log_level(args.log_level)
     random_seed_file = f".logging/random_seed{'_devnet' if args.devnet else ''}.txt"
     if os.path.exists(random_seed_file):
@@ -361,7 +362,7 @@ def get_config(args: argparse.Namespace) -> simulators.Config:
 
 
 def set_up_experiment(
-    experiment_config: simulators.Config, args: argparse.Namespace
+    experiment_config: Config, args: argparse.Namespace
 ) -> tuple[elfpy.pricing_models.base.PricingModel, str, str, dict[str, str], dict]:
     """Declare and assign experiment variables.
 
@@ -407,7 +408,7 @@ def set_up_experiment(
     return pricing_model, crash_file, network_choice, provider_settings, addresses, address_file
 
 
-def get_devnet_addresses(experiment_config: simulators.Config, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
+def get_devnet_addresses(experiment_config: Config, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
     address_file = experiment_config.scratch["project_dir"] / "artifacts" / "addresses.json"
     # make parent folder if it doesn't exist
@@ -429,7 +430,7 @@ def get_devnet_addresses(experiment_config: simulators.Config, addresses: dict[s
     return addresses, address_file
 
 
-def get_accounts(experiment_config: simulators.Config) -> list[KeyfileAccount]:
+def get_accounts(experiment_config: Config) -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
     num = sum(experiment_config.scratch[f"num_{bot}"] for bot in experiment_config.scratch["bot_names"])
     assert (mnemonic := " ".join(["wolf"] * 24)), "You must provide a mnemonic in .env to run this script."
@@ -454,7 +455,7 @@ def create_agent(
     base_instance: ContractInstance,
     on_chain_trade_info: ape_utils.OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
-    experiment_config: simulators.Config,
+    experiment_config: Config,
     args: dict,
     deployer_account: KeyfileAccount,
 ) -> elfpy.agents.agent.Agent:
@@ -539,7 +540,7 @@ def create_agent(
 
 
 def set_up_agents(
-    experiment_config: simulators.Config,
+    experiment_config: Config,
     args: argparse.Namespace,
     provider: ProviderAPI,
     hyperdrive_instance: ContractInstance,
@@ -705,7 +706,7 @@ def log_and_show_block_info(
 
 
 def get_simulator(
-    experiment_config: simulators.Config, pricing_model: elfpy.pricing_models.base.PricingModel
+    experiment_config: Config, pricing_model: elfpy.pricing_models.base.PricingModel
 ) -> simulators.Simulator:
     """Instantiate and return an initialized elfpy Simulator object."""
     market, _, _ = sim_utils.get_initialized_hyperdrive_market(
@@ -715,7 +716,7 @@ def get_simulator(
 
 
 def deploy_hyperdrive(
-    experiment_config: simulators.Config,
+    experiment_config: Config,
     base_instance: ContractInstance,
     deployer_account: KeyfileAccount,
     pricing_model: elfpy.pricing_models.base.PricingModel,
@@ -853,7 +854,7 @@ def get_hyperdrive_config(hyperdrive_instance) -> dict:
 
 
 def set_up_ape(
-    experiment_config: simulators.Config,
+    experiment_config: Config,
     args: argparse.Namespace,
     provider_settings: dict,
     addresses: dict,

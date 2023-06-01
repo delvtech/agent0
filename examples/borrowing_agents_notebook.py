@@ -62,11 +62,11 @@ import pandas as pd
 import elfpy.agents.agent as elf_agent
 import elfpy.agents.wallet as wallet
 import elfpy.markets.borrow as borrow
-import elfpy.simulators as simulators
 import elfpy.time as elf_time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 from elfpy.math.fixed_point import FixedPoint
+from elfpy.simulators.config import Config
 
 
 # %%
@@ -143,7 +143,7 @@ class BorrowingBeatrice(elf_agent.Agent):
 # ### Setup experiment parameters
 
 # %%
-config = simulators.Config()
+config = Config()
 
 # General config parameters
 config.title = "Spark smart agent demo"
