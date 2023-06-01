@@ -5,9 +5,9 @@ import logging
 from dataclasses import dataclass, field
 from enum import Enum
 
-import elfpy.markets.base as base_market
 import elfpy.agents.wallet as wallet
-import elfpy.pricing_models.base as base_pm
+import elfpy.markets.base_market as base_market
+import elfpy.markets.base_pricing_model as base_pm
 import elfpy.types as types
 from elfpy.math import FixedPoint
 

@@ -5,7 +5,7 @@ import unittest
 import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_markets
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 from elfpy.math import FixedPoint
 

@@ -6,7 +6,7 @@ import unittest
 
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils

@@ -6,8 +6,8 @@ from typing import Union
 import elfpy.errors.errors as errors
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.utils.outputs as output_utils
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.pricing_models.yieldspace as yieldspace_pm
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
+import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
 from elfpy.math import FixedPoint
 
 

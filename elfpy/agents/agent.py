@@ -10,7 +10,7 @@ import elfpy.types as types
 from elfpy.math import FixedPoint, FixedPointMath
 
 if TYPE_CHECKING:
-    import elfpy.markets.base as base_market
+    import elfpy.markets.base_market as base_market
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 

@@ -16,15 +16,15 @@ from calc_test_dataclasses import (
 import elfpy.errors.errors as errors
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.pricing_models.yieldspace as yieldspace_pm
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
+import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
-    import elfpy.pricing_models.base as base_pm
+    import elfpy.markets.base_pricing_model as base_pm
 
 # pylint: disable=too-many-lines
 

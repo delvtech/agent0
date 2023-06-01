@@ -4,8 +4,8 @@ from __future__ import annotations
 import unittest
 
 import elfpy.markets.hyperdrive.checkpoint
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.pricing_models.yieldspace as yieldspace_pm
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
+import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.borrow as borrow
 import elfpy.time as time

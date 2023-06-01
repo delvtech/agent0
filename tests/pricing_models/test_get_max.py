@@ -6,15 +6,15 @@ import logging
 from dataclasses import dataclass
 import unittest
 
-import elfpy.pricing_models.trades as trades
+import elfpy.markets.trades as trades
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
 import elfpy.time as time
 import elfpy.utils.outputs as output_utils
-import elfpy.pricing_models.base as base_pm
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.pricing_models.yieldspace as yieldspace_pm
+import elfpy.markets.base_pricing_model as base_pm
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
+import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
 from elfpy.math import FixedPoint
 
 

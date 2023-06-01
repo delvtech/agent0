@@ -4,7 +4,7 @@ import unittest
 import elfpy.utils.price as price_utils
 import elfpy.time as time
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.pricing_models.base as base_pm
+import elfpy.markets.base_pricing_model as base_pm
 from elfpy.math import FixedPoint
 
 

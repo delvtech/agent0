@@ -12,7 +12,7 @@ import elfpy.utils.price as price_utils
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
-    import elfpy.pricing_models.trades as trades
+    import elfpy.markets.trades as trades
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 

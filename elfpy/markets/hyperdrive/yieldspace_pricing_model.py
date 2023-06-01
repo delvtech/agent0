@@ -5,9 +5,9 @@ import logging
 from typing import TYPE_CHECKING
 
 import elfpy.agents.agent_trade_result as agent_trade_result
+import elfpy.markets.base_pricing_model as base_pm
 import elfpy.markets.hyperdrive.market_action_result as market_action_result
-import elfpy.pricing_models.base as base_pm
-import elfpy.pricing_models.trades as trades
+import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
 from elfpy.math import FixedPoint

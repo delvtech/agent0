@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from elfpy import types
 from elfpy.math import FixedPoint
-from elfpy.markets import base as base_market
+from elfpy.markets import base_market
 
 
 @types.freezable(frozen=True, no_new_attribs=True)

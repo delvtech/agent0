@@ -10,7 +10,7 @@ from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.agents.wallet as wallet
-    import elfpy.pricing_models.base as base_pm
+    import elfpy.markets.base_pricing_model as base_pm
     import elfpy.time as time
 
 

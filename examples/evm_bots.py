@@ -32,7 +32,7 @@ from numpy.random._generator import Generator as NumpyGenerator
 # elfpy core repo
 import elfpy
 import elfpy.agents.agent as elfpy_agent
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
 from elfpy import simulators, time, types
