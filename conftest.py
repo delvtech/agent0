@@ -2,7 +2,6 @@
 import unittest
 
 import ape
-import fixtures
 import pytest
 from ape.api.accounts import TestAccountAPI
 from ape.api.providers import ProviderAPI
@@ -10,6 +9,20 @@ from ape.managers.project import ProjectManager
 
 from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
 from elfpy.math.fixed_point import FixedPoint
+
+from tests_fp.cross_platform import fixtures
+
+pytest_plugins = [
+    "tests_fp.cross_platform.fixtures.agents",
+    "tests_fp.cross_platform.fixtures.base_erc20",
+    "tests_fp.cross_platform.fixtures.contracts",
+    "tests_fp.cross_platform.fixtures.deployer",
+    "tests_fp.cross_platform.fixtures.fixed_math_contract",
+    "tests_fp.cross_platform.fixtures.hyperdrive_config",
+    "tests_fp.cross_platform.fixtures.hyperdrive_sim",
+    "tests_fp.cross_platform.fixtures.project",
+    "tests_fp.cross_platform.fixtures.provider",
+]
 
 
 class HyperdriveFixture:

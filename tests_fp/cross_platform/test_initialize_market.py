@@ -9,7 +9,7 @@ from elfpy.math.fixed_point import FixedPoint
 from tests_fp.cross_platform import utils
 
 # elfpy core repo
-from tests_fp.cross_platform.conftest import TestCaseWithHyperdriveFixture, HyperdriveFixture
+from conftest import TestCaseWithHyperdriveFixture, HyperdriveFixture
 
 
 class TestInitialize(TestCaseWithHyperdriveFixture):
