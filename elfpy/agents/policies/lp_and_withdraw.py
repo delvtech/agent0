@@ -3,16 +3,16 @@ from __future__ import annotations
 
 from numpy.random._generator import Generator as NumpyGenerator
 
-import elfpy.agents.agent as elf_agent
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.types as types
+from elfpy.agents.agent import Agent
+from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
+from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
 from elfpy.math import FixedPoint
+from elfpy.types import Trade, MarketType
 
 # pylint: disable=too-many-arguments
 
 
-class LpAndWithdrawAgent(elf_agent.Agent):
+class LpAndWithdrawAgent(Agent):
     """
     simple LP
     only has one LP open at a time
@@ -31,22 +31,22 @@ class LpAndWithdrawAgent(elf_agent.Agent):
         self.time_to_withdraw = time_to_withdraw
         super().__init__(wallet_address, budget, rng)
 
-    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
+    def action(self, market: HyperdriveMarket) -> list[Trade]:
         """
         implement user strategy
         LP if you can, but only do it once
         """
         # pylint disable=unused-argument
-        action_list: list[types.Trade] = []
+        action_list: list[Trade] = []
         has_lp = self.wallet.lp_tokens > FixedPoint(0)
         amount_in_base = self.wallet.balance.amount
         can_lp = amount_in_base >= self.amount_to_lp
         if not has_lp and can_lp:
             action_list.append(
-                types.Trade(
-                    market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.HyperdriveMarketAction(
-                        action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
+                Trade(
+                    market=MarketType.HYPERDRIVE,
+                    trade=HyperdriveMarketAction(
+                        action_type=MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.amount_to_lp,
                         wallet=self.wallet,
                     ),
@@ -56,10 +56,10 @@ class LpAndWithdrawAgent(elf_agent.Agent):
             enough_time_has_passed = market.block_time.time > self.time_to_withdraw
             if enough_time_has_passed:
                 action_list.append(
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.HyperdriveMarketAction(
-                            action_type=hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY,
+                    Trade(
+                        market=MarketType.HYPERDRIVE,
+                        trade=HyperdriveMarketAction(
+                            action_type=MarketActionType.REMOVE_LIQUIDITY,
                             trade_amount=self.wallet.lp_tokens,
                             wallet=self.wallet,
                         ),

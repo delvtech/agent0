@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 
 from numpy.random._generator import Generator as NumpyGenerator
 
-import elfpy.agents.wallet as wallet
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.types as types
+from elfpy.agents.wallet import Wallet
 from elfpy.math import FixedPoint, FixedPointMath
+from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
+from elfpy.types import MarketType, Quantity, TokenType, Trade
 
 if TYPE_CHECKING:
     from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
@@ -24,14 +24,12 @@ class Agent:
 
     Arguments
     ----------
-    rng : Generator
-        Random number generator, constructed using np.random.default_rng(seed)
     wallet_address : int
         Random ID used to identify this specific agent in the simulation
     budget : FixedPoint
         Total amount of assets that this agent has available for spending in the simulation
-    trade_gas_budget : FixedPoint
-        How much the agent is willing to spend per trade on gas
+    rng : Generator
+        Random number generator, constructed using np.random.default_rng(seed)
     """
 
     def __init__(self, wallet_address: int, budget: FixedPoint, rng: NumpyGenerator | None = None):
@@ -39,9 +37,7 @@ class Agent:
         if not isinstance(budget, FixedPoint):
             raise TypeError(f"{budget=} must be of type `FixedPoint`")
         self.budget: FixedPoint = budget
-        self.wallet: wallet.Wallet = wallet.Wallet(
-            address=wallet_address, balance=types.Quantity(amount=budget, unit=types.TokenType.BASE)
-        )
+        self.wallet: Wallet = Wallet(address=wallet_address, balance=Quantity(amount=budget, unit=TokenType.BASE))
         self.rng: NumpyGenerator | None = rng
         # TODO: We need to fix this up -- probably just have the user specify a name on init
         # (i.e. attribute without default)
@@ -51,7 +47,7 @@ class Agent:
         else:  # agent was built in the namespace (e.g. a jupyter notebook)
             self.name = name.rsplit(".", maxsplit=1)[-1].split("'")[0]
 
-    def action(self, market: BaseMarket) -> list[types.Trade]:
+    def action(self, market: BaseMarket) -> list[Trade]:
         r"""Abstract method meant to be implemented by the specific policy
 
         Specify action from the policy
@@ -128,7 +124,7 @@ class Agent:
             # amount of bonds.
             maybe_max_short = max_short * bond_percent
             trade_result = market.pricing_model.calc_out_given_in(
-                in_=types.Quantity(amount=maybe_max_short, unit=types.TokenType.PT),
+                in_=Quantity(amount=maybe_max_short, unit=TokenType.PT),
                 market_state=market.market_state,
                 time_remaining=market.position_duration,
             )
@@ -146,7 +142,7 @@ class Agent:
         # do one more iteration at the last step size in case the bisection method was stuck
         # approaching a max_short value with slightly more base than an agent has.
         trade_result = market.pricing_model.calc_out_given_in(
-            in_=types.Quantity(amount=last_maybe_max_short, unit=types.TokenType.PT),
+            in_=Quantity(amount=last_maybe_max_short, unit=TokenType.PT),
             market_state=market.market_state,
             time_remaining=market.position_duration,
         )
@@ -157,7 +153,7 @@ class Agent:
             last_maybe_max_short = max_short * bond_percent
         return last_maybe_max_short
 
-    def get_trades(self, market: BaseMarket) -> list[types.Trade]:
+    def get_trades(self, market: BaseMarket) -> list[Trade]:
         """Helper function for computing a agent trade
 
         direction is chosen based on this logic:
@@ -182,9 +178,9 @@ class Agent:
         list[Trade]
             List of Trade type objects that represent the trades to be made by this agent
         """
-        actions: list[types.Trade] = self.action(market)  # get the action list from the policy
+        actions: list[Trade] = self.action(market)  # get the action list from the policy
         for action in actions:  # edit each action in place
-            if action.market == types.MarketType.HYPERDRIVE and action.trade.mint_time is None:
+            if action.market == MarketType.HYPERDRIVE and action.trade.mint_time is None:
                 action.trade.mint_time = market.latest_checkpoint_time
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
@@ -192,7 +188,7 @@ class Agent:
         # issue #57
         return actions
 
-    def get_liquidation_trades(self, market: HyperdriveMarket) -> list[types.Trade]:
+    def get_liquidation_trades(self, market: HyperdriveMarket) -> list[Trade]:
         """Get final trades for liquidating positions
 
         Arguments
@@ -211,10 +207,10 @@ class Agent:
             if long.balance > FixedPoint(0):
                 # TODO: Find a way to avoid converting type back and forth for dict keys
                 action_list.append(
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.HyperdriveMarketAction(
-                            action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
+                    Trade(
+                        market=MarketType.HYPERDRIVE,
+                        trade=HyperdriveMarketAction(
+                            action_type=MarketActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=self.wallet,
                             mint_time=mint_time,
@@ -225,10 +221,10 @@ class Agent:
             logging.debug("evaluating closing short: mint_time=%g, position=%s", float(mint_time), short)
             if short.balance > FixedPoint(0):
                 action_list.append(
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.HyperdriveMarketAction(
-                            action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
+                    Trade(
+                        market=MarketType.HYPERDRIVE,
+                        trade=HyperdriveMarketAction(
+                            action_type=MarketActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             wallet=self.wallet,
                             mint_time=mint_time,
@@ -240,10 +236,10 @@ class Agent:
                 "evaluating closing lp: mint_time=%g, position=%s", float(market.block_time.time), self.wallet.lp_tokens
             )
             action_list.append(
-                types.Trade(
-                    market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.HyperdriveMarketAction(
-                        action_type=hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY,
+                Trade(
+                    market=MarketType.HYPERDRIVE,
+                    trade=HyperdriveMarketAction(
+                        action_type=MarketActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
                         wallet=self.wallet,
                         mint_time=market.block_time.time,

@@ -3,14 +3,14 @@ from __future__ import annotations
 
 from numpy.random._generator import Generator as NumpyGenerator
 
-import elfpy.agents.agent as elf_agent
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.types as types
+from elfpy.agents.agent import Agent
+from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
+from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
 from elfpy.math import FixedPoint
+from elfpy.types import MarketType, Trade
 
 
-class SingleShortAgent(elf_agent.Agent):
+class SingleShortAgent(Agent):
     """simple short thatonly has one long open at a time"""
 
     def __init__(
@@ -26,7 +26,7 @@ class SingleShortAgent(elf_agent.Agent):
         self.amount_to_trade = amount_to_trade
         super().__init__(wallet_address, budget, rng)
 
-    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
+    def action(self, market: HyperdriveMarket) -> list[Trade]:
         """Implement user strategy: short if you can, only once."""
         action_list = []
         shorts = list(self.wallet.shorts.values())
@@ -34,10 +34,10 @@ class SingleShortAgent(elf_agent.Agent):
         can_open_short = self.get_max_short(market) >= self.amount_to_trade
         if can_open_short and not has_opened_short:
             action_list.append(
-                types.Trade(
-                    market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.HyperdriveMarketAction(
-                        action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
+                Trade(
+                    market=MarketType.HYPERDRIVE,
+                    trade=HyperdriveMarketAction(
+                        action_type=MarketActionType.OPEN_SHORT,
                         trade_amount=self.amount_to_trade,
                         wallet=self.wallet,
                     ),

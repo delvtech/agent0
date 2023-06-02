@@ -3,14 +3,14 @@ from __future__ import annotations
 
 from numpy.random._generator import Generator as NumpyGenerator
 
-import elfpy.agents.agent as elf_agent
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.types as types
+from elfpy.agents.agent import Agent
+from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
+from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
 from elfpy.math import FixedPoint
+from elfpy.types import MarketType, Trade
 
 
-class SingleLpAgent(elf_agent.Agent):
+class SingleLpAgent(Agent):
     """simple LP that only has one LP open at a time"""
 
     def __init__(
@@ -24,7 +24,7 @@ class SingleLpAgent(elf_agent.Agent):
         self.amount_to_lp: FixedPoint = amount_to_lp
         super().__init__(wallet_address, budget, rng)
 
-    def action(self, _market: hyperdrive_market.Market) -> list[types.Trade]:
+    def action(self, _market: HyperdriveMarket) -> list[Trade]:
         """
         implement user strategy
         LP if you can, but only do it once
@@ -34,10 +34,10 @@ class SingleLpAgent(elf_agent.Agent):
         can_lp = self.wallet.balance.amount >= self.amount_to_lp
         if can_lp and not has_lp:
             action_list.append(
-                types.Trade(
-                    market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.HyperdriveMarketAction(
-                        action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
+                Trade(
+                    market=MarketType.HYPERDRIVE,
+                    trade=HyperdriveMarketAction(
+                        action_type=MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.amount_to_lp,
                         wallet=self.wallet,
                     ),
