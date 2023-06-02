@@ -1,7 +1,7 @@
 """Deployer fixture"""
 import ape
-from ape.api.accounts import TestAccountAPI
 import pytest
+from ape.api.accounts import TestAccountAPI
 
 from elfpy.math.fixed_point import FixedPoint
 
@@ -11,5 +11,5 @@ def deployer() -> TestAccountAPI:
     """Returns solidity agents initialized with some ETH"""
     budget: FixedPoint = FixedPoint("50_000_000.0")
     agent_deployer = ape.accounts.test_accounts.generate_test_account()
-    agent_deployer.provider.set_balance(agent_deployer.address, int(budget))
+    agent_deployer.provider.set_balance(agent_deployer.address, budget.scaled_value)
     return agent_deployer

@@ -1,8 +1,8 @@
 """Fixtures for contracts"""
+import pytest
 from ape.api.accounts import TestAccountAPI
 from ape.contracts import ContractInstance
 from ape.managers.project import ProjectManager
-import pytest
 
 from .hyperdrive_config import HyperdriveConfig
 
@@ -12,6 +12,7 @@ from .hyperdrive_config import HyperdriveConfig
 @pytest.fixture(scope="function")
 def hyperdrive_data_contract(project: ProjectManager, hyperdrive_contract: ContractInstance) -> ContractInstance:
     """Gets the data provider interface for the hyperdrive contract"""
+    print("")
     hyperdrive_data_contract: ContractInstance = project.MockHyperdriveDataProviderTestnet.at(
         hyperdrive_contract.address
     )  # type: ignore
@@ -24,16 +25,16 @@ def hyperdrive_contract(
 ) -> ContractInstance:
     """Deploys the base erc20 contract"""
     hc = hyperdrive_config  # pylint: disable=invalid-name
-    print(f"{project.MockHyperdriveDataProviderTestnet=}")
-    print(f"{base_erc20=}")
-    print(f"{hc.initial_apr=}")
-    print(f"{hc.share_price=}")
-    print(f"{hc.position_duration_seconds=}")
-    print(f"{hc.checkpoint_duration_seconds=}")
-    print(f"{hc.time_stretch=}")
-    print(f"{hc.gov_fee=}")
-    print(f"{hc.flat_fee=}")
-    print(f"{hc.curve_fee=}")
+    # print(f"{project.MockHyperdriveDataProviderTestnet=}")
+    # print(f"{base_erc20=}")
+    # print(f"{hc.initial_apr=}")
+    # print(f"{hc.share_price=}")
+    # print(f"{hc.position_duration_seconds=}")
+    # print(f"{hc.checkpoint_duration_seconds=}")
+    # print(f"{hc.time_stretch=}")
+    # print(f"{hc.gov_fee=}")
+    # print(f"{hc.flat_fee=}")
+    # print(f"{hc.curve_fee=}")
     hyperdrive_data_provider_contract = deployer.deploy(
         project.MockHyperdriveDataProviderTestnet,  # type: ignore
         base_erc20,

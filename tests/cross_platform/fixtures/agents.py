@@ -7,7 +7,6 @@ from elfpy.agents.agent import Agent
 from elfpy.math.fixed_point import FixedPoint
 
 # pylint: disable=redefined-outer-name
-# pylint: disable=too-few-public-methods
 
 
 class PythonAgents:
@@ -31,9 +30,9 @@ class SolidityAgents:
 class Agents:
     """Agents Type"""
 
-    def __init__(self, solidity: SolidityAgents, python: PythonAgents):
-        self.solidity = solidity
-        self.python = python
+    def __init__(self, solidity_agents: SolidityAgents, python_agents: PythonAgents):
+        self.solidity = solidity_agents
+        self.python = python_agents
 
 
 @pytest.fixture(scope="function")
@@ -57,9 +56,10 @@ def solidity_agents(deployer: TestAccountAPI):
     bob = ape.accounts.test_accounts.generate_test_account()
     celine = ape.accounts.test_accounts.generate_test_account()
 
-    deployer.provider.set_balance(alice.address, int(budget))
-    deployer.provider.set_balance(bob.address, int(budget))
-    deployer.provider.set_balance(celine.address, int(budget))
+    print(f"{budget.scaled_value=}")
+    deployer.provider.set_balance(alice.address, budget.scaled_value)
+    deployer.provider.set_balance(bob.address, budget.scaled_value)
+    deployer.provider.set_balance(celine.address, budget.scaled_value)
 
     return SolidityAgents(alice, bob, celine)
 
