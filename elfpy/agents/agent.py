@@ -12,7 +12,7 @@ import elfpy.types as types
 from elfpy.math import FixedPoint, FixedPointMath
 
 if TYPE_CHECKING:
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
     from elfpy.markets.base.base_market import BaseMarket
 
 
@@ -71,7 +71,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate below the APR when opening the long
     # issue #213
-    def get_max_long(self, market: hyperdrive_market.Market) -> FixedPoint:
+    def get_max_long(self, market: HyperdriveMarket) -> FixedPoint:
         """Gets an approximation of the maximum amount of base the agent can use
 
         Typically would be called to determine how much to enter into a long position.
@@ -98,7 +98,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate above the APR when opening the short
     # issue #213
-    def get_max_short(self, market: hyperdrive_market.Market) -> FixedPoint:
+    def get_max_short(self, market: HyperdriveMarket) -> FixedPoint:
         """Gets an approximation of the maximum amount of bonds the agent can short.
 
         Arguments
@@ -192,7 +192,7 @@ class Agent:
         # issue #57
         return actions
 
-    def get_liquidation_trades(self, market: hyperdrive_market.Market) -> list[types.Trade]:
+    def get_liquidation_trades(self, market: HyperdriveMarket) -> list[types.Trade]:
         """Get final trades for liquidating positions
 
         Arguments
@@ -261,7 +261,7 @@ class Agent:
             float(self.wallet.fees_paid) or 0,
         )
 
-    def log_final_report(self, market: hyperdrive_market.Market) -> None:
+    def log_final_report(self, market: HyperdriveMarket) -> None:
         """Logs a report of the agent's state
 
         Arguments
