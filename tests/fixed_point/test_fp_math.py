@@ -10,6 +10,8 @@ from elfpy.math import FixedPointMath, FixedPoint
 class TestFixedPointMath(unittest.TestCase):
     """Unit tests to verify that the fixed-point math implementations are correct."""
 
+    APPROX_EQ = FixedPoint(1e3)
+
     ONE = FixedPoint("1.0")
     NEG_ONE = FixedPoint("-1.0")
     INF = FixedPoint("inf")
@@ -81,3 +83,25 @@ class TestFixedPointMath(unittest.TestCase):
         assert FixedPointMath.exp(self.NAN).is_nan() is True
         assert FixedPointMath.exp(self.INF) == self.INF
         assert FixedPointMath.exp(self.NEG_INF) == self.NEG_INF
+
+    def test_sqrt(self):
+        r"""Test sqrt method"""
+        result = FixedPointMath.sqrt(self.ONE)
+        expected = self.ONE
+        self.assertEqual(result, expected)
+        result = FixedPointMath.sqrt(FixedPoint("5.0"))
+        expected = FixedPoint("2.236067977499789696")
+        self.assertAlmostEqual(result, expected, delta=self.APPROX_EQ)
+        result = FixedPointMath.sqrt(3)
+        expected = int(math.sqrt(3))
+        self.assertEqual(result, expected)
+        result = FixedPointMath.sqrt(7.0)
+        expected = float(math.sqrt(7.0))
+        self.assertEqual(result, expected)
+
+    def test_sqrt_nonfinite(self):
+        r"""Test failure mode of fixed-point sqrt"""
+        with self.assertRaises(ValueError):
+            _ = FixedPointMath.sqrt(FixedPoint("-inf"))
+        assert FixedPointMath.sqrt(self.NAN).is_nan() is True
+        assert FixedPointMath.sqrt(self.INF) == self.INF

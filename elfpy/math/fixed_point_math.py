@@ -54,3 +54,8 @@ class FixedPointMath:
                 return x
             return FixedPoint(scaled_value=FixedPointIntegerMath.exp(x.scaled_value))
         return type(x)(math.exp(x))
+
+    @staticmethod
+    def sqrt(x: NUMERIC) -> NUMERIC:
+        """Performs sqrt(x)"""
+        return type(x)(math.sqrt(x))

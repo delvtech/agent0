@@ -3,11 +3,20 @@
 # we will use single letter names for the FixedPointIntegerMath class since all functions do basic arithmetic
 # pylint: disable=invalid-name
 
+from elfpy.errors import errors
+
 
 class FixedPointIntegerMath:
-    """Safe integer arithmetic that assumes a 18-decimal fixed-point representation"""
+    """Safe integer arithmetic that assumes a 18-decimal fixed-point representation
 
-    # int has no max size in python 3. Use 256 since that is max for solidity.
+    .. note::
+        Most arithmetic adopted from `HyperDrive <https://github.com/delvtech/hyperdrive/blob/main/contracts/src/libraries/FixedPointMath.sol`_
+        Credit to
+            - `Solmate <https://github.com/transmissions11/solmate/blob/main/src/utils/FixedPointMathLib.sol>`_
+            - `Balancer <https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/solidity-utils/contracts/math/FixedPoint.sol>`_
+    """
+
+    # int has no max size in Python 3. We will use 256 since that is max for solidity.
     INT_MAX = 2**255 - 1
     INT_MIN = -(2**255)
     UINT_MAX = 2**256 - 1
@@ -219,3 +228,21 @@ class FixedPointIntegerMath:
             return 0
         ylnx = y * FixedPointIntegerMath.ln(x) // FixedPointIntegerMath.ONE_18
         return FixedPointIntegerMath.exp(ylnx)
+
+    @staticmethod
+    def sqrt(x: int) -> int:
+        """
+        Calculates the square root of a fixed-point number with 1e18 precision.
+
+        .. notes::
+            - The algorithm used here is based on the Babylonian method.
+
+            - The input x should be a non-negative integer.
+
+            - The result is rounded down to the nearest integer (floor square root).
+        """
+        if x < 0:
+            raise errors.DivisionByZero("input to sqrt must be a non-negative integer")
+        if x in [0, FixedPointIntegerMath.ONE_18]:
+            return x
+        return FixedPointIntegerMath.pow(x, FixedPointIntegerMath.ONE_18 // 2)
