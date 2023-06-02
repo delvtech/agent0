@@ -15,7 +15,7 @@ from eth_typing import HexAddress
 import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 from elfpy.math.fixed_point import FixedPoint
-from tests_fp.cross_platform.fixtures.hyperdrive_config import HyperdriveConfig
+from tests.cross_platform.fixtures.hyperdrive_config import HyperdriveConfig
 
 
 def to_fixed_point(float_var: float, decimal_places=18):

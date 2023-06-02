@@ -6,7 +6,7 @@ from __future__ import annotations
 # stdlib
 import unittest
 from elfpy.math.fixed_point import FixedPoint
-from tests_fp.cross_platform import utils
+from tests.cross_platform import utils
 
 # elfpy core repo
 from conftest import TestCaseWithHyperdriveFixture, HyperdriveFixture
