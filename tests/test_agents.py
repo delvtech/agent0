@@ -22,6 +22,8 @@ from elfpy.agents.policies.random_agent import RandomAgent
 from elfpy.agents.policies.single_long import SingleLongAgent
 from elfpy.agents.policies.single_lp import SingleLpAgent
 from elfpy.agents.policies.single_short import SingleShortAgent
+from elfpy.agents.policies.smart_long import LongLouie
+from elfpy.agents.policies.smart_short import ShortSally
 from elfpy.math import FixedPoint
 
 
@@ -82,6 +84,22 @@ class TestAgent(unittest.TestCase):
                 example_agent = SingleShortAgent(
                     wallet_address=agent_id,
                     budget=FixedPoint("1_000.0"),
+                )
+            elif policy_name == "smart_long":
+                example_agent = LongLouie(
+                    wallet_address=agent_id,
+                    budget=FixedPoint("1_000.0"),
+                    rng=np.random.default_rng(seed=1234),
+                    trade_chance=FixedPoint("1.0"),
+                    risk_threshold=FixedPoint("1.0"),
+                )
+            elif policy_name == "smart_short":
+                example_agent = ShortSally(
+                    wallet_address=agent_id,
+                    budget=FixedPoint("1_000.0"),
+                    rng=np.random.default_rng(seed=1234),
+                    trade_chance=FixedPoint("1.0"),
+                    risk_threshold=FixedPoint("1.0"),
                 )
             elif policy_name == "single_lp":
                 example_agent = SingleLpAgent(

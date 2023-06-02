@@ -151,7 +151,8 @@ class Agent:
         if max_loss > self.wallet.balance.amount:
             bond_percent -= last_step_size
             last_maybe_max_short = max_short * bond_percent
-        return last_maybe_max_short
+        max_short = FixedPointMath.minimum(self.wallet.balance.amount, last_maybe_max_short)
+        return max_short
 
     def get_trades(self, market: BaseMarket) -> list[Trade]:
         """Helper function for computing a agent trade
