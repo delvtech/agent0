@@ -27,8 +27,7 @@ import elfpy.types as types
 
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
-from elfpy.agents.policies.smart_long import LongLouie
-from elfpy.agents.policies.smart_short import ShortSally
+from elfpy.agents.policies import LongLouie, ShortSally
 
 # %% [markdown]
 # ### Setup experiment parameters

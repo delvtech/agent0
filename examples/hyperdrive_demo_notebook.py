@@ -60,9 +60,9 @@ from numpy.random._generator import Generator as NumpyGenerator
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
-import elfpy.agents.policies.random_agent as random_agent
 
 from elfpy.agents.agent import Agent
+from elfpy.agents.policies import RandomAgent
 from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils
 from elfpy.utils.outputs import get_gridspec_subplots
@@ -101,7 +101,7 @@ config.log_filename = "hyperdrive"  # Output filename for logging
 
 
 # %%
-class RandomAgent(random_agent.RandomAgent):
+class RandomAgent(RandomAgent):
     """Agent that randomly opens or closes longs or shorts
 
     Customized from the policy in that one can force the agent to only open longs or shorts

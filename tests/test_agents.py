@@ -15,15 +15,17 @@ import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
 from elfpy.agents.get_wallet_state import get_wallet_state
-from elfpy.agents.policies.init_lp import InitializeLiquidityAgent
-from elfpy.agents.policies.lp_and_withdraw import LpAndWithdrawAgent
-from elfpy.agents.policies.no_action import NoActionAgent
-from elfpy.agents.policies.random_agent import RandomAgent
-from elfpy.agents.policies.single_long import SingleLongAgent
-from elfpy.agents.policies.single_lp import SingleLpAgent
-from elfpy.agents.policies.single_short import SingleShortAgent
-from elfpy.agents.policies.smart_long import LongLouie
-from elfpy.agents.policies.smart_short import ShortSally
+from elfpy.agents.policies import (
+    InitializeLiquidityAgent,
+    LpAndWithdrawAgent,
+    NoActionAgent,
+    RandomAgent,
+    SingleLongAgent,
+    SingleLpAgent,
+    SingleShortAgent,
+    LongLouie,
+    ShortSally,
+)
 from elfpy.math import FixedPoint
 
 
