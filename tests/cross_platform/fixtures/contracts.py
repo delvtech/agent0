@@ -12,7 +12,6 @@ from .hyperdrive_config import HyperdriveConfig
 @pytest.fixture(scope="function")
 def hyperdrive_data_contract(project: ProjectManager, hyperdrive_contract: ContractInstance) -> ContractInstance:
     """Gets the data provider interface for the hyperdrive contract"""
-    print("")
     hyperdrive_data_contract: ContractInstance = project.MockHyperdriveDataProviderTestnet.at(
         hyperdrive_contract.address
     )  # type: ignore
@@ -38,26 +37,27 @@ def hyperdrive_contract(
     hyperdrive_data_provider_contract = deployer.deploy(
         project.MockHyperdriveDataProviderTestnet,  # type: ignore
         base_erc20,
-        hc.initial_apr,
-        hc.share_price,
+        hc.initial_apr.scaled_value,
+        hc.share_price.scaled_value,
         hc.position_duration_seconds,
         hc.checkpoint_duration_seconds,
         hc.time_stretch,
-        (hc.curve_fee, hc.flat_fee, hc.gov_fee),
-        deployer,
+        (hc.curve_fee.scaled_value, hc.flat_fee.scaled_value, hc.gov_fee.scaled_value),
+        deployer.address,
     )
     hyperdrive_contract = deployer.deploy(
         project.MockHyperdriveTestnet,  # type: ignore
-        hyperdrive_data_provider_contract,
+        hyperdrive_data_provider_contract.address,
         base_erc20,
-        hc.initial_apr,
-        hc.share_price,
+        hc.initial_apr.scaled_value,
+        hc.share_price.scaled_value,
         hc.position_duration_seconds,
         hc.checkpoint_duration_seconds,
         hc.time_stretch,
-        (hc.curve_fee, hc.flat_fee, hc.gov_fee),
-        deployer,
+        (hc.curve_fee.scaled_value, hc.flat_fee.scaled_value, hc.gov_fee.scaled_value),
+        deployer.address,
     )
+
     return hyperdrive_contract
 
 
