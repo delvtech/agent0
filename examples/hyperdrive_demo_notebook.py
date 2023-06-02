@@ -53,9 +53,9 @@ except:  # pylint: disable=bare-except
 
 # %%
 import numpy as np
-from numpy.random._generator import Generator as NumpyGenerator
 import matplotlib.pyplot as plt
 import pandas as pd
+from numpy.random._generator import Generator as NumpyGenerator
 
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
@@ -107,11 +107,17 @@ class RandomAgent(random_agent.RandomAgent):
     Customized from the policy in that one can force the agent to only open longs or shorts
     """
 
-    def __init__(self, rng: NumpyGenerator, trade_chance_pct: float, wallet_address: int, budget: int = 10_000) -> None:
+    def __init__(
+        self,
+        wallet_address: int,
+        budget: FixedPoint = FixedPoint("10_000.0"),
+        rng: NumpyGenerator | None = None,
+        trade_chance: FixedPoint = FixedPoint("1.0"),
+    ) -> None:
         """Add custom stuff then call basic policy init"""
         self.trade_long = True  # default to allow easy overriding
         self.trade_short = True  # default to allow easy overriding
-        super().__init__(rng, trade_chance_pct, wallet_address, FixedPoint(budget * 10 * 18))
+        super().__init__(wallet_address, budget, rng, trade_chance)
 
     def get_available_actions(
         self,
@@ -144,16 +150,21 @@ class RandomAgent(random_agent.RandomAgent):
 
 
 def get_example_agents(
-    rng: NumpyGenerator, budget: int, new_agents: int, existing_agents: int = 0, direction: str | None = None
+    rng: NumpyGenerator,
+    budget: int,
+    new_agents: int,
+    trade_chance: float,
+    existing_agents: int = 0,
+    direction: str | None = None,
 ) -> list[Agent]:
     """Instantiate a set of custom agents"""
     agents = []
     for address in range(existing_agents, existing_agents + new_agents):
         agent = RandomAgent(
-            rng=rng,
-            trade_chance_pct=trade_chance,
             wallet_address=address,
-            budget=budget,
+            budget=FixedPoint(budget),
+            rng=rng,
+            trade_chance=FixedPoint(trade_chance),
         )
         if direction is not None:
             if direction == "short":
@@ -223,11 +234,17 @@ simulator = sim_utils.get_simulator(config)
 # %%
 # add the random agents
 short_agents = get_example_agents(
-    rng=simulator.rng, budget=agent_budget, new_agents=num_agents // 2, existing_agents=1, direction="short"
+    rng=simulator.rng,
+    budget=agent_budget,
+    trade_chance=trade_chance,
+    new_agents=num_agents // 2,
+    existing_agents=1,
+    direction="short",
 )
 long_agents = get_example_agents(
     rng=simulator.rng,
     budget=agent_budget,
+    trade_chance=trade_chance,
     new_agents=num_agents // 2,
     existing_agents=1 + len(short_agents),
     direction="long",

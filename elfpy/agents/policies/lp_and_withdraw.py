@@ -1,11 +1,15 @@
 """User strategy that adds liquidity and then removes it when enough time has passed"""
 from __future__ import annotations
 
+from numpy.random._generator import Generator as NumpyGenerator
+
 import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
 from elfpy.math import FixedPoint
+
+# pylint: disable=too-many-arguments
 
 
 class LpAndWithdrawAgent(elf_agent.Agent):
@@ -14,11 +18,18 @@ class LpAndWithdrawAgent(elf_agent.Agent):
     only has one LP open at a time
     """
 
-    def __init__(self, wallet_address, budget: FixedPoint = FixedPoint("1000.0")):
+    def __init__(
+        self,
+        wallet_address: int,
+        budget: FixedPoint = FixedPoint("1000.0"),
+        rng: NumpyGenerator | None = None,
+        amount_to_lp: FixedPoint = FixedPoint("100.0"),
+        time_to_withdraw: FixedPoint = FixedPoint("1.0"),
+    ):
         """call basic policy init then add custom stuff"""
-        self.time_to_withdraw = FixedPoint("1.0")
-        self.amount_to_lp = FixedPoint("100.0")
-        super().__init__(wallet_address, budget)
+        self.amount_to_lp = amount_to_lp
+        self.time_to_withdraw = time_to_withdraw
+        super().__init__(wallet_address, budget, rng)
 
     def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """

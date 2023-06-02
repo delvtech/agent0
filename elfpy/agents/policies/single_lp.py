@@ -1,6 +1,8 @@
 """User strategy that adds base liquidity and doesn't remove until liquidation"""
 from __future__ import annotations
 
+from numpy.random._generator import Generator as NumpyGenerator
+
 import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -11,10 +13,16 @@ from elfpy.math import FixedPoint
 class SingleLpAgent(elf_agent.Agent):
     """simple LP that only has one LP open at a time"""
 
-    def __init__(self, wallet_address: int, budget: FixedPoint = FixedPoint("1000.0")):
+    def __init__(
+        self,
+        wallet_address: int,
+        budget: FixedPoint = FixedPoint("1000.0"),
+        rng: NumpyGenerator | None = None,
+        amount_to_lp: FixedPoint = FixedPoint("100.0"),
+    ):
         """call basic policy init then add custom stuff"""
-        self.amount_to_lp = FixedPoint("100.0")
-        super().__init__(wallet_address, budget)
+        self.amount_to_lp: FixedPoint = amount_to_lp
+        super().__init__(wallet_address, budget, rng)
 
     def action(self, _market: hyperdrive_market.Market) -> list[types.Trade]:
         """

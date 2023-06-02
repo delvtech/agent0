@@ -4,6 +4,8 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 from typing import TYPE_CHECKING
 
+from numpy.random._generator import Generator as NumpyGenerator
+
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
@@ -22,13 +24,17 @@ class Agent:
 
     Arguments
     ----------
+    rng : Generator
+        Random number generator, constructed using np.random.default_rng(seed)
     wallet_address : int
         Random ID used to identify this specific agent in the simulation
     budget : FixedPoint
-        Amount of assets that this agent has available for spending in the simulation
+        Total amount of assets that this agent has available for spending in the simulation
+    trade_gas_budget : FixedPoint
+        How much the agent is willing to spend per trade on gas
     """
 
-    def __init__(self, wallet_address: int, budget: FixedPoint):
+    def __init__(self, wallet_address: int, budget: FixedPoint, rng: NumpyGenerator | None = None):
         """Set up initial conditions"""
         if not isinstance(budget, FixedPoint):
             raise TypeError(f"{budget=} must be of type `FixedPoint`")
@@ -36,6 +42,7 @@ class Agent:
         self.wallet: wallet.Wallet = wallet.Wallet(
             address=wallet_address, balance=types.Quantity(amount=budget, unit=types.TokenType.BASE)
         )
+        self.rng: NumpyGenerator | None = rng
         # TODO: We need to fix this up -- probably just have the user specify a name on init
         # (i.e. attribute without default)
         name = str(self.__class__)

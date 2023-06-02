@@ -63,10 +63,10 @@ class TestAgent(unittest.TestCase):
         for agent_id, policy_name in enumerate(agent_policies):
             if policy_name == "random_agent":
                 example_agent = RandomAgent(
-                    rng=np.random.default_rng(seed=1234),
-                    trade_chance=1.0,
                     wallet_address=agent_id,
                     budget=FixedPoint("1_000.0"),
+                    rng=np.random.default_rng(seed=1234),
+                    trade_chance=1.0,
                 )
             elif policy_name == "lp_and_withdraw":
                 example_agent = LpAndWithdrawAgent(

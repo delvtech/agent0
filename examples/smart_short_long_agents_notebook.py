@@ -101,17 +101,16 @@ class FixedFrida(elf_agent.Agent):
 
     def __init__(
         self,
-        rng: NumpyGenerator,
-        trade_chance: float,
-        risk_threshold: float,
         wallet_address: int,
-        budget: FixedPoint = FixedPoint("10_000.0"),
+        budget: FixedPoint,
+        rng: NumpyGenerator,
+        trade_chance: FixedPoint,
+        risk_threshold: FixedPoint,
     ) -> None:
         """Add custom stuff then call basic policy init"""
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
-        self.rng = rng
-        super().__init__(wallet_address, budget)
+        super().__init__(wallet_address, budget, rng)
 
     def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Implement a Fixed Frida user strategy
@@ -135,7 +134,7 @@ class FixedFrida(elf_agent.Agent):
         action_list : list[MarketAction]
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
-        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
+        gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
         if not gonna_trade:
             return []
         action_list = []
@@ -157,9 +156,7 @@ class FixedFrida(elf_agent.Agent):
         short_balances = [short.balance for short in self.wallet.shorts.values()]
         has_opened_short = bool(any(short_balance > FixedPoint(0) for short_balance in short_balances))
         # only open a short if the fixed rate is 0.02 or more lower than variable rate
-        if (market.fixed_apr - market.market_state.variable_apr) < FixedPoint(
-            self.risk_threshold
-        ) and not has_opened_short:
+        if (market.fixed_apr - market.market_state.variable_apr) < self.risk_threshold and not has_opened_short:
             # maximum amount the agent can short given the market and the agent's wallet
             trade_amount = self.get_max_short(market)
             # TODO: This is a hack until we fix get_max
@@ -188,17 +185,16 @@ class LongLouie(elf_agent.Agent):
 
     def __init__(
         self,
-        rng: NumpyGenerator,
-        trade_chance: float,
-        risk_threshold: float,
         wallet_address: int,
-        budget: FixedPoint = FixedPoint("10_000.0"),
+        budget: FixedPoint,
+        rng: NumpyGenerator,
+        trade_chance: FixedPoint,
+        risk_threshold: FixedPoint,
     ) -> None:
         """Add custom stuff then call basic policy init"""
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
-        self.rng = rng
-        super().__init__(wallet_address, budget)
+        super().__init__(wallet_address, budget, rng)
 
     def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Implement a Long Louie user strategy
@@ -241,9 +237,7 @@ class LongLouie(elf_agent.Agent):
         long_balances = [long.balance for long in self.wallet.longs.values()]
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
-        if (market.fixed_apr - market.market_state.variable_apr) > FixedPoint(
-            self.risk_threshold
-        ) and not has_opened_long:
+        if (market.fixed_apr - market.market_state.variable_apr) > self.risk_threshold and not has_opened_long:
             total_bonds_to_match_variable_apr = market.pricing_model.calc_bond_reserves(
                 target_apr=market.market_state.variable_apr,  # fixed rate targets the variable rate
                 time_remaining=market.position_duration,
@@ -306,15 +300,18 @@ def get_example_agents(
     """Instantiate a set of custom agents"""
     agents = []
     for address in range(existing_agents, existing_agents + experiment_config.scratch["num_fridas"]):
-        risk_threshold = np.maximum(
-            experiment_config.scratch["frida_risk_min"],
-            np.minimum(
-                experiment_config.scratch["frida_risk_max"],
-                rng.normal(
-                    loc=experiment_config.scratch["frida_risk_mean"], scale=experiment_config.scratch["frida_risk_std"]
+        risk_threshold = FixedPoint(
+            np.maximum(
+                experiment_config.scratch["frida_risk_min"],
+                np.minimum(
+                    experiment_config.scratch["frida_risk_max"],
+                    rng.normal(
+                        loc=experiment_config.scratch["frida_risk_mean"],
+                        scale=experiment_config.scratch["frida_risk_std"],
+                    ),
                 ),
-            ),
-        ).item()  # convert to Python type
+            ).item()  # convert to Python type
+        )
         budget = FixedPoint(
             np.maximum(
                 experiment_config.scratch["frida_budget_min"],
@@ -338,7 +335,7 @@ def get_example_agents(
         agents += [agent]
     existing_agents += len(agents)
     for address in range(existing_agents, existing_agents + experiment_config.scratch["num_louies"]):
-        risk_threshold = 0.0
+        risk_threshold = FixedPoint("0.0")
         budget = FixedPoint(
             np.maximum(
                 experiment_config.scratch["louie_budget_min"],

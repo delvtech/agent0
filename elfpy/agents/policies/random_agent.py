@@ -15,12 +15,17 @@ class RandomAgent(elf_agent.Agent):
     """Random agent"""
 
     def __init__(
-        self, rng: NumpyGenerator, trade_chance: float, wallet_address: int, budget: FixedPoint = FixedPoint("10_000.0")
+        self,
+        wallet_address: int,
+        budget: FixedPoint = FixedPoint("10_000.0"),
+        rng: NumpyGenerator | None = None,
+        trade_chance: FixedPoint = FixedPoint("1.0"),
     ) -> None:
         """Adds custom attributes"""
         self.trade_chance = trade_chance
-        self.rng = rng
-        super().__init__(wallet_address, budget)
+        if rng is None:
+            raise ValueError("random agent requires the `rng` argument to be set")
+        super().__init__(wallet_address, budget, rng)
 
     def get_available_actions(
         self,
@@ -86,6 +91,7 @@ class RandomAgent(elf_agent.Agent):
         maximum_trade_amount_in_base = market.market_state.bond_reserves * market.spot_price / FixedPoint("2.0")
         # # WEI <= trade_amount <= max_short
         trade_amount = max(elfpy.WEI, min(initial_trade_amount, maximum_trade_amount_in_base / FixedPoint("100.0")))
+        # How much the agent is willing to spend to make the trade happen
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
@@ -106,6 +112,7 @@ class RandomAgent(elf_agent.Agent):
         )
         # WEI <= trade_amount
         trade_amount: FixedPoint = max(elfpy.WEI, initial_trade_amount)
+        # How much the agent is willing to spend to make the trade happen
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
@@ -126,6 +133,7 @@ class RandomAgent(elf_agent.Agent):
         )
         # WEI <= trade_amount <= lp_tokens
         trade_amount = max(elfpy.WEI, min(self.wallet.lp_tokens, initial_trade_amount))
+        # How much the agent is willing to spend to make the trade happen
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
@@ -143,6 +151,7 @@ class RandomAgent(elf_agent.Agent):
         # choose a random short time to close
         short_time: FixedPoint = list(self.wallet.shorts)[self.rng.integers(len(self.wallet.shorts))]
         trade_amount = self.wallet.shorts[short_time].balance  # close the full trade
+        # How much the agent is willing to spend to make the trade happen
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
@@ -160,6 +169,7 @@ class RandomAgent(elf_agent.Agent):
         # choose a random long time to close
         long_time: FixedPoint = list(self.wallet.longs)[self.rng.integers(len(self.wallet.longs))]
         trade_amount = self.wallet.longs[long_time].balance  # close the full trade
+        # How much the agent is willing to spend to make the trade happen
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,

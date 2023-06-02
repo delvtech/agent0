@@ -19,6 +19,7 @@ class SingleLongAgent(elf_agent.Agent):
         longs = list(self.wallet.longs.values())
         has_opened_long = len(longs) > 0
         action_list = []
+        # How much the agent is willing to spend to make the trade happen
         if has_opened_long:
             mint_time = list(self.wallet.longs)[-1]
             enough_time_has_passed = market.block_time.time - mint_time > FixedPoint("0.01")

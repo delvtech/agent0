@@ -205,19 +205,18 @@ class RegularGuy(Agent):
 
     def __init__(
         self,
-        rng: NumpyGenerator,
-        trade_chance: float,
         wallet_address: int,
         budget: FixedPoint = FixedPoint("10_000.0"),
+        rng: NumpyGenerator | None = None,
+        trade_chance: FixedPoint = FixedPoint("1.0"),
     ) -> None:
         """Add custom stuff then call basic policy init"""
+        self.trade_chance = trade_chance
         self.trade_long = True  # default to allow easy overriding
         self.trade_short = True  # default to allow easy overriding
-        self.trade_chance = trade_chance
-        self.rng = rng
         self.last_think_time = None
-        self.threshold = FixedPoint(self.rng.normal(loc=0, scale=0.005))
-        super().__init__(wallet_address, budget)
+        self.threshold = FixedPoint(rng.normal(loc=0, scale=0.005))
+        super().__init__(wallet_address, budget, rng)
 
     def action(self, market: hyperdrive_market.Market) -> list[hyperdrive_actions.HyperdriveMarketAction]:
         """Implement a random user strategy
@@ -238,7 +237,7 @@ class RegularGuy(Agent):
         action_list : list[MarketAction]
         """
         action_list = []
-        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
+        gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
         if gonna_trade:
             # User can always open a trade, and can close a trade if one is open
             available_actions = []

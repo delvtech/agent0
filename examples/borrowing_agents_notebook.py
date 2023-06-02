@@ -84,17 +84,16 @@ class BorrowingBeatrice(elf_agent.Agent):
 
     def __init__(
         self,
-        rng: NumpyGenerator,
-        trade_chance: float,
-        risk_threshold: float,
         wallet_address: int,
         budget: FixedPoint = FixedPoint("10_000.0"),
+        rng: NumpyGenerator | None = None,
+        trade_chance: FixedPoint = FixedPoint("1.0"),
+        risk_threshold: FixedPoint = FixedPoint("0.0"),
     ) -> None:
         """Add custom stuff then call basic policy init"""
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
-        self.rng = rng
-        super().__init__(wallet_address, budget)
+        super().__init__(wallet_address, budget, rng)
 
     def action(self, market: Market) -> list[types.Trade]:
         """Implement a Borrowing Beatrice user strategy
@@ -114,11 +113,11 @@ class BorrowingBeatrice(elf_agent.Agent):
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
         action_list = []
-        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
+        gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
         if not gonna_trade:
             return action_list
         has_borrow = self.wallet.borrows
-        want_to_borrow = market.borrow_rate <= FixedPoint(self.risk_threshold)
+        want_to_borrow = market.borrow_rate <= self.risk_threshold
         if want_to_borrow and not has_borrow:
             action_list = [
                 types.Trade(
@@ -208,11 +207,11 @@ market = Market(pricing_model=BorrowPricingModel(), market_state=market_state, b
 
 agents = {
     0: BorrowingBeatrice(
-        rng=config.rng,
-        trade_chance=0.1,
-        risk_threshold=0.02,
         wallet_address=1,
         budget=FixedPoint("10_000.0"),
+        rng=config.rng,
+        trade_chance=FixedPoint(trade_chance),
+        risk_threshold=FixedPoint("0.02"),
     )
 }
 
@@ -268,3 +267,5 @@ for day in range(config.num_trading_days):
 # %%
 df = pd.DataFrame.from_dict(simulation_state.__dict__)
 print(df)
+
+# %%

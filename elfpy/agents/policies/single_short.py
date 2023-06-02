@@ -1,5 +1,7 @@
 """User strategy that opens a single short and doesn't close until liquidation"""
-from typing import List
+from __future__ import annotations
+
+from numpy.random._generator import Generator as NumpyGenerator
 
 import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
@@ -11,12 +13,20 @@ from elfpy.math import FixedPoint
 class SingleShortAgent(elf_agent.Agent):
     """simple short thatonly has one long open at a time"""
 
-    def __init__(self, wallet_address: int, budget: FixedPoint = FixedPoint("100.0")):
+    def __init__(
+        self,
+        wallet_address: int,
+        budget: FixedPoint = FixedPoint("100.0"),
+        amount_to_trade: FixedPoint | None = None,
+        rng: NumpyGenerator | None = None,
+    ):
         """call basic policy init then add custom stuff"""
-        self.amount_to_trade = budget
-        super().__init__(wallet_address, budget)
+        if amount_to_trade is None:
+            amount_to_trade = budget
+        self.amount_to_trade = amount_to_trade
+        super().__init__(wallet_address, budget, rng)
 
-    def action(self, market: hyperdrive_market.Market) -> List[types.Trade]:
+    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Implement user strategy: short if you can, only once."""
         action_list = []
         shorts = list(self.wallet.shorts.values())
