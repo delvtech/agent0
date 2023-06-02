@@ -17,6 +17,7 @@ dependencies:
 solidity:
   import_remapping:
     - "@openzeppelin/contracts=OpenZeppelin/4.8.1"
+    - "openzeppelin-contracts/contracts=OpenZeppelin/4.8.1"
     - "@aave=Aave/1.17.2"
 
 ethereum:
