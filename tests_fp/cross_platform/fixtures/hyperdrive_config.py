@@ -10,7 +10,7 @@ from elfpy.math.fixed_point import FixedPoint
 class HyperdriveConfig:
     """Configuration variables to setup hyperdrive fixtures."""
 
-    initial_apr: FixedPoint = FixedPoint(".05")
+    initial_apr: FixedPoint = FixedPoint("0.05")
     share_price: FixedPoint = FixedPoint(1)
     checkpoint_duration_seconds: int = 86400
     checkpoints: int = 182
