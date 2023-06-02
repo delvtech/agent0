@@ -66,7 +66,7 @@ class TestAgent(unittest.TestCase):
                     wallet_address=agent_id,
                     budget=FixedPoint("1_000.0"),
                     rng=np.random.default_rng(seed=1234),
-                    trade_chance=1.0,
+                    trade_chance=FixedPoint("1.0"),
                 )
             elif policy_name == "lp_and_withdraw":
                 example_agent = LpAndWithdrawAgent(

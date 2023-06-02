@@ -916,7 +916,7 @@ def set_up_ape(
         )
     else:  # not on devnet, means we're on goerli, so we use known goerli addresses
         base_instance: ContractInstance = ape_utils.get_instance(
-            experiment_config.scratch[experiment_config.scratch["goerli_sdai_address"]],
+            experiment_config.scratch[experiment_config.scratch["goerli_sdai"]],
             provider=provider,
         )
         hyperdrive_instance: ContractInstance = project.get_hyperdrive_contract()
@@ -1005,6 +1005,7 @@ def main():
     pricing_model, crash_file, network_choice, provider_settings, addresses, address_file = set_up_experiment(
         experiment_config, args
     )
+    experiment_config.scratch["goerli_sdai"] = addresses["goerli_sdai"]
     no_crash_streak = 0
     last_executed_block = 0
     output_utils.setup_logging(log_filename=experiment_config.log_filename, log_level=experiment_config.log_level)

@@ -26,6 +26,7 @@ class RandomAgent(elf_agent.Agent):
         if rng is None:
             raise ValueError("random agent requires the `rng` argument to be set")
         super().__init__(wallet_address, budget, rng)
+        self.rng: NumpyGenerator = rng  # TODO: Figure out a better way to narrow this type
 
     def get_available_actions(
         self,
@@ -202,7 +203,7 @@ class RandomAgent(elf_agent.Agent):
         """
         # pylint: disable=too-many-return-statements
         # check if the agent will trade this block or not
-        if not self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance]):
+        if not self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)]):
             return []
         # user can always open a trade, and can close a trade if one is open
         available_actions = self.get_available_actions()
