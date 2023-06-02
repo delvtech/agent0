@@ -231,16 +231,7 @@ class FixedPointIntegerMath:
 
     @staticmethod
     def sqrt(x: int) -> int:
-        """
-        Calculates the square root of a fixed-point number with 1e18 precision.
-
-        .. notes::
-            - The algorithm used here is based on the Babylonian method.
-
-            - The input x should be a non-negative integer.
-
-            - The result is rounded down to the nearest integer (floor square root).
-        """
+        """Calculates the square root of a fixed-point number with 1e18 precision"""
         if x < 0:
             raise errors.DivisionByZero("input to sqrt must be a non-negative integer")
         if x in [0, FixedPointIntegerMath.ONE_18]:
