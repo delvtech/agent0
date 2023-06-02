@@ -10,6 +10,8 @@ from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, 
 from elfpy.math import FixedPoint
 from elfpy.types import Trade, MarketType
 
+# pylint: disable=too-many-arguments
+
 
 class ShortSally(Agent):
     """Agent that paints & opens fixed rate borrow positions
@@ -38,6 +40,7 @@ class ShortSally(Agent):
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
         super().__init__(wallet_address, budget, rng)
+        self.rng: NumpyGenerator = rng  # TODO: Figure out a better way to narrow this type
 
     def action(self, market: HyperdriveMarket) -> list[Trade]:
         """Implement a Short Sally user strategy

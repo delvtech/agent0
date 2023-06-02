@@ -10,6 +10,8 @@ from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, 
 from elfpy.math import FixedPoint, FixedPointMath
 from elfpy.types import Trade, MarketType
 
+# pylint: disable=too-many-arguments
+
 
 class LongLouie(Agent):
     """Agent that opens longs to push the fixed-rate towards the variable-rate
@@ -36,6 +38,7 @@ class LongLouie(Agent):
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
         super().__init__(wallet_address, budget, rng)
+        self.rng: NumpyGenerator = rng  # TODO: Figure out a better way to narrow this type
 
     def action(self, market: HyperdriveMarket) -> list[Trade]:
         """Implement a Long Louie user strategy
@@ -50,7 +53,7 @@ class LongLouie(Agent):
         action_list : list[MarketAction]
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
-        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
+        gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
         if not gonna_trade:
             return []
         action_list = []
