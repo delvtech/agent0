@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from typing import Union, Any, Literal
+from typing import Union, Any, Literal, get_args
 
 import elfpy.errors.errors as errors
 from .fixed_point_integer_math import FixedPointIntegerMath
@@ -78,8 +78,10 @@ class FixedPoint:
 
     def _set_float(self, unscaled_value: float) -> None:
         """Reformat input argument from float to FixedPoint"""
-        # use int cast to truncate to `decimal_places` precision
-        super().__setattr__("_scaled_value", int(unscaled_value * 10**self.decimal_places))
+        if str(unscaled_value) in get_args(SpecialValues):  # handle non-finite floats
+            self._set_str(str(unscaled_value))
+        else:  # use int cast to truncate to `decimal_places` precision
+            super().__setattr__("_scaled_value", int(unscaled_value * 10**self.decimal_places))
 
     def _set_int(self, unscaled_value: int) -> None:
         """Reformat input argument from int to FixedPoint"""
@@ -340,6 +342,18 @@ class FixedPoint:
         r"""Enables reciprocal pow to support other ** FixedPoint"""
         other = self._coerce_other(other)  # convert to FixedPoint
         return other**self  # then normal pow
+
+    def __sqrt__(self) -> FixedPoint:
+        if self.is_finite():
+            return FixedPoint(
+                scaled_value=FixedPointIntegerMath.sqrt(self.scaled_value),
+                decimal_places=self.decimal_places,
+                signed=self.signed,
+            )
+        if self.is_nan() or self.is_inf:
+            return self
+        # must be -inf
+        raise ValueError(f"cannot take square root of {self}")
 
     def __mod__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables `%` syntax
@@ -632,6 +646,12 @@ class FixedPoint:
     def is_inf(self) -> bool:
         r"""Return True if self is inf or -inf."""
         if self.special_value is not None and "inf" in self.special_value:
+            return True
+        return False
+
+    def is_neg_inf(self) -> bool:
+        r"""Return True if self is inf or -inf."""
+        if self.special_value is not None and "-inf" in self.special_value:
             return True
         return False
 
