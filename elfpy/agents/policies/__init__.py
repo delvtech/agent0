@@ -1,3 +1,5 @@
+"""Policies for expert system trading bots"""
+
 from .init_lp import InitializeLiquidityAgent
 from .lp_and_withdraw import LpAndWithdrawAgent
 from .no_action import NoActionAgent
