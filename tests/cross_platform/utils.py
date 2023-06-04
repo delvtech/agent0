@@ -48,9 +48,7 @@ def get_simulation_market_state_from_contract(
     """
     # pylint: disable=too-many-arguments
     pool_config = hyperdrive_data_contract.getPoolConfig()
-    print(f"{pool_config=}")
     pool_info = hyperdrive_data_contract.getPoolInfo()
-    print(f"{pool_info=}")
     pool_state = pool_info
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
         asset_id = hyperdrive_assets.encode_asset_id(
