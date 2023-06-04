@@ -56,7 +56,6 @@ def solidity_agents(deployer: TestAccountAPI):
     bob = ape.accounts.test_accounts.generate_test_account()
     celine = ape.accounts.test_accounts.generate_test_account()
 
-    print(f"{budget.scaled_value=}")
     deployer.provider.set_balance(alice.address, budget.scaled_value)
     deployer.provider.set_balance(bob.address, budget.scaled_value)
     deployer.provider.set_balance(celine.address, budget.scaled_value)

@@ -6,8 +6,6 @@ As such, we are relaxing some of the lint rules.
 """
 from __future__ import annotations
 
-from collections import defaultdict
-
 # external lib
 import ape
 from ape.contracts import ContractInstance
@@ -52,14 +50,12 @@ def get_simulation_market_state_from_contract(
     pool_config = hyperdrive_data_contract.getPoolConfig()
     print(f"{pool_config=}")
     pool_info = hyperdrive_data_contract.getPoolInfo()
-    # print(f"{pool_info=}")
-    # pool_state = pool_info.__dict__
-    pool_state = defaultdict(lambda: 0)
-    # print(f"{pool_state=}")
-    # pool_state = defaultdict(lambda: 0)
+    print(f"{pool_info=}")
+    pool_state = pool_info
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
         asset_id = hyperdrive_assets.encode_asset_id(
-            hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, int(int(position_duration_seconds) / 10**18)
+            hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE,
+            int(position_duration_seconds),
         )
         total_supply_withdraw_shares = hyperdrive_data_contract.balanceOf(asset_id, agent_address)
 

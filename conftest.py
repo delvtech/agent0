@@ -1,4 +1,6 @@
 """Fixtures for cross-platform tests."""
+from __future__ import annotations
+
 import unittest
 
 import ape
@@ -9,9 +11,9 @@ from ape.managers.project import ProjectManager
 
 from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
 from elfpy.math.fixed_point import FixedPoint
-
 from tests.cross_platform import fixtures
 
+# load all fixtures, this can only be done in a root level conftest.py file.
 pytest_plugins = [
     "tests.cross_platform.fixtures.agents",
     "tests.cross_platform.fixtures.base_erc20",
@@ -72,26 +74,28 @@ class TestCaseWithHyperdriveFixture(unittest.TestCase):
 
     fixture: HyperdriveFixture
 
-    def inititalize(self, agents: fixtures.Agents):
+    def inititalize(self, fixture: HyperdriveFixture | None = None):
         """Initializes the hyperdrive contract and simulation market."""
-        fx = self.fixture  # pylint: disable=invalid-name
-
-        # give some base token to the deployer
-        fx.contracts.base_erc20_contract.mint(fx.config.target_liquidity, sender=fixtures.deployer)  # type: ignore
+        if fixture:
+            fx = fixture  # pylint: disable=invalid-name
+        else:
+            fx = self.fixture  # pylint: disable=invalid-name
 
         # Initialize hyperdrive contract
-        with ape.accounts.use_sender(self.fixture.deployer):
-            fixtures.base_erc20.mint(fx.config.target_liquidity, sender=fixtures.deployer)
-            fixtures.base_erc20.approve(fx.contracts.hyperdrive_contract, fx.config.target_liquidity)
-            fixtures.contracts.hyperdrive_contract.initialize(
-                fx.config.target_liquidity, fx.config.initial_apr, fixtures.deployer, True
+        with ape.accounts.use_sender(fx.deployer):
+            # give some base token to the deployer and approve hyperdrive to take it
+            fx.contracts.base_erc20.mint(fx.config.target_liquidity.scaled_value)
+            fx.contracts.base_erc20.approve(fx.contracts.hyperdrive_contract, fx.config.target_liquidity.scaled_value)
+            # sets the appropriate share and base reserves to create the initial apr, gives deployer lp tokens
+            fx.contracts.hyperdrive_contract.initialize(
+                fx.config.target_liquidity.scaled_value, fx.config.initial_apr.scaled_value, fx.deployer.address, True
             )
 
         # initialize hyperdrive simulation market
-        self.fixture.hyperdrive_sim.initialize(
-            agents.python.alice.wallet.address,
-            FixedPoint(self.fixture.config.target_liquidity),
-            FixedPoint(self.fixture.config.initial_apr),
+        fx.hyperdrive_sim.initialize(
+            fx.agents.python.alice.wallet.address,
+            FixedPoint(fx.config.target_liquidity),
+            FixedPoint(fx.config.initial_apr),
         )
 
     @pytest.fixture(autouse=True)

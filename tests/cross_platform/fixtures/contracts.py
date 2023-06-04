@@ -23,38 +23,35 @@ def hyperdrive_contract(
     project: ProjectManager, hyperdrive_config: HyperdriveConfig, deployer: TestAccountAPI, base_erc20: ContractInstance
 ) -> ContractInstance:
     """Deploys the base erc20 contract"""
-    hc = hyperdrive_config  # pylint: disable=invalid-name
-    # print(f"{project.MockHyperdriveDataProviderTestnet=}")
-    # print(f"{base_erc20=}")
-    # print(f"{hc.initial_apr=}")
-    # print(f"{hc.share_price=}")
-    # print(f"{hc.position_duration_seconds=}")
-    # print(f"{hc.checkpoint_duration_seconds=}")
-    # print(f"{hc.time_stretch=}")
-    # print(f"{hc.gov_fee=}")
-    # print(f"{hc.flat_fee=}")
-    # print(f"{hc.curve_fee=}")
     hyperdrive_data_provider_contract = deployer.deploy(
         project.MockHyperdriveDataProviderTestnet,  # type: ignore
         base_erc20,
-        hc.initial_apr.scaled_value,
-        hc.share_price.scaled_value,
-        hc.position_duration_seconds,
-        hc.checkpoint_duration_seconds,
-        hc.time_stretch,
-        (hc.curve_fee.scaled_value, hc.flat_fee.scaled_value, hc.gov_fee.scaled_value),
+        hyperdrive_config.initial_apr.scaled_value,
+        hyperdrive_config.share_price.scaled_value,
+        hyperdrive_config.position_duration_seconds,
+        hyperdrive_config.checkpoint_duration_seconds,
+        hyperdrive_config.time_stretch,
+        (
+            hyperdrive_config.curve_fee.scaled_value,
+            hyperdrive_config.flat_fee.scaled_value,
+            hyperdrive_config.gov_fee.scaled_value,
+        ),
         deployer.address,
     )
     hyperdrive_contract = deployer.deploy(
         project.MockHyperdriveTestnet,  # type: ignore
         hyperdrive_data_provider_contract.address,
         base_erc20,
-        hc.initial_apr.scaled_value,
-        hc.share_price.scaled_value,
-        hc.position_duration_seconds,
-        hc.checkpoint_duration_seconds,
-        hc.time_stretch,
-        (hc.curve_fee.scaled_value, hc.flat_fee.scaled_value, hc.gov_fee.scaled_value),
+        hyperdrive_config.initial_apr.scaled_value,
+        hyperdrive_config.share_price.scaled_value,
+        hyperdrive_config.position_duration_seconds,
+        hyperdrive_config.checkpoint_duration_seconds,
+        hyperdrive_config.time_stretch,
+        (
+            hyperdrive_config.curve_fee.scaled_value,
+            hyperdrive_config.flat_fee.scaled_value,
+            hyperdrive_config.gov_fee.scaled_value,
+        ),
         deployer.address,
     )
 
