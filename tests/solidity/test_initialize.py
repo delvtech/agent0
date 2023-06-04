@@ -1,12 +1,14 @@
 """Market initialization tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
-from elfpy.time.time import BlockTime
+
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies import BasePolicy
 from elfpy.math import FixedPoint
+from elfpy.time.time import BlockTime
 
 # pylint: disable=too-many-instance-attributes
 
@@ -21,9 +23,9 @@ class TestInitialize(unittest.TestCase):
     contribution: FixedPoint
     target_apr: FixedPoint
     position_duration: FixedPoint
-    alice: elf_agent.Agent
-    bob: elf_agent.Agent
-    celine: elf_agent.Agent
+    alice: Agent
+    bob: Agent
+    celine: Agent
     hyperdrive: hyperdrive_market.Market
     block_time: BlockTime
     pricing_model: hyperdrive_pm.HyperdrivePricingModel
@@ -41,9 +43,9 @@ class TestInitialize(unittest.TestCase):
         self.contribution = contribution
         self.target_apr = target_apr
         self.position_duration = FixedPoint(position_duration)
-        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
-        self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
+        self.alice = Agent(wallet_address=0, policy=BasePolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=BasePolicy(budget=self.contribution))
+        self.celine = Agent(wallet_address=2, policy=BasePolicy(budget=self.contribution))
         self.block_time = BlockTime()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.HyperdriveMarketState()

@@ -7,18 +7,18 @@ from os import path, walk
 
 import numpy as np
 
-import elfpy.agents.agent as elf_agent
 import elfpy.agents.policies as policies
 import elfpy.agents.wallet as wallet
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
+
+from elfpy.agents.agent import Agent
 from elfpy.agents.get_wallet_state import get_wallet_state
 from elfpy.agents.policies import (
     InitializeLiquidityAgent,
     LpAndWithdrawAgent,
-    NoActionAgent,
+    BasePolicy,
     RandomAgent,
     SingleLongAgent,
     SingleLpAgent,
@@ -26,10 +26,12 @@ from elfpy.agents.policies import (
     LongLouie,
     ShortSally,
 )
+from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarketState
 from elfpy.math import FixedPoint
 
 
-class TestPolicy(elf_agent.Agent):
+class TestPolicy(Agent):
     """This class was made for testing purposes. It does not implement the required self.action() method"""
 
     def __init__(self, wallet_address: int, budget: FixedPoint = FixedPoint("1000.0")):
@@ -47,7 +49,7 @@ class TestPolicy(elf_agent.Agent):
 class TestCaseGetMax:
     """Test case for get_max_long and get_max_short tests"""
 
-    market_state: hyperdrive_market.HyperdriveMarketState
+    market_state: HyperdriveMarketState
     time_remaining: time.StretchedTime
 
     __test__ = False  # pytest: don't test this class
@@ -63,73 +65,88 @@ class TestAgent(unittest.TestCase):
         filenames = next(walk(policies_path), (None, None, []))[2]
         agent_policies = [path.splitext(filename)[0] for filename in filenames if "__init__" not in filename]
         # Instantiate an agent for each policy
-        self.agent_list: list[elf_agent.Agent] = []
+        self.agent_list: list[Agent] = []
         for agent_id, policy_name in enumerate(agent_policies):
             if policy_name == "random_agent":
-                example_agent = RandomAgent(
+                example_agent = Agent(
                     wallet_address=agent_id,
-                    budget=FixedPoint("1_000.0"),
-                    rng=np.random.default_rng(seed=1234),
-                    trade_chance=FixedPoint("1.0"),
+                    policy=RandomAgent(
+                        budget=FixedPoint("1_000.0"),
+                        rng=np.random.default_rng(seed=1234),
+                        trade_chance=FixedPoint("1.0"),
+                    ),
                 )
             elif policy_name == "lp_and_withdraw":
-                example_agent = LpAndWithdrawAgent(
+                example_agent = Agent(
                     wallet_address=agent_id,
-                    budget=FixedPoint("1_000.0"),
+                    policy=LpAndWithdrawAgent(
+                        budget=FixedPoint("1_000.0"),
+                    ),
                 )
             elif policy_name == "single_long":
-                example_agent = SingleLongAgent(
+                example_agent = Agent(
                     wallet_address=agent_id,
-                    budget=FixedPoint("1_000.0"),
+                    policy=SingleLongAgent(
+                        budget=FixedPoint("1_000.0"),
+                    ),
                 )
             elif policy_name == "single_short":
-                example_agent = SingleShortAgent(
+                example_agent = Agent(
                     wallet_address=agent_id,
-                    budget=FixedPoint("1_000.0"),
+                    policy=SingleShortAgent(
+                        budget=FixedPoint("1_000.0"),
+                    ),
                 )
             elif policy_name == "smart_long":
-                example_agent = LongLouie(
+                example_agent = Agent(
                     wallet_address=agent_id,
-                    budget=FixedPoint("1_000.0"),
-                    rng=np.random.default_rng(seed=1234),
-                    trade_chance=FixedPoint("1.0"),
-                    risk_threshold=FixedPoint("1.0"),
+                    policy=LongLouie(
+                        budget=FixedPoint("1_000.0"),
+                        rng=np.random.default_rng(seed=1234),
+                        trade_chance=FixedPoint("1.0"),
+                        risk_threshold=FixedPoint("1.0"),
+                    ),
                 )
             elif policy_name == "smart_short":
-                example_agent = ShortSally(
+                example_agent = Agent(
                     wallet_address=agent_id,
-                    budget=FixedPoint("1_000.0"),
-                    rng=np.random.default_rng(seed=1234),
-                    trade_chance=FixedPoint("1.0"),
-                    risk_threshold=FixedPoint("1.0"),
+                    policy=ShortSally(
+                        budget=FixedPoint("1_000.0"),
+                        rng=np.random.default_rng(seed=1234),
+                        trade_chance=FixedPoint("1.0"),
+                        risk_threshold=FixedPoint("1.0"),
+                    ),
                 )
             elif policy_name == "single_lp":
-                example_agent = SingleLpAgent(
+                example_agent = Agent(
                     wallet_address=agent_id,
-                    budget=FixedPoint("1_000.0"),
+                    policy=SingleLpAgent(
+                        budget=FixedPoint("1_000.0"),
+                    ),
                 )
             elif policy_name == "init_lp":
-                example_agent = InitializeLiquidityAgent(
+                example_agent = Agent(
                     wallet_address=agent_id,
-                    budget=FixedPoint("1_000.0"),
+                    policy=InitializeLiquidityAgent(
+                        budget=FixedPoint("1_000.0"),
+                    ),
                 )
             elif policy_name == "no_action":
-                example_agent = NoActionAgent(
+                example_agent = Agent(
                     wallet_address=agent_id,
-                    budget=FixedPoint("1_000.0"),
+                    policy=BasePolicy(
+                        budget=FixedPoint("1_000.0"),
+                    ),
                 )
             else:
                 raise ValueError(f"agent type {policy_name} not supported")
-                # example_agent = import_module(f"elfpy.agents.policies.{policy_name}").Policy(
-                #     wallet_address=agent_id, budget=1_000
-                # )
             self.agent_list.append(example_agent)
         # One more test agent that uses a test policy
         self.test_agent = TestPolicy(wallet_address=len(agent_policies))
         # Get a mock Market
-        self.market = hyperdrive_market.Market(
+        self.market = HyperdriveMarket(
             pricing_model=hyperdrive_pm.HyperdrivePricingModel(),
-            market_state=hyperdrive_market.HyperdriveMarketState(),
+            market_state=HyperdriveMarketState(),
             position_duration=time.StretchedTime(
                 days=FixedPoint("365.0"), time_stretch=FixedPoint("10.0"), normalizing_constant=FixedPoint("365.0")
             ),
@@ -199,7 +216,7 @@ class TestAgent(unittest.TestCase):
     def test_no_action_failure(self):
         """Tests for Agent instantiation when no action function was defined"""
 
-        class TestErrorPolicy(elf_agent.Agent):
+        class TestErrorPolicy(Agent):
             """This class was made for testing purposes. It does not implement the required self.action() method"""
 
             # Purposefully incorrectly implemented

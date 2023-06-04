@@ -50,7 +50,9 @@ def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulato
     simulator = simulators.Simulator(config=config, market=market, block_time=block_time)
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp:
-        init_agent = InitializeLiquidityAgent(wallet_address=0, budget=FixedPoint(config.target_liquidity))
+        init_agent = Agent(
+            wallet_address=0, policy=InitializeLiquidityAgent(budget=FixedPoint(config.target_liquidity))
+        )
         init_agent_action = init_agent.action(market)[0]
         init_agent.wallet.update(init_agent_deltas)
         simulator.add_agents([init_agent])

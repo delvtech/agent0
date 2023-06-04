@@ -19,6 +19,8 @@ import elfpy.utils.post_processing as post_processing
 from elfpy import WEI, PRECISION_THRESHOLD
 from elfpy.simulators.config import Config
 from elfpy.agents.agent import Agent
+from elfpy.agents.wallet import Wallet
+from elfpy.agents.policies import BasePolicy
 from elfpy.utils import sim_utils
 from elfpy.math import FixedPoint
 
@@ -198,14 +200,14 @@ def get_biggest_position(position_dict) -> FixedPoint | None:
     return biggest_position
 
 
-class RegularGuy(Agent):
+# pylint: disable=too-few-public-methods
+class RegularGuy(BasePolicy):
     """
     Agent that tracks the vault APR, trading both long and short by default
     """
 
     def __init__(
         self,
-        wallet_address: int,
         budget: FixedPoint = FixedPoint("10_000.0"),
         rng: NumpyGenerator | None = None,
         trade_chance: FixedPoint = FixedPoint("1.0"),
@@ -216,9 +218,11 @@ class RegularGuy(Agent):
         self.trade_short = True  # default to allow easy overriding
         self.last_think_time = None
         self.threshold = FixedPoint(rng.normal(loc=0, scale=0.005))
-        super().__init__(wallet_address, budget, rng)
+        super().__init__(budget, rng)
 
-    def action(self, market: hyperdrive_market.Market) -> list[hyperdrive_actions.HyperdriveMarketAction]:
+    def action(
+        self, market: hyperdrive_market.Market, wallet: Wallet
+    ) -> list[hyperdrive_actions.HyperdriveMarketAction]:
         """Implement a random user strategy
 
         The agent performs one of four possible trades:
@@ -231,6 +235,8 @@ class RegularGuy(Agent):
         ----------
         market : Market
             the trading market
+        wallet : Wallet
+            the agent's wallet
 
         Returns
         -------
@@ -241,8 +247,8 @@ class RegularGuy(Agent):
         if gonna_trade:
             # User can always open a trade, and can close a trade if one is open
             available_actions = []
-            has_opened_short = bool(any((short.balance > 0 for short in self.wallet.shorts.values())))
-            has_opened_long = bool(any((long.balance > 0 for long in self.wallet.longs.values())))
+            has_opened_short = bool(any((short.balance > 0 for short in wallet.shorts.values())))
+            has_opened_long = bool(any((long.balance > 0 for long in wallet.longs.values())))
             if market.fixed_apr > market.market_state.variable_apr + self.threshold:
                 # we want to make rate to go DOWN, so BUY PTs
                 if has_opened_short is True:
@@ -275,7 +281,7 @@ class RegularGuy(Agent):
                 else:
                     amount_to_trade_pt = amount_to_trade_base / market.spot_price
                 if action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:
-                    max_short = self.get_max_short(market)
+                    max_short = wallet.get_max_short(market)
                     # TODO: This is a hack until we fix get_max
                     max_short = max_short / FixedPoint("100.0")
                     if max_short > WEI + PRECISION_THRESHOLD:  # if max_short is greater than the minimum eth amount
@@ -288,13 +294,13 @@ class RegularGuy(Agent):
                                 trade=hyperdrive_actions.HyperdriveMarketAction(
                                     action_type=action_type,
                                     trade_amount=trade_amount,
-                                    wallet=self.wallet,
+                                    wallet=wallet,
                                     mint_time=market.block_time.time,
                                 ),
                             )
                         ]
                 elif action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:
-                    max_long = self.get_max_long(market)
+                    max_long = wallet.get_max_long(market)
                     # TODO: This is a hack until we fix get_max
                     max_long = max_long / FixedPoint("100.0")
                     if max_long > WEI + PRECISION_THRESHOLD:  # if max_long is greater than the minimum eth amount
@@ -305,13 +311,13 @@ class RegularGuy(Agent):
                                 trade=hyperdrive_actions.HyperdriveMarketAction(
                                     action_type=action_type,
                                     trade_amount=trade_amount,
-                                    wallet=self.wallet,
+                                    wallet=wallet,
                                     mint_time=market.block_time.time,
                                 ),
                             )
                         ]
                 elif action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:
-                    biggest_short = get_biggest_position(self.wallet.shorts)
+                    biggest_short = get_biggest_position(wallet.shorts)
                     trade_amount = max(WEI + PRECISION_THRESHOLD, min(amount_to_trade_pt, biggest_short["balance"]))
                     action_list = [
                         types.Trade(
@@ -319,13 +325,13 @@ class RegularGuy(Agent):
                             trade=hyperdrive_actions.HyperdriveMarketAction(
                                 action_type=action_type,
                                 trade_amount=trade_amount,
-                                wallet=self.wallet,
+                                wallet=wallet,
                                 mint_time=biggest_short["mint_time"],
                             ),
                         )
                     ]
                 elif action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:
-                    biggest_long = get_biggest_position(self.wallet.longs)
+                    biggest_long = get_biggest_position(wallet.longs)
                     trade_amount = np.maximum(
                         WEI + PRECISION_THRESHOLD, np.minimum(amount_to_trade_pt, biggest_long["balance"])
                     )
@@ -335,7 +341,7 @@ class RegularGuy(Agent):
                             trade=hyperdrive_actions.HyperdriveMarketAction(
                                 action_type=action_type,
                                 trade_amount=trade_amount,
-                                wallet=self.wallet,
+                                wallet=wallet,
                                 mint_time=biggest_long["mint_time"],
                             ),
                         )
@@ -344,7 +350,7 @@ class RegularGuy(Agent):
                     print(
                         f"t={market.block_time.time*365:.0f}: "
                         f"F:{market.fixed_apr:.3%} V:{market.market_state.variable_apr:.3%} "
-                        f"agent #{self.wallet.address:03.0f} is going to {action_type} of size {trade_amount}",
+                        f"agent #{wallet.address:03.0f} is going to {action_type} of size {trade_amount}",
                     )
         return action_list
 
@@ -363,11 +369,13 @@ def get_example_agents(
     existing_agents = int(existing_agents)
     print(f"Creating {new_agents} new agents from {existing_agents} existing agents to {existing_agents + new_agents}")
     for address in range(existing_agents, existing_agents + new_agents):
-        example_agent = RegularGuy(
-            rng=rng,
-            trade_chance=agent_trade_chance,
+        example_agent = Agent(
             wallet_address=address,
-            budget=budget,
+            policy=RegularGuy(
+                budget=budget,
+                rng=rng,
+                trade_chance=agent_trade_chance,
+            ),
         )
         if direction is not None:
             if direction == "short":

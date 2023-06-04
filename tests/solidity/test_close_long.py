@@ -1,14 +1,16 @@
 """Close long market trade tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy.agents.agent as elf_agent
-from elfpy.markets.hyperdrive.checkpoint import Checkpoint
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
-from elfpy.time.time import TimeUnit
 import elfpy.types as types
+
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies import BasePolicy
+from elfpy.markets.hyperdrive.checkpoint import Checkpoint
 from elfpy.math import FixedPoint
+from elfpy.time.time import TimeUnit
 
 # pylint: disable=too-many-arguments
 
@@ -21,9 +23,9 @@ class TestCloseLong(unittest.TestCase):
     contribution: FixedPoint = FixedPoint("500_000_000.0")
     target_apr: FixedPoint = FixedPoint("0.05")
     term_length: FixedPoint = FixedPoint("365.0")
-    alice: elf_agent.Agent
-    bob: elf_agent.Agent
-    celine: elf_agent.Agent
+    alice: Agent
+    bob: Agent
+    celine: Agent
     hyperdrive: hyperdrive_market.Market
     block_time: time.BlockTime
 
@@ -31,9 +33,9 @@ class TestCloseLong(unittest.TestCase):
         """Set up agent, pricing model, & market for the subsequent tests.
         This function is run before each test method.
         """
-        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
-        self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
+        self.alice = Agent(wallet_address=0, policy=BasePolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=BasePolicy(budget=self.contribution))
+        self.celine = Agent(wallet_address=2, policy=BasePolicy(budget=self.contribution))
         block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.HyperdriveMarketState(
@@ -55,7 +57,7 @@ class TestCloseLong(unittest.TestCase):
 
     def verify_close_long(
         self,
-        example_agent: elf_agent.Agent,
+        example_agent: Agent,
         market_state_before: hyperdrive_market.HyperdriveMarketState,
         agent_base_paid: FixedPoint,
         agent_base_proceeds: FixedPoint,

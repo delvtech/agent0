@@ -6,12 +6,13 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-import elfpy
-import elfpy.types as types
-from elfpy.math.fixed_point import FixedPoint
+from elfpy import check_non_zero
+from elfpy.types import freezable, Quantity, TokenType
+from elfpy.math import FixedPoint, FixedPointMath
 
 if TYPE_CHECKING:
     from typing import Any, Iterable
+    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
 
 
 @dataclass
@@ -62,15 +63,15 @@ class Borrow:
     start_time : FixedPoint
     .. todo: add explanation
     """
-    borrow_token: types.TokenType
+    borrow_token: TokenType
     borrow_amount: FixedPoint
     borrow_shares: FixedPoint
-    collateral_token: types.TokenType
+    collateral_token: TokenType
     collateral_amount: FixedPoint
     start_time: FixedPoint
 
 
-@types.freezable()
+@freezable()
 @dataclass()
 class Wallet:
     r"""Stores what is in the agent's wallet
@@ -100,11 +101,9 @@ class Wallet:
     address: int
 
     # fungible
-    balance: types.Quantity = field(
-        default_factory=lambda: types.Quantity(amount=FixedPoint(0), unit=types.TokenType.BASE)
-    )
+    balance: Quantity = field(default_factory=lambda: Quantity(amount=FixedPoint(0), unit=TokenType.BASE))
     # TODO: Support multiple typed balances:
-    #     balance: Dict[types.TokenType, types.Quantity] = field(default_factory=dict)
+    #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
     lp_tokens: FixedPoint = FixedPoint(0)
 
     # non-fungible (identified by key=mint_time, stored as dict)
@@ -121,59 +120,6 @@ class Wallet:
 
     def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
-
-    def copy(self) -> Wallet:
-        """Returns a new copy of self"""
-        return Wallet(**copy.deepcopy(self.__dict__))
-
-    def update(self, wallet_deltas: Wallet) -> None:
-        """Update the agent's wallet
-
-        Arguments
-        ----------
-        wallet_deltas : Wallet
-            The agent's wallet that tracks the amount of assets this agent holds
-
-        Returns
-        -------
-        This method has no returns. It updates the Agent's Wallet according to the passed parameters
-        """
-        # track over time the agent's weighted average spend, for return calculation
-        for key, value_or_dict in wallet_deltas.copy().__dict__.items():
-            if value_or_dict is None or key in ["fees_paid", "address", "frozen", "no_new_attribs"]:
-                continue
-            if key in ["lp_tokens", "fees_paid", "withdraw_shares"]:
-                logging.debug(
-                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                    self.address,
-                    key,
-                    getattr(self, key),
-                    getattr(self, key) + value_or_dict,
-                    value_or_dict,
-                )
-                self[key] += value_or_dict
-            # handle updating a Quantity
-            elif key == "balance":
-                logging.debug(
-                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                    self.address,
-                    key,
-                    float(getattr(self, key).amount),
-                    float(getattr(self, key).amount + value_or_dict.amount),
-                    float(value_or_dict.amount),
-                )
-                getattr(self, key).amount += value_or_dict.amount
-            # handle updating a dict, which have mint_time attached
-            elif key == "borrows":
-                if value_or_dict:  # could be empty
-                    self._update_borrows(value_or_dict.items())
-            elif key == "longs":
-                self._update_longs(value_or_dict.items())
-            elif key == "shorts":
-                self._update_shorts(value_or_dict.items())
-            else:
-                raise ValueError(f"wallet_key={key} is not allowed.")
-            self.check_valid_wallet_state(self.__dict__)
 
     def _update_borrows(self, borrows: Iterable[tuple[FixedPoint, Borrow]]) -> None:
         for mint_time, borrow_summary in borrows:
@@ -276,4 +222,147 @@ class Wallet:
         """Test that all wallet state variables are greater than zero"""
         if dictionary is None:
             dictionary = self.__dict__
-        elfpy.check_non_zero(dictionary)
+        check_non_zero(dictionary)
+
+    def copy(self) -> Wallet:
+        """Returns a new copy of self"""
+        return Wallet(**copy.deepcopy(self.__dict__))
+
+    def update(self, wallet_deltas: Wallet) -> None:
+        """Update the agent's wallet
+
+        Arguments
+        ----------
+        wallet_deltas : Wallet
+            The agent's wallet that tracks the amount of assets this agent holds
+
+        Returns
+        -------
+        This method has no returns. It updates the Agent's Wallet according to the passed parameters
+        """
+        # track over time the agent's weighted average spend, for return calculation
+        for key, value_or_dict in wallet_deltas.copy().__dict__.items():
+            if value_or_dict is None or key in ["fees_paid", "address", "frozen", "no_new_attribs"]:
+                continue
+            if key in ["lp_tokens", "fees_paid", "withdraw_shares"]:
+                logging.debug(
+                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    self.address,
+                    key,
+                    getattr(self, key),
+                    getattr(self, key) + value_or_dict,
+                    value_or_dict,
+                )
+                self[key] += value_or_dict
+            # handle updating a Quantity
+            elif key == "balance":
+                logging.debug(
+                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    self.address,
+                    key,
+                    float(getattr(self, key).amount),
+                    float(getattr(self, key).amount + value_or_dict.amount),
+                    float(value_or_dict.amount),
+                )
+                getattr(self, key).amount += value_or_dict.amount
+            # handle updating a dict, which have mint_time attached
+            elif key == "borrows":
+                if value_or_dict:  # could be empty
+                    self._update_borrows(value_or_dict.items())
+            elif key == "longs":
+                self._update_longs(value_or_dict.items())
+            elif key == "shorts":
+                self._update_shorts(value_or_dict.items())
+            else:
+                raise ValueError(f"wallet_key={key} is not allowed.")
+            self.check_valid_wallet_state(self.__dict__)
+
+    # TODO: this function should optionally accept a target apr.  the short should not slip the
+    # market fixed rate below the APR when opening the long
+    # issue #213
+    def get_max_long(self, market: HyperdriveMarket) -> FixedPoint:
+        """Gets an approximation of the maximum amount of base the agent can use
+
+        Typically would be called to determine how much to enter into a long position.
+
+        Arguments
+        ----------
+        market : Market
+            The market on which this agent will be executing trades (MarketActions)
+
+        Returns
+        -------
+        FixedPoint
+            Maximum amount the agent can use to open a long
+        """
+        (max_long, _) = market.pricing_model.get_max_long(
+            market_state=market.market_state,
+            time_remaining=market.position_duration,
+        )
+        return FixedPointMath.minimum(
+            self.balance.amount,
+            max_long,
+        )
+
+    # TODO: this function should optionally accept a target apr.  the short should not slip the
+    # market fixed rate above the APR when opening the short
+    # issue #213
+    def get_max_short(self, market: HyperdriveMarket) -> FixedPoint:
+        """Gets an approximation of the maximum amount of bonds the agent can short.
+
+        Arguments
+        ----------
+        market : Market
+            The market on which this agent will be executing trades (MarketActions)
+
+        Returns
+        -------
+        FixedPoint
+            Amount of base that the agent can short in the current market
+        """
+        # Get the market level max short.
+        (max_short_max_loss, max_short) = market.pricing_model.get_max_short(
+            market_state=market.market_state,
+            time_remaining=market.position_duration,
+        )
+        # If the Agent's base balance can cover the max loss of the maximum
+        # short, we can simply return the maximum short.
+        if self.balance.amount >= max_short_max_loss:
+            return max_short
+        last_maybe_max_short = FixedPoint(0)
+        bond_percent = FixedPoint("1.0")
+        num_iters = 25
+        for step_size in [FixedPoint(1 / (2 ** (x + 1))) for x in range(num_iters)]:
+            # Compute the amount of base returned by selling the specified
+            # amount of bonds.
+            maybe_max_short = max_short * bond_percent
+            trade_result = market.pricing_model.calc_out_given_in(
+                in_=Quantity(amount=maybe_max_short, unit=TokenType.PT),
+                market_state=market.market_state,
+                time_remaining=market.position_duration,
+            )
+            # If the max loss is greater than the wallet's base, we need to
+            # decrease the bond percentage. Otherwise, we may have found the
+            # max short, and we should increase the bond percentage.
+            max_loss = maybe_max_short - trade_result.user_result.d_base
+            if max_loss > self.balance.amount:
+                bond_percent -= step_size
+            else:
+                last_maybe_max_short = maybe_max_short
+                if bond_percent == FixedPoint("1.0"):
+                    return last_maybe_max_short
+                bond_percent += step_size
+        # do one more iteration at the last step size in case the bisection method was stuck
+        # approaching a max_short value with slightly more base than an agent has.
+        trade_result = market.pricing_model.calc_out_given_in(
+            in_=Quantity(amount=last_maybe_max_short, unit=TokenType.PT),
+            market_state=market.market_state,
+            time_remaining=market.position_duration,
+        )
+        max_loss = last_maybe_max_short - trade_result.user_result.d_base
+        last_step_size = FixedPoint("1.0") / (FixedPoint("2.0") ** FixedPoint(float(num_iters)) + FixedPoint("1.0"))
+        if max_loss > self.balance.amount:
+            bond_percent -= last_step_size
+            last_maybe_max_short = max_short * bond_percent
+        max_short = FixedPointMath.minimum(self.balance.amount, last_maybe_max_short)
+        return max_short

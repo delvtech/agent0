@@ -3,21 +3,38 @@
 Policies inherit from Users (thus each policy is assigned to a user)
 subclasses of BasicPolicy will implement trade actions
 """
-from __future__ import annotations  # types will be strings by default in 3.11
+from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
-import elfpy.agents.agent as elf_agent
-import elfpy.types as types
+from numpy.random import default_rng
 
 if TYPE_CHECKING:
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from numpy.random._generator import Generator as NumpyGenerator
+
+    from elfpy.agents.wallet import Wallet
+    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+    from elfpy.math import FixedPoint
+    from elfpy.types import Trade
+
+# pylint: disable=too-few-public-methods
 
 
-class NoActionAgent(elf_agent.Agent):
-    """Most basic policy setup, which implements a noop agent that performs no action"""
+class BasePolicy:
+    """Base class policy"""
 
-    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
-        """Returns an empty list, indicating now action"""
-        # pylint disable=unused-argument
+    def __init__(self, budget: FixedPoint, rng: NumpyGenerator | None = None):
+        if not isinstance(budget, FixedPoint):
+            raise TypeError(f"{budget=} must be of type `FixedPoint`")
+        self.budget: FixedPoint = budget
+        if rng is None:
+            logging.warning("Policy random number generator (rng) argument not set, using seed of `123`.")
+            self.rng: NumpyGenerator = default_rng(123)
+        else:
+            self.rng: NumpyGenerator = rng
+
+    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
+        """Returns an empty list, indicating no action"""
+        # pylint: disable=unused-argument
         return []

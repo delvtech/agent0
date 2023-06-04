@@ -1,19 +1,25 @@
 """Agent policy for smart short positions"""
 from __future__ import annotations
 
-from numpy.random._generator import Generator as NumpyGenerator
+from typing import TYPE_CHECKING
+
 
 from elfpy import WEI
-from elfpy.agents.agent import Agent
-from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+from elfpy.agents.policies import BasePolicy
 from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
 from elfpy.math import FixedPoint
 from elfpy.types import Trade, MarketType
 
-# pylint: disable=too-many-arguments
+if TYPE_CHECKING:
+    from numpy.random._generator import Generator as NumpyGenerator
+
+    from elfpy.agents.wallet import Wallet
+    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+
+# pylint: disable=too-few-public-methods
 
 
-class ShortSally(Agent):
+class ShortSally(BasePolicy):
     """Agent that paints & opens fixed rate borrow positions
 
     .. note::
@@ -30,7 +36,6 @@ class ShortSally(Agent):
 
     def __init__(
         self,
-        wallet_address: int,
         budget: FixedPoint,
         rng: NumpyGenerator,
         trade_chance: FixedPoint,
@@ -39,10 +44,9 @@ class ShortSally(Agent):
         """Add custom stuff then call basic policy init"""
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
-        super().__init__(wallet_address, budget, rng)
-        self.rng: NumpyGenerator = rng  # TODO: Figure out a better way to narrow this type
+        super().__init__(budget, rng)
 
-    def action(self, market: HyperdriveMarket) -> list[Trade]:
+    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Implement a Short Sally user strategy
 
 
@@ -60,27 +64,27 @@ class ShortSally(Agent):
         if not gonna_trade:
             return []
         action_list = []
-        for short_time in self.wallet.shorts:  # loop over shorts # pylint: disable=consider-using-dict-items
+        for short_time in wallet.shorts:  # loop over shorts # pylint: disable=consider-using-dict-items
             # if any short is mature
             if (market.block_time.time - FixedPoint(short_time)) >= market.annualized_position_duration:
-                trade_amount = self.wallet.shorts[short_time].balance  # close the whole thing
+                trade_amount = wallet.shorts[short_time].balance  # close the whole thing
                 action_list += [
                     Trade(
                         market=MarketType.HYPERDRIVE,
                         trade=HyperdriveMarketAction(
                             action_type=MarketActionType.CLOSE_SHORT,
                             trade_amount=trade_amount,
-                            wallet=self.wallet,
+                            wallet=wallet,
                             mint_time=short_time,
                         ),
                     )
                 ]
-        short_balances = [short.balance for short in self.wallet.shorts.values()]
+        short_balances = [short.balance for short in wallet.shorts.values()]
         has_opened_short = bool(any(short_balance > FixedPoint(0) for short_balance in short_balances))
         # only open a short if the fixed rate is 0.02 or more lower than variable rate
         if (market.fixed_apr - market.market_state.variable_apr) < self.risk_threshold and not has_opened_short:
             # maximum amount the agent can short given the market and the agent's wallet
-            trade_amount = self.get_max_short(market)
+            trade_amount = wallet.get_max_short(market)
             # TODO: This is a hack until we fix get_max
             # issue # 440
             trade_amount = trade_amount / FixedPoint("100.0")
@@ -91,7 +95,7 @@ class ShortSally(Agent):
                         trade=HyperdriveMarketAction(
                             action_type=MarketActionType.OPEN_SHORT,
                             trade_amount=trade_amount,
-                            wallet=self.wallet,
+                            wallet=wallet,
                             mint_time=market.block_time.time,
                         ),
                     )

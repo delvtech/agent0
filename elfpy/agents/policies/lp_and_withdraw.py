@@ -1,18 +1,23 @@
 """User strategy that adds liquidity and then removes it when enough time has passed"""
 from __future__ import annotations
 
-from numpy.random._generator import Generator as NumpyGenerator
+from typing import TYPE_CHECKING
 
-from elfpy.agents.agent import Agent
+from elfpy.agents.policies import BasePolicy
 from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
-from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
 from elfpy.math import FixedPoint
 from elfpy.types import Trade, MarketType
 
-# pylint: disable=too-many-arguments
+if TYPE_CHECKING:
+    from numpy.random._generator import Generator as NumpyGenerator
+
+    from elfpy.agents.wallet import Wallet
+    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+
+# pylint: disable=too-few-public-methods
 
 
-class LpAndWithdrawAgent(Agent):
+class LpAndWithdrawAgent(BasePolicy):
     """
     simple LP
     only has one LP open at a time
@@ -20,7 +25,6 @@ class LpAndWithdrawAgent(Agent):
 
     def __init__(
         self,
-        wallet_address: int,
         budget: FixedPoint = FixedPoint("1000.0"),
         rng: NumpyGenerator | None = None,
         amount_to_lp: FixedPoint = FixedPoint("100.0"),
@@ -29,17 +33,17 @@ class LpAndWithdrawAgent(Agent):
         """call basic policy init then add custom stuff"""
         self.amount_to_lp = amount_to_lp
         self.time_to_withdraw = time_to_withdraw
-        super().__init__(wallet_address, budget, rng)
+        super().__init__(budget, rng)
 
-    def action(self, market: HyperdriveMarket) -> list[Trade]:
+    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """
         implement user strategy
         LP if you can, but only do it once
         """
         # pylint disable=unused-argument
         action_list: list[Trade] = []
-        has_lp = self.wallet.lp_tokens > FixedPoint(0)
-        amount_in_base = self.wallet.balance.amount
+        has_lp = wallet.lp_tokens > FixedPoint(0)
+        amount_in_base = wallet.balance.amount
         can_lp = amount_in_base >= self.amount_to_lp
         if not has_lp and can_lp:
             action_list.append(
@@ -48,7 +52,7 @@ class LpAndWithdrawAgent(Agent):
                     trade=HyperdriveMarketAction(
                         action_type=MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.amount_to_lp,
-                        wallet=self.wallet,
+                        wallet=wallet,
                     ),
                 )
             )
@@ -60,8 +64,8 @@ class LpAndWithdrawAgent(Agent):
                         market=MarketType.HYPERDRIVE,
                         trade=HyperdriveMarketAction(
                             action_type=MarketActionType.REMOVE_LIQUIDITY,
-                            trade_amount=self.wallet.lp_tokens,
-                            wallet=self.wallet,
+                            trade_amount=wallet.lp_tokens,
+                            wallet=wallet,
                         ),
                     )
                 )

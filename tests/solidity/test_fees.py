@@ -4,11 +4,13 @@ from typing import Optional, Tuple
 
 import pytest
 
-import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
+
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies import BasePolicy
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-instance-attributes
@@ -23,10 +25,10 @@ class TestFees(unittest.TestCase):
 
     contribution: FixedPoint
     target_apr: FixedPoint
-    alice: elf_agent.Agent
-    bob: elf_agent.Agent
-    celine: elf_agent.Agent
-    gary: elf_agent.Agent  # governance gary
+    alice: Agent
+    bob: Agent
+    celine: Agent
+    gary: Agent  # governance gary
     hyperdrive: hyperdrive_market.Market
     block_time: time.BlockTime
     term_length: FixedPoint
@@ -44,11 +46,11 @@ class TestFees(unittest.TestCase):
         self.contribution = FixedPoint("500_000_000.0")
         self.term_length = FixedPoint("365.0")
         self.trade_amount = FixedPoint("1.0")
-        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
+        self.alice = Agent(wallet_address=0, policy=BasePolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=BasePolicy(budget=self.contribution))
         self.bob.budget = FixedPoint(self.trade_amount)
         self.bob.wallet.balance = types.Quantity(amount=self.trade_amount, unit=types.TokenType.BASE)
-        self.gary = elf_agent.Agent(wallet_address=2, budget=FixedPoint(0))
+        self.gary = Agent(wallet_address=2, policy=BasePolicy(budget=FixedPoint(0)))
         self.block_time = time.BlockTime()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.HyperdriveMarketState(

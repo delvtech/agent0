@@ -1,19 +1,23 @@
 """Agent policy for leveraged long positions"""
 from __future__ import annotations
 
-from numpy.random._generator import Generator as NumpyGenerator
+from typing import TYPE_CHECKING
 
 from elfpy import WEI
-from elfpy.agents.agent import Agent
-from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+from elfpy.agents.policies import BasePolicy
 from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
 from elfpy.math import FixedPoint, FixedPointMath
 from elfpy.types import Trade, MarketType
 
-# pylint: disable=too-many-arguments
+if TYPE_CHECKING:
+    from numpy.random._generator import Generator as NumpyGenerator
+    from elfpy.agents.wallet import Wallet
+    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+
+# pylint: disable=too-few-public-methods
 
 
-class LongLouie(Agent):
+class LongLouie(BasePolicy):
     """Agent that opens longs to push the fixed-rate towards the variable-rate
 
     .. note::
@@ -28,7 +32,6 @@ class LongLouie(Agent):
 
     def __init__(
         self,
-        wallet_address: int,
         budget: FixedPoint,
         rng: NumpyGenerator,
         trade_chance: FixedPoint,
@@ -37,10 +40,9 @@ class LongLouie(Agent):
         """Add custom stuff then call basic policy init"""
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
-        super().__init__(wallet_address, budget, rng)
-        self.rng: NumpyGenerator = rng  # TODO: Figure out a better way to narrow this type
+        super().__init__(budget, rng)
 
-    def action(self, market: HyperdriveMarket) -> list[Trade]:
+    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Implement a Long Louie user strategy
 
         Parameters
@@ -57,22 +59,22 @@ class LongLouie(Agent):
         if not gonna_trade:
             return []
         action_list = []
-        for long_time in self.wallet.longs:  # loop over longs # pylint: disable=consider-using-dict-items
+        for long_time in wallet.longs:  # loop over longs # pylint: disable=consider-using-dict-items
             # if any long is mature
             if (market.block_time.time - FixedPoint(long_time)) >= market.annualized_position_duration:
-                trade_amount = self.wallet.longs[long_time].balance  # close the whole thing
+                trade_amount = wallet.longs[long_time].balance  # close the whole thing
                 action_list += [
                     Trade(
                         market=MarketType.HYPERDRIVE,
                         trade=HyperdriveMarketAction(
                             action_type=MarketActionType.CLOSE_LONG,
                             trade_amount=trade_amount,
-                            wallet=self.wallet,
+                            wallet=wallet,
                             mint_time=long_time,
                         ),
                     )
                 ]
-        long_balances = [long.balance for long in self.wallet.longs.values()]
+        long_balances = [long.balance for long in wallet.longs.values()]
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
         if (market.fixed_apr - market.market_state.variable_apr) > self.risk_threshold and not has_opened_long:
@@ -88,7 +90,7 @@ class LongLouie(Agent):
             # divide by 2 to adjust for changes in share reserves when the trade is executed
             adjusted_bonds = new_bonds_to_match_variable_apr / FixedPoint(2.0)
             # get the maximum amount the agent can long given the market and the agent's wallet
-            max_trade_amount = self.get_max_long(market)
+            max_trade_amount = wallet.get_max_long(market)
             # don't want to trade more than the agent has or more than the market can handle
             trade_amount = FixedPointMath.minimum(max_trade_amount, adjusted_bonds)
             # TODO: This is a hack until we fix get_max
@@ -101,7 +103,7 @@ class LongLouie(Agent):
                         trade=HyperdriveMarketAction(
                             action_type=MarketActionType.OPEN_LONG,
                             trade_amount=trade_amount,
-                            wallet=self.wallet,
+                            wallet=wallet,
                             mint_time=market.block_time.time,
                         ),
                     )

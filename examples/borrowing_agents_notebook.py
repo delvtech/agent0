@@ -59,12 +59,14 @@ import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 import pandas as pd
 
-import elfpy.agents.agent as elf_agent
 import elfpy.agents.wallet as wallet
 import elfpy.time as elf_time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies import BasePolicy
+from elfpy.agents.wallet import Wallet
 from elfpy.markets.borrow.borrow_market import (
     Market,
     BorrowMarketAction,
@@ -75,16 +77,17 @@ from elfpy.markets.borrow.borrow_market_state import BorrowMarketState
 from elfpy.math.fixed_point import FixedPoint
 from elfpy.simulators.config import Config
 
+# pylint: disable=too-few-public-methods
+
 
 # %%
-class BorrowingBeatrice(elf_agent.Agent):
+class BorrowingBeatrice(BasePolicy):
     """
     Agent that paints & opens fixed rate borrow positions
     """
 
     def __init__(
         self,
-        wallet_address: int,
         budget: FixedPoint = FixedPoint("10_000.0"),
         rng: NumpyGenerator | None = None,
         trade_chance: FixedPoint = FixedPoint("1.0"),
@@ -93,9 +96,9 @@ class BorrowingBeatrice(elf_agent.Agent):
         """Add custom stuff then call basic policy init"""
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
-        super().__init__(wallet_address, budget, rng)
+        super().__init__(budget, rng)
 
-    def action(self, market: Market) -> list[types.Trade]:
+    def action(self, market: Market, wallet: Wallet) -> list[types.Trade]:
         """Implement a Borrowing Beatrice user strategy
 
         I take out loans when the interest rate is below a threshold
@@ -116,7 +119,7 @@ class BorrowingBeatrice(elf_agent.Agent):
         gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
         if not gonna_trade:
             return action_list
-        has_borrow = self.wallet.borrows
+        has_borrow = wallet.borrows
         want_to_borrow = market.borrow_rate <= self.risk_threshold
         if want_to_borrow and not has_borrow:
             action_list = [
@@ -124,7 +127,7 @@ class BorrowingBeatrice(elf_agent.Agent):
                     market=types.MarketType.BORROW,
                     trade=BorrowMarketAction(
                         action_type=MarketActionType.OPEN_BORROW,
-                        wallet=self.wallet,
+                        wallet=wallet,
                         collateral=types.Quantity(amount=self.budget, unit=types.TokenType.BASE),
                         spot_price=1,
                     ),
@@ -136,7 +139,7 @@ class BorrowingBeatrice(elf_agent.Agent):
                     market=types.MarketType.BORROW,
                     trade=BorrowMarketAction(
                         action_type=MarketActionType.CLOSE_BORROW,
-                        wallet=self.wallet,
+                        wallet=wallet,
                         collateral=types.Quantity(amount=self.budget, unit=types.TokenType.BASE),
                         spot_price=1,  # usdc
                     ),
@@ -206,12 +209,14 @@ market_state = BorrowMarketState(
 market = Market(pricing_model=BorrowPricingModel(), market_state=market_state, block_time=elf_time.BlockTime())
 
 agents = {
-    0: BorrowingBeatrice(
+    0: Agent(
         wallet_address=1,
-        budget=FixedPoint("10_000.0"),
-        rng=config.rng,
-        trade_chance=FixedPoint(trade_chance),
-        risk_threshold=FixedPoint("0.02"),
+        policy=BorrowingBeatrice(
+            budget=FixedPoint("10_000.0"),
+            rng=config.rng,
+            trade_chance=FixedPoint(trade_chance),
+            risk_threshold=FixedPoint("0.02"),
+        ),
     )
 }
 

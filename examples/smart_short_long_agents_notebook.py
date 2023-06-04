@@ -7,6 +7,7 @@ from __future__ import annotations
 # pylint: disable=too-many-lines
 # pylint: disable=too-many-arguments
 # pylint: disable=invalid-name
+# pylint: disable=too-few-public-methods
 # pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 
 # %% [markdown]
@@ -17,7 +18,6 @@ import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 import matplotlib.ticker as ticker
 
-import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
@@ -25,6 +25,9 @@ import elfpy.utils.post_processing as post_processing
 import elfpy.utils.sim_utils as sim_utils
 import elfpy.types as types
 
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies import BasePolicy
+from elfpy.agents.wallet import Wallet
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.agents.policies import LongLouie, ShortSally
@@ -97,12 +100,12 @@ fig_size = (5, 5)
 
 
 # %%
-class LPAgent(elf_agent.Agent):
+class LPAgent(BasePolicy):
     """Adds a large LP"""
 
-    def action(self, market: hyperdrive_market.Market):
+    def action(self, market: hyperdrive_market.Market, wallet: Wallet):
         """implement user strategy"""
-        if self.wallet.lp_tokens > 0:  # has already opened the lp
+        if wallet.lp_tokens > 0:  # has already opened the lp
             action_list = []
         else:
             action_list = [
@@ -111,7 +114,7 @@ class LPAgent(elf_agent.Agent):
                     trade=hyperdrive_actions.HyperdriveMarketAction(
                         action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.budget,
-                        wallet=self.wallet,
+                        wallet=wallet,
                     ),
                 )
             ]
@@ -119,9 +122,7 @@ class LPAgent(elf_agent.Agent):
 
 
 # %%
-def get_example_agents(
-    rng: NumpyGenerator, experiment_config: Config, existing_agents: int = 0
-) -> list[elf_agent.Agent]:
+def get_example_agents(rng: NumpyGenerator, experiment_config: Config, existing_agents: int = 0) -> list[Agent]:
     """Instantiate a set of custom agents"""
     agents = []
     for address in range(existing_agents, existing_agents + experiment_config.scratch["num_sallys"]):
@@ -149,12 +150,14 @@ def get_example_agents(
                 ),
             ).item()  # convert to Python type
         )
-        agent = ShortSally(
-            rng=rng,
-            trade_chance=experiment_config.scratch["trade_chance"],
-            risk_threshold=risk_threshold,
+        agent = Agent(
             wallet_address=address,
-            budget=budget,
+            policy=ShortSally(
+                budget=budget,
+                rng=rng,
+                trade_chance=experiment_config.scratch["trade_chance"],
+                risk_threshold=risk_threshold,
+            ),
         )
         agent.log_status_report()
         agents += [agent]
@@ -173,12 +176,14 @@ def get_example_agents(
                 ),
             ).item()  # convert to Python type
         )
-        agent = LongLouie(
-            rng=rng,
-            trade_chance=experiment_config.scratch["trade_chance"],
-            risk_threshold=risk_threshold,
+        agent = Agent(
             wallet_address=address,
-            budget=budget,
+            policy=LongLouie(
+                budget=budget,
+                rng=rng,
+                trade_chance=experiment_config.scratch["trade_chance"],
+                risk_threshold=risk_threshold,
+            ),
         )
         agent.log_status_report()
         agents += [agent]

@@ -63,6 +63,7 @@ import elfpy.utils.post_processing as post_processing
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import RandomAgent
+from elfpy.agents.wallet import Wallet
 from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils
 from elfpy.utils.outputs import get_gridspec_subplots
@@ -109,7 +110,6 @@ class RandomAgent(RandomAgent):
 
     def __init__(
         self,
-        wallet_address: int,
         budget: FixedPoint = FixedPoint("10_000.0"),
         rng: NumpyGenerator | None = None,
         trade_chance: FixedPoint = FixedPoint("1.0"),
@@ -117,10 +117,11 @@ class RandomAgent(RandomAgent):
         """Add custom stuff then call basic policy init"""
         self.trade_long = True  # default to allow easy overriding
         self.trade_short = True  # default to allow easy overriding
-        super().__init__(wallet_address, budget, rng, trade_chance)
+        super().__init__(budget, rng, trade_chance)
 
     def get_available_actions(
         self,
+        wallet: Wallet,
         disallowed_actions: list[hyperdrive_actions.MarketActionType] | None = None,
     ) -> list[hyperdrive_actions.MarketActionType]:
         """Get all available actions, excluding those listed in disallowed_actions"""
@@ -141,9 +142,9 @@ class RandomAgent(RandomAgent):
             hyperdrive_actions.MarketActionType.OPEN_LONG,
             hyperdrive_actions.MarketActionType.OPEN_SHORT,
         ]
-        if self.wallet.longs:  # if the agent has open longs
+        if wallet.longs:  # if the agent has open longs
             all_available_actions.append(hyperdrive_actions.MarketActionType.CLOSE_LONG)
-        if self.wallet.shorts:  # if the agent has open shorts
+        if wallet.shorts:  # if the agent has open shorts
             all_available_actions.append(hyperdrive_actions.MarketActionType.CLOSE_SHORT)
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
