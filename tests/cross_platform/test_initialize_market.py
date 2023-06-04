@@ -14,6 +14,9 @@ if TYPE_CHECKING:
     from ape.contracts.base import ContractInstance
 
 
+#########################
+# Example with class test
+#########################
 class TestInitialize(TestCaseWithHyperdriveFixture):
     """Test case for initializing the market"""
 
@@ -39,18 +42,21 @@ class TestInitialize(TestCaseWithHyperdriveFixture):
             config=config,
         )
 
-        print(f"{market_state_sol.share_reserves=}")
-        print(f"{fx.hyperdrive_sim.market_state.share_reserves=}")
-        print(f"\n{market_state_sol.bond_reserves=}")
-        print(f"{fx.hyperdrive_sim.market_state.bond_reserves=}")
         self.assertAlmostEqual(
             market_state_sol.share_reserves, fx.hyperdrive_sim.market_state.share_reserves, delta=self.APPROX_EQ
         )
         # TODO: figure out why these are different!
+        # print(f"{market_state_sol.share_reserves=}")
+        # print(f"{fx.hyperdrive_sim.market_state.share_reserves=}")
+        # print(f"\n{market_state_sol.bond_reserves=}")
+        # print(f"{fx.hyperdrive_sim.market_state.bond_reserves=}")
         # self.assertAlmostEqual(market_state_sol.bond_reserves, float(hyperdrive_sim.market_state.bond_reserves))
         # self.assertAlmostEqual(market_state_sol.lp_total_supply, float(hyperdrive_sim.market_state.lp_total_supply))
 
 
+############################
+# Example without class test
+############################
 # initial TestCase for standalone test case defs
 tc = TestCaseWithHyperdriveFixture()
 
