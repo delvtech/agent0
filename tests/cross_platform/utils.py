@@ -47,9 +47,7 @@ def get_simulation_market_state_from_contract(
         representing the agent which is executing the action.
     """
     # pylint: disable=too-many-arguments
-    pool_config = hyperdrive_data_contract.getPoolConfig()
     pool_info = hyperdrive_data_contract.getPoolInfo()
-    pool_state = pool_info
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
         asset_id = hyperdrive_assets.encode_asset_id(
             hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE,
@@ -58,28 +56,28 @@ def get_simulation_market_state_from_contract(
         total_supply_withdraw_shares = hyperdrive_data_contract.balanceOf(asset_id, agent_address)
 
     return hyperdrive_market.HyperdriveMarketState(
-        lp_total_supply=FixedPoint(scaled_value=pool_state["lpTotalSupply"]),
-        share_reserves=FixedPoint(scaled_value=pool_state["shareReserves"]),
-        bond_reserves=FixedPoint(scaled_value=pool_state["bondReserves"]),
-        base_buffer=FixedPoint(scaled_value=pool_state["longsOutstanding"]),  # so do we not need any buffers now?
+        lp_total_supply=FixedPoint(scaled_value=pool_info["lpTotalSupply"]),
+        share_reserves=FixedPoint(scaled_value=pool_info["shareReserves"]),
+        bond_reserves=FixedPoint(scaled_value=pool_info["bondReserves"]),
+        base_buffer=FixedPoint(scaled_value=pool_info["longsOutstanding"]),  # so do we not need any buffers now?
         # TODO: bond_buffer=0,
         variable_apr=variable_apr,
-        share_price=FixedPoint(scaled_value=pool_state["sharePrice"]),
+        share_price=FixedPoint(scaled_value=pool_info["sharePrice"]),
         init_share_price=config.share_price,
         curve_fee_multiple=config.curve_fee,
         flat_fee_multiple=config.flat_fee,
-        longs_outstanding=FixedPoint(scaled_value=pool_state["longsOutstanding"]),
-        shorts_outstanding=FixedPoint(scaled_value=pool_state["shortsOutstanding"]),
-        long_average_maturity_time=FixedPoint(scaled_value=pool_state["longAverageMaturityTime"]),
-        short_average_maturity_time=FixedPoint(scaled_value=pool_state["shortAverageMaturityTime"]),
+        longs_outstanding=FixedPoint(scaled_value=pool_info["longsOutstanding"]),
+        shorts_outstanding=FixedPoint(scaled_value=pool_info["shortsOutstanding"]),
+        long_average_maturity_time=FixedPoint(scaled_value=pool_info["longAverageMaturityTime"]),
+        short_average_maturity_time=FixedPoint(scaled_value=pool_info["shortAverageMaturityTime"]),
         long_base_volume=FixedPoint(0),  # FixedPoint(scaled_value=pool_state["longBaseVolume"]),
-        short_base_volume=FixedPoint(scaled_value=pool_state["shortBaseVolume"]),
+        short_base_volume=FixedPoint(scaled_value=pool_info["shortBaseVolume"]),
         # TODO: checkpoints=defaultdict
         checkpoint_duration=checkpoint_duration_days,
-        total_supply_longs={FixedPoint(0): FixedPoint(scaled_value=pool_state["longsOutstanding"])},
-        total_supply_shorts={FixedPoint(0): FixedPoint(scaled_value=pool_state["shortsOutstanding"])},
+        total_supply_longs={FixedPoint(0): FixedPoint(scaled_value=pool_info["longsOutstanding"])},
+        total_supply_shorts={FixedPoint(0): FixedPoint(scaled_value=pool_info["shortsOutstanding"])},
         total_supply_withdraw_shares=FixedPoint(scaled_value=total_supply_withdraw_shares),
-        withdraw_shares_ready_to_withdraw=FixedPoint(scaled_value=pool_state["withdrawalSharesReadyToWithdraw"]),
-        withdraw_capital=FixedPoint(scaled_value=pool_state["withdrawalSharesProceeds"]),
+        withdraw_shares_ready_to_withdraw=FixedPoint(scaled_value=pool_info["withdrawalSharesReadyToWithdraw"]),
+        withdraw_capital=FixedPoint(scaled_value=pool_info["withdrawalSharesProceeds"]),
         withdraw_interest=FixedPoint(0),  # FixedPoint(scaled_value=pool_state["interest"]),
     )
