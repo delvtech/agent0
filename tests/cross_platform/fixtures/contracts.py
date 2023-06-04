@@ -3,6 +3,7 @@ import pytest
 from ape.api.accounts import TestAccountAPI
 from ape.contracts import ContractInstance
 from ape.managers.project import ProjectManager
+from attr import dataclass
 
 from .hyperdrive_config import HyperdriveConfig
 
@@ -58,20 +59,13 @@ def hyperdrive_contract(
     return hyperdrive_contract
 
 
+@dataclass
 class Contracts:
     "Contracts Type"
-
-    def __init__(
-        self,
-        base_erc20: ContractInstance,
-        hyperdrive_contract: ContractInstance,
-        hyperdrive_data_contract: ContractInstance,
-        fixed_math_contract: ContractInstance,
-    ):
-        self.base_erc20 = base_erc20
-        self.hyperdrive_contract = hyperdrive_contract
-        self.hyperdrive_data_contract = hyperdrive_data_contract
-        self.fixed_math_contract = fixed_math_contract
+    base_erc20: ContractInstance
+    hyperdrive_contract: ContractInstance
+    hyperdrive_data_contract: ContractInstance
+    fixed_math_contract: ContractInstance
 
 
 @pytest.fixture(scope="function")

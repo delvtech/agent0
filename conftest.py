@@ -8,6 +8,7 @@ import pytest
 from ape.api.accounts import TestAccountAPI
 from ape.api.providers import ProviderAPI
 from ape.managers.project import ProjectManager
+from attr import dataclass
 
 from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
 from elfpy.math.fixed_point import FixedPoint
@@ -27,30 +28,22 @@ pytest_plugins = [
 ]
 
 
+@dataclass
 class HyperdriveFixture:
     "Fixture Type"
 
-    def __init__(
-        self,
-        config: fixtures.HyperdriveConfig,
-        project: ProjectManager,
-        provider: ProviderAPI,
-        deployer: TestAccountAPI,
-        agents: fixtures.Agents,
-        contracts: fixtures.Contracts,
-        hyperdrive_sim: HyperdriveMarket,
-    ):
-        self.config = config
-        self.project = project
-        self.provider = provider
-        self.agents = agents
-        self.deployer = deployer
-        self.contracts = contracts
-        self.genesis_block_number = ape.chain.blocks[-1].number
-        self.genesis_timestamp = ape.chain.provider.get_block(self.genesis_block_number).timestamp  # type:ignore
-        self.hyperdrive_sim = hyperdrive_sim
+    config: fixtures.HyperdriveConfig
+    project: ProjectManager
+    provider: ProviderAPI
+    deployer: TestAccountAPI
+    agents: fixtures.Agents
+    contracts: fixtures.Contracts
+    hyperdrive_sim: HyperdriveMarket
+    genesis_block_number: int
+    genesis_timestamp: int
 
 
+# pylint: disable=too-many-arguments
 @pytest.fixture(scope="function")
 def hyperdrive_fixture(
     hyperdrive_config: fixtures.HyperdriveConfig,
@@ -60,11 +53,21 @@ def hyperdrive_fixture(
     deployer: TestAccountAPI,
     contracts: fixtures.Contracts,
     hyperdrive_sim: HyperdriveMarket,
-):
+) -> HyperdriveFixture:
     """Adds the fixture dictionary"""
 
+    genesis_block_number = ape.chain.blocks[-1].number or 0
+    genesis_timestamp = ape.chain.provider.get_block(genesis_block_number).timestamp  # type:ignore
     fixture: HyperdriveFixture = HyperdriveFixture(
-        hyperdrive_config, project, provider, deployer, agents, contracts, hyperdrive_sim
+        hyperdrive_config,
+        project,
+        provider,
+        deployer,
+        agents,
+        contracts,
+        hyperdrive_sim,
+        genesis_block_number,
+        genesis_timestamp,
     )
     return fixture
 

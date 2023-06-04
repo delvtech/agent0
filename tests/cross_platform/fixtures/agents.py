@@ -2,6 +2,7 @@
 import ape
 import pytest
 from ape.api.accounts import TestAccountAPI
+from attr import dataclass
 
 from elfpy.agents.agent import Agent
 from elfpy.math.fixed_point import FixedPoint
@@ -9,30 +10,30 @@ from elfpy.math.fixed_point import FixedPoint
 # pylint: disable=redefined-outer-name
 
 
+@dataclass
 class PythonAgents:
     """Python Agents Type"""
 
-    def __init__(self, alice: Agent, bob: Agent, celine: Agent):
-        self.alice = alice
-        self.bob = bob
-        self.celine = celine
+    alice: Agent
+    bob: Agent
+    celine: Agent
 
 
+@dataclass
 class SolidityAgents:
     """Solidity Agents Type"""
 
-    def __init__(self, alice: TestAccountAPI, bob: TestAccountAPI, celine: TestAccountAPI):
-        self.alice = alice
-        self.bob = bob
-        self.celine = celine
+    alice: TestAccountAPI
+    bob: TestAccountAPI
+    celine: TestAccountAPI
 
 
+@dataclass
 class Agents:
     """Agents Type"""
 
-    def __init__(self, solidity_agents: SolidityAgents, python_agents: PythonAgents):
-        self.solidity = solidity_agents
-        self.python = python_agents
+    solidity: SolidityAgents
+    python: PythonAgents
 
 
 @pytest.fixture(scope="function")
