@@ -77,8 +77,8 @@ limit-inference-results=100
 
 # List of plugins (as comma separated values of python module names) to load,
 # usually to register additional checkers.
-# load-plugins=pylint.extensions.docparams, pylint.extensions.docstyle
-load-plugins=pylint.extensions.docparams
+load-plugins=pylint.extensions.docparams, pylint.extensions.docstyle
+# load-plugins=pylint.extensions.docparams
 
 # Pickle collected data for later comparisons.
 persistent=yes
@@ -626,7 +626,7 @@ accept-no-param-doc = false
 
 # Whether to accept totally missing raises documentation
 # in the docstring of a function that raises an exception.
-# accept-no-raise-doc = true
+accept-no-raise-doc = true
 
 # Whether to accept totally missing return documentation in
 # the docstring of a function that returns a statement.
