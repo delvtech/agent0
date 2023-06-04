@@ -10,7 +10,7 @@ import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.agents.agent import Agent
-from elfpy.agents.policies import BasePolicy
+from elfpy.agents.policies import NoActionPolicy
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-instance-attributes
@@ -46,11 +46,11 @@ class TestFees(unittest.TestCase):
         self.contribution = FixedPoint("500_000_000.0")
         self.term_length = FixedPoint("365.0")
         self.trade_amount = FixedPoint("1.0")
-        self.alice = Agent(wallet_address=0, policy=BasePolicy(budget=self.contribution))
-        self.bob = Agent(wallet_address=1, policy=BasePolicy(budget=self.contribution))
-        self.bob.budget = FixedPoint(self.trade_amount)
+        self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
+        self.bob.policy.budget = FixedPoint(self.trade_amount)
         self.bob.wallet.balance = types.Quantity(amount=self.trade_amount, unit=types.TokenType.BASE)
-        self.gary = Agent(wallet_address=2, policy=BasePolicy(budget=FixedPoint(0)))
+        self.gary = Agent(wallet_address=2, policy=NoActionPolicy(budget=FixedPoint(0)))
         self.block_time = time.BlockTime()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.HyperdriveMarketState(

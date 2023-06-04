@@ -8,7 +8,7 @@ import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.agents.agent import Agent
-from elfpy.agents.policies import BasePolicy
+from elfpy.agents.policies import NoActionPolicy
 from elfpy.markets.hyperdrive.checkpoint import Checkpoint
 from elfpy.math import FixedPoint
 from elfpy.time.time import StretchedTime
@@ -41,8 +41,8 @@ class TestCloseShort(unittest.TestCase):
         """Set up agent, pricing model, & market for the subsequent tests.
         This function is run before each test method.
         """
-        self.alice = Agent(wallet_address=0, policy=BasePolicy(budget=self.contribution))
-        self.bob = Agent(wallet_address=1, policy=BasePolicy(budget=self.contribution))
+        self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
         block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.HyperdriveMarketState(
@@ -163,7 +163,7 @@ class TestCloseShort(unittest.TestCase):
     def test_close_short_failure_zero_amount(self):
         """Attempt to close shorts using zero bond_amount. This should fail."""
         bond_amount = FixedPoint("10.0")
-        self.bob.budget = bond_amount
+        self.bob.policy.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.BASE)
         _ = self.hyperdrive.open_short(
             agent_wallet=self.bob.wallet,
@@ -180,7 +180,7 @@ class TestCloseShort(unittest.TestCase):
     def test_close_short_failure_invalid_amount(self):
         """Attempt to close too many shorts. This should fail."""
         bond_amount = FixedPoint("10.0")
-        self.bob.budget = bond_amount
+        self.bob.policy.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.BASE)
         _ = self.hyperdrive.open_short(
             agent_wallet=self.bob.wallet,
@@ -197,7 +197,7 @@ class TestCloseShort(unittest.TestCase):
     def test_close_short_failure_invalid_timestamp(self):
         """Attempt to use a timestamp greater than the maximum range. This should fail."""
         base_amount = FixedPoint("10.0")
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_deltas, _ = self.hyperdrive.open_short(
             agent_wallet=self.bob.wallet,
@@ -214,7 +214,7 @@ class TestCloseShort(unittest.TestCase):
     def test_close_short_immediately_with_regular_amount(self):
         """Open a position, close it immediately, with regular amount"""
         trade_amount = FixedPoint("10.0")  # this will be reflected in BASE in the wallet and PTs in the short
-        self.bob.budget = trade_amount
+        self.bob.policy.budget = trade_amount
         self.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
         _, agent_deltas_open = self.hyperdrive.open_short(
             agent_wallet=self.bob.wallet,
@@ -240,7 +240,7 @@ class TestCloseShort(unittest.TestCase):
     def test_close_short_immediately_with_small_amount(self):
         """Open a small position, close it immediately, with small amount"""
         trade_amount = FixedPoint("0.01")  # this will be reflected in BASE in the wallet and PTs in the short
-        self.bob.budget = trade_amount
+        self.bob.policy.budget = trade_amount
         self.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
         _, agent_deltas_open = self.hyperdrive.open_short(
             agent_wallet=self.bob.wallet,
@@ -267,7 +267,7 @@ class TestCloseShort(unittest.TestCase):
         """Open a position, advance time all the way through the term, close it, receiving zero variable interest"""
         # Bob opens a short
         trade_amount = FixedPoint("10.0")  # this will be reflected in BASE in the wallet and PTs in the short
-        self.bob.budget = trade_amount
+        self.bob.policy.budget = trade_amount
         self.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
         _ = self.hyperdrive.market_state.copy()
         _, agent_deltas_open = self.hyperdrive.open_short(
@@ -303,7 +303,7 @@ class TestCloseShort(unittest.TestCase):
         """Open a position, advance time all the way through the term, close it, receiving negative variable interest"""
         # Bob opens a short
         trade_amount = FixedPoint("10.0")  # this will be reflected in BASE in the wallet and PTs in the short
-        self.bob.budget = trade_amount
+        self.bob.policy.budget = trade_amount
         self.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
         _, agent_deltas_open = self.hyperdrive.open_short(
             agent_wallet=self.bob.wallet,
@@ -338,7 +338,7 @@ class TestCloseShort(unittest.TestCase):
         """Open a position, advance time halfway through the term, close it, receiving negative variable interest"""
         # Bob opens a short
         trade_amount = FixedPoint("10.0")  # how much base the agent is using to open a short
-        self.bob.budget = trade_amount
+        self.bob.policy.budget = trade_amount
         self.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
         _, agent_deltas_open = self.hyperdrive.open_short(
             agent_wallet=self.bob.wallet,

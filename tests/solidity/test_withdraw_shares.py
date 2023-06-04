@@ -6,7 +6,7 @@ import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 
 from elfpy.agents.agent import Agent
-from elfpy.agents.policies import BasePolicy
+from elfpy.agents.policies import NoActionPolicy
 from elfpy.math import FixedPoint, FixedPointMath
 
 # pylint: disable=too-many-arguments
@@ -33,9 +33,9 @@ class TestWithdrawShares(unittest.TestCase):
         """Set up agent, pricing model, & market for the subsequent tests.
         This function is run before each test method.
         """
-        self.alice = Agent(wallet_address=0, policy=BasePolicy(budget=self.budget))
-        self.bob = Agent(wallet_address=1, policy=BasePolicy(budget=self.budget))
-        self.celine = Agent(wallet_address=2, policy=BasePolicy(budget=self.budget))
+        self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.budget))
+        self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.budget))
+        self.celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=self.budget))
         self.block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.HyperdriveMarketState()

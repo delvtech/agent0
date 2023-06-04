@@ -7,7 +7,7 @@ import elfpy.types as types
 import elfpy.time as time
 
 from elfpy.agents.agent import Agent
-from elfpy.agents.policies import BasePolicy
+from elfpy.agents.policies import NoActionPolicy
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-arguments
@@ -31,9 +31,9 @@ class TestOpenLong(unittest.TestCase):
         """Set up agent, pricing model, & market for the subsequent tests.
         This function is run before each test method.
         """
-        self.alice = Agent(wallet_address=0, policy=BasePolicy(budget=self.contribution))
-        self.bob = Agent(wallet_address=1, policy=BasePolicy(budget=self.contribution))
-        self.celine = Agent(wallet_address=2, policy=BasePolicy(budget=self.contribution))
+        self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
+        self.celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=self.contribution))
         self.block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.HyperdriveMarketState()
@@ -151,7 +151,7 @@ class TestOpenLong(unittest.TestCase):
     def test_open_long(self):
         """Open a long & check that accounting is done correctly"""
         base_amount = FixedPoint("10.0")
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
@@ -169,7 +169,7 @@ class TestOpenLong(unittest.TestCase):
     def test_open_long_with_small_amount(self):
         """Open a tiny long & check that accounting is done correctly"""
         base_amount = FixedPoint("0.01")
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr

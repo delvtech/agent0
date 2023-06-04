@@ -26,7 +26,7 @@ import elfpy.utils.sim_utils as sim_utils
 import elfpy.types as types
 
 from elfpy.agents.agent import Agent
-from elfpy.agents.policies import BasePolicy
+from elfpy.agents.policies.base import BasePolicy
 from elfpy.agents.wallet import Wallet
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config

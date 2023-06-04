@@ -4,10 +4,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from elfpy import WEI
-from elfpy.agents.policies import BasePolicy
 from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
 from elfpy.math import FixedPoint
 from elfpy.types import MarketType, Trade
+
+from .base import BasePolicy
 
 if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator

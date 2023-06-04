@@ -8,7 +8,7 @@ import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 
 from elfpy.agents.agent import Agent
-from elfpy.agents.policies import BasePolicy
+from elfpy.agents.policies import NoActionPolicy
 from elfpy import types
 from elfpy.errors import errors
 from elfpy.math import FixedPoint
@@ -32,9 +32,9 @@ class TestCheckpoint(unittest.TestCase):
     block_time: time.BlockTime
 
     def setUp(self):
-        self.alice = Agent(wallet_address=0, policy=BasePolicy(budget=self.contribution))
-        self.bob = Agent(wallet_address=1, policy=BasePolicy(budget=self.contribution))
-        self.celine = Agent(wallet_address=1, policy=BasePolicy(budget=self.contribution))
+        self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
+        self.celine = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
         self.block_time = time.BlockTime()
 
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
@@ -71,10 +71,10 @@ class TestCheckpoint(unittest.TestCase):
         # open a long and a short
         long_amount = FixedPoint("10_000_000.0")
         short_amount = FixedPoint("50_000.0")
-        self.bob.budget = long_amount
+        self.bob.policy.budget = long_amount
         self.bob.wallet.balance = types.Quantity(amount=long_amount, unit=types.TokenType.BASE)
         _, long_wallet_deltas = self.hyperdrive.open_long(self.bob.wallet, long_amount)
-        self.celine.budget = short_amount
+        self.celine.policy.budget = short_amount
         self.celine.wallet.balance = types.Quantity(amount=short_amount, unit=types.TokenType.PT)
         self.hyperdrive.open_short(self.celine.wallet, short_amount)
         # Update the share price. Since the long and short were opened in this checkpoint, the

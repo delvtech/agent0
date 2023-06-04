@@ -6,7 +6,7 @@ import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 
 from elfpy.agents.agent import Agent
-from elfpy.agents.policies import BasePolicy
+from elfpy.agents.policies import NoActionPolicy
 from elfpy.math import FixedPoint
 from elfpy.time.time import BlockTime
 
@@ -43,9 +43,9 @@ class TestInitialize(unittest.TestCase):
         self.contribution = contribution
         self.target_apr = target_apr
         self.position_duration = FixedPoint(position_duration)
-        self.alice = Agent(wallet_address=0, policy=BasePolicy(budget=self.contribution))
-        self.bob = Agent(wallet_address=1, policy=BasePolicy(budget=self.contribution))
-        self.celine = Agent(wallet_address=2, policy=BasePolicy(budget=self.contribution))
+        self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
+        self.celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=self.contribution))
         self.block_time = BlockTime()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.HyperdriveMarketState()

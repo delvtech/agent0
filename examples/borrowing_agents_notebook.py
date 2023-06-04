@@ -65,7 +65,7 @@ import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 
 from elfpy.agents.agent import Agent
-from elfpy.agents.policies import BasePolicy
+from elfpy.agents.policies.base import BasePolicy
 from elfpy.agents.wallet import Wallet
 from elfpy.markets.borrow.borrow_market import (
     Market,

@@ -7,7 +7,7 @@ import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.agents.agent import Agent
-from elfpy.agents.policies import BasePolicy
+from elfpy.agents.policies import NoActionPolicy
 from elfpy.math import FixedPoint
 
 
@@ -32,9 +32,9 @@ class TestOpenShort(unittest.TestCase):
     block_time: time.BlockTime
 
     def setUp(self):
-        self.alice = Agent(wallet_address=0, policy=BasePolicy(budget=self.contribution))
-        self.bob = Agent(wallet_address=1, policy=BasePolicy(budget=self.contribution))
-        self.celine = Agent(wallet_address=2, policy=BasePolicy(budget=self.contribution))
+        self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
+        self.celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=self.contribution))
         self.block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.HyperdriveMarketState()
@@ -163,7 +163,7 @@ class TestOpenShort(unittest.TestCase):
     def test_open_short(self):
         """Open a short & check that accounting is done correctly"""
         bond_amount = FixedPoint("10.0")
-        self.bob.budget = bond_amount
+        self.bob.policy.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
@@ -182,7 +182,7 @@ class TestOpenShort(unittest.TestCase):
     def test_open_short_with_small_amount(self):
         """Open a tiny short & check that accounting is done correctly"""
         bond_amount = FixedPoint("0.01")
-        self.bob.budget = bond_amount
+        self.bob.policy.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr

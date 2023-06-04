@@ -161,11 +161,13 @@ def get_example_agents(
     """Instantiate a set of custom agents"""
     agents = []
     for address in range(existing_agents, existing_agents + new_agents):
-        agent = RandomAgent(
+        agent = Agent(
             wallet_address=address,
-            budget=FixedPoint(budget),
-            rng=rng,
-            trade_chance=FixedPoint(trade_chance),
+            policy=RandomAgent(
+                budget=FixedPoint(budget),
+                rng=rng,
+                trade_chance=FixedPoint(trade_chance),
+            ),
         )
         if direction is not None:
             if direction == "short":

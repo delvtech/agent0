@@ -20,7 +20,7 @@ from elfpy import WEI, PRECISION_THRESHOLD
 from elfpy.simulators.config import Config
 from elfpy.agents.agent import Agent
 from elfpy.agents.wallet import Wallet
-from elfpy.agents.policies import BasePolicy
+from elfpy.agents.policies.base import BasePolicy
 from elfpy.utils import sim_utils
 from elfpy.math import FixedPoint
 

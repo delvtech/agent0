@@ -8,17 +8,17 @@ from os import path, walk
 import numpy as np
 
 import elfpy.agents.policies as policies
-import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.get_wallet_state import get_wallet_state
+from elfpy.agents.policies.base import BasePolicy
 from elfpy.agents.policies import (
     InitializeLiquidityAgent,
     LpAndWithdrawAgent,
-    BasePolicy,
+    NoActionPolicy,
     RandomAgent,
     SingleLongAgent,
     SingleLpAgent,
@@ -29,17 +29,20 @@ from elfpy.agents.policies import (
 from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarketState
 from elfpy.math import FixedPoint
+from elfpy.agents.wallet import Wallet, Long
+
+# pylint: disable=too-few-public-methods
 
 
-class TestPolicy(Agent):
+class TestPolicy(BasePolicy):
     """This class was made for testing purposes. It does not implement the required self.action() method"""
 
-    def __init__(self, wallet_address: int, budget: FixedPoint = FixedPoint("1000.0")):
+    def __init__(self, budget: FixedPoint = FixedPoint("1000.0")):
         """call basic policy init then add custom stuff"""
-        super().__init__(wallet_address, budget)
+        super().__init__(budget, rng=None)
         # TODO: mock up a wallet that has done trades
 
-    def action(self, market):
+    def action(self, market, wallet):
         pass
 
     __test__ = False  # pytest: don't test this class
@@ -134,15 +137,17 @@ class TestAgent(unittest.TestCase):
             elif policy_name == "no_action":
                 example_agent = Agent(
                     wallet_address=agent_id,
-                    policy=BasePolicy(
+                    policy=NoActionPolicy(
                         budget=FixedPoint("1_000.0"),
                     ),
                 )
+            elif policy_name == "base":
+                continue
             else:
                 raise ValueError(f"agent type {policy_name} not supported")
             self.agent_list.append(example_agent)
         # One more test agent that uses a test policy
-        self.test_agent = TestPolicy(wallet_address=len(agent_policies))
+        self.test_agent = Agent(wallet_address=len(agent_policies), policy=TestPolicy())
         # Get a mock Market
         self.market = HyperdriveMarket(
             pricing_model=hyperdrive_pm.HyperdrivePricingModel(),
@@ -163,7 +168,7 @@ class TestAgent(unittest.TestCase):
 
     def test_wallet_copy(self):
         """Test the wallet ability to deep copy itself"""
-        example_wallet = wallet.Wallet(
+        example_wallet = Wallet(
             address=0, balance=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.BASE)
         )
         wallet_copy = example_wallet.copy()
@@ -174,13 +179,13 @@ class TestAgent(unittest.TestCase):
 
     def test_wallet_update(self):
         """Test that the wallet updates correctly & does not use references to the deltas argument"""
-        example_wallet = wallet.Wallet(
+        example_wallet = Wallet(
             address=0, balance=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.BASE)
         )
-        example_deltas = wallet.Wallet(
+        example_deltas = Wallet(
             address=0,
             balance=types.Quantity(amount=FixedPoint("-10.0"), unit=types.TokenType.BASE),
-            longs={FixedPoint(0): wallet.Long(FixedPoint("15.0"))},
+            longs={FixedPoint(0): Long(FixedPoint("15.0"))},
             fees_paid=FixedPoint("0.001"),
         )
         example_wallet.update(example_deltas)
@@ -195,10 +200,10 @@ class TestAgent(unittest.TestCase):
         assert example_wallet.balance.amount == FixedPoint(
             "90.0"
         ), f"{example_wallet.balance.amount=} should be 100-10=90."
-        new_example_deltas = wallet.Wallet(
+        new_example_deltas = Wallet(
             address=0,
             balance=types.Quantity(amount=FixedPoint("-5.0"), unit=types.TokenType.BASE),
-            longs={FixedPoint(0): wallet.Long(FixedPoint("8.0"))},
+            longs={FixedPoint(0): Long(FixedPoint("8.0"))},
             fees_paid=FixedPoint("0.0008"),
         )
         example_wallet.update(new_example_deltas)
@@ -216,24 +221,24 @@ class TestAgent(unittest.TestCase):
     def test_no_action_failure(self):
         """Tests for Agent instantiation when no action function was defined"""
 
-        class TestErrorPolicy(Agent):
+        class TestErrorPolicy(BasePolicy):
             """This class was made for testing purposes. It does not implement the required self.action() method"""
 
             # Purposefully incorrectly implemented
             ### pylint: disable=abstract-method
 
-            def __init__(self, wallet_address: int, budget: FixedPoint = FixedPoint(1000)):
+            def __init__(self, budget: FixedPoint = FixedPoint(1000)):
                 """call basic policy init then add custom stuff"""
-                super().__init__(wallet_address, budget)
+                super().__init__(budget, rng=None)
 
             # self.action() method is intentionally not implemented, so we can test error behavior
 
             __test__ = False  # pytest: don't test this class
 
         # Instantiate a wrongly implemented agent policy
-        example_agent = TestErrorPolicy(wallet_address=1)
+        example_agent = Agent(wallet_address=1, policy=TestErrorPolicy())
         with self.assertRaises(NotImplementedError):
-            example_agent.action(self.market)
+            example_agent.policy.action(self.market, example_agent.wallet)
 
     def test_policy_action(self):
         """Test for calling the action() method on all implemented policies
@@ -244,7 +249,7 @@ class TestAgent(unittest.TestCase):
         budget_list = [FixedPoint("10.0"), FixedPoint("100.0"), FixedPoint("1_000.0")]
         for agent_budget in budget_list:
             for example_agent in self.agent_list:
-                example_agent.budget = agent_budget
+                example_agent.policy.budget = agent_budget
                 if hasattr(example_agent, "amount_to_trade"):
                     setattr(example_agent, "amount_to_trade", agent_budget)
                 example_agent.wallet.balance = types.Quantity(
@@ -255,7 +260,7 @@ class TestAgent(unittest.TestCase):
                 for market_action in actions_list:
                     # Ensure trade size is smaller than wallet size
                     self.assertGreaterEqual(
-                        example_agent.budget,
+                        example_agent.policy.budget,
                         market_action.trade.trade_amount,
-                        msg=f"{market_action.trade.trade_amount=} should be <= {example_agent.budget=}",
+                        msg=f"{market_action.trade.trade_amount=} should be <= {example_agent.policy.budget=}",
                     )

@@ -7,6 +7,7 @@ import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.simulators as simulators
 import elfpy.time as time
 
+from elfpy.agents.agent import Agent
 from elfpy.agents.policies import InitializeLiquidityAgent
 from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
 from elfpy.math import FixedPoint
@@ -20,7 +21,6 @@ from elfpy.simulators.simulation_state import (
 
 if TYPE_CHECKING:
     import elfpy.agents.wallet as wallet
-    from elfpy.agents.agent import Agent
 
 
 def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulators.Simulator:
