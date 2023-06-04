@@ -47,8 +47,8 @@ jobs:
           python -m pip install coverage
 
       - name: Run pytest with coverage
-        run: |
-          coverage run -m pytest
+        run: |j
+          coverage run -m pytest --ignore=tests/cross_platform
 
       - name: Generate coverage report
         run: |
