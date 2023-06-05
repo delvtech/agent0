@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
     from elfpy.wallet.wallet import Wallet
-    from elfpy.markets.base.base_market import BaseMarket
+    from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 
 # pylint: disable=too-few-public-methods
 
@@ -36,7 +36,7 @@ class LpAndWithdrawAgent(BasePolicy):
         self.time_to_withdraw = time_to_withdraw
         super().__init__(budget, rng)
 
-    def action(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
+    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """
         implement user strategy
         LP if you can, but only do it once

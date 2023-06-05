@@ -59,14 +59,12 @@ import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 import pandas as pd
 
-import elfpy.wallet.wallet as wallet
 import elfpy.time as elf_time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
-from elfpy.wallet.wallet import Wallet
 from elfpy.markets.borrow.borrow_market import (
     Market,
     BorrowMarketAction,
@@ -76,6 +74,7 @@ from elfpy.markets.borrow.borrow_pricing_model import BorrowPricingModel
 from elfpy.markets.borrow.borrow_market_state import BorrowMarketState
 from elfpy.math.fixed_point import FixedPoint
 from elfpy.simulators.config import Config
+from elfpy.wallet.wallet import Borrow, Wallet
 
 # pylint: disable=too-few-public-methods
 
@@ -227,7 +226,7 @@ class BorrowSimState:
 
     day: list[int] = field(default_factory=list)
     block: list[int] = field(default_factory=list)
-    borrows: list[dict[FixedPoint, wallet.Borrow]] = field(default_factory=list)
+    borrows: list[dict[FixedPoint, Borrow]] = field(default_factory=list)
 
     def add_dict_entries(self, dictionary: dict) -> None:
         """Add dict entries to the sim state"""

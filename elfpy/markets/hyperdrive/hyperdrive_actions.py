@@ -346,7 +346,7 @@ def calc_open_short(
 
     Returns
     -------
-    tuple[MarketDeltas, AgentDeltas]
+    tuple[MarketDeltas, WalletDeltas]
         Returns the deltas to update the market and the agent's wallet after opening a short.
     """
     # get the checkpointed time remaining
@@ -469,7 +469,7 @@ def calc_close_short(
 
     Returns
     -------
-    tuple[MarketDeltas, AgentDeltas]
+    tuple[MarketDeltas, WalletDeltas]
         Returns the deltas to update the market and the agent's wallet after opening a short.
     """
     if bond_amount > market_state.bond_reserves - market_state.bond_buffer:
@@ -617,7 +617,7 @@ def calc_open_long(
 
     Returns
     -------
-    tuple[MarketDeltas, AgentDeltas]
+    tuple[MarketDeltas, WalletDeltas]
         The deltas that should be applied to the market and agent
     """
     if base_amount > market_state.bond_reserves * spot_price:
@@ -705,7 +705,7 @@ def calc_close_long(
 
     Returns
     -------
-    tuple[MarketDeltas, AgentDeltas]
+    tuple[MarketDeltas, WalletDeltas]
         Returns the deltas to update the market and the agent's wallet after opening a short.
     """
     # Compute the time remaining given the mint time.
@@ -976,7 +976,7 @@ def calc_add_liquidity(
 
     Returns
     -------
-    tuple[MarketDeltas, AgentDeltas]
+    tuple[MarketDeltas, WalletDeltas]
         Returns the deltas to update the market and the agent's wallet after providing liquidity.
     """
     # get_rate assumes that there is some amount of reserves,
@@ -1036,7 +1036,7 @@ def calc_remove_liquidity(
 
     Returns
     -------
-    tuple[MarketDeltas, AgentDeltas]
+    tuple[MarketDeltas, WalletDeltas]
         Returns the deltas to update the market and the agent's wallet after removing liquidity.
     """
     # sanity check inputs

@@ -16,7 +16,6 @@ import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulati
 import elfpy.types as types
 
 from elfpy.agents.agent import Agent
-from elfpy.wallet.wallet import Wallet
 from elfpy.agents.policies import SingleLongAgent
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
@@ -27,6 +26,7 @@ from elfpy.simulators.simulation_state import (
     RunSimVariables,
     TradeSimVariables,
 )
+from elfpy.wallet.wallet import Wallet
 
 
 class TestSimulator(unittest.TestCase):

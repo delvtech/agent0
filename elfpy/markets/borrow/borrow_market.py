@@ -5,12 +5,12 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from elfpy.wallet.wallet_deltas import WalletDeltas
-from elfpy.wallet.wallet import Borrow
 from elfpy.markets.borrow.borrow_pricing_model import BorrowPricingModel
 from elfpy.markets.borrow.borrow_market_state import BorrowMarketState
 from elfpy.markets.borrow.borrow_market_deltas import BorrowMarketDeltas
-import elfpy.types as types
+from elfpy.types import freezable, Quantity, TokenType
+from elfpy.wallet.wallet_deltas import WalletDeltas
+from elfpy.wallet.wallet import Borrow
 
 from elfpy.markets.base.base_market import BaseMarket, BaseMarketAction
 from elfpy.math import FixedPoint
@@ -26,7 +26,7 @@ class MarketActionType(Enum):
     CLOSE_BORROW = "close_borrow"
 
 
-@types.freezable(frozen=False, no_new_attribs=True)
+@freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class BorrowMarketAction(BaseMarketAction):
     r"""Market action specification"""
@@ -34,7 +34,7 @@ class BorrowMarketAction(BaseMarketAction):
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
     # amount to supply for the action
-    collateral: types.Quantity
+    collateral: Quantity
     spot_price: FixedPoint | None = None
 
 
@@ -80,10 +80,10 @@ class Market(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPricingMode
         """Construct a borrow market."""
         market_deltas = BorrowMarketDeltas()
         borrow_summary = Borrow(
-            borrow_token=types.TokenType.BASE,
+            borrow_token=TokenType.BASE,
             borrow_amount=FixedPoint(0),
             borrow_shares=FixedPoint(0),
-            collateral_token=types.TokenType.BASE,
+            collateral_token=TokenType.BASE,
             collateral_amount=FixedPoint(0),
             start_time=FixedPoint(0),
         )
@@ -149,7 +149,7 @@ class Market(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPricingMode
 
     def calc_open_borrow(
         self,
-        collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
+        collateral: Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
     ) -> tuple[BorrowMarketDeltas, WalletDeltas]:
         """
@@ -166,13 +166,13 @@ class Market(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPricingMode
         # collateral increases because it's being deposited
         market_deltas = BorrowMarketDeltas(
             d_borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
-            d_collateral=types.Quantity(
+            d_collateral=Quantity(
                 unit=collateral.unit,
                 amount=collateral.amount,
             ),
         )
         borrow_summary = Borrow(
-            borrow_token=types.TokenType.BASE,
+            borrow_token=TokenType.BASE,
             borrow_amount=borrow_amount_in_base,
             borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
             collateral_token=collateral.unit,
@@ -188,7 +188,7 @@ class Market(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPricingMode
     def open_borrow(
         self,
         agent_wallet: Wallet,
-        collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
+        collateral: Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
     ) -> tuple[BorrowMarketDeltas, WalletDeltas]:
         """Execute a borrow as requested by the agent and return the market and agent deltas.
@@ -201,7 +201,7 @@ class Market(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPricingMode
 
     def calc_close_borrow(
         self,
-        collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
+        collateral: Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
     ) -> tuple[BorrowMarketDeltas, WalletDeltas]:
         """
@@ -221,7 +221,7 @@ class Market(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPricingMode
             d_borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price, d_collateral=-collateral
         )
         borrow_summary = Borrow(
-            borrow_token=types.TokenType.BASE,
+            borrow_token=TokenType.BASE,
             borrow_amount=-borrow_amount_in_base,
             borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price,
             collateral_token=collateral.unit,
@@ -237,7 +237,7 @@ class Market(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPricingMode
     def close_borrow(
         self,
         agent_wallet: Wallet,
-        collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
+        collateral: Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
     ) -> tuple[BorrowMarketDeltas, WalletDeltas]:
         """Close a borrow as requested by the agent and return the market and agent deltas.

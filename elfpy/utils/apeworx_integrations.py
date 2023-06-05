@@ -1,5 +1,4 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx."""
-
 from __future__ import annotations
 
 import logging
@@ -18,13 +17,13 @@ from ape.managers.project import ProjectManager
 from ape.types import AddressType, ContractType
 
 import elfpy
-import elfpy.wallet.wallet as elf_wallet
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 from elfpy import types
 from elfpy.math import FixedPoint
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
+from elfpy.wallet.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:
     from ape.api.accounts import AccountAPI
@@ -176,7 +175,7 @@ def get_wallet_from_onchain_trade_info(
     info: OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
     base_contract: ContractInstance,
-) -> elf_wallet.Wallet:
+) -> Wallet:
     r"""Construct wallet balances from on-chain trade info.
 
     Arguments
@@ -198,7 +197,7 @@ def get_wallet_from_onchain_trade_info(
         Wallet with Short, Long, and LP positions.
     """
     # TODO: remove restriction forcing Wallet index to be an int (issue #415)
-    wallet = elf_wallet.Wallet(
+    wallet = Wallet(
         address=index,
         balance=types.Quantity(amount=FixedPoint(base_contract.balanceOf(address_)), unit=types.TokenType.BASE),
     )
@@ -242,7 +241,7 @@ def get_wallet_from_onchain_trade_info(
                 logging.debug("calculated weighted average open share price of %s", open_share_price)
                 wallet.shorts.update(
                     {
-                        mint_time: elf_wallet.Short(
+                        mint_time: Short(
                             balance=FixedPoint(scaled_value=balance),
                             open_share_price=open_share_price,
                         )
@@ -250,11 +249,11 @@ def get_wallet_from_onchain_trade_info(
                 )
                 logging.debug(
                     "storing in wallet as %s",
-                    {mint_time: elf_wallet.Short(balance=balance, open_share_price=open_share_price)},
+                    {mint_time: Short(balance=balance, open_share_price=open_share_price)},
                 )
             elif asset_type == "LONG":
-                wallet.longs.update({mint_time: elf_wallet.Long(balance=FixedPoint(scaled_value=balance))})
-                logging.debug("storing in wallet as %s", {mint_time: elf_wallet.Long(balance=balance)})
+                wallet.longs.update({mint_time: Long(balance=FixedPoint(scaled_value=balance))})
+                logging.debug("storing in wallet as %s", {mint_time: Long(balance=balance)})
             elif asset_type == "LP":
                 wallet.lp_tokens += balance
     return wallet
@@ -394,36 +393,36 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
         (maturity_timestamp - int(elfpy.SECONDS_IN_YEAR) * pool_info.term_length) - pool_info.start_time
     ) / int(elfpy.SECONDS_IN_YEAR)
     if trade_type == "addLiquidity":  # sourcery skip: lift-return-into-if, switch
-        agent_deltas = elf_wallet.Wallet(
+        agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=-types.Quantity(amount=trade["_contribution"], unit=types.TokenType.BASE),
             lp_tokens=trade["value"],  # trade output
         )
     elif trade_type == "removeLiquidity":
-        agent_deltas = elf_wallet.Wallet(
+        agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
             lp_tokens=-trade["_shares"],  # negative, decreasing
             withdraw_shares=trade["_shares"],  # positive, increasing
         )
     elif trade_type == "openLong":
-        agent_deltas = elf_wallet.Wallet(
+        agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=types.Quantity(amount=-trade["_baseAmount"], unit=types.TokenType.BASE),  # negative, decreasing
-            longs={pool_info.block_time: elf_wallet.Long(trade["value"])},  # trade output, increasing
+            longs={pool_info.block_time: Long(trade["value"])},  # trade output, increasing
         )
     elif trade_type == "closeLong":
-        agent_deltas = elf_wallet.Wallet(
+        agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
-            longs={mint_time: elf_wallet.Long(-trade["_bondAmount"])},  # negative, decreasing
+            longs={mint_time: Long(-trade["_bondAmount"])},  # negative, decreasing
         )
     elif trade_type == "openShort":
-        agent_deltas = elf_wallet.Wallet(
+        agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=types.Quantity(amount=-dai_in, unit=types.TokenType.BASE),  # negative, decreasing
             shorts={
-                pool_info.block_time: elf_wallet.Short(
+                pool_info.block_time: Short(
                     balance=trade["value"],  # trade output
                     open_share_price=pool_info.market_state.share_price,
                 )
@@ -432,11 +431,11 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
     else:
         if trade_type != "closeShort":
             raise ValueError(f"Unknown trade type: {trade_type}")
-        agent_deltas = elf_wallet.Wallet(
+        agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),
             shorts={
-                mint_time: elf_wallet.Short(
+                mint_time: Short(
                     balance=-trade["_bondAmount"],  # negative, decreasing
                     open_share_price=0,
                 )

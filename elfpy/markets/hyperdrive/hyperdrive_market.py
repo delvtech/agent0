@@ -13,12 +13,12 @@ import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
 
-from elfpy.wallet.wallet_deltas import WalletDeltas
 from elfpy.markets.base.base_market import BaseMarketState, BaseMarket
 from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
 from elfpy.markets.hyperdrive.checkpoint import Checkpoint
 from elfpy.math import FixedPoint
 from elfpy.types import Quantity, TokenType
+from elfpy.wallet.wallet_deltas import WalletDeltas
 
 if TYPE_CHECKING:
     from elfpy.wallet.wallet import Wallet
