@@ -1,15 +1,18 @@
 """Close short market trade tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
-import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
-from elfpy.markets.hyperdrive.checkpoint import Checkpoint
-from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
+from elfpy.markets.hyperdrive import (
+    Checkpoint,
+    HyperdriveMarket,
+    HyperdriveMarketState,
+    HyperdrivePricingModel,
+    YieldspacePricingModel,
+)
 from elfpy.math import FixedPoint
 from elfpy.time.time import StretchedTime
 
@@ -44,7 +47,7 @@ class TestCloseShort(unittest.TestCase):
         self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.contribution))
         self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
         block_time = time.BlockTime()
-        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
+        pricing_model = HyperdrivePricingModel()
         market_state = HyperdriveMarketState(
             curve_fee_multiple=FixedPoint("0.0"),
             flat_fee_multiple=FixedPoint("0.0"),
@@ -91,7 +94,7 @@ class TestCloseShort(unittest.TestCase):
             time_stretch=self.hyperdrive.time_stretch_constant,
             normalizing_constant=FixedPoint("365.0"),
         )
-        model = yieldspace_pm.YieldspacePricingModel()
+        model = YieldspacePricingModel()
         curve_shares = model.calc_shares_in_given_bonds_out(
             market_state_before.share_reserves,
             market_state_before.bond_reserves,

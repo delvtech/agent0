@@ -12,15 +12,14 @@ import elfpy.types as types
 from elfpy.wallet.wallet_deltas import WalletDeltas
 from elfpy.wallet.wallet import Short, Long
 from elfpy.markets.base.base_market import BaseMarketAction
-from elfpy.markets.hyperdrive.checkpoint import Checkpoint
-from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
+from elfpy.markets.hyperdrive import Checkpoint, HyperdriveMarketDeltas
 from elfpy.math import FixedPoint, FixedPointMath
 from elfpy.math.update_weighted_average import update_weighted_average
 from elfpy.time.time import StretchedTime
 
 if TYPE_CHECKING:
     from elfpy.wallet.wallet import Wallet
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from elfpy.markets.hyperdrive import HyperdriveMarketState
 
 
 # TODO: clean up to avoid these
@@ -96,7 +95,7 @@ def calculate_lp_allocation_adjustment(
 
 
 def calculate_short_adjustment(
-    market_state: hyperdrive_market.HyperdriveMarketState,
+    market_state: HyperdriveMarketState,
     position_duration: time.StretchedTime,
     market_time: FixedPoint,
 ) -> FixedPoint:
@@ -104,7 +103,7 @@ def calculate_short_adjustment(
 
     Arguments
     ----------
-    market_state : hyperdrive_market.MarketState
+    market_state : HyperdriveMarketState
         The state of the hyperdrive market.
     position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
@@ -133,7 +132,7 @@ def calculate_short_adjustment(
 
 
 def calculate_long_adjustment(
-    market_state: hyperdrive_market.HyperdriveMarketState,
+    market_state: HyperdriveMarketState,
     position_duration: time.StretchedTime,
     market_time: FixedPoint,
 ) -> FixedPoint:
@@ -141,7 +140,7 @@ def calculate_long_adjustment(
 
     Arguments
     ----------
-    market_state : hyperdrive_market.MarketState
+    market_state : HyperdriveMarketState
         The state of the hyperdrive market.
     position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the longs.
@@ -172,7 +171,7 @@ def calculate_long_adjustment(
 def calc_lp_out_given_tokens_in(
     base_in: FixedPoint,
     rate: FixedPoint,
-    market_state: hyperdrive_market.HyperdriveMarketState,
+    market_state: HyperdriveMarketState,
     market_time: FixedPoint,
     position_duration: time.StretchedTime,
 ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
@@ -191,7 +190,7 @@ def calc_lp_out_given_tokens_in(
         The amount of base provided to exchange for lp tokens.
     rate : FixedPoint
         The fixed rate value of the bonds.
-    market_state : hyperdrive_market.MarketState
+    market_state : HyperdriveMarketState
         Hyperdrive's market state.
     market_time : FixedPoint
         The current time in years.
@@ -260,7 +259,7 @@ def calculate_base_volume(
 
 
 def calc_checkpoint_deltas(
-    market_state: hyperdrive_market.HyperdriveMarketState,
+    market_state: HyperdriveMarketState,
     checkpoint_time: FixedPoint,
     bond_amount: FixedPoint,
     position: Literal["short", "long"],
@@ -269,7 +268,7 @@ def calc_checkpoint_deltas(
 
     Arguments
     ----------
-    market_state : hyperdrive_market.MarketState
+    market_state : HyperdriveMarketState
         Deltas are computed for this market.
     checkpoint_time : FixedPoint
         The checkpoint (mint) time to be used for updating.
@@ -310,7 +309,7 @@ def calc_checkpoint_deltas(
 
 def calc_open_short(
     bond_amount: FixedPoint,
-    market_state: hyperdrive_market.HyperdriveMarketState,
+    market_state: HyperdriveMarketState,
     position_duration: time.StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
@@ -333,7 +332,7 @@ def calc_open_short(
     ---------
     bond_amount : FixedPoint
         The amount of bonds the agent is shorting.
-    market_state : hyperdrive_market.MarketState
+    market_state : HyperdriveMarketState
         Deltas are computed for this market.
     position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
@@ -435,7 +434,7 @@ def calc_open_short(
 
 def calc_close_short(
     bond_amount: FixedPoint,
-    market_state: hyperdrive_market.HyperdriveMarketState,
+    market_state: HyperdriveMarketState,
     position_duration: time.StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
@@ -454,7 +453,7 @@ def calc_close_short(
     ---------
     bond_amount : FixedPoint
         The amount of bonds the agent is shorting.
-    market_state : hyperdrive_market.MarketStateFP
+    market_state : HyperdriveMarketStateFP
         Deltas are computed for this market.
     position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
@@ -587,7 +586,7 @@ def calc_close_short(
 
 def calc_open_long(
     base_amount: FixedPoint,
-    market_state: hyperdrive_market.HyperdriveMarketState,
+    market_state: HyperdriveMarketState,
     position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     latest_checkpoint_time: FixedPoint,
@@ -604,7 +603,7 @@ def calc_open_long(
     ----------
     base_amount : FixedPoint
         Amount in base that the agent wishes to trade.
-    market_state : hyperdrive_market.MarketState
+    market_state : HyperdriveMarketState
         The current values for the market's state variables.
     position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
@@ -674,7 +673,7 @@ def calc_open_long(
 
 def calc_close_long(
     bond_amount: FixedPoint,
-    market_state: hyperdrive_market.HyperdriveMarketState,
+    market_state: HyperdriveMarketState,
     position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
@@ -688,7 +687,7 @@ def calc_close_long(
     ---------
     bond_amount : FixedPoint
         The amount of bonds the agent is shorting.
-    market_state : hyperdrive_market.MarketStateFP
+    market_state : HyperdriveMarketState
         The current values for the market's state variables.
     position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
@@ -951,7 +950,7 @@ def calc_short_proceeds(
 
 def calc_add_liquidity(
     base_in: FixedPoint,
-    market_state: hyperdrive_market.HyperdriveMarketState,
+    market_state: HyperdriveMarketState,
     position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     fixed_apr: FixedPoint,
@@ -963,7 +962,7 @@ def calc_add_liquidity(
     ----------
     base_in : FixedPoint
         The amount of base the agent is providing.
-    market_state : hyperdrive_market.MarketState
+    market_state : HyperdriveMarketState
         The market's current state.
     position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
@@ -1017,7 +1016,7 @@ def calc_add_liquidity(
 
 def calc_remove_liquidity(
     lp_shares: FixedPoint,
-    market_state: hyperdrive_market.HyperdriveMarketState,
+    market_state: HyperdriveMarketState,
     position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
 ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
@@ -1027,7 +1026,7 @@ def calc_remove_liquidity(
     ----------
     lp_shares : FixedPoint
         The amount of lp_shares the agent is redeeming.
-    market_state : hyperdrive_market.MarketState
+    market_state : HyperdriveMarketState
         The market's current state.
     position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
@@ -1075,7 +1074,7 @@ def calc_remove_liquidity(
 
 
 def calc_free_margin(
-    market_state: hyperdrive_market.HyperdriveMarketState,
+    market_state: HyperdriveMarketState,
     freed_capital: FixedPoint,
     max_capital: FixedPoint,
     interest: FixedPoint,
@@ -1084,7 +1083,7 @@ def calc_free_margin(
 
     Arguments
     ----------
-    market_state : hyperdrive_market.MarketState
+    market_state : HyperdriveMarketState
         The market's current state.
     freed_capital : FixedPoint
         The amount of capital to add to the withdraw pool, must not be more than the max capital.

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
+from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.math import FixedPoint
 from elfpy.types import MarketType, Trade
 

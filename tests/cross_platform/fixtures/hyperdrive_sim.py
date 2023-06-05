@@ -1,8 +1,7 @@
 """Fixture for the python implementation of the Hyperdrive market."""
 import pytest
 
-from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
-from elfpy.markets.hyperdrive.hyperdrive_pricing_model import HyperdrivePricingModel
+from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 from elfpy.time.time import BlockTime, StretchedTime
 

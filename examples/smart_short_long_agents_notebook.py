@@ -18,7 +18,6 @@ import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 import matplotlib.ticker as ticker
 
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
 import elfpy.utils.sim_utils as sim_utils
@@ -27,7 +26,7 @@ import elfpy.types as types
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
 from elfpy.wallet.wallet import Wallet
-from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
+from elfpy.markets.hyperdrive import hyperdrive_actions, HyperdriveMarket
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.agents.policies import LongLouie, ShortSally

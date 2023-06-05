@@ -2,13 +2,11 @@
 
 import unittest
 
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
-from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
+from elfpy.markets.hyperdrive import hyperdrive_actions, HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 
 
@@ -31,7 +29,7 @@ class TestAddLiquidity(unittest.TestCase):
         self.celine = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
         self.block_time = time.BlockTime()
 
-        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
+        pricing_model = HyperdrivePricingModel()
         market_state = HyperdriveMarketState()
 
         self.hyperdrive = HyperdriveMarket(

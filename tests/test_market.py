@@ -5,12 +5,15 @@ import unittest
 from elfpy.markets.borrow.borrow_pricing_model import BorrowPricingModel
 from elfpy.markets.borrow.borrow_market_state import BorrowMarketState
 
-import elfpy.markets.hyperdrive.checkpoint
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
-import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
 import elfpy.time as time
 
-from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
+from elfpy.markets.hyperdrive import (
+    Checkpoint,
+    HyperdriveMarket,
+    HyperdriveMarketState,
+    HyperdrivePricingModel,
+    YieldspacePricingModel,
+)
 from elfpy.markets.borrow.borrow_market import Market
 from elfpy.math import FixedPoint
 
@@ -36,7 +39,7 @@ class MarketTest(unittest.TestCase):
             time_stretch=FixedPoint("1.0"),
             normalizing_constant=FixedPoint("36.0"),
         )
-        for pricing_model in [yieldspace_pm.YieldspacePricingModel(), hyperdrive_pm.HyperdrivePricingModel()]:
+        for pricing_model in [YieldspacePricingModel(), HyperdrivePricingModel()]:
             _ = HyperdriveMarket(
                 pricing_model=pricing_model,
                 market_state=HyperdriveMarketState(),
@@ -101,7 +104,7 @@ class MarketTest(unittest.TestCase):
                 ),
                 "init_share_price": FixedPoint("1.0"),  # original share price pool started; u = 1
                 "share_price": FixedPoint("1.0"),  # share price of the LP in the yield source; c = 1
-                "pricing_model": hyperdrive_pm.HyperdrivePricingModel(),
+                "pricing_model": HyperdrivePricingModel(),
                 "expected_share_reserves": FixedPoint("5_000_000.0"),  # target_liquidity / share_price
                 "expected_bond_reserves": FixedPoint("1_823_834.7868545868"),
             },
@@ -118,7 +121,7 @@ class MarketTest(unittest.TestCase):
                 ),
                 "init_share_price": FixedPoint("1.0"),  # original share price pool started; u = 1
                 "share_price": FixedPoint("1.0"),  # share price of the LP in the yield source; c = 1
-                "pricing_model": yieldspace_pm.YieldspacePricingModel(),
+                "pricing_model": YieldspacePricingModel(),
                 "expected_share_reserves": FixedPoint("5_000_000.0"),  # target_liquidity / share_price
                 "expected_bond_reserves": FixedPoint("1_841_446.767658661"),
             },
@@ -135,7 +138,7 @@ class MarketTest(unittest.TestCase):
                 ),
                 "init_share_price": FixedPoint("1.0"),  # original share price pool started; u = 1
                 "share_price": FixedPoint("1.0"),  # share price of the LP in the yield source; c = 1
-                "pricing_model": hyperdrive_pm.HyperdrivePricingModel(),
+                "pricing_model": HyperdrivePricingModel(),
                 "expected_share_reserves": FixedPoint("5_000_000.0"),
                 "expected_bond_reserves": FixedPoint("1_806_633.2221533637"),
             },
@@ -152,7 +155,7 @@ class MarketTest(unittest.TestCase):
                 ),
                 "init_share_price": FixedPoint("2.0"),  # original share price when pool started
                 "share_price": FixedPoint("2.0"),  # share price of the LP in the yield source
-                "pricing_model": hyperdrive_pm.HyperdrivePricingModel(),
+                "pricing_model": HyperdrivePricingModel(),
                 "expected_share_reserves": FixedPoint("5_000_000.0"),
                 "expected_bond_reserves": FixedPoint("1_591_223.795848793"),
             },
@@ -169,7 +172,7 @@ class MarketTest(unittest.TestCase):
                 ),
                 "init_share_price": FixedPoint("1.3"),  # original share price when pool started
                 "share_price": FixedPoint("1.3"),  # share price of the LP in the yield source
-                "pricing_model": hyperdrive_pm.HyperdrivePricingModel(),
+                "pricing_model": HyperdrivePricingModel(),
                 "expected_share_reserves": FixedPoint("7_692_307.692307692"),
                 "expected_bond_reserves": FixedPoint("6_486_058.016848019"),
             },
@@ -186,7 +189,7 @@ class MarketTest(unittest.TestCase):
                 ),
                 "init_share_price": FixedPoint("2.0"),  # original share price when pool started
                 "share_price": FixedPoint("2.0"),  # share price of the LP in the yield source
-                "pricing_model": yieldspace_pm.YieldspacePricingModel(),
+                "pricing_model": YieldspacePricingModel(),
                 "expected_share_reserves": FixedPoint("5_000_000.0"),
                 "expected_bond_reserves": FixedPoint("1_591_223.795848793"),
             },
@@ -315,30 +318,22 @@ class MarketTest(unittest.TestCase):
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
             market_state = HyperdriveMarketState(
-                checkpoints={
-                    FixedPoint(0): elfpy.markets.hyperdrive.checkpoint.Checkpoint(share_price=FixedPoint(-1.0))
-                },
+                checkpoints={FixedPoint(0): Checkpoint(share_price=FixedPoint(-1.0))},
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
             market_state = HyperdriveMarketState(
-                checkpoints={
-                    FixedPoint(0): elfpy.markets.hyperdrive.checkpoint.Checkpoint(long_share_price=FixedPoint(-1.0))
-                },
+                checkpoints={FixedPoint(0): Checkpoint(long_share_price=FixedPoint(-1.0))},
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
             market_state = HyperdriveMarketState(
-                checkpoints={
-                    FixedPoint(0): elfpy.markets.hyperdrive.checkpoint.Checkpoint(long_base_volume=FixedPoint(-1.0))
-                },
+                checkpoints={FixedPoint(0): Checkpoint(long_base_volume=FixedPoint(-1.0))},
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
             market_state = HyperdriveMarketState(
-                checkpoints={
-                    FixedPoint(0): elfpy.markets.hyperdrive.checkpoint.Checkpoint(short_base_volume=FixedPoint(-1.0))
-                },
+                checkpoints={FixedPoint(0): Checkpoint(short_base_volume=FixedPoint(-1.0))},
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):

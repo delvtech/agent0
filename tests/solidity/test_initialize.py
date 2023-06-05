@@ -1,12 +1,11 @@
 """Market initialization tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
-from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
+from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 from elfpy.time.time import BlockTime
 
@@ -28,7 +27,7 @@ class TestInitialize(unittest.TestCase):
     celine: Agent
     hyperdrive: HyperdriveMarket
     block_time: BlockTime
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel
+    pricing_model: HyperdrivePricingModel
 
     def __init__(
         self,
@@ -47,7 +46,7 @@ class TestInitialize(unittest.TestCase):
         self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
         self.celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=self.contribution))
         self.block_time = BlockTime()
-        self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
+        self.pricing_model = HyperdrivePricingModel()
         market_state = HyperdriveMarketState()
         self.hyperdrive = HyperdriveMarket(
             pricing_model=self.pricing_model,

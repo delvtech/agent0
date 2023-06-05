@@ -4,14 +4,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from elfpy.math import FixedPoint
-from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
+from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.types import Trade, MarketType
 
 from .base import BasePolicy
 
 if TYPE_CHECKING:
     from elfpy.wallet.wallet import Wallet
-    from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
+    from elfpy.markets.hyperdrive import HyperdriveMarket
 
 # pylint: disable=too-few-public-methods
 

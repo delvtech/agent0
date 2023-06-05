@@ -13,7 +13,7 @@ from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.markets.trades as trades
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from elfpy.markets.hyperdrive import HyperdriveMarketState
 
 
 class BasePricingModel(ABC):
@@ -27,7 +27,7 @@ class BasePricingModel(ABC):
     def calc_in_given_out(
         self,
         out: types.Quantity,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
@@ -36,7 +36,7 @@ class BasePricingModel(ABC):
     def calc_out_given_in(
         self,
         in_: types.Quantity,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
@@ -46,7 +46,7 @@ class BasePricingModel(ABC):
         self,
         d_base: FixedPoint,
         rate: FixedPoint,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
@@ -55,7 +55,7 @@ class BasePricingModel(ABC):
     def calc_tokens_out_given_lp_in(
         self,
         lp_in: FixedPoint,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         """Calculate how many tokens should be returned for a given lp addition"""
         raise NotImplementedError
@@ -72,7 +72,7 @@ class BasePricingModel(ABC):
         self,
         target_apr: FixedPoint,
         time_remaining: time.StretchedTime,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
     ) -> FixedPoint:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR for an initialized market
@@ -113,7 +113,7 @@ class BasePricingModel(ABC):
         self,
         target_apr: FixedPoint,
         time_remaining: time.StretchedTime,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
     ) -> FixedPoint:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR
@@ -153,7 +153,7 @@ class BasePricingModel(ABC):
 
     def calc_spot_price_from_reserves(
         self,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> FixedPoint:
         r"""Calculates the spot price of base in terms of bonds.
@@ -188,7 +188,7 @@ class BasePricingModel(ABC):
 
     def calc_apr_from_reserves(
         self,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> FixedPoint:
         r"""Returns the apr given reserve amounts
@@ -216,7 +216,7 @@ class BasePricingModel(ABC):
     def check_input_assertions(
         self,
         quantity: types.Quantity,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ):
         """Applies a set of assertions to the input of a trading function."""

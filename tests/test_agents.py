@@ -8,7 +8,6 @@ from os import path, walk
 import numpy as np
 
 import elfpy.agents.policies as policies
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
 
@@ -27,7 +26,7 @@ from elfpy.agents.policies import (
     LongLouie,
     ShortSally,
 )
-from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
+from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 from elfpy.wallet.wallet import Wallet, Long
 
@@ -150,7 +149,7 @@ class TestAgent(unittest.TestCase):
         self.test_agent = Agent(wallet_address=len(agent_policies), policy=TestPolicy())
         # Get a mock Market
         self.market = HyperdriveMarket(
-            pricing_model=hyperdrive_pm.HyperdrivePricingModel(),
+            pricing_model=HyperdrivePricingModel(),
             market_state=HyperdriveMarketState(),
             position_duration=time.StretchedTime(
                 days=FixedPoint("365.0"), time_stretch=FixedPoint("10.0"), normalizing_constant=FixedPoint("365.0")

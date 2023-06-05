@@ -5,11 +5,10 @@ from typing import Optional, TYPE_CHECKING
 
 import pandas as pd
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.time as time
 import elfpy.types as types
 
-from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
+from elfpy.markets.hyperdrive import HyperdriveMarketDeltas, HyperdriveMarketState
 from elfpy.simulators.config import Config
 
 if TYPE_CHECKING:
@@ -114,7 +113,7 @@ class RunSimVariables:
     # initial wallets for the agents
     agent_init: list[Wallet]
     # initial market state for this simulation run
-    market_init: hyperdrive_market.HyperdriveMarketState
+    market_init: HyperdriveMarketState
     # minimum time discretization for time step in years
     time_step: float
     # time lapse between token mint and expiry in years

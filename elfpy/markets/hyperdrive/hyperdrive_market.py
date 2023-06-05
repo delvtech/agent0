@@ -7,15 +7,19 @@ from typing import TYPE_CHECKING
 
 import elfpy
 import elfpy.errors.errors as errors
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
 
 from elfpy.markets.base.base_market import BaseMarketState, BaseMarket
-from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
-from elfpy.markets.hyperdrive.checkpoint import Checkpoint
+from elfpy.markets.hyperdrive import (
+    hyperdrive_actions,
+    Checkpoint,
+    HyperdriveMarketAction,
+    MarketActionType,
+    HyperdriveMarketDeltas,
+    HyperdrivePricingModel,
+)
 from elfpy.math import FixedPoint
 from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet_deltas import WalletDeltas
@@ -169,7 +173,7 @@ class HyperdriveMarket(
     BaseMarket[
         HyperdriveMarketState,
         HyperdriveMarketDeltas,
-        hyperdrive_pm.HyperdrivePricingModel,
+        HyperdrivePricingModel,
     ]
 ):
     r"""Market state simulator
@@ -181,7 +185,7 @@ class HyperdriveMarket(
 
     def __init__(
         self,
-        pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+        pricing_model: HyperdrivePricingModel,
         market_state: HyperdriveMarketState,
         position_duration: time.StretchedTime,
         block_time: time.BlockTime,
@@ -326,7 +330,7 @@ class HyperdriveMarket(
         return max_short
 
     def perform_action(
-        self, action_details: tuple[int, hyperdrive_actions.HyperdriveMarketAction]
+        self, action_details: tuple[int, HyperdriveMarketAction]
     ) -> tuple[int, WalletDeltas, HyperdriveMarketDeltas]:
         r"""Execute a trade in the simulated market
 
@@ -375,19 +379,19 @@ class HyperdriveMarket(
         if (
             agent_action.action_type
             in [
-                hyperdrive_actions.MarketActionType.CLOSE_LONG,
-                hyperdrive_actions.MarketActionType.CLOSE_SHORT,
+                MarketActionType.CLOSE_LONG,
+                MarketActionType.CLOSE_SHORT,
             ]
             and agent_action.mint_time is None
         ):
             raise ValueError(f"{agent_action.mint_time=} must be provided when closing a short or long")
         # for each position, specify how to forumulate trade and then execute
-        if agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:  # buy to open long
+        if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
             market_deltas, agent_deltas = self.open_long(
                 agent_wallet=agent_action.wallet,
                 base_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
             )
-        elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:  # sell to close long
+        elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
             # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
             mint_time = FixedPoint(agent_action.mint_time or 0)
             market_deltas, agent_deltas = self.close_long(
@@ -395,12 +399,12 @@ class HyperdriveMarket(
                 bond_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
                 mint_time=mint_time,
             )
-        elif agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:  # sell PT to open short
+        elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
             market_deltas, agent_deltas = self.open_short(
                 agent_wallet=agent_action.wallet,
                 bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
             )
-        elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:  # buy PT to close short
+        elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
             # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
             mint_time = FixedPoint(agent_action.mint_time or 0)
             open_share_price = agent_action.wallet.shorts[mint_time].open_share_price
@@ -410,12 +414,12 @@ class HyperdriveMarket(
                 mint_time=mint_time,
                 open_share_price=open_share_price,
             )
-        elif agent_action.action_type == hyperdrive_actions.MarketActionType.ADD_LIQUIDITY:
+        elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
             market_deltas, agent_deltas = self.add_liquidity(
                 agent_wallet=agent_action.wallet,
                 bond_amount=agent_action.trade_amount,
             )
-        elif agent_action.action_type == hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY:
+        elif agent_action.action_type == MarketActionType.REMOVE_LIQUIDITY:
             market_deltas, agent_deltas = self.remove_liquidity(
                 agent_wallet=agent_action.wallet,
                 lp_shares=agent_action.trade_amount,
@@ -749,7 +753,7 @@ class HyperdriveMarket(
 
         Returns
         -------
-        tuple[hyperdrive_actions.MarketDeltas, AgentDeltas]
+        tuple[MarketDeltas, AgentDeltas]
 
         """
         market_deltas = HyperdriveMarketDeltas()

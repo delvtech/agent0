@@ -17,9 +17,10 @@ from ape.managers.project import ProjectManager
 from ape.types import AddressType, ContractType
 
 import elfpy
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
+
 from elfpy import types
+from elfpy.markets.hyperdrive import AssetIdPrefix, HyperdriveMarketState
 from elfpy.math import FixedPoint
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
@@ -58,9 +59,7 @@ class HyperdriveProject(ProjectManager):
         return self.hyperdrive_container.at(self.conversion_manager.convert(self.hyperdrive_address, AddressType))
 
 
-def get_market_state_from_contract(
-    hyperdrive_contract: ContractInstance, **kwargs
-) -> hyperdrive_market.HyperdriveMarketState:
+def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> HyperdriveMarketState:
     r"""Return the current market state from the smart contract.
 
     Arguments
@@ -72,18 +71,16 @@ def get_market_state_from_contract(
 
     Returns
     -------
-    hyperdrive_market.MarketState
+    HyperdriveMarketState
     """
     pool_state = hyperdrive_contract.getPoolInfo(**kwargs).__dict__
     hyper_config = hyperdrive_contract.getPoolConfig(**kwargs).__dict__
     hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)  # convert to elf-sims format
     hyper_config["term_length"] = hyper_config["positionDuration"] / (60 * 60 * 24)  # in days
-    asset_id = hyperdrive_assets.encode_asset_id(
-        hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"]
-    )
+    asset_id = hyperdrive_assets.encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"])
     total_supply_withdraw_shares = hyperdrive_contract.balanceOf(asset_id, hyperdrive_contract.address)
 
-    return hyperdrive_market.HyperdriveMarketState(
+    return HyperdriveMarketState(
         lp_total_supply=FixedPoint(pool_state["lpTotalSupply"]),
         share_reserves=FixedPoint(pool_state["shareReserves"]),
         bond_reserves=FixedPoint(pool_state["bondReserves"]),
@@ -149,7 +146,7 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTra
     )
     tuple_series = trades.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)  # type: ignore
     trades["prefix"], trades["maturity_timestamp"] = zip(*tuple_series)  # split into two columns
-    trades["trade_type"] = trades["prefix"].apply(lambda x: hyperdrive_assets.AssetIdPrefix(x).name)
+    trades["trade_type"] = trades["prefix"].apply(lambda x: AssetIdPrefix(x).name)
 
     unique_maturities_ = trades["maturity_timestamp"].unique()
     unique_maturities_ = unique_maturities_[unique_maturities_ != 0]
@@ -211,7 +208,7 @@ def get_wallet_from_onchain_trade_info(
             - info.trades.loc[(trades_in_position) & (info.trades["from"] == address_), "value"].sum()
         )
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
-        asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
+        asset_type = AssetIdPrefix(asset_prefix).name
         mint_time = maturity - elfpy.SECONDS_IN_YEAR
         log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
         # verify our calculation against the onchain balance
@@ -592,12 +589,12 @@ def ape_trade(
     """
     # predefine which methods to call based on the trade type, and the corresponding asset ID prefix
     info = {
-        "OPEN_LONG": Info(method=hyperdrive_contract.openLong, prefix=hyperdrive_assets.AssetIdPrefix.LONG),
-        "CLOSE_LONG": Info(method=hyperdrive_contract.closeLong, prefix=hyperdrive_assets.AssetIdPrefix.LONG),
-        "OPEN_SHORT": Info(method=hyperdrive_contract.openShort, prefix=hyperdrive_assets.AssetIdPrefix.SHORT),
-        "CLOSE_SHORT": Info(method=hyperdrive_contract.closeShort, prefix=hyperdrive_assets.AssetIdPrefix.SHORT),
-        "ADD_LIQUIDITY": Info(method=hyperdrive_contract.addLiquidity, prefix=hyperdrive_assets.AssetIdPrefix.LP),
-        "REMOVE_LIQUIDITY": Info(method=hyperdrive_contract.removeLiquidity, prefix=hyperdrive_assets.AssetIdPrefix.LP),
+        "OPEN_LONG": Info(method=hyperdrive_contract.openLong, prefix=AssetIdPrefix.LONG),
+        "CLOSE_LONG": Info(method=hyperdrive_contract.closeLong, prefix=AssetIdPrefix.LONG),
+        "OPEN_SHORT": Info(method=hyperdrive_contract.openShort, prefix=AssetIdPrefix.SHORT),
+        "CLOSE_SHORT": Info(method=hyperdrive_contract.closeShort, prefix=AssetIdPrefix.SHORT),
+        "ADD_LIQUIDITY": Info(method=hyperdrive_contract.addLiquidity, prefix=AssetIdPrefix.LP),
+        "REMOVE_LIQUIDITY": Info(method=hyperdrive_contract.removeLiquidity, prefix=AssetIdPrefix.LP),
     }
     if trade_type in {"CLOSE_LONG", "CLOSE_SHORT"}:  # get the specific asset we're closing
         assert maturity_time is not None, "Maturity time must be provided to close a long or short trade"

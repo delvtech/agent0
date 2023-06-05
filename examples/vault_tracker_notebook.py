@@ -18,7 +18,7 @@ import elfpy.utils.post_processing as post_processing
 from elfpy import WEI, PRECISION_THRESHOLD
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
-from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
+from elfpy.markets.hyperdrive import HyperdriveMarket
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils

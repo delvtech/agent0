@@ -10,7 +10,7 @@ import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.agents.get_wallet_state import get_wallet_state
-from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
+from elfpy.markets.hyperdrive import HyperdriveMarketDeltas
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.simulators.simulation_state import (
@@ -24,7 +24,7 @@ from elfpy.simulators.simulation_state import (
 
 if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
-    from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
+    from elfpy.markets.hyperdrive import HyperdriveMarket
 
 
 class Simulator:

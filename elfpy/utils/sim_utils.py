@@ -2,14 +2,17 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.simulators as simulators
 import elfpy.time as time
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import InitializeLiquidityAgent
-from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
-from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
+from elfpy.markets.hyperdrive import (
+    HyperdriveMarket,
+    HyperdriveMarketState,
+    HyperdriveMarketDeltas,
+    HyperdrivePricingModel,
+)
 from elfpy.math import FixedPoint
 from elfpy.simulators import Config
 from elfpy.simulators.simulation_state import (
@@ -44,7 +47,7 @@ def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulato
     # Instantiate the market.
     # pricing model is hardcoded for now.  once we have support for more markets, we can add a
     # config option for type of market
-    pricing_model = hyperdrive_pm.HyperdrivePricingModel()
+    pricing_model = HyperdrivePricingModel()
     block_time = time.BlockTime()
     market, init_agent_deltas, market_deltas = get_initialized_hyperdrive_market(pricing_model, block_time, config)
     simulator = simulators.Simulator(config=config, market=market, block_time=block_time)
@@ -107,7 +110,7 @@ def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulato
 
 
 def get_initialized_hyperdrive_market(
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    pricing_model: HyperdrivePricingModel,
     block_time: time.BlockTime,
     config: Config,
 ) -> tuple[HyperdriveMarket, WalletDeltas, HyperdriveMarketDeltas]:

@@ -3,13 +3,16 @@ from __future__ import annotations
 import logging
 import unittest
 
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
 
-from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
-from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
+from elfpy.markets.hyperdrive import (
+    HyperdriveMarket,
+    HyperdriveMarketState,
+    HyperdriveMarketDeltas,
+    HyperdrivePricingModel,
+)
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 
@@ -40,7 +43,7 @@ class SimUtilsTest(unittest.TestCase):
                         config.target_fixed_apr = target_fixed_apr
                         # construct the market via sim utils
                         block_time = time.BlockTime()
-                        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
+                        pricing_model = HyperdrivePricingModel()
                         market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time, config)
                         # then construct it by hand
                         market_direct = HyperdriveMarket(
