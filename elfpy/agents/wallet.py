@@ -243,7 +243,7 @@ class Wallet:
         This method has no returns. It updates the Agent's Wallet according to the passed parameters
         """
         # track over time the agent's weighted average spend, for return calculation
-        for key, value_or_dict in wallet_deltas.__dict__.items():
+        for key, value_or_dict in wallet_deltas.copy().__dict__.items():
             if value_or_dict is None or key in ["frozen", "no_new_attribs"]:
                 continue
             if key in ["lp_tokens", "fees_paid", "withdraw_shares"]:

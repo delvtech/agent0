@@ -1,6 +1,7 @@
 """Dataclass for updating agent wallets"""
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -29,7 +30,6 @@ class AgentDeltas:
     borrows : Dict[FixedPoint, Borrow]
         The borrow positions held by the trader.
     """
-
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
 
@@ -46,3 +46,7 @@ class AgentDeltas:
     # this therefore assumes that only one token type can be used at any given mint time
     borrows: dict[FixedPoint, Borrow] = field(default_factory=dict)
     fees_paid: FixedPoint = FixedPoint(0)
+
+    def copy(self) -> AgentDeltas:
+        """Returns a new copy of self"""
+        return AgentDeltas(**copy.deepcopy(self.__dict__))
