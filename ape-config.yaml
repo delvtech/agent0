@@ -16,15 +16,13 @@ dependencies:
   - name: Mocks
     local: hyperdrive_solidity/test/
     contracts_folder: src/contracts
-  - name: LocalDependency
-    local: hyperdrive_solidity/test/
-    contracts_folder: src/contracts
 
 solidity:
   import_remapping:
     - "@openzeppelin/contracts=OpenZeppelin/4.8.1"
     - "openzeppelin-contracts/contracts=OpenZeppelin/4.8.1"
     - "@aave=Aave/1.17.2"
+    - "forge-std=../../lib/forge-std/src"
 
 ethereum:
   default_network: local
@@ -35,3 +33,13 @@ ethereum:
 
 foundry:
   port: 8555
+  anvil:
+    timestamp: 0
+    block_base_fee_per_gas: 0
+    code_size_limit: 0
+    disable_block_gas_limit: True
+  # gas-limit <GAS_LIMIT>         The block gas limit
+  # gas-price <GAS_PRICE>         The gas price
+
+test:
+  number_of_accounts: 5
