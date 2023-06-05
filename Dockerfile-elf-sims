@@ -6,7 +6,7 @@ FROM ghcr.io/delvtech/hyperdrive/migrations:0.0.1 as migrations
 # ### Python Image ###
 # pinned to a specific image chosen from https://github.com/delvtech/elf-simulations/pkgs/container/elf-simulations%2Fpython-base
 # 2022-05-23
-FROM ghcr.io/delvtech/elf-simulations/python-base:nightly-c82cc07d2c3a781d27c7fe57a2b0e57591856f2b
+FROM ghcr.io/delvtech/elf-simulations/python-base:nightly-28db487e38d1060e6a2864e1e994b0f2ee01fc21
 
 # set bash as default shell
 SHELL ["/bin/bash", "-c"]

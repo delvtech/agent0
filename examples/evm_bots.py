@@ -15,6 +15,7 @@ from pathlib import Path
 from time import sleep
 from time import time as now
 from typing import Type, cast
+import requests
 
 # external lib
 import ape
@@ -28,6 +29,9 @@ from ape_accounts.accounts import KeyfileAccount
 from dotenv import load_dotenv
 from eth_account import Account as EthAccount
 from numpy.random._generator import Generator as NumpyGenerator
+
+import tqdm
+from tqdm import trange
 
 # elfpy core repo
 import elfpy
@@ -364,33 +368,31 @@ def set_up_experiment(
     }
 
     # dynamically load devnet addresses from address file
-    address_file = None
     if args["devnet"]:
-        addresses, address_file = get_devnet_addresses(experiment_config, addresses)
-    return pricing_model, crash_file, network_choice, provider_settings, addresses, address_file
+        addresses= get_devnet_addresses(experiment_config, addresses)
+    return pricing_model, crash_file, network_choice, provider_settings, addresses
 
-
-def get_devnet_addresses(experiment_config: Config, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
+def get_devnet_addresses(experiment_config: simulators.Config, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
-    address_file = experiment_config.scratch["project_dir"] / "artifacts" / "addresses.json"
-    # make parent folder if it doesn't exist
-    os.makedirs(os.path.dirname(address_file), exist_ok=True)
-    address_file_data = {}
-    if Path.exists(address_file):
-        with open(address_file, "r", encoding="utf-8") as file:
-            address_file_data = json.load(file)
-    if "baseToken" in address_file_data:
-        addresses["baseToken"] = address_file_data["baseToken"]
+    deployed_addresses = {}
+    for _ in trange(100, desc="artifacts.."):
+        response = requests.get("http://artifacts:80/addresses.json", timeout=1)
+        if response.status_code == 200:
+            deployed_addresses = response.json()
+            break
+        tqdm.desc = f"artifacts.. {response.status_code}"
+        sleep(1)
+    if "baseToken" in deployed_addresses:
+        addresses["baseToken"] = deployed_addresses["baseToken"]
         log_and_show(f"found devnet base address: {addresses['baseToken']}")
     else:
         addresses["baseToken"] = None
-    if "hyperdrive" in address_file_data:
-        addresses["hyperdrive"] = address_file_data["hyperdrive"]
+    if "hyperdrive" in deployed_addresses:
+        addresses["hyperdrive"] = deployed_addresses["hyperdrive"]
         log_and_show(f"found devnet hyperdrive address: {addresses['hyperdrive']}")
     else:
         addresses["hyperdrive"] = None
-    return addresses, address_file
-
+    return addresses
 
 def get_accounts(experiment_config: Config) -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
@@ -740,7 +742,7 @@ def deploy_hyperdrive(
 
 
 def set_up_devnet(
-    addresses, project, provider, experiment_config, pricing_model, address_file
+    addresses, project, provider, experiment_config, pricing_model
 ) -> tuple[ContractInstance, ContractInstance, dict[str, str]]:
     """Load deployed devnet addresses or deploy new contracts.
 
@@ -756,8 +758,6 @@ def set_up_devnet(
         The experiment configuration object.
     pricing_model : elfpy.pricing_models.base.PricingModel
         The elf-simulations pricing model.
-    address_file : str
-        The path to the file containing the addresses of the deployed contracts.
 
     Returns
     -------
@@ -787,8 +787,6 @@ def set_up_devnet(
             experiment_config, base_instance, deployer_account, pricing_model, project
         )
         addresses["hyperdrive"] = hyperdrive_instance.address
-    with open(address_file, "w", encoding="utf-8") as file:
-        json.dump(addresses, file)
     return base_instance, hyperdrive_instance, addresses, deployer_account
 
 
@@ -821,7 +819,6 @@ def set_up_ape(
     provider_settings: dict,
     addresses: dict,
     network_choice: str,
-    address_file: str,
     pricing_model: elfpy.pricing_models.base.PricingModel,
 ) -> tuple[ProviderAPI, ContractInstance, ContractInstance, dict, KeyfileAccount]:
     r"""Set up ape.
@@ -838,8 +835,6 @@ def set_up_ape(
         The addresses of the deployed contracts.
     network_choice : str
         The network to connect to.
-    address_file : str
-        The path to the file containing the addresses of the deployed contracts.
     pricing_model : elfpy.pricing_models.base.PricingModel
         The elf-simulations pricing model to use.
 
@@ -874,7 +869,7 @@ def set_up_ape(
     )
     if args["devnet"]:  # we're on devnet
         base_instance, hyperdrive_instance, addresses, deployer_account = set_up_devnet(
-            addresses, project, provider, experiment_config, pricing_model, address_file
+            addresses, project, provider, experiment_config, pricing_model
         )
     else:  # not on devnet, means we're on goerli, so we use known goerli addresses
         base_instance: ContractInstance = ape_utils.get_instance(
@@ -966,7 +961,7 @@ def main():
     args = get_env_args()
 
     experiment_config = get_config(args)
-    pricing_model, crash_file, network_choice, provider_settings, addresses, address_file = set_up_experiment(
+    pricing_model, crash_file, network_choice, provider_settings, addresses = set_up_experiment(
         experiment_config, args
     )
 
@@ -974,7 +969,7 @@ def main():
     last_executed_block = 0
     output_utils.setup_logging(log_filename=experiment_config.log_filename, log_level=experiment_config.log_level)
     provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
-        experiment_config, args, provider_settings, addresses, network_choice, address_file, pricing_model
+        experiment_config, args, provider_settings, addresses, network_choice, pricing_model
     )
     sim_agents: dict[str, elfpy.agents.agent.Agent] = set_up_agents(
         experiment_config, args, provider, hyperdrive_instance, base_instance, addresses, deployer_account
