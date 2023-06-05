@@ -336,7 +336,7 @@ lp_trades = lp_trades.reset_index()
 sallys = [
     agent_id
     for agent_id in range(len(simulator.agents))
-    if simulator.agents[agent_id].__class__.__name__ == "ShortSally"
+    if simulator.agents[agent_id].policy.__class__.__name__ == "ShortSally"
 ]
 sally_trades = trades.groupby("day").agg({f"agent_{agent_id}_pnl": ["sum"] for agent_id in sallys})
 sally_trades.columns = ["_".join(col).strip() for col in sally_trades.columns.values]
@@ -345,7 +345,7 @@ sally_trades = sally_trades.reset_index()
 louies = [
     agent_id
     for agent_id in range(len(simulator.agents))
-    if simulator.agents[agent_id].__class__.__name__ == "LongLouie"
+    if simulator.agents[agent_id].policy.__class__.__name__ == "LongLouie"
 ]
 louies_trades = trades.groupby("day").agg({f"agent_{agent_id}_pnl": ["sum"] for agent_id in louies})
 louies_trades.columns = ["_".join(col).strip() for col in louies_trades.columns.values]
