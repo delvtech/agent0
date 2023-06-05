@@ -13,7 +13,7 @@ from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.markets.trades as trades
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from elfpy.markets.hyperdrive import HyperdriveMarketState
 
 
 class BasePricingModel(ABC):
@@ -27,7 +27,7 @@ class BasePricingModel(ABC):
     def calc_in_given_out(
         self,
         out: types.Quantity,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
@@ -36,7 +36,7 @@ class BasePricingModel(ABC):
     def calc_out_given_in(
         self,
         in_: types.Quantity,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
@@ -46,7 +46,7 @@ class BasePricingModel(ABC):
         self,
         d_base: FixedPoint,
         rate: FixedPoint,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
@@ -55,7 +55,7 @@ class BasePricingModel(ABC):
     def calc_tokens_out_given_lp_in(
         self,
         lp_in: FixedPoint,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         """Calculate how many tokens should be returned for a given lp addition"""
         raise NotImplementedError
@@ -72,7 +72,7 @@ class BasePricingModel(ABC):
         self,
         target_apr: FixedPoint,
         time_remaining: time.StretchedTime,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
     ) -> FixedPoint:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR for an initialized market
@@ -113,7 +113,7 @@ class BasePricingModel(ABC):
         self,
         target_apr: FixedPoint,
         time_remaining: time.StretchedTime,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
     ) -> FixedPoint:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR
@@ -153,7 +153,7 @@ class BasePricingModel(ABC):
 
     def calc_spot_price_from_reserves(
         self,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> FixedPoint:
         r"""Calculates the spot price of base in terms of bonds.
@@ -188,7 +188,7 @@ class BasePricingModel(ABC):
 
     def calc_apr_from_reserves(
         self,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> FixedPoint:
         r"""Returns the apr given reserve amounts
@@ -206,90 +206,6 @@ class BasePricingModel(ABC):
         )
         return price_utils.calc_apr_from_spot_price(spot_price, time_remaining)
 
-    def get_max_long(
-        self,
-        market_state: hyperdrive_market.HyperdriveMarketState,
-        time_remaining: time.StretchedTime,
-    ) -> tuple[FixedPoint, FixedPoint]:
-        r"""
-        Calculates the maximum long the market can support
-
-        .. math::
-            \Delta z' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot (k-(y+c \cdot z)^{1-\tau(d)}))^{\frac{1}{1-\tau(d)}}
-            -c \cdot z
-
-        Arguments
-        ----------
-        market_state : MarketState
-            The reserves and share prices of the pool
-        time_remaining : StretchedTime
-            The time remaining for the asset (incorporates time stretch)
-
-        Returns
-        -------
-        FixedPoint
-            The maximum amount of base that can be used to purchase bonds.
-        FixedPoint
-            The maximum amount of bonds that can be purchased.
-        """
-        # TODO: This shuld never be less than zero, but sometimes is. Need to investigate.
-        out_amount = market_state.bond_reserves - market_state.bond_buffer
-        if out_amount <= FixedPoint(0):
-            return FixedPoint(0), FixedPoint(0)
-        base = self.calc_in_given_out(
-            out=types.Quantity(amount=out_amount, unit=types.TokenType.PT),
-            market_state=market_state,
-            time_remaining=time_remaining,
-        ).breakdown.with_fee
-        bonds = self.calc_out_given_in(
-            in_=types.Quantity(amount=base, unit=types.TokenType.BASE),
-            market_state=market_state,
-            time_remaining=time_remaining,
-        ).breakdown.with_fee
-        return base, bonds
-
-    def get_max_short(
-        self,
-        market_state: hyperdrive_market.HyperdriveMarketState,
-        time_remaining: time.StretchedTime,
-    ) -> tuple[FixedPoint, FixedPoint]:
-        r"""
-        Calculates the maximum short the market can support using the bisection
-        method.
-
-        .. math::
-            \Delta y' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot k)^{\frac{1}{1-\tau(d)}}-2y-c \cdot z
-
-        Arguments
-        ----------
-        market_state : MarketState
-            The reserves and share prices of the pool.
-        time_remaining : StretchedTime
-            The time remaining for the asset (incorporates time stretch).
-
-        Returns
-        -------
-        FixedPoint
-            The maximum amount of base that can be used to short bonds.
-        FixedPoint
-            The maximum amount of bonds that can be shorted.
-        """
-        # TODO: This shuld never be less than zero, but sometimes is. Need to investigate.
-        out_amount = market_state.share_reserves - market_state.base_buffer / market_state.share_price
-        if out_amount <= FixedPoint(0):
-            return FixedPoint(0), FixedPoint(0)
-        bonds = self.calc_in_given_out(
-            out=types.Quantity(amount=out_amount, unit=types.TokenType.PT),
-            market_state=market_state,
-            time_remaining=time_remaining,
-        ).breakdown.with_fee
-        base = self.calc_out_given_in(
-            in_=types.Quantity(amount=bonds, unit=types.TokenType.PT),
-            market_state=market_state,
-            time_remaining=time_remaining,
-        ).breakdown.with_fee
-        return base, bonds
-
     def calc_time_stretch(self, apr: FixedPoint) -> FixedPoint:
         """Returns fixed time-stretch value based on current apr (as a FixedPoint)"""
         apr_percent = apr * FixedPoint("100.0")  # bounded between 0 and 100
@@ -300,7 +216,7 @@ class BasePricingModel(ABC):
     def check_input_assertions(
         self,
         quantity: types.Quantity,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ):
         """Applies a set of assertions to the input of a trading function."""

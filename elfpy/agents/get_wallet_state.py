@@ -1,12 +1,12 @@
 """Gets all the state variables in a wallet."""
 from __future__ import annotations
 
-from elfpy.agents import wallet
-from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
+from elfpy.markets.hyperdrive import hyperdrive_actions, HyperdriveMarket
 from elfpy.math import FixedPoint
+from elfpy.wallet.wallet import Wallet
 
 
-def get_wallet_state(agent_wallet: wallet.Wallet, market: hyperdrive_market.Market) -> dict[str, FixedPoint]:
+def get_wallet_state(agent_wallet: Wallet, market: HyperdriveMarket) -> dict[str, FixedPoint]:
     r"""The wallet's current state of public variables
 
     .. todo:: This will go away once we finish refactoring the state
@@ -27,7 +27,6 @@ def get_wallet_state(agent_wallet: wallet.Wallet, market: hyperdrive_market.Mark
     for mint_time, long in agent_wallet.longs.items():
         if long.balance > FixedPoint(0) and share_reserves:
             balance = hyperdrive_actions.calc_close_long(
-                wallet_address=agent_wallet.address,
                 bond_amount=long.balance,
                 market_state=market.market_state,
                 position_duration=market.position_duration,
@@ -51,7 +50,6 @@ def get_wallet_state(agent_wallet: wallet.Wallet, market: hyperdrive_market.Mark
             and market.market_state.bond_reserves - market.market_state.bond_buffer > short.balance
         ):
             balance = hyperdrive_actions.calc_close_short(
-                wallet_address=agent_wallet.address,
                 bond_amount=short.balance,
                 market_state=market.market_state,
                 position_duration=market.position_duration,

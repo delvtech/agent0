@@ -1,48 +1,57 @@
 """User strategy that opens a long position and then closes it after a certain amount of time has passed"""
 from __future__ import annotations
 
-import elfpy.agents.agent as elf_agent
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.types as types
+from typing import TYPE_CHECKING
+
 from elfpy.math import FixedPoint
+from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
+from elfpy.types import Trade, MarketType
+
+from .base import BasePolicy
+
+if TYPE_CHECKING:
+    from elfpy.wallet.wallet import Wallet
+    from elfpy.markets.hyperdrive import HyperdriveMarket
+
+# pylint: disable=too-few-public-methods
 
 
-class SingleLongAgent(elf_agent.Agent):
+class SingleLongAgent(BasePolicy):
     """
     simple long
     only has one long open at a time
     """
 
-    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
+    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Specify action"""
-        longs = list(self.wallet.longs.values())
+        longs = list(wallet.longs.values())
         has_opened_long = len(longs) > 0
         action_list = []
         if has_opened_long:
-            mint_time = list(self.wallet.longs)[-1]
+            mint_time = list(wallet.longs)[-1]
             enough_time_has_passed = market.block_time.time - mint_time > FixedPoint("0.01")
             if enough_time_has_passed:
                 action_list.append(
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.HyperdriveMarketAction(
-                            action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
+                    Trade(
+                        market=MarketType.HYPERDRIVE,
+                        trade=HyperdriveMarketAction(
+                            action_type=MarketActionType.CLOSE_LONG,
                             trade_amount=longs[-1].balance,
-                            wallet=self.wallet,
+                            wallet=wallet,
                             mint_time=mint_time,
                         ),
                     )
                 )
         else:
-            trade_amount = self.get_max_long(market) / FixedPoint("2.0")
+            max_base = market.get_max_long_for_account(wallet.balance.amount)
+            trade_amount = max_base / FixedPoint("2.0")
             action_list.append(
-                types.Trade(
-                    market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.HyperdriveMarketAction(
-                        action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
+                Trade(
+                    market=MarketType.HYPERDRIVE,
+                    trade=HyperdriveMarketAction(
+                        action_type=MarketActionType.OPEN_LONG,
                         trade_amount=trade_amount,
-                        wallet=self.wallet,
+                        wallet=wallet,
                     ),
                 )
             )

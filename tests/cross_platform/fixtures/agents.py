@@ -1,8 +1,12 @@
 """Fixtures for elfpy & solidity agents"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
 import ape
 import pytest
+
 from ape.api.accounts import TestAccountAPI
-from attr import dataclass
 
 from elfpy.agents.agent import Agent
 from elfpy.math.fixed_point import FixedPoint
@@ -39,11 +43,9 @@ class Agents:
 @pytest.fixture(scope="function")
 def python_agents() -> PythonAgents:
     """Returns some python agents initialized with some budget"""
-    budget: FixedPoint = FixedPoint("50_000_000.0")
-
-    alice = Agent(wallet_address=0, budget=budget)
-    bob = Agent(wallet_address=1, budget=budget)
-    celine = Agent(wallet_address=2, budget=budget)
+    alice = Agent(wallet_address=0)
+    bob = Agent(wallet_address=1)
+    celine = Agent(wallet_address=2)
 
     return PythonAgents(alice, bob, celine)
 

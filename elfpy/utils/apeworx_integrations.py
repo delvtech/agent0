@@ -1,5 +1,4 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx."""
-
 from __future__ import annotations
 
 import logging
@@ -18,13 +17,14 @@ from ape.managers.project import ProjectManager
 from ape.types import AddressType, ContractType
 
 import elfpy
-import elfpy.agents.wallet as elf_wallet
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
+
 from elfpy import types
+from elfpy.markets.hyperdrive import AssetIdPrefix, HyperdriveMarketState
 from elfpy.math import FixedPoint
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
+from elfpy.wallet.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:
     from ape.api.accounts import AccountAPI
@@ -59,9 +59,7 @@ class HyperdriveProject(ProjectManager):
         return self.hyperdrive_container.at(self.conversion_manager.convert(self.hyperdrive_address, AddressType))
 
 
-def get_market_state_from_contract(
-    hyperdrive_contract: ContractInstance, **kwargs
-) -> hyperdrive_market.HyperdriveMarketState:
+def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> HyperdriveMarketState:
     r"""Return the current market state from the smart contract.
 
     Arguments
@@ -73,18 +71,16 @@ def get_market_state_from_contract(
 
     Returns
     -------
-    hyperdrive_market.MarketState
+    HyperdriveMarketState
     """
     pool_state = hyperdrive_contract.getPoolInfo(**kwargs).__dict__
     hyper_config = hyperdrive_contract.getPoolConfig(**kwargs).__dict__
     hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)  # convert to elf-sims format
     hyper_config["term_length"] = hyper_config["positionDuration"] / (60 * 60 * 24)  # in days
-    asset_id = hyperdrive_assets.encode_asset_id(
-        hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"]
-    )
+    asset_id = hyperdrive_assets.encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"])
     total_supply_withdraw_shares = hyperdrive_contract.balanceOf(asset_id, hyperdrive_contract.address)
 
-    return hyperdrive_market.HyperdriveMarketState(
+    return HyperdriveMarketState(
         lp_total_supply=FixedPoint(pool_state["lpTotalSupply"]),
         share_reserves=FixedPoint(pool_state["shareReserves"]),
         bond_reserves=FixedPoint(pool_state["bondReserves"]),
@@ -150,7 +146,7 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTra
     )
     tuple_series = trades.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)  # type: ignore
     trades["prefix"], trades["maturity_timestamp"] = zip(*tuple_series)  # split into two columns
-    trades["trade_type"] = trades["prefix"].apply(lambda x: hyperdrive_assets.AssetIdPrefix(x).name)
+    trades["trade_type"] = trades["prefix"].apply(lambda x: AssetIdPrefix(x).name)
 
     unique_maturities_ = trades["maturity_timestamp"].unique()
     unique_maturities_ = unique_maturities_[unique_maturities_ != 0]
@@ -176,7 +172,7 @@ def get_wallet_from_onchain_trade_info(
     info: OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
     base_contract: ContractInstance,
-) -> elf_wallet.Wallet:
+) -> Wallet:
     r"""Construct wallet balances from on-chain trade info.
 
     Arguments
@@ -198,7 +194,7 @@ def get_wallet_from_onchain_trade_info(
         Wallet with Short, Long, and LP positions.
     """
     # TODO: remove restriction forcing Wallet index to be an int (issue #415)
-    wallet = elf_wallet.Wallet(
+    wallet = Wallet(
         address=index,
         balance=types.Quantity(amount=FixedPoint(base_contract.balanceOf(address_)), unit=types.TokenType.BASE),
     )
@@ -212,7 +208,7 @@ def get_wallet_from_onchain_trade_info(
             - info.trades.loc[(trades_in_position) & (info.trades["from"] == address_), "value"].sum()
         )
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
-        asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
+        asset_type = AssetIdPrefix(asset_prefix).name
         mint_time = maturity - elfpy.SECONDS_IN_YEAR
         log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
         # verify our calculation against the onchain balance
@@ -242,7 +238,7 @@ def get_wallet_from_onchain_trade_info(
                 logging.debug("calculated weighted average open share price of %s", open_share_price)
                 wallet.shorts.update(
                     {
-                        mint_time: elf_wallet.Short(
+                        mint_time: Short(
                             balance=FixedPoint(scaled_value=balance),
                             open_share_price=open_share_price,
                         )
@@ -250,11 +246,11 @@ def get_wallet_from_onchain_trade_info(
                 )
                 logging.debug(
                     "storing in wallet as %s",
-                    {mint_time: elf_wallet.Short(balance=balance, open_share_price=open_share_price)},
+                    {mint_time: Short(balance=balance, open_share_price=open_share_price)},
                 )
             elif asset_type == "LONG":
-                wallet.longs.update({mint_time: elf_wallet.Long(balance=FixedPoint(scaled_value=balance))})
-                logging.debug("storing in wallet as %s", {mint_time: elf_wallet.Long(balance=balance)})
+                wallet.longs.update({mint_time: Long(balance=FixedPoint(scaled_value=balance))})
+                logging.debug("storing in wallet as %s", {mint_time: Long(balance=balance)})
             elif asset_type == "LP":
                 wallet.lp_tokens += balance
     return wallet
@@ -394,36 +390,36 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
         (maturity_timestamp - int(elfpy.SECONDS_IN_YEAR) * pool_info.term_length) - pool_info.start_time
     ) / int(elfpy.SECONDS_IN_YEAR)
     if trade_type == "addLiquidity":  # sourcery skip: lift-return-into-if, switch
-        agent_deltas = elf_wallet.Wallet(
+        agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=-types.Quantity(amount=trade["_contribution"], unit=types.TokenType.BASE),
             lp_tokens=trade["value"],  # trade output
         )
     elif trade_type == "removeLiquidity":
-        agent_deltas = elf_wallet.Wallet(
+        agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
             lp_tokens=-trade["_shares"],  # negative, decreasing
             withdraw_shares=trade["_shares"],  # positive, increasing
         )
     elif trade_type == "openLong":
-        agent_deltas = elf_wallet.Wallet(
+        agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=types.Quantity(amount=-trade["_baseAmount"], unit=types.TokenType.BASE),  # negative, decreasing
-            longs={pool_info.block_time: elf_wallet.Long(trade["value"])},  # trade output, increasing
+            longs={pool_info.block_time: Long(trade["value"])},  # trade output, increasing
         )
     elif trade_type == "closeLong":
-        agent_deltas = elf_wallet.Wallet(
+        agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
-            longs={mint_time: elf_wallet.Long(-trade["_bondAmount"])},  # negative, decreasing
+            longs={mint_time: Long(-trade["_bondAmount"])},  # negative, decreasing
         )
     elif trade_type == "openShort":
-        agent_deltas = elf_wallet.Wallet(
+        agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=types.Quantity(amount=-dai_in, unit=types.TokenType.BASE),  # negative, decreasing
             shorts={
-                pool_info.block_time: elf_wallet.Short(
+                pool_info.block_time: Short(
                     balance=trade["value"],  # trade output
                     open_share_price=pool_info.market_state.share_price,
                 )
@@ -432,11 +428,11 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
     else:
         if trade_type != "closeShort":
             raise ValueError(f"Unknown trade type: {trade_type}")
-        agent_deltas = elf_wallet.Wallet(
+        agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),
             shorts={
-                mint_time: elf_wallet.Short(
+                mint_time: Short(
                     balance=-trade["_bondAmount"],  # negative, decreasing
                     open_share_price=0,
                 )
@@ -593,12 +589,12 @@ def ape_trade(
     """
     # predefine which methods to call based on the trade type, and the corresponding asset ID prefix
     info = {
-        "OPEN_LONG": Info(method=hyperdrive_contract.openLong, prefix=hyperdrive_assets.AssetIdPrefix.LONG),
-        "CLOSE_LONG": Info(method=hyperdrive_contract.closeLong, prefix=hyperdrive_assets.AssetIdPrefix.LONG),
-        "OPEN_SHORT": Info(method=hyperdrive_contract.openShort, prefix=hyperdrive_assets.AssetIdPrefix.SHORT),
-        "CLOSE_SHORT": Info(method=hyperdrive_contract.closeShort, prefix=hyperdrive_assets.AssetIdPrefix.SHORT),
-        "ADD_LIQUIDITY": Info(method=hyperdrive_contract.addLiquidity, prefix=hyperdrive_assets.AssetIdPrefix.LP),
-        "REMOVE_LIQUIDITY": Info(method=hyperdrive_contract.removeLiquidity, prefix=hyperdrive_assets.AssetIdPrefix.LP),
+        "OPEN_LONG": Info(method=hyperdrive_contract.openLong, prefix=AssetIdPrefix.LONG),
+        "CLOSE_LONG": Info(method=hyperdrive_contract.closeLong, prefix=AssetIdPrefix.LONG),
+        "OPEN_SHORT": Info(method=hyperdrive_contract.openShort, prefix=AssetIdPrefix.SHORT),
+        "CLOSE_SHORT": Info(method=hyperdrive_contract.closeShort, prefix=AssetIdPrefix.SHORT),
+        "ADD_LIQUIDITY": Info(method=hyperdrive_contract.addLiquidity, prefix=AssetIdPrefix.LP),
+        "REMOVE_LIQUIDITY": Info(method=hyperdrive_contract.removeLiquidity, prefix=AssetIdPrefix.LP),
     }
     if trade_type in {"CLOSE_LONG", "CLOSE_SHORT"}:  # get the specific asset we're closing
         assert maturity_time is not None, "Maturity time must be provided to close a long or short trade"

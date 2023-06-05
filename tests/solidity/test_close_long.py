@@ -1,14 +1,14 @@
 """Close long market trade tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy.agents.agent as elf_agent
-from elfpy.markets.hyperdrive.checkpoint import Checkpoint
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
-from elfpy.time.time import TimeUnit
 import elfpy.types as types
+
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies import NoActionPolicy
+from elfpy.markets.hyperdrive import Checkpoint, HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.math import FixedPoint
+from elfpy.time.time import TimeUnit
 
 # pylint: disable=too-many-arguments
 
@@ -21,26 +21,26 @@ class TestCloseLong(unittest.TestCase):
     contribution: FixedPoint = FixedPoint("500_000_000.0")
     target_apr: FixedPoint = FixedPoint("0.05")
     term_length: FixedPoint = FixedPoint("365.0")
-    alice: elf_agent.Agent
-    bob: elf_agent.Agent
-    celine: elf_agent.Agent
-    hyperdrive: hyperdrive_market.Market
+    alice: Agent
+    bob: Agent
+    celine: Agent
+    hyperdrive: HyperdriveMarket
     block_time: time.BlockTime
 
     def setUp(self):
         """Set up agent, pricing model, & market for the subsequent tests.
         This function is run before each test method.
         """
-        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
-        self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
+        self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
+        self.celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=self.contribution))
         block_time = time.BlockTime()
-        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.HyperdriveMarketState(
+        pricing_model = HyperdrivePricingModel()
+        market_state = HyperdriveMarketState(
             curve_fee_multiple=FixedPoint(0),
             flat_fee_multiple=FixedPoint(0),
         )
-        self.hyperdrive = hyperdrive_market.Market(
+        self.hyperdrive = HyperdriveMarket(
             pricing_model=pricing_model,
             market_state=market_state,
             position_duration=time.StretchedTime(
@@ -50,13 +50,13 @@ class TestCloseLong(unittest.TestCase):
             ),
             block_time=block_time,
         )
-        _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, self.target_apr)
+        _, wallet_deltas = self.hyperdrive.initialize(self.contribution, self.target_apr)
         self.alice.wallet.update(wallet_deltas)
 
     def verify_close_long(
         self,
-        example_agent: elf_agent.Agent,
-        market_state_before: hyperdrive_market.HyperdriveMarketState,
+        example_agent: Agent,
+        market_state_before: HyperdriveMarketState,
         agent_base_paid: FixedPoint,
         agent_base_proceeds: FixedPoint,
         bond_amount: FixedPoint,
@@ -163,7 +163,7 @@ class TestCloseLong(unittest.TestCase):
     def test_close_long_failure_zero_amount(self):
         """Attempt to close longs using zero bond_amount. This should fail."""
         base_amount = FixedPoint("10.0")
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         _ = self.hyperdrive.open_long(
             agent_wallet=self.bob.wallet,
@@ -179,7 +179,7 @@ class TestCloseLong(unittest.TestCase):
     def test_close_long_failure_invalid_amount(self):
         """Attempt to close too many longs. This should fail."""
         base_amount = FixedPoint("10.0")
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_deltas, _ = self.hyperdrive.open_long(
             agent_wallet=self.bob.wallet,
@@ -195,7 +195,7 @@ class TestCloseLong(unittest.TestCase):
     def test_close_long_failure_invalid_timestamp(self):
         """Attempt to use a timestamp greater than the maximum range. This should fail."""
         base_amount = FixedPoint("10.0")
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_deltas, _ = self.hyperdrive.open_long(
             agent_wallet=self.bob.wallet,
@@ -211,7 +211,7 @@ class TestCloseLong(unittest.TestCase):
     def test_close_long_immediately_with_regular_amount(self):
         """Open a position, close it, and then verify that the close long updates were correct"""
         base_amount = FixedPoint("10.0")
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         _, agent_deltas_open = self.hyperdrive.open_long(
             agent_wallet=self.bob.wallet,
@@ -236,7 +236,7 @@ class TestCloseLong(unittest.TestCase):
         """Open a small position, close it, and then verify that the close long updates were correct"""
         base_amount = 0.01
         base_amount = FixedPoint("0.01")
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         _, agent_deltas_open = self.hyperdrive.open_long(
             agent_wallet=self.bob.wallet,
@@ -265,7 +265,7 @@ class TestCloseLong(unittest.TestCase):
         """Close a long halfway through the term and check the apr realized was the target apr"""
         # Bob opens a long
         base_amount = FixedPoint("10.0")
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before_open = self.hyperdrive.market_state.copy()
         _, agent_deltas_open = self.hyperdrive.open_long(
@@ -321,7 +321,7 @@ class TestCloseLong(unittest.TestCase):
         """Close long at the end of term"""
         # Bob opens a long
         base_amount = FixedPoint("10.0")
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before_open = self.hyperdrive.market_state.copy()
         _, agent_deltas_open = self.hyperdrive.open_long(
@@ -364,7 +364,7 @@ class TestCloseLong(unittest.TestCase):
         """
         # Bob opens a long
         base_amount = FixedPoint("10.0")
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         _, agent_deltas_open = self.hyperdrive.open_long(
             agent_wallet=self.bob.wallet,
@@ -409,7 +409,7 @@ class TestCloseLong(unittest.TestCase):
         """
         # Bob opens a long
         base_amount = FixedPoint("10.0")  # how much base the agent is using to open a long
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         _, agent_deltas_open = self.hyperdrive.open_long(
             agent_wallet=self.bob.wallet,

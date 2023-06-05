@@ -9,9 +9,12 @@ import elfpy.types as types
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
-    import elfpy.agents.wallet as wallet
-    from elfpy.markets.base.base_pricing_model import BasePricingModel
     import elfpy.time as time
+
+    from elfpy.wallet.wallet import Wallet
+    from elfpy.wallet.wallet_deltas import WalletDeltas
+
+    from .base_pricing_model import BasePricingModel
 
 
 class MarketActionType(Enum):
@@ -34,7 +37,7 @@ class BaseMarketAction(Generic[Action]):
     r"""Market action specification"""
 
     action_type: Enum  # these two variables are required to be set by the strategy
-    wallet: wallet.Wallet  # the agent's wallet
+    wallet: Wallet  # the agent's wallet
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -94,7 +97,7 @@ class BaseMarket(Generic[State, Deltas, PricingModel]):
         """Gets the most recent checkpoint time."""
         raise NotImplementedError
 
-    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.Wallet, Deltas]:
+    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, WalletDeltas, Deltas]:
         """Performs an action in the market without updating it."""
         raise NotImplementedError
 

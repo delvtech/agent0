@@ -2,11 +2,11 @@
 
 import unittest
 
-import elfpy.agents.agent as elf_agent
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_markets
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
+
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies import NoActionPolicy
+from elfpy.markets.hyperdrive import hyperdrive_actions, HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 
 
@@ -17,22 +17,22 @@ class TestAddLiquidity(unittest.TestCase):
 
     contribution = FixedPoint("500_000_000.0")
     target_apr = FixedPoint("0.05")
-    alice: elf_agent.Agent
-    bob: elf_agent.Agent
-    celine: elf_agent.Agent
-    hyperdrive: hyperdrive_markets.Market
+    alice: Agent
+    bob: Agent
+    celine: Agent
+    hyperdrive: HyperdriveMarket
     block_time: time.BlockTime
 
     def setUp(self):
-        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
-        self.celine = elf_agent.Agent(wallet_address=1, budget=self.contribution)
+        self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
+        self.celine = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
         self.block_time = time.BlockTime()
 
-        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_markets.HyperdriveMarketState()
+        pricing_model = HyperdrivePricingModel()
+        market_state = HyperdriveMarketState()
 
-        self.hyperdrive = hyperdrive_markets.Market(
+        self.hyperdrive = HyperdriveMarket(
             pricing_model=pricing_model,
             market_state=market_state,
             block_time=self.block_time,
@@ -42,7 +42,7 @@ class TestAddLiquidity(unittest.TestCase):
                 normalizing_constant=FixedPoint("365.0"),
             ),
         )
-        _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, FixedPoint("0.05"))
+        _, wallet_deltas = self.hyperdrive.initialize(self.contribution, FixedPoint("0.05"))
         self.alice.wallet.update(wallet_deltas)
 
     def test_add_liquidity_failure_zero_amount(self):
@@ -78,7 +78,6 @@ class TestAddLiquidity(unittest.TestCase):
 
         # Celine opens a long.
         market_deltas, wallet_deltas = hyperdrive_actions.calc_open_long(
-            wallet_address=self.celine.wallet.address,
             base_amount=FixedPoint("50_000_000.0"),
             market_state=self.hyperdrive.market_state,
             position_duration=self.hyperdrive.position_duration,

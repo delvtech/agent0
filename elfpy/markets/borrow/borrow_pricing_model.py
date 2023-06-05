@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import elfpy.types as types
 
-from elfpy.markets.base.base_pricing_model import BasePricingModel
+from elfpy.markets.base import BasePricingModel
 from elfpy.math import FixedPoint
 
 

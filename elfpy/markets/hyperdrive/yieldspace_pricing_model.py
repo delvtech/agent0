@@ -9,11 +9,12 @@ import elfpy.markets.hyperdrive.market_action_result as market_action_result
 import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.markets.base.base_pricing_model import BasePricingModel
+from elfpy.markets.base import BasePricingModel
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from .hyperdrive_market import HyperdriveMarketState
+
 
 # TODO: clean up to avoid this
 # pylint: disable=too-many-arguments
@@ -42,7 +43,7 @@ class YieldspacePricingModel(BasePricingModel):
         self,
         d_base: FixedPoint,
         rate: FixedPoint,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -117,7 +118,7 @@ class YieldspacePricingModel(BasePricingModel):
     def calc_in_given_out(
         self,
         out: types.Quantity,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -320,7 +321,7 @@ class YieldspacePricingModel(BasePricingModel):
     def calc_out_given_in(
         self,
         in_: types.Quantity,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -737,7 +738,7 @@ class YieldspacePricingModel(BasePricingModel):
         ) ** time_elapsed
 
     def calc_tokens_out_given_lp_in(
-        self, lp_in: FixedPoint, market_state: hyperdrive_market.HyperdriveMarketState
+        self, lp_in: FixedPoint, market_state: HyperdriveMarketState
     ) -> tuple[FixedPoint, FixedPoint]:
         """
         Calculates the amount of base shares and bonds released from burning a a specified amount of

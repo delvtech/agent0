@@ -6,9 +6,10 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-import elfpy
-import elfpy.types as types
-from elfpy.math.fixed_point import FixedPoint
+from elfpy import check_non_zero
+from elfpy.math import FixedPoint
+from elfpy.types import freezable, Quantity, TokenType
+from elfpy.wallet.wallet_deltas import WalletDeltas
 
 if TYPE_CHECKING:
     from typing import Any, Iterable
@@ -62,15 +63,15 @@ class Borrow:
     start_time : FixedPoint
     .. todo: add explanation
     """
-    borrow_token: types.TokenType
+    borrow_token: TokenType
     borrow_amount: FixedPoint
     borrow_shares: FixedPoint
-    collateral_token: types.TokenType
+    collateral_token: TokenType
     collateral_amount: FixedPoint
     start_time: FixedPoint
 
 
-@types.freezable()
+@freezable()
 @dataclass()
 class Wallet:
     r"""Stores what is in the agent's wallet
@@ -93,18 +94,16 @@ class Wallet:
         The fees paid by the wallet.
     """
 
-    # pylint: disable=too-many-instance-attributes
     # dataclasses can have many attributes
+    # pylint: disable=too-many-instance-attributes
 
     # agent identifier
     address: int
 
     # fungible
-    balance: types.Quantity = field(
-        default_factory=lambda: types.Quantity(amount=FixedPoint(0), unit=types.TokenType.BASE)
-    )
+    balance: Quantity = field(default_factory=lambda: Quantity(amount=FixedPoint(0), unit=TokenType.BASE))
     # TODO: Support multiple typed balances:
-    #     balance: Dict[types.TokenType, types.Quantity] = field(default_factory=dict)
+    #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
     lp_tokens: FixedPoint = FixedPoint(0)
 
     # non-fungible (identified by key=mint_time, stored as dict)
@@ -121,59 +120,6 @@ class Wallet:
 
     def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
-
-    def copy(self) -> Wallet:
-        """Returns a new copy of self"""
-        return Wallet(**copy.deepcopy(self.__dict__))
-
-    def update(self, wallet_deltas: Wallet) -> None:
-        """Update the agent's wallet
-
-        Arguments
-        ----------
-        wallet_deltas : Wallet
-            The agent's wallet that tracks the amount of assets this agent holds
-
-        Returns
-        -------
-        This method has no returns. It updates the Agent's Wallet according to the passed parameters
-        """
-        # track over time the agent's weighted average spend, for return calculation
-        for key, value_or_dict in wallet_deltas.copy().__dict__.items():
-            if value_or_dict is None or key in ["fees_paid", "address", "frozen", "no_new_attribs"]:
-                continue
-            if key in ["lp_tokens", "fees_paid", "withdraw_shares"]:
-                logging.debug(
-                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                    self.address,
-                    key,
-                    getattr(self, key),
-                    getattr(self, key) + value_or_dict,
-                    value_or_dict,
-                )
-                self[key] += value_or_dict
-            # handle updating a Quantity
-            elif key == "balance":
-                logging.debug(
-                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                    self.address,
-                    key,
-                    float(getattr(self, key).amount),
-                    float(getattr(self, key).amount + value_or_dict.amount),
-                    float(value_or_dict.amount),
-                )
-                getattr(self, key).amount += value_or_dict.amount
-            # handle updating a dict, which have mint_time attached
-            elif key == "borrows":
-                if value_or_dict:  # could be empty
-                    self._update_borrows(value_or_dict.items())
-            elif key == "longs":
-                self._update_longs(value_or_dict.items())
-            elif key == "shorts":
-                self._update_shorts(value_or_dict.items())
-            else:
-                raise ValueError(f"wallet_key={key} is not allowed.")
-            self.check_valid_wallet_state(self.__dict__)
 
     def _update_borrows(self, borrows: Iterable[tuple[FixedPoint, Borrow]]) -> None:
         for mint_time, borrow_summary in borrows:
@@ -276,4 +222,57 @@ class Wallet:
         """Test that all wallet state variables are greater than zero"""
         if dictionary is None:
             dictionary = self.__dict__
-        elfpy.check_non_zero(dictionary)
+        check_non_zero(dictionary)
+
+    def copy(self) -> Wallet:
+        """Returns a new copy of self"""
+        return Wallet(**copy.deepcopy(self.__dict__))
+
+    def update(self, wallet_deltas: WalletDeltas) -> None:
+        """Update the agent's wallet
+
+        Arguments
+        ----------
+        wallet_deltas : AgentDeltas
+            The agent's wallet that tracks the amount of assets this agent holds
+
+        Returns
+        -------
+        This method has no returns. It updates the Agent's Wallet according to the passed parameters
+        """
+        # track over time the agent's weighted average spend, for return calculation
+        for key, value_or_dict in wallet_deltas.copy().__dict__.items():
+            if value_or_dict is None or key in ["frozen", "no_new_attribs"]:
+                continue
+            if key in ["lp_tokens", "fees_paid", "withdraw_shares"]:
+                logging.debug(
+                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    self.address,
+                    key,
+                    getattr(self, key),
+                    getattr(self, key) + value_or_dict,
+                    value_or_dict,
+                )
+                self[key] += value_or_dict
+            # handle updating a Quantity
+            elif key == "balance":
+                logging.debug(
+                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    self.address,
+                    key,
+                    float(getattr(self, key).amount),
+                    float(getattr(self, key).amount + value_or_dict.amount),
+                    float(value_or_dict.amount),
+                )
+                getattr(self, key).amount += value_or_dict.amount
+            # handle updating a dict, which have mint_time attached
+            elif key == "borrows":
+                if value_or_dict:  # could be empty
+                    self._update_borrows(value_or_dict.items())
+            elif key == "longs":
+                self._update_longs(value_or_dict.items())
+            elif key == "shorts":
+                self._update_shorts(value_or_dict.items())
+            else:
+                raise ValueError(f"wallet_key={key} is not allowed.")
+            self.check_valid_wallet_state(self.__dict__)

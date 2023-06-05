@@ -2,13 +2,17 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.simulators as simulators
 import elfpy.time as time
 
-from elfpy.agents.policies.init_lp import InitializeLiquidityAgent
-from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies import InitializeLiquidityAgent
+from elfpy.markets.hyperdrive import (
+    HyperdriveMarket,
+    HyperdriveMarketState,
+    HyperdriveMarketDeltas,
+    HyperdrivePricingModel,
+)
 from elfpy.math import FixedPoint
 from elfpy.simulators import Config
 from elfpy.simulators.simulation_state import (
@@ -19,8 +23,7 @@ from elfpy.simulators.simulation_state import (
 )
 
 if TYPE_CHECKING:
-    import elfpy.agents.wallet as wallet
-    from elfpy.agents.agent import Agent
+    from elfpy.wallet.wallet_deltas import WalletDeltas
 
 
 def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulators.Simulator:
@@ -44,13 +47,15 @@ def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulato
     # Instantiate the market.
     # pricing model is hardcoded for now.  once we have support for more markets, we can add a
     # config option for type of market
-    pricing_model = hyperdrive_pm.HyperdrivePricingModel()
+    pricing_model = HyperdrivePricingModel()
     block_time = time.BlockTime()
     market, init_agent_deltas, market_deltas = get_initialized_hyperdrive_market(pricing_model, block_time, config)
     simulator = simulators.Simulator(config=config, market=market, block_time=block_time)
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp:
-        init_agent = InitializeLiquidityAgent(wallet_address=0, budget=FixedPoint(config.target_liquidity))
+        init_agent = Agent(
+            wallet_address=0, policy=InitializeLiquidityAgent(budget=FixedPoint(config.target_liquidity))
+        )
         init_agent_action = init_agent.action(market)[0]
         init_agent.wallet.update(init_agent_deltas)
         simulator.add_agents([init_agent])
@@ -105,10 +110,10 @@ def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulato
 
 
 def get_initialized_hyperdrive_market(
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    pricing_model: HyperdrivePricingModel,
     block_time: time.BlockTime,
     config: Config,
-) -> tuple[hyperdrive_market.Market, wallet.Wallet, HyperdriveMarketDeltas]:
+) -> tuple[HyperdriveMarket, WalletDeltas, HyperdriveMarketDeltas]:
     r"""Setup market
 
     Arguments
@@ -146,10 +151,10 @@ def get_initialized_hyperdrive_market(
         time_stretch=pricing_model.calc_time_stretch(FixedPoint(config.target_fixed_apr)),
         normalizing_constant=FixedPoint(config.num_position_days),
     )
-    market = hyperdrive_market.Market(
+    market = HyperdriveMarket(
         pricing_model=pricing_model,
         block_time=block_time,
-        market_state=hyperdrive_market.HyperdriveMarketState(
+        market_state=HyperdriveMarketState(
             init_share_price=FixedPoint(config.init_share_price),
             share_price=FixedPoint(config.init_share_price),
             variable_apr=FixedPoint(config.variable_apr[0]),
@@ -160,7 +165,6 @@ def get_initialized_hyperdrive_market(
     )
     # Not using an agent to initialize the market so we ignore the agent address
     market_deltas, agent_deltas = market.initialize(
-        wallet_address=0,
         contribution=FixedPoint(config.target_liquidity),
         target_apr=FixedPoint(config.target_fixed_apr),
     )

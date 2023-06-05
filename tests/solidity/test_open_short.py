@@ -1,11 +1,12 @@
 """Test opening a short in hyperdrive"""
 import unittest
 
-import elfpy.agents.agent as elf_agent
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
+
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies import NoActionPolicy
+from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 
 
@@ -23,20 +24,20 @@ class TestOpenShort(unittest.TestCase):
     contribution: FixedPoint = FixedPoint("500_000_000.0")
     target_apr: FixedPoint = FixedPoint("0.05")
     term_length: FixedPoint = FixedPoint("365.0")
-    alice: elf_agent.Agent
-    bob: elf_agent.Agent
-    celine: elf_agent.Agent
-    hyperdrive: hyperdrive_market.Market
+    alice: Agent
+    bob: Agent
+    celine: Agent
+    hyperdrive: HyperdriveMarket
     block_time: time.BlockTime
 
     def setUp(self):
-        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
-        self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
+        self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
+        self.celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=self.contribution))
         self.block_time = time.BlockTime()
-        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.HyperdriveMarketState()
-        self.hyperdrive = hyperdrive_market.Market(
+        pricing_model = HyperdrivePricingModel()
+        market_state = HyperdriveMarketState()
+        self.hyperdrive = HyperdriveMarket(
             pricing_model=pricing_model,
             market_state=market_state,
             block_time=self.block_time,
@@ -46,14 +47,14 @@ class TestOpenShort(unittest.TestCase):
                 normalizing_constant=self.term_length,
             ),
         )
-        _, agent_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, self.target_apr)
+        _, agent_deltas = self.hyperdrive.initialize(self.contribution, self.target_apr)
         self.alice.wallet.update(agent_deltas)
 
     # pylint: disable=too-many-arguments
     def verify_open_short(
         self,
-        user: elf_agent.Agent,
-        market_state_before: hyperdrive_market.HyperdriveMarketState,
+        user: Agent,
+        market_state_before: HyperdriveMarketState,
         base_amount: FixedPoint,  # max loss in base transferred from user to hyperdrive
         unsigned_bond_amount: FixedPoint,  # number of PTs shorted
         market_bond_delta: FixedPoint,
@@ -161,7 +162,7 @@ class TestOpenShort(unittest.TestCase):
     def test_open_short(self):
         """Open a short & check that accounting is done correctly"""
         bond_amount = FixedPoint("10.0")
-        self.bob.budget = bond_amount
+        self.bob.policy.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
@@ -180,7 +181,7 @@ class TestOpenShort(unittest.TestCase):
     def test_open_short_with_small_amount(self):
         """Open a tiny short & check that accounting is done correctly"""
         bond_amount = FixedPoint("0.01")
-        self.bob.budget = bond_amount
+        self.bob.policy.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr

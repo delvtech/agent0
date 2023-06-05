@@ -62,7 +62,7 @@ class FixedFrida(elfpy_agent.Agent):
         self.rng = rng
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.HyperdriveMarket) -> list[types.Trade]:
         """Implement a Fixed Frida user strategy.
 
         I'm an actor with a high risk threshold
@@ -76,7 +76,7 @@ class FixedFrida(elfpy_agent.Agent):
 
         Parameters
         ----------
-        market : Market
+        market : HyperdriveMarket
             the trading market
 
         Returns
@@ -147,7 +147,7 @@ class LongLouie(elfpy_agent.Agent):
         self.rng = rng
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.HyperdriveMarket) -> list[types.Trade]:
         """Implement a Long Louie user strategy.
 
         I'm not willing to open a long if it will cause the fixed-rate apr to go below the variable rate
@@ -158,7 +158,7 @@ class LongLouie(elfpy_agent.Agent):
 
         Parameters
         ----------
-        market : Market
+        market : HyperdriveMarket
             the trading market
 
         Returns
@@ -957,7 +957,7 @@ def create_elfpy_market(
     block_number: int,
     block_timestamp: int,
     start_timestamp: int,
-) -> hyperdrive_market.Market:
+) -> hyperdrive_market.HyperdriveMarket:
     """Create an elfpy market.
 
     Parameters
@@ -977,11 +977,11 @@ def create_elfpy_market(
 
     Returns
     -------
-    hyperdrive_market.Market
+    hyperdrive_market.HyperdriveMarket
         The elfpy market.
     """
     # pylint: disable=too-many-arguments
-    return hyperdrive_market.Market(
+    return hyperdrive_market.HyperdriveMarket(
         pricing_model=pricing_model,
         market_state=ape_utils.get_market_state_from_contract(hyperdrive_contract=hyperdrive_instance),
         position_duration=time.StretchedTime(

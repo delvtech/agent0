@@ -5,17 +5,18 @@ from typing import TYPE_CHECKING
 
 import elfpy.agents.agent_trade_result as agent_trade_result
 import elfpy.markets.hyperdrive.market_action_result as market_action_result
-import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
 import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
 from elfpy.math import FixedPoint
 
+from .yieldspace_pricing_model import YieldspacePricingModel
+
 if TYPE_CHECKING:
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from .hyperdrive_market import HyperdriveMarketState
 
 
-class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
+class HyperdrivePricingModel(YieldspacePricingModel):
     """
     Hyperdrive Pricing Model
 
@@ -30,10 +31,94 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
     def model_type(self) -> str:
         return "hyperdrive"
 
+    def get_max_long(
+        self,
+        market_state: HyperdriveMarketState,
+        time_remaining: time.StretchedTime,
+    ) -> tuple[FixedPoint, FixedPoint]:
+        r"""
+        Calculates the maximum long the market can support
+
+        .. math::
+            \Delta z' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot (k-(y+c \cdot z)^{1-\tau(d)}))^{\frac{1}{1-\tau(d)}}
+            -c \cdot z
+
+        Arguments
+        ----------
+        market_state : MarketState
+            The reserves and share prices of the pool
+        time_remaining : StretchedTime
+            The time remaining for the asset (incorporates time stretch)
+
+        Returns
+        -------
+        FixedPoint
+            The maximum amount of base that can be used to purchase bonds.
+        FixedPoint
+            The maximum amount of bonds that can be purchased.
+        """
+        # TODO: This shuld never be less than zero, but sometimes is. Need to investigate.
+        out_amount = market_state.bond_reserves - market_state.bond_buffer
+        if out_amount <= FixedPoint(0):
+            return FixedPoint(0), FixedPoint(0)
+        base = self.calc_in_given_out(
+            out=types.Quantity(amount=out_amount, unit=types.TokenType.PT),
+            market_state=market_state,
+            time_remaining=time_remaining,
+        ).breakdown.with_fee
+        bonds = self.calc_out_given_in(
+            in_=types.Quantity(amount=base, unit=types.TokenType.BASE),
+            market_state=market_state,
+            time_remaining=time_remaining,
+        ).breakdown.with_fee
+        return base, bonds
+
+    def get_max_short(
+        self,
+        market_state: HyperdriveMarketState,
+        time_remaining: time.StretchedTime,
+    ) -> tuple[FixedPoint, FixedPoint]:
+        r"""
+        Calculates the maximum short the market can support using the bisection
+        method.
+
+        .. math::
+            \Delta y' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot k)^{\frac{1}{1-\tau(d)}}-2y-c \cdot z
+
+        Arguments
+        ----------
+        market_state : MarketState
+            The reserves and share prices of the pool.
+        time_remaining : StretchedTime
+            The time remaining for the asset (incorporates time stretch).
+
+        Returns
+        -------
+        FixedPoint
+            The maximum amount of base that can be used to short bonds.
+        FixedPoint
+            The maximum amount of bonds that can be shorted.
+        """
+        # TODO: This shuld never be less than zero, but sometimes is. Need to investigate.
+        out_amount = market_state.share_reserves - market_state.base_buffer / market_state.share_price
+        if out_amount <= FixedPoint(0):
+            return FixedPoint(0), FixedPoint(0)
+        bonds = self.calc_in_given_out(
+            out=types.Quantity(amount=out_amount, unit=types.TokenType.PT),
+            market_state=market_state,
+            time_remaining=time_remaining,
+        ).breakdown.with_fee
+        base = self.calc_out_given_in(
+            in_=types.Quantity(amount=bonds, unit=types.TokenType.PT),
+            market_state=market_state,
+            time_remaining=time_remaining,
+        ).breakdown.with_fee
+        return base, bonds
+
     def calc_in_given_out(
         self,
         out: types.Quantity,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -181,7 +266,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
     def calc_out_given_in(
         self,
         in_: types.Quantity,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -324,7 +409,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
         )
 
     def calc_tokens_out_given_lp_in(
-        self, lp_in: FixedPoint, market_state: hyperdrive_market.HyperdriveMarketState
+        self, lp_in: FixedPoint, market_state: HyperdriveMarketState
     ) -> tuple[FixedPoint, FixedPoint]:
         """
         Calculates the amount of base shares and bonds released from burning a specified amount of
