@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from elfpy.agents.wallet_deltas import WalletDeltas
+from elfpy.wallet.wallet_deltas import WalletDeltas
 from elfpy.wallet.wallet import Borrow
 from elfpy.markets.borrow.borrow_pricing_model import BorrowPricingModel
 from elfpy.markets.borrow.borrow_market_state import BorrowMarketState

@@ -9,7 +9,7 @@ import elfpy.types as types
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
-    from elfpy.agents.wallet_deltas import WalletDeltas
+    from elfpy.wallet.wallet_deltas import WalletDeltas
     from elfpy.wallet.wallet import Wallet
     from elfpy.markets.base.base_pricing_model import BasePricingModel
     import elfpy.time as time

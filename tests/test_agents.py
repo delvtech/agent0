@@ -13,7 +13,7 @@ import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.agents.agent import Agent
-from elfpy.agents.wallet_deltas import WalletDeltas
+from elfpy.wallet.wallet_deltas import WalletDeltas
 from elfpy.agents.get_wallet_state import get_wallet_state
 from elfpy.agents.policies.base import BasePolicy
 from elfpy.agents.policies import (

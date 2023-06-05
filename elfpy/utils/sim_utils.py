@@ -20,7 +20,7 @@ from elfpy.simulators.simulation_state import (
 )
 
 if TYPE_CHECKING:
-    from elfpy.agents.wallet_deltas import WalletDeltas
+    from elfpy.wallet.wallet_deltas import WalletDeltas
 
 
 def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulators.Simulator:

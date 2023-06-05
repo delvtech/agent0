@@ -9,7 +9,7 @@ import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
 
-from elfpy.agents.wallet_deltas import WalletDeltas
+from elfpy.wallet.wallet_deltas import WalletDeltas
 from elfpy.wallet.wallet import Short, Long
 from elfpy.markets.base.base_market import BaseMarketAction
 from elfpy.markets.hyperdrive.checkpoint import Checkpoint

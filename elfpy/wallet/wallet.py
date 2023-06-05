@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from elfpy import check_non_zero
-from elfpy.agents.wallet_deltas import WalletDeltas
+from elfpy.wallet.wallet_deltas import WalletDeltas
 
 from elfpy.types import freezable, Quantity, TokenType
 from elfpy.math import FixedPoint

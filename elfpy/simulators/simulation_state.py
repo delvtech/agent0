@@ -13,7 +13,7 @@ from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDe
 from elfpy.simulators.config import Config
 
 if TYPE_CHECKING:
-    from elfpy.agents.wallet_deltas import WalletDeltas
+    from elfpy.wallet.wallet_deltas import WalletDeltas
     from elfpy.wallet.wallet import Wallet
 
 

@@ -13,7 +13,7 @@ import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
 
-from elfpy.agents.wallet_deltas import WalletDeltas
+from elfpy.wallet.wallet_deltas import WalletDeltas
 from elfpy.markets.base.base_market import BaseMarketState, BaseMarket
 from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
 from elfpy.markets.hyperdrive.checkpoint import Checkpoint
