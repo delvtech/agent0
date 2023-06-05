@@ -243,6 +243,7 @@ def get_env_args() -> dict:
         "trade_chance": os.environ.get("BOT_TRADE_CHANCE", 0.1),
         # Env passed in is a string "true"
         "alchemy": (os.environ.get("BOT_ALCHEMY", "false") == "true"),
+        "artifacts_url": os.environ.get("BOT_ARTIFACTS_URL", "http://artifacts:80")
     }
     return args
 
@@ -369,14 +370,14 @@ def set_up_experiment(
 
     # dynamically load devnet addresses from address file
     if args["devnet"]:
-        addresses= get_devnet_addresses(experiment_config, addresses)
+        addresses= get_devnet_addresses(experiment_config, args, addresses)
     return pricing_model, crash_file, network_choice, provider_settings, addresses
 
-def get_devnet_addresses(experiment_config: simulators.Config, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
+def get_devnet_addresses(experiment_config: simulators.Config, args: dict, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
     deployed_addresses = {}
     for _ in trange(100, desc="artifacts.."):
-        response = requests.get("http://artifacts:80/addresses.json", timeout=1)
+        response = requests.get(args["artifacts_url"]+"/addresses.json", timeout=1)
         if response.status_code == 200:
             deployed_addresses = response.json()
             break
@@ -827,7 +828,7 @@ def set_up_ape(
     ----------
     experiment_config : simulators.Config
         The experiment configuration, a list of variables that define the elf-simulations run.
-    args : argparse.Namespace
+    args : dict
         The environmental vars arguments.
     provider_settings : dict
         Custom parameters passed to the provider.
@@ -867,13 +868,14 @@ def set_up_ape(
         path=Path.cwd(),
         hyperdrive_address=addresses["goerli_hyperdrive"],  # ignored on devnet
     )
+
     if args["devnet"]:  # we're on devnet
         base_instance, hyperdrive_instance, addresses, deployer_account = set_up_devnet(
             addresses, project, provider, experiment_config, pricing_model
         )
     else:  # not on devnet, means we're on goerli, so we use known goerli addresses
         base_instance: ContractInstance = ape_utils.get_instance(
-            experiment_config.scratch[experiment_config.scratch["goerli_sdai_address"]],
+            addresses["goerli_sdai"],
             provider=provider,
         )
         hyperdrive_instance: ContractInstance = project.get_hyperdrive_contract()
