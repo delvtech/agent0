@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from elfpy.math import FixedPoint, FixedPointMath
+from elfpy.math import FixedPoint
 from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
 from elfpy.types import Trade, MarketType
 
@@ -43,11 +43,8 @@ class SingleLongAgent(BasePolicy):
                     )
                 )
         else:
-            max_base, _ = market.pricing_model.get_max_long(
-                market_state=market.market_state, time_remaining=market.position_duration
-            )
-            max_long = min(wallet.balance.amount, max_base)
-            trade_amount = max_long / FixedPoint("2.0")
+            max_base = wallet.get_max_long(market)
+            trade_amount = max_base / FixedPoint("2.0")
             action_list.append(
                 Trade(
                     market=MarketType.HYPERDRIVE,

@@ -7,12 +7,13 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from elfpy import check_non_zero
+from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
 from elfpy.types import freezable, Quantity, TokenType
 from elfpy.math import FixedPoint, FixedPointMath
 
 if TYPE_CHECKING:
     from typing import Any, Iterable
-    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+    from elfpy.markets.base.base_market import BaseMarket
 
 
 @dataclass
@@ -278,9 +279,36 @@ class Wallet:
             self.check_valid_wallet_state(self.__dict__)
 
     # TODO: this function should optionally accept a target apr.  the short should not slip the
+    # market fixed rate below the APR when opening the long
+    # issue #213
+    def get_max_long(self, market: BaseMarket) -> FixedPoint:
+        """Gets an approximation of the maximum amount of base the agent can use
+        Typically would be called to determine how much to enter into a long position.
+        Arguments
+        ----------
+        market : Market
+            The market on which this agent will be executing trades (MarketActions)
+        Returns
+        -------
+        FixedPoint
+            Maximum amount the agent can use to open a long
+        """
+        if isinstance(market, HyperdriveMarket):
+            (max_long, _) = market.pricing_model.get_max_long(
+                market_state=market.market_state,
+                time_remaining=market.position_duration,
+            )
+        else:  # no maximum
+            max_long = FixedPoint("inf")
+        return FixedPointMath.minimum(
+            self.balance.amount,
+            max_long,
+        )
+
+    # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate above the APR when opening the short
     # issue #213
-    def get_max_short(self, market: HyperdriveMarket) -> FixedPoint:
+    def get_max_short(self, market: BaseMarket) -> FixedPoint:
         """Gets an approximation of the maximum amount of bonds the agent can short.
 
         Arguments
@@ -294,10 +322,13 @@ class Wallet:
             Amount of base that the agent can short in the current market
         """
         # Get the market level max short.
-        (max_short_max_loss, max_short) = market.pricing_model.get_max_short(
-            market_state=market.market_state,
-            time_remaining=market.position_duration,
-        )
+        if hasattr(market.pricing_model, "get_max_short"):
+            (max_short_max_loss, max_short) = market.pricing_model.get_max_short(
+                market_state=market.market_state,
+                time_remaining=market.position_duration,
+            )
+        else:  # no maximum
+            max_short_max_loss, max_short = FixedPoint("inf"), FixedPoint("inf")
         # If the Agent's base balance can cover the max loss of the maximum
         # short, we can simply return the maximum short.
         if self.balance.amount >= max_short_max_loss:

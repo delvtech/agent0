@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
     from elfpy.agents.wallet import Wallet
-    from elfpy.markets.base.base_market import BaseMarket
+    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
 
 # pylint: disable=too-few-public-methods
 
@@ -46,7 +46,7 @@ class ShortSally(BasePolicy):
         self.risk_threshold = risk_threshold
         super().__init__(budget, rng)
 
-    def action(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
+    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Implement a Short Sally user strategy
 
 
@@ -82,11 +82,7 @@ class ShortSally(BasePolicy):
         short_balances = [short.balance for short in wallet.shorts.values()]
         has_opened_short = bool(any(short_balance > FixedPoint(0) for short_balance in short_balances))
         # only open a short if the fixed rate is 0.02 or more lower than variable rate
-        if (
-            hasattr(market, "fixed_apr")
-            and market.fixed_apr - market.market_state.variable_apr < self.risk_threshold
-            and not has_opened_short
-        ):
+        if market.fixed_apr - market.market_state.variable_apr < self.risk_threshold and not has_opened_short:
             # maximum amount the agent can short given the market and the agent's wallet
             trade_amount = wallet.get_max_short(market)
             # TODO: This is a hack until we fix get_max

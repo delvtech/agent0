@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
     from elfpy.agents.wallet import Wallet
-    from elfpy.markets.base.base_market import BaseMarket
+    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
 
 
 class RandomAgent(BasePolicy):
@@ -54,7 +54,7 @@ class RandomAgent(BasePolicy):
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
 
-    def open_short_with_random_amount(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
+    def open_short_with_random_amount(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Open a short with a random allowable amount"""
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
@@ -80,7 +80,7 @@ class RandomAgent(BasePolicy):
             )
         ]
 
-    def open_long_with_random_amount(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
+    def open_long_with_random_amount(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Open a long with a random allowable amount"""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
@@ -181,7 +181,7 @@ class RandomAgent(BasePolicy):
             )
         ]
 
-    def action(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
+    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Implement a random user strategy
 
         The agent performs one of four possible trades:

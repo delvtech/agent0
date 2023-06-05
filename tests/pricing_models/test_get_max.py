@@ -39,7 +39,7 @@ class TestGetMax(unittest.TestCase):
             bond_reserves >= bond_buffer
         """
         output_utils.setup_logging(log_filename="test_get_max")
-        pricing_models: list[BasePricingModel] = [
+        pricing_models: list[hyperdrive_pm.HyperdrivePricingModel | yieldspace_pm.YieldspacePricingModel] = [
             hyperdrive_pm.HyperdrivePricingModel(),
             yieldspace_pm.YieldspacePricingModel(),
         ]
