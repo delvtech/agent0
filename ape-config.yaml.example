@@ -22,8 +22,7 @@ dependencies:
 
 solidity:
   import_remapping:
-    - "@openzeppelin/contracts=OpenZeppelin/4.8.1"
-    - "openzeppelin-contracts/contracts=OpenZeppelin/4.8.1"
+    - "openzeppelin-contracts/contracts=OpenZeppelin/4.9.0"
     - "@aave=Aave/1.17.2"
 
 ethereum:
@@ -34,4 +33,4 @@ ethereum:
     required_confirmations: 1
 
 foundry:
-  port: 8555
+  host: https://ethereum:8545
