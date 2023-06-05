@@ -11,7 +11,7 @@ import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
 
-from elfpy.markets.base.base_market import BaseMarketState, BaseMarket
+from elfpy.markets.base import BaseMarket, BaseMarketState
 from elfpy.markets.hyperdrive import (
     hyperdrive_actions,
     Checkpoint,

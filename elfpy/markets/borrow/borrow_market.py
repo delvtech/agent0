@@ -12,7 +12,7 @@ from elfpy.types import freezable, Quantity, TokenType
 from elfpy.wallet.wallet_deltas import WalletDeltas
 from elfpy.wallet.wallet import Borrow
 
-from elfpy.markets.base.base_market import BaseMarket, BaseMarketAction
+from elfpy.markets.base import BaseMarket, BaseMarketAction
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:

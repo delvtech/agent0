@@ -11,7 +11,7 @@ import elfpy.types as types
 
 from elfpy.wallet.wallet_deltas import WalletDeltas
 from elfpy.wallet.wallet import Short, Long
-from elfpy.markets.base.base_market import BaseMarketAction
+from elfpy.markets.base import BaseMarketAction
 from elfpy.markets.hyperdrive import Checkpoint, HyperdriveMarketDeltas
 from elfpy.math import FixedPoint, FixedPointMath
 from elfpy.math.update_weighted_average import update_weighted_average

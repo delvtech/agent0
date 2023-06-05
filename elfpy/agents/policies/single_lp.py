@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
     from elfpy.wallet.wallet import Wallet
-    from elfpy.markets.base.base_market import BaseMarket
+    from elfpy.markets.base import BaseMarket
 
 # pylint: disable=too-few-public-methods
 

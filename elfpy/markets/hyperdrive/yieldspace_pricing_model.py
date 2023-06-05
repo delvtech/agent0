@@ -9,7 +9,7 @@ import elfpy.markets.hyperdrive.market_action_result as market_action_result
 import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.markets.base.base_pricing_model import BasePricingModel
+from elfpy.markets.base import BasePricingModel
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:

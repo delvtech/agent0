@@ -11,7 +11,7 @@ from .base import BasePolicy
 
 if TYPE_CHECKING:
     from elfpy.wallet.wallet import Wallet
-    from elfpy.markets.base.base_market import BaseMarket
+    from elfpy.markets.base import BaseMarket
     from elfpy.types import Trade
 
 # pylint: disable=too-few-public-methods

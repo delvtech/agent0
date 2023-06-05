@@ -11,7 +11,7 @@ from elfpy.types import MarketType, Quantity, TokenType, Trade
 
 if TYPE_CHECKING:
     from elfpy.markets.hyperdrive import HyperdriveMarket
-    from elfpy.markets.base.base_market import BaseMarket
+    from elfpy.markets.base import BaseMarket
     from elfpy.agents.policies.base import BasePolicy
 
 

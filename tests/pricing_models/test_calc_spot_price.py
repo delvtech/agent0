@@ -3,9 +3,9 @@ import unittest
 
 import elfpy.utils.price as price_utils
 import elfpy.time as time
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
-from elfpy.markets.base.base_pricing_model import BasePricingModel
+from elfpy.markets.base import BasePricingModel
+from elfpy.markets.hyperdrive import HyperdriveMarketState
 from elfpy.math import FixedPoint
 
 
@@ -24,7 +24,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   1 share price; 1 init_share_price
             #   90d elapsed; time_stretch=1; norm=365
             {
-                "market_state": hyperdrive_market.HyperdriveMarketState(
+                "market_state": HyperdriveMarketState(
                     share_reserves=FixedPoint("500000.0"),  # z
                     bond_reserves=FixedPoint("500000.0"),  # y
                     share_price=FixedPoint("1.0"),  # c
@@ -45,7 +45,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   2 share price; 1.5 init_share_price
             #   90d elapsed; time_stretch=1; norm=365
             {
-                "market_state": hyperdrive_market.HyperdriveMarketState(
+                "market_state": HyperdriveMarketState(
                     share_reserves=FixedPoint("250000.0"),  # z
                     bond_reserves=FixedPoint("500000.0"),  # y
                     share_price=FixedPoint("2.0"),  # c
@@ -66,7 +66,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   2 share price; 1.5 init_share_price
             #   180d elapsed; time_stretch=0.7; norm=365
             {
-                "market_state": hyperdrive_market.HyperdriveMarketState(
+                "market_state": HyperdriveMarketState(
                     share_reserves=FixedPoint("250000.0"),  # z
                     bond_reserves=FixedPoint("300000.0"),  # y
                     share_price=FixedPoint("2.0"),  # c
@@ -184,7 +184,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   1 share price; 1 init_share_price
             #   90d elapsed; time_stretch=1; norm=365
             {
-                "market_state": hyperdrive_market.HyperdriveMarketState(
+                "market_state": HyperdriveMarketState(
                     share_reserves=FixedPoint("500000.0"),  # z
                     bond_reserves=FixedPoint("500000.0"),  # y
                     share_price=FixedPoint("1.0"),  # c
@@ -200,7 +200,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   2 share price; 1.5 init_share_price
             #   90d elapsed; time_stretch=1; norm=365
             {
-                "market_state": hyperdrive_market.HyperdriveMarketState(
+                "market_state": HyperdriveMarketState(
                     share_reserves=FixedPoint("250000.0"),  # z
                     bond_reserves=FixedPoint("500000.0"),  # y
                     share_price=FixedPoint("2.0"),  # c
@@ -216,7 +216,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   2 share price; 1.5 init_share_price
             #   180d elapsed; time_stretch=0.7; norm=365
             {
-                "market_state": hyperdrive_market.HyperdriveMarketState(
+                "market_state": HyperdriveMarketState(
                     share_reserves=FixedPoint("250000.0"),  # z
                     bond_reserves=FixedPoint("300000.0"),  # y
                     share_price=FixedPoint("2.0"),  # c
