@@ -38,7 +38,7 @@ class BorrowMarketAction(BaseMarketAction):
     spot_price: FixedPoint | None = None
 
 
-class Market(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPricingModel]):
+class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPricingModel]):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.

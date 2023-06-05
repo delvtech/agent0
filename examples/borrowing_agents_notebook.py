@@ -65,13 +65,13 @@ import elfpy.utils.outputs as output_utils
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
-from elfpy.markets.borrow.borrow_market import (
-    Market,
+from elfpy.markets.borrow import (
+    BorrowMarket,
     BorrowMarketAction,
+    BorrowMarketState,
     MarketActionType,
+    BorrowPricingModel,
 )
-from elfpy.markets.borrow.borrow_pricing_model import BorrowPricingModel
-from elfpy.markets.borrow.borrow_market_state import BorrowMarketState
 from elfpy.math.fixed_point import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.wallet.wallet import Borrow, Wallet
@@ -97,7 +97,7 @@ class BorrowingBeatrice(BasePolicy):
         self.risk_threshold = risk_threshold
         super().__init__(budget, rng)
 
-    def action(self, market: Market, wallet: Wallet) -> list[types.Trade]:
+    def action(self, market: BorrowMarket, wallet: Wallet) -> list[types.Trade]:
         """Implement a Borrowing Beatrice user strategy
 
         I take out loans when the interest rate is below a threshold
@@ -205,7 +205,7 @@ market_state = BorrowMarketState(
     lending_rate=FixedPoint("0.01"),
     spread_ratio=FixedPoint("1.25"),
 )
-market = Market(pricing_model=BorrowPricingModel(), market_state=market_state, block_time=elf_time.BlockTime())
+market = BorrowMarket(pricing_model=BorrowPricingModel(), market_state=market_state, block_time=elf_time.BlockTime())
 
 agents = {
     0: Agent(

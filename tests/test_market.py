@@ -2,8 +2,7 @@
 from __future__ import annotations
 
 import unittest
-from elfpy.markets.borrow.borrow_pricing_model import BorrowPricingModel
-from elfpy.markets.borrow.borrow_market_state import BorrowMarketState
+from elfpy.markets.borrow import BorrowMarket, BorrowMarketState, BorrowPricingModel
 
 import elfpy.time as time
 
@@ -14,7 +13,6 @@ from elfpy.markets.hyperdrive import (
     HyperdrivePricingModel,
     YieldspacePricingModel,
 )
-from elfpy.markets.borrow.borrow_market import Market
 from elfpy.math import FixedPoint
 
 # TODO: remove this after FixedPoint PRs are finished
@@ -204,7 +202,7 @@ class MarketTest(unittest.TestCase):
         # Loop through the test cases & pricing model
         for test_number, test_case in enumerate(test_cases):
             if isinstance(test_case["pricing_model"], BorrowPricingModel):
-                market = Market(
+                market = BorrowMarket(
                     pricing_model=test_case["pricing_model"],
                     block_time=time.BlockTime(),
                     market_state=BorrowMarketState(),
