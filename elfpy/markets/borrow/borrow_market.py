@@ -5,15 +5,16 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from elfpy.markets.borrow.borrow_pricing_model import BorrowPricingModel
-from elfpy.markets.borrow.borrow_market_state import BorrowMarketState
-from elfpy.markets.borrow.borrow_market_deltas import BorrowMarketDeltas
 from elfpy.types import freezable, Quantity, TokenType
 from elfpy.wallet.wallet_deltas import WalletDeltas
 from elfpy.wallet.wallet import Borrow
 
 from elfpy.markets.base import BaseMarket, BaseMarketAction
 from elfpy.math import FixedPoint
+
+from .borrow_pricing_model import BorrowPricingModel
+from .borrow_market_state import BorrowMarketState
+from .borrow_market_deltas import BorrowMarketDeltas
 
 if TYPE_CHECKING:
     from elfpy.wallet.wallet import Wallet

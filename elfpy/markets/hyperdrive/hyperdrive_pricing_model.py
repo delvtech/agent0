@@ -5,17 +5,18 @@ from typing import TYPE_CHECKING
 
 import elfpy.agents.agent_trade_result as agent_trade_result
 import elfpy.markets.hyperdrive.market_action_result as market_action_result
-import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
 import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
 from elfpy.math import FixedPoint
 
+from .yieldspace_pricing_model import YieldspacePricingModel
+
 if TYPE_CHECKING:
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from .hyperdrive_market import HyperdriveMarketState
 
 
-class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
+class HyperdrivePricingModel(YieldspacePricingModel):
     """
     Hyperdrive Pricing Model
 
@@ -32,7 +33,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
 
     def get_max_long(
         self,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint]:
         r"""
@@ -74,7 +75,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
 
     def get_max_short(
         self,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint]:
         r"""
@@ -117,7 +118,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
     def calc_in_given_out(
         self,
         out: types.Quantity,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -265,7 +266,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
     def calc_out_given_in(
         self,
         in_: types.Quantity,
-        market_state: hyperdrive_market.HyperdriveMarketState,
+        market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -408,7 +409,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
         )
 
     def calc_tokens_out_given_lp_in(
-        self, lp_in: FixedPoint, market_state: hyperdrive_market.HyperdriveMarketState
+        self, lp_in: FixedPoint, market_state: HyperdriveMarketState
     ) -> tuple[FixedPoint, FixedPoint]:
         """
         Calculates the amount of base shares and bonds released from burning a specified amount of

@@ -5,8 +5,9 @@ from dataclasses import dataclass, field
 import elfpy.types as types
 
 from elfpy.markets.base import BaseMarketState
-from elfpy.markets.borrow import BorrowMarketDeltas
 from elfpy.math import FixedPoint
+
+from .borrow_market_deltas import BorrowMarketDeltas
 
 
 @types.freezable(frozen=False, no_new_attribs=False)

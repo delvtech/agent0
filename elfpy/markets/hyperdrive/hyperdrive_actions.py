@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
@@ -12,10 +11,13 @@ import elfpy.types as types
 from elfpy.wallet.wallet_deltas import WalletDeltas
 from elfpy.wallet.wallet import Short, Long
 from elfpy.markets.base import BaseMarketAction
-from elfpy.markets.hyperdrive import Checkpoint, HyperdriveMarketDeltas
 from elfpy.math import FixedPoint, FixedPointMath
 from elfpy.math.update_weighted_average import update_weighted_average
 from elfpy.time.time import StretchedTime
+
+from .checkpoint import Checkpoint
+from .hyperdrive_market_deltas import HyperdriveMarketDeltas
+from .hyperdrive_pricing_model import HyperdrivePricingModel
 
 if TYPE_CHECKING:
     from elfpy.wallet.wallet import Wallet
@@ -311,7 +313,7 @@ def calc_open_short(
     bond_amount: FixedPoint,
     market_state: HyperdriveMarketState,
     position_duration: time.StretchedTime,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    pricing_model: HyperdrivePricingModel,
     block_time: FixedPoint,
     latest_checkpoint_time: FixedPoint,
 ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
@@ -436,7 +438,7 @@ def calc_close_short(
     bond_amount: FixedPoint,
     market_state: HyperdriveMarketState,
     position_duration: time.StretchedTime,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    pricing_model: HyperdrivePricingModel,
     block_time: FixedPoint,
     mint_time: FixedPoint,
     open_share_price: FixedPoint,
@@ -588,7 +590,7 @@ def calc_open_long(
     base_amount: FixedPoint,
     market_state: HyperdriveMarketState,
     position_duration: StretchedTime,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    pricing_model: HyperdrivePricingModel,
     latest_checkpoint_time: FixedPoint,
     spot_price: FixedPoint,
 ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
@@ -675,7 +677,7 @@ def calc_close_long(
     bond_amount: FixedPoint,
     market_state: HyperdriveMarketState,
     position_duration: StretchedTime,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    pricing_model: HyperdrivePricingModel,
     block_time: FixedPoint,
     mint_time: FixedPoint,
     is_trade: bool = True,
@@ -952,7 +954,7 @@ def calc_add_liquidity(
     base_in: FixedPoint,
     market_state: HyperdriveMarketState,
     position_duration: StretchedTime,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    pricing_model: HyperdrivePricingModel,
     fixed_apr: FixedPoint,
     block_time: FixedPoint,
 ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
@@ -1018,7 +1020,7 @@ def calc_remove_liquidity(
     lp_shares: FixedPoint,
     market_state: HyperdriveMarketState,
     position_duration: StretchedTime,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    pricing_model: HyperdrivePricingModel,
 ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
     """Computes new deltas for bond & share reserves after liquidity is removed.
 
