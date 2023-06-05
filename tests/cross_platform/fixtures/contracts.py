@@ -1,9 +1,11 @@
 """Fixtures for contracts"""
+from dataclasses import dataclass
+
 import pytest
+
 from ape.api.accounts import TestAccountAPI
 from ape.contracts import ContractInstance
 from ape.managers.project import ProjectManager
-from attr import dataclass
 
 from .hyperdrive_config import HyperdriveConfig
 

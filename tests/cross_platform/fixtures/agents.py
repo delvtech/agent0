@@ -1,10 +1,15 @@
 """Fixtures for elfpy & solidity agents"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
 import ape
 import pytest
+
 from ape.api.accounts import TestAccountAPI
-from attr import dataclass
 
 from elfpy.agents.agent import Agent
+from elfpy.agents.policies import NoActionPolicy
 from elfpy.math.fixed_point import FixedPoint
 
 # pylint: disable=redefined-outer-name
@@ -41,9 +46,9 @@ def python_agents() -> PythonAgents:
     """Returns some python agents initialized with some budget"""
     budget: FixedPoint = FixedPoint("50_000_000.0")
 
-    alice = Agent(wallet_address=0, budget=budget)
-    bob = Agent(wallet_address=1, budget=budget)
-    celine = Agent(wallet_address=2, budget=budget)
+    alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=budget))
+    bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=budget))
+    celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=budget))
 
     return PythonAgents(alice, bob, celine)
 
