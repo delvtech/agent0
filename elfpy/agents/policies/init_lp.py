@@ -10,7 +10,7 @@ from elfpy.types import Trade, MarketType
 from .base import BasePolicy
 
 if TYPE_CHECKING:
-    from elfpy.agents.wallet import Wallet
+    from elfpy.wallet.wallet import Wallet
     from elfpy.markets.base.base_market import BaseMarket
 
 

@@ -29,7 +29,7 @@ from elfpy.agents.policies import (
 )
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
 from elfpy.math import FixedPoint
-from elfpy.agents.wallet import Wallet, Long
+from elfpy.wallet.wallet import Wallet, Long
 
 # pylint: disable=too-few-public-methods
 

@@ -6,7 +6,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from elfpy.agents.wallet_deltas import WalletDeltas
-from elfpy.agents.wallet import Borrow
+from elfpy.wallet.wallet import Borrow
 from elfpy.markets.borrow.borrow_pricing_model import BorrowPricingModel
 from elfpy.markets.borrow.borrow_market_state import BorrowMarketState
 from elfpy.markets.borrow.borrow_market_deltas import BorrowMarketDeltas
@@ -16,7 +16,7 @@ from elfpy.markets.base.base_market import BaseMarket, BaseMarketAction
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
-    from elfpy.agents.wallet import Wallet
+    from elfpy.wallet.wallet import Wallet
 
 
 class MarketActionType(Enum):

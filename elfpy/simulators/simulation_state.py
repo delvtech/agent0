@@ -14,7 +14,7 @@ from elfpy.simulators.config import Config
 
 if TYPE_CHECKING:
     from elfpy.agents.wallet_deltas import WalletDeltas
-    from elfpy.agents.wallet import Wallet
+    from elfpy.wallet.wallet import Wallet
 
 
 @dataclass

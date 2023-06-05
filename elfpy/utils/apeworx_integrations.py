@@ -18,7 +18,7 @@ from ape.managers.project import ProjectManager
 from ape.types import AddressType, ContractType
 
 import elfpy
-import elfpy.agents.wallet as elf_wallet
+import elfpy.wallet.wallet as elf_wallet
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 from elfpy import types

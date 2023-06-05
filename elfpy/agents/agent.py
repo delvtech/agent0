@@ -4,7 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 from typing import TYPE_CHECKING
 
-from elfpy.agents.wallet import Wallet
+from elfpy.wallet.wallet import Wallet
 from elfpy.math import FixedPoint
 from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Quantity, TokenType, Trade

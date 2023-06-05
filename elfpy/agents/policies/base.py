@@ -10,7 +10,7 @@ from elfpy.math import FixedPoint
 if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
-    from elfpy.agents.wallet import Wallet
+    from elfpy.wallet.wallet import Wallet
     from elfpy.markets.base.base_market import BaseMarket
     from elfpy.types import Trade
 

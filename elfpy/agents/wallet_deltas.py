@@ -9,7 +9,7 @@ from elfpy.math import FixedPoint
 from elfpy.types import freezable, Quantity, TokenType
 
 if TYPE_CHECKING:
-    from elfpy.agents.wallet import Long, Short, Borrow
+    from elfpy.wallet.wallet import Long, Short, Borrow
 
 
 @freezable()

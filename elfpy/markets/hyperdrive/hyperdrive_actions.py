@@ -10,7 +10,7 @@ import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.agents.wallet_deltas import WalletDeltas
-from elfpy.agents.wallet import Short, Long
+from elfpy.wallet.wallet import Short, Long
 from elfpy.markets.base.base_market import BaseMarketAction
 from elfpy.markets.hyperdrive.checkpoint import Checkpoint
 from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
@@ -19,7 +19,7 @@ from elfpy.math.update_weighted_average import update_weighted_average
 from elfpy.time.time import StretchedTime
 
 if TYPE_CHECKING:
-    from elfpy.agents.wallet import Wallet
+    from elfpy.wallet.wallet import Wallet
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 

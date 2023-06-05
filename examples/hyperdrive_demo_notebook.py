@@ -63,7 +63,7 @@ import elfpy.utils.post_processing as post_processing
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import RandomAgent
-from elfpy.agents.wallet import Wallet
+from elfpy.wallet.wallet import Wallet
 from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils
 from elfpy.utils.outputs import get_gridspec_subplots

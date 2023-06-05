@@ -26,7 +26,7 @@ import elfpy.types as types
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
-from elfpy.agents.wallet import Wallet
+from elfpy.wallet.wallet import Wallet
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config

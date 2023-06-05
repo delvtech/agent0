@@ -21,7 +21,7 @@ from elfpy.math import FixedPoint
 from elfpy.types import Quantity, TokenType
 
 if TYPE_CHECKING:
-    from elfpy.agents.wallet import Wallet
+    from elfpy.wallet.wallet import Wallet
 
 # dataclasses can have many attributes
 # pylint: disable=too-many-instance-attributes
