@@ -333,7 +333,7 @@ class Wallet:
             time_remaining=market.position_duration,
         )
         max_loss = last_maybe_max_short - trade_result.user_result.d_base
-        last_step_size = FixedPoint("1.0") / (FixedPoint("2.0") ** FixedPoint(float(num_iters)) + FixedPoint("1.0"))
+        last_step_size = FixedPoint("1.0") / (FixedPoint("2.0") ** FixedPoint(num_iters) + FixedPoint("1.0"))
         if max_loss > self.balance.amount:
             bond_percent -= last_step_size
             last_maybe_max_short = max_short * bond_percent
