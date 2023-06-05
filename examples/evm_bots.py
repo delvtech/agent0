@@ -37,198 +37,23 @@ from tqdm import trange
 
 # elfpy core repo
 import elfpy
-import elfpy.agents.agent as elfpy_agent
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
-from elfpy import simulators, time, types
-from elfpy.agents.policies import random_agent
-from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
+
+from elfpy import DEFAULT_LOG_MAXBYTES, SECONDS_IN_YEAR
+from elfpy import time, types
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies.base import BasePolicy
+from elfpy.agents.policies import LongLouie, RandomAgent, ShortSally
+from elfpy.markets.base import BasePricingModel
+from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
 from elfpy.math import FixedPoint
+from elfpy.simulators import Simulator
 from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
 
-
-class FixedFrida(elfpy_agent.Agent):
-    """Agent that paints & opens fixed rate borrow positions."""
-
-    def __init__(  # pylint: disable=too-many-arguments # noqa: PLR0913
-        self,
-        rng: NumpyGenerator,
-        trade_chance: float,
-        risk_threshold: float,
-        wallet_address: int,
-        budget: FixedPoint = FixedPoint("10_000.0"),
-    ) -> None:
-        """Add custom stuff then call basic policy init."""
-        self.trade_chance = trade_chance
-        self.risk_threshold: FixedPoint = FixedPoint(risk_threshold)
-        self.rng = rng
-        super().__init__(wallet_address, budget)
-
-    def action(self, market: hyperdrive_market.HyperdriveMarket) -> list[types.Trade]:
-        """Implement a Fixed Frida user strategy.
-
-        I'm an actor with a high risk threshold
-        I'm willing to open up a fixed-rate borrow (aka a short) if the fixed rate is ~2% higher than the variable rate
-            approx means gauss mean=0.02; std=0.005, clipped at 0, 5
-        I will never close my short until the simulation stops
-            UNLESS my short reaches the token duration mark (e.g. 6mo)
-            realistically, people might leave them hanging
-        I have total budget of 2k -> 250k (gauss mean=75k; std=50k, i.e. 68% values are within 75k +/- 50k)
-        I only open one short at a time
-
-        Parameters
-        ----------
-        market : HyperdriveMarket
-            the trading market
-
-        Returns
-        -------
-        action_list : list[MarketAction]
-        """
-        # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
-        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
-        if not gonna_trade:
-            return []
-        action_list = []
-        for short_time, short in self.wallet.shorts.items():  # loop over shorts
-            if (market.block_time.time - short_time) >= market.annualized_position_duration:  # if any short is mature
-                trade_amount = short.balance  # close the whole thing
-                action_list += [
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.HyperdriveMarketAction(
-                            action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
-                            trade_amount=trade_amount,
-                            wallet=self.wallet,
-                            mint_time=short_time,
-                        ),
-                    )
-                ]
-        short_balances = [short.balance for short in self.wallet.shorts.values()]
-        has_opened_short = any((short_balance > 0 for short_balance in short_balances))
-        # only open a short if the fixed rate is 0.02 or more lower than variable rate
-        if (market.fixed_apr - market.market_state.variable_apr) < self.risk_threshold and not has_opened_short:
-            # TODO: This is a hack until we fix get_max
-            # issue # 440
-            # maximum amount the agent can short given the market and the agent's wallet
-            # trade_amount = self.get_max_short(market)
-            maximum_trade_amount_in_bonds = (
-                market.market_state.share_reserves * market.market_state.share_price / FixedPoint("2.0")
-            )
-            # WEI <= trade_amount <= max_short
-            trade_amount = max(elfpy.WEI, min(FixedPoint("0.0"), maximum_trade_amount_in_bonds))
-            if trade_amount > elfpy.WEI:
-                action_list += [
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.HyperdriveMarketAction(
-                            action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
-                            trade_amount=trade_amount,
-                            wallet=self.wallet,
-                            mint_time=market.block_time.time,
-                        ),
-                    )
-                ]
-        return action_list
-
-
-class LongLouie(elfpy_agent.Agent):
-    """Long-nosed agent that opens longs."""
-
-    def __init__(  # pylint: disable=too-many-arguments # noqa: PLR0913
-        self,
-        rng: NumpyGenerator,
-        trade_chance: float,
-        risk_threshold: float,
-        wallet_address: int,
-        budget: FixedPoint = FixedPoint("10_000.0"),
-    ) -> None:
-        """Add custom stuff then call basic policy init."""
-        self.trade_chance = trade_chance
-        self.risk_threshold: FixedPoint = FixedPoint(risk_threshold)
-        self.rng = rng
-        super().__init__(wallet_address, budget)
-
-    def action(self, market: hyperdrive_market.HyperdriveMarket) -> list[types.Trade]:
-        """Implement a Long Louie user strategy.
-
-        I'm not willing to open a long if it will cause the fixed-rate apr to go below the variable rate
-            I simulate the outcome of my trade, and only execute on this condition
-        I only close if the position has matured
-        I have total budget of 2k -> 250k (gauss mean=75k; std=50k, i.e. 68% values are within 75k +/- 50k)
-        I only open one long at a time
-
-        Parameters
-        ----------
-        market : HyperdriveMarket
-            the trading market
-
-        Returns
-        -------
-        action_list : list[MarketAction]
-        """
-        # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
-        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
-        if not gonna_trade:
-            return []
-        action_list = []
-        for long_time, long in self.wallet.longs.items():  # loop over longs
-            if (market.block_time.time - long_time) >= market.annualized_position_duration:  # if any long is mature
-                trade_amount = long.balance  # close the whole thing
-                action_list += [
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.HyperdriveMarketAction(
-                            action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
-                            trade_amount=trade_amount,
-                            wallet=self.wallet,
-                            mint_time=long_time,
-                        ),
-                    )
-                ]
-
-        long_balances = [long.balance for long in self.wallet.longs.values()]
-        has_opened_long = any((long_balance > 0 for long_balance in long_balances))
-        # only open a long if the fixed rate is higher than variable rate
-        if (
-            market.fixed_apr - market.market_state.variable_apr
-        ) > self.risk_threshold and not has_opened_long:  # risk_threshold = 0
-            total_bonds_to_match_variable_apr = market.pricing_model.calc_bond_reserves(
-                target_apr=market.market_state.variable_apr,  # fixed rate targets the variable rate
-                time_remaining=market.position_duration,
-                market_state=market.market_state,
-            )
-            # get the delta bond amount & convert units
-            new_bonds_to_match_variable_apr = (
-                market.market_state.bond_reserves - total_bonds_to_match_variable_apr
-            ) * market.spot_price
-            # divide by 2 to adjust for changes in share reserves when the trade is executed
-            adjusted_bonds = new_bonds_to_match_variable_apr / FixedPoint("2.0")
-            # TODO: This is a hack until we fix get_max
-            # issue # 440
-            # get the maximum amount the agent can long given the market and the agent's wallet
-            # max_trade_amount = self.get_max_long(market)
-            maximum_trade_amount_in_base = market.market_state.bond_reserves * market.spot_price / FixedPoint("2.0")
-            # WEI <= trade_amount <= max_short
-            # don't want to trade more than the agent has or more than the market can handle
-            trade_amount = max(elfpy.WEI, min(adjusted_bonds, maximum_trade_amount_in_base))
-            if trade_amount > elfpy.WEI:
-                action_list += [
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.HyperdriveMarketAction(
-                            action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
-                            trade_amount=trade_amount,
-                            wallet=self.wallet,
-                            mint_time=market.block_time.time,
-                        ),
-                    )
-                ]
-        return action_list
 
 
 def get_env_args() -> dict:
@@ -254,7 +79,7 @@ def get_env_args() -> dict:
         "rpc_url": os.environ.get("BOT_RPC_URL", "http://ethereum:8545"),
         "log_filename": os.environ.get("BOT_LOG_FILENAME", "testnet_bots"),
         "log_level": os.environ.get("BOT_LOG_LEVEL", "INFO"),
-        "max_bytes": os.environ.get("BOT_MAX_BYTES", elfpy.DEFAULT_LOG_MAXBYTES),
+        "max_bytes": os.environ.get("BOT_MAX_BYTES", DEFAULT_LOG_MAXBYTES),
         "num_louie": os.environ.get("BOT_NUM_LOUIE", 0),
         "num_frida": os.environ.get("BOT_NUM_FRIDA", 0),
         "num_random": os.environ.get("BOT_NUM_RANDOM", 4),
@@ -289,7 +114,7 @@ class BotInfo:
 
     Budget = namedtuple("Budget", ["mean", "std", "min", "max"])
     Risk = namedtuple("Risk", ["mean", "std", "min", "max"])
-    policy: Type[elfpy_agent.Agent]
+    policy: Type[Agent]
     trade_chance: float = 0.1
     risk_threshold: float | None = None
     budget: Budget = Budget(mean=5_000, std=2_000, min=1_000, max=10_000)
@@ -340,8 +165,8 @@ def get_config(args: dict) -> Config:
     # Custom parameters for this experiment
     config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
     config.scratch["louie"] = BotInfo(risk_threshold=0.0, policy=LongLouie, trade_chance=config.scratch["trade_chance"])
-    config.scratch["frida"] = BotInfo(policy=FixedFrida, trade_chance=config.scratch["trade_chance"])
-    config.scratch["random"] = BotInfo(policy=random_agent.RandomAgent, trade_chance=config.scratch["trade_chance"])
+    config.scratch["frida"] = BotInfo(policy=ShortSally, trade_chance=config.scratch["trade_chance"])
+    config.scratch["random"] = BotInfo(policy=RandomAgent, trade_chance=config.scratch["trade_chance"])
     config.scratch["bot_names"] = {"louie", "frida", "random"}
 
     config.freeze()
@@ -350,7 +175,7 @@ def get_config(args: dict) -> Config:
 
 def set_up_experiment(
     experiment_config: Config, args: dict
-) -> tuple[elfpy.pricing_models.base.PricingModel, str, str, dict[str, str], dict]:
+) -> tuple[BasePricingModel, str, str, dict[str, str], dict]:
     """Declare and assign experiment variables.
 
     Parameters
@@ -362,7 +187,7 @@ def set_up_experiment(
 
     Returns
     -------
-    pricing_model : elfpy.pricing_models.base.PricingModel
+    pricing_model : BasePricingModel
         The elf-simulations pricing model.
     crash_file : str
         The path to the crash file.
@@ -373,7 +198,7 @@ def set_up_experiment(
     addresses : dict
         Dict of deployed addresses.
     """
-    pricing_model = hyperdrive_pm.HyperdrivePricingModel()
+    pricing_model = HyperdrivePricingModel()
     # inputs
     crash_file = f".logging/no_crash_streak{'_devnet' if args['devnet'] else ''}.txt"
     network_choice = "ethereum:local:" + ("alchemy" if args["alchemy"] else "foundry")
@@ -390,7 +215,7 @@ def set_up_experiment(
         addresses= get_devnet_addresses(experiment_config, args, addresses)
     return pricing_model, crash_file, network_choice, provider_settings, addresses
 
-def get_devnet_addresses(experiment_config: simulators.Config, args: dict, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
+def get_devnet_addresses(experiment_config: Config, args: dict, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
     deployed_addresses = {}
     for _ in trange(100, desc="artifacts.."):
@@ -440,7 +265,7 @@ def create_agent(
     experiment_config: Config,
     args: dict,
     deployer_account: KeyfileAccount,
-) -> elfpy.agents.agent.Agent:
+) -> Agent:
     """Create an agent as defined in bot_info, assign its address, give it enough base.
 
     Parameters
@@ -466,12 +291,12 @@ def create_agent(
 
     Returns
     -------
-    agent : elfpy.agents.agent.Agent
+    agent : Agent
         The agent object used in elf-simulations.
     """
     # pylint: disable=too-many-arguments
     assert bot.index is not None, "Bot must have an index."
-    assert isinstance(bot.policy, type(elfpy_agent.Agent)), "Bot must have a policy of type Agent."
+    assert isinstance(bot.policy, type(Agent)), "Bot must have a policy of type Agent."
     params = {
         "trade_chance": experiment_config.scratch["trade_chance"],
         "budget": FixedPoint(
@@ -529,7 +354,7 @@ def set_up_agents(
     base_instance: ContractInstance,
     addresses: dict[str, str],
     deployer_account: KeyfileAccount,
-) -> dict[str, elfpy.agents.agent.Agent]:
+) -> dict[str, Agent]:
     """Set up python agents & corresponding on-chain accounts.
 
     Parameters
@@ -551,7 +376,7 @@ def set_up_agents(
 
     Returns
     -------
-    sim_agents : dict[str, elfpy.agents.agent.Agent]
+    sim_agents : dict[str, Agent]
         Dict of agents used in the simulation.
     """
     # pylint: disable=too-many-arguments, too-many-locals
@@ -598,7 +423,7 @@ def set_up_agents(
 
 def do_trade(
     market_trade: types.Trade,
-    sim_agents: dict[str, elfpy.agents.agent.Agent],
+    sim_agents: dict[str, Agent],
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
 ):
@@ -608,7 +433,7 @@ def do_trade(
     ----------
     market_trade : types.Trade
         The trade to execute.
-    sim_agents : dict[str, elfpy.agents.agent.Agent]
+    sim_agents : dict[str, Agent]
         Dict of agents used in the simulation.
     hyperdrive_instance : ContractInstance
         The hyperdrive contract instance.
@@ -639,7 +464,7 @@ def do_trade(
         "amount": amount,
     }
     if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
-        params["maturity_time"] = int(trade.mint_time + elfpy.SECONDS_IN_YEAR)
+        params["maturity_time"] = int(trade.mint_time + SECONDS_IN_YEAR)
     log_and_show(
         f" agent_{agent_contract.address[:8]} has"
         f" Eth={fmt(agent_contract.balance/1e18)}"
@@ -688,20 +513,20 @@ def log_and_show_block_info(
 
 
 def get_simulator(
-    experiment_config: Config, pricing_model: elfpy.pricing_models.base.PricingModel
-) -> simulators.Simulator:
+    experiment_config: Config, pricing_model: BasePricingModel
+) -> Simulator:
     """Instantiate and return an initialized elfpy Simulator object."""
     market, _, _ = sim_utils.get_initialized_hyperdrive_market(
         pricing_model=pricing_model, block_time=time.BlockTime(), config=experiment_config
     )
-    return simulators.Simulator(experiment_config, market, time.BlockTime())
+    return Simulator(experiment_config, market, time.BlockTime())
 
 
 def deploy_hyperdrive(
     experiment_config: Config,
     base_instance: ContractInstance,
     deployer_account: KeyfileAccount,
-    pricing_model: elfpy.pricing_models.base.PricingModel,
+    pricing_model: BasePricingModel,
     project: ape_utils.HyperdriveProject,
 ) -> ContractInstance:
     """Deploy Hyperdrive when operating on a fresh fork.
@@ -714,7 +539,7 @@ def deploy_hyperdrive(
         The base token contract instance.
     deployer_account : Account
         The account used to deploy smart contracts.
-    pricing_model : elfpy.pricing_models.base.PricingModel
+    pricing_model : BasePricingModel
         The elf-simulations pricing model.
     project : ape_utils.HyperdriveProject
         The Ape project that contains a Hyperdrive contract.
@@ -774,7 +599,7 @@ def set_up_devnet(
         The Ape object that connects to the Ethereum blockchain.
     experiment_config : simulators.Config
         The experiment configuration object.
-    pricing_model : elfpy.pricing_models.base.PricingModel
+    pricing_model : BasePricingModel
         The elf-simulations pricing model.
 
     Returns
@@ -838,7 +663,7 @@ def set_up_ape(
     provider_settings: dict,
     addresses: dict,
     network_choice: str,
-    pricing_model: elfpy.pricing_models.base.PricingModel,
+    pricing_model: BasePricingModel,
 ) -> tuple[ProviderAPI, ContractInstance, ContractInstance, dict, KeyfileAccount]:
     r"""Set up ape.
 
@@ -854,7 +679,7 @@ def set_up_ape(
         The addresses of the deployed contracts.
     network_choice : str
         The network to connect to.
-    pricing_model : elfpy.pricing_models.base.PricingModel
+    pricing_model : BasePricingModel
         The elf-simulations pricing model to use.
 
     Returns
@@ -905,11 +730,11 @@ def set_up_ape(
 
 
 def do_policy(
-    policy: elfpy.agents.policy.Policy,
-    elfpy_market: elfpy.markets.base.Market,
+    policy: BasePolicy,
+    elfpy_market: BaseMarket,
     no_crash_streak: int,
     crash_file: str,
-    sim_agents: dict[str, elfpy.agents.agent.Agent],
+    sim_agents: dict[str, Agent],
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
 ):  # pylint: disable=too-many-arguments
@@ -934,7 +759,7 @@ def create_elfpy_market(
     block_number: int,
     block_timestamp: int,
     start_timestamp: int,
-) -> hyperdrive_market.HyperdriveMarket:
+) -> HyperdriveMarket:
     """Create an elfpy market.
 
     Parameters
@@ -954,11 +779,11 @@ def create_elfpy_market(
 
     Returns
     -------
-    hyperdrive_market.HyperdriveMarket
+    HyperdriveMarket
         The elfpy market.
     """
     # pylint: disable=too-many-arguments
-    return hyperdrive_market.HyperdriveMarket(
+    return HyperdriveMarket(
         pricing_model=pricing_model,
         market_state=ape_utils.get_market_state_from_contract(hyperdrive_contract=hyperdrive_instance),
         position_duration=time.StretchedTime(
