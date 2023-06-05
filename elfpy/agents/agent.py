@@ -4,6 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 from typing import TYPE_CHECKING
 
+from elfpy.agents.policies import NoActionPolicy
 from elfpy.wallet.wallet import Wallet
 from elfpy.math import FixedPoint
 from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
@@ -31,7 +32,7 @@ class Agent:
         Random number generator, constructed using np.random.default_rng(seed)
     """
 
-    def __init__(self, wallet_address: int, policy: BasePolicy):
+    def __init__(self, wallet_address: int, policy: BasePolicy = NoActionPolicy()):
         """Store agent wallet"""
         self.policy = policy
         self.wallet: Wallet = Wallet(

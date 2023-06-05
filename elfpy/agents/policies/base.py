@@ -14,8 +14,6 @@ if TYPE_CHECKING:
     from elfpy.markets.base import BaseMarket
     from elfpy.types import Trade
 
-# pylint: disable=too-few-public-methods
-
 
 class BasePolicy:
     """Base class policy"""
@@ -29,6 +27,11 @@ class BasePolicy:
             self.rng: NumpyGenerator = default_rng(123)
         else:
             self.rng: NumpyGenerator = rng
+
+    @property
+    def name(self):
+        """Return the class name"""
+        return self.__class__.__name__
 
     def action(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
         """Returns an empty list, indicating no action"""

@@ -9,7 +9,6 @@ import pytest
 from ape.api.accounts import TestAccountAPI
 
 from elfpy.agents.agent import Agent
-from elfpy.agents.policies import NoActionPolicy
 from elfpy.math.fixed_point import FixedPoint
 
 # pylint: disable=redefined-outer-name
@@ -44,11 +43,9 @@ class Agents:
 @pytest.fixture(scope="function")
 def python_agents() -> PythonAgents:
     """Returns some python agents initialized with some budget"""
-    budget: FixedPoint = FixedPoint("50_000_000.0")
-
-    alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=budget))
-    bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=budget))
-    celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=budget))
+    alice = Agent(wallet_address=0)
+    bob = Agent(wallet_address=1)
+    celine = Agent(wallet_address=2)
 
     return PythonAgents(alice, bob, celine)
 

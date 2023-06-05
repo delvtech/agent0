@@ -14,7 +14,6 @@ if TYPE_CHECKING:
     from elfpy.markets.base import BaseMarket
 
 
-# pylint: disable=too-few-public-methods
 class InitializeLiquidityAgent(BasePolicy):
     """Adds a large LP"""
 

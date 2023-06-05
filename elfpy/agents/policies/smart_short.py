@@ -52,12 +52,12 @@ class ShortSally(BasePolicy):
 
         Parameters
         ----------
-        market : Market
+        market : HyperdriveMarket
             the trading market
 
         Returns
         -------
-        action_list : list[MarketAction]
+        action_list : list[HyperdriveMarketAction]
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
         gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
