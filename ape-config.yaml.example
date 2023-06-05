@@ -9,7 +9,7 @@ plugins:
 dependencies:
   - name: OpenZeppelin
     github: OpenZeppelin/openzeppelin-contracts
-    version: 4.8.1
+    version: 4.9.0
   - name: Aave
     github: aave/aave-v3-core
     version: 1.17.2
