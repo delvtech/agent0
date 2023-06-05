@@ -206,7 +206,7 @@ class MarketTest(unittest.TestCase):
                     block_time=time.BlockTime(),
                     market_state=BorrowMarketState(),
                 )
-                market_deltas, _ = market.initialize(wallet_address=0)
+                market_deltas, _ = market.initialize()
                 market.market_state.apply_delta(market_deltas)
                 self.assertAlmostEqual(
                     market.market_state.borrow_amount,
@@ -236,11 +236,7 @@ class MarketTest(unittest.TestCase):
                     block_time=time.BlockTime(),
                     pricing_model=test_case["pricing_model"],
                 )
-                _ = market.initialize(
-                    wallet_address=0,
-                    contribution=test_case["target_liquidity"],
-                    target_apr=test_case["target_apr"],
-                )
+                _ = market.initialize(test_case["target_liquidity"], test_case["target_apr"])
                 self.assertAlmostEqual(
                     market.fixed_apr,
                     test_case["target_apr"],

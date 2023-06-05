@@ -70,11 +70,7 @@ class TestFees(unittest.TestCase):
                 normalizing_constant=self.term_length,
             ),
         )
-        _, wallet_deltas = self.hyperdrive.initialize(
-            wallet_address=self.alice.wallet.address,
-            contribution=self.contribution,
-            target_apr=self.target_apr,
-        )
+        _, wallet_deltas = self.hyperdrive.initialize(self.contribution, self.target_apr)
         self.alice.wallet.update(wallet_deltas)
         self.market_state_before_open = self.hyperdrive.market_state.copy()
 

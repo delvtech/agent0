@@ -45,7 +45,6 @@ class TestBorrow(unittest.TestCase):
                     market_state=BorrowMarketState(loan_to_value_ratio=loan_to_value_ratios),
                 )
                 market_deltas, agent_deltas = borrow.calc_open_borrow(
-                    wallet_address=1,
                     collateral=collateral,
                     spot_price=FixedPoint(spot_price),
                 )
@@ -87,7 +86,6 @@ class TestBorrow(unittest.TestCase):
         )
 
         market_deltas = borrow.calc_close_borrow(
-            wallet_address=1,
             collateral=collateral,
             spot_price=FixedPoint("0.9"),
         )[0]

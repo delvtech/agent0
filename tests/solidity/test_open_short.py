@@ -48,7 +48,7 @@ class TestOpenShort(unittest.TestCase):
                 normalizing_constant=self.term_length,
             ),
         )
-        _, agent_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, self.target_apr)
+        _, agent_deltas = self.hyperdrive.initialize(self.contribution, self.target_apr)
         self.alice.wallet.update(agent_deltas)
 
     # pylint: disable=too-many-arguments

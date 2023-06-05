@@ -50,7 +50,7 @@ class TestCheckpoint(unittest.TestCase):
                 normalizing_constant=FixedPoint("365.0"),
             ),
         )
-        _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, self.target_apr)
+        _, wallet_deltas = self.hyperdrive.initialize(self.contribution, self.target_apr)
         self.alice.wallet.update(wallet_deltas)
 
     def test_checkpoint_failure_future_checkpoint(self):

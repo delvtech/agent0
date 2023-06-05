@@ -1,17 +1,20 @@
 """Dataclass for storing the current and past simulation state"""
 from __future__ import annotations
 from dataclasses import dataclass, field, make_dataclass
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import pandas as pd
 
-import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
 from elfpy.simulators.config import Config
+
+if TYPE_CHECKING:
+    from elfpy.agents.agent_deltas import AgentDeltas
+    from elfpy.agents.wallet import Wallet
 
 
 @dataclass
@@ -109,7 +112,7 @@ class RunSimVariables:
     # the simulation config
     config: Config
     # initial wallets for the agents
-    agent_init: list[wallet.Wallet]
+    agent_init: list[Wallet]
     # initial market state for this simulation run
     market_init: hyperdrive_market.HyperdriveMarketState
     # minimum time discretization for time step in years
@@ -171,7 +174,7 @@ class TradeSimVariables:
     # address of the agent that is executing the trade
     agent_address: int
     # deltas used to update the market state
-    agent_deltas: wallet.Wallet
+    agent_deltas: AgentDeltas
 
 
 @dataclass

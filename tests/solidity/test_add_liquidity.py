@@ -44,7 +44,7 @@ class TestAddLiquidity(unittest.TestCase):
                 normalizing_constant=FixedPoint("365.0"),
             ),
         )
-        _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, FixedPoint("0.05"))
+        _, wallet_deltas = self.hyperdrive.initialize(self.contribution, FixedPoint("0.05"))
         self.alice.wallet.update(wallet_deltas)
 
     def test_add_liquidity_failure_zero_amount(self):
@@ -80,7 +80,6 @@ class TestAddLiquidity(unittest.TestCase):
 
         # Celine opens a long.
         market_deltas, wallet_deltas = hyperdrive_actions.calc_open_long(
-            wallet_address=self.celine.wallet.address,
             base_amount=FixedPoint("50_000_000.0"),
             market_state=self.hyperdrive.market_state,
             position_duration=self.hyperdrive.position_duration,

@@ -59,11 +59,7 @@ class TestInitialize(unittest.TestCase):
                 normalizing_constant=self.position_duration,
             ),
         )
-        _, wallet_deltas = self.hyperdrive.initialize(
-            wallet_address=self.alice.wallet.address,
-            contribution=self.contribution,
-            target_apr=self.target_apr,
-        )
+        _, wallet_deltas = self.hyperdrive.initialize(self.contribution, self.target_apr)
         self.alice.wallet.update(wallet_deltas)
         super().__init__(**kwargs)
 
@@ -74,7 +70,6 @@ def test_initialize_failure():
     test = TestInitialize()
     with test.assertRaises(AssertionError):
         _ = test.hyperdrive.initialize(
-            wallet_address=test.bob.wallet.address,
             contribution=test.contribution,
             target_apr=test.target_apr,
         )

@@ -49,9 +49,7 @@ class TestWithdrawShares(unittest.TestCase):
             ),
             block_time=self.block_time,
         )
-        _, wallet_deltas = self.hyperdrive.initialize(
-            self.alice.wallet.address, self.initial_liquidity, self.target_apr
-        )
+        _, wallet_deltas = self.hyperdrive.initialize(self.initial_liquidity, self.target_apr)
         self.alice.wallet.update(wallet_deltas)
 
     # TODO: complete this

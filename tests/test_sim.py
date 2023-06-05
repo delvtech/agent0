@@ -9,7 +9,6 @@ import pandas as pd
 import numpy as np
 from numpy.random import RandomState
 
-import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
@@ -17,6 +16,7 @@ import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulati
 import elfpy.types as types
 
 from elfpy.agents.agent import Agent
+from elfpy.agents.wallet import Wallet
 from elfpy.agents.policies import SingleLongAgent
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
@@ -128,7 +128,7 @@ class TestSimulator(unittest.TestCase):
             {
                 "run_number": [0] * num_runs,
                 "config": [Config()],
-                "agent_init": [[wallet.Wallet(address) for address in range(2)]],
+                "agent_init": [[Wallet(address) for address in range(2)]],
                 "market_init": [hyperdrive_market.HyperdriveMarketState()],
                 "time_step": [0.001],
                 "position_duration": [90],
@@ -164,7 +164,7 @@ class TestSimulator(unittest.TestCase):
                         trade=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                             trade_amount=FixedPoint(10),
-                            wallet=wallet.Wallet(0),
+                            wallet=Wallet(0),
                         ),
                     )
                 ]

@@ -47,7 +47,7 @@ class TestRemoveLiquidity(unittest.TestCase):
             ),
             block_time=time.BlockTime(),
         )
-        _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, self.target_apr)
+        _, wallet_deltas = self.hyperdrive.initialize(self.contribution, self.target_apr)
         self.alice.wallet.update(wallet_deltas)
 
     def test_remove_liquidity_fail_zero_amount(self):

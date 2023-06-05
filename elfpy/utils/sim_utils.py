@@ -20,7 +20,7 @@ from elfpy.simulators.simulation_state import (
 )
 
 if TYPE_CHECKING:
-    import elfpy.agents.wallet as wallet
+    from elfpy.agents.agent_deltas import AgentDeltas
 
 
 def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulators.Simulator:
@@ -110,7 +110,7 @@ def get_initialized_hyperdrive_market(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: time.BlockTime,
     config: Config,
-) -> tuple[hyperdrive_market.Market, wallet.Wallet, HyperdriveMarketDeltas]:
+) -> tuple[hyperdrive_market.Market, AgentDeltas, HyperdriveMarketDeltas]:
     r"""Setup market
 
     Arguments
@@ -162,7 +162,6 @@ def get_initialized_hyperdrive_market(
     )
     # Not using an agent to initialize the market so we ignore the agent address
     market_deltas, agent_deltas = market.initialize(
-        wallet_address=0,
         contribution=FixedPoint(config.target_liquidity),
         target_apr=FixedPoint(config.target_fixed_apr),
     )

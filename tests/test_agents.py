@@ -13,6 +13,7 @@ import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.agents.agent import Agent
+from elfpy.agents.agent_deltas import AgentDeltas
 from elfpy.agents.get_wallet_state import get_wallet_state
 from elfpy.agents.policies.base import BasePolicy
 from elfpy.agents.policies import (
@@ -157,7 +158,7 @@ class TestAgent(unittest.TestCase):
             ),
             block_time=time.BlockTime(),
         )
-        self.market.initialize(wallet_address=0, contribution=FixedPoint("1_000_000.0"), target_apr=FixedPoint("0.01"))
+        self.market.initialize(contribution=FixedPoint("1_000_000.0"), target_apr=FixedPoint("0.01"))
 
     def test_wallet_state_matches_state_keys(self):
         """Tests that an agent wallet has the right keys"""
@@ -182,8 +183,7 @@ class TestAgent(unittest.TestCase):
         example_wallet = Wallet(
             address=0, balance=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.BASE)
         )
-        example_deltas = Wallet(
-            address=0,
+        example_deltas = AgentDeltas(
             balance=types.Quantity(amount=FixedPoint("-10.0"), unit=types.TokenType.BASE),
             longs={FixedPoint(0): Long(FixedPoint("15.0"))},
             fees_paid=FixedPoint("0.001"),
@@ -200,8 +200,7 @@ class TestAgent(unittest.TestCase):
         assert example_wallet.balance.amount == FixedPoint(
             "90.0"
         ), f"{example_wallet.balance.amount=} should be 100-10=90."
-        new_example_deltas = Wallet(
-            address=0,
+        new_example_deltas = AgentDeltas(
             balance=types.Quantity(amount=FixedPoint("-5.0"), unit=types.TokenType.BASE),
             longs={FixedPoint(0): Long(FixedPoint("8.0"))},
             fees_paid=FixedPoint("0.0008"),

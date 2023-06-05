@@ -47,7 +47,7 @@ class TestOpenLong(unittest.TestCase):
                 normalizing_constant=self.term_length,
             ),
         )
-        _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, self.target_apr)
+        _, wallet_deltas = self.hyperdrive.initialize(self.contribution, self.target_apr)
         self.alice.wallet.update(wallet_deltas)
 
     def verify_open_long(
