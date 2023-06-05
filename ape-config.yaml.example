@@ -16,6 +16,9 @@ dependencies:
   - name: Mocks
     local: hyperdrive_solidity/test/
     contracts_folder: src/contracts
+  - name: LocalDependency
+    local: hyperdrive_solidity/test/
+    contracts_folder: src/contracts
 
 solidity:
   import_remapping:
