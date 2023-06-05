@@ -11,7 +11,7 @@ from .base import BasePolicy
 
 if TYPE_CHECKING:
     from elfpy.agents.wallet import Wallet
-    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+    from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 
 # pylint: disable=too-few-public-methods
 

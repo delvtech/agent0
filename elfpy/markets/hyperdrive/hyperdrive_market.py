@@ -165,7 +165,7 @@ class HyperdriveMarketState(BaseMarketState):
         elfpy.check_non_zero(dictionary)
 
 
-class Market(
+class HyperdriveMarket(
     BaseMarket[
         HyperdriveMarketState,
         HyperdriveMarketDeltas,

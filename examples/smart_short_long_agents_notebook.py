@@ -18,7 +18,6 @@ import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 import matplotlib.ticker as ticker
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
@@ -28,6 +27,7 @@ import elfpy.types as types
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
 from elfpy.agents.wallet import Wallet
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.agents.policies import LongLouie, ShortSally
@@ -103,7 +103,7 @@ fig_size = (5, 5)
 class LPAgent(BasePolicy):
     """Adds a large LP"""
 
-    def action(self, market: hyperdrive_market.Market, wallet: Wallet):
+    def action(self, market: HyperdriveMarket, wallet: Wallet):
         """implement user strategy"""
         if wallet.lp_tokens > 0:  # has already opened the lp
             action_list = []

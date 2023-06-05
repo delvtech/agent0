@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
     from elfpy.agents.wallet import Wallet
-    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+    from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 
 # pylint: disable=too-few-public-methods
 

@@ -4,13 +4,13 @@ from typing import Optional, Tuple
 
 import pytest
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-instance-attributes
@@ -29,7 +29,7 @@ class TestFees(unittest.TestCase):
     bob: Agent
     celine: Agent
     gary: Agent  # governance gary
-    hyperdrive: hyperdrive_market.Market
+    hyperdrive: HyperdriveMarket
     block_time: time.BlockTime
     term_length: FixedPoint
     trade_amount: FixedPoint
@@ -53,14 +53,14 @@ class TestFees(unittest.TestCase):
         self.gary = Agent(wallet_address=2, policy=NoActionPolicy(budget=FixedPoint(0)))
         self.block_time = time.BlockTime()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.HyperdriveMarketState(
+        market_state = HyperdriveMarketState(
             curve_fee_multiple=FixedPoint("0.1"),  # 0.1e18, // curveFee
             flat_fee_multiple=FixedPoint("0.1"),  # 0.1e18, //flatFee
             governance_fee_multiple=gov_fee,  # 0.5e18, //govFee
         )
         super().__init__()
 
-        self.hyperdrive = hyperdrive_market.Market(
+        self.hyperdrive = HyperdriveMarket(
             pricing_model=self.pricing_model,
             market_state=market_state,
             block_time=self.block_time,

@@ -2,7 +2,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.simulators as simulators
 import elfpy.time as time
@@ -10,6 +9,7 @@ import elfpy.time as time
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import InitializeLiquidityAgent
 from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
 from elfpy.math import FixedPoint
 from elfpy.simulators import Config
 from elfpy.simulators.simulation_state import (
@@ -110,7 +110,7 @@ def get_initialized_hyperdrive_market(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: time.BlockTime,
     config: Config,
-) -> tuple[hyperdrive_market.Market, WalletDeltas, HyperdriveMarketDeltas]:
+) -> tuple[HyperdriveMarket, WalletDeltas, HyperdriveMarketDeltas]:
     r"""Setup market
 
     Arguments
@@ -148,10 +148,10 @@ def get_initialized_hyperdrive_market(
         time_stretch=pricing_model.calc_time_stretch(FixedPoint(config.target_fixed_apr)),
         normalizing_constant=FixedPoint(config.num_position_days),
     )
-    market = hyperdrive_market.Market(
+    market = HyperdriveMarket(
         pricing_model=pricing_model,
         block_time=block_time,
-        market_state=hyperdrive_market.HyperdriveMarketState(
+        market_state=HyperdriveMarketState(
             init_share_price=FixedPoint(config.init_share_price),
             share_price=FixedPoint(config.init_share_price),
             variable_apr=FixedPoint(config.variable_apr[0]),

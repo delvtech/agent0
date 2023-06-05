@@ -23,8 +23,8 @@ from elfpy.simulators.simulation_state import (
 )
 
 if TYPE_CHECKING:
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
     from elfpy.agents.agent import Agent
+    from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 
 
 class Simulator:
@@ -40,7 +40,7 @@ class Simulator:
     def __init__(
         self,
         config: Config,
-        market: hyperdrive_market.Market,
+        market: HyperdriveMarket,
         block_time: time.BlockTime,
     ):
         # User specified variables

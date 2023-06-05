@@ -1,12 +1,12 @@
 """Remove liquidity market trade tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
 from elfpy.math import FixedPoint, FixedPointMath
 
 # pylint: disable=too-many-arguments
@@ -23,7 +23,7 @@ class TestRemoveLiquidity(unittest.TestCase):
     alice: Agent
     bob: Agent
     celine: Agent
-    hyperdrive: hyperdrive_market.Market
+    hyperdrive: HyperdriveMarket
 
     def setUp(self):
         """Set up agent, pricing model, & market for the subsequent tests.
@@ -33,11 +33,11 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
         self.celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=self.contribution))
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.HyperdriveMarketState(
+        market_state = HyperdriveMarketState(
             curve_fee_multiple=FixedPoint("0.0"),
             flat_fee_multiple=FixedPoint("0.0"),
         )
-        self.hyperdrive = hyperdrive_market.Market(
+        self.hyperdrive = HyperdriveMarket(
             pricing_model=pricing_model,
             market_state=market_state,
             position_duration=time.StretchedTime(

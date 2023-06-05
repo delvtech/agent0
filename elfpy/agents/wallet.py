@@ -9,14 +9,11 @@ from typing import TYPE_CHECKING
 from elfpy import check_non_zero
 from elfpy.agents.wallet_deltas import WalletDeltas
 
-# from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
 from elfpy.types import freezable, Quantity, TokenType
-from elfpy.math import FixedPoint, FixedPointMath
+from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     from typing import Any, Iterable
-
-    # from elfpy.markets.base.base_market import BaseMarket
 
 
 @dataclass

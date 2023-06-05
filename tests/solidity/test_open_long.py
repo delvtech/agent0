@@ -1,13 +1,13 @@
 """Open long market trade tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.types as types
 import elfpy.time as time
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-arguments
@@ -24,7 +24,7 @@ class TestOpenLong(unittest.TestCase):
     alice: Agent
     bob: Agent
     celine: Agent
-    hyperdrive: hyperdrive_market.Market
+    hyperdrive: HyperdriveMarket
     block_time: time.BlockTime
 
     def setUp(self):
@@ -36,8 +36,8 @@ class TestOpenLong(unittest.TestCase):
         self.celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=self.contribution))
         self.block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.HyperdriveMarketState()
-        self.hyperdrive = hyperdrive_market.Market(
+        market_state = HyperdriveMarketState()
+        self.hyperdrive = HyperdriveMarket(
             pricing_model=pricing_model,
             market_state=market_state,
             block_time=self.block_time,
@@ -53,7 +53,7 @@ class TestOpenLong(unittest.TestCase):
     def verify_open_long(
         self,
         user: Agent,
-        market_state_before: hyperdrive_market.HyperdriveMarketState,
+        market_state_before: HyperdriveMarketState,
         contribution: FixedPoint,
         base_amount: FixedPoint,
         unsigned_bond_amount_out: FixedPoint,

@@ -10,7 +10,7 @@ from ape.api.providers import ProviderAPI
 from ape.managers.project import ProjectManager
 from attr import dataclass
 
-from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 from elfpy.math.fixed_point import FixedPoint
 from tests.cross_platform import fixtures
 

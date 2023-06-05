@@ -1,7 +1,6 @@
 """Close short market trade tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
 import elfpy.time as time
@@ -10,6 +9,7 @@ import elfpy.types as types
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
 from elfpy.markets.hyperdrive.checkpoint import Checkpoint
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
 from elfpy.math import FixedPoint
 from elfpy.time.time import StretchedTime
 
@@ -34,7 +34,7 @@ class TestCloseShort(unittest.TestCase):
     alice: Agent
     bob: Agent
     celine: Agent
-    hyperdrive: hyperdrive_market.Market
+    hyperdrive: HyperdriveMarket
     block_time: time.BlockTime
 
     def setUp(self):
@@ -45,11 +45,11 @@ class TestCloseShort(unittest.TestCase):
         self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
         block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.HyperdriveMarketState(
+        market_state = HyperdriveMarketState(
             curve_fee_multiple=FixedPoint("0.0"),
             flat_fee_multiple=FixedPoint("0.0"),
         )
-        self.hyperdrive = hyperdrive_market.Market(
+        self.hyperdrive = HyperdriveMarket(
             pricing_model=pricing_model,
             market_state=market_state,
             position_duration=time.StretchedTime(
@@ -65,7 +65,7 @@ class TestCloseShort(unittest.TestCase):
     def verify_close_short(
         self,
         example_agent: Agent,
-        market_state_before: hyperdrive_market.HyperdriveMarketState,
+        market_state_before: HyperdriveMarketState,
         agent_base_paid: FixedPoint,
         agent_base_proceeds: FixedPoint,
         bond_amount: FixedPoint,

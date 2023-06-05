@@ -27,8 +27,7 @@ from elfpy.agents.policies import (
     LongLouie,
     ShortSally,
 )
-from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
-from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarketState
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
 from elfpy.math import FixedPoint
 from elfpy.agents.wallet import Wallet, Long
 

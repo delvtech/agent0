@@ -1,13 +1,13 @@
 """Test opening a short in hyperdrive"""
 import unittest
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
 from elfpy.math import FixedPoint
 
 
@@ -28,7 +28,7 @@ class TestOpenShort(unittest.TestCase):
     alice: Agent
     bob: Agent
     celine: Agent
-    hyperdrive: hyperdrive_market.Market
+    hyperdrive: HyperdriveMarket
     block_time: time.BlockTime
 
     def setUp(self):
@@ -37,8 +37,8 @@ class TestOpenShort(unittest.TestCase):
         self.celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=self.contribution))
         self.block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.HyperdriveMarketState()
-        self.hyperdrive = hyperdrive_market.Market(
+        market_state = HyperdriveMarketState()
+        self.hyperdrive = HyperdriveMarket(
             pricing_model=pricing_model,
             market_state=market_state,
             block_time=self.block_time,
@@ -55,7 +55,7 @@ class TestOpenShort(unittest.TestCase):
     def verify_open_short(
         self,
         user: Agent,
-        market_state_before: hyperdrive_market.HyperdriveMarketState,
+        market_state_before: HyperdriveMarketState,
         base_amount: FixedPoint,  # max loss in base transferred from user to hyperdrive
         unsigned_bond_amount: FixedPoint,  # number of PTs shorted
         market_bond_delta: FixedPoint,

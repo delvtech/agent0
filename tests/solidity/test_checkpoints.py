@@ -3,14 +3,14 @@
 import unittest
 
 import elfpy.markets.hyperdrive.checkpoint
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_markets
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
 
+from elfpy import types
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
-from elfpy import types
 from elfpy.errors import errors
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
 from elfpy.math import FixedPoint
 
 # TODO: refactor solidity tests as a separate PR to consolidate setUps
@@ -28,7 +28,7 @@ class TestCheckpoint(unittest.TestCase):
     alice: Agent
     bob: Agent
     celine: Agent
-    hyperdrive: hyperdrive_markets.Market
+    hyperdrive: HyperdriveMarket
     block_time: time.BlockTime
 
     def setUp(self):
@@ -38,9 +38,9 @@ class TestCheckpoint(unittest.TestCase):
         self.block_time = time.BlockTime()
 
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_markets.HyperdriveMarketState()
+        market_state = HyperdriveMarketState()
 
-        self.hyperdrive = hyperdrive_markets.Market(
+        self.hyperdrive = HyperdriveMarket(
             pricing_model=pricing_model,
             market_state=market_state,
             block_time=self.block_time,

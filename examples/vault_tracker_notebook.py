@@ -10,19 +10,19 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from scipy import special
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
 
 from elfpy import WEI, PRECISION_THRESHOLD
-from elfpy.simulators.config import Config
 from elfpy.agents.agent import Agent
 from elfpy.agents.wallet import Wallet
 from elfpy.agents.policies.base import BasePolicy
-from elfpy.utils import sim_utils
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 from elfpy.math import FixedPoint
+from elfpy.simulators.config import Config
+from elfpy.utils import sim_utils
 
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-branches
@@ -220,9 +220,7 @@ class RegularGuy(BasePolicy):
         self.threshold = FixedPoint(rng.normal(loc=0, scale=0.005))
         super().__init__(budget, rng)
 
-    def action(
-        self, market: hyperdrive_market.Market, wallet: Wallet
-    ) -> list[hyperdrive_actions.HyperdriveMarketAction]:
+    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[hyperdrive_actions.HyperdriveMarketAction]:
         """Implement a random user strategy
 
         The agent performs one of four possible trades:
