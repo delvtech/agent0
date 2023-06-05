@@ -300,7 +300,10 @@ class RegularGuy(BasePolicy):
                             )
                         ]
                 elif action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:
-                    max_long = wallet.get_max_long(market)
+                    max_base, _ = market.pricing_model.get_max_long(
+                        market_state=market.market_state, time_remaining=market.position_duration
+                    )
+                    max_long = min(wallet.balance.amount, max_base)
                     # TODO: This is a hack until we fix get_max
                     max_long = max_long / FixedPoint("100.0")
                     if max_long > WEI + PRECISION_THRESHOLD:  # if max_long is greater than the minimum eth amount

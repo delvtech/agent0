@@ -278,33 +278,6 @@ class Wallet:
             self.check_valid_wallet_state(self.__dict__)
 
     # TODO: this function should optionally accept a target apr.  the short should not slip the
-    # market fixed rate below the APR when opening the long
-    # issue #213
-    def get_max_long(self, market: HyperdriveMarket) -> FixedPoint:
-        """Gets an approximation of the maximum amount of base the agent can use
-
-        Typically would be called to determine how much to enter into a long position.
-
-        Arguments
-        ----------
-        market : Market
-            The market on which this agent will be executing trades (MarketActions)
-
-        Returns
-        -------
-        FixedPoint
-            Maximum amount the agent can use to open a long
-        """
-        (max_long, _) = market.pricing_model.get_max_long(
-            market_state=market.market_state,
-            time_remaining=market.position_duration,
-        )
-        return FixedPointMath.minimum(
-            self.balance.amount,
-            max_long,
-        )
-
-    # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate above the APR when opening the short
     # issue #213
     def get_max_short(self, market: HyperdriveMarket) -> FixedPoint:

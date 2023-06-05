@@ -13,7 +13,7 @@ from .base import BasePolicy
 if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
     from elfpy.agents.wallet import Wallet
-    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+    from elfpy.markets.base.base_market import BaseMarket
 
 # pylint: disable=too-few-public-methods
 
@@ -43,7 +43,7 @@ class LongLouie(BasePolicy):
         self.risk_threshold = risk_threshold
         super().__init__(budget, rng)
 
-    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
+    def action(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
         """Implement a Long Louie user strategy
 
         Parameters
@@ -91,9 +91,12 @@ class LongLouie(BasePolicy):
             # divide by 2 to adjust for changes in share reserves when the trade is executed
             adjusted_bonds = new_bonds_to_match_variable_apr / FixedPoint(2.0)
             # get the maximum amount the agent can long given the market and the agent's wallet
-            max_trade_amount = wallet.get_max_long(market)
+            max_base, _ = market.pricing_model.get_max_long(
+                market_state=market.market_state, time_remaining=market.position_duration
+            )
+            max_long = min(wallet.balance.amount, max_base)
             # don't want to trade more than the agent has or more than the market can handle
-            trade_amount = FixedPointMath.minimum(max_trade_amount, adjusted_bonds)
+            trade_amount = FixedPointMath.minimum(max_long, adjusted_bonds)
             # TODO: This is a hack until we fix get_max
             # issue #440
             trade_amount = trade_amount / FixedPoint("100.0")

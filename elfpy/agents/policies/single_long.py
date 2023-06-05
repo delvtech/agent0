@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from elfpy.math import FixedPoint
+from elfpy.math import FixedPoint, FixedPointMath
 from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
 from elfpy.types import Trade, MarketType
 
@@ -11,7 +11,7 @@ from .base import BasePolicy
 
 if TYPE_CHECKING:
     from elfpy.agents.wallet import Wallet
-    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+    from elfpy.markets.base.base_market import BaseMarket
 
 # pylint: disable=too-few-public-methods
 
@@ -22,7 +22,7 @@ class SingleLongAgent(BasePolicy):
     only has one long open at a time
     """
 
-    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
+    def action(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
         """Specify action"""
         longs = list(wallet.longs.values())
         has_opened_long = len(longs) > 0
@@ -43,7 +43,11 @@ class SingleLongAgent(BasePolicy):
                     )
                 )
         else:
-            trade_amount = wallet.get_max_long(market) / FixedPoint("2.0")
+            max_base, _ = market.pricing_model.get_max_long(
+                market_state=market.market_state, time_remaining=market.position_duration
+            )
+            max_long = min(wallet.balance.amount, max_base)
+            trade_amount = max_long / FixedPoint("2.0")
             action_list.append(
                 Trade(
                     market=MarketType.HYPERDRIVE,

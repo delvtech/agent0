@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
     from elfpy.agents.wallet import Wallet
-    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+    from elfpy.markets.base.base_market import BaseMarket
 
 # pylint: disable=too-few-public-methods
 
@@ -31,7 +31,7 @@ class SingleLpAgent(BasePolicy):
         self.amount_to_lp: FixedPoint = amount_to_lp
         super().__init__(budget, rng)
 
-    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
+    def action(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
         """
         implement user strategy
         LP if you can, but only do it once

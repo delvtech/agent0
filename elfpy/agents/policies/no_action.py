@@ -11,7 +11,7 @@ from .base import BasePolicy
 
 if TYPE_CHECKING:
     from elfpy.agents.wallet import Wallet
-    from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+    from elfpy.markets.base.base_market import BaseMarket
     from elfpy.types import Trade
 
 # pylint: disable=too-few-public-methods
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class NoActionPolicy(BasePolicy):
     """NoOp class policy"""
 
-    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
+    def action(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
         """Returns an empty list, indicating no action"""
         # pylint: disable=unused-argument
         return []
