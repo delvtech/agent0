@@ -225,56 +225,22 @@ class LongLouie(elfpy_agent.Agent):
         return action_list
 
 
-def get_argparser() -> argparse.ArgumentParser:
-    """Define & parse arguments from stdin.
-
-    List of arguments:
-        log_filename : Optional output filename for logging. Default is "testnet_bots".
-        log_level : Logging level, should be in ["DEBUG", "INFO", "WARNING"]. Default is "INFO".
-        max_bytes : Maximum log file output size, in bytes. Default is 1MB.
-        num_louie : Number of Long Louie agents to run. Default is 0.
-        num_frida : Number of Fixed Rate Frida agents to run. Default is 0.
-        num_random: Number of Random agents to run. Default is 0.
-        trade_chance : Chance for a bot to execute a trade. Default is 0.1.
-
-    Returns
-    -------
-    parser : argparse.ArgumentParser
-    """
-    parser = argparse.ArgumentParser(
-        prog="TestnetBots",
-        description="Execute bots on testnet",
-        epilog="See the README on https://github.com/element-fi/elf-simulations/ for more implementation details",
-    )
-    parser.add_argument("--log_filename", help="Optional output filename for logging", default="testnet_bots", type=str)
-    parser.add_argument(
-        "--log_level",
-        help='Logging level, should be in ["DEBUG", "INFO", "WARNING"]. Default is "INFO".',
-        default="INFO",
-        type=str,
-    )
-    parser.add_argument(
-        "--max_bytes",
-        help=f"Maximum log file output size, in bytes. Default is {elfpy.DEFAULT_LOG_MAXBYTES} bytes."
-        "More than 100 files will cause overwrites.",
-        default=elfpy.DEFAULT_LOG_MAXBYTES,
-        type=int,
-    )
-    parser.add_argument("--num_louie", help="Number of Louie agents (default=0)", default=0, type=int)
-    parser.add_argument("--num_frida", help="Number of Frida agents (default=0)", default=0, type=int)
-    parser.add_argument("--num_random", help="Number of Random agents (default=4)", default=4, type=int)
-    parser.add_argument(
-        "--trade_chance",
-        help="Percent chance that a agent gets to trade on a given block (default = 0.1, i.e. 10%)",
-        default=0.1,
-        type=float,
-    )
-    parser.add_argument("--alchemy", help="Use Alchemy as a provider", action="store_true")  # default is false
-
-    parser.add_argument("--devnet", help="Run on devnet", action="store_true")  # stroe_true because default is false
-    parser.add_argument("--fork_url", help="Override for url to fork from", default=None, type=str)
-    parser.add_argument("--fork_port", help="Override for port for fork to use", default=None, type=int)
-    return parser
+def get_env_args() -> dict:
+    args = {
+        # Env passed in is a string "true"
+        "devnet" : (os.environ.get("BOT_DEVNET", "true") == "true"),
+        "rpc_url": os.environ.get("BOT_RPC_URL", "http://ethereum:8545"),
+        "log_filename": os.environ.get("BOT_LOG_FILENAME", "testnet_bots"),
+        "log_level": os.environ.get("BOT_LOG_LEVEL", "INFO"),
+        "max_bytes": os.environ.get("BOT_MAX_BYTES", elfpy.DEFAULT_LOG_MAXBYTES),
+        "num_louie": os.environ.get("BOT_NUM_LOUIE", 0),
+        "num_frida": os.environ.get("BOT_NUM_FRIDA", 0),
+        "num_random": os.environ.get("BOT_NUM_RANDOM", 4),
+        "trade_chance": os.environ.get("BOT_TRADE_CHANCE", 0.1),
+        # Env passed in is a string "true"
+        "alchemy": (os.environ.get("BOT_ALCHEMY", "false") == "true"),
+    }
+    return args
 
 
 @dataclass
@@ -315,14 +281,13 @@ class BotInfo:
             [f"{key}={value}" if value else "" for key, value in self.__dict__.items() if key not in ["name", "policy"]]
         )
 
-
-def get_config(args: argparse.Namespace) -> Config:
+def get_config(args: dict) -> Config:
     """Instantiate a config object with elf-simulation parameters.
 
     Parameters
     ----------
-    args : argparse.Namespace
-        The parsed arguments from stdin.
+    args : dict
+        The arguments from environmental variables.
 
     Returns
     -------
@@ -332,8 +297,8 @@ def get_config(args: argparse.Namespace) -> Config:
     load_dotenv(dotenv_path=f"{Path.cwd() if Path.cwd().name != 'examples' else Path.cwd().parent}/.env")
     ape_logger.set_level(logging.ERROR)
     config = Config()
-    config.log_level = output_utils.text_to_log_level(args.log_level)
-    random_seed_file = f".logging/random_seed{'_devnet' if args.devnet else ''}.txt"
+    config.log_level = output_utils.text_to_log_level(args["log_level"])
+    random_seed_file = f".logging/random_seed{'_devnet' if args['devnet'] else ''}.txt"
     if os.path.exists(random_seed_file):
         with open(random_seed_file, "r", encoding="utf-8") as file:
             config.random_seed = int(file.read()) + 1
@@ -343,12 +308,12 @@ def get_config(args: argparse.Namespace) -> Config:
     with open(random_seed_file, "w", encoding="utf-8") as file:
         file.write(str(config.random_seed))
     config.title = "evm bots"
-    for key, value in args.__dict__.items():
+    for key, value in args.items():
         if hasattr(config, key):
             config[key] = value
         else:
             config.scratch[key] = value
-    config.log_filename += "_devnet" if args.devnet else ""
+    config.log_filename += "_devnet" if args["devnet"] else ""
 
     # Custom parameters for this experiment
     config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
@@ -362,7 +327,7 @@ def get_config(args: argparse.Namespace) -> Config:
 
 
 def set_up_experiment(
-    experiment_config: Config, args: argparse.Namespace
+    experiment_config: Config, args: dict
 ) -> tuple[elfpy.pricing_models.base.PricingModel, str, str, dict[str, str], dict]:
     """Declare and assign experiment variables.
 
@@ -370,8 +335,8 @@ def set_up_experiment(
     ----------
     experiment_config : simulators.Config
         The config object.
-    args : argparse.Namespace
-        The parsed arguments from stdin.
+    args : dict
+        The arguments from environmental variables.
 
     Returns
     -------
@@ -388,12 +353,9 @@ def set_up_experiment(
     """
     pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     # inputs
-    crash_file = f".logging/no_crash_streak{'_devnet' if args.devnet else ''}.txt"
-    network_choice = "ethereum:local:" + ("alchemy" if args.alchemy else "foundry")
-    provider_settings = {
-        "fork_url": args.fork_url or "https://localhost:8545",
-        "port": args.fork_port or 8545,
-    }
+    crash_file = f".logging/no_crash_streak{'_devnet' if args['devnet'] else ''}.txt"
+    network_choice = "ethereum:local:" + ("alchemy" if args["alchemy"] else "foundry")
+    provider_settings = {"host": args["rpc_url"]}
     # hard-code goerli addresses
     addresses = {
         "goerli_faucet": "0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2",
@@ -403,7 +365,7 @@ def set_up_experiment(
 
     # dynamically load devnet addresses from address file
     address_file = None
-    if args.devnet:
+    if args["devnet"]:
         addresses, address_file = get_devnet_addresses(experiment_config, addresses)
     return pricing_model, crash_file, network_choice, provider_settings, addresses, address_file
 
@@ -541,7 +503,7 @@ def create_agent(
 
 def set_up_agents(
     experiment_config: Config,
-    args: argparse.Namespace,
+    args: dict,
     provider: ProviderAPI,
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
@@ -555,7 +517,7 @@ def set_up_agents(
     experiment_config : simulators.Config
         The experiment config.
     args : dict
-        The command line arguments.
+        The env var arguments.
     provider : ape.api.ProviderAPI
         The Ape object that connects to the Ethereum network.
     hyperdrive_instance : ContractInstance
@@ -575,7 +537,7 @@ def set_up_agents(
     # pylint: disable=too-many-arguments, too-many-locals
     dev_accounts: list[KeyfileAccount] = get_accounts(experiment_config)
     faucet = None
-    if not args.devnet:
+    if not args["devnet"]:
         faucet = ape_utils.get_instance(addresses["goerli_faucet"], provider=provider)
     bot_num = 0
     for bot_name in experiment_config.scratch["bot_names"]:
@@ -855,7 +817,7 @@ def get_hyperdrive_config(hyperdrive_instance) -> dict:
 
 def set_up_ape(
     experiment_config: Config,
-    args: argparse.Namespace,
+    args: dict,
     provider_settings: dict,
     addresses: dict,
     network_choice: str,
@@ -869,7 +831,7 @@ def set_up_ape(
     experiment_config : simulators.Config
         The experiment configuration, a list of variables that define the elf-simulations run.
     args : argparse.Namespace
-        The command line arguments.
+        The environmental vars arguments.
     provider_settings : dict
         Custom parameters passed to the provider.
     addresses : dict
@@ -903,14 +865,14 @@ def set_up_ape(
     ).push_provider()
     log_and_show(
         "connected to %s, latest block %s",
-        "devnet" if args.devnet else network_choice,
+        "devnet" if args["devnet"] else network_choice,
         provider.get_block("latest").number,
     )
     project: ape_utils.HyperdriveProject = ape_utils.HyperdriveProject(
         path=Path.cwd(),
         hyperdrive_address=addresses["goerli_hyperdrive"],  # ignored on devnet
     )
-    if args.devnet:  # we're on devnet
+    if args["devnet"]:  # we're on devnet
         base_instance, hyperdrive_instance, addresses, deployer_account = set_up_devnet(
             addresses, project, provider, experiment_config, pricing_model, address_file
         )
@@ -1000,11 +962,14 @@ def create_elfpy_market(
 def main():
     """Run the simulation."""
     # pylint: disable=too-many-locals
-    args = get_argparser().parse_args()
+    #args = get_argparser().parse_args()
+    args = get_env_args()
+
     experiment_config = get_config(args)
     pricing_model, crash_file, network_choice, provider_settings, addresses, address_file = set_up_experiment(
         experiment_config, args
     )
+
     no_crash_streak = 0
     last_executed_block = 0
     output_utils.setup_logging(log_filename=experiment_config.log_filename, log_level=experiment_config.log_level)
