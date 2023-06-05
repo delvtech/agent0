@@ -2,13 +2,16 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
+import os
+import json
 import logging
 from collections import namedtuple
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Tuple
+from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 import pandas as pd
+import ape
 from ape import Contract
 from ape.api import BlockAPI, ProviderAPI, ReceiptAPI, TransactionAPI
 from ape.contracts import ContractContainer
@@ -16,11 +19,15 @@ from ape.contracts.base import ContractTransaction, ContractTransactionHandler
 from ape.exceptions import TransactionError, TransactionNotFoundError
 from ape.managers.project import ProjectManager
 from ape.types import AddressType, ContractType
+from ape_accounts.accounts import KeyfileAccount
 
-from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI
-from elfpy import types
+import elfpy
+from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, simulators, time, types
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
+from elfpy.simulators.config import Config
 from elfpy.markets.hyperdrive import hyperdrive_assets, AssetIdPrefix, HyperdriveMarketState
 from elfpy.math import FixedPoint
+from elfpy.utils import sim_utils
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
 from elfpy.wallet.wallet import Long, Short, Wallet
@@ -57,8 +64,102 @@ class HyperdriveProject(ProjectManager):
         """Get the Hyperdrive contract instance."""
         return self.hyperdrive_container.at(self.conversion_manager.convert(self.hyperdrive_address, AddressType))
 
+def get_simulator(
+    experiment_config: Config, pricing_model: elfpy.pricing_models.base.PricingModel
+) -> simulators.Simulator:
+    """Instantiate and return an initialized elfpy Simulator object."""
+    market, _, _ = sim_utils.get_initialized_hyperdrive_market(
+        pricing_model=pricing_model, block_time=time.BlockTime(), config=experiment_config
+    )
+    return simulators.Simulator(experiment_config, market, time.BlockTime())
 
-def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> HyperdriveMarketState:
+def get_hyperdrive_config(hyperdrive_instance) -> dict:
+    """Get the hyperdrive config from a deployed hyperdrive contract.
+
+    Parameters
+    ----------
+    hyperdrive_instance : ContractInstance
+        The deployed hyperdrive contract instance.
+
+    Returns
+    -------
+    hyperdrive_config : dict
+        The hyperdrive config.
+    """
+    hyperdrive_config: dict = hyperdrive_instance.getPoolConfig().__dict__
+    hyperdrive_config["timeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
+    log_and_show(f"Hyperdrive config deployed at {hyperdrive_instance.address}:")
+    for key, value in hyperdrive_config.items():
+        divisor = 1 if key in ["positionDuration", "checkpointDuration", "timeStretch"] else 1e18
+        formatted_value = fmt(value / divisor) if isinstance(value, (int, float)) else value
+        log_and_show(f" {key}: {formatted_value}")
+    hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
+    return hyperdrive_config
+
+def deploy_hyperdrive(
+    experiment_config: Config,
+    base_instance: ContractInstance,
+    deployer_account: KeyfileAccount,
+    pricing_model: elfpy.pricing_models.base.PricingModel,
+    project: HyperdriveProject,
+) -> ContractInstance:
+    """Deploy Hyperdrive when operating on a fresh fork.
+
+    Parameters
+    ----------
+    experiment_config : simulators.Config
+        The experiment configuration object.
+    base_instance : ContractInstance
+        The base token contract instance.
+    deployer_account : Account
+        The account used to deploy smart contracts.
+    pricing_model : elfpy.pricing_models.base.PricingModel
+        The elf-simulations pricing model.
+    project : ape_utils.HyperdriveProject
+        The Ape project that contains a Hyperdrive contract.
+
+    Returns
+    -------
+    hyperdrive : ContractInstance
+        The deployed Hyperdrive contract instance.
+    """
+    initial_supply = FixedPoint(experiment_config.target_liquidity, decimal_places=18)
+    initial_apr = FixedPoint(experiment_config.target_fixed_apr, decimal_places=18)
+    simulator = get_simulator(experiment_config, pricing_model)  # Instantiate the sim market
+    base_instance.mint(
+        initial_supply.scaled_value,
+        sender=deployer_account,  # minted amount goes to sender
+    )
+    hyperdrive: ContractInstance = deployer_account.deploy(
+        project.get_contract("MockHyperdriveTestnet"),
+        base_instance,
+        initial_apr.scaled_value,
+        FixedPoint(experiment_config.init_share_price).scaled_value,
+        365,  # checkpoints per term
+        86400,  # checkpoint duration in seconds (1 day)
+        (
+            FixedPoint("1.0") / (simulator.market.time_stretch_constant)
+        ).scaled_value,  # time stretch in solidity format (inverted)
+        (
+            FixedPoint(experiment_config.curve_fee_multiple).scaled_value,
+            FixedPoint(experiment_config.flat_fee_multiple).scaled_value,
+            FixedPoint(experiment_config.governance_fee_multiple).scaled_value,
+        ),
+        deployer_account,
+    )
+    with ape.accounts.use_sender(deployer_account):
+        base_instance.approve(hyperdrive, initial_supply.scaled_value)
+        hyperdrive.initialize(
+            initial_supply.scaled_value,
+            initial_apr.scaled_value,
+            deployer_account,
+            True,
+        )
+    return hyperdrive
+
+def get_market_state_from_contract(
+    hyperdrive_contract: ContractInstance, **kwargs
+) -> HyperdriveMarketState:
     r"""Return the current market state from the smart contract.
 
     Arguments
@@ -281,6 +382,70 @@ def get_wallet_from_onchain_trade_info(
                 wallet.lp_tokens += FixedPoint(scaled_value=balance)
     return wallet
 
+def create_elfpy_market(
+    pricing_model: elfpy.pricing_models.base.PricingModel,
+    hyperdrive_instance: ContractInstance,
+    hyperdrive_config: dict,
+    block_number: int,
+    block_timestamp: int,
+    start_timestamp: int,
+) -> HyperdriveMarket:
+    """Create an elfpy market.
+
+    Parameters
+    ----------
+    pricing_model : elfpy.pricing_models.base.PricingModel
+        The pricing model to use.
+    hyperdrive_instance : ContractInstance
+        The deployed Hyperdrive instance.
+    hyperdrive_config : dict
+        The configuration of the deployed Hyperdrive instance
+    block_number : int
+        The block number of the latest block.
+    block_timestamp : int
+        The timestamp of the latest block.
+    start_timestamp : int
+        The timestamp for when we started the simulation.
+
+    Returns
+    -------
+    hyperdrive_market.Market
+        The elfpy market.
+    """
+    # pylint: disable=too-many-arguments
+    return HyperdriveMarket(
+        pricing_model=pricing_model,
+        market_state=get_market_state_from_contract(hyperdrive_contract=hyperdrive_instance),
+        position_duration=time.StretchedTime(
+            days=FixedPoint(hyperdrive_config["term_length"]),
+            time_stretch=FixedPoint(hyperdrive_config["timeStretch"]),
+            normalizing_constant=FixedPoint(hyperdrive_config["term_length"]),
+        ),
+        block_time=time.BlockTime(
+            _time=FixedPoint((block_timestamp - start_timestamp) / 365),
+            _block_number=FixedPoint(block_number),
+            _step_size=FixedPoint("1.0") / FixedPoint("365.0"),
+        ),
+    )
+
+
+def dump_agent_info(sim_agents, experiment_config):
+    """Dump bot info to bots.json."""
+    # save bot info to bots.json
+    variables_to_save_to_bots_json = ["project_dir", "louie", "frida", "random", "bot_names"]
+    # build json
+    json_dict = {
+        key: str(value) for key, value in experiment_config.scratch.items() if key in variables_to_save_to_bots_json
+    }
+    for agent_name, agent in sim_agents.items():
+        json_dict[agent_name] = str(agent)
+    # make folder if it doesn't exist
+    if not os.path.exists(f"{experiment_config.scratch['project_dir']}/artifacts"):
+        os.makedirs(f"{experiment_config.scratch['project_dir']}/artifacts")
+    # write to file
+    with open(f"{experiment_config.scratch['project_dir']}/artifacts/bots.json", "w", encoding="utf-8") as file:
+        json.dump(json_dict, file, indent=4)
+
 
 def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
     r"""Get the max and priority fees from a block (type 2 transactions only).
@@ -333,12 +498,12 @@ def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
     return _max_max_fee, _avg_max_fee, _max_priority_fee, _avg_priority_fee
 
 
-def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
+def get_transfer_single_event(txn_receipt: ReceiptAPI) -> ContractLog:
     r"""Parse the transaction receipt to get the "transfer single" trade event.
 
     Arguments
     ---------
-    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    txn_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         Ape transaction abstract class to represent a transaction receipt.
 
 
@@ -347,7 +512,7 @@ def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
     single_event : `ape.types.ContractLog <https://docs.apeworx.io/ape/stable/methoddocs/types.html#ape.types.ContractLog>`_
         The primary emitted trade (a "TransferSingle") event, excluding peripheral events.
     """
-    single_events = [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"]
+    single_events = [tx_event for tx_event in txn_receipt.events if tx_event.event_name == "TransferSingle"]
     if len(single_events) > 1:
         single_events = [tx_event for tx_event in single_events if tx_event.id != 0]  # exclude token id 0
     if len(single_events) > 1:
@@ -362,12 +527,12 @@ def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
         ) from exc
 
 
-def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance) -> PoolState:
+def get_pool_state(txn_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance) -> PoolState:
     r"""Return everything returned by `getPoolInfo()` in the smart contracts.
 
     Arguments
     ---------
-    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    txn_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         Ape transaction abstract class to represent a transaction receipt.
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Ape interactive instance of the initialized MockHyperdriveTestnet smart contract.
@@ -386,12 +551,12 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
     * `prefix_` : the prefix of the trade (LP, long, or short)
     * `maturity_timestamp` : the maturity time of the trade
     """
-    transfer_single_event = get_transfer_single_event(tx_receipt)
+    transfer_single_event = get_transfer_single_event(txn_receipt)
     # The ID is a concatenation of the current share price and the maturity time of the trade
     token_id = int(transfer_single_event["id"])
     prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(token_id)
     hyper_dict = hyperdrive_contract.getPoolInfo().__dict__
-    hyper_dict["block_number"] = tx_receipt.block_number
+    hyper_dict["block_number"] = txn_receipt.block_number
     hyper_dict["token_id"] = token_id
     hyper_dict["prefix"] = prefix
     hyper_dict["maturity_timestamp"] = maturity_timestamp  # in seconds
@@ -441,14 +606,14 @@ class PoolState:
 PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
 
 
-def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_info: PoolInfo):
+def get_agent_deltas(txn_receipt: ReceiptAPI, trade, addresses, trade_type, pool_info: PoolInfo):
     """Get the change in an agent's wallet from a transaction receipt."""
     # TODO: verify the accuracy of this function through more testing
     # issue #423
-    agent = tx_receipt.operator
-    event_args = tx_receipt.event_arguments
-    event_args.update({key: value for key, value in tx_receipt.items() if key in ["block_number", "event_name"]})
-    dai_events = [e.dict() for e in tx_receipt.events if agent in [e.get("src"), e.get("dst")]]
+    agent = txn_receipt.operator
+    event_args = txn_receipt.event_arguments
+    event_args.update({key: value for key, value in txn_receipt.items() if key in ["block_number", "event_name"]})
+    dai_events = [e.dict() for e in txn_receipt.events if agent in [e.get("src"), e.get("dst")]]
     dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
     _, maturity_timestamp = hyperdrive_assets.decode_asset_id(int(trade["id"]))
     mint_time = ((maturity_timestamp - int(SECONDS_IN_YEAR) * pool_info.term_length) - pool_info.start_time) / int(
@@ -563,7 +728,7 @@ def get_contract_type(address: str, provider: ProviderAPI) -> ContractType:
     return contract_type
 
 
-def select_abi(method: Callable, params: dict | None = None, args: Tuple | None = None) -> tuple[MethodABI, Tuple]:
+def select_abi(method: Callable, params: dict | None = None, args: tuple | None = None) -> tuple[MethodABI, tuple]:
     r"""Select the correct ABI for a method based on the provided parameters.
 
     * If `params` is provided, the ABI will be matched by keyword arguments
@@ -619,15 +784,15 @@ def select_abi(method: Callable, params: dict | None = None, args: Tuple | None 
 Info = namedtuple("Info", ["method", "prefix"])
 
 
-def ape_trade(
+def create_trade(
     trade_type: str,
     hyperdrive_contract: ContractInstance,
     agent: AccountAPI,
     amount: int,
     maturity_time: int | None = None,
     **kwargs: Any,
-) -> tuple[dict[str, Any] | None]:
-    r"""Execute a trade on the Hyperdrive contract.
+) -> tuple[ContractTransaction, tuple, MethodABI]:
+    r"""Creates a trade on the Hyperdrive contract.
 
     Arguments
     ---------
@@ -649,8 +814,8 @@ def ape_trade(
     -------
     pool_state : dict, optional
         The Hyperdrive pool state after the trade.
-    txn_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
-        The Ape transaction receipt.
+    args : list
+        The matching keyword arguments, or the original arguments if no keywords were provided.
     """
     # predefine which methods to call based on the trade type, and the corresponding asset ID prefix
     info = {
@@ -686,11 +851,58 @@ def ape_trade(
     selected_abi, args = select_abi(params=params, method=info[trade_type].method)
     # create a transaction with the selected ABI
     contract_txn: ContractTransaction = ContractTransaction(abi=selected_abi, address=hyperdrive_contract.address)
+    return contract_txn, args, selected_abi
+
+
+def ape_trade(
+    trade_type: str,
+    hyperdrive_contract: ContractInstance,
+    agent: AccountAPI,
+    amount: int,
+    maturity_time: int | None = None,
+    **kwargs: Any,
+) -> tuple[dict[str, Any] | None, ReceiptAPI | None]:
+    r"""Execute a trade on the Hyperdrive contract.
+
+    Arguments
+    ---------
+    trade_type : str
+        The type of trade to execute. One of `ADD_LIQUIDITY,
+        REMOVE_LIQUIDITY, OPEN_LONG, CLOSE_LONG, OPEN_SHORT, CLOSE_SHORT`
+    hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        Ape interactive instance of the initialized MockHyperdriveTestnet smart contract.
+    agent : `ape.api.accounts.AccountAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.accounts.AccountAPI>`_
+        The account that will execute the trade.
+    amount : int
+        Unsigned int-256 representation of the trade amount (base if not LP, otherwise LP tokens)
+    maturity_time : int, optional
+        The maturity time of the trade. Only used for `CLOSE_LONG`, and `CLOSE_SHORT`.
+    kwargs : dict, optional
+        Additional keyword arguments to pass to the trade method.
+
+    Returns
+    -------
+    pool_state : dict, optional
+        The Hyperdrive pool state after the trade.
+    txn_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+        The Ape transaction receipt.
+    """
+    contract_txn, args, _ = create_trade(
+        trade_type=trade_type,
+        hyperdrive_contract=hyperdrive_contract,
+        agent=agent,
+        amount=amount,
+        maturity_time=maturity_time,
+        **kwargs,
+    )
     try:  # attempt to execute the transaction, allowing for a specified number of retries (default is 1)
-        txn_receipt = attempt_txn(agent, contract_txn, *args, **kwargs)
+        if args:
+            txn_receipt = attempt_txn(agent, contract_txn, *args, **kwargs)
+        else:
+            txn_receipt = attempt_txn(agent, contract_txn, **kwargs)
         if txn_receipt is None:
             return None, None
-        return get_pool_state(tx_receipt=txn_receipt, hyperdrive_contract=hyperdrive_contract), txn_receipt
+        return get_pool_state(txn_receipt=txn_receipt, hyperdrive_contract=hyperdrive_contract), txn_receipt
     except TransactionError as exc:
         logging.error(
             "Failed to execute %s: %s\n =>  Amount: %s\n => Agent: %s\n => Pool: %s\n",
@@ -725,7 +937,7 @@ def attempt_txn(
 
     Returns
     -------
-    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    txn_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         The transaction receipt. Not returned if the transaction fails.
 
     Raises
@@ -778,9 +990,9 @@ def attempt_txn(
         if signed_txn is None:
             raise ValueError("Failed to sign transaction")
         try:
-            tx_receipt: ReceiptAPI = agent.provider.send_transaction(signed_txn)
-            tx_receipt.await_confirmations()
-            return tx_receipt
+            txn_receipt: ReceiptAPI = agent.provider.send_transaction(signed_txn)
+            txn_receipt.await_confirmations()
+            return txn_receipt
         except TransactionError as exc:
             if "replacement transaction underpriced" not in str(exc) or not isinstance(exc, TransactionNotFoundError):
                 log_and_show(f"Txn failed in unexpected way on attempt {attempt} of {mult}: {exc}")

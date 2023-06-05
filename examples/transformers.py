@@ -1,104 +1,41 @@
-# ---
-# jupyter:
-#   jupytext:
-#     cell_metadata_filter: -all
-#     custom_cell_magics: kql
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.11.2
-#   kernelspec:
-#     display_name: .venv
-#     language: python
-#     name: python3
-# ---
-
 # %%
-"""simulation for the Hyperdrive market"""
+"""Utilities to transform from elf-simulations to Ape objects."""
 from __future__ import annotations
-from matplotlib.axes import Axes
-
-# pylint: disable=line-too-long
-# pylint: disable=too-many-lines
-# pylint: disable=invalid-name
-# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
-
-# %% [markdown]
-# ## Hyperdrive Simulation
-# We use the following setup:
-# - 90 day term
-# - 200 agents, 100 randomly open and close longs, the other 100 randomly open and close shorts
-# - agents are initialized with 1 million of capital, trading 10% of their budget per trade
-# - they trade at random intervals calibrated to be roughly twice per term (1 open 1 close)
-# - there is one Liquidity Provider which deposits 500 million of liquidity
-#
-# For details on the simulation framework, please see our <a href="https://elfpy.delv.tech/">simulation documentation</a>
-
-# %% [markdown]
-# ### Install repo requirements & import packages
-
-# %%
-# test: skip-cell
-try:  # install repo only if running on google colab
-    # check if running in Google Colaboratory
-    eval("import google.colab")  # pylint: disable=eval-used
-    import os
-
-    os.system(
-        "!pip install git+https://github.com/delvtech/elf-simulations.git@4536bb486b7ce857840996448dbb479adb1c5c14"
-    )
-except:  # pylint: disable=bare-except
-    print("running locally & trusting that you have the dependencies installed")
-
-# %%
-import numpy as np
+from pathlib import Path
+from ape.api import ReceiptAPI
+from ape.contracts.base import ContractTransaction
+from ethpm_types.abi import MethodABI
 from numpy.random._generator import Generator as NumpyGenerator
-import matplotlib.pyplot as plt
-import pandas as pd
 
+import ape
+import elfpy
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
-import elfpy.utils.post_processing as post_processing
 import elfpy.agents.policies.random_agent as random_agent
-
-from elfpy.agents.agent import Agent
+import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils
-from elfpy.utils.outputs import get_gridspec_subplots
 from elfpy.math import FixedPoint
+import elfpy.utils.apeworx_integrations as ape_utils
 
-
-# %% [markdown]
-# ### Setup experiment parameters
-
-# %%
+# %% setup
 config = Config()
 
-config.title = "Hyperdrive demo"
+config.title = "transformers demo"
 config.pricing_model_name = "Hyperdrive"  # can be yieldspace or hyperdrive
 
-config.num_trading_days = 90  # Number of simulated trading days
-config.num_blocks_per_day = 10  # Blocks in a given day (7200 means ~12 sec per block)
-config.num_position_days = 45
+config.num_trading_days = 3  # Number of simulated trading days
+config.num_blocks_per_day = 1  # Blocks in a given day (7200 means ~12 sec per block)
+config.num_position_days = 365
 config.curve_fee_multiple = 0.10  # fee multiple applied to the price slippage (1-p) collected on trades
 config.flat_fee_multiple = 0.005  # 5 bps
-
-num_agents = 100  # int specifying how many agents you want to simulate
-agent_budget = 1_000_000  # max money an agent can spend
-trade_chance = 2 / (
-    config.num_trading_days * config.num_blocks_per_day
-)  # on a given block, an agent will trade with probability `trade_chance`
 
 config.target_fixed_apr = 0.01  # target fixed APR of the initial market after the LP
 config.target_liquidity = 500_000_000  # target total liquidity of the initial market, before any trades
 
 config.log_level = output_utils.text_to_log_level("WARNING")  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
-config.log_filename = "hyperdrive"  # Output filename for logging
-
-# %% [markdown]
-# ### Setup agents
-
+config.log_filename = "transformers"  # Output filename for logging
+config.freeze()
 
 # %%
 class RandomAgent(random_agent.RandomAgent):
@@ -142,256 +79,108 @@ class RandomAgent(random_agent.RandomAgent):
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
 
-
-def get_example_agents(
-    rng: NumpyGenerator, budget: int, new_agents: int, existing_agents: int = 0, direction: str | None = None
-) -> list[Agent]:
-    """Instantiate a set of custom agents"""
-    agents = []
-    for address in range(existing_agents, existing_agents + new_agents):
-        agent = RandomAgent(
-            rng=rng,
-            trade_chance_pct=trade_chance,
-            wallet_address=address,
-            budget=budget,
-        )
-        if direction is not None:
-            if direction == "short":
-                agent.trade_long = False
-            elif direction == "long":
-                agent.trade_short = False
-        agent.log_status_report()
-        agents += [agent]
-    return agents
-
-
-# %% [markdown]
-#
-# ### Define variable apr process
-
-
-# %%
-def DSR_historical(num_dates=90):
-    """Retuns a list of historical DSR values
-
-    Parameters
-    ----------
-    num_dates : int, optional
-        number of daily values to return, by default 90
-
-    Returns
-    -------
-    list[float]
-        A list of historical DSR values
-    """
-    try:
-        dsr = pd.read_csv(
-            "https://s3-sim-repo-0.s3.us-east-2.amazonaws.com/Data/HIST_DSR_D.csv",
-            index_col=0,
-            infer_datetime_format=True,
-        )
-        dsr.index = pd.to_datetime(dsr.index)
-        dsr = dsr.resample("D").mean()
-        min_date = dsr.index.min()
-        max_date = dsr.index.max()
-        date_range = max_date - min_date
-        new_date_range = min_date + date_range * np.linspace(0, 1, num_dates)
-        dsr_new = dsr.reindex(new_date_range, method="ffill")
-        dsr_new = dsr_new.reset_index(drop=True)
-        return dsr_new["DAI_SAV_RATE"].to_list()
-    except:  # pylint: disable=bare-except
-        return [0.01] * config.num_trading_days
-
-
-# Define the variable apr
-config.variable_apr = DSR_historical(num_dates=config.num_trading_days)
-config.freeze()  # type: ignore
-
-# %% [markdown]
-# ### Setup simulation objects
-
-# %%
-# define root logging parameters
+# %% setup
 output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
-
-# get an instantiated simulator object
 simulator = sim_utils.get_simulator(config)
+simulator.add_agents([RandomAgent(rng=simulator.rng, trade_chance_pct=1, wallet_address=1, budget=1_000_000)])
+agent_ids = list(simulator.agents)
+trades = simulator.collect_trades(agent_ids)
 
-# %% [markdown]
-# ### Run the simulation
+# %% why is this so awkward? we packed "market" next to the Trade class in a tuple, instead of inside
+market, trade_obj = trades[0]
+trade_details = trade_obj.trade
 
-# %%
-# add the random agents
-short_agents = get_example_agents(
-    rng=simulator.rng, budget=agent_budget, new_agents=num_agents // 2, existing_agents=1, direction="short"
+# %% fixtures (stuff I use elesewhere)
+provider = ape.networks.parse_network_choice("ethereum:local:foundry").push_provider()
+project: ape_utils.HyperdriveProject = ape_utils.HyperdriveProject(path=Path.cwd())
+test_account = ape.accounts.test_accounts[0]
+test_account.balance += int(1e18)  # give test account 1 Eth
+base_instance = test_account.deploy(project.get_contract("ERC20Mintable"))
+pricing_model = hyperdrive_pm.HyperdrivePricingModel()
+hyperdrive_instance = ape_utils.deploy_hyperdrive(config, base_instance, test_account, pricing_model, project)
+
+# %% TRASFORMERS ROLL OUT: TRADE_DETAILS => ABI_CALL (issue #397)
+print(''.join(["="]*8 + [" TRANSFORMERS THE FIRST: TRADE_DETAILS => ABI_CALL"] + ["="]*8))
+print(f"{trade_details=}")
+
+amount = trade_details.trade_amount.scaled_value  # ape works with ints
+params = {
+    "trade_type": trade_details.action_type.name,
+    "hyperdrive_contract": hyperdrive_instance,
+    "agent": test_account,
+    "amount": amount,
+}
+if trade_details.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
+    params["maturity_time"] = int(trade_details.mint_time + elfpy.SECONDS_IN_YEAR)
+
+# mint 50k base
+base_instance.mint(test_account.address, int(50_000 * 1e18), sender=test_account)
+
+# approve 50k base, using attempt_txn cus this txn has to be signed
+ape_utils.attempt_txn(test_account, base_instance.approve, hyperdrive_instance.address, int(50_000 * 1e18))
+
+# execute the trade using key-word arguments
+pool_state, txn_receipt_result = ape_utils.ape_trade(**params)
+assert isinstance(txn_receipt_result,ReceiptAPI), "ape_trade did not return Receipt"
+txn_receipt: ReceiptAPI = txn_receipt_result
+assert txn_receipt.failed is not True, "txn was not successfull"
+
+# show that we can return whichever part of the "abi call" you want, without executing it!
+contract_txn: ContractTransaction
+args: tuple
+abi: MethodABI
+contract_txn, args, abi = ape_utils.create_trade(**params)
+print(f"{contract_txn=}")
+print(f"{args=}")
+print(f"{abi=}")
+
+# %% TRASFORMERS ROLL OUT: getPoolInfo, getPoolConfig --> MarketState (issue #391)
+market_state=ape_utils.get_market_state_from_contract(hyperdrive_contract=hyperdrive_instance)
+print(f"{market_state=}")
+
+# %% TRANSFORMERS ROLL OUT: tx_receipt --> Wallet (issue #392)
+# get FOR EVERY tx_receipt that has EVER HAPPENED wow! efficient!
+on_chain_trade_info: ape_utils.OnChainTradeInfo = ape_utils.get_on_chain_trade_info(hyperdrive_instance)
+agent_wallet = ape_utils.get_wallet_from_onchain_trade_info(
+    address_=test_account.address,
+    index=1,  # this is the index of the agent in the list of ALL agents, assigned in set_up_agents() to len(sim_agents)
+    info=on_chain_trade_info,
+    hyperdrive_contract=hyperdrive_instance,
+    base_contract=base_instance,
 )
-long_agents = get_example_agents(
-    rng=simulator.rng,
-    budget=agent_budget,
-    new_agents=num_agents // 2,
-    existing_agents=1 + len(short_agents),
-    direction="long",
+print(f"{agent_wallet=}")
+
+# %% TRANSFORMERS ROLL OUT: calculateSpotPrice --> market.SpotPrice (issue #393)
+# not sure if i've used this before... I must have... just not recently
+
+# %% TRANSFORMERS ROLL OUT:L calculateAPRFromReserves--> market.fixed_apr (issue #394)
+# ditto
+
+# %% TRANSFORMERS ROLL OUT: getPoolinfo --> market_deltas (issue #395)
+# I've never done this, because I just create a new market from scratch after every trade
+hyperdrive_config = ape_utils.get_hyperdrive_config(hyperdrive_instance)
+latest_block = ape.chain.blocks[-1]
+block_number = latest_block.number
+assert block_number, "block number isn't real"
+start_timestamp = ape.chain.blocks[-1].timestamp
+block_timestamp = latest_block.timestamp
+elfpy_market = ape_utils.create_elfpy_market(
+    pricing_model, hyperdrive_instance, hyperdrive_config, block_number, block_timestamp, start_timestamp
 )
-simulator.add_agents(short_agents + long_agents)
-print(f"Simulator has {len(simulator.agents)} agents")
-agent_ids = list(simulator.agents)[::-1] if liquidate else list(simulator.agents)
-trades = simulator.collect_trades(agent_ids, liquidate)
 
-# %%
-# run the simulation
+# %% TRASFORMERS ROLL OUT: TRADE_DETAILS => AGENT_DELTAS (use #396)
+print(''.join(["="]*8 + [" TRANSFORMERS THE SECOND: TX_RECEIPT => WALLET"] + ["="]*8))
 
-simulator.run_simulation()
-
-# %%
-# convert simulation state to a pandas dataframe
-trades: pd.DataFrame = post_processing.compute_derived_variables(simulator)
-for col in list(trades):
-    if col.startswith("agent"):  # type: ignore
-        divisor = 1e6  # 1 million divisor for everyone
-        # pandas dataframes lets you do this syntax, but they didn't do the typing for it :/
-        trades[col] = trades[col] / divisor  # pylint: disable-all
-
-# %% [markdown]
-# ### Plot simulation results
-
-# %% [markdown]
-# This shows the evolution of interest rates over time. The "variable" APR represents a theoretical underlying variable rate. Here we've mocked it up to have the same pattern as the MakerDao DAI Saving Rate over its whole history, but condensed to a 90 day period for this simulation. The fixed rate is initialized at 1% and appears to remain unchanged.
-
-# %%
-trades_agg = trades.groupby("day").agg(
-    {
-        "variable_apr": ["mean"],
-        "fixed_apr": ["mean"],
-        "delta_base_abs": ["sum"],
-        "agent_0_pnl": ["mean"],
-    }
+# use txn_receipt from above
+agent_deltas = ape_utils.get_agent_deltas(
+    tx_receipt=txn_receipt,  # should pick one of these two names, i like "txn" more than "tx", it's beefier
+    trade=???,  # I got this from Jacob
+    addresses=agent_ids,
+    trade_type=params["trade_type"],
+    pool_info=ape_utils.PoolInfo(
+        start_time=???,
+        block_time=???,
+        term_length=???,
+        market_state=???,
+    )
 )
-trades_agg.columns = ["_".join(col).strip() for col in trades_agg.columns.values]
-trades_agg = trades_agg.reset_index()
-ax = get_gridspec_subplots()[1][0]
-plt.gcf().set_size_inches(6, 5)
-ax = trades_agg.iloc[0:].plot(x="day", y="variable_apr_mean", ax=ax, label="variable", c="blue")
-ax = trades_agg.iloc[0:].plot(x="day", y="fixed_apr_mean", ax=ax, label="fixed", c="black")
-ax.set_title("Interest rates over time")
-ax.set_xlabel("Day")
-ax.set_ylabel("APR")
-ax.legend()
-
-xtick_step = 10
-ax.set_xticks([0] + list(range(9, simulator.config.num_trading_days + 1, xtick_step)))
-ax.set_xticklabels(["1"] + [str(x + 1) for x in range(9, simulator.config.num_trading_days + 1, xtick_step)])
-
-ylim = ax.get_ylim()
-ax.set_ylim(0, ylim[1])
-ax.set_yticks(list(np.arange(ylim[0], ylim[1], 0.01)))
-ax.set_yticklabels([f"{(i):.0%}" for i in ax.get_yticks()])
-
-# %% [markdown]
-# It may look like the black line isn't moving at all, until the end. But let's zoom in!
-#
-# This is a function of two things: random agents being too dumb to concertedly move the rate, as well as the model parameters not being optimized for this scenario.
-
-# %%
-fig = output_utils.plot_fixed_apr(trades, exclude_first_day=True, exclude_last_day=True)
-fig.set_size_inches(6, 5)
-ax = plt.gca()
-ax.properties()["children"][0].set_color("black")
-ax.set_yticklabels([f"{(i/100):.3%}" for i in ax.get_yticks()])
-ax.set_ylabel("APR")
-
-xtick_step = 10
-ax.set_xticks([0] + list(range(9, simulator.config.num_trading_days + 1, xtick_step)))
-ax.set_xticklabels(["1"] + [str(x + 1) for x in range(9, simulator.config.num_trading_days + 1, xtick_step)])
-
-# %% [markdown]
-# These random agents are unable to pick smart entry points. Due to trading on coinflips only, they slowdly bleed fees out of their starting position, which in this case reduces from 1.0 million down to 0.999, a loss of $1k.
-
-
-# %%
-def get_pnl_excluding_agent_0_no_mock_with_day(trades_df: pd.DataFrame) -> pd.DataFrame:
-    """Returns Profit and Loss Column for every agent except for agent 0 from post-processing"""
-    cols_to_return = ["day"] + [col for col in trades_df if col.startswith("agent") and col.endswith("pnl_no_mock")]  # type: ignore
-    cols_to_return.remove("agent_0_pnl_no_mock")
-    return trades_df[cols_to_return]
-
-
-def plot_pnl(pnl: pd.DataFrame, axes: Axes, label: str):
-    """Plots Profit and Loss"""
-    # ax.plot(pnl.iloc[1:,:], linestyle='-', linewidth=0.5, alpha=0.5)
-    # separate first half of agents, which are set to trade short
-    # from second half of agents, which are set to trade long
-    columns = pnl.columns.to_list()
-    n = len(columns) // 2  # int
-    short_pnl = pnl.loc[1:, columns[:n]].mean(axis=1)
-    long_pnl = pnl.loc[1:, columns[n:]].mean(axis=1)
-    axes.plot(short_pnl, c="red", label=f"Short {label}, final value={short_pnl[len(short_pnl)-1]:.5f}", linewidth=2)
-    axes.plot(long_pnl, c="black", label=f"Long {label}, final_value={long_pnl[len(long_pnl)-1]:.5f}", linewidth=2)
-    # grey area where day is last day
-    axes.set_ylabel("PNL in millions")
-    # ax.axvspan(last_day, len(short_pnl), color='grey', alpha=0.2, label="Last day")
-    axes.legend()
-
-
-fig, ax = plt.subplots(1, 1, figsize=(6, 5), sharex=True, gridspec_kw={"wspace": 0.0, "hspace": 0.0})
-first_trade_that_is_on_last_day = min(trades.index[trades.day == max(trades.day)])
-# data_mock = post_processing.get_pnl_excluding_agent_0(trades)
-# plot_pnl(pnl=data_mock.iloc[:-1, :], ax=ax, label='Mock')
-data_no_mock = get_pnl_excluding_agent_0_no_mock_with_day(trades).groupby("day").mean()
-plot_pnl(pnl=data_no_mock.iloc[:-1, :], axes=ax, label="Realized Market Value")
-
-xtick_step = 10
-ax.set_xticks([0] + list(range(9, simulator.config.num_trading_days + 1, xtick_step)))
-ax.set_xticklabels(["1"] + [str(x + 1) for x in range(9, simulator.config.num_trading_days + 1, xtick_step)])
-
-plt.gca().set_xlabel("Day")
-plt.gca().set_title("Trader PNL over time")
-# display(data_no_mock)
-
-# %% [markdown]
-# This plot shows being a Liquidity Provider (LP) is a profitable position, in this scenario where agents are trading randomly.
-
-# %%
-fig, ax = plt.subplots(2, 1, figsize=(6, 10))
-exclude_last_day = True
-num_agents = 1
-start_idx = 0
-first_trade_that_is_on_last_day = min(trades_agg.index[trades_agg.day == max(trades_agg.day)])
-end_idx = first_trade_that_is_on_last_day - 1 if exclude_last_day is True else len(trades_agg)
-ax[0].plot(
-    trades_agg.loc[start_idx:end_idx, "day"],
-    trades_agg.loc[start_idx:end_idx, "agent_0_pnl_mean"],
-    label=f"mean = {trades_agg.loc[end_idx,'agent_0_pnl_mean']:.3f}",
-)
-ax[0].set_title("LP PNL Over Time")
-ax[0].set_ylabel("PNL")
-ax[0].set_xlabel("Day")
-data = trades.loc[0 : first_trade_that_is_on_last_day - 1, "agent_0_pnl"]
-xtick_step = 10
-ax[0].set_xticks([0] + list(range(9, simulator.config.num_trading_days + 1, xtick_step)))
-ax[0].set_xticklabels(["1"] + [str(x + 1) for x in range(9, simulator.config.num_trading_days + 1, xtick_step)])
-ax[0].legend({f"final value = {data.values[len(data)-1]:,.3f}"})
-ax[0].set_ylabel("PnL in millions")
-
-exclude_first_trade = True
-exclude_last_trade = True
-start_idx = 1 if exclude_first_trade else 0
-end_idx = first_trade_that_is_on_last_day - 1 if exclude_last_trade is True else None
-ax[1].bar(trades_agg.loc[start_idx:end_idx, "day"], trades_agg.loc[start_idx:end_idx, "delta_base_abs_sum"], label=f"mean = {trades_agg.loc[end_idx,'delta_base_abs_sum']:.3f}")  # type: ignore
-ax[1].set_title("Market Volume")
-ax[1].set_ylabel("Base")
-ax[1].set_xlabel("Day")
-xtick_step = 10
-ax[1].set_xticks([0] + list(range(9, simulator.config.num_trading_days + 1, xtick_step)))
-ax[1].set_xticklabels(["1"] + [str(x + 1) for x in range(9, simulator.config.num_trading_days + 1, xtick_step)])
-ylim = ax[1].get_ylim()
-ax[1].set_ylim(0, ylim[1])
-
-# %% [markdown]
-# ## We are constantly updating our research. Stay tuned for more!
-
-# %% [markdown]
-# TODO:
-# - parameter optimization
-# - smart agents
-# - multiple simulation trial runs to evaluate LP profitability
-# - simulate Aave, Compound, MakerDao, etc.

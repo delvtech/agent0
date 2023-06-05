@@ -35,8 +35,7 @@ import elfpy
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
 
-from elfpy import DEFAULT_LOG_MAXBYTES, SECONDS_IN_YEAR
-from elfpy import time, types
+from elfpy import DEFAULT_LOG_MAXBYTES, SECONDS_IN_YEAR, time, types
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
 from elfpy.agents.policies import LongLouie, RandomAgent, ShortSally
@@ -45,7 +44,6 @@ from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 from elfpy.simulators import Simulator
 from elfpy.simulators.config import Config
-from elfpy.utils import sim_utils
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
 import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
@@ -542,77 +540,6 @@ def log_and_show_block_info(
         base_fee,
     )
 
-
-def get_simulator(experiment_config: Config, pricing_model: BasePricingModel) -> Simulator:
-    """Instantiate and return an initialized elfpy Simulator object."""
-    market, _, _ = sim_utils.get_initialized_hyperdrive_market(
-        pricing_model=pricing_model, block_time=time.BlockTime(), config=experiment_config
-    )
-    return Simulator(experiment_config, market, time.BlockTime())
-
-
-def deploy_hyperdrive(
-    experiment_config: Config,
-    base_instance: ContractInstance,
-    deployer_account: KeyfileAccount,
-    pricing_model: BasePricingModel,
-    project: ape_utils.HyperdriveProject,
-) -> ContractInstance:
-    """Deploy Hyperdrive when operating on a fresh fork.
-
-    Parameters
-    ----------
-    experiment_config : simulators.Config
-        The experiment configuration object.
-    base_instance : ContractInstance
-        The base token contract instance.
-    deployer_account : Account
-        The account used to deploy smart contracts.
-    pricing_model : BasePricingModel
-        The elf-simulations pricing model.
-    project : ape_utils.HyperdriveProject
-        The Ape project that contains a Hyperdrive contract.
-
-    Returns
-    -------
-    hyperdrive : ContractInstance
-        The deployed Hyperdrive contract instance.
-    """
-    initial_supply = FixedPoint(experiment_config.target_liquidity, decimal_places=18)
-    initial_apr = FixedPoint(experiment_config.target_fixed_apr, decimal_places=18)
-    simulator = get_simulator(experiment_config, pricing_model)  # Instantiate the sim market
-    base_instance.mint(
-        initial_supply.scaled_value,
-        sender=deployer_account,  # minted amount goes to sender
-    )
-    hyperdrive: ContractInstance = deployer_account.deploy(
-        project.get_contract("MockHyperdriveTestnet"),
-        base_instance,
-        initial_apr.scaled_value,
-        FixedPoint(experiment_config.init_share_price).scaled_value,
-        365,  # checkpoints per term
-        86400,  # checkpoint duration in seconds (1 day)
-        (
-            FixedPoint("1.0") / (simulator.market.time_stretch_constant)
-        ).scaled_value,  # time stretch in solidity format (inverted)
-        (
-            FixedPoint(experiment_config.curve_fee_multiple).scaled_value,
-            FixedPoint(experiment_config.flat_fee_multiple).scaled_value,
-            FixedPoint(experiment_config.governance_fee_multiple).scaled_value,
-        ),
-        deployer_account,
-    )
-    with ape.accounts.use_sender(deployer_account):
-        base_instance.approve(hyperdrive, initial_supply.scaled_value)
-        hyperdrive.initialize(
-            initial_supply.scaled_value,
-            initial_apr.scaled_value,
-            deployer_account,
-            True,
-        )
-    return hyperdrive
-
-
 def set_up_devnet(
     addresses, project, provider, experiment_config, pricing_model
 ) -> tuple[ContractInstance, ContractInstance, dict[str, str]]:
@@ -655,36 +582,11 @@ def set_up_devnet(
             provider=provider,
         )
     else:  # deploy a new hyperdrive
-        hyperdrive_instance: ContractInstance = deploy_hyperdrive(
+        hyperdrive_instance: ContractInstance = ape_utils.deploy_hyperdrive(
             experiment_config, base_instance, deployer_account, pricing_model, project
         )
         addresses["hyperdrive"] = hyperdrive_instance.address
     return base_instance, hyperdrive_instance, addresses, deployer_account
-
-
-def get_hyperdrive_config(hyperdrive_instance) -> dict:
-    """Get the hyperdrive config from a deployed hyperdrive contract.
-
-    Parameters
-    ----------
-    hyperdrive_instance : ContractInstance
-        The deployed hyperdrive contract instance.
-
-    Returns
-    -------
-    hyperdrive_config : dict
-        The hyperdrive config.
-    """
-    hyperdrive_config: dict = hyperdrive_instance.getPoolConfig().__dict__
-    hyperdrive_config["timeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
-    log_and_show(f"Hyperdrive config deployed at {hyperdrive_instance.address}:")
-    for key, value in hyperdrive_config.items():
-        divisor = 1 if key in ["positionDuration", "checkpointDuration", "timeStretch"] else 1e18
-        formatted_value = fmt(value / divisor) if isinstance(value, (int, float)) else value
-        log_and_show(f" {key}: {formatted_value}")
-    hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
-    return hyperdrive_config
-
 
 def set_up_ape(
     experiment_config: Config,
@@ -756,7 +658,7 @@ def set_up_ape(
         )
         hyperdrive_instance: ContractInstance = project.get_hyperdrive_contract()
     # read the hyperdrive config from the contract, and log (and print) it
-    hyperdrive_config = get_hyperdrive_config(hyperdrive_instance)
+    hyperdrive_config = ape_utils.get_hyperdrive_config(hyperdrive_instance)
     # becomes provider.get_auto_mine() with this PR: https://github.com/ApeWorX/ape-foundry/pull/51
     automine = provider._make_request("anvil_getAutomine", parameters={})  # pylint: disable=protected-access
     return provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account
@@ -793,72 +695,6 @@ def do_policy(
             raise exc
     return no_crash_streak
 
-
-def create_elfpy_market(
-    pricing_model: elfpy.pricing_models.base.PricingModel,
-    hyperdrive_instance: ContractInstance,
-    hyperdrive_config: dict,
-    block_number: int,
-    block_timestamp: int,
-    start_timestamp: int,
-) -> HyperdriveMarket:
-    """Create an elfpy market.
-
-    Parameters
-    ----------
-    pricing_model : elfpy.pricing_models.base.PricingModel
-        The pricing model to use.
-    hyperdrive_instance : ContractInstance
-        The deployed Hyperdrive instance.
-    hyperdrive_config : dict
-        The configuration of the deployed Hyperdrive instance
-    block_number : int
-        The block number of the latest block.
-    block_timestamp : int
-        The timestamp of the latest block.
-    start_timestamp : int
-        The timestamp for when we started the simulation.
-
-    Returns
-    -------
-    HyperdriveMarket
-        The elfpy market.
-    """
-    # pylint: disable=too-many-arguments
-    return HyperdriveMarket(
-        pricing_model=pricing_model,
-        market_state=ape_utils.get_market_state_from_contract(hyperdrive_contract=hyperdrive_instance),
-        position_duration=time.StretchedTime(
-            days=FixedPoint(hyperdrive_config["term_length"]),
-            time_stretch=FixedPoint(hyperdrive_config["timeStretch"]),
-            normalizing_constant=FixedPoint(hyperdrive_config["term_length"]),
-        ),
-        block_time=time.BlockTime(
-            _time=FixedPoint((block_timestamp - start_timestamp) / 365),
-            _block_number=FixedPoint(block_number),
-            _step_size=FixedPoint("1.0") / FixedPoint("365.0"),
-        ),
-    )
-
-
-def dump_agent_info(sim_agents, experiment_config):
-    """Dump bot info to bots.json."""
-    # save bot info to bots.json
-    variables_to_save_to_bots_json = ["project_dir", "louie", "frida", "random", "bot_names"]
-    # build json
-    json_dict = {
-        key: str(value) for key, value in experiment_config.scratch.items() if key in variables_to_save_to_bots_json
-    }
-    for agent_name, agent in sim_agents.items():
-        json_dict[agent_name] = str(agent)
-    # make folder if it doesn't exist
-    if not os.path.exists(f"{experiment_config.scratch['project_dir']}/artifacts"):
-        os.makedirs(f"{experiment_config.scratch['project_dir']}/artifacts")
-    # write to file
-    with open(f"{experiment_config.scratch['project_dir']}/artifacts/bots.json", "w", encoding="utf-8") as file:
-        json.dump(json_dict, file, indent=4)
-
-
 def main():
     """Run the simulation."""
     # pylint: disable=too-many-locals
@@ -877,7 +713,7 @@ def main():
     sim_agents, _ = set_up_agents(
         experiment_config, args, provider, hyperdrive_instance, base_instance, addresses, deployer_account
     )
-    dump_agent_info(sim_agents, experiment_config)
+    ape_utils.dump_agent_info(sim_agents, experiment_config)
 
     start_timestamp = ape.chain.blocks[-1].timestamp
     while True:  # hyper drive forever into the sunset
@@ -886,7 +722,7 @@ def main():
         block_timestamp = latest_block.timestamp
         if block_number > last_executed_block:
             log_and_show_block_info(provider, no_crash_streak, block_number, block_timestamp)
-            elfpy_market = create_elfpy_market(
+            elfpy_market = ape_utils.create_elfpy_market(
                 pricing_model, hyperdrive_instance, hyperdrive_config, block_number, block_timestamp, start_timestamp
             )
             for agent in sim_agents.values():
