@@ -377,9 +377,9 @@ def get_example_agents(
         )
         if direction is not None:
             if direction == "short":
-                example_agent.trade_long = False
+                example_agent.policy.trade_long = False
             if direction == "long":
-                example_agent.trade_short = False
+                example_agent.policy.trade_short = False
         example_agent.log_status_report()
         agents += [example_agent]
     return agents
@@ -433,10 +433,10 @@ simulator.add_agents(short_agents + long_agents)
 print(f"Simulator has {len(simulator.agents)} agents")
 for idx, agent in enumerate(short_agents):
     if idx in [0, num_agents / 2 - 1]:
-        print(f"Agent #{agent.wallet.address} is a short: {agent.trade_short=} {agent.trade_long=}")
+        print(f"Agent #{agent.wallet.address} is a short: {agent.policy.trade_short=} {agent.policy.trade_long=}")
 for idx, agent in enumerate(long_agents):
     if idx in [0, num_agents / 2 - 1]:
-        print(f"Agent #{agent.wallet.address} is a long: {agent.trade_short=} {agent.trade_long=}")
+        print(f"Agent #{agent.wallet.address} is a long: {agent.policy.trade_short=} {agent.policy.trade_long=}")
 
 # %%
 # run the simulation
