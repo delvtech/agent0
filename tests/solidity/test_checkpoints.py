@@ -2,13 +2,13 @@
 
 import unittest
 
-import elfpy.agents.agent as elf_agent
-import elfpy.markets.hyperdrive.checkpoint
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_markets
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
+
 from elfpy import types
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies import NoActionPolicy
 from elfpy.errors import errors
+from elfpy.markets.hyperdrive import Checkpoint, HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 
 # TODO: refactor solidity tests as a separate PR to consolidate setUps
@@ -23,22 +23,22 @@ class TestCheckpoint(unittest.TestCase):
 
     contribution = FixedPoint("500_000_000.0")
     target_apr = FixedPoint("0.05")
-    alice: elf_agent.Agent
-    bob: elf_agent.Agent
-    celine: elf_agent.Agent
-    hyperdrive: hyperdrive_markets.Market
+    alice: Agent
+    bob: Agent
+    celine: Agent
+    hyperdrive: HyperdriveMarket
     block_time: time.BlockTime
 
     def setUp(self):
-        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
-        self.celine = elf_agent.Agent(wallet_address=1, budget=self.contribution)
+        self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
+        self.celine = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
         self.block_time = time.BlockTime()
 
-        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_markets.HyperdriveMarketState()
+        pricing_model = HyperdrivePricingModel()
+        market_state = HyperdriveMarketState()
 
-        self.hyperdrive = hyperdrive_markets.Market(
+        self.hyperdrive = HyperdriveMarket(
             pricing_model=pricing_model,
             market_state=market_state,
             block_time=self.block_time,
@@ -48,7 +48,7 @@ class TestCheckpoint(unittest.TestCase):
                 normalizing_constant=FixedPoint("365.0"),
             ),
         )
-        _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, self.target_apr)
+        _, wallet_deltas = self.hyperdrive.initialize(self.contribution, self.target_apr)
         self.alice.wallet.update(wallet_deltas)
 
     def test_checkpoint_failure_future_checkpoint(self):
@@ -69,10 +69,10 @@ class TestCheckpoint(unittest.TestCase):
         # open a long and a short
         long_amount = FixedPoint("10_000_000.0")
         short_amount = FixedPoint("50_000.0")
-        self.bob.budget = long_amount
+        self.bob.policy.budget = long_amount
         self.bob.wallet.balance = types.Quantity(amount=long_amount, unit=types.TokenType.BASE)
         _, long_wallet_deltas = self.hyperdrive.open_long(self.bob.wallet, long_amount)
-        self.celine.budget = short_amount
+        self.celine.policy.budget = short_amount
         self.celine.wallet.balance = types.Quantity(amount=short_amount, unit=types.TokenType.PT)
         self.hyperdrive.open_short(self.celine.wallet, short_amount)
         # Update the share price. Since the long and short were opened in this checkpoint, the
@@ -95,9 +95,7 @@ class TestCheckpoint(unittest.TestCase):
         )
 
         # get default zero value if no checkpoint exists.
-        checkpoint = self.hyperdrive.market_state.checkpoints.get(
-            checkpoint_time, elfpy.markets.hyperdrive.checkpoint.Checkpoint()
-        )
+        checkpoint = self.hyperdrive.market_state.checkpoints.get(checkpoint_time, Checkpoint())
         # Ensure that the checkpoint contains the share price prior to the share price update.
         self.assertEqual(share_price_before, checkpoint.share_price)
         # Ensure that the long and short balance wasn't effected by the checkpoint (the long and
@@ -126,9 +124,7 @@ class TestCheckpoint(unittest.TestCase):
         self.assertEqual(apr_after, apr_before)
         # Ensure that the checkpoint contains the latest share price.
         # get default zero value if no checkpoint exists.
-        checkpoint = self.hyperdrive.market_state.checkpoints.get(
-            self.hyperdrive.latest_checkpoint_time, elfpy.markets.hyperdrive.checkpoint.Checkpoint()
-        )
+        checkpoint = self.hyperdrive.market_state.checkpoints.get(self.hyperdrive.latest_checkpoint_time, Checkpoint())
         self.assertEqual(checkpoint.share_price, self.hyperdrive.market_state.share_price)
 
     def test_checkpoint_in_the_past(self):
@@ -159,13 +155,11 @@ class TestCheckpoint(unittest.TestCase):
         # share price update.
         # get default zero value if no checkpoint exists.
         last_checkpoint = self.hyperdrive.market_state.checkpoints.get(
-            self.hyperdrive.latest_checkpoint_time, elfpy.markets.hyperdrive.checkpoint.Checkpoint()
+            self.hyperdrive.latest_checkpoint_time, Checkpoint()
         )
         self.assertEqual(last_checkpoint.share_price, self.hyperdrive.market_state.share_price)
         # Ensure that the previous checkpoint contains the closest share price.
-        previous_checkpoint = self.hyperdrive.market_state.checkpoints.get(
-            previous_checkpoint_time, elfpy.markets.hyperdrive.checkpoint.Checkpoint()
-        )
+        previous_checkpoint = self.hyperdrive.market_state.checkpoints.get(previous_checkpoint_time, Checkpoint())
         self.assertEqual(previous_checkpoint.share_price, self.hyperdrive.market_state.share_price)
         # Ensure that the long and short balance has gone to zero (all of the
         # matured positions have been closed).

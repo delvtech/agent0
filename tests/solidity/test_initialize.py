@@ -1,12 +1,13 @@
 """Market initialization tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy.agents.agent as elf_agent
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.time as time
-from elfpy.time.time import BlockTime
+
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies import NoActionPolicy
+from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.math import FixedPoint
+from elfpy.time.time import BlockTime
 
 # pylint: disable=too-many-instance-attributes
 
@@ -21,12 +22,12 @@ class TestInitialize(unittest.TestCase):
     contribution: FixedPoint
     target_apr: FixedPoint
     position_duration: FixedPoint
-    alice: elf_agent.Agent
-    bob: elf_agent.Agent
-    celine: elf_agent.Agent
-    hyperdrive: hyperdrive_market.Market
+    alice: Agent
+    bob: Agent
+    celine: Agent
+    hyperdrive: HyperdriveMarket
     block_time: BlockTime
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel
+    pricing_model: HyperdrivePricingModel
 
     def __init__(
         self,
@@ -41,13 +42,13 @@ class TestInitialize(unittest.TestCase):
         self.contribution = contribution
         self.target_apr = target_apr
         self.position_duration = FixedPoint(position_duration)
-        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
-        self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
+        self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
+        self.celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=self.contribution))
         self.block_time = BlockTime()
-        self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.HyperdriveMarketState()
-        self.hyperdrive = hyperdrive_market.Market(
+        self.pricing_model = HyperdrivePricingModel()
+        market_state = HyperdriveMarketState()
+        self.hyperdrive = HyperdriveMarket(
             pricing_model=self.pricing_model,
             market_state=market_state,
             block_time=self.block_time,
@@ -57,11 +58,7 @@ class TestInitialize(unittest.TestCase):
                 normalizing_constant=self.position_duration,
             ),
         )
-        _, wallet_deltas = self.hyperdrive.initialize(
-            wallet_address=self.alice.wallet.address,
-            contribution=self.contribution,
-            target_apr=self.target_apr,
-        )
+        _, wallet_deltas = self.hyperdrive.initialize(self.contribution, self.target_apr)
         self.alice.wallet.update(wallet_deltas)
         super().__init__(**kwargs)
 
@@ -72,7 +69,6 @@ def test_initialize_failure():
     test = TestInitialize()
     with test.assertRaises(AssertionError):
         _ = test.hyperdrive.initialize(
-            wallet_address=test.bob.wallet.address,
             contribution=test.contribution,
             target_apr=test.target_apr,
         )

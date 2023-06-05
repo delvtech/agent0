@@ -1,35 +1,53 @@
 """User strategy that opens a single short and doesn't close until liquidation"""
-from typing import List
+from __future__ import annotations
 
-import elfpy.agents.agent as elf_agent
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.types as types
+from typing import TYPE_CHECKING
+
+from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.math import FixedPoint
+from elfpy.types import MarketType, Trade
+
+from .base import BasePolicy
+
+if TYPE_CHECKING:
+    from numpy.random._generator import Generator as NumpyGenerator
+
+    from elfpy.wallet.wallet import Wallet
+    from elfpy.markets.hyperdrive import HyperdriveMarket
 
 
-class SingleShortAgent(elf_agent.Agent):
+# pylint: disable=too-few-public-methods
+
+
+class SingleShortAgent(BasePolicy):
     """simple short thatonly has one long open at a time"""
 
-    def __init__(self, wallet_address: int, budget: FixedPoint = FixedPoint("100.0")):
+    def __init__(
+        self,
+        budget: FixedPoint = FixedPoint("100.0"),
+        rng: NumpyGenerator | None = None,
+        amount_to_trade: FixedPoint | None = None,
+    ):
         """call basic policy init then add custom stuff"""
-        self.amount_to_trade = budget
-        super().__init__(wallet_address, budget)
+        if amount_to_trade is None:
+            amount_to_trade = budget
+        self.amount_to_trade = amount_to_trade
+        super().__init__(budget, rng)
 
-    def action(self, market: hyperdrive_market.Market) -> List[types.Trade]:
+    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Implement user strategy: short if you can, only once."""
         action_list = []
-        shorts = list(self.wallet.shorts.values())
+        shorts = list(wallet.shorts.values())
         has_opened_short = len(shorts) > 0
-        can_open_short = self.get_max_short(market) >= self.amount_to_trade
+        can_open_short = market.get_max_short_for_account(wallet.balance.amount) >= self.amount_to_trade
         if can_open_short and not has_opened_short:
             action_list.append(
-                types.Trade(
-                    market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.HyperdriveMarketAction(
-                        action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
+                Trade(
+                    market=MarketType.HYPERDRIVE,
+                    trade=HyperdriveMarketAction(
+                        action_type=MarketActionType.OPEN_SHORT,
                         trade_amount=self.amount_to_trade,
-                        wallet=self.wallet,
+                        wallet=wallet,
                     ),
                 )
             )

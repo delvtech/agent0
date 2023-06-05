@@ -1,11 +1,12 @@
 """Open long market trade tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy.agents.agent as elf_agent
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.types as types
 import elfpy.time as time
+
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies import NoActionPolicy
+from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-arguments
@@ -19,23 +20,23 @@ class TestOpenLong(unittest.TestCase):
     contribution: FixedPoint = FixedPoint("500_000_000.0")
     target_apr: FixedPoint = FixedPoint("0.05")
     term_length: FixedPoint = FixedPoint("365.0")
-    alice: elf_agent.Agent
-    bob: elf_agent.Agent
-    celine: elf_agent.Agent
-    hyperdrive: hyperdrive_market.Market
+    alice: Agent
+    bob: Agent
+    celine: Agent
+    hyperdrive: HyperdriveMarket
     block_time: time.BlockTime
 
     def setUp(self):
         """Set up agent, pricing model, & market for the subsequent tests.
         This function is run before each test method.
         """
-        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
-        self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
+        self.alice = Agent(wallet_address=0, policy=NoActionPolicy(budget=self.contribution))
+        self.bob = Agent(wallet_address=1, policy=NoActionPolicy(budget=self.contribution))
+        self.celine = Agent(wallet_address=2, policy=NoActionPolicy(budget=self.contribution))
         self.block_time = time.BlockTime()
-        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.HyperdriveMarketState()
-        self.hyperdrive = hyperdrive_market.Market(
+        pricing_model = HyperdrivePricingModel()
+        market_state = HyperdriveMarketState()
+        self.hyperdrive = HyperdriveMarket(
             pricing_model=pricing_model,
             market_state=market_state,
             block_time=self.block_time,
@@ -45,13 +46,13 @@ class TestOpenLong(unittest.TestCase):
                 normalizing_constant=self.term_length,
             ),
         )
-        _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, self.target_apr)
+        _, wallet_deltas = self.hyperdrive.initialize(self.contribution, self.target_apr)
         self.alice.wallet.update(wallet_deltas)
 
     def verify_open_long(
         self,
-        user: elf_agent.Agent,
-        market_state_before: hyperdrive_market.HyperdriveMarketState,
+        user: Agent,
+        market_state_before: HyperdriveMarketState,
         contribution: FixedPoint,
         base_amount: FixedPoint,
         unsigned_bond_amount_out: FixedPoint,
@@ -149,7 +150,7 @@ class TestOpenLong(unittest.TestCase):
     def test_open_long(self):
         """Open a long & check that accounting is done correctly"""
         base_amount = FixedPoint("10.0")
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
@@ -167,7 +168,7 @@ class TestOpenLong(unittest.TestCase):
     def test_open_long_with_small_amount(self):
         """Open a tiny long & check that accounting is done correctly"""
         base_amount = FixedPoint("0.01")
-        self.bob.budget = base_amount
+        self.bob.policy.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr

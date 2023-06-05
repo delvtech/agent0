@@ -7,6 +7,7 @@ from __future__ import annotations
 # pylint: disable=too-many-lines
 # pylint: disable=too-many-arguments
 # pylint: disable=invalid-name
+# pylint: disable=too-few-public-methods
 # pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 
 # %% [markdown]
@@ -17,17 +18,18 @@ import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 import matplotlib.ticker as ticker
 
-import elfpy.agents.agent as elf_agent
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
 import elfpy.utils.sim_utils as sim_utils
 import elfpy.types as types
 
-from elfpy import WEI
-from elfpy.math import FixedPoint, FixedPointMath
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies.base import BasePolicy
+from elfpy.wallet.wallet import Wallet
+from elfpy.markets.hyperdrive import hyperdrive_actions, HyperdriveMarket
+from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
+from elfpy.agents.policies import LongLouie, ShortSally
 
 # %% [markdown]
 # ### Setup experiment parameters
@@ -50,15 +52,15 @@ config.target_fixed_apr = 0.01  # target fixed APR of the initial market after t
 config.target_liquidity = 500_000_000  # target total liquidity of the initial market, before any trades
 
 config.log_level = output_utils.text_to_log_level("DEBUG")  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
-config.log_filename = "frida_n_louie"  # Output filename for logging
+config.log_filename = "sally_n_louie"  # Output filename for logging
 
 config.shuffle_users = True
 
 # Notebook specific parameters
-config.scratch["num_fridas"] = 15
-config.scratch["num_louies"] = 20 * config.scratch["num_fridas"]
+config.scratch["num_sallys"] = 15
+config.scratch["num_louies"] = 20 * config.scratch["num_sallys"]
 config.scratch["num_agents"] = (
-    config.scratch["num_fridas"] + config.scratch["num_louies"]
+    config.scratch["num_sallys"] + config.scratch["num_louies"]
 )  # int specifying how many agents you want to simulate
 config.scratch[
     "trade_chance"
@@ -70,16 +72,16 @@ config.scratch["louie_budget_std"] = 25_000
 config.scratch["louie_budget_max"] = 1_00_000
 config.scratch["louie_budget_min"] = 1_000
 
-config.scratch["frida_budget_mean"] = 1_000
-config.scratch["frida_budget_std"] = 500
+config.scratch["sally_budget_mean"] = 1_000
+config.scratch["sally_budget_std"] = 500
 
-config.scratch["frida_budget_max"] = 1_00_000
-config.scratch["frida_budget_min"] = 1_000
+config.scratch["sally_budget_max"] = 1_00_000
+config.scratch["sally_budget_min"] = 1_000
 
-config.scratch["frida_risk_min"] = 0.0
-config.scratch["frida_risk_max"] = 0.06
-config.scratch["frida_risk_mean"] = 0.02
-config.scratch["frida_risk_std"] = 0.01
+config.scratch["sally_risk_min"] = 0.0
+config.scratch["sally_risk_max"] = 0.06
+config.scratch["sally_risk_mean"] = 0.02
+config.scratch["sally_risk_std"] = 0.01
 
 # Define the vault apr
 vault_apr = np.array([0.01] * config.num_trading_days)
@@ -94,196 +96,15 @@ fig_size = (5, 5)
 
 
 # %%
-class FixedFrida(elf_agent.Agent):
-    """
-    Agent that paints & opens fixed rate borrow positions
-    """
-
-    def __init__(
-        self,
-        rng: NumpyGenerator,
-        trade_chance: float,
-        risk_threshold: float,
-        wallet_address: int,
-        budget: FixedPoint = FixedPoint("10_000.0"),
-    ) -> None:
-        """Add custom stuff then call basic policy init"""
-        self.trade_chance = trade_chance
-        self.risk_threshold = risk_threshold
-        self.rng = rng
-        super().__init__(wallet_address, budget)
-
-    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
-        """Implement a Fixed Frida user strategy
-
-        I'm an actor with a high risk threshold
-        I'm willing to open up a fixed-rate borrow (aka a short) if the fixed rate is ~2% higher than the variable rate
-            approx means gauss mean=0.02; std=0.005, clipped at 0, 5
-        I will never close my short until the simulation stops
-            UNLESS my short reaches the token duration mark (e.g. 6mo)
-            realistically, people might leave them hanging
-        I have total budget of 2k -> 250k (gauss mean=75k; std=50k, i.e. 68% values are within 75k +/- 50k)
-        I only open one short at a time
-
-        Parameters
-        ----------
-        market : Market
-            the trading market
-
-        Returns
-        -------
-        action_list : list[MarketAction]
-        """
-        # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
-        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
-        if not gonna_trade:
-            return []
-        action_list = []
-        for short_time in self.wallet.shorts:  # loop over shorts # pylint: disable=consider-using-dict-items
-            # if any short is mature
-            if (market.block_time.time - FixedPoint(short_time)) >= market.annualized_position_duration:
-                trade_amount = self.wallet.shorts[short_time].balance  # close the whole thing
-                action_list += [
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.HyperdriveMarketAction(
-                            action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
-                            trade_amount=trade_amount,
-                            wallet=self.wallet,
-                            mint_time=short_time,
-                        ),
-                    )
-                ]
-        short_balances = [short.balance for short in self.wallet.shorts.values()]
-        has_opened_short = bool(any(short_balance > FixedPoint(0) for short_balance in short_balances))
-        # only open a short if the fixed rate is 0.02 or more lower than variable rate
-        if (market.fixed_apr - market.market_state.variable_apr) < FixedPoint(
-            self.risk_threshold
-        ) and not has_opened_short:
-            # maximum amount the agent can short given the market and the agent's wallet
-            trade_amount = self.get_max_short(market)
-            # TODO: This is a hack until we fix get_max
-            # issue # 440
-            trade_amount = trade_amount / FixedPoint("100.0")
-            if trade_amount > WEI:
-                action_list += [
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.HyperdriveMarketAction(
-                            action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
-                            trade_amount=trade_amount,
-                            wallet=self.wallet,
-                            mint_time=market.block_time.time,
-                        ),
-                    )
-                ]
-        return action_list
 
 
 # %%
-class LongLouie(elf_agent.Agent):
-    """
-    Long-nosed agent that opens longs
-    """
-
-    def __init__(
-        self,
-        rng: NumpyGenerator,
-        trade_chance: float,
-        risk_threshold: float,
-        wallet_address: int,
-        budget: FixedPoint = FixedPoint("10_000.0"),
-    ) -> None:
-        """Add custom stuff then call basic policy init"""
-        self.trade_chance = trade_chance
-        self.risk_threshold = risk_threshold
-        self.rng = rng
-        super().__init__(wallet_address, budget)
-
-    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
-        """Implement a Long Louie user strategy
-
-        I'm not willing to open a long if it will cause the fixed-rate apr to go below the variable rate
-            I simulate the outcome of my trade, and only execute on this condition
-        I only close if the position has matured
-        I have total budget of 2k -> 250k (gauss mean=75k; std=50k, i.e. 68% values are within 75k +/- 50k)
-        I only open one long at a time
-
-        Parameters
-        ----------
-        market : Market
-            the trading market
-
-        Returns
-        -------
-        action_list : list[MarketAction]
-        """
-        # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
-        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
-        if not gonna_trade:
-            return []
-        action_list = []
-        for long_time in self.wallet.longs:  # loop over longs # pylint: disable=consider-using-dict-items
-            # if any long is mature
-            if (market.block_time.time - FixedPoint(long_time)) >= market.annualized_position_duration:
-                trade_amount = self.wallet.longs[long_time].balance  # close the whole thing
-                action_list += [
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.HyperdriveMarketAction(
-                            action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
-                            trade_amount=trade_amount,
-                            wallet=self.wallet,
-                            mint_time=long_time,
-                        ),
-                    )
-                ]
-        long_balances = [long.balance for long in self.wallet.longs.values()]
-        has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
-        # only open a long if the fixed rate is higher than variable rate
-        if (market.fixed_apr - market.market_state.variable_apr) > FixedPoint(
-            self.risk_threshold
-        ) and not has_opened_long:
-            total_bonds_to_match_variable_apr = market.pricing_model.calc_bond_reserves(
-                target_apr=market.market_state.variable_apr,  # fixed rate targets the variable rate
-                time_remaining=market.position_duration,
-                market_state=market.market_state,
-            )
-            # get the delta bond amount & convert units
-            new_bonds_to_match_variable_apr = (
-                market.market_state.bond_reserves - total_bonds_to_match_variable_apr
-            ) * market.spot_price
-            # divide by 2 to adjust for changes in share reserves when the trade is executed
-            adjusted_bonds = new_bonds_to_match_variable_apr / FixedPoint(2.0)
-            # get the maximum amount the agent can long given the market and the agent's wallet
-            max_trade_amount = self.get_max_long(market)
-            # don't want to trade more than the agent has or more than the market can handle
-            trade_amount = FixedPointMath.minimum(max_trade_amount, adjusted_bonds)
-            # TODO: This is a hack until we fix get_max
-            # issue #440
-            trade_amount = trade_amount / FixedPoint("100.0")
-            if trade_amount > WEI:
-                action_list += [
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.HyperdriveMarketAction(
-                            action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
-                            trade_amount=trade_amount,
-                            wallet=self.wallet,
-                            mint_time=market.block_time.time,
-                        ),
-                    )
-                ]
-        return action_list
-
-
-# %%
-class LPAgent(elf_agent.Agent):
+class LPAgent(BasePolicy):
     """Adds a large LP"""
 
-    def action(self, market: hyperdrive_market.Market):
+    def action(self, market: HyperdriveMarket, wallet: Wallet):
         """implement user strategy"""
-        if self.wallet.lp_tokens > 0:  # has already opened the lp
+        if wallet.lp_tokens > 0:  # has already opened the lp
             action_list = []
         else:
             action_list = [
@@ -292,7 +113,7 @@ class LPAgent(elf_agent.Agent):
                     trade=hyperdrive_actions.HyperdriveMarketAction(
                         action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.budget,
-                        wallet=self.wallet,
+                        wallet=wallet,
                     ),
                 )
             ]
@@ -300,45 +121,48 @@ class LPAgent(elf_agent.Agent):
 
 
 # %%
-def get_example_agents(
-    rng: NumpyGenerator, experiment_config: Config, existing_agents: int = 0
-) -> list[elf_agent.Agent]:
+def get_example_agents(rng: NumpyGenerator, experiment_config: Config, existing_agents: int = 0) -> list[Agent]:
     """Instantiate a set of custom agents"""
     agents = []
-    for address in range(existing_agents, existing_agents + experiment_config.scratch["num_fridas"]):
-        risk_threshold = np.maximum(
-            experiment_config.scratch["frida_risk_min"],
-            np.minimum(
-                experiment_config.scratch["frida_risk_max"],
-                rng.normal(
-                    loc=experiment_config.scratch["frida_risk_mean"], scale=experiment_config.scratch["frida_risk_std"]
-                ),
-            ),
-        ).item()  # convert to Python type
-        budget = FixedPoint(
+    for address in range(existing_agents, existing_agents + experiment_config.scratch["num_sallys"]):
+        risk_threshold = FixedPoint(
             np.maximum(
-                experiment_config.scratch["frida_budget_min"],
+                experiment_config.scratch["sally_risk_min"],
                 np.minimum(
-                    250_000,
+                    experiment_config.scratch["sally_risk_max"],
                     rng.normal(
-                        loc=experiment_config.scratch["frida_budget_mean"],
-                        scale=experiment_config.scratch["frida_budget_std"],
+                        loc=experiment_config.scratch["sally_risk_mean"],
+                        scale=experiment_config.scratch["sally_risk_std"],
                     ),
                 ),
             ).item()  # convert to Python type
         )
-        agent = FixedFrida(
-            rng=rng,
-            trade_chance=experiment_config.scratch["trade_chance"],
-            risk_threshold=risk_threshold,
+        budget = FixedPoint(
+            np.maximum(
+                experiment_config.scratch["sally_budget_min"],
+                np.minimum(
+                    250_000,
+                    rng.normal(
+                        loc=experiment_config.scratch["sally_budget_mean"],
+                        scale=experiment_config.scratch["sally_budget_std"],
+                    ),
+                ),
+            ).item()  # convert to Python type
+        )
+        agent = Agent(
             wallet_address=address,
-            budget=budget,
+            policy=ShortSally(
+                budget=budget,
+                rng=rng,
+                trade_chance=experiment_config.scratch["trade_chance"],
+                risk_threshold=risk_threshold,
+            ),
         )
         agent.log_status_report()
         agents += [agent]
     existing_agents += len(agents)
     for address in range(existing_agents, existing_agents + experiment_config.scratch["num_louies"]):
-        risk_threshold = 0.0
+        risk_threshold = FixedPoint("0.0")
         budget = FixedPoint(
             np.maximum(
                 experiment_config.scratch["louie_budget_min"],
@@ -351,12 +175,14 @@ def get_example_agents(
                 ),
             ).item()  # convert to Python type
         )
-        agent = LongLouie(
-            rng=rng,
-            trade_chance=experiment_config.scratch["trade_chance"],
-            risk_threshold=risk_threshold,
+        agent = Agent(
             wallet_address=address,
-            budget=budget,
+            policy=LongLouie(
+                budget=budget,
+                rng=rng,
+                trade_chance=experiment_config.scratch["trade_chance"],
+                risk_threshold=risk_threshold,
+            ),
         )
         agent.log_status_report()
         agents += [agent]
@@ -506,19 +332,19 @@ lp_trades = trades.groupby("day").agg({f"agent_{0}_pnl": ["sum"]})
 lp_trades.columns = ["_".join(col).strip() for col in lp_trades.columns.values]
 lp_trades = lp_trades.reset_index()
 
-fridas = [
+sallys = [
     agent_id
     for agent_id in range(len(simulator.agents))
-    if simulator.agents[agent_id].__class__.__name__ == "FixedFrida"
+    if simulator.agents[agent_id].policy.__class__.__name__ == "ShortSally"
 ]
-frida_trades = trades.groupby("day").agg({f"agent_{agent_id}_pnl": ["sum"] for agent_id in fridas})
-frida_trades.columns = ["_".join(col).strip() for col in frida_trades.columns.values]
-frida_trades = frida_trades.reset_index()
+sally_trades = trades.groupby("day").agg({f"agent_{agent_id}_pnl": ["sum"] for agent_id in sallys})
+sally_trades.columns = ["_".join(col).strip() for col in sally_trades.columns.values]
+sally_trades = sally_trades.reset_index()
 
 louies = [
     agent_id
     for agent_id in range(len(simulator.agents))
-    if simulator.agents[agent_id].__class__.__name__ == "LongLouie"
+    if simulator.agents[agent_id].policy.__class__.__name__ == "LongLouie"
 ]
 louies_trades = trades.groupby("day").agg({f"agent_{agent_id}_pnl": ["sum"] for agent_id in louies})
 louies_trades.columns = ["_".join(col).strip() for col in louies_trades.columns.values]
@@ -531,7 +357,7 @@ ax.plot(trades_agg["day"][:-1], lp_trades.sum(axis=1)[:-1], label="LP pnl", c="b
 ax.set_ylabel("base")
 
 ax = axes[1]
-ax.plot(trades_agg["day"][:-1], frida_trades.sum(axis=1)[:-1], label="Frida pnl", c="orange")
+ax.plot(trades_agg["day"][:-1], sally_trades.sum(axis=1)[:-1], label="sally pnl", c="orange")
 ax.plot(trades_agg["day"][:-1], louies_trades.sum(axis=1)[:-1], label="Louie pnl", c="black")
 
 for ax in axes:

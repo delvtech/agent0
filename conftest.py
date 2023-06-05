@@ -10,7 +10,7 @@ from ape.api.providers import ProviderAPI
 from ape.managers.project import ProjectManager
 from attr import dataclass
 
-from elfpy.markets.hyperdrive.hyperdrive_market import Market as HyperdriveMarket
+from elfpy.markets.hyperdrive import HyperdriveMarket
 from elfpy.math.fixed_point import FixedPoint
 from tests.cross_platform import fixtures
 
@@ -96,7 +96,6 @@ class TestCaseWithHyperdriveFixture(unittest.TestCase):
 
         # initialize hyperdrive simulation market
         fx.hyperdrive_sim.initialize(
-            fx.agents.python.alice.wallet.address,
             FixedPoint(fx.config.target_liquidity),
             FixedPoint(fx.config.initial_apr),
         )
