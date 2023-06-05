@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 @freezable()
 @dataclass()
-class AgentDeltas:
+class WalletDeltas:
     r"""Stores changes for an agent's wallet
 
     Arguments
@@ -47,6 +47,6 @@ class AgentDeltas:
     borrows: dict[FixedPoint, Borrow] = field(default_factory=dict)
     fees_paid: FixedPoint = FixedPoint(0)
 
-    def copy(self) -> AgentDeltas:
+    def copy(self) -> WalletDeltas:
         """Returns a new copy of self"""
-        return AgentDeltas(**copy.deepcopy(self.__dict__))
+        return WalletDeltas(**copy.deepcopy(self.__dict__))

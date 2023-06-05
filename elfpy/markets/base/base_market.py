@@ -9,7 +9,7 @@ import elfpy.types as types
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
-    from elfpy.agents.agent_deltas import AgentDeltas
+    from elfpy.agents.wallet_deltas import WalletDeltas
     from elfpy.agents.wallet import Wallet
     from elfpy.markets.base.base_pricing_model import BasePricingModel
     import elfpy.time as time
@@ -95,7 +95,7 @@ class BaseMarket(Generic[State, Deltas, PricingModel]):
         """Gets the most recent checkpoint time."""
         raise NotImplementedError
 
-    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, AgentDeltas, Deltas]:
+    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, WalletDeltas, Deltas]:
         """Performs an action in the market without updating it."""
         raise NotImplementedError
 

@@ -39,7 +39,7 @@ class SingleShortAgent(BasePolicy):
         action_list = []
         shorts = list(wallet.shorts.values())
         has_opened_short = len(shorts) > 0
-        can_open_short = wallet.get_max_short(market) >= self.amount_to_trade
+        can_open_short = market.get_max_short_for_account(wallet.balance.amount) >= self.amount_to_trade
         if can_open_short and not has_opened_short:
             action_list.append(
                 Trade(

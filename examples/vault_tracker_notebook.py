@@ -281,7 +281,7 @@ class RegularGuy(BasePolicy):
                 else:
                     amount_to_trade_pt = amount_to_trade_base / market.spot_price
                 if action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:
-                    max_short = wallet.get_max_short(market)
+                    max_short = market.get_max_short_for_account(wallet.balance.amount)
                     # TODO: This is a hack until we fix get_max
                     max_short = max_short / FixedPoint("100.0")
                     if max_short > WEI + PRECISION_THRESHOLD:  # if max_short is greater than the minimum eth amount
@@ -300,7 +300,7 @@ class RegularGuy(BasePolicy):
                             )
                         ]
                 elif action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:
-                    max_long = wallet.get_max_long(market)
+                    max_long = market.get_max_long_for_account(wallet.balance.amount)
                     # TODO: This is a hack until we fix get_max
                     max_long = max_long / FixedPoint("100.0")
                     if max_long > WEI + PRECISION_THRESHOLD:  # if max_long is greater than the minimum eth amount

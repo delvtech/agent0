@@ -13,11 +13,12 @@ import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
 
-from elfpy.agents.agent_deltas import AgentDeltas
+from elfpy.agents.wallet_deltas import WalletDeltas
 from elfpy.markets.base.base_market import BaseMarketState, BaseMarket
 from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
 from elfpy.markets.hyperdrive.checkpoint import Checkpoint
 from elfpy.math import FixedPoint
+from elfpy.types import Quantity, TokenType
 
 if TYPE_CHECKING:
     from elfpy.agents.wallet import Wallet
@@ -234,9 +235,99 @@ class Market(
         latest_checkpoint = latest_checkpoint_days / FixedPoint("365.0")
         return latest_checkpoint
 
+    # TODO: this function should optionally accept a target apr.  the short should not slip the
+    # market fixed rate below the APR when opening the long
+    # issue #213
+    def get_max_long_for_account(self, account_balance: FixedPoint) -> FixedPoint:
+        """Gets an approximation of the maximum amount of base the agent can use.
+
+        Typically would be called to determine how much to enter into a long position.
+
+        Arguments
+        ----------
+        account_balance : FixedPoint
+            Alternative maximum, for example the balance of an Agent's wallet
+
+        Returns
+        -------
+        FixedPoint
+            Maximum amount the agent can use to open a long
+        """
+        (max_long, _) = self.pricing_model.get_max_long(
+            market_state=self.market_state,
+            time_remaining=self.position_duration,
+        )
+        return min(account_balance, max_long)
+
+    # TODO: this function should optionally accept a target apr.  the short should not slip the
+    # market fixed rate above the APR when opening the short
+    # issue #213
+    def get_max_short_for_account(self, account_balance: FixedPoint) -> FixedPoint:
+        """Gets an approximation of the maximum amount of bonds the agent can short.
+
+        Arguments
+        ----------
+        account_balance : FixedPoint
+            Alternative maximum, for example the balance of an Agent's wallet
+
+        Returns
+        -------
+        FixedPoint
+            Amount of base that the agent can short in the current market
+        """
+        # Get the market level max short.
+        if hasattr(self.pricing_model, "get_max_short"):
+            (max_short_max_loss, max_short) = self.pricing_model.get_max_short(
+                market_state=self.market_state,
+                time_remaining=self.position_duration,
+            )
+        else:  # no maximum
+            max_short_max_loss, max_short = FixedPoint("inf"), FixedPoint("inf")
+        # If the Agent's base balance can cover the max loss of the maximum
+        # short, we can simply return the maximum short.
+        if account_balance >= max_short_max_loss:
+            return max_short
+        last_maybe_max_short = FixedPoint(0)
+        bond_percent = FixedPoint("1.0")
+        num_iters = 25
+        for step_size in [FixedPoint(1 / (2 ** (x + 1))) for x in range(num_iters)]:
+            # Compute the amount of base returned by selling the specified
+            # amount of bonds.
+            maybe_max_short = max_short * bond_percent
+            trade_result = self.pricing_model.calc_out_given_in(
+                in_=Quantity(amount=maybe_max_short, unit=TokenType.PT),
+                market_state=self.market_state,
+                time_remaining=self.position_duration,
+            )
+            # If the max loss is greater than the wallet's base, we need to
+            # decrease the bond percentage. Otherwise, we may have found the
+            # max short, and we should increase the bond percentage.
+            max_loss = maybe_max_short - trade_result.user_result.d_base
+            if max_loss > account_balance:
+                bond_percent -= step_size
+            else:
+                last_maybe_max_short = maybe_max_short
+                if bond_percent == FixedPoint("1.0"):
+                    return last_maybe_max_short
+                bond_percent += step_size
+        # do one more iteration at the last step size in case the bisection method was stuck
+        # approaching a max_short value with slightly more base than an agent has.
+        trade_result = self.pricing_model.calc_out_given_in(
+            in_=Quantity(amount=last_maybe_max_short, unit=TokenType.PT),
+            market_state=self.market_state,
+            time_remaining=self.position_duration,
+        )
+        max_loss = last_maybe_max_short - trade_result.user_result.d_base
+        last_step_size = FixedPoint("1.0") / (FixedPoint("2.0") ** FixedPoint(num_iters) + FixedPoint("1.0"))
+        if max_loss > account_balance:
+            bond_percent -= last_step_size
+            last_maybe_max_short = max_short * bond_percent
+        max_short = min(account_balance, last_maybe_max_short)
+        return max_short
+
     def perform_action(
         self, action_details: tuple[int, hyperdrive_actions.HyperdriveMarketAction]
-    ) -> tuple[int, AgentDeltas, HyperdriveMarketDeltas]:
+    ) -> tuple[int, WalletDeltas, HyperdriveMarketDeltas]:
         r"""Execute a trade in the simulated market
 
         Checks which of 6 action types are being executed, and handles each case:
@@ -344,7 +435,7 @@ class Market(
 
     def initialize(
         self, contribution: FixedPoint, target_apr: FixedPoint
-    ) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+    ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
         """Market Deltas so that an LP can initialize the market"""
         if self.market_state.share_reserves > FixedPoint(0) or self.market_state.bond_reserves > FixedPoint(0):
             raise AssertionError("The market appears to already be initialized.")
@@ -364,7 +455,7 @@ class Market(
         market_deltas = HyperdriveMarketDeltas(
             d_base_asset=contribution, d_bond_asset=bond_reserves, d_lp_total_supply=lp_tokens
         )
-        agent_deltas = AgentDeltas(
+        agent_deltas = WalletDeltas(
             balance=-types.Quantity(amount=contribution, unit=types.TokenType.BASE),
             lp_tokens=lp_tokens,
         )
@@ -377,7 +468,7 @@ class Market(
         agent_wallet: Wallet,
         bond_amount: FixedPoint,
         max_deposit: FixedPoint = FixedPoint(2**32 * 10**18),
-    ) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+    ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
         """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
         # create/update the checkpoint
         _ = self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
@@ -404,7 +495,7 @@ class Market(
         open_share_price: FixedPoint,
         bond_amount: FixedPoint,
         mint_time: FixedPoint,
-    ) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+    ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
         """Calculate the deltas from closing a short and then update the agent wallet & market state"""
         # create/update the checkpoint
         self.apply_checkpoint(mint_time, self.market_state.share_price)
@@ -427,7 +518,7 @@ class Market(
         self,
         agent_wallet: Wallet,
         base_amount: FixedPoint,
-    ) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+    ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
         """Calculate the deltas from opening a long and then update the agent wallet & market state"""
         # create/update the checkpoint
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
@@ -460,7 +551,7 @@ class Market(
 
     def close_long(
         self, agent_wallet: Wallet, bond_amount: FixedPoint, mint_time: FixedPoint
-    ) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+    ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
         """Calculate the deltas from closing a long and then update the agent wallet & market state"""
         # create/update the checkpoint
         _ = self.apply_checkpoint(mint_time, self.market_state.share_price)
@@ -483,7 +574,7 @@ class Market(
         self,
         agent_wallet: Wallet,
         bond_amount: FixedPoint,
-    ) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+    ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
         """Computes new deltas for bond & share reserves after liquidity is added"""
         _ = self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         market_deltas, agent_deltas = hyperdrive_actions.calc_add_liquidity(
@@ -502,7 +593,7 @@ class Market(
         self,
         agent_wallet: Wallet,
         lp_shares: FixedPoint,
-    ) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+    ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         market_deltas, agent_deltas = hyperdrive_actions.calc_remove_liquidity(
@@ -642,7 +733,7 @@ class Market(
 
     def calc_redeem_withdraw_shares(
         self, shares: FixedPoint, min_output: FixedPoint, as_underlying: bool
-    ) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+    ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
         r"""Calculates the market and wallet deltas for redeemable withdrawal shares, if enough margin
         has been freed to do so.
 
@@ -663,7 +754,7 @@ class Market(
         """
         market_deltas = HyperdriveMarketDeltas()
         # TODO don't use a wallet. issue #315
-        wallet_deltas = AgentDeltas()
+        wallet_deltas = WalletDeltas()
         # We burn the shares from the user
         wallet_deltas.withdraw_shares -= shares
         # The user gets a refund on their margin equal to the face value of their withdraw shares

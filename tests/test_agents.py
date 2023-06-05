@@ -13,7 +13,7 @@ import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.agents.agent import Agent
-from elfpy.agents.agent_deltas import AgentDeltas
+from elfpy.agents.wallet_deltas import WalletDeltas
 from elfpy.agents.get_wallet_state import get_wallet_state
 from elfpy.agents.policies.base import BasePolicy
 from elfpy.agents.policies import (
@@ -183,7 +183,7 @@ class TestAgent(unittest.TestCase):
         example_wallet = Wallet(
             address=0, balance=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.BASE)
         )
-        example_deltas = AgentDeltas(
+        example_deltas = WalletDeltas(
             balance=types.Quantity(amount=FixedPoint("-10.0"), unit=types.TokenType.BASE),
             longs={FixedPoint(0): Long(FixedPoint("15.0"))},
             fees_paid=FixedPoint("0.001"),
@@ -200,7 +200,7 @@ class TestAgent(unittest.TestCase):
         assert example_wallet.balance.amount == FixedPoint(
             "90.0"
         ), f"{example_wallet.balance.amount=} should be 100-10=90."
-        new_example_deltas = AgentDeltas(
+        new_example_deltas = WalletDeltas(
             balance=types.Quantity(amount=FixedPoint("-5.0"), unit=types.TokenType.BASE),
             longs={FixedPoint(0): Long(FixedPoint("8.0"))},
             fees_paid=FixedPoint("0.0008"),

@@ -96,7 +96,6 @@ class TestCaseWithHyperdriveFixture(unittest.TestCase):
 
         # initialize hyperdrive simulation market
         fx.hyperdrive_sim.initialize(
-            fx.agents.python.alice.wallet.address,
             FixedPoint(fx.config.target_liquidity),
             FixedPoint(fx.config.initial_apr),
         )

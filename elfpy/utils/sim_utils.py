@@ -20,7 +20,7 @@ from elfpy.simulators.simulation_state import (
 )
 
 if TYPE_CHECKING:
-    from elfpy.agents.agent_deltas import AgentDeltas
+    from elfpy.agents.wallet_deltas import WalletDeltas
 
 
 def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulators.Simulator:
@@ -110,7 +110,7 @@ def get_initialized_hyperdrive_market(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: time.BlockTime,
     config: Config,
-) -> tuple[hyperdrive_market.Market, AgentDeltas, HyperdriveMarketDeltas]:
+) -> tuple[hyperdrive_market.Market, WalletDeltas, HyperdriveMarketDeltas]:
     r"""Setup market
 
     Arguments

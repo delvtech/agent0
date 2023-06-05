@@ -13,7 +13,7 @@ from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDe
 from elfpy.simulators.config import Config
 
 if TYPE_CHECKING:
-    from elfpy.agents.agent_deltas import AgentDeltas
+    from elfpy.agents.wallet_deltas import WalletDeltas
     from elfpy.agents.wallet import Wallet
 
 
@@ -174,7 +174,7 @@ class TradeSimVariables:
     # address of the agent that is executing the trade
     agent_address: int
     # deltas used to update the market state
-    agent_deltas: AgentDeltas
+    agent_deltas: WalletDeltas
 
 
 @dataclass

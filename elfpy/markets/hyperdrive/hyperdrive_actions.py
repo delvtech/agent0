@@ -9,7 +9,7 @@ import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
 
-from elfpy.agents.agent_deltas import AgentDeltas
+from elfpy.agents.wallet_deltas import WalletDeltas
 from elfpy.agents.wallet import Short, Long
 from elfpy.markets.base.base_market import BaseMarketAction
 from elfpy.markets.hyperdrive.checkpoint import Checkpoint
@@ -315,7 +315,7 @@ def calc_open_short(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
     latest_checkpoint_time: FixedPoint,
-) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
     r"""Calculate the agent & market deltas for opening a short position.
 
     Shorts need their margin account to cover the worst case scenario (p=1).
@@ -425,7 +425,7 @@ def calc_open_short(
         short_checkpoints={latest_checkpoint_time: base_volume},
         total_supply_shorts={latest_checkpoint_time: bond_amount},
     )
-    agent_deltas = AgentDeltas(
+    agent_deltas = WalletDeltas(
         balance=-types.Quantity(amount=trader_deposit, unit=types.TokenType.BASE),
         shorts={latest_checkpoint_time: Short(balance=bond_amount, open_share_price=market_state.share_price)},
         fees_paid=trade_result.breakdown.fee,
@@ -441,7 +441,7 @@ def calc_close_short(
     block_time: FixedPoint,
     mint_time: FixedPoint,
     open_share_price: FixedPoint,
-) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
     """
     When closing a short, the number of bonds being closed out, at face value, give us the total margin returned.
     The worst case scenario of the short is reduced by that amount, so they no longer need margin for it.
@@ -569,7 +569,7 @@ def calc_close_short(
     # we don't collect payment when closing a short, only pay out if necessary
     amount = (market_state.share_price / open_share_price) * bond_amount + trade_result.user_result.d_base
     amount = amount if amount > FixedPoint(0) else FixedPoint(0)
-    agent_deltas = AgentDeltas(
+    agent_deltas = WalletDeltas(
         balance=types.Quantity(
             amount=amount,
             unit=types.TokenType.BASE,
@@ -592,7 +592,7 @@ def calc_open_long(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     latest_checkpoint_time: FixedPoint,
     spot_price: FixedPoint,
-) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
     """
     When a trader opens a long, they put up base and are given long tokens. As time passes, an amount of the longs
     proportional to the time that has passed are considered to be “mature” and can be redeemed one-to-one.
@@ -664,7 +664,7 @@ def calc_open_long(
         long_checkpoints={latest_checkpoint_time: base_volume},
         total_supply_longs={latest_checkpoint_time: trade_result.user_result.d_bonds},
     )
-    agent_deltas = AgentDeltas(
+    agent_deltas = WalletDeltas(
         balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
         longs={latest_checkpoint_time: Long(trade_result.user_result.d_bonds)},
         fees_paid=trade_result.breakdown.fee,
@@ -680,7 +680,7 @@ def calc_close_long(
     block_time: FixedPoint,
     mint_time: FixedPoint,
     is_trade: bool = True,
-) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
     """Calculations for closing a long position.
     This function takes the trade spec & turn it into trade details.
 
@@ -830,7 +830,7 @@ def calc_close_long(
         withdraw_interest=withdraw_pool_deltas.withdraw_interest,
         withdraw_shares_ready_to_withdraw=withdraw_pool_deltas.withdraw_shares_ready_to_withdraw,
     )
-    agent_deltas = AgentDeltas(
+    agent_deltas = WalletDeltas(
         balance=types.Quantity(amount=base_proceeds, unit=types.TokenType.BASE),
         longs={mint_time: Long(-bond_amount)},
         fees_paid=fee,
@@ -956,7 +956,7 @@ def calc_add_liquidity(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     fixed_apr: FixedPoint,
     block_time: FixedPoint,
-) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
     """Computes new deltas for bond & share reserves after liquidity is added.
 
     Arguments
@@ -1008,7 +1008,7 @@ def calc_add_liquidity(
         d_bond_asset=d_bond_reserves,
         d_lp_total_supply=lp_out,
     )
-    agent_deltas = AgentDeltas(
+    agent_deltas = WalletDeltas(
         balance=-types.Quantity(amount=d_base_reserves, unit=types.TokenType.BASE),
         lp_tokens=lp_out,
     )
@@ -1020,7 +1020,7 @@ def calc_remove_liquidity(
     market_state: hyperdrive_market.HyperdriveMarketState,
     position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
-) -> tuple[HyperdriveMarketDeltas, AgentDeltas]:
+) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
     """Computes new deltas for bond & share reserves after liquidity is removed.
 
     Arguments
@@ -1066,7 +1066,7 @@ def calc_remove_liquidity(
         d_lp_total_supply=-lp_shares,
         total_supply_withdraw_shares=withdraw_shares,
     )
-    agent_deltas = AgentDeltas(
+    agent_deltas = WalletDeltas(
         balance=types.Quantity(amount=delta_base, unit=types.TokenType.BASE),
         lp_tokens=-lp_shares,
         withdraw_shares=withdraw_shares,

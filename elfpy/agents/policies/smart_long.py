@@ -91,7 +91,7 @@ class LongLouie(BasePolicy):
             # divide by 2 to adjust for changes in share reserves when the trade is executed
             adjusted_bonds = new_bonds_to_match_variable_apr / FixedPoint(2.0)
             # get the maximum amount the agent can long given the market and the agent's wallet
-            max_base = wallet.get_max_long(market)
+            max_base = market.get_max_long_for_account(wallet.balance.amount)
             # don't want to trade more than the agent has or more than the market can handle
             trade_amount = FixedPointMath.minimum(max_base, adjusted_bonds)
             # TODO: This is a hack until we fix get_max

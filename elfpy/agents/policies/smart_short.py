@@ -84,7 +84,7 @@ class ShortSally(BasePolicy):
         # only open a short if the fixed rate is 0.02 or more lower than variable rate
         if market.fixed_apr - market.market_state.variable_apr < self.risk_threshold and not has_opened_short:
             # maximum amount the agent can short given the market and the agent's wallet
-            trade_amount = wallet.get_max_short(market)
+            trade_amount = market.get_max_short_for_account(wallet.balance.amount)
             # TODO: This is a hack until we fix get_max
             # issue # 440
             trade_amount = trade_amount / FixedPoint("100.0")
