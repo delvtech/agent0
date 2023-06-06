@@ -79,11 +79,11 @@ def get_env_args() -> dict:
         "rpc_url": os.environ.get("BOT_RPC_URL", "http://ethereum:8545"),
         "log_filename": os.environ.get("BOT_LOG_FILENAME", "testnet_bots"),
         "log_level": os.environ.get("BOT_LOG_LEVEL", "INFO"),
-        "max_bytes": os.environ.get("BOT_MAX_BYTES", DEFAULT_LOG_MAXBYTES),
-        "num_louie": os.environ.get("BOT_NUM_LOUIE", 0),
-        "num_frida": os.environ.get("BOT_NUM_FRIDA", 0),
-        "num_random": os.environ.get("BOT_NUM_RANDOM", 4),
-        "trade_chance": os.environ.get("BOT_TRADE_CHANCE", 0.1),
+        "max_bytes": int(os.environ.get("BOT_MAX_BYTES", DEFAULT_LOG_MAXBYTES)),
+        "num_louie": int(os.environ.get("BOT_NUM_LOUIE", 0)),
+        "num_frida": int(os.environ.get("BOT_NUM_FRIDA", 0)),
+        "num_random": int(os.environ.get("BOT_NUM_RANDOM", 4)),
+        "trade_chance": float(os.environ.get("BOT_TRADE_CHANCE", 0.1)),
         # Env passed in is a string "true"
         "alchemy": (os.environ.get("BOT_ALCHEMY", "false") == "true"),
         "artifacts_url": os.environ.get("BOT_ARTIFACTS_URL", "http://artifacts:80")
@@ -307,8 +307,7 @@ def create_agent(
                     bot.budget.max,
                 )
             )
-        ),
-        "wallet_address": dev_accounts[bot.index].address,
+        )
     }
     params["rng"] = experiment_config.rng
     if bot.risk_threshold and bot.name != "random":  # random agent doesn't use risk threshold
@@ -317,14 +316,14 @@ def create_agent(
         params["risk_threshold"] = np.clip(
             experiment_config.rng.normal(loc=bot.risk.mean, scale=bot.risk.std), bot.risk.min, bot.risk.max
         )
-    agent = bot.policy(**params)  # instantiate the agent with its policy and params
+    agent = Agent(wallet_address=dev_accounts[bot.index].address, policy=bot.policy(**params))
     agent.contract = dev_accounts[bot.index]  # assign its onchain contract
-    if args.devnet:
+    if args["devnet"]:
         agent.contract.balance += int(1e18)  # give it some eth
     if (need_to_mint := (params["budget"].scaled_value - base_instance.balanceOf(agent.contract.address)) / 1e18) > 0:
         log_and_show(f" agent_{agent.contract.address[:8]} needs to mint {fmt(need_to_mint)} Base")
         with ape.accounts.use_sender(agent.contract):
-            if args.devnet:
+            if args["devnet"]:
                 txn_receipt: ReceiptAPI = base_instance.mint(
                     agent.contract.address, int(50_000 * 1e18), sender=deployer_account
                 )
@@ -709,8 +708,12 @@ def set_up_ape(
     )
     project: ape_utils.HyperdriveProject = ape_utils.HyperdriveProject(
         path=Path.cwd(),
-        hyperdrive_address=addresses["goerli_hyperdrive"],  # ignored on devnet
+        hyperdrive_address=addresses["hyperdrive"] if args["devnet"] else addresses["goerli_hyperdrive"],
     )
+
+    # quick test
+    # hyperdrive_instance = project.get_contract("IHyperdrive").at("0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9")
+    # test_result = hyperdrive_instance.getPoolConfig()
 
     if args["devnet"]:  # we're on devnet
         base_instance, hyperdrive_instance, addresses, deployer_account = set_up_devnet(
