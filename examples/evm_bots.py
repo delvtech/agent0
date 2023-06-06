@@ -215,7 +215,7 @@ def set_up_experiment(
 def get_devnet_addresses(experiment_config: Config, args: dict, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
     deployed_addresses = {}
-    for _ in trange(100, desc="artifacts..", format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]"):
+    for _ in trange(100, desc="artifacts.."):
         response = requests.get(args["artifacts_url"]+"/addresses.json", timeout=1)
         if response.status_code == 200:
             deployed_addresses = response.json()
@@ -834,7 +834,7 @@ def dump_agent_info(sim_agents, experiment_config):
     # write to file
     with open(f"{experiment_config.scratch['project_dir']}/artifacts/bots.json", "w", encoding="utf-8") as file:
         json.dump(json_dict,file, indent=4)
-    
+
 
 def main():
     """Run the simulation."""
