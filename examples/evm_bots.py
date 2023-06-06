@@ -215,7 +215,7 @@ def set_up_experiment(
 def get_devnet_addresses(experiment_config: Config, args: dict, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
     deployed_addresses = {}
-    for _ in trange(100, desc="artifacts.."):
+    for _ in trange(100, desc="artifacts..", format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]"):
         response = requests.get(args["artifacts_url"]+"/addresses.json", timeout=1)
         if response.status_code == 200:
             deployed_addresses = response.json()
