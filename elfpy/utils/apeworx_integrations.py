@@ -244,7 +244,7 @@ def get_wallet_from_onchain_trade_info(
                 ), "weighted average open share price calculation is wrong"
                 logging.debug("calculated weighted average open share price of %s", open_share_price)
                 previous_balance = wallet.shorts[mint_time].balance if mint_time in wallet.shorts else 0
-                new_balance = previous_balance + balance
+                new_balance = previous_balance + FixedPoint(scaled_value=balance)
                 if new_balance == 0:
                     # remove key of "mint_time" from the "wallet.shorts" dict
                     wallet.shorts.pop(mint_time, None)
@@ -252,7 +252,7 @@ def get_wallet_from_onchain_trade_info(
                     wallet.shorts.update(
                         {
                             mint_time: Short(
-                                balance=FixedPoint(scaled_value=new_balance),
+                                balance=new_balance,
                                 open_share_price=FixedPoint(scaled_value=open_share_price),
                             )
                         }
@@ -260,17 +260,17 @@ def get_wallet_from_onchain_trade_info(
                     logging.debug(
                         "storing in wallet as %s",
                         {mint_time: Short(
-                            balance=FixedPoint(scaled_value=new_balance), 
+                            balance=new_balance, 
                             open_share_price=FixedPoint(scaled_value=open_share_price))
                         },
                     )
             elif asset_type == "LONG":
                 previous_balance = wallet.longs[mint_time].balance if mint_time in wallet.longs else 0
-                new_balance = previous_balance + balance
+                new_balance = previous_balance + FixedPoint(scaled_value=balance)
                 if new_balance == 0:
                     # remove key of "mint_time" from the "wallet.longs" dict
                     wallet.longs.pop(mint_time, None)
-                wallet.longs.update({mint_time: Long(balance=FixedPoint(scaled_value=new_balance))})
+                wallet.longs.update({mint_time: Long(balance=new_balance)})
                 logging.debug("storing in wallet as %s", {mint_time: Long(balance=balance)})
             elif asset_type == "LP":
                 wallet.lp_tokens += FixedPoint(scaled_value=balance)
