@@ -136,8 +136,6 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance, block_number:
             Map of share price to block number.
     """
     trades = hyperdrive_contract.TransferSingle.query("*", start_block=block_number or 0, stop_block=block_number)
-    # assert isinstance(trades, pd.DataFrame), "trades is not a DataFrame"
-    # assert trades["event_arguments"] is not None, "no event_arguments found in trades"
     trades = pd.concat(  # flatten event_arguments
         [
             trades.loc[:, [c for c in trades.columns if c != "event_arguments"]],
@@ -208,18 +206,20 @@ def get_wallet_from_onchain_trade_info(
             info.trades["id"] == position_id
         )
         log_and_show("found %s trades for %s in position %s", sum(trades_in_position), address[:8], position_id)
-        balance = (
-            info.trades.loc[(trades_in_position) & (info.trades["to"] == address), "value"].sum()
-            - info.trades.loc[(trades_in_position) & (info.trades["from"] == address), "value"].sum()
-        )
+        positive_balance = info.trades.loc[(trades_in_position) & (info.trades["to"] == address), "value"].sum()
+        negative_balance = info.trades.loc[(trades_in_position) & (info.trades["from"] == address), "value"].sum()
+        balance = positive_balance - negative_balance
+        logging.debug(f"balance {balance} = positive_balance {positive_balance} - negative_balance {negative_balance}")
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = AssetIdPrefix(asset_prefix).name
         mint_time = maturity - elfpy.SECONDS_IN_YEAR
         log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
+
+        on_chain_balance=0
         # verify our calculation against the onchain balance
-        on_chain_balance = hyperdrive_contract.balanceOf(position_id, address)
-        # only do balance checks if not marignal update 
         if add_to_existing_wallet is None: # sourcery skip: merge-nested-ifs
+            on_chain_balance = hyperdrive_contract.balanceOf(position_id, address)
+            # only do balance checks if not marignal update 
             if abs(balance - on_chain_balance) > elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI:
                 raise ValueError(
                     f"events {balance=} and {on_chain_balance=} disagree by "
@@ -243,23 +243,34 @@ def get_wallet_from_onchain_trade_info(
                     abs(balance - sum_value) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
                 ), "weighted average open share price calculation is wrong"
                 logging.debug("calculated weighted average open share price of %s", open_share_price)
-                wallet.shorts.update(
-                    {
-                        mint_time: Short(
-                            balance=FixedPoint(scaled_value=balance),
-                            open_share_price=FixedPoint(scaled_value=open_share_price),
-                        )
-                    }
-                )
-                logging.debug(
-                    "storing in wallet as %s",
-                    {mint_time: Short(
-                        balance=FixedPoint(scaled_value=balance), 
-                        open_share_price=FixedPoint(scaled_value=open_share_price))
-                    },
-                )
+                previous_balance = wallet.shorts[mint_time].balance if mint_time in wallet.shorts else 0
+                new_balance = previous_balance + balance
+                if new_balance == 0:
+                    # remove key of "mint_time" from the "wallet.shorts" dict
+                    wallet.shorts.pop(mint_time, None)
+                else:
+                    wallet.shorts.update(
+                        {
+                            mint_time: Short(
+                                balance=FixedPoint(scaled_value=new_balance),
+                                open_share_price=FixedPoint(scaled_value=open_share_price),
+                            )
+                        }
+                    )
+                    logging.debug(
+                        "storing in wallet as %s",
+                        {mint_time: Short(
+                            balance=FixedPoint(scaled_value=new_balance), 
+                            open_share_price=FixedPoint(scaled_value=open_share_price))
+                        },
+                    )
             elif asset_type == "LONG":
-                wallet.longs.update({mint_time: Long(balance=FixedPoint(scaled_value=balance))})
+                previous_balance = wallet.longs[mint_time].balance if mint_time in wallet.longs else 0
+                new_balance = previous_balance + balance
+                if new_balance == 0:
+                    # remove key of "mint_time" from the "wallet.longs" dict
+                    wallet.longs.pop(mint_time, None)
+                wallet.longs.update({mint_time: Long(balance=FixedPoint(scaled_value=new_balance))})
                 logging.debug("storing in wallet as %s", {mint_time: Long(balance=balance)})
             elif asset_type == "LP":
                 wallet.lp_tokens += FixedPoint(scaled_value=balance)
@@ -639,6 +650,7 @@ def ape_trade(
         assert maturity_time is not None, "Maturity time must be provided to close a long or short trade"
         trade_asset_id = hyperdrive_assets.encode_asset_id(info[trade_type].prefix, maturity_time)
         amount = np.clip(amount, 0, hyperdrive_contract.balanceOf(trade_asset_id, agent))
+        assert amount != 0, "trade amount is zero, this is not allowed"
     # specify one big dict that holds the parameters for all six methods
     params = {
         "_asUnderlying": True,  # mockHyperdriveTestNet does not support as_underlying=False
