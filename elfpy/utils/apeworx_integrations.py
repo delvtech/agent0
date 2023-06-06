@@ -82,27 +82,27 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
     total_supply_withdraw_shares = hyperdrive_contract.balanceOf(asset_id, hyperdrive_contract.address)
 
     return HyperdriveMarketState(
-        lp_total_supply=FixedPoint(pool_state["lpTotalSupply"]),
-        share_reserves=FixedPoint(pool_state["shareReserves"]),
-        bond_reserves=FixedPoint(pool_state["bondReserves"]),
-        base_buffer=FixedPoint(pool_state["longsOutstanding"]),  # so do we not need any buffers now?
+        lp_total_supply=FixedPoint(scaled_value=pool_state["lpTotalSupply"]),
+        share_reserves=FixedPoint(scaled_value=pool_state["shareReserves"]),
+        bond_reserves=FixedPoint(scaled_value=pool_state["bondReserves"]),
+        base_buffer=FixedPoint(scaled_value=pool_state["longsOutstanding"]),  # so do we not need any buffers now?
         variable_apr=FixedPoint(0.01),  # TODO: insert real value
-        share_price=FixedPoint(pool_state["sharePrice"]),
-        init_share_price=FixedPoint(hyper_config["initialSharePrice"]),
-        curve_fee_multiple=FixedPoint(hyper_config["fees"]["curve"]),
-        flat_fee_multiple=FixedPoint(hyper_config["fees"]["flat"]),
-        governance_fee_multiple=FixedPoint(hyper_config["fees"]["governance"]),
-        longs_outstanding=FixedPoint(pool_state["longsOutstanding"]),
-        shorts_outstanding=FixedPoint(pool_state["shortsOutstanding"]),
-        long_average_maturity_time=FixedPoint(pool_state["longAverageMaturityTime"]),
-        short_average_maturity_time=FixedPoint(pool_state["shortAverageMaturityTime"]),
-        short_base_volume=FixedPoint(pool_state["shortBaseVolume"]),
+        share_price=FixedPoint(scaled_value=pool_state["sharePrice"]),
+        init_share_price=FixedPoint(scaled_value=hyper_config["initialSharePrice"]),
+        curve_fee_multiple=FixedPoint(scaled_value=hyper_config["fees"]["curve"]),
+        flat_fee_multiple=FixedPoint(scaled_value=hyper_config["fees"]["flat"]),
+        governance_fee_multiple=FixedPoint(scaled_value=hyper_config["fees"]["governance"]),
+        longs_outstanding=FixedPoint(scaled_value=pool_state["longsOutstanding"]),
+        shorts_outstanding=FixedPoint(scaled_value=pool_state["shortsOutstanding"]),
+        long_average_maturity_time=FixedPoint(scaled_value=pool_state["longAverageMaturityTime"]),
+        short_average_maturity_time=FixedPoint(scaled_value=pool_state["shortAverageMaturityTime"]),
+        short_base_volume=FixedPoint(scaled_value=pool_state["shortBaseVolume"]),
         # TODO: checkpoints=dict
         checkpoint_duration=FixedPoint(hyper_config["checkpointDuration"]),
-        total_supply_longs={FixedPoint(0): FixedPoint(pool_state["longsOutstanding"])},
-        total_supply_shorts={FixedPoint(0): FixedPoint(pool_state["shortsOutstanding"])},
-        total_supply_withdraw_shares=FixedPoint(total_supply_withdraw_shares),
-        withdraw_shares_ready_to_withdraw=FixedPoint(pool_state["withdrawalSharesReadyToWithdraw"]),
+        total_supply_longs={FixedPoint(0): FixedPoint(scaled_value=pool_state["longsOutstanding"])},
+        total_supply_shorts={FixedPoint(0): FixedPoint(scaled_value=pool_state["shortsOutstanding"])},
+        total_supply_withdraw_shares=FixedPoint(scaled_value=total_supply_withdraw_shares),
+        withdraw_shares_ready_to_withdraw=FixedPoint(scaled_value=pool_state["withdrawalSharesReadyToWithdraw"]),
         withdraw_capital=FixedPoint(0),
     )
 
