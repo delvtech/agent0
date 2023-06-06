@@ -199,7 +199,7 @@ def get_wallet_from_onchain_trade_info(
     if add_to_existing_wallet is None:
         wallet = Wallet(
             address=index,
-            balance=types.Quantity(amount=FixedPoint(base_contract.balanceOf(address)), unit=types.TokenType.BASE),
+            balance=types.Quantity(amount=FixedPoint(scaled_value=base_contract.balanceOf(address)), unit=types.TokenType.BASE),
         )
     else:
         wallet = add_to_existing_wallet
@@ -238,7 +238,7 @@ def get_wallet_from_onchain_trade_info(
                     sum_product_of_open_share_price_and_value += (
                         value * info.share_price[info.trades.loc[specific_trade, "block_number"]]
                     )
-                open_share_price = sum_product_of_open_share_price_and_value / sum_value
+                open_share_price = int(sum_product_of_open_share_price_and_value / sum_value)
                 assert (
                     abs(balance - sum_value) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
                 ), "weighted average open share price calculation is wrong"
@@ -247,19 +247,22 @@ def get_wallet_from_onchain_trade_info(
                     {
                         mint_time: Short(
                             balance=FixedPoint(scaled_value=balance),
-                            open_share_price=open_share_price,
+                            open_share_price=FixedPoint(scaled_value=open_share_price),
                         )
                     }
                 )
                 logging.debug(
                     "storing in wallet as %s",
-                    {mint_time: Short(balance=balance, open_share_price=open_share_price)},
+                    {mint_time: Short(
+                        balance=FixedPoint(scaled_value=balance), 
+                        open_share_price=FixedPoint(scaled_value=open_share_price))
+                    },
                 )
             elif asset_type == "LONG":
                 wallet.longs.update({mint_time: Long(balance=FixedPoint(scaled_value=balance))})
                 logging.debug("storing in wallet as %s", {mint_time: Long(balance=balance)})
             elif asset_type == "LP":
-                wallet.lp_tokens += balance
+                wallet.lp_tokens += FixedPoint(scaled_value=balance)
     return wallet
 
 
