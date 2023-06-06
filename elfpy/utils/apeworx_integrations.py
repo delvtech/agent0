@@ -74,8 +74,6 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
     HyperdriveMarketState
     """
     pool_state = hyperdrive_contract.getPoolInfo(**kwargs).__dict__
-    for key, value in pool_state.items():
-        log_and_show(f"{key}: {value}")
     hyper_config = hyperdrive_contract.getPoolConfig(**kwargs).__dict__
     hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)  # convert to elf-sims format
     hyper_config["term_length"] = hyper_config["positionDuration"] / (60 * 60 * 24)  # in days
@@ -113,7 +111,7 @@ OnChainTradeInfo = namedtuple(
 )
 
 
-def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTradeInfo:
+def get_on_chain_trade_info(hyperdrive_contract: ContractInstance, trades: pd.DataFrame | None = None) -> OnChainTradeInfo:
     r"""Get all trades from hyperdrive contract.
 
     Arguments
@@ -136,14 +134,17 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTra
         - share_price_
             Map of share price to block number.
     """
-    trades = hyperdrive_contract.TransferSingle.query("*")  # get all trades
-    trades = pd.concat(  # flatten event_arguments
-        [
-            trades.loc[:, [c for c in trades.columns if c != "event_arguments"]],
-            pd.DataFrame((dict(i) for i in trades["event_arguments"])),
-        ],
-        axis=1,
-    )
+    if trades is None:
+        trades = hyperdrive_contract.TransferSingle.query("*")  # get all trades
+        assert isinstance(trades, pd.DataFrame), "trades is not a DataFrame"
+        assert trades["event_arguments"] is not None, "no event_arguments found in trades"
+        trades = pd.concat(  # flatten event_arguments
+            [
+                trades.loc[:, [c for c in trades.columns if c != "event_arguments"]],
+                pd.DataFrame((dict(i) for i in trades["event_arguments"])),
+            ],
+            axis=1,
+        )
     tuple_series = trades.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)  # type: ignore
     trades["prefix"], trades["maturity_timestamp"] = zip(*tuple_series)  # split into two columns
     trades["trade_type"] = trades["prefix"].apply(lambda x: AssetIdPrefix(x).name)
@@ -167,7 +168,7 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTra
 
 
 def get_wallet_from_onchain_trade_info(
-    address_: str,
+    address: str,
     index: int,
     info: OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
@@ -177,7 +178,7 @@ def get_wallet_from_onchain_trade_info(
 
     Arguments
     ---------
-    address_ : str
+    address : str
         Address of the wallet.
     index : int
         Index of the wallet.
@@ -196,27 +197,27 @@ def get_wallet_from_onchain_trade_info(
     # TODO: remove restriction forcing Wallet index to be an int (issue #415)
     wallet = Wallet(
         address=index,
-        balance=types.Quantity(amount=FixedPoint(base_contract.balanceOf(address_)), unit=types.TokenType.BASE),
+        balance=types.Quantity(amount=FixedPoint(base_contract.balanceOf(address)), unit=types.TokenType.BASE),
     )
     for position_id in info.unique_ids:  # loop across all unique positions
-        trades_in_position = ((info.trades["from"] == address_) | (info.trades["to"] == address_)) & (
+        trades_in_position = ((info.trades["from"] == address) | (info.trades["to"] == address)) & (
             info.trades["id"] == position_id
         )
-        log_and_show("found %s trades for %s in position %s", sum(trades_in_position), address_[:8], position_id)
+        log_and_show("found %s trades for %s in position %s", sum(trades_in_position), address[:8], position_id)
         balance = (
-            info.trades.loc[(trades_in_position) & (info.trades["to"] == address_), "value"].sum()
-            - info.trades.loc[(trades_in_position) & (info.trades["from"] == address_), "value"].sum()
+            info.trades.loc[(trades_in_position) & (info.trades["to"] == address), "value"].sum()
+            - info.trades.loc[(trades_in_position) & (info.trades["from"] == address), "value"].sum()
         )
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = AssetIdPrefix(asset_prefix).name
         mint_time = maturity - elfpy.SECONDS_IN_YEAR
         log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
         # verify our calculation against the onchain balance
-        on_chain_balance = hyperdrive_contract.balanceOf(position_id, address_)
+        on_chain_balance = hyperdrive_contract.balanceOf(position_id, address)
         if abs(balance - on_chain_balance) > elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI:
             raise ValueError(
                 f"events {balance=} and {on_chain_balance=} disagree by "
-                f"more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address_}"
+                f"more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address}"
             )
         log_and_show(f" => calculated balance = on_chain = {fmt(balance)}")
         # check if there's an outstanding balance
@@ -226,7 +227,7 @@ def get_wallet_from_onchain_trade_info(
                 sum_product_of_open_share_price_and_value, sum_value = 0, 0
                 for specific_trade in trades_in_position.index[trades_in_position]:
                     value = info.trades.loc[specific_trade, "value"]
-                    value *= -1 if info.trades.loc[specific_trade, "from"] == address_ else 1
+                    value *= -1 if info.trades.loc[specific_trade, "from"] == address else 1
                     sum_value += value
                     sum_product_of_open_share_price_and_value += (
                         value * info.share_price[info.trades.loc[specific_trade, "block_number"]]
@@ -584,7 +585,7 @@ def ape_trade(
     -------
     pool_state : dict, optional
         The Hyperdrive pool state after the trade.
-    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    txn_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         The Ape transaction receipt.
     """
     # predefine which methods to call based on the trade type, and the corresponding asset ID prefix
@@ -621,10 +622,10 @@ def ape_trade(
     # create a transaction with the selected ABI
     contract_txn: ContractTransaction = ContractTransaction(abi=selected_abi, address=hyperdrive_contract.address)
     try:  # attempt to execute the transaction, allowing for a specified number of retries (default is 1)
-        tx_receipt = attempt_txn(agent, contract_txn, *args, **kwargs)
-        if tx_receipt is None:
+        txn_receipt = attempt_txn(agent, contract_txn, *args, **kwargs)
+        if txn_receipt is None:
             return None, None
-        return get_pool_state(tx_receipt=tx_receipt, hyperdrive_contract=hyperdrive_contract), tx_receipt
+        return get_pool_state(tx_receipt=txn_receipt, hyperdrive_contract=hyperdrive_contract), txn_receipt
     except TransactionError as exc:
         logging.error(
             "Failed to execute %s: %s\n =>  Amount: %s\n => Agent: %s\n => Pool: %s\n",
