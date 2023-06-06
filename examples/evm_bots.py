@@ -14,8 +14,8 @@ from pathlib import Path
 from time import sleep
 from time import time as now
 from typing import Type, cast
-import requests
 from typing import Any
+import requests
 
 # external lib
 import pandas as pd
@@ -333,7 +333,7 @@ def create_agent(
         f" Eth={fmt(agent.contract.balance/1e18)} Base={fmt(base_instance.balanceOf(agent.contract.address)/1e18)}"
     )
     agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
-        address_=agent.contract.address,
+        address=agent.contract.address,
         index=bot.index,
         info=on_chain_trade_info,
         hyperdrive_contract=hyperdrive_contract,
@@ -374,6 +374,8 @@ def set_up_agents(
     -------
     sim_agents : dict[str, Agent]
         Dict of agents used in the simulation.
+    on_chain_trade_info : ape_utils.OnChainTradeInfo
+        Information about on-chain trades.
     """
     # pylint: disable=too-many-arguments, too-many-locals
     dev_accounts: list[KeyfileAccount] = get_accounts(experiment_config)
@@ -763,6 +765,9 @@ def do_policy(
                 axis=1,
             )
             recent_trades_info = ape_utils.get_on_chain_trade_info(hyperdrive_instance, recent_trades)
+            # recent_trades_wallet = ape_utils.get_wallet_from_onchain_trade_info(
+            #     address_
+            # )
             print(f"{recent_trades_info=}")
             print("check")
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file)  # set and save to file
@@ -819,6 +824,24 @@ def create_elfpy_market(
         ),
     )
 
+def dump_agent_info(sim_agents, experiment_config):
+    """Dump bot info to bots.json."""
+    # save bot info to bots.json
+    variables_to_save_to_bots_json = ["project_dir","louie","frida","random","bot_names"]
+    # build json
+    json_dict = {
+        key: str(value)
+        for key, value in experiment_config.scratch.items() if key in variables_to_save_to_bots_json
+    }
+    for agent_name, agent in sim_agents.items():
+        json_dict[agent_name] = str(agent)
+    # make folder if it doesn't exist
+    if not os.path.exists(f"{experiment_config.scratch['project_dir']}/artifacts"):
+        os.makedirs(f"{experiment_config.scratch['project_dir']}/artifacts")
+    # write to file
+    with open(f"{experiment_config.scratch['project_dir']}/artifacts/bots.json", "w", encoding="utf-8") as file:
+        json.dump(json_dict,file, indent=4)
+    
 
 def main():
     """Run the simulation."""
@@ -839,6 +862,7 @@ def main():
     sim_agents, on_chain_trade_info = set_up_agents(
         experiment_config, args, provider, hyperdrive_instance, base_instance, addresses, deployer_account
     )
+    dump_agent_info(sim_agents, experiment_config)
 
     start_timestamp = ape.chain.blocks[-1].timestamp
     while True:  # hyper drive forever into the sunset
