@@ -733,7 +733,7 @@ def set_up_ape(
 
 
 def do_policy(
-    policy: BasePolicy,
+    agent: BasePolicy,
     elfpy_market: BaseMarket,
     no_crash_streak: int,
     crash_file: str,
@@ -742,7 +742,7 @@ def do_policy(
     base_instance: ContractInstance,
 ):  # pylint: disable=too-many-arguments
     """Execute an agent's policy."""
-    trades: list[types.Trade] = policy.get_trades(market=elfpy_market)
+    trades: list[types.Trade] = agent.get_trades(market=elfpy_market)
     for trade_object in trades:
         try:
             logging.debug(trade_object)
@@ -818,7 +818,7 @@ def main():
     provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
         experiment_config, args, provider_settings, addresses, network_choice, pricing_model
     )
-    sim_agents: dict[str, elfpy.agents.agent.Agent] = set_up_agents(
+    sim_agents: dict[str, Agent] = set_up_agents(
         experiment_config, args, provider, hyperdrive_instance, base_instance, addresses, deployer_account
     )
 
@@ -832,12 +832,12 @@ def main():
             elfpy_market = create_elfpy_market(
                 pricing_model, hyperdrive_instance, hyperdrive_config, block_number, block_timestamp, start_timestamp
             )
-            for policy in sim_agents.values():
+            for agent in sim_agents.values():
                 no_crash_streak = do_policy(
-                    policy, elfpy_market, no_crash_streak, crash_file, sim_agents, hyperdrive_instance, base_instance
+                    agent, elfpy_market, no_crash_streak, crash_file, sim_agents, hyperdrive_instance, base_instance
                 )
             last_executed_block = block_number
-        if args.devnet and automine:  # anvil automatically mines after you send a transaction. or manually.
+        if args["devnet"] and automine:  # anvil automatically mines after you send a transaction. or manually.
             ape.chain.mine()
         else:  # either on goerli or on devnet with automine disabled (which means time-based mining is enabled)
             sleep(1)

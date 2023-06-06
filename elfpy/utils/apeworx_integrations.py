@@ -104,7 +104,7 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
         total_supply_shorts={FixedPoint(0): FixedPoint(pool_state["shortsOutstanding"])},
         total_supply_withdraw_shares=FixedPoint(total_supply_withdraw_shares),
         withdraw_shares_ready_to_withdraw=FixedPoint(pool_state["withdrawalSharesReadyToWithdraw"]),
-        withdraw_capital=FixedPoint(pool_state["proceeds"]),
+        withdraw_capital=FixedPoint(0),
     )
 
 
