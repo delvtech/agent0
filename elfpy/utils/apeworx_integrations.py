@@ -135,7 +135,7 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance, block_number:
         - share_price_
             Map of share price to block number.
     """
-    trades = hyperdrive_contract.TransferSingle.query("*", start_block=block_number, stop_block=block_number)
+    trades = hyperdrive_contract.TransferSingle.query("*", start_block=block_number or 0, stop_block=block_number)
     # assert isinstance(trades, pd.DataFrame), "trades is not a DataFrame"
     # assert trades["event_arguments"] is not None, "no event_arguments found in trades"
     trades = pd.concat(  # flatten event_arguments
@@ -343,7 +343,7 @@ def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
         ) from exc
 
 
-def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance):
+def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance) -> PoolState:
     r"""Return everything returned by `getPoolInfo()` in the smart contracts.
 
     Arguments
@@ -371,13 +371,42 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
     # The ID is a concatenation of the current share price and the maturity time of the trade
     token_id = int(transfer_single_event["id"])
     prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(token_id)
-    pool_state = hyperdrive_contract.getPoolInfo().__dict__
-    pool_state["block_number"] = tx_receipt.block_number
-    pool_state["token_id"] = token_id
-    pool_state["prefix"] = prefix
-    pool_state["maturity_timestamp"] = maturity_timestamp  # in seconds
-    logging.debug("hyperdrive_pool_state=%s", pool_state)
-    return pool_state
+    hyper_dict = hyperdrive_contract.getPoolInfo().__dict__
+    hyper_dict["block_number"] = tx_receipt.block_number
+    hyper_dict["token_id"] = token_id
+    hyper_dict["prefix"] = prefix
+    hyper_dict["maturity_timestamp"] = maturity_timestamp  # in seconds
+    logging.debug("hyperdrive_pool_state=%s", hyper_dict)
+    return PoolState(**hyper_dict)
+
+@dataclass
+class PoolState:
+    """A dataclass to hold the state of the pool at a given block."""
+    # pylint: disable=invalid-name, too-many-instance-attributes
+    shareReserves: int
+    bondReserves: int
+    lpTotalSupply: int
+    sharePrice: int
+    longsOutstanding: int
+    longAverageMaturityTime: int
+    shortsOutstanding: int
+    shortAverageMaturityTime: int
+    shortBaseVolume: int
+    withdrawalSharesReadyToWithdraw: int
+    withdrawalSharesProceeds: int
+    block_number: int
+    token_id: int
+    prefix: str
+    maturity_timestamp: int
+
+    def __getattribute__(self, __snake: str) -> Any:
+        """Convert from snake_case to camelCase for the dataclass."""
+        camel = "".join(word.capitalize() for word in __snake.split("_"))
+        return super().__getattribute__(camel)
+
+    def __setattr__(self, __snake: str, __value: Any) -> None:
+        camel = "".join(word.capitalize() for word in __snake.split("_"))
+        super().__setattr__(camel, __value)
 
 
 PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])

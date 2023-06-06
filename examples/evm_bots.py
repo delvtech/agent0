@@ -424,7 +424,7 @@ def do_trade(
     sim_agents: dict[str, Agent],
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
-) -> dict[str, Any]:
+) -> ape_utils.PoolState:
     """Execute agent trades on hyperdrive solidity contract.
 
     Parameters
@@ -440,7 +440,7 @@ def do_trade(
 
     Returns
     -------
-    pool_state : dict, optional
+    pool_state : ape_utils.PoolSatate
         The Hyperdrive pool state after the trade.
     txn_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         The Ape transaction receipt.
@@ -747,7 +747,6 @@ def do_policy(
     sim_agents: dict[str, Agent],
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
-    on_chain_trade_info: ape_utils.OnChainTradeInfo
 ):  # pylint: disable=too-many-arguments
     """Execute an agent's policy."""
     trades: list[types.Trade] = agent.get_trades(market=elfpy_market)
@@ -758,11 +757,12 @@ def do_policy(
             # marginal update to wallet
             agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
                 address=agent.contract.address,
-                info=ape_utils.get_on_chain_trade_info(hyperdrive_instance, ape.chain.blocks[-1]),
+                info=ape_utils.get_on_chain_trade_info(hyperdrive_instance, ape.chain.blocks[-1].number),
                 hyperdrive_contract=hyperdrive_instance,
                 base_contract=base_instance,
                 add_to_existing_wallet=agent.wallet,
             )
+            print(f"{agent.wallet=}")
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file)  # set and save to file
         except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
             log_and_show("Crashed unexpectedly: %s", exc)
@@ -869,7 +869,7 @@ def main():
             )
             for agent in sim_agents.values():
                 no_crash_streak = do_policy(
-                    agent, elfpy_market, no_crash_streak, crash_file, sim_agents, hyperdrive_instance, base_instance, on_chain_trade_info
+                    agent, elfpy_market, no_crash_streak, crash_file, sim_agents, hyperdrive_instance, base_instance
                 )
             last_executed_block = block_number
         if args["devnet"] and automine:  # anvil automatically mines after you send a transaction. or manually.
