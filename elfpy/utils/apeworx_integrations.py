@@ -1,5 +1,6 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx."""
 from __future__ import annotations
+from dataclasses import dataclass
 
 import logging
 from collections import namedtuple
@@ -111,7 +112,7 @@ OnChainTradeInfo = namedtuple(
 )
 
 
-def get_on_chain_trade_info(hyperdrive_contract: ContractInstance, trades: pd.DataFrame | None = None) -> OnChainTradeInfo:
+def get_on_chain_trade_info(hyperdrive_contract: ContractInstance, block_number: int | None = None) -> OnChainTradeInfo:
     r"""Get all trades from hyperdrive contract.
 
     Arguments
@@ -134,17 +135,16 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance, trades: pd.Da
         - share_price_
             Map of share price to block number.
     """
-    if trades is None:
-        trades = hyperdrive_contract.TransferSingle.query("*")  # get all trades
-        assert isinstance(trades, pd.DataFrame), "trades is not a DataFrame"
-        assert trades["event_arguments"] is not None, "no event_arguments found in trades"
-        trades = pd.concat(  # flatten event_arguments
-            [
-                trades.loc[:, [c for c in trades.columns if c != "event_arguments"]],
-                pd.DataFrame((dict(i) for i in trades["event_arguments"])),
-            ],
-            axis=1,
-        )
+    trades = hyperdrive_contract.TransferSingle.query("*", start_block=block_number, stop_block=block_number)
+    # assert isinstance(trades, pd.DataFrame), "trades is not a DataFrame"
+    # assert trades["event_arguments"] is not None, "no event_arguments found in trades"
+    trades = pd.concat(  # flatten event_arguments
+        [
+            trades.loc[:, [c for c in trades.columns if c != "event_arguments"]],
+            pd.DataFrame((dict(i) for i in trades["event_arguments"])),
+        ],
+        axis=1,
+    )
     tuple_series = trades.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)  # type: ignore
     trades["prefix"], trades["maturity_timestamp"] = zip(*tuple_series)  # split into two columns
     trades["trade_type"] = trades["prefix"].apply(lambda x: AssetIdPrefix(x).name)
@@ -169,10 +169,11 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance, trades: pd.Da
 
 def get_wallet_from_onchain_trade_info(
     address: str,
-    index: int,
     info: OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
     base_contract: ContractInstance,
+    index: int = 0,
+    add_to_existing_wallet: Wallet | None = None
 ) -> Wallet:
     r"""Construct wallet balances from on-chain trade info.
 
@@ -180,14 +181,14 @@ def get_wallet_from_onchain_trade_info(
     ---------
     address : str
         Address of the wallet.
-    index : int
-        Index of the wallet.
     info : OnChainTradeInfo
         On-chain trade info.
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
     base_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the base currency (e.g. ERC20)
+    index : int
+        Index of the wallet among ALL agents.
 
     Returns
     -------
@@ -195,10 +196,13 @@ def get_wallet_from_onchain_trade_info(
         Wallet with Short, Long, and LP positions.
     """
     # TODO: remove restriction forcing Wallet index to be an int (issue #415)
-    wallet = Wallet(
-        address=index,
-        balance=types.Quantity(amount=FixedPoint(base_contract.balanceOf(address)), unit=types.TokenType.BASE),
-    )
+    if add_to_existing_wallet is None:
+        wallet = Wallet(
+            address=index,
+            balance=types.Quantity(amount=FixedPoint(base_contract.balanceOf(address)), unit=types.TokenType.BASE),
+        )
+    else:
+        wallet = add_to_existing_wallet
     for position_id in info.unique_ids:  # loop across all unique positions
         trades_in_position = ((info.trades["from"] == address) | (info.trades["to"] == address)) & (
             info.trades["id"] == position_id
@@ -214,11 +218,13 @@ def get_wallet_from_onchain_trade_info(
         log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
         # verify our calculation against the onchain balance
         on_chain_balance = hyperdrive_contract.balanceOf(position_id, address)
-        if abs(balance - on_chain_balance) > elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI:
-            raise ValueError(
-                f"events {balance=} and {on_chain_balance=} disagree by "
-                f"more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address}"
-            )
+        # only do balance checks if not marignal update 
+        if add_to_existing_wallet is None: # sourcery skip: merge-nested-ifs
+            if abs(balance - on_chain_balance) > elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI:
+                raise ValueError(
+                    f"events {balance=} and {on_chain_balance=} disagree by "
+                    f"more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address}"
+                )
         log_and_show(f" => calculated balance = on_chain = {fmt(balance)}")
         # check if there's an outstanding balance
         if balance != 0 or on_chain_balance != 0:
@@ -366,10 +372,10 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
     token_id = int(transfer_single_event["id"])
     prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(token_id)
     pool_state = hyperdrive_contract.getPoolInfo().__dict__
-    pool_state["block_number_"] = tx_receipt.block_number
-    pool_state["token_id_"] = token_id
-    pool_state["prefix_"] = prefix
-    pool_state["maturity_timestamp_"] = maturity_timestamp  # in seconds
+    pool_state["block_number"] = tx_receipt.block_number
+    pool_state["token_id"] = token_id
+    pool_state["prefix"] = prefix
+    pool_state["maturity_timestamp"] = maturity_timestamp  # in seconds
     logging.debug("hyperdrive_pool_state=%s", pool_state)
     return pool_state
 
@@ -562,7 +568,7 @@ def ape_trade(
     amount: int,
     maturity_time: int | None = None,
     **kwargs: Any,
-) -> tuple[dict[str, Any] | None, ReceiptAPI | None]:
+) -> tuple[dict[str, Any] | None]:
     r"""Execute a trade on the Hyperdrive contract.
 
     Arguments

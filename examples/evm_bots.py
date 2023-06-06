@@ -424,7 +424,7 @@ def do_trade(
     sim_agents: dict[str, Agent],
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
-) -> tuple[dict[str, Any] | None, ReceiptAPI | None]:
+) -> dict[str, Any]:
     """Execute agent trades on hyperdrive solidity contract.
 
     Parameters
@@ -477,8 +477,8 @@ def do_trade(
     )
 
     # execute the trade using key-word arguments
-    pool_state, txn_receipt = ape_utils.ape_trade(**params)
-    return pool_state, txn_receipt
+    pool_state, _ = ape_utils.ape_trade(**params)
+    return pool_state
 
 
 def set_days_without_crashing(current_streak, crash_file, reset: bool = False):
@@ -754,22 +754,15 @@ def do_policy(
     for trade_object in trades:
         try:
             logging.debug(trade_object)
-            pool_state, txn_receipt = do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
-            latest_block_number = ape.chain.blocks[-1].number
-            recent_trades = hyperdrive_instance.TransferSingle.query("*", start_block=latest_block_number, stop_block=latest_block_number)
-            recent_trades = pd.concat(  # flatten event_arguments
-                [
-                    recent_trades.loc[:, [c for c in recent_trades.columns if c != "event_arguments"]],
-                    pd.DataFrame((dict(i) for i in recent_trades["event_arguments"])),
-                ],
-                axis=1,
+            pool_state = do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
+            # marginal update to wallet
+            agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
+                address=agent.contract.address,
+                info=ape_utils.get_on_chain_trade_info(hyperdrive_instance, ape.chain.blocks[-1]),
+                hyperdrive_contract=hyperdrive_instance,
+                base_contract=base_instance,
+                add_to_existing_wallet=agent.wallet,
             )
-            recent_trades_info = ape_utils.get_on_chain_trade_info(hyperdrive_instance, recent_trades)
-            # recent_trades_wallet = ape_utils.get_wallet_from_onchain_trade_info(
-            #     address_
-            # )
-            print(f"{recent_trades_info=}")
-            print("check")
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file)  # set and save to file
         except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
             log_and_show("Crashed unexpectedly: %s", exc)
