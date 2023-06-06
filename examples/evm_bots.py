@@ -4,7 +4,6 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 # pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 # stdlib
-import argparse
 import json
 import logging
 import os
@@ -16,8 +15,10 @@ from time import sleep
 from time import time as now
 from typing import Type, cast
 import requests
+from typing import Any
 
 # external lib
+import pandas as pd
 import ape
 import numpy as np
 from ape import accounts
@@ -28,10 +29,6 @@ from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from dotenv import load_dotenv
 from eth_account import Account as EthAccount
-from numpy.random._generator import Generator as NumpyGenerator
-import tqdm
-from tqdm import trange
-
 import tqdm
 from tqdm import trange
 
@@ -79,7 +76,7 @@ def get_env_args() -> dict:
         "rpc_url": os.environ.get("BOT_RPC_URL", "http://ethereum:8545"),
         "log_filename": os.environ.get("BOT_LOG_FILENAME", "testnet_bots"),
         "log_level": os.environ.get("BOT_LOG_LEVEL", "INFO"),
-        "max_bytes": int(os.environ.get("BOT_MAX_BYTES", DEFAULT_LOG_MAXBYTES)),
+        "max_bytes": int(os.environ.get("BOTS_MAX_BYTES", DEFAULT_LOG_MAXBYTES)),
         "num_louie": int(os.environ.get("BOT_NUM_LOUIE", 0)),
         "num_frida": int(os.environ.get("BOT_NUM_FRIDA", 0)),
         "num_random": int(os.environ.get("BOT_NUM_RANDOM", 4)),
@@ -353,7 +350,7 @@ def set_up_agents(
     base_instance: ContractInstance,
     addresses: dict[str, str],
     deployer_account: KeyfileAccount,
-) -> dict[str, Agent]:
+) -> tuple[dict[str, Agent], ape_utils.OnChainTradeInfo]:
     """Set up python agents & corresponding on-chain accounts.
 
     Parameters
@@ -417,7 +414,7 @@ def set_up_agents(
                 deployer_account=deployer_account,
             )
             sim_agents[f"agent_{agent.wallet.address}"] = agent
-    return sim_agents
+    return sim_agents, on_chain_trade_info
 
 
 def do_trade(
@@ -425,7 +422,7 @@ def do_trade(
     sim_agents: dict[str, Agent],
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
-):
+) -> tuple[dict[str, Any] | None, ReceiptAPI | None]:
     """Execute agent trades on hyperdrive solidity contract.
 
     Parameters
@@ -438,6 +435,13 @@ def do_trade(
         The hyperdrive contract instance.
     base_instance : ContractInstance
         The base token contract instance.
+
+    Returns
+    -------
+    pool_state : dict, optional
+        The Hyperdrive pool state after the trade.
+    txn_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+        The Ape transaction receipt.
     """
     # TODO: add market-state-dependent trading for smart bots
     # market_state = get_simulation_market_state_from_contract(
@@ -471,7 +475,8 @@ def do_trade(
     )
 
     # execute the trade using key-word arguments
-    ape_utils.ape_trade(**params)
+    pool_state, txn_receipt = ape_utils.ape_trade(**params)
+    return pool_state, txn_receipt
 
 
 def set_days_without_crashing(current_streak, crash_file, reset: bool = False):
@@ -740,13 +745,26 @@ def do_policy(
     sim_agents: dict[str, Agent],
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
+    on_chain_trade_info: ape_utils.OnChainTradeInfo
 ):  # pylint: disable=too-many-arguments
     """Execute an agent's policy."""
     trades: list[types.Trade] = agent.get_trades(market=elfpy_market)
     for trade_object in trades:
         try:
             logging.debug(trade_object)
-            do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
+            pool_state, txn_receipt = do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
+            latest_block_number = ape.chain.blocks[-1].number
+            recent_trades = hyperdrive_instance.TransferSingle.query("*", start_block=latest_block_number, stop_block=latest_block_number)
+            recent_trades = pd.concat(  # flatten event_arguments
+                [
+                    recent_trades.loc[:, [c for c in recent_trades.columns if c != "event_arguments"]],
+                    pd.DataFrame((dict(i) for i in recent_trades["event_arguments"])),
+                ],
+                axis=1,
+            )
+            recent_trades_info = ape_utils.get_on_chain_trade_info(hyperdrive_instance, recent_trades)
+            print(f"{recent_trades_info=}")
+            print("check")
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file)  # set and save to file
         except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
             log_and_show("Crashed unexpectedly: %s", exc)
@@ -814,11 +832,11 @@ def main():
     )
     no_crash_streak = 0
     last_executed_block = 0
-    output_utils.setup_logging(log_filename=experiment_config.log_filename, log_level=experiment_config.log_level)
+    output_utils.setup_logging(log_filename=experiment_config.log_filename, log_level=experiment_config.log_level, max_bytes=args["max_bytes"])
     provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
         experiment_config, args, provider_settings, addresses, network_choice, pricing_model
     )
-    sim_agents: dict[str, Agent] = set_up_agents(
+    sim_agents, on_chain_trade_info = set_up_agents(
         experiment_config, args, provider, hyperdrive_instance, base_instance, addresses, deployer_account
     )
 
@@ -834,7 +852,7 @@ def main():
             )
             for agent in sim_agents.values():
                 no_crash_streak = do_policy(
-                    agent, elfpy_market, no_crash_streak, crash_file, sim_agents, hyperdrive_instance, base_instance
+                    agent, elfpy_market, no_crash_streak, crash_file, sim_agents, hyperdrive_instance, base_instance, on_chain_trade_info
                 )
             last_executed_block = block_number
         if args["devnet"] and automine:  # anvil automatically mines after you send a transaction. or manually.
