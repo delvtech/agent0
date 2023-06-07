@@ -14,11 +14,9 @@ from pathlib import Path
 from time import sleep
 from time import time as now
 from typing import Type, cast
-from typing import Any
 import requests
 
 # external lib
-import pandas as pd
 import ape
 import numpy as np
 from ape import accounts
@@ -50,6 +48,7 @@ from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
+import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 
 
 
@@ -215,13 +214,19 @@ def set_up_experiment(
 def get_devnet_addresses(experiment_config: Config, args: dict, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
     deployed_addresses = {}
-    for _ in trange(100, desc="artifacts.."):
-        response = requests.get(args["artifacts_url"]+"/addresses.json", timeout=1)
-        if response.status_code == 200:
-            deployed_addresses = response.json()
-            break
-        tqdm.desc = f"artifacts.. {response.status_code}"
-        sleep(1)
+    # get deployed addresses from local file, if it exists
+    address_file_path = experiment_config.scratch["project_dir"] / "hyperdrive_solidity/artifacts/addresses.json"
+    if os.path.exists(address_file_path):
+        with open(address_file_path, "r", encoding="utf-8") as file:
+            deployed_addresses = json.load(file)
+    else:  # otherwise get deployed addresses from artifacts server
+        for _ in trange(100, desc="artifacts.."):
+            response = requests.get(args["artifacts_url"]+"/addresses.json", timeout=1)
+            if response.status_code == 200:
+                deployed_addresses = response.json()
+                break
+            tqdm.desc = f"artifacts.. {response.status_code}"
+            sleep(1)
     if "baseToken" in deployed_addresses:
         addresses["baseToken"] = deployed_addresses["baseToken"]
         log_and_show(f"found devnet base address: {addresses['baseToken']}")
@@ -453,6 +458,13 @@ def do_trade(
     trade = market_trade.trade
     agent_contract = sim_agents[f"agent_{trade.wallet.address}"].contract
     amount = trade.trade_amount.scaled_value  # ape works with ints
+
+    print(f"scaling down from {type(amount)}{amount=}", end="")
+    # amount = int(np.floor(amount/1e18) * 1e18)
+    # amount -= int(1e18)
+    amount = int(amount/2)
+    print(f" to {type(amount)}{amount=}")
+
     # If agent does not have enough base approved for this trade, then approve another 50k
     # allowance(address owner, address spender) → uint256
     if base_instance.allowance(agent_contract.address, hyperdrive_instance.address) < amount:
@@ -470,6 +482,16 @@ def do_trade(
     }
     if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
         params["maturity_time"] = int(trade.mint_time + SECONDS_IN_YEAR)
+
+        # check if we have enough on-chain balance to close this
+        prefix = 1 if trade.action_type.name == "CLOSE_LONG" else 2  # LONG = 1, SHORT = 2
+        position_id = hyperdrive_assets.encode_asset_id(prefix=prefix, timestamp=params["maturity_time"])
+        on_chain_balance = hyperdrive_instance.balanceOf(position_id, agent_contract.address)
+        print(f"trying to {trade.action_type.name} {params['amount']=} with {on_chain_balance=}")
+
+        if params["amount"] > on_chain_balance:
+            print("oops")
+
     log_and_show(
         f" agent_{agent_contract.address[:8]} has"
         f" Eth={fmt(agent_contract.balance/1e18)}"

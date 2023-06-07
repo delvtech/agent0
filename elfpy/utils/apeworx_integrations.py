@@ -206,8 +206,8 @@ def get_wallet_from_onchain_trade_info(
             info.trades["id"] == position_id
         )
         log_and_show("found %s trades for %s in position %s", sum(trades_in_position), address[:8], position_id)
-        positive_balance = info.trades.loc[(trades_in_position) & (info.trades["to"] == address), "value"].sum()
-        negative_balance = info.trades.loc[(trades_in_position) & (info.trades["from"] == address), "value"].sum()
+        positive_balance = int(info.trades.loc[(trades_in_position) & (info.trades["to"] == address), "value"].sum())
+        negative_balance = int(info.trades.loc[(trades_in_position) & (info.trades["from"] == address), "value"].sum())
         balance = positive_balance - negative_balance
         logging.debug(f"balance {balance} = positive_balance {positive_balance} - negative_balance {negative_balance}")
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
@@ -225,7 +225,7 @@ def get_wallet_from_onchain_trade_info(
                     f"events {balance=} and {on_chain_balance=} disagree by "
                     f"more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address}"
                 )
-        log_and_show(f" => calculated balance = on_chain = {fmt(balance)}")
+            log_and_show(f" => calculated balance = on_chain = {fmt(balance)}")
         # check if there's an outstanding balance
         if balance != 0 or on_chain_balance != 0:
             if asset_type == "SHORT":
@@ -649,8 +649,8 @@ def ape_trade(
     if trade_type in {"CLOSE_LONG", "CLOSE_SHORT"}:  # get the specific asset we're closing
         assert maturity_time is not None, "Maturity time must be provided to close a long or short trade"
         trade_asset_id = hyperdrive_assets.encode_asset_id(info[trade_type].prefix, maturity_time)
-        amount = np.clip(amount, 0, hyperdrive_contract.balanceOf(trade_asset_id, agent))
         assert amount != 0, "trade amount is zero, this is not allowed"
+        amount = max(elfpy.WEI,min(amount, hyperdrive_contract.balanceOf(trade_asset_id, agent)))
     # specify one big dict that holds the parameters for all six methods
     params = {
         "_asUnderlying": True,  # mockHyperdriveTestNet does not support as_underlying=False
