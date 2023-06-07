@@ -210,9 +210,10 @@ def set_up_experiment(experiment_config: Config, args: dict) -> tuple[BasePricin
         addresses = get_devnet_addresses(experiment_config, args, addresses)
     return pricing_model, crash_file, network_choice, provider_settings, addresses
 
+
 def get_devnet_addresses(
-        experiment_config: Config, args: dict, addresses: dict[str, str]
-    ) -> tuple[dict[str, str], str]:
+    experiment_config: Config, args: dict, addresses: dict[str, str]
+) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
     deployed_addresses = {}
     # get deployed addresses from local file, if it exists
@@ -461,11 +462,11 @@ def do_trade(
     agent_contract = sim_agents[f"agent_{trade.wallet.address}"].contract
     amount = trade.trade_amount.scaled_value  # ape works with ints
 
-    #print(f"scaling down from {type(amount)}{amount=}", end="")
+    # print(f"scaling down from {type(amount)}{amount=}", end="")
     ## amount = int(np.floor(amount/1e18) * 1e18)
     ## amount -= int(1e18)
-    #amount = int(amount / 2)
-    #print(f" to {type(amount)}{amount=}")
+    # amount = int(amount / 2)
+    # print(f" to {type(amount)}{amount=}")
 
     # If agent does not have enough base approved for this trade, then approve another 50k
     # allowance(address owner, address spender) → uint256
@@ -868,7 +869,7 @@ def main():
     no_crash_streak = 0
     last_executed_block = 0
     output_utils.setup_logging(
-            log_filename=experiment_config.log_filename, log_level=experiment_config.log_level, max_bytes=args["max_bytes"]
+        log_filename=experiment_config.log_filename, log_level=experiment_config.log_level, max_bytes=args["max_bytes"]
     )
     provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
         experiment_config, args, provider_settings, addresses, network_choice, pricing_model
