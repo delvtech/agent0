@@ -51,6 +51,7 @@ class HyperdriveProject(ProjectManager):
         """Initialize the project, loading the Hyperdrive contract."""
         if path.name == "examples":  # if in examples folder, move up a level
             path = path.parent
+        print(f"loading project with path {path}")
         if hyperdrive_address is not None:
             self.hyperdrive_address = hyperdrive_address
         super().__init__(path)
