@@ -223,7 +223,7 @@ def get_wallet_from_onchain_trade_info(
 
         on_chain_balance = 0
         # verify our calculation against the onchain balance
-        if add_to_existing_wallet is None:  # sourcery skip: merge-nested-ifs
+        if add_to_existing_wallet is None:
             on_chain_balance = hyperdrive_contract.balanceOf(position_id, address)
             # only do balance checks if not marignal update
             if abs(balance - on_chain_balance) > elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI:
