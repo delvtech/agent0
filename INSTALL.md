@@ -37,6 +37,8 @@ If you intend to improve the documentation, then you must also install the packa
 
 ## Apeworks and Contract Integration
 
+If you wish to run a local blockchain instance without Docker, follow these instructions.
+
 NOTE: The Hyperdrive solidity implementation is currently under security review, and thus is not available publicly.
 The following instructions will not work for anyone who is not a member of Delv.
 
