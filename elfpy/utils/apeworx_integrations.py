@@ -173,6 +173,8 @@ def get_wallet_from_onchain_trade_info(
     index: int = 0,
     add_to_existing_wallet: Wallet | None = None,
 ) -> Wallet:
+    # pylint: disable=too-many-arguments, too-many-branches
+
     r"""Construct wallet balances from on-chain trade info.
 
     Arguments
@@ -211,7 +213,9 @@ def get_wallet_from_onchain_trade_info(
         positive_balance = int(info.trades.loc[(trades_in_position) & (info.trades["to"] == address), "value"].sum())
         negative_balance = int(info.trades.loc[(trades_in_position) & (info.trades["from"] == address), "value"].sum())
         balance = positive_balance - negative_balance
-        logging.debug(f"balance {balance} = positive_balance {positive_balance} - negative_balance {negative_balance}")
+        logging.debug(
+            "balance %s = positive_balance %s - negative_balance %s", balance, positive_balance, negative_balance
+        )
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = AssetIdPrefix(asset_prefix).name
         mint_time = maturity - elfpy.SECONDS_IN_YEAR
