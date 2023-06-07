@@ -1,7 +1,6 @@
 astunparse
 black
-# make cached keys warning use logging: https://github.com/ApeWorX/ape/pull/1462
-eth-ape @ git+https://github.com/wakamex/ape@v0.6.10.420
+eth-ape==0.6.10
 ipython
 jupytext
 matplotlib

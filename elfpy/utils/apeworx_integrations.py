@@ -827,7 +827,7 @@ def create_trade(
     hyperdrive_contract: ContractInstance,
     agent: AccountAPI,
     amount: int,
-    maturity_time: int | None = None
+    maturity_time: int | None = None,
 ) -> tuple[ContractTransaction, tuple, MethodABI]:
     r"""Creates a trade on the Hyperdrive contract.
 
