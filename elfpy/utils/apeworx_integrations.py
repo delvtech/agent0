@@ -398,6 +398,7 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
     logging.debug("hyperdrive_pool_state=%s", hyper_dict)
     return PoolState(**hyper_dict)
 
+
 def _snake_to_camel(_snake):
     """Convert snake_case to camelCase."""
     return "".join(word.capitalize() for word in _snake.split("_"))
