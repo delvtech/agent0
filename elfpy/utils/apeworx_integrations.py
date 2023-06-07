@@ -97,6 +97,23 @@ def get_hyperdrive_config(hyperdrive_instance) -> dict:
     hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
     return hyperdrive_config
 
+@dataclass
+class DefaultHyperdriveConfig:
+    """Configuration variables to setup hyperdrive fixtures."""
+
+    # pylint: disable=too-many-instance-attributes
+
+    initial_apr: FixedPoint = FixedPoint("0.05")
+    share_price: FixedPoint = FixedPoint(1)
+    checkpoint_duration_seconds: int = 86400
+    checkpoints: int = 182
+    time_stretch: int = 22186877016851913475
+    curve_fee: FixedPoint = FixedPoint(0)
+    flat_fee: FixedPoint = FixedPoint(0)
+    gov_fee: FixedPoint = FixedPoint(0)
+    position_duration_seconds: int = checkpoint_duration_seconds * checkpoints
+    target_liquidity = FixedPoint(1 * 10**6)
+
 def deploy_hyperdrive(
     experiment_config: Config,
     base_instance: ContractInstance,
@@ -131,8 +148,25 @@ def deploy_hyperdrive(
         initial_supply.scaled_value,
         sender=deployer_account,  # minted amount goes to sender
     )
+    hyperdrive_config = DefaultHyperdriveConfig()
+    hyperdrive_data_provider_contract = deployer_account.deploy(
+        project.MockHyperdriveDataProviderTestnet,  # type: ignore
+        base_instance,
+        hyperdrive_config.initial_apr.scaled_value,
+        hyperdrive_config.share_price.scaled_value,
+        hyperdrive_config.position_duration_seconds,
+        hyperdrive_config.checkpoint_duration_seconds,
+        hyperdrive_config.time_stretch,
+        (
+            hyperdrive_config.curve_fee.scaled_value,
+            hyperdrive_config.flat_fee.scaled_value,
+            hyperdrive_config.gov_fee.scaled_value,
+        ),
+        deployer_account.address,
+    )
     hyperdrive: ContractInstance = deployer_account.deploy(
         project.get_contract("MockHyperdriveTestnet"),
+        hyperdrive_data_provider_contract.address,
         base_instance,
         initial_apr.scaled_value,
         FixedPoint(experiment_config.init_share_price).scaled_value,
