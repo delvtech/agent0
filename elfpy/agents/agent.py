@@ -211,9 +211,6 @@ class Agent:
 
     def __str__(self) -> str:
         # cls arg tells json how to handle numpy objects and nested dataclasses
-        dict_to_encode = {
-            str(key): str(value)
-            for key, value in self.__dict__.items()
-        }
+        dict_to_encode = {str(key): str(value) for key, value in self.__dict__.items()}
         return json.dumps(dict_to_encode, sort_keys=True, indent=2, cls=output_utils.CustomEncoder)
 

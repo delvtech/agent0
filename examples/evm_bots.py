@@ -51,7 +51,6 @@ from elfpy.utils.outputs import number_to_string as fmt
 import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 
 
-
 def get_env_args() -> dict:
     """Define & parse arguments from stdin.
 
@@ -71,7 +70,7 @@ def get_env_args() -> dict:
 
     args = {
         # Env passed in is a string "true"
-        "devnet" : (os.environ.get("BOT_DEVNET", "true") == "true"),
+        "devnet": (os.environ.get("BOT_DEVNET", "true") == "true"),
         "rpc_url": os.environ.get("BOT_RPC_URL", "http://ethereum:8545"),
         "log_filename": os.environ.get("BOT_LOG_FILENAME", "testnet_bots"),
         "log_level": os.environ.get("BOT_LOG_LEVEL", "INFO"),
@@ -82,9 +81,10 @@ def get_env_args() -> dict:
         "trade_chance": float(os.environ.get("BOT_TRADE_CHANCE", 0.1)),
         # Env passed in is a string "true"
         "alchemy": (os.environ.get("BOT_ALCHEMY", "false") == "true"),
-        "artifacts_url": os.environ.get("BOT_ARTIFACTS_URL", "http://artifacts:80")
+        "artifacts_url": os.environ.get("BOT_ARTIFACTS_URL", "http://artifacts:80"),
     }
     return args
+
 
 @dataclass
 class BotInfo:
@@ -123,6 +123,7 @@ class BotInfo:
         return f"{self.name} " + ",".join(
             [f"{key}={value}" if value else "" for key, value in self.__dict__.items() if key not in ["name", "policy"]]
         )
+
 
 def get_config(args: dict) -> Config:
     """Instantiate a config object with elf-simulation parameters.
@@ -169,9 +170,7 @@ def get_config(args: dict) -> Config:
     return config
 
 
-def set_up_experiment(
-    experiment_config: Config, args: dict
-) -> tuple[BasePricingModel, str, str, dict[str, str], dict]:
+def set_up_experiment(experiment_config: Config, args: dict) -> tuple[BasePricingModel, str, str, dict[str, str], dict]:
     """Declare and assign experiment variables.
 
     Parameters
@@ -208,10 +207,12 @@ def set_up_experiment(
 
     # dynamically load devnet addresses from address file
     if args["devnet"]:
-        addresses= get_devnet_addresses(experiment_config, args, addresses)
+        addresses = get_devnet_addresses(experiment_config, args, addresses)
     return pricing_model, crash_file, network_choice, provider_settings, addresses
 
-def get_devnet_addresses(experiment_config: Config, args: dict, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
+def get_devnet_addresses(
+        experiment_config: Config, args: dict, addresses: dict[str, str]
+    ) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
     deployed_addresses = {}
     # get deployed addresses from local file, if it exists
@@ -221,7 +222,7 @@ def get_devnet_addresses(experiment_config: Config, args: dict, addresses: dict[
             deployed_addresses = json.load(file)
     else:  # otherwise get deployed addresses from artifacts server
         for _ in trange(100, desc="artifacts.."):
-            response = requests.get(args["artifacts_url"]+"/addresses.json", timeout=1)
+            response = requests.get(args["artifacts_url"] + "/addresses.json", timeout=1)
             if response.status_code == 200:
                 deployed_addresses = response.json()
                 break
@@ -238,6 +239,7 @@ def get_devnet_addresses(experiment_config: Config, args: dict, addresses: dict[
     else:
         addresses["hyperdrive"] = None
     return addresses
+
 
 def get_accounts(experiment_config: Config) -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
@@ -309,7 +311,7 @@ def create_agent(
                     bot.budget.max,
                 )
             )
-        )
+        ),
     }
     params["rng"] = experiment_config.rng
     if bot.risk_threshold and bot.name != "random":  # random agent doesn't use risk threshold
@@ -459,11 +461,11 @@ def do_trade(
     agent_contract = sim_agents[f"agent_{trade.wallet.address}"].contract
     amount = trade.trade_amount.scaled_value  # ape works with ints
 
-    print(f"scaling down from {type(amount)}{amount=}", end="")
-    # amount = int(np.floor(amount/1e18) * 1e18)
-    # amount -= int(1e18)
-    amount = int(amount/2)
-    print(f" to {type(amount)}{amount=}")
+    #print(f"scaling down from {type(amount)}{amount=}", end="")
+    ## amount = int(np.floor(amount/1e18) * 1e18)
+    ## amount -= int(1e18)
+    #amount = int(amount / 2)
+    #print(f" to {type(amount)}{amount=}")
 
     # If agent does not have enough base approved for this trade, then approve another 50k
     # allowance(address owner, address spender) → uint256
@@ -540,9 +542,7 @@ def log_and_show_block_info(
     )
 
 
-def get_simulator(
-    experiment_config: Config, pricing_model: BasePricingModel
-) -> Simulator:
+def get_simulator(experiment_config: Config, pricing_model: BasePricingModel) -> Simulator:
     """Instantiate and return an initialized elfpy Simulator object."""
     market, _, _ = sim_utils.get_initialized_hyperdrive_market(
         pricing_model=pricing_model, block_time=time.BlockTime(), config=experiment_config
@@ -839,14 +839,14 @@ def create_elfpy_market(
         ),
     )
 
+
 def dump_agent_info(sim_agents, experiment_config):
     """Dump bot info to bots.json."""
     # save bot info to bots.json
-    variables_to_save_to_bots_json = ["project_dir","louie","frida","random","bot_names"]
+    variables_to_save_to_bots_json = ["project_dir", "louie", "frida", "random", "bot_names"]
     # build json
     json_dict = {
-        key: str(value)
-        for key, value in experiment_config.scratch.items() if key in variables_to_save_to_bots_json
+        key: str(value) for key, value in experiment_config.scratch.items() if key in variables_to_save_to_bots_json
     }
     for agent_name, agent in sim_agents.items():
         json_dict[agent_name] = str(agent)
@@ -855,22 +855,21 @@ def dump_agent_info(sim_agents, experiment_config):
         os.makedirs(f"{experiment_config.scratch['project_dir']}/artifacts")
     # write to file
     with open(f"{experiment_config.scratch['project_dir']}/artifacts/bots.json", "w", encoding="utf-8") as file:
-        json.dump(json_dict,file, indent=4)
+        json.dump(json_dict, file, indent=4)
 
 
 def main():
     """Run the simulation."""
     # pylint: disable=too-many-locals
-    #args = get_argparser().parse_args()
     args = get_env_args()
 
     experiment_config = get_config(args)
-    pricing_model, crash_file, network_choice, provider_settings, addresses = set_up_experiment(
-        experiment_config, args
-    )
+    pricing_model, crash_file, network_choice, provider_settings, addresses = set_up_experiment(experiment_config, args)
     no_crash_streak = 0
     last_executed_block = 0
-    output_utils.setup_logging(log_filename=experiment_config.log_filename, log_level=experiment_config.log_level, max_bytes=args["max_bytes"])
+    output_utils.setup_logging(
+            log_filename=experiment_config.log_filename, log_level=experiment_config.log_level, max_bytes=args["max_bytes"]
+    )
     provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
         experiment_config, args, provider_settings, addresses, network_choice, pricing_model
     )

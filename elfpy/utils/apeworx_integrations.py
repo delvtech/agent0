@@ -171,7 +171,7 @@ def get_wallet_from_onchain_trade_info(
     hyperdrive_contract: ContractInstance,
     base_contract: ContractInstance,
     index: int = 0,
-    add_to_existing_wallet: Wallet | None = None
+    add_to_existing_wallet: Wallet | None = None,
 ) -> Wallet:
     r"""Construct wallet balances from on-chain trade info.
 
@@ -197,7 +197,9 @@ def get_wallet_from_onchain_trade_info(
     if add_to_existing_wallet is None:
         wallet = Wallet(
             address=index,
-            balance=types.Quantity(amount=FixedPoint(scaled_value=base_contract.balanceOf(address)), unit=types.TokenType.BASE),
+            balance=types.Quantity(
+                amount=FixedPoint(scaled_value=base_contract.balanceOf(address)), unit=types.TokenType.BASE
+            ),
         )
     else:
         wallet = add_to_existing_wallet
@@ -215,11 +217,11 @@ def get_wallet_from_onchain_trade_info(
         mint_time = maturity - elfpy.SECONDS_IN_YEAR
         log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
 
-        on_chain_balance=0
+        on_chain_balance = 0
         # verify our calculation against the onchain balance
-        if add_to_existing_wallet is None: # sourcery skip: merge-nested-ifs
+        if add_to_existing_wallet is None:  # sourcery skip: merge-nested-ifs
             on_chain_balance = hyperdrive_contract.balanceOf(position_id, address)
-            # only do balance checks if not marignal update 
+            # only do balance checks if not marignal update
             if abs(balance - on_chain_balance) > elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI:
                 raise ValueError(
                     f"events {balance=} and {on_chain_balance=} disagree by "
@@ -259,9 +261,10 @@ def get_wallet_from_onchain_trade_info(
                     )
                     logging.debug(
                         "storing in wallet as %s",
-                        {mint_time: Short(
-                            balance=new_balance, 
-                            open_share_price=FixedPoint(scaled_value=open_share_price))
+                        {
+                            mint_time: Short(
+                                balance=new_balance, open_share_price=FixedPoint(scaled_value=open_share_price)
+                            )
                         },
                     )
             elif asset_type == "LONG":
@@ -393,9 +396,11 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
     logging.debug("hyperdrive_pool_state=%s", hyper_dict)
     return PoolState(**hyper_dict)
 
+
 @dataclass
 class PoolState:
     """A dataclass to hold the state of the pool at a given block."""
+
     # pylint: disable=invalid-name, too-many-instance-attributes
     shareReserves: int
     bondReserves: int
@@ -650,7 +655,7 @@ def ape_trade(
         assert maturity_time is not None, "Maturity time must be provided to close a long or short trade"
         trade_asset_id = hyperdrive_assets.encode_asset_id(info[trade_type].prefix, maturity_time)
         assert amount != 0, "trade amount is zero, this is not allowed"
-        amount = max(elfpy.WEI,min(amount, hyperdrive_contract.balanceOf(trade_asset_id, agent)))
+        amount = max(elfpy.WEI, min(amount, hyperdrive_contract.balanceOf(trade_asset_id, agent)))
     # specify one big dict that holds the parameters for all six methods
     params = {
         "_asUnderlying": True,  # mockHyperdriveTestNet does not support as_underlying=False
