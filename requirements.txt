@@ -1,6 +1,7 @@
 astunparse
 black
-eth-ape==0.6.10
+# commit after "make cached keys warning use logging"
+eth-ape @ git+https://github.com/wakamex/ape@236cc5257763c97439065fd8837082922967008b
 ipython
 jupytext
 matplotlib
