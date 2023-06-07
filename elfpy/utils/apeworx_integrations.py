@@ -400,6 +400,15 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
     logging.debug("hyperdrive_pool_state=%s", hyper_dict)
     return PoolState(**hyper_dict)
 
+def _snake_to_camel(_snake):
+    """Convert snake_case to camelCase."""
+    return "".join(word.capitalize() for word in _snake.split("_"))
+
+
+def _camel_to_snake(_camel):
+    """Convert camelCase to snake_case."""
+    return _camel.lower().replace(" ", "_")
+
 
 @dataclass
 class PoolState:
@@ -424,12 +433,10 @@ class PoolState:
 
     def __getattribute__(self, __snake: str) -> Any:
         """Convert from snake_case to camelCase for the dataclass."""
-        camel = "".join(word.capitalize() for word in __snake.split("_"))
-        return super().__getattribute__(camel)
+        return super().__getattribute__(_snake_to_camel(__snake))
 
     def __setattr__(self, __snake: str, __value: Any) -> None:
-        camel = "".join(word.capitalize() for word in __snake.split("_"))
-        super().__setattr__(camel, __value)
+        super().__setattr__(_snake_to_camel(__snake), __value)
 
 
 PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
