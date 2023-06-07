@@ -776,7 +776,7 @@ def do_policy(
     for trade_object in trades:
         try:
             logging.debug(trade_object)
-            pool_state = do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
+            do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
             # marginal update to wallet
             agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
                 address=agent.contract.address,
@@ -874,7 +874,7 @@ def main():
     provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
         experiment_config, args, provider_settings, addresses, network_choice, pricing_model
     )
-    sim_agents, on_chain_trade_info = set_up_agents(
+    sim_agents, _ = set_up_agents(
         experiment_config, args, provider, hyperdrive_instance, base_instance, addresses, deployer_account
     )
     dump_agent_info(sim_agents, experiment_config)
