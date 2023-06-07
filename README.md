@@ -1,4 +1,4 @@
-[![](https://codecov.io/gh/element-fi/elf-simulations/branch/main/graph/badge.svg?token=1S60MD42ZP)](https://app.codecov.io/gh/element-fi/elf-simulations?displayType=list)
+[![](https://codecov.io/gh/delvtech/elf-simulations/branch/main/graph/badge.svg?token=1S60MD42ZP)](https://app.codecov.io/gh/delvtech/elf-simulations?displayType=list)
 [![](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![](https://img.shields.io/badge/testing-pytest-blue.svg)](https://docs.pytest.org/en/latest/contents.html)
 <br><a href="https://app.codecov.io/gh/delvtech/elf-simulations?displayType=list"><img height="50px" src="https://codecov.io/gh/delvtech/elf-simulations/branch/main/graphs/sunburst.svg?token=1S60MD42ZP"><a>
@@ -11,7 +11,11 @@ Documentation can be found [here](https://elfpy.delv.tech).
 
 ## Install
 
-Please refer to [INSTALL.md](https://github.com/element-fi/elf-simulations/blob/main/INSTALL.md).
+Please refer to [INSTALL.md](https://github.com/delvtech/elf-simulations/blob/main/INSTALL.md).
+
+## Deployment
+
+Please refer to [BUILD.md](https://github.com/delvtech/elf-simulations/blob/main/BUILD.md).
 
 ## Testing
 
@@ -35,7 +39,7 @@ Python files in the `examples/` folder should be executable from the repository 
 
 ## Contributions
 
-Please refer to [CONTRIBUTING.md](https://github.com/element-fi/elf-simulations/blob/main/CONTRIBUTING.md).
+Please refer to [CONTRIBUTING.md](https://github.com/delvtech/elf-simulations/blob/main/CONTRIBUTING.md).
 
 ## Number format
 
