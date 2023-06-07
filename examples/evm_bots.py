@@ -40,7 +40,7 @@ from elfpy import time, types
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
 from elfpy.agents.policies import LongLouie, RandomAgent, ShortSally
-from elfpy.markets.base import BasePricingModel
+from elfpy.markets.base import BasePricingModel, BaseMarket
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 from elfpy.simulators import Simulator
