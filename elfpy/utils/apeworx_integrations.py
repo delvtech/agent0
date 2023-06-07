@@ -17,7 +17,7 @@ from ape.exceptions import TransactionError, TransactionNotFoundError
 from ape.managers.project import ProjectManager
 from ape.types import AddressType, ContractType
 
-import elfpy
+from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI
 from elfpy import types
 from elfpy.markets.hyperdrive import hyperdrive_assets, AssetIdPrefix, HyperdriveMarketState
 from elfpy.math import FixedPoint
@@ -216,7 +216,7 @@ def get_wallet_from_onchain_trade_info(
         )
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = AssetIdPrefix(asset_prefix).name
-        mint_time = maturity - elfpy.SECONDS_IN_YEAR
+        mint_time = maturity - SECONDS_IN_YEAR
         log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
 
         on_chain_balance = 0
@@ -224,10 +224,10 @@ def get_wallet_from_onchain_trade_info(
         if add_to_existing_wallet is None:
             on_chain_balance = hyperdrive_contract.balanceOf(position_id, address)
             # only do balance checks if not marignal update
-            if abs(balance - on_chain_balance) > elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI:
+            if abs(balance - on_chain_balance) > MAXIMUM_BALANCE_MISMATCH_IN_WEI:
                 raise ValueError(
                     f"events {balance=} and {on_chain_balance=} disagree by "
-                    f"more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address}"
+                    f"more than {MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address}"
                 )
             log_and_show(f" => calculated balance = on_chain = {fmt(balance)}")
         # check if there's an outstanding balance
@@ -244,7 +244,7 @@ def get_wallet_from_onchain_trade_info(
                     )
                 open_share_price = int(sum_product_of_open_share_price_and_value / sum_value)
                 assert (
-                    abs(balance - sum_value) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
+                    abs(balance - sum_value) <= MAXIMUM_BALANCE_MISMATCH_IN_WEI
                 ), "weighted average open share price calculation is wrong"
                 logging.debug("calculated weighted average open share price of %s", open_share_price)
                 previous_balance = wallet.shorts[mint_time].balance if mint_time in wallet.shorts else 0
@@ -451,9 +451,9 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
     dai_events = [e.dict() for e in tx_receipt.events if agent in [e.get("src"), e.get("dst")]]
     dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
     _, maturity_timestamp = hyperdrive_assets.decode_asset_id(int(trade["id"]))
-    mint_time = (
-        (maturity_timestamp - int(elfpy.SECONDS_IN_YEAR) * pool_info.term_length) - pool_info.start_time
-    ) / int(elfpy.SECONDS_IN_YEAR)
+    mint_time = ((maturity_timestamp - int(SECONDS_IN_YEAR) * pool_info.term_length) - pool_info.start_time) / int(
+        SECONDS_IN_YEAR
+    )
     if trade_type == "addLiquidity":  # sourcery skip: lift-return-into-if, switch
         agent_deltas = Wallet(
             address=addresses.index(agent),
@@ -665,7 +665,7 @@ def ape_trade(
         assert maturity_time is not None, "Maturity time must be provided to close a long or short trade"
         trade_asset_id = hyperdrive_assets.encode_asset_id(info[trade_type].prefix, maturity_time)
         assert amount != 0, "trade amount is zero, this is not allowed"
-        amount = max(elfpy.WEI, min(amount, hyperdrive_contract.balanceOf(trade_asset_id, agent)))
+        amount = max(WEI, min(amount, hyperdrive_contract.balanceOf(trade_asset_id, agent)))
     # specify one big dict that holds the parameters for all six methods
     params = {
         "_asUnderlying": True,  # mockHyperdriveTestNet does not support as_underlying=False
