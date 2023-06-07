@@ -4,6 +4,7 @@ from ethpm_types.abi import MethodABI
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy
 
+
 def trade_details_to_abi(trade_details, hyperdrive_instance, account) -> tuple[ContractTransaction, tuple, MethodABI]:
     """Convert trade_details to abi call."""
     # build params kwargs to pass to ape_trade
@@ -11,7 +12,7 @@ def trade_details_to_abi(trade_details, hyperdrive_instance, account) -> tuple[C
         "trade_type": trade_details.action_type.name,
         "hyperdrive_contract": hyperdrive_instance,
         "agent": account,
-        "amount": trade_details.trade_amount.scaled_value  # ape works with ints
+        "amount": trade_details.trade_amount.scaled_value,  # ape works with ints
     }
     if trade_details.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
         params["maturity_time"] = int(trade_details.mint_time + elfpy.SECONDS_IN_YEAR)

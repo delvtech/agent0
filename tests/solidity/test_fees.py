@@ -412,4 +412,3 @@ def test_calc_fees_out_given_bonds_out_at_maturity(amount):
     test.assertAlmostEqual(gov_curve_fee, FixedPoint(0), delta=test.APPROX_EQ)
     test.assertAlmostEqual(flat_fee, FixedPoint("0.1") * test.trade_amount, delta=test.APPROX_EQ)
     test.assertAlmostEqual(gov_flat_fee, FixedPoint("0.05") * test.trade_amount, delta=test.APPROX_EQ)
-

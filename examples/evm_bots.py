@@ -31,18 +31,16 @@ import tqdm
 from tqdm import trange
 
 # elfpy core repo
-import elfpy
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
 
-from elfpy import DEFAULT_LOG_MAXBYTES, SECONDS_IN_YEAR, time, types
+from elfpy import DEFAULT_LOG_MAXBYTES, SECONDS_IN_YEAR, types
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
 from elfpy.agents.policies import LongLouie, RandomAgent, ShortSally
 from elfpy.markets.base import BasePricingModel, BaseMarket
-from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
+from elfpy.markets.hyperdrive import HyperdrivePricingModel
 from elfpy.math import FixedPoint
-from elfpy.simulators import Simulator
 from elfpy.simulators.config import Config
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
@@ -540,6 +538,7 @@ def log_and_show_block_info(
         base_fee,
     )
 
+
 def set_up_devnet(
     addresses, project, provider, experiment_config, pricing_model
 ) -> tuple[ContractInstance, ContractInstance, dict[str, str]]:
@@ -587,6 +586,7 @@ def set_up_devnet(
         )
         addresses["hyperdrive"] = hyperdrive_instance.address
     return base_instance, hyperdrive_instance, addresses, deployer_account
+
 
 def set_up_ape(
     experiment_config: Config,
@@ -694,6 +694,7 @@ def do_policy(
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file, reset=True)  # set and save to file
             raise exc
     return no_crash_streak
+
 
 def main():
     """Run the simulation."""

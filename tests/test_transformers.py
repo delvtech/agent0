@@ -1,7 +1,6 @@
 # %%
 """Utilities to transform from elf-simulations to Ape objects."""
 from __future__ import annotations
-from re import A
 import unittest
 from pathlib import Path
 from ape.api import ReceiptAPI
@@ -21,9 +20,10 @@ import elfpy.utils.transformers as trans_utils
 
 class TransformerTest(unittest.TestCase):
     """Test class for Transformers."""
+
     # pylint: disable=too-few-public-methods
     __test__ = False
-    
+
     def __init__(self):
         config = Config()
 
@@ -39,7 +39,9 @@ class TransformerTest(unittest.TestCase):
         config.target_fixed_apr = 0.01  # target fixed APR of the initial market after the LP
         config.target_liquidity = 500_000_000  # target total liquidity of the initial market, before any trades
 
-        config.log_level = output_utils.text_to_log_level("WARNING")  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
+        config.log_level = output_utils.text_to_log_level(
+            "WARNING"
+        )  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
         config.log_filename = "transformers"  # Output filename for logging
         config.freeze()
 
@@ -59,19 +61,24 @@ class TransformerTest(unittest.TestCase):
         self.test_account.balance += int(1e18)  # give test account 1 Eth
         self.base_instance = self.test_account.deploy(project.get_contract("ERC20Mintable"))
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        self.hyperdrive_instance = ape_utils.deploy_hyperdrive(config, self.base_instance, self.test_account, self.pricing_model, project)
+        self.hyperdrive_instance = ape_utils.deploy_hyperdrive(
+            config, self.base_instance, self.test_account, self.pricing_model, project
+        )
         # why is this so awkward? we packed "market" next to the Trade class in a tuple, instead of inside
         _, trade_obj = trades[0]
         self.trade_details = trade_obj.trade
         # mint 50k base
         self.base_instance.mint(self.test_account.address, int(50_000 * 1e18), sender=self.test_account)
         # approve 50k base, using attempt_txn cus this txn has to be signed
-        ape_utils.attempt_txn(self.test_account, self.base_instance.approve, self.hyperdrive_instance.address, int(50_000 * 1e18))
+        ape_utils.attempt_txn(
+            self.test_account, self.base_instance.approve, self.hyperdrive_instance.address, int(50_000 * 1e18)
+        )
         super().__init__()
+
 
 def test_trans_lib_abi_call():
     """TRASFORMERS ROLL OUT: TRADE_DETAILS => ABI_CALL (issue #397)."""
-    __test__=False  # pylint: disable=unused-variable
+    __test__ = False  # pylint: disable=unused-variable
     test = TransformerTest()
 
     # build params kwargs to pass to ape_trade
@@ -79,13 +86,13 @@ def test_trans_lib_abi_call():
         "trade_type": test.trade_details.action_type.name,
         "hyperdrive_contract": test.hyperdrive_instance,
         "agent": test.test_account,
-        "amount": test.trade_details.trade_amount.scaled_value  # ape works with ints
+        "amount": test.trade_details.trade_amount.scaled_value,  # ape works with ints
     }
     if test.trade_details.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
         params["maturity_time"] = int(test.trade_details.mint_time + elfpy.SECONDS_IN_YEAR)
     # execute the trade using key-word arguments
     _, txn_receipt_result = ape_utils.ape_trade(**params)
-    assert isinstance(txn_receipt_result,ReceiptAPI), "ape_trade did not return Receipt"
+    assert isinstance(txn_receipt_result, ReceiptAPI), "ape_trade did not return Receipt"
     txn_receipt: ReceiptAPI = txn_receipt_result
     assert txn_receipt.failed is not True, "txn was not successfull"
 
@@ -102,15 +109,17 @@ def test_trans_lib_abi_call():
     assert trans_lib_args == manual_args, "args are different"
     assert trans_lib_abi == manual_abi, "abi is different"
 
+
 def test_trans_lib_market_state() -> hyperdrive_market.HyperdriveMarketState:
     """TRASFORMERS ROLL OUT: getPoolInfo, getPoolConfig --> MarketState (issue #391)."""
-    __test__=False  # pylint: disable=unused-variable
+    __test__ = False  # pylint: disable=unused-variable
     test = TransformerTest()
     return ape_utils.get_market_state_from_contract(hyperdrive_contract=test.hyperdrive_instance)
 
+
 def test_trans_lib_wallet():
     """TRANSFORMERS ROLL OUT: tx_receipt --> Wallet (issue #392)."""
-    __test__=False  # pylint: disable=unused-variable
+    __test__ = False  # pylint: disable=unused-variable
     test = TransformerTest()
     return ape_utils.get_wallet_from_onchain_trade_info(
         address=test.test_account.address,
@@ -120,9 +129,10 @@ def test_trans_lib_wallet():
         base_contract=test.base_instance,
     )
 
+
 def test_trans_lib_elfpy_market():
     """TRANSFORMERS ROLL OUT: getPoolinfo --> market_deltas (issue #395)."""
-    __test__=False  # pylint: disable=unused-variable
+    __test__ = False  # pylint: disable=unused-variable
     test = TransformerTest()
     # TODO: replace with market_deltas instead of elfpy_market
     hyperdrive_config = ape_utils.get_hyperdrive_config(test.hyperdrive_instance)

@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from ape.types import ContractLog
     from ethpm_types.abi import MethodABI
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals, too-many-lines
 # pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 
 
@@ -64,6 +64,7 @@ class HyperdriveProject(ProjectManager):
         """Get the Hyperdrive contract instance."""
         return self.hyperdrive_container.at(self.conversion_manager.convert(self.hyperdrive_address, AddressType))
 
+
 def get_simulator(
     experiment_config: Config, pricing_model: elfpy.pricing_models.base.PricingModel
 ) -> simulators.Simulator:
@@ -72,6 +73,7 @@ def get_simulator(
         pricing_model=pricing_model, block_time=time.BlockTime(), config=experiment_config
     )
     return simulators.Simulator(experiment_config, market, time.BlockTime())
+
 
 def get_hyperdrive_config(hyperdrive_instance) -> dict:
     """Get the hyperdrive config from a deployed hyperdrive contract.
@@ -96,6 +98,7 @@ def get_hyperdrive_config(hyperdrive_instance) -> dict:
     hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
     return hyperdrive_config
 
+
 @dataclass
 class DefaultHyperdriveConfig:
     """Configuration variables to setup hyperdrive fixtures."""
@@ -112,6 +115,7 @@ class DefaultHyperdriveConfig:
     gov_fee: FixedPoint = FixedPoint(0)
     position_duration_seconds: int = checkpoint_duration_seconds * checkpoints
     target_liquidity = FixedPoint(1 * 10**6)
+
 
 def deploy_hyperdrive(
     experiment_config: Config,
@@ -191,9 +195,8 @@ def deploy_hyperdrive(
         )
     return hyperdrive
 
-def get_market_state_from_contract(
-    hyperdrive_contract: ContractInstance, **kwargs
-) -> HyperdriveMarketState:
+
+def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> HyperdriveMarketState:
     r"""Return the current market state from the smart contract.
 
     Arguments
@@ -415,6 +418,7 @@ def get_wallet_from_onchain_trade_info(
             elif asset_type == "LP":
                 wallet.lp_tokens += FixedPoint(scaled_value=balance)
     return wallet
+
 
 def create_elfpy_market(
     pricing_model: elfpy.pricing_models.base.PricingModel,
@@ -823,8 +827,7 @@ def create_trade(
     hyperdrive_contract: ContractInstance,
     agent: AccountAPI,
     amount: int,
-    maturity_time: int | None = None,
-    **kwargs: Any,
+    maturity_time: int | None = None
 ) -> tuple[ContractTransaction, tuple, MethodABI]:
     r"""Creates a trade on the Hyperdrive contract.
 
@@ -927,7 +930,6 @@ def ape_trade(
         agent=agent,
         amount=amount,
         maturity_time=maturity_time,
-        **kwargs,
     )
     try:  # attempt to execute the transaction, allowing for a specified number of retries (default is 1)
         if args:
