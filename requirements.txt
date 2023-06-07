@@ -1,7 +1,7 @@
 astunparse
 black
-# make cached keys warning use logging: https://github.com/ApeWorX/ape/pull/1462
-eth-ape @ git+https://github.com/wakamex/ape@v0.6.10.420
+# commit after "make cached keys warning use logging"
+eth-ape @ git+https://github.com/apeworx/ape@236cc5257763c97439065fd8837082922967008b
 ipython
 jupytext
 matplotlib
