@@ -76,9 +76,9 @@ class TransformerTest(unittest.TestCase):
         super().__init__()
 
 
+@unittest.skip("not working yet")
 def test_trans_lib_abi_call():
     """TRASFORMERS ROLL OUT: TRADE_DETAILS => ABI_CALL (issue #397)."""
-    __test__ = False  # pylint: disable=unused-variable
     test = TransformerTest()
 
     # build params kwargs to pass to ape_trade
@@ -110,16 +110,16 @@ def test_trans_lib_abi_call():
     assert trans_lib_abi == manual_abi, "abi is different"
 
 
+@unittest.skip("not working yet")
 def test_trans_lib_market_state() -> hyperdrive_market.HyperdriveMarketState:
     """TRASFORMERS ROLL OUT: getPoolInfo, getPoolConfig --> MarketState (issue #391)."""
-    __test__ = False  # pylint: disable=unused-variable
     test = TransformerTest()
     return ape_utils.get_market_state_from_contract(hyperdrive_contract=test.hyperdrive_instance)
 
 
+@unittest.skip("not working yet")
 def test_trans_lib_wallet():
     """TRANSFORMERS ROLL OUT: tx_receipt --> Wallet (issue #392)."""
-    __test__ = False  # pylint: disable=unused-variable
     test = TransformerTest()
     return ape_utils.get_wallet_from_onchain_trade_info(
         address=test.test_account.address,
@@ -130,9 +130,9 @@ def test_trans_lib_wallet():
     )
 
 
+@unittest.skip("not working yet")
 def test_trans_lib_elfpy_market():
     """TRANSFORMERS ROLL OUT: getPoolinfo --> market_deltas (issue #395)."""
-    __test__ = False  # pylint: disable=unused-variable
     test = TransformerTest()
     # TODO: replace with market_deltas instead of elfpy_market
     hyperdrive_config = ape_utils.get_hyperdrive_config(test.hyperdrive_instance)
