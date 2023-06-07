@@ -31,7 +31,7 @@ ethereum:
     required_confirmations: 1
 
 foundry:
-  port: 8545
+  # port 8555 for CI
   anvil:
     timestamp: 0
     block_base_fee_per_gas: 0
