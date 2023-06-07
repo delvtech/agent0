@@ -12,7 +12,6 @@ import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 
 
-
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class Config(types.FrozenClass):
