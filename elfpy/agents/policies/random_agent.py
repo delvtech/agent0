@@ -169,8 +169,6 @@ class RandomAgent(BasePolicy):
         # choose a random long time to close
         long_time: FixedPoint = list(wallet.longs)[self.rng.integers(len(wallet.longs))]
         trade_amount = wallet.longs[long_time].balance  # close the full trade
-        if trade_amount <= 0:
-            print("break")
         return [
             Trade(
                 market=MarketType.HYPERDRIVE,
