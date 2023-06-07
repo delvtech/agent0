@@ -785,7 +785,7 @@ def do_policy(
                 base_contract=base_instance,
                 add_to_existing_wallet=agent.wallet,
             )
-            print(f"{agent.wallet=}")
+            logging.debug("%s", agent.wallet)
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file)  # set and save to file
         except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
             log_and_show("Crashed unexpectedly: %s", exc)
