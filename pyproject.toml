@@ -40,7 +40,6 @@ line-length = "120"
 extend-exclude = "\\.ipynb"
 
 [tool.pyright]
-<<<<<<< Updated upstream
 exclude = [
     ".venv",
     ".vscode",
@@ -89,6 +88,3 @@ exclude = [
     "hyperdrive_solidity/.venv",
     "hyperdrive_solidity",
 ]
-=======
-exclude = ["hyperdrive_solidity"]
->>>>>>> Stashed changes
