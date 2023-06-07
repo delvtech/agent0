@@ -1,5 +1,6 @@
 """State object for setting experiment configuration"""
 from __future__ import annotations
+from typing import Any
 import json
 import logging
 from dataclasses import dataclass, field
@@ -90,7 +91,7 @@ class Config(types.FrozenClass):
     rng: NumpyGenerator = field(init=False, compare=False)
 
     # scratch space for any application-specific & extraneous parameters
-    scratch: dict = field(default_factory=dict)
+    scratch: dict[Any, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         r"""init_share_price & rng are a function of other random variables"""
@@ -123,12 +124,7 @@ class Config(types.FrozenClass):
 
     def copy(self) -> Config:
         """Returns a new copy of self"""
-        if hasattr(self, "__dataclass_fields__"):
-            # TODO: Not sure why lint is claiming that self has no "__dataclass_fields__" member
-            # when we're in the conditional
-            # pylint: disable=no-member
-            return Config(**{key: self[key] for key, value in self.__dataclass_fields__.items() if value.init})
-        raise AttributeError("Config was not instantiated & cannot be copied")
+        return Config(**{key: value for key, value in self.__dict__.items() if key not in ["rng"]})
 
     def check_variable_apr(self) -> None:
         r"""Verify that the variable_apr is the right length"""
