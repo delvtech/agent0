@@ -9,9 +9,9 @@ import requests
 import toml
 
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from web3.middleware.geth_poa import geth_poa_middleware
 from hexbytes import HexBytes
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
 
 # python `open` will infer the encoding if we do not specified, which is the behavior we want for now
 # pylint: disable=unspecified-encoding
