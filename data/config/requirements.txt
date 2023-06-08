@@ -3,5 +3,4 @@ toml
 hexbytes
 eth_abi
 requests
-time
 eth_utils
