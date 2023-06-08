@@ -7,6 +7,9 @@ from elfpy import DEFAULT_LOG_MAXBYTES
 
 
 class LogLevel(Enum):
+    """Logging Level Names.  These are the levels we've decided to use.  Values correspond to the
+    values found in the logging lib and can be access with logging.getLogLevel"""
+
     DEBUG = "DEBUG"
     INFO = "INFO"
     WARNING = "WARNING"
@@ -17,10 +20,14 @@ class LogLevel(Enum):
 # TODO: do we need this to be enviroment variables, why not add to the simulator Config?
 @dataclass
 class EnvironmentArguments:
+    """Environment arguments that can be set either locally or passed from docker.  This is a
+    temporary pattern until a better is made to pass arguments from docker compose scripts in the
+    infra repo to evm_bots."""
+
     # Env passed in is a string "true"
     halt_on_errors: bool = False
     devnet: bool = True
-    rpc_url: str = "http://ethereum:8545"
+    rpc_url: str = "http://localhost:8545"
     log_filename: str = "testnet_bots"
     log_level: LogLevel = LogLevel.INFO
     max_bytes: int = DEFAULT_LOG_MAXBYTES
@@ -58,7 +65,7 @@ def get_env_args() -> EnvironmentArguments:
         # Env passed in is a string "true"
         halt_on_errors=(os.environ.get("HALT_ON_ERRORS", "false") == "true"),
         devnet=(os.environ.get("BOT_DEVNET", "true") == "true"),
-        rpc_url=os.environ.get("BOT_RPC_URL", "http://ethereum:8545"),
+        rpc_url=os.environ.get("BOT_RPC_URL", "http://localhost:8545"),
         log_filename=os.environ.get("BOT_LOG_FILENAME", "testnet_bots"),
         log_level=log_level,
         max_bytes=int(os.environ.get("BOTS_MAX_BYTES", DEFAULT_LOG_MAXBYTES)),

@@ -8,7 +8,6 @@ import sys
 import unittest
 
 import elfpy.utils.outputs as output_utils
-from elfpy.bots.get_env_args import LogLevel
 from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils
 

@@ -13,8 +13,7 @@ from elfpy.bots.get_env_args import EnvironmentArguments
 from elfpy.simulators.config import Config
 
 
-# FIXME: define these args!  if we are going to accept command line args or environment variable
-# args, this would be a really good place to create something with attr.s so that we can do run time
+# TODO: this would be a really good place to create something with attr.s so that we can do run time
 # checking to make sure that nothing incorrect is passed in, so that we can avoid typo errors.
 def get_config(args: EnvironmentArguments) -> Config:
     """Instantiate a config object with elf-simulation parameters.

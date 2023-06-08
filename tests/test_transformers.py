@@ -1,21 +1,24 @@
 # %%
 """Utilities to transform from elf-simulations to Ape objects."""
 from __future__ import annotations
+
 import unittest
 from pathlib import Path
-from ape.api import ReceiptAPI
 
 import ape
+from ape.api import ReceiptAPI
+
 import elfpy
-from elfpy.agents.agent import Agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.utils.outputs as output_utils
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
+import elfpy.utils.apeworx_integrations as ape_utils
+import elfpy.utils.outputs as output_utils
+import elfpy.utils.transformers as trans_utils
+from elfpy.agents.agent import Agent
 from elfpy.agents.policies import RandomAgent
+from elfpy.bots.get_env_args import LogLevel
 from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils
-import elfpy.utils.apeworx_integrations as ape_utils
-import elfpy.utils.transformers as trans_utils
 
 
 class TransformerTest(unittest.TestCase):
@@ -40,7 +43,7 @@ class TransformerTest(unittest.TestCase):
         config.target_liquidity = 500_000_000  # target total liquidity of the initial market, before any trades
 
         config.log_level = output_utils.text_to_log_level(
-            "WARNING"
+            LogLevel.ERROR
         )  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
         config.log_filename = "transformers"  # Output filename for logging
         config.freeze()
