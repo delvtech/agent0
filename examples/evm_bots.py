@@ -37,7 +37,7 @@ from elfpy import SECONDS_IN_YEAR, types
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import LongLouie, RandomAgent, ShortSally
 from elfpy.agents.policies.base import BasePolicy
-from elfpy.bots.BotInfo import BotInfo
+from elfpy.bots.bot_info import BotInfo
 from elfpy.bots.get_env_args import get_env_args
 from elfpy.markets.base import BaseMarket, BasePricingModel
 from elfpy.markets.hyperdrive import HyperdrivePricingModel

@@ -1,3 +1,4 @@
+"""Information for creating a bot."""
 from __future__ import annotations
 
 from collections import namedtuple
