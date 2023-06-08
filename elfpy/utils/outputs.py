@@ -1,22 +1,24 @@
 """Helper functions for delivering simulation outputs"""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-import os
-import sys
 import json
 import logging
+import os
+import sys
 from logging.handlers import RotatingFileHandler
+from typing import TYPE_CHECKING
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import gridspec
 
 import elfpy
+from elfpy.bots.get_env_args import LogLevel
 from elfpy.math.fixed_point import FixedPoint
 
 if TYPE_CHECKING:
-    from typing import Optional, Any
+    from typing import Any, Optional
+
     import pandas as pd
     from matplotlib.figure import Figure
     from matplotlib.gridspec import GridSpec
@@ -442,7 +444,7 @@ def setup_logging(
             os.remove(os.path.join(log_dir, log_name))
         handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
 
-    logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
+    logging.getLogger().setLevel(log_level.value)  # events of this level and above will be tracked
     handler.setFormatter(logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME))
     logging.getLogger().handlers = [handler]  # overwrite handlers with the desired one
 
@@ -460,7 +462,7 @@ def close_logging(delete_logs=True):
             handler.close()
 
 
-def text_to_log_level(logging_text: str) -> int:
+def text_to_log_level(log_level: LogLevel) -> int:
     r"""Converts logging level description to an integer
 
     Arguments
@@ -473,20 +475,10 @@ def text_to_log_level(logging_text: str) -> int:
     int
         Logging level integer corresponding to the string input
     """
-    if logging_text.lower() == "notset":
-        level = logging.NOTSET
-    elif logging_text.lower() == "debug":
-        level = logging.DEBUG
-    elif logging_text.lower() == "info":
-        level = logging.INFO
-    elif logging_text.lower() == "warning":
-        level = logging.WARNING
-    elif logging_text.lower() == "error":
-        level = logging.ERROR
-    elif logging_text.lower() == "critical":
-        level = logging.CRITICAL
-    else:
-        raise ValueError(f'{logging_text=} must be in ["debug", "info", "warning", "error", "critical"]')
+
+    level: int = logging.getLevelName(log_level.value)
+    if not isinstance(level, int):
+        raise ValueError(f'{log_level=} must be in ["debug", "info", "warning", "error", "critical"]')
     return level
 
 

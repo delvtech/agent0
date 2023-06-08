@@ -1,18 +1,17 @@
 """Get environment arguments for bots"""
 import os
 from dataclasses import dataclass
-from enum import Enum, auto
-from typing import Literal
+from enum import Enum
 
 from elfpy import DEFAULT_LOG_MAXBYTES
 
 
 class LogLevel(Enum):
-    DEBUG = auto()
-    INFO = auto()
-    WARNING = auto()
-    ERROR = auto()
-    CRITICAL = auto()
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
 
 # TODO: do we need this to be enviroment variables, why not add to the simulator Config?
@@ -31,7 +30,7 @@ class EnvironmentArguments:
     trade_chance: float = 0.1
     # Env passed in is a string "true"
     alchemy: bool = False
-    artifacts_url: str = "http://artifacts:80"
+    artifacts_url: str = "http://localhost:80"
 
 
 def get_env_args() -> EnvironmentArguments:
@@ -69,7 +68,7 @@ def get_env_args() -> EnvironmentArguments:
         trade_chance=float(os.environ.get("BOT_TRADE_CHANCE", 0.1)),
         # Env passed in is a string "true"
         alchemy=(os.environ.get("BOT_ALCHEMY", "false") == "true"),
-        artifacts_url=os.environ.get("BOT_ARTIFACTS_URL", "http://artifacts:80"),
+        artifacts_url=os.environ.get("BOT_ARTIFACTS_URL", "http://localhost:80"),
     )
 
     return args
