@@ -1,8 +1,10 @@
+"""Get environment arguments for bots"""
 import os
 
 from elfpy import DEFAULT_LOG_MAXBYTES
 
 
+# FIXME: do we need this to be enviroment variables, why not add to the simulator Config?
 def get_env_args() -> dict:
     """Define & parse arguments from stdin.
     List of arguments:

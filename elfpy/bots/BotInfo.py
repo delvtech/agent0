@@ -7,6 +7,7 @@ from typing import Type
 from elfpy.agents.agent import Agent
 
 
+# FIXME: Do we need this or can get combine with the Agent class?  I submit that we can.
 @dataclass
 class BotInfo:
     """Information about a bot.
