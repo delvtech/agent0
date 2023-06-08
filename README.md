@@ -46,6 +46,10 @@ Please refer to [CONTRIBUTING.md](https://github.com/delvtech/elf-simulations/bl
 Internally Elfpy conducts all operations using 18-decimal fixed-point precision integers and arithmetic.
 Briefly, this means our representation for unity, "one", is `1 * 10 ** 18`.
 This can create confusion when additionally dealing with standard Python floats and ints.
-As such, we have purposefully constrained support for mixed-type operations that include the FixedPoint type (e.g. `int * FixedPoint` is not allowed).
+As such, we have purposefully constrained support for mixed-type operations that include the FixedPoint type.
+Due to a lack of known precision, operations against `float` are not allowed (e.g. `float * FixedPoint`).
+However, operations against `int` are allowed.
+In this case, the `int` argument is assumed to be "unscaled", i.e. if you write `int(8) * FixedPoint(8)` we will scale up the first variable to compute `8*10**18 * 8*10**18` and return a `FixedPoint` number.
+If you wish to force the internal representation, you can pass construct using the `scaled_value` argument, e.g. `FixedPoint(scaled_value=8) * FixedPoint(8)` could be thought of as approximately equivalent to using floats `8*10**-18 * 8.0`.
 This may change as we continue to develop our workflow.
-To understand more, we recommend that you study the fixed point tests and source implementation.
+To understand more, we recommend that you study the fixed point tests and source implementation in `elfpy/math/`.
