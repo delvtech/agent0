@@ -1,6 +1,7 @@
 """Implements abstract classes that control agent behavior"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
+import json
 import logging
 from typing import TYPE_CHECKING
 
@@ -9,6 +10,7 @@ from elfpy.wallet.wallet import Wallet
 from elfpy.math import FixedPoint
 from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Quantity, TokenType, Trade
+import elfpy.utils.outputs as output_utils
 
 if TYPE_CHECKING:
     from elfpy.markets.hyperdrive import HyperdriveMarket
@@ -38,6 +40,11 @@ class Agent:
         self.wallet: Wallet = Wallet(
             address=wallet_address, balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE)
         )
+
+    def __str__(self) -> str:
+        # cls arg tells json how to handle numpy objects and nested dataclasses
+        dict_to_encode = {str(key): str(value) for key, value in self.__dict__.items()}
+        return json.dumps(dict_to_encode, sort_keys=True, indent=2, cls=output_utils.CustomEncoder)
 
     def action(self, market: BaseMarket) -> list[Trade]:
         r"""Abstract method meant to be implemented by the specific policy

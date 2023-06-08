@@ -1,12 +1,14 @@
 ### Migrations Image ###
 # pinned to a specific image chosen from https://github.com/delvtech/hyperdrive/pkgs/container/hyperdrive%2Fmigrations
 # v0.0.1 (2022-05-23)
-FROM ghcr.io/delvtech/hyperdrive/migrations:0.0.1 as migrations
+# FROM ghcr.io/delvtech/hyperdrive/migrations:0.0.1 as migrations
+# 2022-05-31
+FROM ghcr.io/delvtech/hyperdrive/migrations:nightly-3188e7df62a07a77c61c467ab640aeec836c79fe as migrations
 
 # ### Python Image ###
 # pinned to a specific image chosen from https://github.com/delvtech/elf-simulations/pkgs/container/elf-simulations%2Fpython-base
-# 2022-05-23
-FROM ghcr.io/delvtech/elf-simulations/python-base:nightly-c82cc07d2c3a781d27c7fe57a2b0e57591856f2b
+# 2022-05-31 using ape v0.6.10.420
+FROM ghcr.io/delvtech/elf-simulations/python-base:nightly-28db487e38d1060e6a2864e1e994b0f2ee01fc21
 
 # set bash as default shell
 SHELL ["/bin/bash", "-c"]
@@ -25,4 +27,4 @@ COPY --from=migrations /usr/local/bin/ /usr/local/bin
 RUN ape compile
 
 # install elf-simulations
-RUN python -m pip install .
+RUN python -m pip install -e .

@@ -7,6 +7,8 @@ Set up your favorite python virtual environment. We use:
 - [pyenv](https://github.com/pyenv/pyenv#how-it-works) to manage python versions
 - [venv](https://docs.python.org/3/library/venv.html) standard library to manage virtual environments
 
+We also use [Docker](docs.docker.com/get-docker) for building images.
+
 # Install -- steps
 Clone the repo into a <repo_location> of your choice.
 Next, follow the installation instructions provided by [pyenv](https://github.com/pyenv/pyenv#installation).
@@ -33,49 +35,34 @@ If you intend to improve the documentation, then you must also install the packa
 * `python -m venv .venv` This will create a `.venv` folder in your repo directory that stores the local python build & packages. After this command you should be able to type which python and see that it points to an executable inside `.venv/`.
 * `python -m pip install -e .` This installs elfpy locally such that the install updates automatically any time you change the source code. 
 
-## Docker
-
-Using Docker is mostly untested, as the core team doesn't use it. However, the following steps should get you started.
-
-To install a docker development environment which may be more reliable to install project dependencies:
-
-```bash
-docker build -t elf-simulations-dev .
-```
-
-Then to create an isolated shell environment which observes file changes run:
-
-```bash
-docker run -it --name elf-simulations-dev --rm --volume $(pwd):/app/ --net=host elf-simulations-dev:latest bash
-```
+Finally, you can test that everything is working by calling:
+`PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest tests/`
 
 ## Apeworks and Contract Integration
+
+We run several tests and offer utilities that depend on executing Hyperdrive solidity contracts. This is not required to use elfpy.
 
 NOTE: The Hyperdrive solidity implementation is currently under security review, and thus is not available publicly.
 The following instructions will not work for anyone who is not a member of Delv.
 
-[Install Forge](https://github.com/foundry-rs/foundry#installatio://github.com/foundry-rs/foundry#installation)
+First, [install Forge](https://github.com/foundry-rs/foundry#installatio://github.com/foundry-rs/foundry#installation).
 
-You can optionally run
-
-```
-anvil
-```
-
-if you wish to execute ape against a local foundry backend. To use apeworx with elfpy, clone and sym link the hyperdrive repo, into `hyperdrive_solidity/`, i.e.:
+Next, to use apeworx with elfpy, clone and sym link the hyperdrive repo, into `hyperdrive_solidity/`, i.e.:
 
 ```bash
-git clone https://github.com/element-fi/hyperdrive.git ../hyperdrive
+git clone https://github.com/delvtech/hyperdrive.git ../hyperdrive
 ln -s ../hyperdrive hyperdrive_solidity
 ```
 
 then run:
 
 ```bash
-cp ape-config.yaml.example ape-config.yaml
-pip install eth-ape
 ape plugins install .
 ape compile
 ```
+
+You should now be able to test that everything is working with `pytest .`
+
+NOTE: These steps also set you up to run a local blockchain instance without Docker. To do so, you can run `ape compile -v DEBUG` to compile the hyperdrive repo without optimizations. You'll need to repreat this command any time you change a Hyperdrive solidity file. Then to start the service run `anvil --port [PREFERRED-PORT] --block-time [SECONDS-PER-BLOCK] --host 0.0.0.0`, where you fill in the commands you need. For example `8549` for the port and `12` for the seconds per block.
 
 NOTE: `pip` might complain about dependency incompatibility between eth-ape and some plugins. This discrepancy comes from apeworx, although our examples should run without dealing with the incompatibility.
