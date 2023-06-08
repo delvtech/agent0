@@ -7,18 +7,17 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import json
 import logging
 import os
-from collections import namedtuple
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from time import sleep
 from time import time as now
-from typing import Type, cast
-import requests
+from typing import cast
 
 # external lib
 import ape
 import numpy as np
+import requests
+import tqdm
 from ape import accounts
 from ape.api import ProviderAPI, ReceiptAPI
 from ape.contracts import ContractInstance
@@ -27,98 +26,25 @@ from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from dotenv import load_dotenv
 from eth_account import Account as EthAccount
-import tqdm
 from tqdm import trange
+
+import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 
 # elfpy core repo
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
-
-from elfpy import DEFAULT_LOG_MAXBYTES, SECONDS_IN_YEAR, types
+from elfpy import SECONDS_IN_YEAR, types
 from elfpy.agents.agent import Agent
-from elfpy.agents.policies.base import BasePolicy
 from elfpy.agents.policies import LongLouie, RandomAgent, ShortSally
-from elfpy.markets.base import BasePricingModel, BaseMarket
+from elfpy.agents.policies.base import BasePolicy
+from elfpy.bots.BotInfo import BotInfo
+from elfpy.bots.get_env_args import get_env_args
+from elfpy.markets.base import BaseMarket, BasePricingModel
 from elfpy.markets.hyperdrive import HyperdrivePricingModel
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
-import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
-
-
-def get_env_args() -> dict:
-    """Define & parse arguments from stdin.
-
-    List of arguments:
-        log_filename : Optional output filename for logging. Default is "testnet_bots".
-        log_level : Logging level, should be in ["DEBUG", "INFO", "WARNING"]. Default is "INFO".
-        max_bytes : Maximum log file output size, in bytes. Default is 1MB.
-        num_louie : Number of Long Louie agents to run. Default is 0.
-        num_frida : Number of Fixed Rate Frida agents to run. Default is 0.
-        num_random: Number of Random agents to run. Default is 0.
-        trade_chance : Chance for a bot to execute a trade. Default is 0.1.
-
-    Returns
-    -------
-    parser : dict
-    """
-
-    args = {
-        # Env passed in is a string "true"
-        "devnet": (os.environ.get("BOT_DEVNET", "true") == "true"),
-        "rpc_url": os.environ.get("BOT_RPC_URL", "http://ethereum:8545"),
-        "log_filename": os.environ.get("BOT_LOG_FILENAME", "testnet_bots"),
-        "log_level": os.environ.get("BOT_LOG_LEVEL", "INFO"),
-        "max_bytes": int(os.environ.get("BOTS_MAX_BYTES", DEFAULT_LOG_MAXBYTES)),
-        "num_louie": int(os.environ.get("BOT_NUM_LOUIE", 0)),
-        "num_frida": int(os.environ.get("BOT_NUM_FRIDA", 0)),
-        "num_random": int(os.environ.get("BOT_NUM_RANDOM", 4)),
-        "trade_chance": float(os.environ.get("BOT_TRADE_CHANCE", 0.1)),
-        # Env passed in is a string "true"
-        "alchemy": (os.environ.get("BOT_ALCHEMY", "false") == "true"),
-        "artifacts_url": os.environ.get("BOT_ARTIFACTS_URL", "http://artifacts:80"),
-    }
-    return args
-
-
-@dataclass
-class BotInfo:
-    """Information about a bot.
-
-    Attributes
-    ----------
-    policy : Type[Agent]
-        The agent's policy.
-    trade_chance : float
-        Percent chance that a agent gets to trade on a given block.
-    risk_threshold : float | None
-        The risk threshold for the agent.
-    budget : Budget[mean, std, min, max]
-        The budget for the agent.
-    risk : Risk[mean, std, min, max]
-        The risk for the agent.
-    index : int | None
-        The index of the agent in the list of ALL agents.
-    name : str
-        The name of the agent.
-    """
-
-    Budget = namedtuple("Budget", ["mean", "std", "min", "max"])
-    Risk = namedtuple("Risk", ["mean", "std", "min", "max"])
-    policy: Type[Agent]
-    trade_chance: float = 0.1
-    risk_threshold: float | None = None
-    budget: Budget = Budget(mean=5_000, std=2_000, min=1_000, max=10_000)
-    risk: Risk = Risk(mean=0.02, std=0.01, min=0.0, max=0.06)
-    index: int | None = None
-    name: str = "botty mcbotface"
-
-    def __repr__(self) -> str:
-        """Return a string representation of the object."""
-        return f"{self.name} " + ",".join(
-            [f"{key}={value}" if value else "" for key, value in self.__dict__.items() if key not in ["name", "policy"]]
-        )
 
 
 def get_config(args: dict) -> Config:
