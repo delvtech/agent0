@@ -8,7 +8,7 @@ from typing import Type
 from elfpy.agents.policies.base import BasePolicy
 
 
-# FIXME: Do we need this or can get combine with the Agent class?  I submit that we can.
+# TODO: Do we need this or can get combine with the Agent class?  I submit that we can.
 @dataclass
 class BotInfo:
     """Information about a bot.

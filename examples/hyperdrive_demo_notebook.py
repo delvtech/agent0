@@ -17,7 +17,10 @@
 # %%
 """simulation for the Hyperdrive market"""
 from __future__ import annotations
+
 from matplotlib.axes import Axes
+
+from elfpy.bots.get_env_args import LogLevel
 
 # pylint: disable=line-too-long
 # pylint: disable=too-many-lines
@@ -51,16 +54,16 @@ try:  # install repo only if running on google colab
 except:  # pylint: disable=bare-except
     print("running locally & trusting that you have the dependencies installed")
 
+import matplotlib.pyplot as plt
+
 # %%
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 from numpy.random._generator import Generator as NumpyGenerator
 
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
-
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import RandomAgent
 from elfpy.math import FixedPoint
@@ -68,7 +71,6 @@ from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils
 from elfpy.utils.outputs import get_gridspec_subplots
 from elfpy.wallet.wallet import Wallet
-
 
 # %% [markdown]
 # ### Setup experiment parameters
@@ -94,7 +96,9 @@ trade_chance = 2 / (
 config.target_fixed_apr = 0.01  # target fixed APR of the initial market after the LP
 config.target_liquidity = 500_000_000  # target total liquidity of the initial market, before any trades
 
-config.log_level = output_utils.text_to_log_level("WARNING")  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
+config.log_level = output_utils.text_to_log_level(
+    LogLevel.WARNING
+)  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
 config.log_filename = "hyperdrive"  # Output filename for logging
 
 # %% [markdown]

@@ -24,6 +24,9 @@ class EnvironmentArguments:
     temporary pattern until a better is made to pass arguments from docker compose scripts in the
     infra repo to evm_bots."""
 
+    # this will go away soon anyway when we add to config
+    # pylint: disable=too-many-instance-attributes
+
     # Env passed in is a string "true"
     halt_on_errors: bool = False
     devnet: bool = True
