@@ -1,13 +1,17 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx."""
 from __future__ import annotations
+from dataclasses import dataclass
 
+import os
+import json
 import logging
 from collections import namedtuple
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Tuple
+from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 import pandas as pd
+import ape
 from ape import Contract
 from ape.api import BlockAPI, ProviderAPI, ReceiptAPI, TransactionAPI
 from ape.contracts import ContractContainer
@@ -15,13 +19,15 @@ from ape.contracts.base import ContractTransaction, ContractTransactionHandler
 from ape.exceptions import TransactionError, TransactionNotFoundError
 from ape.managers.project import ProjectManager
 from ape.types import AddressType, ContractType
+from ape_accounts.accounts import KeyfileAccount
 
 import elfpy
-import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
-
-from elfpy import types
-from elfpy.markets.hyperdrive import AssetIdPrefix, HyperdriveMarketState
+from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, simulators, time, types
+from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
+from elfpy.simulators.config import Config
+from elfpy.markets.hyperdrive import hyperdrive_assets, AssetIdPrefix, HyperdriveMarketState
 from elfpy.math import FixedPoint
+from elfpy.utils import sim_utils
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
 from elfpy.wallet.wallet import Long, Short, Wallet
@@ -32,7 +38,7 @@ if TYPE_CHECKING:
     from ape.types import ContractLog
     from ethpm_types.abi import MethodABI
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals, too-many-lines
 # pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 
 
@@ -59,6 +65,137 @@ class HyperdriveProject(ProjectManager):
         return self.hyperdrive_container.at(self.conversion_manager.convert(self.hyperdrive_address, AddressType))
 
 
+def get_simulator(
+    experiment_config: Config, pricing_model: elfpy.pricing_models.base.PricingModel
+) -> simulators.Simulator:
+    """Instantiate and return an initialized elfpy Simulator object."""
+    market, _, _ = sim_utils.get_initialized_hyperdrive_market(
+        pricing_model=pricing_model, block_time=time.BlockTime(), config=experiment_config
+    )
+    return simulators.Simulator(experiment_config, market, time.BlockTime())
+
+
+def get_hyperdrive_config(hyperdrive_instance) -> dict:
+    """Get the hyperdrive config from a deployed hyperdrive contract.
+
+    Parameters
+    ----------
+    hyperdrive_instance : ContractInstance
+        The deployed hyperdrive contract instance.
+
+    Returns
+    -------
+    hyperdrive_config : dict
+        The hyperdrive config.
+    """
+    hyperdrive_config: dict = hyperdrive_instance.getPoolConfig().__dict__
+    hyperdrive_config["timeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
+    log_and_show(f"Hyperdrive config deployed at {hyperdrive_instance.address}:")
+    for key, value in hyperdrive_config.items():
+        divisor = 1 if key in ["positionDuration", "checkpointDuration", "timeStretch"] else 1e18
+        formatted_value = fmt(value / divisor) if isinstance(value, (int, float)) else value
+        log_and_show(f" {key}: {formatted_value}")
+    hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
+    return hyperdrive_config
+
+
+@dataclass
+class DefaultHyperdriveConfig:
+    """Configuration variables to setup hyperdrive fixtures."""
+
+    # pylint: disable=too-many-instance-attributes
+
+    initial_apr: FixedPoint = FixedPoint("0.05")
+    share_price: FixedPoint = FixedPoint(1)
+    checkpoint_duration_seconds: int = 86400
+    checkpoints: int = 182
+    time_stretch: int = 22186877016851913475
+    curve_fee: FixedPoint = FixedPoint(0)
+    flat_fee: FixedPoint = FixedPoint(0)
+    gov_fee: FixedPoint = FixedPoint(0)
+    position_duration_seconds: int = checkpoint_duration_seconds * checkpoints
+    target_liquidity = FixedPoint(1 * 10**6)
+
+
+def deploy_hyperdrive(
+    experiment_config: Config,
+    base_instance: ContractInstance,
+    deployer_account: KeyfileAccount,
+    pricing_model: elfpy.pricing_models.base.PricingModel,
+    project: HyperdriveProject,
+) -> ContractInstance:
+    """Deploy Hyperdrive when operating on a fresh fork.
+
+    Parameters
+    ----------
+    experiment_config : simulators.Config
+        The experiment configuration object.
+    base_instance : ContractInstance
+        The base token contract instance.
+    deployer_account : Account
+        The account used to deploy smart contracts.
+    pricing_model : elfpy.pricing_models.base.PricingModel
+        The elf-simulations pricing model.
+    project : ape_utils.HyperdriveProject
+        The Ape project that contains a Hyperdrive contract.
+
+    Returns
+    -------
+    hyperdrive : ContractInstance
+        The deployed Hyperdrive contract instance.
+    """
+    initial_supply = FixedPoint(experiment_config.target_liquidity, decimal_places=18)
+    initial_apr = FixedPoint(experiment_config.target_fixed_apr, decimal_places=18)
+    simulator = get_simulator(experiment_config, pricing_model)  # Instantiate the sim market
+    base_instance.mint(
+        initial_supply.scaled_value,
+        sender=deployer_account,  # minted amount goes to sender
+    )
+    hyperdrive_config = DefaultHyperdriveConfig()
+    hyperdrive_data_provider_contract = deployer_account.deploy(
+        project.MockHyperdriveDataProviderTestnet,  # type: ignore
+        base_instance,
+        hyperdrive_config.initial_apr.scaled_value,
+        hyperdrive_config.share_price.scaled_value,
+        hyperdrive_config.position_duration_seconds,
+        hyperdrive_config.checkpoint_duration_seconds,
+        hyperdrive_config.time_stretch,
+        (
+            hyperdrive_config.curve_fee.scaled_value,
+            hyperdrive_config.flat_fee.scaled_value,
+            hyperdrive_config.gov_fee.scaled_value,
+        ),
+        deployer_account.address,
+    )
+    hyperdrive: ContractInstance = deployer_account.deploy(
+        project.get_contract("MockHyperdriveTestnet"),
+        hyperdrive_data_provider_contract.address,
+        base_instance,
+        initial_apr.scaled_value,
+        FixedPoint(experiment_config.init_share_price).scaled_value,
+        365,  # checkpoints per term
+        86400,  # checkpoint duration in seconds (1 day)
+        (
+            FixedPoint("1.0") / (simulator.market.time_stretch_constant)
+        ).scaled_value,  # time stretch in solidity format (inverted)
+        (
+            FixedPoint(experiment_config.curve_fee_multiple).scaled_value,
+            FixedPoint(experiment_config.flat_fee_multiple).scaled_value,
+            FixedPoint(experiment_config.governance_fee_multiple).scaled_value,
+        ),
+        deployer_account,
+    )
+    with ape.accounts.use_sender(deployer_account):
+        base_instance.approve(hyperdrive, initial_supply.scaled_value)
+        hyperdrive.initialize(
+            initial_supply.scaled_value,
+            initial_apr.scaled_value,
+            deployer_account,
+            True,
+        )
+    return hyperdrive
+
+
 def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> HyperdriveMarketState:
     r"""Return the current market state from the smart contract.
 
@@ -81,30 +218,28 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
     total_supply_withdraw_shares = hyperdrive_contract.balanceOf(asset_id, hyperdrive_contract.address)
 
     return HyperdriveMarketState(
-        lp_total_supply=FixedPoint(pool_state["lpTotalSupply"]),
-        share_reserves=FixedPoint(pool_state["shareReserves"]),
-        bond_reserves=FixedPoint(pool_state["bondReserves"]),
-        base_buffer=FixedPoint(pool_state["longsOutstanding"]),  # so do we not need any buffers now?
+        lp_total_supply=FixedPoint(scaled_value=pool_state["lpTotalSupply"]),
+        share_reserves=FixedPoint(scaled_value=pool_state["shareReserves"]),
+        bond_reserves=FixedPoint(scaled_value=pool_state["bondReserves"]),
+        base_buffer=FixedPoint(scaled_value=pool_state["longsOutstanding"]),  # so do we not need any buffers now?
         variable_apr=FixedPoint(0.01),  # TODO: insert real value
-        share_price=FixedPoint(pool_state["sharePrice"]),
-        init_share_price=FixedPoint(hyper_config["initialSharePrice"]),
-        curve_fee_multiple=FixedPoint(hyper_config["curveFee"]),
-        flat_fee_multiple=FixedPoint(hyper_config["flatFee"]),
-        governance_fee_multiple=FixedPoint(hyper_config["governanceFee"]),
-        longs_outstanding=FixedPoint(pool_state["longsOutstanding"]),
-        shorts_outstanding=FixedPoint(pool_state["shortsOutstanding"]),
-        long_average_maturity_time=FixedPoint(pool_state["longAverageMaturityTime"]),
-        short_average_maturity_time=FixedPoint(pool_state["shortAverageMaturityTime"]),
-        long_base_volume=FixedPoint(pool_state["longBaseVolume"]),
-        short_base_volume=FixedPoint(pool_state["shortBaseVolume"]),
+        share_price=FixedPoint(scaled_value=pool_state["sharePrice"]),
+        init_share_price=FixedPoint(scaled_value=hyper_config["initialSharePrice"]),
+        curve_fee_multiple=FixedPoint(scaled_value=hyper_config["fees"]["curve"]),
+        flat_fee_multiple=FixedPoint(scaled_value=hyper_config["fees"]["flat"]),
+        governance_fee_multiple=FixedPoint(scaled_value=hyper_config["fees"]["governance"]),
+        longs_outstanding=FixedPoint(scaled_value=pool_state["longsOutstanding"]),
+        shorts_outstanding=FixedPoint(scaled_value=pool_state["shortsOutstanding"]),
+        long_average_maturity_time=FixedPoint(scaled_value=pool_state["longAverageMaturityTime"]),
+        short_average_maturity_time=FixedPoint(scaled_value=pool_state["shortAverageMaturityTime"]),
+        short_base_volume=FixedPoint(scaled_value=pool_state["shortBaseVolume"]),
         # TODO: checkpoints=dict
         checkpoint_duration=FixedPoint(hyper_config["checkpointDuration"]),
-        total_supply_longs={FixedPoint(0): FixedPoint(pool_state["longsOutstanding"])},
-        total_supply_shorts={FixedPoint(0): FixedPoint(pool_state["shortsOutstanding"])},
-        total_supply_withdraw_shares=FixedPoint(total_supply_withdraw_shares),
-        withdraw_shares_ready_to_withdraw=FixedPoint(pool_state["withdrawalSharesReadyToWithdraw"]),
-        withdraw_capital=FixedPoint(pool_state["capital"]),
-        withdraw_interest=FixedPoint(pool_state["interest"]),
+        total_supply_longs={FixedPoint(0): FixedPoint(scaled_value=pool_state["longsOutstanding"])},
+        total_supply_shorts={FixedPoint(0): FixedPoint(scaled_value=pool_state["shortsOutstanding"])},
+        total_supply_withdraw_shares=FixedPoint(scaled_value=total_supply_withdraw_shares),
+        withdraw_shares_ready_to_withdraw=FixedPoint(scaled_value=pool_state["withdrawalSharesReadyToWithdraw"]),
+        withdraw_capital=FixedPoint(0),
     )
 
 
@@ -113,7 +248,7 @@ OnChainTradeInfo = namedtuple(
 )
 
 
-def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTradeInfo:
+def get_on_chain_trade_info(hyperdrive_contract: ContractInstance, block_number: int | None = None) -> OnChainTradeInfo:
     r"""Get all trades from hyperdrive contract.
 
     Arguments
@@ -136,7 +271,7 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTra
         - share_price_
             Map of share price to block number.
     """
-    trades = hyperdrive_contract.TransferSingle.query("*")  # get all trades
+    trades = hyperdrive_contract.TransferSingle.query("*", start_block=block_number or 0, stop_block=block_number)
     trades = pd.concat(  # flatten event_arguments
         [
             trades.loc[:, [c for c in trades.columns if c != "event_arguments"]],
@@ -167,26 +302,29 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTra
 
 
 def get_wallet_from_onchain_trade_info(
-    address_: str,
-    index: int,
+    address: str,
     info: OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
     base_contract: ContractInstance,
+    index: int = 0,
+    add_to_existing_wallet: Wallet | None = None,
 ) -> Wallet:
+    # pylint: disable=too-many-arguments, too-many-branches
+
     r"""Construct wallet balances from on-chain trade info.
 
     Arguments
     ---------
-    address_ : str
+    address : str
         Address of the wallet.
-    index : int
-        Index of the wallet.
     info : OnChainTradeInfo
         On-chain trade info.
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
     base_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the base currency (e.g. ERC20)
+    index : int
+        Index of the wallet among ALL agents.
 
     Returns
     -------
@@ -194,31 +332,42 @@ def get_wallet_from_onchain_trade_info(
         Wallet with Short, Long, and LP positions.
     """
     # TODO: remove restriction forcing Wallet index to be an int (issue #415)
-    wallet = Wallet(
-        address=index,
-        balance=types.Quantity(amount=FixedPoint(base_contract.balanceOf(address_)), unit=types.TokenType.BASE),
-    )
+    if add_to_existing_wallet is None:
+        wallet = Wallet(
+            address=index,
+            balance=types.Quantity(
+                amount=FixedPoint(scaled_value=base_contract.balanceOf(address)), unit=types.TokenType.BASE
+            ),
+        )
+    else:
+        wallet = add_to_existing_wallet
     for position_id in info.unique_ids:  # loop across all unique positions
-        trades_in_position = ((info.trades["from"] == address_) | (info.trades["to"] == address_)) & (
+        trades_in_position = ((info.trades["from"] == address) | (info.trades["to"] == address)) & (
             info.trades["id"] == position_id
         )
-        log_and_show("found %s trades for %s in position %s", sum(trades_in_position), address_[:8], position_id)
-        balance = (
-            info.trades.loc[(trades_in_position) & (info.trades["to"] == address_), "value"].sum()
-            - info.trades.loc[(trades_in_position) & (info.trades["from"] == address_), "value"].sum()
+        log_and_show("found %s trades for %s in position %s", sum(trades_in_position), address[:8], position_id)
+        positive_balance = int(info.trades.loc[(trades_in_position) & (info.trades["to"] == address), "value"].sum())
+        negative_balance = int(info.trades.loc[(trades_in_position) & (info.trades["from"] == address), "value"].sum())
+        balance = positive_balance - negative_balance
+        logging.debug(
+            "balance %s = positive_balance %s - negative_balance %s", balance, positive_balance, negative_balance
         )
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = AssetIdPrefix(asset_prefix).name
-        mint_time = maturity - elfpy.SECONDS_IN_YEAR
+        mint_time = maturity - SECONDS_IN_YEAR
         log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
+
+        on_chain_balance = 0
         # verify our calculation against the onchain balance
-        on_chain_balance = hyperdrive_contract.balanceOf(position_id, address_)
-        if abs(balance - on_chain_balance) > elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI:
-            raise ValueError(
-                f"events {balance=} and {on_chain_balance=} disagree by "
-                f"more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address_}"
-            )
-        log_and_show(f" => calculated balance = on_chain = {fmt(balance)}")
+        if add_to_existing_wallet is None:
+            on_chain_balance = hyperdrive_contract.balanceOf(position_id, address)
+            # only do balance checks if not marignal update
+            if abs(balance - on_chain_balance) > MAXIMUM_BALANCE_MISMATCH_IN_WEI:
+                raise ValueError(
+                    f"events {balance=} and {on_chain_balance=} disagree by "
+                    f"more than {MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address}"
+                )
+            log_and_show(f" => calculated balance = on_chain = {fmt(balance)}")
         # check if there's an outstanding balance
         if balance != 0 or on_chain_balance != 0:
             if asset_type == "SHORT":
@@ -226,34 +375,114 @@ def get_wallet_from_onchain_trade_info(
                 sum_product_of_open_share_price_and_value, sum_value = 0, 0
                 for specific_trade in trades_in_position.index[trades_in_position]:
                     value = info.trades.loc[specific_trade, "value"]
-                    value *= -1 if info.trades.loc[specific_trade, "from"] == address_ else 1
+                    value *= -1 if info.trades.loc[specific_trade, "from"] == address else 1
                     sum_value += value
                     sum_product_of_open_share_price_and_value += (
                         value * info.share_price[info.trades.loc[specific_trade, "block_number"]]
                     )
-                open_share_price = sum_product_of_open_share_price_and_value / sum_value
+                open_share_price = int(sum_product_of_open_share_price_and_value / sum_value)
                 assert (
-                    abs(balance - sum_value) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
+                    abs(balance - sum_value) <= MAXIMUM_BALANCE_MISMATCH_IN_WEI
                 ), "weighted average open share price calculation is wrong"
                 logging.debug("calculated weighted average open share price of %s", open_share_price)
-                wallet.shorts.update(
-                    {
-                        mint_time: Short(
-                            balance=FixedPoint(scaled_value=balance),
-                            open_share_price=open_share_price,
-                        )
-                    }
-                )
-                logging.debug(
-                    "storing in wallet as %s",
-                    {mint_time: Short(balance=balance, open_share_price=open_share_price)},
-                )
+                previous_balance = wallet.shorts[mint_time].balance if mint_time in wallet.shorts else 0
+                new_balance = previous_balance + FixedPoint(scaled_value=balance)
+                if new_balance == 0:
+                    # remove key of "mint_time" from the "wallet.shorts" dict
+                    wallet.shorts.pop(mint_time, None)
+                else:
+                    wallet.shorts.update(
+                        {
+                            mint_time: Short(
+                                balance=new_balance,
+                                open_share_price=FixedPoint(scaled_value=open_share_price),
+                            )
+                        }
+                    )
+                    logging.debug(
+                        "storing in wallet as %s",
+                        {
+                            mint_time: Short(
+                                balance=new_balance, open_share_price=FixedPoint(scaled_value=open_share_price)
+                            )
+                        },
+                    )
             elif asset_type == "LONG":
-                wallet.longs.update({mint_time: Long(balance=FixedPoint(scaled_value=balance))})
+                previous_balance = wallet.longs[mint_time].balance if mint_time in wallet.longs else 0
+                new_balance = previous_balance + FixedPoint(scaled_value=balance)
+                if new_balance == 0:
+                    # remove key of "mint_time" from the "wallet.longs" dict
+                    wallet.longs.pop(mint_time, None)
+                wallet.longs.update({mint_time: Long(balance=new_balance)})
                 logging.debug("storing in wallet as %s", {mint_time: Long(balance=balance)})
             elif asset_type == "LP":
-                wallet.lp_tokens += balance
+                wallet.lp_tokens += FixedPoint(scaled_value=balance)
     return wallet
+
+
+def create_elfpy_market(
+    pricing_model: elfpy.pricing_models.base.PricingModel,
+    hyperdrive_instance: ContractInstance,
+    hyperdrive_config: dict,
+    block_number: int,
+    block_timestamp: int,
+    start_timestamp: int,
+) -> HyperdriveMarket:
+    """Create an elfpy market.
+
+    Parameters
+    ----------
+    pricing_model : elfpy.pricing_models.base.PricingModel
+        The pricing model to use.
+    hyperdrive_instance : ContractInstance
+        The deployed Hyperdrive instance.
+    hyperdrive_config : dict
+        The configuration of the deployed Hyperdrive instance
+    block_number : int
+        The block number of the latest block.
+    block_timestamp : int
+        The timestamp of the latest block.
+    start_timestamp : int
+        The timestamp for when we started the simulation.
+
+    Returns
+    -------
+    hyperdrive_market.Market
+        The elfpy market.
+    """
+    # pylint: disable=too-many-arguments
+    return HyperdriveMarket(
+        pricing_model=pricing_model,
+        market_state=get_market_state_from_contract(hyperdrive_contract=hyperdrive_instance),
+        position_duration=time.StretchedTime(
+            days=FixedPoint(hyperdrive_config["term_length"]),
+            time_stretch=FixedPoint(hyperdrive_config["timeStretch"]),
+            normalizing_constant=FixedPoint(hyperdrive_config["term_length"]),
+        ),
+        block_time=time.BlockTime(
+            _time=FixedPoint((block_timestamp - start_timestamp) / 365),
+            _block_number=FixedPoint(block_number),
+            _step_size=FixedPoint("1.0") / FixedPoint("365.0"),
+        ),
+    )
+
+
+def dump_agent_info(sim_agents, experiment_config):
+    """Dump bot info to bots.json."""
+    # save bot info to bots.json
+    variables_to_save_to_bots_json = ["project_dir", "louie", "frida", "random", "bot_names"]
+    # build json
+    json_dict = {
+        key: str(value) for key, value in experiment_config.scratch.items() if key in variables_to_save_to_bots_json
+    }
+    for agent_name, agent in sim_agents.items():
+        json_dict[agent_name] = str(agent)
+    # make folder if it doesn't exist
+    if not os.path.exists(f"{experiment_config.scratch['project_dir']}/artifacts"):
+        os.makedirs(f"{experiment_config.scratch['project_dir']}/artifacts")
+    # write to file
+    with open(f"{experiment_config.scratch['project_dir']}/artifacts/bots.json", "w", encoding="utf-8") as file:
+        json.dump(json_dict, file, indent=4)
 
 
 def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
@@ -307,12 +536,12 @@ def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
     return _max_max_fee, _avg_max_fee, _max_priority_fee, _avg_priority_fee
 
 
-def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
+def get_transfer_single_event(txn_receipt: ReceiptAPI) -> ContractLog:
     r"""Parse the transaction receipt to get the "transfer single" trade event.
 
     Arguments
     ---------
-    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    txn_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         Ape transaction abstract class to represent a transaction receipt.
 
 
@@ -321,7 +550,7 @@ def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
     single_event : `ape.types.ContractLog <https://docs.apeworx.io/ape/stable/methoddocs/types.html#ape.types.ContractLog>`_
         The primary emitted trade (a "TransferSingle") event, excluding peripheral events.
     """
-    single_events = [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"]
+    single_events = [tx_event for tx_event in txn_receipt.events if tx_event.event_name == "TransferSingle"]
     if len(single_events) > 1:
         single_events = [tx_event for tx_event in single_events if tx_event.id != 0]  # exclude token id 0
     if len(single_events) > 1:
@@ -336,12 +565,12 @@ def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
         ) from exc
 
 
-def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance):
+def get_pool_state(txn_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance) -> PoolState:
     r"""Return everything returned by `getPoolInfo()` in the smart contracts.
 
     Arguments
     ---------
-    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    txn_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         Ape transaction abstract class to represent a transaction receipt.
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Ape interactive instance of the initialized MockHyperdriveTestnet smart contract.
@@ -360,35 +589,74 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
     * `prefix_` : the prefix of the trade (LP, long, or short)
     * `maturity_timestamp` : the maturity time of the trade
     """
-    transfer_single_event = get_transfer_single_event(tx_receipt)
+    transfer_single_event = get_transfer_single_event(txn_receipt)
     # The ID is a concatenation of the current share price and the maturity time of the trade
     token_id = int(transfer_single_event["id"])
     prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(token_id)
-    pool_state = hyperdrive_contract.getPoolInfo().__dict__
-    pool_state["block_number_"] = tx_receipt.block_number
-    pool_state["token_id_"] = token_id
-    pool_state["prefix_"] = prefix
-    pool_state["maturity_timestamp_"] = maturity_timestamp  # in seconds
-    logging.debug("hyperdrive_pool_state=%s", pool_state)
-    return pool_state
+    hyper_dict = hyperdrive_contract.getPoolInfo().__dict__
+    hyper_dict["block_number"] = txn_receipt.block_number
+    hyper_dict["token_id"] = token_id
+    hyper_dict["prefix"] = prefix
+    hyper_dict["maturity_timestamp"] = maturity_timestamp  # in seconds
+    logging.debug("hyperdrive_pool_state=%s", hyper_dict)
+    return PoolState(**hyper_dict)
+
+
+def _snake_to_camel(_snake):
+    """Convert snake_case to camelCase."""
+    return "".join(word.capitalize() for word in _snake.split("_"))
+
+
+def _camel_to_snake(_camel):
+    """Convert camelCase to snake_case."""
+    return _camel.lower().replace(" ", "_")
+
+
+@dataclass
+class PoolState:
+    """A dataclass to hold the state of the pool at a given block."""
+
+    # pylint: disable=invalid-name, too-many-instance-attributes
+    shareReserves: int
+    bondReserves: int
+    lpTotalSupply: int
+    sharePrice: int
+    longsOutstanding: int
+    longAverageMaturityTime: int
+    shortsOutstanding: int
+    shortAverageMaturityTime: int
+    shortBaseVolume: int
+    withdrawalSharesReadyToWithdraw: int
+    withdrawalSharesProceeds: int
+    block_number: int
+    token_id: int
+    prefix: str
+    maturity_timestamp: int
+
+    def __getattribute__(self, __snake: str) -> Any:
+        """Convert from snake_case to camelCase for the dataclass."""
+        return super().__getattribute__(_snake_to_camel(__snake))
+
+    def __setattr__(self, __snake: str, __value: Any) -> None:
+        super().__setattr__(_snake_to_camel(__snake), __value)
 
 
 PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
 
 
-def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_info: PoolInfo):
+def get_agent_deltas(txn_receipt: ReceiptAPI, trade, addresses, trade_type, pool_info: PoolInfo):
     """Get the change in an agent's wallet from a transaction receipt."""
     # TODO: verify the accuracy of this function through more testing
     # issue #423
-    agent = tx_receipt.operator
-    event_args = tx_receipt.event_arguments
-    event_args.update({key: value for key, value in tx_receipt.items() if key in ["block_number", "event_name"]})
-    dai_events = [e.dict() for e in tx_receipt.events if agent in [e.get("src"), e.get("dst")]]
+    agent = txn_receipt.operator
+    event_args = txn_receipt.event_arguments
+    event_args.update({key: value for key, value in txn_receipt.items() if key in ["block_number", "event_name"]})
+    dai_events = [e.dict() for e in txn_receipt.events if agent in [e.get("src"), e.get("dst")]]
     dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
     _, maturity_timestamp = hyperdrive_assets.decode_asset_id(int(trade["id"]))
-    mint_time = (
-        (maturity_timestamp - int(elfpy.SECONDS_IN_YEAR) * pool_info.term_length) - pool_info.start_time
-    ) / int(elfpy.SECONDS_IN_YEAR)
+    mint_time = ((maturity_timestamp - int(SECONDS_IN_YEAR) * pool_info.term_length) - pool_info.start_time) / int(
+        SECONDS_IN_YEAR
+    )
     if trade_type == "addLiquidity":  # sourcery skip: lift-return-into-if, switch
         agent_deltas = Wallet(
             address=addresses.index(agent),
@@ -498,7 +766,7 @@ def get_contract_type(address: str, provider: ProviderAPI) -> ContractType:
     return contract_type
 
 
-def select_abi(method: Callable, params: dict | None = None, args: Tuple | None = None) -> tuple[MethodABI, Tuple]:
+def select_abi(method: Callable, params: dict | None = None, args: tuple | None = None) -> tuple[MethodABI, tuple]:
     r"""Select the correct ABI for a method based on the provided parameters.
 
     * If `params` is provided, the ABI will be matched by keyword arguments
@@ -554,6 +822,75 @@ def select_abi(method: Callable, params: dict | None = None, args: Tuple | None 
 Info = namedtuple("Info", ["method", "prefix"])
 
 
+def create_trade(
+    trade_type: str,
+    hyperdrive_contract: ContractInstance,
+    agent: AccountAPI,
+    amount: int,
+    maturity_time: int | None = None,
+) -> tuple[ContractTransaction, tuple, MethodABI]:
+    r"""Creates a trade on the Hyperdrive contract.
+
+    Arguments
+    ---------
+    trade_type : str
+        The type of trade to execute. One of `ADD_LIQUIDITY,
+        REMOVE_LIQUIDITY, OPEN_LONG, CLOSE_LONG, OPEN_SHORT, CLOSE_SHORT`
+    hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        Ape interactive instance of the initialized MockHyperdriveTestnet smart contract.
+    agent : `ape.api.accounts.AccountAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.accounts.AccountAPI>`_
+        The account that will execute the trade.
+    amount : int
+        Unsigned int-256 representation of the trade amount (base if not LP, otherwise LP tokens)
+    maturity_time : int, optional
+        The maturity time of the trade. Only used for `CLOSE_LONG`, and `CLOSE_SHORT`.
+    kwargs : dict, optional
+        Additional keyword arguments to pass to the trade method.
+
+    Returns
+    -------
+    pool_state : dict, optional
+        The Hyperdrive pool state after the trade.
+    args : list
+        The matching keyword arguments, or the original arguments if no keywords were provided.
+    """
+    # predefine which methods to call based on the trade type, and the corresponding asset ID prefix
+    info = {
+        "OPEN_LONG": Info(method=hyperdrive_contract.openLong, prefix=AssetIdPrefix.LONG),
+        "CLOSE_LONG": Info(method=hyperdrive_contract.closeLong, prefix=AssetIdPrefix.LONG),
+        "OPEN_SHORT": Info(method=hyperdrive_contract.openShort, prefix=AssetIdPrefix.SHORT),
+        "CLOSE_SHORT": Info(method=hyperdrive_contract.closeShort, prefix=AssetIdPrefix.SHORT),
+        "ADD_LIQUIDITY": Info(method=hyperdrive_contract.addLiquidity, prefix=AssetIdPrefix.LP),
+        "REMOVE_LIQUIDITY": Info(method=hyperdrive_contract.removeLiquidity, prefix=AssetIdPrefix.LP),
+    }
+    if trade_type in {"CLOSE_LONG", "CLOSE_SHORT"}:  # get the specific asset we're closing
+        assert maturity_time is not None, "Maturity time must be provided to close a long or short trade"
+        trade_asset_id = hyperdrive_assets.encode_asset_id(info[trade_type].prefix, maturity_time)
+        assert amount != 0, "trade amount is zero, this is not allowed"
+        amount = max(WEI, min(amount, hyperdrive_contract.balanceOf(trade_asset_id, agent)))
+    # specify one big dict that holds the parameters for all six methods
+    params = {
+        "_asUnderlying": True,  # mockHyperdriveTestNet does not support as_underlying=False
+        "_destination": agent,
+        "_contribution": amount,
+        "_shares": amount,
+        "_baseAmount": amount,
+        "_bondAmount": amount,
+        "_minOutput": 0,
+        "_maxDeposit": amount,
+        "_minApr": 0,
+        "_maxApr": int(100 * 1e18),
+        "agent_contract": agent,
+        "trade_amount": amount,
+        "_maturityTime": maturity_time,
+    }
+    # check the specified method for an ABI that we have all the parameters for
+    selected_abi, args = select_abi(params=params, method=info[trade_type].method)
+    # create a transaction with the selected ABI
+    contract_txn: ContractTransaction = ContractTransaction(abi=selected_abi, address=hyperdrive_contract.address)
+    return contract_txn, args, selected_abi
+
+
 def ape_trade(
     trade_type: str,
     hyperdrive_contract: ContractInstance,
@@ -584,47 +921,24 @@ def ape_trade(
     -------
     pool_state : dict, optional
         The Hyperdrive pool state after the trade.
-    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    txn_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         The Ape transaction receipt.
     """
-    # predefine which methods to call based on the trade type, and the corresponding asset ID prefix
-    info = {
-        "OPEN_LONG": Info(method=hyperdrive_contract.openLong, prefix=AssetIdPrefix.LONG),
-        "CLOSE_LONG": Info(method=hyperdrive_contract.closeLong, prefix=AssetIdPrefix.LONG),
-        "OPEN_SHORT": Info(method=hyperdrive_contract.openShort, prefix=AssetIdPrefix.SHORT),
-        "CLOSE_SHORT": Info(method=hyperdrive_contract.closeShort, prefix=AssetIdPrefix.SHORT),
-        "ADD_LIQUIDITY": Info(method=hyperdrive_contract.addLiquidity, prefix=AssetIdPrefix.LP),
-        "REMOVE_LIQUIDITY": Info(method=hyperdrive_contract.removeLiquidity, prefix=AssetIdPrefix.LP),
-    }
-    if trade_type in {"CLOSE_LONG", "CLOSE_SHORT"}:  # get the specific asset we're closing
-        assert maturity_time is not None, "Maturity time must be provided to close a long or short trade"
-        trade_asset_id = hyperdrive_assets.encode_asset_id(info[trade_type].prefix, maturity_time)
-        amount = np.clip(amount, 0, hyperdrive_contract.balanceOf(trade_asset_id, agent))
-    # specify one big dict that holds the parameters for all six methods
-    params = {
-        "_asUnderlying": True,  # mockHyperdriveTestNet does not support as_underlying=False
-        "_destination": agent,
-        "_contribution": amount,
-        "_shares": amount,
-        "_baseAmount": amount,
-        "_bondAmount": amount,
-        "_minOutput": 0,
-        "_maxDeposit": amount,
-        "_minApr": 0,
-        "_maxApr": int(100 * 1e18),
-        "agent_contract": agent,
-        "trade_amount": amount,
-        "_maturityTime": maturity_time,
-    }
-    # check the specified method for an ABI that we have all the parameters for
-    selected_abi, args = select_abi(params=params, method=info[trade_type].method)
-    # create a transaction with the selected ABI
-    contract_txn: ContractTransaction = ContractTransaction(abi=selected_abi, address=hyperdrive_contract.address)
+    contract_txn, args, _ = create_trade(
+        trade_type=trade_type,
+        hyperdrive_contract=hyperdrive_contract,
+        agent=agent,
+        amount=amount,
+        maturity_time=maturity_time,
+    )
     try:  # attempt to execute the transaction, allowing for a specified number of retries (default is 1)
-        tx_receipt = attempt_txn(agent, contract_txn, *args, **kwargs)
-        if tx_receipt is None:
+        if args:
+            txn_receipt = attempt_txn(agent, contract_txn, *args, **kwargs)
+        else:
+            txn_receipt = attempt_txn(agent, contract_txn, **kwargs)
+        if txn_receipt is None:
             return None, None
-        return get_pool_state(tx_receipt=tx_receipt, hyperdrive_contract=hyperdrive_contract), tx_receipt
+        return get_pool_state(txn_receipt=txn_receipt, hyperdrive_contract=hyperdrive_contract), txn_receipt
     except TransactionError as exc:
         logging.error(
             "Failed to execute %s: %s\n =>  Amount: %s\n => Agent: %s\n => Pool: %s\n",
@@ -659,7 +973,7 @@ def attempt_txn(
 
     Returns
     -------
-    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    txn_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         The transaction receipt. Not returned if the transaction fails.
 
     Raises
@@ -712,9 +1026,9 @@ def attempt_txn(
         if signed_txn is None:
             raise ValueError("Failed to sign transaction")
         try:
-            tx_receipt: ReceiptAPI = agent.provider.send_transaction(signed_txn)
-            tx_receipt.await_confirmations()
-            return tx_receipt
+            txn_receipt: ReceiptAPI = agent.provider.send_transaction(signed_txn)
+            txn_receipt.await_confirmations()
+            return txn_receipt
         except TransactionError as exc:
             if "replacement transaction underpriced" not in str(exc) or not isinstance(exc, TransactionNotFoundError):
                 log_and_show(f"Txn failed in unexpected way on attempt {attempt} of {mult}: {exc}")

@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 import elfpy
+from elfpy.math.fixed_point import FixedPoint
 
 if TYPE_CHECKING:
     from typing import Optional, Any
@@ -500,6 +501,8 @@ class CustomEncoder(json.JSONEncoder):
             return float(o)
         if isinstance(o, np.ndarray):
             return o.tolist()
+        if isinstance(o, FixedPoint):
+            return str(o)
         try:
             return o.__dict__
         except AttributeError:
