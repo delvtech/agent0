@@ -12,6 +12,8 @@ from web3 import Web3
 from web3.middleware.geth_poa import geth_poa_middleware
 from hexbytes import HexBytes
 from eth_utils.address import to_checksum_address
+from eth_utils import to_checksum_address
+from web3.datastructures import AttributeDict, MutableAttributeDict
 
 # python `open` will infer the encoding if we do not specified, which is the behavior we want for now
 # pylint: disable=unspecified-encoding
@@ -19,12 +21,14 @@ from eth_utils.address import to_checksum_address
 # pylint: disable=too-many-locals
 
 
-class HexBytesEncoder(JSONEncoder):
+class ExtendedJSONEncoder(JSONEncoder):
     """Overrides json encoder to handle hex inputs"""
 
-    def default(self, obj):  # pylint: disable=arguments-renamed
+    def default(self, obj):
         if isinstance(obj, HexBytes):
             return obj.hex()
+        elif isinstance(obj, (AttributeDict, MutableAttributeDict)):
+            return dict(obj)
         return super().default(obj)
 
 
@@ -40,6 +44,59 @@ def load_abi(file_path):
     with open(file_path, "r") as file:
         data = json.load(file)
     return data["abi"]
+
+
+def recursive_dict_conversion(obj):
+    if isinstance(obj, dict):
+        return {key: recursive_dict_conversion(value) for key, value in obj.items()}
+    elif isinstance(obj, HexBytes):
+        return obj.hex()
+    elif hasattr(obj, "items"):
+        return {key: recursive_dict_conversion(value) for key, value in obj.items()}
+    return obj
+
+
+def get_event_object(web3_instance, contract, log):
+    for event in [e for e in dir(contract.events) if not e.startswith("_")]:
+        event_cls = getattr(contract.events, event)
+        if log["topics"][0] == web3_instance.keccak(text=event):
+            return event_cls(), event_cls._anonymous_types
+    return None, []
+
+
+def fetch_and_decode_logs(web3_container, contract, tx_receipt):
+    logs = []
+
+    if tx_receipt.get("logs"):
+        for log in tx_receipt["logs"]:
+            event_obj, anonymous_types = get_event_object(web3_container, contract, log)
+
+            if event_obj:
+                log_data = event_obj.processLog(log)
+                formatted_log = {
+                    "event": event_obj.event_name,
+                    "args": {k: str(v) for k, v in log_data["args"].items()},
+                    "logIndex": log_data["logIndex"],
+                    "transactionIndex": log_data["transactionIndex"],
+                    "transactionHash": log_data["transactionHash"].hex(),
+                    "address": log_data["address"],
+                    "blockHash": log_data["blockHash"].hex(),
+                    "blockNumber": log_data["blockNumber"],
+                }
+
+                # Decode indexed and non-indexed event params
+                arg_names = [arg["name"] for arg in event_obj._transaction_parser.inputs]
+                formatted_topics = [(arg_names[i], topic.hex()) for i, topic in enumerate(log["topics"][1:])]
+                decoded_topics = {
+                    arg["name"]: web3_container.codec.decode_single(arg["type"], topic)
+                    for arg, topic in zip(anonymous_types, log["topics"][1:])
+                }
+                formatted_log["args"].update(decoded_topics)
+                formatted_log["topics"] = formatted_topics
+
+                logs.append(formatted_log)
+
+    return logs
 
 
 def fetch_transactions(web3_container, contract, start_block, current_block):
@@ -63,11 +120,12 @@ def fetch_transactions(web3_container, contract, start_block, current_block):
             except ValueError:  # if the input is not meant for the contract, ignore it
                 continue
 
+            tx_receipt = web3_container.eth.get_transaction_receipt(transaction["hash"])
+            logs = fetch_and_decode_logs(web3_container, contract, tx_receipt)
             transactions.append(
-                {
-                    "transaction": tx_dict,
-                }
+                {"transaction": tx_dict, "logs": logs, "receipt": recursive_dict_conversion(tx_receipt)}
             )
+
     return transactions
 
 
@@ -120,13 +178,13 @@ def main():
 
         # Save the updated transactions to the output file with custom encoder
         with open(transactions_output_file, "w") as file:
-            json.dump(transactions, file, indent=2, cls=HexBytesEncoder)
+            json.dump(transactions, file, indent=2, cls=ExtendedJSONEncoder)
 
         # Update the starting block number in the config file
         config["settings"]["startBlock"] = current_block
 
         # Save the updated config data to the TOML file
-        save_config(config, config_file_path)
+        # save_config(config, config_file_path)
 
         # Wait for 10 seconds before fetching transactions again
         time.sleep(10)
