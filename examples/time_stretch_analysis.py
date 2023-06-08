@@ -9,26 +9,9 @@
 from __future__ import annotations  # types are strings by default in 3.11
 
 from dataclasses import dataclass
-import logging
-from typing import Any
-from elfpy.markets.hyperdrive import HyperdrivePricingModel, YieldspacePricingModel, HyperdriveMarketState, HyperdriveMarket
-from elfpy.math import FixedPoint
-from elfpy import time
-from elfpy.time import StretchedTime, BlockTime
-from elfpy.agents.agent import Agent
-from elfpy.agents.policies import NoActionPolicy
+
 import numpy as np
 import pandas as pd
-
-apr = FixedPoint("0.05")
-print("apr: ", apr)
-share_reserves = FixedPoint("1")
-pricing_model = HyperdrivePricingModel()
-time_stretch = pricing_model.calc_time_stretch(apr)
-print("time_stretch: ", time_stretch)
-position_duration = StretchedTime(days=FixedPoint(182.5), time_stretch=time_stretch, normalizing_constant=FixedPoint(365))
-bond_reserves = pricing_model.calc_bond_reserves(apr, position_duration, HyperdriveMarketState(share_reserves=share_reserves))
-print("share_reserves: ", share_reserves, " bond_reserves: ", bond_reserves)
 
 # %%
 
@@ -76,6 +59,9 @@ df = pd.DataFrame(list(zip(apr_list, time_stretch_list, share_reserves_list,
 # %%
 df['reserve_ratio']=df['share_reserves']/df['bond_reserves']
 
+## This is the magic filter. We are essentially only looking for time stretches that result in 
+## the bond reserves being between ~ 3x larger than base reserves.  Using this as a schelling point
+## for the ratio bc this is very similar to when we used y + total supply where total supply = x+y
 reserve_ratio_filter=(df['reserve_ratio'].astype(float)>=.30)&(df['reserve_ratio'].astype(float)<=.36)
 df_filtered = df[reserve_ratio_filter].reset_index()
 
@@ -139,14 +125,3 @@ x = np.arange(1,51,1)
 y = 5.24592 /( 0.04665 * x)
 plt.plot(x, y, '--', color="green")
 # %%
-
-APR = 5.0
-time_stretch = 5.24592 /( 0.04665 * APR)
-print(time_stretch)
-share_reserves = 1
-bond_reserves = calc_bond_reserves(APR, share_reserves, 365,time_stretch)
-print(share_reserves,bond_reserves)
-price=calc_spot_price_from_reserves(share_reserves,bond_reserves,365,time_stretch)
-print(price)
-apr=calc_apr_from_reserves(share_reserves,bond_reserves,365,time_stretch)
-print(apr)
