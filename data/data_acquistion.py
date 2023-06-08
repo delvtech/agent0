@@ -58,11 +58,17 @@ def fetch_transactions(w3, contract, start_block, current_block):
                 'transaction': tx_dict,
             })
     return transactions
+
 def main():
     # Define necessary variables/objects
     config_file_path = './data/config/dataConfig.toml'
     ethereum_node = 'http://localhost:8545'
-    transactions_output_file = './data/transactions.json'
+    log_dir = '.logging'
+    
+    if not os.path.exists(log_dir):  # create log_dir if necessary
+        os.makedirs(log_dir)
+
+    transactions_output_file = os.path.join(log_dir,'transactions.json')
 
     # Load the ABI from the JSON file
     abi_file_path = './hyperdrive_solidity/.build/Hyperdrive.json'
