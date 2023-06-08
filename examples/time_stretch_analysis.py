@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 # %%
 
+
 def calc_bond_reserves(apr, share_reserves, days_until_maturity, time_stretch):
     """calculate bond reserves from apr, share reserves, and days until maturity"""
     t = days_until_maturity / (365 * time_stretch)
