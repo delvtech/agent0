@@ -1,0 +1,6 @@
+web3
+toml
+hexbytes
+eth_abi
+requests
+eth_utils
