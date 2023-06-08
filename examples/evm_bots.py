@@ -21,10 +21,8 @@ import tqdm
 from ape import accounts
 from ape.api import ProviderAPI, ReceiptAPI
 from ape.contracts import ContractInstance
-from ape.logging import logger as ape_logger
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
-from dotenv import load_dotenv
 from eth_account import Account as EthAccount
 from tqdm import trange
 
@@ -35,61 +33,16 @@ import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
 from elfpy import SECONDS_IN_YEAR, types
 from elfpy.agents.agent import Agent
-from elfpy.agents.policies import LongLouie, RandomAgent, ShortSally
 from elfpy.agents.policies.base import BasePolicy
 from elfpy.bots.bot_info import BotInfo
-from elfpy.bots.get_env_args import get_env_args
+from elfpy.bots.get_config import get_config
+from elfpy.bots.get_env_args import EnvironmentArguments, get_env_args
 from elfpy.markets.base import BaseMarket, BasePricingModel
 from elfpy.markets.hyperdrive import HyperdrivePricingModel
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
-
-
-def get_config(args: dict) -> Config:
-    """Instantiate a config object with elf-simulation parameters.
-
-    Parameters
-    ----------
-    args : dict
-        The arguments from environmental variables.
-
-    Returns
-    -------
-    config : simulators.Config
-        The config object.
-    """
-    load_dotenv(dotenv_path=f"{Path.cwd() if Path.cwd().name != 'examples' else Path.cwd().parent}/.env")
-    ape_logger.set_level(logging.ERROR)
-    config = Config()
-    config.log_level = output_utils.text_to_log_level(args["log_level"])
-    random_seed_file = f".logging/random_seed{'_devnet' if args['devnet'] else ''}.txt"
-    if os.path.exists(random_seed_file):
-        with open(random_seed_file, "r", encoding="utf-8") as file:
-            config.random_seed = int(file.read()) + 1
-    else:  # make parent directory if it doesn't exist
-        os.makedirs(os.path.dirname(random_seed_file), exist_ok=True)
-    logging.info("Random seed=%s", config.random_seed)
-    with open(random_seed_file, "w", encoding="utf-8") as file:
-        file.write(str(config.random_seed))
-    config.title = "evm bots"
-    for key, value in args.items():
-        if hasattr(config, key):
-            config[key] = value
-        else:
-            config.scratch[key] = value
-    config.log_filename += "_devnet" if args["devnet"] else ""
-
-    # Custom parameters for this experiment
-    config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
-    config.scratch["louie"] = BotInfo(risk_threshold=0.0, policy=LongLouie, trade_chance=config.scratch["trade_chance"])
-    config.scratch["frida"] = BotInfo(policy=ShortSally, trade_chance=config.scratch["trade_chance"])
-    config.scratch["random"] = BotInfo(policy=RandomAgent, trade_chance=config.scratch["trade_chance"])
-    config.scratch["bot_names"] = {"louie", "frida", "random"}
-
-    config.freeze()
-    return config
 
 
 def set_up_experiment(experiment_config: Config, args: dict) -> tuple[BasePricingModel, str, str, dict[str, str], dict]:
@@ -598,6 +551,7 @@ def do_policy(
     sim_agents: dict[str, Agent],
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
+    args: EnvironmentArguments,
 ):  # pylint: disable=too-many-arguments
     """Execute an agent's policy."""
     trades: list[types.Trade] = agent.get_trades(market=elfpy_market)
@@ -616,9 +570,10 @@ def do_policy(
             logging.debug("%s", agent.wallet)
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file)  # set and save to file
         except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
-            log_and_show("Crashed unexpectedly: %s", exc)
+            log_and_show("Crashed with error: %s", exc)
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file, reset=True)  # set and save to file
-            raise exc
+            if args.halt_on_errors:
+                raise exc
     return no_crash_streak
 
 
@@ -654,7 +609,14 @@ def main():
             )
             for agent in sim_agents.values():
                 no_crash_streak = do_policy(
-                    agent, elfpy_market, no_crash_streak, crash_file, sim_agents, hyperdrive_instance, base_instance
+                    agent,
+                    elfpy_market,
+                    no_crash_streak,
+                    crash_file,
+                    sim_agents,
+                    hyperdrive_instance,
+                    base_instance,
+                    args,
                 )
             last_executed_block = block_number
         if args["devnet"] and automine:  # anvil automatically mines after you send a transaction. or manually.

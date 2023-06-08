@@ -5,7 +5,7 @@ from collections import namedtuple
 from dataclasses import dataclass
 from typing import Type
 
-from elfpy.agents.agent import Agent
+from elfpy.agents.policies.base import BasePolicy
 
 
 # FIXME: Do we need this or can get combine with the Agent class?  I submit that we can.
@@ -32,7 +32,7 @@ class BotInfo:
 
     Budget = namedtuple("Budget", ["mean", "std", "min", "max"])
     Risk = namedtuple("Risk", ["mean", "std", "min", "max"])
-    policy: Type[Agent]
+    policy: Type[BasePolicy]
     trade_chance: float = 0.1
     risk_threshold: float | None = None
     budget: Budget = Budget(mean=5_000, std=2_000, min=1_000, max=10_000)
