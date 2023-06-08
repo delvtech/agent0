@@ -230,11 +230,14 @@ def get_devnet_addresses(
         log_and_show(f"found devnet base address: {addresses['baseToken']}")
     else:
         addresses["baseToken"] = None
-    if "hyperdrive" in deployed_addresses:
-        addresses["hyperdrive"] = deployed_addresses["hyperdrive"]
+    if "mockHyperdrive" in deployed_addresses:
+        addresses["hyperdrive"] = deployed_addresses["mockHyperdrive"]
         log_and_show(f"found devnet hyperdrive address: {addresses['hyperdrive']}")
     else:
         addresses["hyperdrive"] = None
+    if "mockHyperdriveMath" in deployed_addresses:
+        addresses["hyperdriveMath"] = deployed_addresses["mockHyperdriveMath"]
+        log_and_show(f"found devnet hyperdriveMath address: {addresses['hyperdriveMath']}")
     return addresses
 
 
@@ -679,7 +682,7 @@ def do_policy(
         try:
             logging.debug(trade_object)
             do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
-            # marginal update to wallet
+            # marginal update to wallet (currently inefficient, using unnecessary calls)
             agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
                 address=agent.contract.address,
                 info=ape_utils.get_on_chain_trade_info(hyperdrive_instance, ape.chain.blocks[-1].number),
@@ -687,6 +690,8 @@ def do_policy(
                 base_contract=base_instance,
                 add_to_existing_wallet=agent.wallet,
             )
+            # TODO: use txn_receipt to get the marginal wallet update
+            # agent.wallet = new_wallet_from_txn_receipt(txn_receipt)
             logging.debug("%s", agent.wallet)
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file)  # set and save to file
         except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
