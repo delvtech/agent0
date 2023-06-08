@@ -20,8 +20,6 @@ from __future__ import annotations
 
 from matplotlib.axes import Axes
 
-from elfpy.bots.get_env_args import LogLevel
-
 # pylint: disable=line-too-long
 # pylint: disable=too-many-lines
 # pylint: disable=invalid-name
@@ -54,11 +52,12 @@ try:  # install repo only if running on google colab
 except:  # pylint: disable=bare-except
     print("running locally & trusting that you have the dependencies installed")
 
-import matplotlib.pyplot as plt
+
 
 # %%
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from numpy.random._generator import Generator as NumpyGenerator
 
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
@@ -66,6 +65,7 @@ import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import RandomAgent
+from elfpy.bots.get_env_args import LogLevel
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils
