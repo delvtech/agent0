@@ -6,7 +6,6 @@ from pathlib import Path
 from ape.logging import logger as ape_logger
 from dotenv import load_dotenv
 
-import elfpy.utils.outputs as output_utils
 from elfpy.agents.policies import LongLouie, RandomAgent, ShortSally
 from elfpy.bots.bot_info import BotInfo
 from elfpy.bots.get_env_args import EnvironmentArguments
@@ -29,7 +28,7 @@ def get_config(args: EnvironmentArguments) -> Config:
     load_dotenv(dotenv_path=f"{Path.cwd() if Path.cwd().name != 'examples' else Path.cwd().parent}/.env")
     ape_logger.set_level(logging.ERROR)
     config = Config()
-    config.log_level = output_utils.text_to_log_level(args.log_level)
+    config.log_level = args.log_level
     random_seed_file = f".logging/random_seed{'_devnet' if args.devnet else ''}.txt"
     if os.path.exists(random_seed_file):
         with open(random_seed_file, "r", encoding="utf-8") as file:

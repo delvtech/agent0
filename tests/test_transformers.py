@@ -2,7 +2,9 @@
 """Utilities to transform from elf-simulations to Ape objects."""
 from __future__ import annotations
 
+import logging
 import unittest
+
 from pathlib import Path
 
 import ape
@@ -16,7 +18,6 @@ import elfpy.utils.outputs as output_utils
 import elfpy.utils.transformers as trans_utils
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import RandomAgent
-from elfpy.bots.get_env_args import LogLevel
 from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils
 
@@ -42,9 +43,7 @@ class TransformerTest(unittest.TestCase):
         config.target_fixed_apr = 0.01  # target fixed APR of the initial market after the LP
         config.target_liquidity = 500_000_000  # target total liquidity of the initial market, before any trades
 
-        config.log_level = output_utils.text_to_log_level(
-            LogLevel.ERROR
-        )  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
+        config.log_level = logging.ERROR  # Logging level, should be in [DEBUG, INFO, WARNING]
         config.log_filename = "transformers"  # Output filename for logging
         config.freeze()
 
