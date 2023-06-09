@@ -1,4 +1,4 @@
-"""Script to pull on-chain data and output JSON for post-processing"""
+"""Script to pull on-chain transaction data and output JSON for post-processing"""
 from __future__ import annotations
 
 import json
@@ -122,19 +122,15 @@ def fetch_transactions(web3_container, contract, start_block, current_block):
     return transactions
 
 
-def main():
+def main(config_file_path, contracts_url, ethereum_node, save_dir, abi_file_path):
     """Main execution entry point"""
     # Define necessary variables/objects
-    contracts_url = "http://localhost:80/addresses.json"
-    config_file_path = "./data/config/dataConfig.toml"
-    ethereum_node = "http://localhost:8545"
-    log_dir = ".logging"
-    if not os.path.exists(log_dir):  # create log_dir if necessary
-        os.makedirs(log_dir)
-    transactions_output_file = os.path.join(log_dir, "transactions.json")
+    if not os.path.exists(save_dir):  # create save_dir if necessary
+        os.makedirs(save_dir)
+    transactions_output_file = os.path.join(save_dir, "transactions.json")
     # Load the ABI from the JSON file
-    abi_file_path = "./hyperdrive_solidity/.build/Hyperdrive.json"
-    abi = load_abi(abi_file_path)
+    with open(abi_file_path, "r") as file:
+        abi = json.load(file)["abi"]
     # Connect to the Ethereum node
     web3_container = Web3(Web3.HTTPProvider(ethereum_node))
     web3_container.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
@@ -171,4 +167,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    CONFIG_FILE_PATH = "./data/config/dataConfig.toml"
+    CONTRACTS_URL = "http://localhost:80/addresses.json"
+    ETHEREUM_NODE = "http://localhost:8545"
+    SAVE_DIR = ".logging"
+    ABI_FILE_PATH = "./hyperdrive_solidity/.build/Hyperdrive.json"
+    main(CONFIG_FILE_PATH, CONTRACTS_URL, ETHEREUM_NODE, SAVE_DIR, ABI_FILE_PATH)
