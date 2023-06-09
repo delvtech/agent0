@@ -13,7 +13,6 @@ import numpy as np
 from matplotlib import gridspec
 
 import elfpy
-from elfpy.bots.get_env_args import LogLevel
 from elfpy.math.fixed_point import FixedPoint
 
 if TYPE_CHECKING:
@@ -460,26 +459,6 @@ def close_logging(delete_logs=True):
                 if os.path.exists(handler_file_name):
                     os.remove(handler_file_name)
             handler.close()
-
-
-def text_to_log_level(log_level: LogLevel) -> int:
-    r"""Converts logging level description to an integer
-
-    Arguments
-    ----------
-    logging_text : str
-        String description of the logging level; must be in ["debug", "info", "warning", "error", "critical"]
-
-    Returns
-    -------
-    int
-        Logging level integer corresponding to the string input
-    """
-
-    level: int = logging.getLevelName(log_level.value)
-    if not isinstance(level, int):
-        raise ValueError(f'{log_level=} must be in ["debug", "info", "warning", "error", "critical"]')
-    return level
 
 
 class CustomEncoder(json.JSONEncoder):

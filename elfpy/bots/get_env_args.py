@@ -1,20 +1,9 @@
 """Get environment arguments for bots"""
 import os
+import logging
 from dataclasses import dataclass
-from enum import Enum
 
 from elfpy import DEFAULT_LOG_MAXBYTES
-
-
-class LogLevel(Enum):
-    """Logging Level Names.  These are the levels we've decided to use.  Values correspond to the
-    values found in the logging lib and can be access with logging.getLogLevel"""
-
-    DEBUG = "DEBUG"
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
-    CRITICAL = "CRITICAL"
 
 
 # TODO: do we need this to be enviroment variables, why not add to the simulator Config?
@@ -32,7 +21,7 @@ class EnvironmentArguments:
     devnet: bool = True
     rpc_url: str = "http://localhost:8545"
     log_filename: str = "testnet_bots"
-    log_level: LogLevel = LogLevel.INFO
+    log_level: int = logging.INFO
     max_bytes: int = DEFAULT_LOG_MAXBYTES
     num_louie: int = 0
     num_frida: int = 0
@@ -60,9 +49,7 @@ def get_env_args() -> EnvironmentArguments:
 
     # make sure we get a valid log level, default to INFO
     log_level_str: str = os.environ.get("BOT_LOG_LEVEL", "INFO")
-    log_level = LogLevel.__members__.get(log_level_str)
-    if log_level is None:
-        log_level = LogLevel.INFO
+    log_level: int = logging.getLevelName(log_level_str)
 
     args = EnvironmentArguments(
         # Env passed in is a string "true"
