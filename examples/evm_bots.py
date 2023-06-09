@@ -37,8 +37,7 @@ from elfpy.agents.policies.base import BasePolicy
 from elfpy.bots.bot_info import BotInfo
 from elfpy.bots.get_config import get_config
 from elfpy.bots.get_env_args import EnvironmentArguments, get_env_args
-from elfpy.markets.base import BaseMarket, BasePricingModel
-from elfpy.markets.hyperdrive import HyperdrivePricingModel
+from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.utils.outputs import str_with_precision as fmt
@@ -46,7 +45,7 @@ from elfpy.utils.outputs import str_with_precision as fmt
 
 def set_up_experiment(
     experiment_config: Config, args: EnvironmentArguments
-) -> tuple[BasePricingModel, str, str, dict[str, str], dict]:
+) -> tuple[HyperdrivePricingModel, str, str, dict[str, str], dict]:
     """Declare and assign experiment variables.
 
     Parameters
@@ -58,7 +57,7 @@ def set_up_experiment(
 
     Returns
     -------
-    pricing_model : BasePricingModel
+    pricing_model : HyperdrivePricingModel
         The elf-simulations pricing model.
     crash_file : str
         The path to the crash file.
@@ -425,7 +424,7 @@ def log_and_show_block_info(
 
 
 def set_up_devnet(
-    addresses, project, provider, experiment_config, pricing_model
+    addresses, project: ape_utils.HyperdriveProject, provider, experiment_config, pricing_model
 ) -> tuple[ContractInstance, ContractInstance, dict[str, str]]:
     """Load deployed devnet addresses or deploy new contracts.
 
@@ -433,13 +432,13 @@ def set_up_devnet(
     ----------
     addresses : dict
         The addresses of the deployed contracts.
-    project : ape_utils.HyperdriveProject
+    project : HyperdriveProject
         The Ape project that contains a Hyperdrive contract.
     provider : ape.api.ProviderAPI
         The Ape object that connects to the Ethereum blockchain.
     experiment_config : simulators.Config
         The experiment configuration object.
-    pricing_model : BasePricingModel
+    pricing_model : HyperdrivePricingModel
         The elf-simulations pricing model.
 
     Returns
@@ -479,7 +478,7 @@ def set_up_ape(
     provider_settings: dict,
     addresses: dict,
     network_choice: str,
-    pricing_model: BasePricingModel,
+    pricing_model: HyperdrivePricingModel,
 ) -> tuple[ProviderAPI, ContractInstance, ContractInstance, dict, KeyfileAccount]:
     r"""Set up ape.
 
@@ -551,7 +550,7 @@ def set_up_ape(
 
 def do_policy(
     agent: BasePolicy,
-    elfpy_market: BaseMarket,
+    elfpy_market: HyperdriveMarket,
     no_crash_streak: int,
     crash_file: str,
     sim_agents: dict[str, Agent],

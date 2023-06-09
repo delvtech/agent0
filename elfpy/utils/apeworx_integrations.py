@@ -21,11 +21,10 @@ from ape.managers.project import ProjectManager
 from ape.types import AddressType, ContractType
 from ape_accounts.accounts import KeyfileAccount
 
-import elfpy
 from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, simulators, time, types
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 from elfpy.simulators.config import Config
-from elfpy.markets.hyperdrive import hyperdrive_assets, AssetIdPrefix, HyperdriveMarketState
+from elfpy.markets.hyperdrive import hyperdrive_assets, AssetIdPrefix, HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 from elfpy.utils import sim_utils
 from elfpy.utils import outputs as output_utils
@@ -53,6 +52,9 @@ class HyperdriveProject(ProjectManager):
         if hyperdrive_address is not None:
             self.hyperdrive_address = hyperdrive_address
         super().__init__(path)
+
+    def __post_init__(self):
+        """Set up contracts after init"""
         self.load_contracts()
         try:
             self.hyperdrive_container: ContractContainer = self.get_contract("Hyperdrive")
@@ -62,40 +64,6 @@ class HyperdriveProject(ProjectManager):
     def get_hyperdrive_contract(self) -> ContractInstance:
         """Get the Hyperdrive contract instance."""
         return self.hyperdrive_container.at(self.conversion_manager.convert(self.hyperdrive_address, AddressType))
-
-
-def get_simulator(
-    experiment_config: Config, pricing_model: elfpy.pricing_models.base.PricingModel
-) -> simulators.Simulator:
-    """Instantiate and return an initialized elfpy Simulator object."""
-    market, _, _ = sim_utils.get_initialized_hyperdrive_market(
-        pricing_model=pricing_model, block_time=time.BlockTime(), config=experiment_config
-    )
-    return simulators.Simulator(experiment_config, market, time.BlockTime())
-
-
-def get_hyperdrive_config(hyperdrive_instance) -> dict:
-    """Get the hyperdrive config from a deployed hyperdrive contract.
-
-    Parameters
-    ----------
-    hyperdrive_instance : ContractInstance
-        The deployed hyperdrive contract instance.
-
-    Returns
-    -------
-    hyperdrive_config : dict
-        The hyperdrive config.
-    """
-    hyperdrive_config: dict = hyperdrive_instance.getPoolConfig().__dict__
-    hyperdrive_config["timeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
-    logging.info("Hyperdrive config deployed at %s: ", hyperdrive_instance.address)
-    for key, value in hyperdrive_config.items():
-        divisor = 1 if key in ["positionDuration", "checkpointDuration", "timeStretch"] else 1e18
-        formatted_value = output_utils.str_with_precision(value / divisor) if isinstance(value, (int, float)) else value
-        logging.info(" %s: %s", key, formatted_value)
-    hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
-    return hyperdrive_config
 
 
 @dataclass
@@ -116,11 +84,32 @@ class DefaultHyperdriveConfig:
     target_liquidity = FixedPoint(1 * 10**6)
 
 
+def get_hyperdrive_config(hyperdrive_instance) -> dict:
+    """Get the hyperdrive config from a deployed hyperdrive contract.
+
+    Parameters
+    ----------
+    hyperdrive_instance : ContractInstance
+        The deployed hyperdrive contract instance.
+
+    Returns
+    -------
+    hyperdrive_config : dict
+        The hyperdrive config.
+    """
+    hyperdrive_config: dict = hyperdrive_instance.getPoolConfig().__dict__
+    hyperdrive_config["timeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
+    logging.info("Hyperdrive config deployed at %s: ", hyperdrive_instance.address)
+    logging.info("Hyperdrive config: %s", hyperdrive_config)
+    hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
+    return hyperdrive_config
+
+
 def deploy_hyperdrive(
     experiment_config: Config,
     base_instance: ContractInstance,
     deployer_account: KeyfileAccount,
-    pricing_model: elfpy.pricing_models.base.PricingModel,
+    pricing_model: HyperdrivePricingModel,
     project: HyperdriveProject,
 ) -> ContractInstance:
     """Deploy Hyperdrive when operating on a fresh fork.
@@ -133,9 +122,9 @@ def deploy_hyperdrive(
         The base token contract instance.
     deployer_account : Account
         The account used to deploy smart contracts.
-    pricing_model : elfpy.pricing_models.base.PricingModel
+    pricing_model : HyperdrivePricingModel
         The elf-simulations pricing model.
-    project : ape_utils.HyperdriveProject
+    project : HyperdriveProject
         The Ape project that contains a Hyperdrive contract.
 
     Returns
@@ -143,9 +132,12 @@ def deploy_hyperdrive(
     hyperdrive : ContractInstance
         The deployed Hyperdrive contract instance.
     """
-    initial_supply = FixedPoint(experiment_config.target_liquidity, decimal_places=18)
-    initial_apr = FixedPoint(experiment_config.target_fixed_apr, decimal_places=18)
-    simulator = get_simulator(experiment_config, pricing_model)  # Instantiate the sim market
+    initial_supply = FixedPoint(experiment_config.target_liquidity)
+    initial_apr = FixedPoint(experiment_config.target_fixed_apr)
+    market, _, _ = sim_utils.get_initialized_hyperdrive_market(
+        pricing_model=pricing_model, block_time=time.BlockTime(), config=experiment_config
+    )
+    simulator = simulators.Simulator(experiment_config, market, time.BlockTime())
     base_instance.mint(
         initial_supply.scaled_value,
         sender=deployer_account,  # minted amount goes to sender
@@ -420,7 +412,7 @@ def get_wallet_from_onchain_trade_info(
 
 
 def create_elfpy_market(
-    pricing_model: elfpy.pricing_models.base.PricingModel,
+    pricing_model: HyperdrivePricingModel,
     hyperdrive_instance: ContractInstance,
     hyperdrive_config: dict,
     block_number: int,
@@ -431,7 +423,7 @@ def create_elfpy_market(
 
     Parameters
     ----------
-    pricing_model : elfpy.pricing_models.base.PricingModel
+    pricing_model : HyperdrivePricingModel
         The pricing model to use.
     hyperdrive_instance : ContractInstance
         The deployed Hyperdrive instance.
