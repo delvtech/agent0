@@ -28,8 +28,7 @@ from elfpy.simulators.config import Config
 from elfpy.markets.hyperdrive import hyperdrive_assets, AssetIdPrefix, HyperdriveMarketState
 from elfpy.math import FixedPoint
 from elfpy.utils import sim_utils
-from elfpy.utils.outputs import log_and_show
-from elfpy.utils.outputs import number_to_string as fmt
+from elfpy.utils import outputs as output_utils
 from elfpy.wallet.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:
@@ -90,11 +89,11 @@ def get_hyperdrive_config(hyperdrive_instance) -> dict:
     """
     hyperdrive_config: dict = hyperdrive_instance.getPoolConfig().__dict__
     hyperdrive_config["timeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
-    log_and_show(f"Hyperdrive config deployed at {hyperdrive_instance.address}:")
+    logging.info(f"Hyperdrive config deployed at {hyperdrive_instance.address}:")
     for key, value in hyperdrive_config.items():
         divisor = 1 if key in ["positionDuration", "checkpointDuration", "timeStretch"] else 1e18
-        formatted_value = fmt(value / divisor) if isinstance(value, (int, float)) else value
-        log_and_show(f" {key}: {formatted_value}")
+        formatted_value = output_utils.str_with_precision(value / divisor) if isinstance(value, (int, float)) else value
+        logging.info(f" {key}: {formatted_value}")
     hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
     return hyperdrive_config
 
@@ -345,7 +344,7 @@ def get_wallet_from_onchain_trade_info(
         trades_in_position = ((info.trades["from"] == address) | (info.trades["to"] == address)) & (
             info.trades["id"] == position_id
         )
-        log_and_show("found %s trades for %s in position %s", sum(trades_in_position), address[:8], position_id)
+        logging.info("found %s trades for %s in position %s", sum(trades_in_position), address[:8], position_id)
         positive_balance = int(info.trades.loc[(trades_in_position) & (info.trades["to"] == address), "value"].sum())
         negative_balance = int(info.trades.loc[(trades_in_position) & (info.trades["from"] == address), "value"].sum())
         balance = positive_balance - negative_balance
@@ -355,7 +354,7 @@ def get_wallet_from_onchain_trade_info(
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = AssetIdPrefix(asset_prefix).name
         mint_time = maturity - SECONDS_IN_YEAR
-        log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
+        logging.info(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
 
         on_chain_balance = 0
         # verify our calculation against the onchain balance
@@ -367,7 +366,7 @@ def get_wallet_from_onchain_trade_info(
                     f"events {balance=} and {on_chain_balance=} disagree by "
                     f"more than {MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address}"
                 )
-            log_and_show(f" => calculated balance = on_chain = {fmt(balance)}")
+            logging.info(f" => calculated balance = on_chain = {output_utils.str_with_precision(balance)}")
         # check if there's an outstanding balance
         if balance != 0 or on_chain_balance != 0:
             if asset_type == "SHORT":
@@ -815,7 +814,7 @@ def select_abi(method: Callable, params: dict | None = None, args: tuple | None 
             + (f" with missing arguments: {missing_args}" if missing_args else "")
         )
     lstr = f" => {selected_abi.name}({', '.join(f'{inpt.name}={arg}' for arg, inpt in zip(args, selected_abi.inputs))})"
-    log_and_show(lstr)
+    logging.info(lstr)
     return selected_abi, args
 
 
@@ -944,7 +943,7 @@ def ape_trade(
             "Failed to execute %s: %s\n =>  Amount: %s\n => Agent: %s\n => Pool: %s\n",
             trade_type,
             exc,
-            fmt(amount),
+            output_utils.str_with_precision(amount),
             agent,
             hyperdrive_contract.getPoolInfo().__dict__,
         )
@@ -1003,7 +1002,9 @@ def attempt_txn(
             raise ValueError("latest block does not have base_fee")
         base_fee = getattr(latest, "base_fee")
         logging.debug(
-            "latest block %s has base_fee %s", fmt(getattr(latest, "number")), fmt(base_fee / 1e9, min_digits=3)
+            "latest block %s has base_fee %s",
+            output_utils.str_with_precision(getattr(latest, "number")),
+            output_utils.str_with_precision(base_fee / 1e9, min_digits=3),
         )
         kwargs["max_priority_fee_per_gas"] = int(
             agent.provider.priority_fee * (1 + priority_fee_multiple * (attempt - 1))
@@ -1016,7 +1017,9 @@ def attempt_txn(
         # kwargs["gas_price"] = kwargs["max_fee_per_gas"]
         formatted_items = []
         for key, value in kwargs.items():
-            value = fmt(value / 1e9) if "fee" in key else fmt(value)
+            value = (
+                output_utils.str_with_precision(value / 1e9) if "fee" in key else output_utils.str_with_precision(value)
+            )
             formatted_items.append(f"{key}={value}")
         logging.debug("txn attempt %s of %s with %s", attempt, mult, ", ".join(formatted_items))
         serial_txn: TransactionAPI = contract_txn.serialize_transaction(*args, **kwargs)
@@ -1031,12 +1034,12 @@ def attempt_txn(
             return txn_receipt
         except TransactionError as exc:
             if "replacement transaction underpriced" not in str(exc) or not isinstance(exc, TransactionNotFoundError):
-                log_and_show(f"Txn failed in unexpected way on attempt {attempt} of {mult}: {exc}")
+                logging.info(f"Txn failed in unexpected way on attempt {attempt} of {mult}: {exc}")
                 raise exc
-            log_and_show(f"Txn failed in expected way: {exc}")
+            logging.info(f"Txn failed in expected way: {exc}")
             if attempt == mult:
-                log_and_show(" => max attempts reached, raising exception")
+                logging.info(" => max attempts reached, raising exception")
                 raise exc
-            log_and_show(f" => retrying with higher gas price: {attempt + 1} of {mult}")
+            logging.info(f" => retrying with higher gas price: {attempt + 1} of {mult}")
             continue
     raise TimeoutError("Failed to execute transaction")

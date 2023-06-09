@@ -412,24 +412,21 @@ def annotate(axis_handle, text, major_offset, minor_offset, val):
 
 
 ## Logging
-def delete_log_file() -> None:
-    r"""If the logger's handler if a file handler, delete the underlying file."""
-    handler = logging.getLogger().handlers[0]
-    if isinstance(handler, logging.FileHandler):
-        os.remove(handler.baseFilename)
-    logging.getLogger().removeHandler(handler)
-
-
 def setup_logging(
-    log_filename: Optional[str] = None,
+    log_filename: str | None = None,
     max_bytes: int = elfpy.DEFAULT_LOG_MAXBYTES,
     log_level: int = elfpy.DEFAULT_LOG_LEVEL,
     delete_previous_logs: bool = False,
+    log_file_and_stdout: bool = False,
 ) -> None:
     r"""Setup logging and handlers with default settings"""
-    if log_filename is None:
-        handler = logging.StreamHandler(sys.stdout)
-    else:  # we have a filename
+    if log_filename is None and log_file_and_stdout:
+        raise ValueError(f"{log_filename=} cannot be None and {log_file_and_stdout=} be True")
+    handlers = []
+    log_formatter = logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME)
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(log_formatter)
+    if log_filename is not None:
         log_dir, log_name = os.path.split(log_filename)
         if not log_name.endswith(".log"):
             log_name += ".log"
@@ -441,11 +438,13 @@ def setup_logging(
         # delete the log file if it exists
         if delete_previous_logs and os.path.exists(os.path.join(log_dir, log_name)):
             os.remove(os.path.join(log_dir, log_name))
-        handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
-
+        file_handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
+        file_handler.setFormatter(log_formatter)
+        handlers.append(file_handler)
+    if log_file_and_stdout or log_filename is None:
+        handlers.append(stream_handler)
     logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
-    handler.setFormatter(logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME))
-    logging.getLogger().handlers = [handler]  # overwrite handlers with the desired one
+    logging.getLogger().handlers = handlers  # overwrite handlers with the desired one
 
 
 def close_logging(delete_logs=True):
@@ -455,8 +454,8 @@ def close_logging(delete_logs=True):
         for handler in logging.getLogger().handlers:
             if hasattr(handler, "baseFilename") and not isinstance(handler, logging.StreamHandler):
                 # access baseFilename in a type safe way
-                handler_file_name = getattr(handler, "baseFilename")
-                if os.path.exists(handler_file_name):
+                handler_file_name = getattr(handler, "baseFilename", None)
+                if handler_file_name is not None and os.path.exists(handler_file_name):
                     os.remove(handler_file_name)
             handler.close()
 
@@ -480,7 +479,7 @@ class CustomEncoder(json.JSONEncoder):
             return repr(o)
 
 
-def number_to_string(value, precision=3, min_digits=0, debug=False):
+def str_with_precision(value, precision=3, min_digits=0, debug=False):
     """
     Format a float to a string with a given precision
     this follows the significant figure behavior, irrepective of number size
@@ -512,35 +511,3 @@ def number_to_string(value, precision=3, min_digits=0, debug=False):
     if abs(value) > 0.01:
         return f"{value:,.{decimals}f}"
     return f"{value:0.{precision - 1}e}"
-
-
-def log_and_show(string: str, *args) -> None:
-    """Log to default logger and to stdout.
-
-    Arguments
-    ----------
-    string : str
-        String to log
-    *args
-        Arguments to log
-    """
-
-    # try to get the stdout logger
-    stdout_logger = logging.getLogger("stdout")
-
-    # if it doesn't exist, set it up
-    if not stdout_logger.handlers:
-        stdout_handler = logging.StreamHandler(sys.stdout)
-        stdout_handler.setFormatter(logging.Formatter("%(message)s"))
-        stdout_logger = logging.getLogger("stdout")
-        stdout_logger.addHandler(stdout_handler)
-        stdout_logger.setLevel(logging.INFO)
-
-    # log to both default logger and stdout, depending on whether there are args
-    if args:
-        formatted_string = string % args
-        # logging.info(formatted_string)
-        stdout_logger.info(formatted_string)
-    else:
-        # logging.info(string)
-        stdout_logger.info(string)

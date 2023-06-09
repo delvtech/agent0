@@ -41,8 +41,7 @@ from elfpy.markets.base import BaseMarket, BasePricingModel
 from elfpy.markets.hyperdrive import HyperdrivePricingModel
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
-from elfpy.utils.outputs import log_and_show
-from elfpy.utils.outputs import number_to_string as fmt
+from elfpy.utils.outputs import str_with_precision as fmt
 
 
 def set_up_experiment(
@@ -108,12 +107,12 @@ def get_devnet_addresses(
             sleep(1)
     if "baseToken" in deployed_addresses:
         addresses["baseToken"] = deployed_addresses["baseToken"]
-        log_and_show(f"found devnet base address: {addresses['baseToken']}")
+        logging.info("found devnet base address: %s", addresses["baseToken"])
     else:
         addresses["baseToken"] = None
     if "hyperdrive" in deployed_addresses:
         addresses["hyperdrive"] = deployed_addresses["hyperdrive"]
-        log_and_show(f"found devnet hyperdrive address: {addresses['hyperdrive']}")
+        logging.info("found devnet hyperdrive address: %s", addresses["hyperdrive"])
     else:
         addresses["hyperdrive"] = None
     return addresses
@@ -203,7 +202,7 @@ def create_agent(
     if args.devnet:
         agent.contract.balance += int(1e18)  # give it some eth
     if (need_to_mint := (params["budget"].scaled_value - base_instance.balanceOf(agent.contract.address)) / 1e18) > 0:
-        log_and_show(f" agent_{agent.contract.address[:8]} needs to mint {fmt(need_to_mint)} Base")
+        logging.info(" agent_%s needs to mint %s Base", agent.contract.address[:8], fmt(need_to_mint))
         with ape.accounts.use_sender(agent.contract):
             if args.devnet:
                 txn_receipt: ReceiptAPI = base_instance.mint(
@@ -213,9 +212,13 @@ def create_agent(
                 assert faucet is not None, "Faucet must be provided to mint base on testnet."
                 txn_receipt: ReceiptAPI = faucet.mint(base_instance.address, agent.wallet.address, int(50_000 * 1e18))
             txn_receipt.await_confirmations()
-    log_and_show(
-        f" agent_{agent.contract.address[:8]} is a {bot.name} with budget={fmt(params['budget'])}"
-        f" Eth={fmt(agent.contract.balance/1e18)} Base={fmt(base_instance.balanceOf(agent.contract.address)/1e18)}"
+    logging.info(
+        " agent_%s is a %s with budget=%s Eth=%s Base=%s",
+        agent.contract.addres[:8],
+        bot.name,
+        fmt(params["budget"]),
+        fmt(agent.contract.balance / 1e18),
+        fmt(base_instance.balanceOf(agent.contract.address) / 1e18),
     )
     agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
         address=agent.contract.address,
@@ -270,9 +273,11 @@ def set_up_agents(
     bot_num = 0
     for bot_name in experiment_config.scratch["bot_names"]:
         policy = experiment_config.scratch[bot_name].policy
-        log_and_show(
-            f"{bot_name:6s}: n={experiment_config.scratch[f'num_{bot_name}']}  "
-            f"policy={policy.__name__ if policy.__module__ == '__main__' else policy.__module__:20s}"
+        logging.info(
+            "%s: n=%s with policy=%s",
+            bot_name,
+            experiment_config.scratch[f"num_{bot_name}"],
+            policy.__name__ if policy.__module__ == "__main__" else policy.__module__,
         )
         bot_num += experiment_config.scratch[f"num_{bot_name}"]
     sim_agents = {}
@@ -280,7 +285,7 @@ def set_up_agents(
     on_chain_trade_info: ape_utils.OnChainTradeInfo = ape_utils.get_on_chain_trade_info(
         hyperdrive_contract=hyperdrive_instance
     )
-    log_and_show(f"Getting on-chain trade info took {fmt(now() - start_time_)} seconds")
+    logging.debug("Getting on-chain trade info took %s seconds", fmt(now() - start_time_))
     for bot_name in [
         name for name in experiment_config.scratch["bot_names"] if experiment_config.scratch[f"num_{name}"] > 0
     ]:
@@ -371,13 +376,12 @@ def do_trade(
 
         if params["amount"] > on_chain_balance:
             print("oops")
-
-    log_and_show(
-        f" agent_{agent_contract.address[:8]} has"
-        f" Eth={fmt(agent_contract.balance/1e18)}"
-        f" Base={fmt(base_instance.balanceOf(agent_contract.address)/1e18)}"
+    logging.info(
+        " agent_%s has Eth=%s Base=%s",
+        agent_contract.addres[:8],
+        fmt(agent_contract.balance / 1e18),
+        fmt(base_instance.balanceOf(agent_contract.address) / 1e18),
     )
-
     # execute the trade using key-word arguments
     pool_state, _ = ape_utils.ape_trade(**params)
     return pool_state
@@ -411,7 +415,7 @@ def log_and_show_block_info(
     if not hasattr(block, "base_fee"):
         raise ValueError("latest block does not have base_fee")
     base_fee = getattr(block, "base_fee") / 1e9
-    log_and_show(
+    logging.info(
         "Block number: %s, Block time: %s, Trades without crashing: %s, base_fee: %s",
         fmt(block_number),
         datetime.fromtimestamp(block_timestamp),
@@ -514,7 +518,7 @@ def set_up_ape(
         network_choice=network_choice,
         provider_settings=provider_settings,
     ).push_provider()
-    log_and_show(
+    logging.info(
         "connected to %s, latest block %s",
         "devnet" if args.devnet else network_choice,
         provider.get_block("latest").number,
@@ -572,7 +576,7 @@ def do_policy(
             logging.debug("%s", agent.wallet)
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file)  # set and save to file
         except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
-            log_and_show("Crashed with error: %s", exc)
+            logging.info("Crashed with error: %s", exc)
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file, reset=True)  # set and save to file
             if args.halt_on_errors:
                 raise exc
