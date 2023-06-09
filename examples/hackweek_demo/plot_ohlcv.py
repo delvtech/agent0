@@ -17,6 +17,8 @@
 from __future__ import annotations
 import json
 import pandas as pd
+import time
+import matplotlib.pyplot as plt
 
 import mplfinance as mpf
 
@@ -30,14 +32,6 @@ st.set_page_config(
     )
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
-# %%
-# Hard coding location for now
-trans_data = "hyperTransRecs_updated.json"
-
-with open(trans_data, 'r', encoding='utf8') as f:
-    json_data = json.load(f)
-
-data = pd.DataFrame(json_data)
 
 def get_decoded_logs(data):
     timestamps = data['timestamp']
@@ -55,7 +49,6 @@ def get_decoded_input(data):
     decoded_input = pd.json_normalize(data['decoded_input'])
     decoded_input['timestamp'] = pd.to_datetime(timestamps, unit='s')
     return decoded_input
-
 
 
 def calculate_spot_price(decoded_logs):
@@ -83,11 +76,37 @@ def calc_ohlcv(data, freq='D'):
 
     return ohlcv.astype(float)
 
+# creating a single-element container
+placeholder = st.empty()
 
+# %%
+# near real-time / live feed simulation
 
-ohlcv = calc_ohlcv(data)
+while True:
+    # Hard coding location for now
+    trans_data = "hyperTransRecs_updated.json"
 
-mpf.plot(ohlcv, style='mike', type='candle', volume=True)
+    ## Get transactions from data
+    #trans_data = "../../.logging/transactions.json"
+
+    with open(trans_data, 'r', encoding='utf8') as f:
+        json_data = json.load(f)
+
+    data = pd.DataFrame(json_data)
+    ohlcv = calc_ohlcv(data)
+
+    with placeholder.container():
+        # create three columns
+        fig_col_1, fig_col_2 = st.columns(2)
+        fig = mpf.plot(ohlcv, style='mike', type='candle', volume=True, returnfig=True)
+        with fig_col_1:
+            st.markdown("## OHLCV plot")
+            st.write(fig[0])
+        with fig_col_2:
+            st.markdown("## Volume plot")
+            st.write(fig[1])
+
+    time.sleep(1)
 
 # %%
 
