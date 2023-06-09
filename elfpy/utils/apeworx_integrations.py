@@ -21,7 +21,6 @@ from ape.managers.project import ProjectManager
 from ape.types import AddressType, ContractType
 from ape_accounts.accounts import KeyfileAccount
 
-import elfpy
 from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, simulators, time, types
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 from elfpy.simulators.config import Config
@@ -761,29 +760,29 @@ def get_contract_type(address: str, provider: ProviderAPI) -> ContractType:
 def select_abi(method: Callable, params: dict | None = None, args: tuple | None = None) -> tuple[MethodABI, tuple]:
     r"""Select the correct ABI for a method based on the provided parameters.
 
-        * If `params` is provided, the ABI will be matched by keyword arguments
-        * If `args` is provided, the ABI will be matched by the number of arguments.
+    * If `params` is provided, the ABI will be matched by keyword arguments
+    * If `args` is provided, the ABI will be matched by the number of arguments.
 
-        Arguments
-        ---------
-        method : Callable
-            The method to select the ABI for.
-    l
-            The keyword arguments to match the ABI to.
-        args : list, optional
-            The arguments to match the ABI to.
+    Arguments
+    ---------
+    method : Callable
+        The method to select the ABI for.
+    params : dict, optional
+        The keyword arguments to match the ABI to.
+    args : list, optional
+        The arguments to match the ABI to.
 
-        Returns
-        -------
-        selected_abi : ethpm_types.MethodABI
-            The ABI that matches the provided parameters.
-        args : list
-            The matching keyword arguments, or the original arguments if no keywords were provided.
+    Returns
+    -------
+    selected_abi : ethpm_types.MethodABI
+        The ABI that matches the provided parameters.
+    args : list
+        The matching keyword arguments, or the original arguments if no keywords were provided.
 
-        Raises
-        ------
-        ValueError
-            If no matching ABI is found.
+    Raises
+    ------
+    ValueError
+        If no matching ABI is found.
     """
     if args is None:
         args = ()
