@@ -51,76 +51,52 @@ data = trans_data.merge(pool_info_data, left_index=True, right_index=True)
 
 
 # %%
-data = data[~data["args.id"].isna()]
-data = data.reset_index(drop=True)
-prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(data["args.id"].values)
-trade_type = pd.DataFrame(prefix).apply(lambda x: hyperdrive_assets.AssetIdPrefix(x.values).name, axis=1)
+#data = data[~data["args.id"].isna()]
+#data = data.reset_index(drop=True)
+#prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(data["args.id"].values)
+#trade_type = pd.DataFrame(prefix).apply(lambda x: hyperdrive_assets.AssetIdPrefix(x.values).name, axis=1)
 
 # %%
-data["prefix"] = prefix
+#data["prefix"] = prefix
 data["timestamp"] = data["timestamp"].astype(int)
 
-# %%
-columns = [
-    "contractAddress",
-    "transactionHash",
-    "blockNumber",
-    "blockHash",
-    "transactionIndex",
-    "args.operator", # missing
-    "args.from", # missing
-    "args.to", # missing
-    "args.id", # missing
-    "args.value", # missing
-    "prefix",
-    "input.params._maturityTime",
-    "input.method",
-    "shareReserves",
-    "bondReserves",
-    "lpTotalSupply",
-    "sharePrice",
-    "longsOutstanding",
-    "longAverageMaturityTime",
-    "longBaseVolume",
-    "shortsOutstanding",
-    "shortAverageMaturityTime",
-    "shortBaseVolume",
-    "timestamp",
-]
+rename_dict = {
+    "contractAddress": "contract_address",
+    "transactionHash": "transaction_hash",
+    "blockNumber": "block_number",
+    "blockHash": "block_hash",
+    "transactionIndex": "transaction_index",
+    "args.operator": "operator",# missing
+    "args.from": "from", # missing
+    "args.to": "to", # missing
+    "args.id": "id", # missing
+    "args.value": "value", # missing
+    "prefix": "prefix", # missing
+    "input.params._maturityTime": "maturity_timestamp",
+    "input.method": "trade_type",
+    "shareReserves": "share_reserves",
+    "bondReserves": "bond_reserves",
+    "lpTotalSupply": "lp_total_supply",
+    "sharePrice": "share_price",
+    "longsOutstanding": "longs_outstanding",
+    "longAverageMaturityTime": "longs_average_maturity_time",
+    "shortsOutstanding": "shorts_outstanding",
+    "shortAverageMaturityTime": "short_average_maturity_time",
+    "shortBaseVolume": "short_base_volume",
+    "timestamp": "block_timestamp",
+}
 
 # %%
-rename_columns = [
-    "contract_address",
-    "transaction_hash",
-    "block_number",
-    "block_hash",
-    "transaction_index",
-    "operator",
-    "from",
-    "to",
-    "id",
-    "value",
-    "prefix",
-    "maturity_timestamp",
-    "trade_type",
-    "share_reserves",
-    "bond_reserves",
-    "lp_total_supply",
-    "share_price",
-    "longs_outstanding",
-    "longs_average_maturity_time",
-    "long_base_volume",
-    "shorts_outstanding",
-    "short_average_maturity_time",
-    "short_base_volume",
-    "block_timestamp",
-]
+columns = [k for k in rename_dict.keys()]
 
-assert(len(columns) == len(rename_columns))
+# TODO remove this hack, only grab columns that exist from data
+columns = [c for c in columns if c in data.columns]
 
 # %%
+# Filter data based on columns
 trade_data = data[columns]
-trade_data.columns = rename_columns
+# Rename columns
+trade_data = trade_data.rename(rename_dict)
 
 # %%
 def get_wallet_from_onchain_trade_info(
