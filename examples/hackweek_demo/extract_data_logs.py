@@ -17,10 +17,12 @@ def read_json_to_pd(json_file):
     return pd.DataFrame(json_data)
 
 def explode_transaction_data(data):
-    return pd.concat([
+    cat_data = pd.concat([
         pd.json_normalize(data['transaction']),
         pd.json_normalize(data['receipt'])
         ], axis=1)
+    cat_data = cat_data.loc[:,~cat_data.columns.duplicated()].copy()
+    return cat_data
 
 def calculate_spot_price(pool_info_data):
     # Hard coding variables to calculate spot price
