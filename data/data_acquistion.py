@@ -31,22 +31,21 @@ class ExtendedJSONEncoder(JSONEncoder):
         return super().default(o)
 
 
-# Save the config data to a TOML file
 def save_config(config, file_path):
-    """Saves the config file to file_path"""
+    """Saves the config file in TOML format"""
     with open(file_path, "w", encoding="UTF-8") as file:
         toml.dump(config, file)
 
 
 def load_abi(file_path):
-    """Load the ABI from a JSON file"""
+    """Load the Application Binary Interface (ABI) from a JSON file"""
     with open(file_path, "r") as file:
         data = json.load(file)
     return data["abi"]
 
 
 def recursive_dict_conversion(obj):
-    """TODO"""
+    """Recursively converts a dictionary to convert objects to hex values"""
     if isinstance(obj, dict):
         return {key: recursive_dict_conversion(value) for key, value in obj.items()}
     if isinstance(obj, HexBytes):
@@ -57,7 +56,7 @@ def recursive_dict_conversion(obj):
 
 
 def get_event_object(web3_instance, contract, log):
-    """TODO"""
+    """Retrieves the event object and anonymous types fora  given contract and log"""
     for event in [e for e in dir(contract.events) if not e.startswith("_")]:
         event_cls = getattr(contract.events, event)
         if log["topics"][0] == web3_instance.keccak(text=event):
@@ -66,7 +65,7 @@ def get_event_object(web3_instance, contract, log):
 
 
 def fetch_and_decode_logs(web3_container, contract, tx_receipt):
-    """TODO"""
+    """Decode logs from a transaction receipt"""
     logs = []
     if tx_receipt.get("logs"):
         for log in tx_receipt["logs"]:
@@ -102,9 +101,9 @@ def fetch_transactions(web3_container, contract, start_block, current_block):
     """Fetch transactions related to the hyperdrive_address contract"""
     transactions = []
     print(f"Processing Block Range {start_block}/{current_block}")
-    for i in range(start_block, current_block):
-        print(f"Processing Block {i}/{current_block}")
-        block = web3_container.eth.get_block(i, full_transactions=True)
+    for block in range(start_block, current_block):
+        print(f"Processing Block {block}/{current_block}")
+        block = web3_container.eth.get_block(block, full_transactions=True)
         for transaction in block["transactions"]:
             tx_dict = dict(transaction)
             # Convert the HexBytes fields to their hex representation
