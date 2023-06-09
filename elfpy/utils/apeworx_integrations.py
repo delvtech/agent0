@@ -22,11 +22,8 @@ from ape.managers.project import ProjectManager
 from ape.types import AddressType, ContractType
 from ape_accounts.accounts import KeyfileAccount
 
-from elfpy import (MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI,
-                   simulators, time, types)
-from elfpy.markets.hyperdrive import (AssetIdPrefix, HyperdriveMarketState,
-                                      HyperdrivePricingModel,
-                                      hyperdrive_assets)
+from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, simulators, time, types
+from elfpy.markets.hyperdrive import AssetIdPrefix, HyperdriveMarketState, HyperdrivePricingModel, hyperdrive_assets
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
@@ -598,11 +595,12 @@ def get_pool_state(txn_receipt: ReceiptAPI, hyperdrive_contract: ContractInstanc
 
 
 def snake_to_camel(_snake):
-    """Convert snake_case to camelCase."""
+    """Convert snake_case to camelCase"""
     return "".join(word.capitalize() for word in _snake.split("_"))
 
 
 def camel_to_snake(camel_string: str) -> str:
+    """Convert camelCase to snake_case"""
     snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", camel_string)
     return snake_string.lower()
 

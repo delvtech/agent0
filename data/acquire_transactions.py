@@ -56,7 +56,7 @@ def recursive_dict_conversion(obj):
 
 
 def get_event_object(web3_instance, contract, log):
-    """Retrieves the event object and anonymous types fora  given contract and log"""
+    """Retrieves the event object and anonymous types for a  given contract and log"""
     for event in [e for e in dir(contract.events) if not e.startswith("_")]:
         event_cls = getattr(contract.events, event)
         if log["topics"][0] == web3_instance.keccak(text=event):

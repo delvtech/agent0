@@ -11,12 +11,16 @@ from eth_typing import URI
 from eth_utils import address
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.contract import Contract
+from web3.contract import Contract  # type: ignore=reportPrivateImportUsage
 from web3.contract.contract import ContractFunction
 from web3.datastructures import AttributeDict, MutableAttributeDict
 from web3.middleware import geth_poa
 
 from elfpy.utils import apeworx_integrations as ape_utils
+
+# TODO: Fix these later
+# pyright: reportPrivateImportUsage=false, reportGeneralTypeIssues=false
+# pyright: reportTypedDictNotRequiredAccess=false, reportUnboundVariable=false
 
 
 class ExtendedJSONEncoder(json.JSONEncoder):
@@ -31,7 +35,7 @@ class ExtendedJSONEncoder(json.JSONEncoder):
 
 
 def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url: str, output_location: str):
-    """main entry point for accessing contract & writing pool info"""
+    """Main entry point for accessing contract & writing pool info"""
     web3 = setup_web3(ethereum_node)
 
     # Send a request to the local server to fetch the deployed contract addresses and
@@ -68,22 +72,22 @@ def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url:
                 json.dump(pool_info, file, indent=2, cls=ExtendedJSONEncoder)
 
 
-def get_smart_contract_read_call(contract: Contract, function_name: str):
+def get_smart_contract_read_call(contract: Contract, function_name: str, **function_args):
     """Get a smart contract read call"""
     # decode ABI to get pool info variable names
     abi = contract.abi
-    result_keys = [
+    # TODO: Fix this up to actually decode the ABI using web3
+    return_value_keys = [
         component["name"]
         for component in abi[[idx for idx in range(len(abi)) if abi[idx]["name"] == function_name][0]]["outputs"][0][
             "components"
         ]
     ]
-    # execute run hyperdrive contract call to get pool info
     function: ContractFunction = contract.get_function_by_name(function_name)()
-    result_values = function.call()
+    return_values = function.call(**function_args)
     # associate pool info with the keys
-    assert len(result_keys) == len(result_values)
-    result = dict((variable_name, info) for variable_name, info in zip(result_keys, result_values))
+    assert len(return_value_keys) == len(return_values)
+    result = dict((variable_name, info) for variable_name, info in zip(return_value_keys, return_values))
     return result
 
 
@@ -97,6 +101,8 @@ def setup_web3(ethereum_node: URI | str) -> Web3:
 @attr.s
 class HyperdriveAddressesJson:
     """Addresses for deployed Hyperdrive contracts."""
+
+    # pylint: disable=too-few-public-methods
 
     hyperdrive: str = attr.ib()
     base_token: str = attr.ib()
