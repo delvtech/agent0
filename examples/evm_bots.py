@@ -213,7 +213,7 @@ def create_agent(
             txn_receipt.await_confirmations()
     logging.info(
         " agent_%s is a %s with budget=%s Eth=%s Base=%s",
-        agent.contract.addres[:8],
+        agent.contract.address[:8],
         bot.name,
         fmt(params["budget"]),
         fmt(agent.contract.balance / 1e18),
