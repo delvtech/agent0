@@ -74,15 +74,16 @@ def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url:
         latest_block_number: int = web3.eth.get_block_number()
         # if we are on a new block
         if latest_block_number != block_number:
-            block_number: int = latest_block_number
-            latest_block_timestamp: BlockData = web3.eth.get_block("latest").timestamp
-            # get pool info from hyperdrive contract
-            block_pool_info = get_smart_contract_read_call(hyperdrive_contract, "getPoolInfo")
-            block_pool_info.update({"timestamp": latest_block_timestamp})
-            pool_info[latest_block_number] = block_pool_info
-            contract_file = os.path.join(output_location, "hyperdrive_pool_info.json")
-            with open(contract_file, mode="w", encoding="UTF-8") as file:
-                json.dump(pool_info, file, indent=2, cls=ExtendedJSONEncoder)
+            blocks_that_need_updating = range(block_number + 1, latest_block_number + 1)
+            for block_number in blocks_that_need_updating:
+                latest_block_timestamp: BlockData = web3.eth.get_block(block_identifier=block_number).timestamp
+                # get pool info from hyperdrive contract
+                block_pool_info = get_smart_contract_read_call(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
+                block_pool_info.update({"timestamp": latest_block_timestamp})
+                pool_info[latest_block_number] = block_pool_info
+                contract_file = os.path.join(output_location, "hyperdrive_pool_info.json")
+                with open(contract_file, mode="w", encoding="UTF-8") as file:
+                    json.dump(pool_info, file, indent=2, cls=ExtendedJSONEncoder)
 
 
 def get_smart_contract_read_call(contract: Contract, function_name: str, **function_args):
