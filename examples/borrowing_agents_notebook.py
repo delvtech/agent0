@@ -18,7 +18,6 @@
 """Simulation for the Hyperdrive Borrow market"""
 from __future__ import annotations
 
-from elfpy.bots.get_env_args import LogLevel
 
 # pylint: disable=line-too-long
 # pylint: disable=too-many-lines
@@ -66,6 +65,7 @@ import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
+from elfpy.bots.get_env_args import LogLevel
 from elfpy.markets.borrow import (
     BorrowMarket,
     BorrowMarketAction,
