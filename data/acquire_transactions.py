@@ -1,18 +1,18 @@
-"""Script to pull on-chain data and output JSON for post-processing"""
+"""Script to pull on-chain transaction data and output JSON for post-processing"""
 from __future__ import annotations
-import os
+
 import json
+import os
 import time
 from json import JSONEncoder
 
 import requests
 import toml
-
+from eth_utils.address import to_checksum_address
+from hexbytes import HexBytes
 from web3 import Web3
 from web3.datastructures import AttributeDict, MutableAttributeDict
 from web3.middleware import geth_poa
-from hexbytes import HexBytes
-from eth_utils.address import to_checksum_address
 
 # python `open` will infer the encoding if we do not specified, which is the behavior we want for now
 # pylint: disable=unspecified-encoding
@@ -31,33 +31,32 @@ class ExtendedJSONEncoder(JSONEncoder):
         return super().default(o)
 
 
-# Save the config data to a TOML file
 def save_config(config, file_path):
-    """Saves the config file to file_path"""
+    """Saves the config file in TOML format"""
     with open(file_path, "w", encoding="UTF-8") as file:
         toml.dump(config, file)
 
 
 def load_abi(file_path):
-    """Load the ABI from a JSON file"""
+    """Load the Application Binary Interface (ABI) from a JSON file"""
     with open(file_path, "r") as file:
         data = json.load(file)
     return data["abi"]
 
 
 def recursive_dict_conversion(obj):
-    """TODO"""
-    if isinstance(obj, dict):
-        return {key: recursive_dict_conversion(value) for key, value in obj.items()}
+    """Recursively converts a dictionary to convert objects to hex values"""
     if isinstance(obj, HexBytes):
         return obj.hex()
+    if isinstance(obj, dict):
+        return {key: recursive_dict_conversion(value) for key, value in obj.items()}
     if hasattr(obj, "items"):
         return {key: recursive_dict_conversion(value) for key, value in obj.items()}
     return obj
 
 
 def get_event_object(web3_instance, contract, log):
-    """TODO"""
+    """Retrieves the event object and anonymous types for a  given contract and log"""
     for event in [e for e in dir(contract.events) if not e.startswith("_")]:
         event_cls = getattr(contract.events, event)
         if log["topics"][0] == web3_instance.keccak(text=event):
@@ -66,7 +65,7 @@ def get_event_object(web3_instance, contract, log):
 
 
 def fetch_and_decode_logs(web3_container, contract, tx_receipt):
-    """TODO"""
+    """Decode logs from a transaction receipt"""
     logs = []
     if tx_receipt.get("logs"):
         for log in tx_receipt["logs"]:
@@ -102,9 +101,9 @@ def fetch_transactions(web3_container, contract, start_block, current_block):
     """Fetch transactions related to the hyperdrive_address contract"""
     transactions = []
     print(f"Processing Block Range {start_block}/{current_block}")
-    for i in range(start_block, current_block):
-        print(f"Processing Block {i}/{current_block}")
-        block = web3_container.eth.get_block(i, full_transactions=True)
+    for block in range(start_block, current_block):
+        print(f"Processing Block {block}/{current_block}")
+        block = web3_container.eth.get_block(block, full_transactions=True)
         for transaction in block["transactions"]:
             tx_dict = dict(transaction)
             # Convert the HexBytes fields to their hex representation
@@ -123,19 +122,15 @@ def fetch_transactions(web3_container, contract, start_block, current_block):
     return transactions
 
 
-def main():
+def main(config_file_path, contracts_url, ethereum_node, save_dir, abi_file_path):
     """Main execution entry point"""
     # Define necessary variables/objects
-    contracts_url = "http://localhost:80/addresses.json"
-    config_file_path = "./data/config/dataConfig.toml"
-    ethereum_node = "http://localhost:8545"
-    log_dir = ".logging"
-    if not os.path.exists(log_dir):  # create log_dir if necessary
-        os.makedirs(log_dir)
-    transactions_output_file = os.path.join(log_dir, "transactions.json")
+    if not os.path.exists(save_dir):  # create save_dir if necessary
+        os.makedirs(save_dir)
+    transactions_output_file = os.path.join(save_dir, "transactions.json")
     # Load the ABI from the JSON file
-    abi_file_path = "./hyperdrive_solidity/.build/Hyperdrive.json"
-    abi = load_abi(abi_file_path)
+    with open(abi_file_path, "r") as file:
+        abi = json.load(file)["abi"]
     # Connect to the Ethereum node
     web3_container = Web3(Web3.HTTPProvider(ethereum_node))
     web3_container.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
@@ -172,4 +167,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    CONFIG_FILE_PATH = "./data/config/dataConfig.toml"
+    CONTRACTS_URL = "http://localhost:80/addresses.json"
+    ETHEREUM_NODE = "http://localhost:8545"
+    SAVE_DIR = ".logging"
+    ABI_FILE_PATH = "./hyperdrive_solidity/.build/Hyperdrive.json"
+    main(CONFIG_FILE_PATH, CONTRACTS_URL, ETHEREUM_NODE, SAVE_DIR, ABI_FILE_PATH)

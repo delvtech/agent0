@@ -1,17 +1,18 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx."""
 from __future__ import annotations
-from dataclasses import dataclass
 
-import os
 import json
 import logging
+import os
+import re
 from collections import namedtuple
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
 
+import ape
 import numpy as np
 import pandas as pd
-import ape
 from ape import Contract
 from ape.api import BlockAPI, ProviderAPI, ReceiptAPI, TransactionAPI
 from ape.contracts import ContractContainer
@@ -22,12 +23,12 @@ from ape.types import AddressType, ContractType
 from ape_accounts.accounts import KeyfileAccount
 
 from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, simulators, time, types
+from elfpy.markets.hyperdrive import AssetIdPrefix, HyperdriveMarketState, HyperdrivePricingModel, hyperdrive_assets
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
-from elfpy.simulators.config import Config
-from elfpy.markets.hyperdrive import hyperdrive_assets, AssetIdPrefix, HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.math import FixedPoint
-from elfpy.utils import sim_utils
+from elfpy.simulators.config import Config
 from elfpy.utils import outputs as output_utils
+from elfpy.utils import sim_utils
 from elfpy.wallet.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:
@@ -593,14 +594,15 @@ def get_pool_state(txn_receipt: ReceiptAPI, hyperdrive_contract: ContractInstanc
     return PoolState(**hyper_dict)
 
 
-def _snake_to_camel(_snake):
-    """Convert snake_case to camelCase."""
+def snake_to_camel(_snake):
+    """Convert snake_case to camelCase"""
     return "".join(word.capitalize() for word in _snake.split("_"))
 
 
-def _camel_to_snake(_camel):
-    """Convert camelCase to snake_case."""
-    return _camel.lower().replace(" ", "_")
+def camel_to_snake(camel_string: str) -> str:
+    """Convert camelCase to snake_case"""
+    snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", camel_string)
+    return snake_string.lower()
 
 
 @dataclass
@@ -626,10 +628,10 @@ class PoolState:
 
     def __getattribute__(self, __snake: str) -> Any:
         """Convert from snake_case to camelCase for the dataclass."""
-        return super().__getattribute__(_snake_to_camel(__snake))
+        return super().__getattribute__(snake_to_camel(__snake))
 
     def __setattr__(self, __snake: str, __value: Any) -> None:
-        super().__setattr__(_snake_to_camel(__snake), __value)
+        super().__setattr__(snake_to_camel(__snake), __value)
 
 
 PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
