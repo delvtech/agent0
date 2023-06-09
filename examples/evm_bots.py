@@ -377,7 +377,7 @@ def do_trade(
             print("oops")
     logging.info(
         " agent_%s has Eth=%s Base=%s",
-        agent_contract.addres[:8],
+        agent_contract.address[:8],
         fmt(agent_contract.balance / 1e18),
         fmt(base_instance.balanceOf(agent_contract.address) / 1e18),
     )
