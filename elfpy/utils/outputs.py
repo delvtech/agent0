@@ -6,7 +6,7 @@ import logging
 import os
 import sys
 from logging.handlers import RotatingFileHandler
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
