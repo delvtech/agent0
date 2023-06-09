@@ -600,7 +600,7 @@ def _snake_to_camel(_snake):
 
 def _camel_to_snake(_camel):
     """Convert camelCase to snake_case."""
-    return _camel.lower().replace(" ", "_")
+    return "_".join(word.lower() for word in _camel.split(" "))
 
 
 @dataclass
