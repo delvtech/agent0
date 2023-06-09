@@ -89,11 +89,11 @@ def get_hyperdrive_config(hyperdrive_instance) -> dict:
     """
     hyperdrive_config: dict = hyperdrive_instance.getPoolConfig().__dict__
     hyperdrive_config["timeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
-    logging.info(f"Hyperdrive config deployed at {hyperdrive_instance.address}:")
+    logging.info("Hyperdrive config deployed at %s: ", hyperdrive_instance.address)
     for key, value in hyperdrive_config.items():
         divisor = 1 if key in ["positionDuration", "checkpointDuration", "timeStretch"] else 1e18
         formatted_value = output_utils.str_with_precision(value / divisor) if isinstance(value, (int, float)) else value
-        logging.info(f" {key}: {formatted_value}")
+        logging.info(" %s: %s", key, formatted_value)
     hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
     return hyperdrive_config
 
@@ -354,7 +354,7 @@ def get_wallet_from_onchain_trade_info(
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = AssetIdPrefix(asset_prefix).name
         mint_time = maturity - SECONDS_IN_YEAR
-        logging.info(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
+        logging.info(" => %s(%s) maturity=%s mint_time=%s", asset_type, asset_prefix, maturity, mint_time)
 
         on_chain_balance = 0
         # verify our calculation against the onchain balance
@@ -366,7 +366,7 @@ def get_wallet_from_onchain_trade_info(
                     f"events {balance=} and {on_chain_balance=} disagree by "
                     f"more than {MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address}"
                 )
-            logging.info(f" => calculated balance = on_chain = {output_utils.str_with_precision(balance)}")
+            logging.info(" => calculated balance = on_chain = %s", output_utils.str_with_precision(balance))
         # check if there's an outstanding balance
         if balance != 0 or on_chain_balance != 0:
             if asset_type == "SHORT":
@@ -1034,12 +1034,12 @@ def attempt_txn(
             return txn_receipt
         except TransactionError as exc:
             if "replacement transaction underpriced" not in str(exc) or not isinstance(exc, TransactionNotFoundError):
-                logging.info(f"Txn failed in unexpected way on attempt {attempt} of {mult}: {exc}")
+                logging.info("Txn failed in unexpected way on attempt %s of %s: %s", attempt, mult, exc)
                 raise exc
-            logging.info(f"Txn failed in expected way: {exc}")
+            logging.info("Txn failed in expected way: %s", exc)
             if attempt == mult:
                 logging.info(" => max attempts reached, raising exception")
                 raise exc
-            logging.info(f" => retrying with higher gas price: {attempt + 1} of {mult}")
+            logging.info(" => retrying with higher gas price: %s of %s", attempt + 1, mult)
             continue
     raise TimeoutError("Failed to execute transaction")
