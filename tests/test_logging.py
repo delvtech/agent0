@@ -1,11 +1,11 @@
 """Testing for logging in the ElfPy package modules"""
 from __future__ import annotations
 
-import unittest
-import logging
 import itertools
+import logging
 import os
 import sys
+import unittest
 
 import elfpy.utils.outputs as output_utils
 from elfpy.simulators.config import Config
@@ -62,12 +62,3 @@ class TestLogging(unittest.TestCase):
         logging.info("%s", config)
         self.assertLogs(level=logging.INFO)
         output_utils.close_logging()
-
-    def test_text_to_logging_level(self):
-        """Test that logging level strings result in the correct integera amounts"""
-        # change up case to test .lower()
-        logging_levels = ["notset", "debug", "info", "Warning", "Error", "CRITICAL"]
-        logging_constants = [0, 10, 20, 30, 40, 50]
-        for level_str, level_int in zip(logging_levels, logging_constants):
-            func_level = output_utils.text_to_log_level(level_str)
-            assert level_int == func_level

@@ -18,6 +18,7 @@
 """Simulation for the Hyperdrive Borrow market"""
 from __future__ import annotations
 
+
 # pylint: disable=line-too-long
 # pylint: disable=too-many-lines
 # pylint: disable=too-many-arguments
@@ -56,21 +57,21 @@ except:  # pylint: disable=bare-except
 from dataclasses import dataclass, field
 
 import numpy as np
-from numpy.random._generator import Generator as NumpyGenerator
 import pandas as pd
+from numpy.random._generator import Generator as NumpyGenerator
 
 import elfpy.time as elf_time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
+from elfpy.bots.get_env_args import LogLevel
 from elfpy.markets.borrow import (
     BorrowMarket,
     BorrowMarketAction,
     BorrowMarketState,
-    MarketActionType,
     BorrowPricingModel,
+    MarketActionType,
 )
 from elfpy.math.fixed_point import FixedPoint
 from elfpy.simulators.config import Config
@@ -167,7 +168,9 @@ config.flat_fee_multiple = 0.05  # fee collected on the spread of the flat porti
 config.target_fixed_apr = 0.01  # target fixed APR of the initial market after the LP
 config.target_liquidity = 500_000_000  # target total liquidity of the initial market, before any trades
 
-config.log_level = output_utils.text_to_log_level("INFO")  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
+config.log_level = output_utils.text_to_log_level(
+    LogLevel.INFO
+)  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
 config.log_filename = "borrowing_beatrice"  # Output filename for logging
 
 config.shuffle_users = True
