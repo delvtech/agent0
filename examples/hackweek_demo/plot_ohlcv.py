@@ -97,14 +97,12 @@ while True:
 
     with placeholder.container():
         # create three columns
-        fig_col_1, fig_col_2 = st.columns(2)
+        fig_col = st.columns(1)[0]
+
         fig = mpf.plot(ohlcv, style='mike', type='candle', volume=True, returnfig=True)
-        with fig_col_1:
+        with fig_col:
             st.markdown("## OHLCV plot")
             st.write(fig[0])
-        with fig_col_2:
-            st.markdown("## Volume plot")
-            st.write(fig[1])
 
     time.sleep(1)
 
