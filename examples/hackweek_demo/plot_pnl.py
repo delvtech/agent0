@@ -32,7 +32,7 @@ from matplotlib import ticker as mpl_ticker
 from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
 
-from extract_data_logs import read_json_to_pd, explode_transaction_data, calculate_spot_price
+from extract_data_logs import read_json_to_pd, explode_transaction_data
 
 ## Get transactions from data
 trans_data = "../../.logging/transactions.json"
@@ -96,7 +96,7 @@ columns = [c for c in columns if c in data.columns]
 # Filter data based on columns
 trade_data = data[columns]
 # Rename columns
-trade_data = trade_data.rename(rename_dict)
+trade_data = trade_data.rename(columns = rename_dict)
 
 # %%
 def get_wallet_from_onchain_trade_info(
