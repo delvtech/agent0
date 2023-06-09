@@ -2,18 +2,35 @@
 from __future__ import annotations
 
 import json
+import os
 import time
-from typing import NewType
 
 import attr
 import requests
 from eth_typing import URI
 from eth_utils import address
+from hexbytes import HexBytes
 from web3 import Web3
+from web3.contract import Contract
+from web3.contract.contract import ContractFunction
+from web3.datastructures import AttributeDict, MutableAttributeDict
 from web3.middleware import geth_poa
 
+from elfpy.utils import apeworx_integrations as ape_utils
 
-def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url: str):
+
+class ExtendedJSONEncoder(json.JSONEncoder):
+    """Overrides json encoder to handle hex inputs"""
+
+    def default(self, o):
+        if isinstance(o, HexBytes):
+            return o.hex()
+        if isinstance(o, (AttributeDict, MutableAttributeDict)):
+            return dict(o)
+        return super().default(o)
+
+
+def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url: str, output_location: str):
     """main entry point for accessing contract & writing pool info"""
     web3 = setup_web3(ethereum_node)
 
@@ -21,20 +38,57 @@ def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url:
     # load the deployed Hyperdrive contract addresses from the server response
     addresses = fetch_addresses(contracts_url)
 
-    # Load the deployed contract addresses from the server response
+    # get contract instance of hyperdrive
     with open(hyperdrive_abi_file_path, "r", encoding="UTF-8") as file:
         abi = json.load(file)["abi"]
-    contract = web3.eth.contract(address=address.to_checksum_address(addresses.hyperdrive), abi=abi)
-    pool_info = contract.functions.getPoolInfo()
+    hyperdrive_contract: Contract = web3.eth.contract(
+        address=address.to_checksum_address(addresses.hyperdrive), abi=abi
+    )
 
-    ## Get the current block number from the Ethereum node
-    #current_block = web3.eth.block_number
-    ## decode data from current_block
-    #block = web3.eth.get_block(current_block, full_transactions=True)
+    # get pool config from hyperdrive contract
+    pool_config = get_smart_contract_read_call(hyperdrive_contract, "getPoolConfig")
+    contract_file = os.path.join(output_location, "hyperdrive_config.json")
+    with open(contract_file, mode="w", encoding="UTF-8") as file:
+        json.dump(pool_config, file, indent=2, cls=ExtendedJSONEncoder)
+
+    block_number: int = web3.eth.get_block_number()
+    latest_block_number: int = block_number
+    pool_info = {}
+    block_pool_info = get_smart_contract_read_call(hyperdrive_contract, "getPoolInfo")
+    while True:
+        latest_block_number: int = web3.eth.get_block_number()
+        # if we are on a new block
+        if latest_block_number != block_number:
+            block_number: int = latest_block_number
+            # get pool info from hyperdrive contract
+            block_pool_info = get_smart_contract_read_call(hyperdrive_contract, "getPoolInfo")
+            pool_info[latest_block_number] = block_pool_info
+            contract_file = os.path.join(output_location, "hyperdrive_pool_info.json")
+            with open(contract_file, mode="w", encoding="UTF-8") as file:
+                json.dump(pool_info, file, indent=2, cls=ExtendedJSONEncoder)
+
+
+def get_smart_contract_read_call(contract: Contract, function_name: str):
+    """Get a smart contract read call"""
+    # decode ABI to get pool info variable names
+    abi = contract.abi
+    result_keys = [
+        component["name"]
+        for component in abi[[idx for idx in range(len(abi)) if abi[idx]["name"] == function_name][0]]["outputs"][0][
+            "components"
+        ]
+    ]
+    # execute run hyperdrive contract call to get pool info
+    function: ContractFunction = contract.get_function_by_name(function_name)()
+    result_values = function.call()
+    # associate pool info with the keys
+    assert len(result_keys) == len(result_values)
+    result = dict((variable_name, info) for variable_name, info in zip(result_keys, result_values))
+    return result
 
 
 def setup_web3(ethereum_node: URI | str) -> Web3:
-    # Create the Web3 provider and inject a geth Proof of Authority (poa) middleware.
+    """Create the Web3 provider and inject a geth Proof of Authority (poa) middleware."""
     web3 = Web3(Web3.HTTPProvider(ethereum_node))
     web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
     return web3
@@ -45,7 +99,7 @@ class HyperdriveAddressesJson:
     """Addresses for deployed Hyperdrive contracts."""
 
     hyperdrive: str = attr.ib()
-    base_erc20: str = attr.ib()
+    base_token: str = attr.ib()
 
 
 def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
@@ -62,21 +116,22 @@ def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
     if response.status_code != 200:
         raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
     addresses_json = response.json()
-    addresses = HyperdriveAddressesJson(**addresses_json)
-
+    addresses = HyperdriveAddressesJson(
+        **{ape_utils.camel_to_snake(key): value for key, value in addresses_json.items()}
+    )
     return addresses
 
-    # first write poolConfig
 
+# def get_contract_instance(abi: json):
+#    # Load the deployed contract addresses from the server response
+#    with open(hyperdrive_abi_file_path, "r", encoding="UTF-8") as file:
+#        abi = json.load(file)["abi"]
+#    contract = web3.eth.contract(address=address.to_checksum_address(addresses.hyperdrive), abi=abi)
 
-def get_contract_instance(abi: json)
-    # Load the deployed contract addresses from the server response
-    with open(hyperdrive_abi_file_path, "r", encoding="UTF-8") as file:
-        abi = json.load(file)["abi"]
-    contract = web3.eth.contract(address=address.to_checksum_address(addresses.hyperdrive), abi=abi)
 
 if __name__ == "__main__":
     ETHEREUM_NODE = "http://localhost:8545"
-    ABI_FILE_PATH = "./hyperdrive_solidity/.build/Hyperdrive.json"
+    ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
     CONTRACTS_URL = "http://localhost:80/addresses.json"
-    main(ETHEREUM_NODE, ABI_FILE_PATH, CONTRACTS_URL)
+    OUTPUT_LOCATION = ".logging"
+    main(ETHEREUM_NODE, ABI_FILE_PATH, CONTRACTS_URL, OUTPUT_LOCATION)
