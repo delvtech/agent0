@@ -15,14 +15,14 @@
 # %%
 """simulation for the Hyperdrive market"""
 from __future__ import annotations
-import json
+from extract_data_logs import read_json_to_pd, explode_transaction_data, calculate_spot_price
+
+import matplotlib.pyplot as plt
+import mplfinance as mpf
+import streamlit as st
 import pandas as pd
 import time
-import matplotlib.pyplot as plt
 
-import mplfinance as mpf
-
-import streamlit as st
 
 # %%
 # Get data here
@@ -32,49 +32,24 @@ st.set_page_config(
     )
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
+def calc_ohlcv(pool_info_data, freq='D'):
+    """
+    freq var: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
+    """
+    spot_prices = calculate_spot_price(pool_info_data).to_frame().astype(float)
+    spot_prices.columns = ['spot_price']
+    timestamp = pool_info_data['timestamp']
+    spot_prices['timestamp'] = pd.to_datetime(timestamp, unit='s')
+    spot_prices = spot_prices.set_index('timestamp')
 
-def get_decoded_logs(data):
-    timestamps = data['timestamp']
-    decoded_logs = data['decoded_logs'].reset_index().explode('decoded_logs')
-    index = decoded_logs['index']
-    decoded_logs = pd.json_normalize(decoded_logs['decoded_logs'])
-    decoded_logs['timestamp'] = pd.to_datetime(timestamps.loc[index].values, unit='s')
-    # Filter for only transfers
-    decoded_logs['data_index'] = index.values
-    decoded_logs = decoded_logs[decoded_logs['event'] == "TransferSingle"]
-    return decoded_logs
-
-def get_decoded_input(data):
-    timestamps = data['timestamp']
-    decoded_input = pd.json_normalize(data['decoded_input'])
-    decoded_input['timestamp'] = pd.to_datetime(timestamps, unit='s')
-    return decoded_input
-
-
-def calculate_spot_price(decoded_logs):
-    # Hard coding variables to calculate spot price
-    initial_share_price = 1
-    time_remaining_stretched = 0.045071688063194093
-    spot_price = ((initial_share_price * (decoded_logs['block_info.shareReserves_']/1e18)) /
-        ((decoded_logs['block_info.bondReserves_']/1e18) + (decoded_logs['block_info.lpTotalSupply']/1e18))
-                 ) ** time_remaining_stretched
-    return spot_price
-
-
-def calc_ohlcv(data, freq='D'):
-    decoded_logs = get_decoded_logs(data)
-    decoded_logs['spot_price'] = calculate_spot_price(decoded_logs)
-    decoded_logs['value'] = decoded_logs['args.value']/1e18
-    decoded_logs = decoded_logs.set_index('timestamp')
-
-    ohlcv = decoded_logs.groupby([
+    ohlcv = spot_prices.groupby([
         pd.Grouper(freq=freq)
-    ]).agg({'spot_price':['first', 'last', 'max', 'min'], 'value':'sum'})
+    ]).agg({'spot_price':['first', 'last', 'max', 'min']})
 
-    ohlcv.columns = ['Open', 'Close', 'High', 'Low', 'Volume']
+    ohlcv.columns = ['Open', 'Close', 'High', 'Low']
     ohlcv.index.name = 'Date'
 
-    return ohlcv.astype(float)
+    return ohlcv
 
 # creating a single-element container
 placeholder = st.empty()
@@ -84,31 +59,27 @@ placeholder = st.empty()
 
 while True:
     # Hard coding location for now
-    trans_data = "hyperTransRecs_updated.json"
+    # trans_data = "hyperTransRecs_updated.json"
 
     ## Get transactions from data
-    #trans_data = "../../.logging/transactions.json"
+    trans_data = "../../.logging/transactions.json"
+    config_data = "../../.logging/hyperdrive_config.json"
+    pool_info_data = "../../.logging/hyperdrive_pool_info.json"
 
-    with open(trans_data, 'r', encoding='utf8') as f:
-        json_data = json.load(f)
+    trans_data = explode_transaction_data(read_json_to_pd(trans_data))
+    config_data = read_json_to_pd(config_data)
+    pool_info_data = read_json_to_pd(pool_info_data).T
 
-    data = pd.DataFrame(json_data)
-    ohlcv = calc_ohlcv(data)
+    ohlcv = calc_ohlcv(pool_info_data, freq='5T')
 
     with placeholder.container():
         # create three columns
         fig_col = st.columns(1)[0]
-
-        fig = mpf.plot(ohlcv, style='mike', type='candle', volume=True, returnfig=True)
+        plt.close('all')
+        fig = mpf.plot(ohlcv, style='mike', type='candle', returnfig=True)
         with fig_col:
             st.markdown("## OHLCV plot")
             st.write(fig[0])
 
-    time.sleep(1)
-
-# %%
-
-# Show plot in streamlit
-st.pyplot()
-
+    time.sleep(.1)
 
