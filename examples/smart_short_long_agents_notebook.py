@@ -2,6 +2,25 @@
 """Simulation for the smart bots making rational trades"""
 from __future__ import annotations
 
+import logging
+
+import matplotlib.ticker as ticker
+
+# %%
+import numpy as np
+from numpy.random._generator import Generator as NumpyGenerator
+
+import elfpy.types as types
+import elfpy.utils.outputs as output_utils
+import elfpy.utils.post_processing as post_processing
+import elfpy.utils.sim_utils as sim_utils
+from elfpy.agents.agent import Agent
+from elfpy.agents.policies import LongLouie, ShortSally
+from elfpy.agents.policies.base import BasePolicy
+from elfpy.markets.hyperdrive import HyperdriveMarket, hyperdrive_actions
+from elfpy.math import FixedPoint
+from elfpy.simulators.config import Config
+from elfpy.wallet.wallet import Wallet
 
 # pylint: disable=line-too-long
 # pylint: disable=too-many-lines
@@ -13,23 +32,6 @@ from __future__ import annotations
 # %% [markdown]
 # ### Install repo requirements & import packages
 
-# %%
-import numpy as np
-from numpy.random._generator import Generator as NumpyGenerator
-import matplotlib.ticker as ticker
-
-import elfpy.utils.outputs as output_utils
-import elfpy.utils.post_processing as post_processing
-import elfpy.utils.sim_utils as sim_utils
-import elfpy.types as types
-
-from elfpy.agents.agent import Agent
-from elfpy.agents.policies.base import BasePolicy
-from elfpy.wallet.wallet import Wallet
-from elfpy.markets.hyperdrive import hyperdrive_actions, HyperdriveMarket
-from elfpy.math import FixedPoint
-from elfpy.simulators.config import Config
-from elfpy.agents.policies import LongLouie, ShortSally
 
 # %% [markdown]
 # ### Setup experiment parameters
@@ -51,7 +53,7 @@ config.flat_fee_multiple = 0.05  # fee collected on the spread of the flat porti
 config.target_fixed_apr = 0.01  # target fixed APR of the initial market after the LP
 config.target_liquidity = 500_000_000  # target total liquidity of the initial market, before any trades
 
-config.log_level = output_utils.text_to_log_level("DEBUG")  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
+config.log_level = logging.DEBUG  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
 config.log_filename = "sally_n_louie"  # Output filename for logging
 
 config.shuffle_users = True
