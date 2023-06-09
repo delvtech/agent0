@@ -1,15 +1,19 @@
 [project]
 name = "elfpy"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
-    { name = "Dylan Paiton", email = "dylan@element.fi" },
-    { name = "Jonny Rhea", email = "jonny@element.fi" },
-    { name = "Mihai Cosma", email = "mihai@element.fi" },
-    { name = "Alex Towle", email = "alex@element.fi" },
-    { name = "Matthew Brown", email = "matt@element.fi" },
-    { name = "Giovanni Effio", email = "mazygio@element.fi" },
-    { name = "Patrick Morris", email = "patrick@element.fi" },
-    { name = "Violet Vienhage", email = "violet@element.fi" },
+    { name = "Dylan Paiton", email = "dylan@delv.tech" },
+    { name = "Mihai Cosma", email = "mihai@delv.tech" },
+    { name = "Jonny Rhea", email = "jonny@delv.tech" },
+    { name = "Matthew Brown", email = "matt@delv.tech" },
+    { name = "Alex Towle", email = "alex@delv.tech" },
+    { name = "Sheng Lundquist", email = "sheng@delv.tech" },
+    { name = "Patrick Morris", email = "patrick@delv.tech" },
+    { name = "Giovanni Effio", email = "mazygio@delv.tech" },
+    { name = "Ryan Goree", email = "ryan@delv.tech" },
+    { name = "Will Villanueva", email = "will@delv.tech" },
+    { name = "Jacob Arruda", email = "jacob@delv.tech" },
+    { name = "Violet Vienhage", email = "violet@delv.tech" },
 ]
 description = "Experiment management and market simulators by Delv"
 readme = "README.md"
