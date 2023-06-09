@@ -53,7 +53,6 @@ except:  # pylint: disable=bare-except
     print("running locally & trusting that you have the dependencies installed")
 
 
-
 # %%
 import numpy as np
 import pandas as pd
