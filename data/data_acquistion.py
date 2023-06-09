@@ -1,18 +1,18 @@
 """Script to pull on-chain data and output JSON for post-processing"""
 from __future__ import annotations
-import os
+
 import json
+import os
 import time
 from json import JSONEncoder
 
 import requests
 import toml
-
+from eth_utils.address import to_checksum_address
+from hexbytes import HexBytes
 from web3 import Web3
 from web3.datastructures import AttributeDict, MutableAttributeDict
 from web3.middleware import geth_poa
-from hexbytes import HexBytes
-from eth_utils.address import to_checksum_address
 
 # python `open` will infer the encoding if we do not specified, which is the behavior we want for now
 # pylint: disable=unspecified-encoding
@@ -46,10 +46,10 @@ def load_abi(file_path):
 
 def recursive_dict_conversion(obj):
     """Recursively converts a dictionary to convert objects to hex values"""
-    if isinstance(obj, dict):
-        return {key: recursive_dict_conversion(value) for key, value in obj.items()}
     if isinstance(obj, HexBytes):
         return obj.hex()
+    if isinstance(obj, dict):
+        return {key: recursive_dict_conversion(value) for key, value in obj.items()}
     if hasattr(obj, "items"):
         return {key: recursive_dict_conversion(value) for key, value in obj.items()}
     return obj
