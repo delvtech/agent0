@@ -16,8 +16,6 @@ import elfpy
 from elfpy.math.fixed_point import FixedPoint
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
-
     import pandas as pd
     from matplotlib.figure import Figure
     from matplotlib.gridspec import GridSpec
