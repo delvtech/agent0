@@ -5,7 +5,7 @@ import json
 import os
 import time
 from json import JSONEncoder
-from types import Iterable
+from typing import Iterable
 
 import requests
 import toml
@@ -76,12 +76,8 @@ def get_event_object(web3: Web3, contract: Contract, log: LogReceipt, tx_receipt
             # Decode matching log
             contract_event: ContractEvent = contract.events[event["name"]]()
             decoded_logs: Iterable[EventData] = contract_event.process_receipt(tx_receipt)
-            return decoded_logs
-    # for event in [e for e in dir(contract.events) if not e.startswith("_")]:
-    #    event_cls = getattr(contract.events, event)
-    #    if log["topics"][0] == web3_instance.keccak(text=event):
-    #        return event_cls(), event_cls._anonymous_types  # pylint: disable=protected-access
-    # return None, []
+            return decoded_logs, event
+        return None, None
 
 
 def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: TxReceipt):
@@ -89,30 +85,18 @@ def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: 
     logs = []
     if tx_receipt.get("logs"):
         for log in tx_receipt["logs"]:
-            event_obj, anonymous_types = get_event_object(web3_container, contract, log, tx_receipt)
-            if event_obj:
-                log_data = event_obj.processLog(log)
+            log_data, event = get_event_object(web3_container, contract, log, tx_receipt)
+            if log_data:
                 formatted_log = {
-                    "address": log_data["address"],
-                    "args": {k: str(v) for k, v in log_data["args"].items()},
-                    "blockHash": log_data["blockHash"].hex(),
-                    "blockNumber": log_data["blockNumber"],
-                    "event": event_obj.event_name,
-                    "logIndex": log_data["logIndex"],
-                    "transactionIndex": log_data["transactionIndex"],
-                    "transactionHash": log_data["transactionHash"].hex(),
+                    "address": [log["address"] for log in log_data],
+                    "args": [log["args"] for log in log_data],
+                    "blockHash": [log["blockHash"].hex() for log in log_data],
+                    "blockNumber": [log["blockNumber"] for log in log_data],
+                    "event": [event["name"] for _ in log_data],
+                    "logIndex": [log["logIndex"] for log in log_data],
+                    "transactionIndex": [log["transactionIndex"] for log in log_data],
+                    "transactionHash": [log["transactionHash"].hex() for log in log_data],
                 }
-                # Decode indexed and non-indexed event params
-                arg_names = [
-                    arg["name"] for arg in event_obj._transaction_parser.inputs  # pylint: disable=protected-access
-                ]
-                formatted_topics = [(arg_names[i], topic.hex()) for i, topic in enumerate(log["topics"][1:])]
-                decoded_topics = {
-                    arg["name"]: web3_container.codec.decode_single(arg["type"], topic)
-                    for arg, topic in zip(anonymous_types, log["topics"][1:])
-                }
-                formatted_log["args"].update(decoded_topics)
-                formatted_log["topics"] = formatted_topics
                 logs.append(formatted_log)
     return logs
 
