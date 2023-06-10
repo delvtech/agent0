@@ -12,11 +12,10 @@ import toml
 from eth_utils.address import to_checksum_address
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.contract import Contract
-from web3.contract.contract import ContractEvent
+from web3.contract.contract import Contract, ContractEvent
 from web3.datastructures import AttributeDict, MutableAttributeDict
 from web3.middleware import geth_poa
-from web3.types import EventData, LogReceipt, TxReceipt
+from web3.types import ABIEvent, EventData, LogReceipt, TxReceipt
 
 # python `open` will infer the encoding if we do not specified, which is the behavior we want for now
 # pylint: disable=unspecified-encoding
@@ -61,13 +60,13 @@ def recursive_dict_conversion(obj):
 
 def get_event_object(
     web3_container: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
-) -> Iterable[EventData]:
+) -> tuple[Iterable[EventData], ABIEvent] | tuple[None, None]:
     """Retrieves the event object and anonymous types for a  given contract and log"""
-    abi_events = [abi for abi in contract.abi if abi["type"] == "event"]
-    for event in abi_events:
+    abi_events = [abi for abi in contract.abi if abi["type"] == "event"]  # type: ignore
+    for event in abi_events:  # type: ignore
         # Get event signature components
-        name = event["name"]
-        inputs = [param["type"] for param in event["inputs"]]
+        name = event["name"]  # type: ignore
+        inputs = [param["type"] for param in event["inputs"]]  # type: ignore
         inputs = ",".join(inputs)
         # Hash event signature
         event_signature_text = f"{name}({inputs})"
@@ -76,10 +75,10 @@ def get_event_object(
         receipt_event_signature_hex = log["topics"][0].hex()
         if event_signature_hex == receipt_event_signature_hex:
             # Decode matching log
-            contract_event: ContractEvent = contract.events[event["name"]]()
+            contract_event: ContractEvent = contract.events[event["name"]]()  # type: ignore
             decoded_logs: Iterable[EventData] = contract_event.process_receipt(tx_receipt)
             return decoded_logs, event
-        return None, None
+    return (None, None)
 
 
 def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: TxReceipt):
@@ -89,15 +88,16 @@ def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: 
         for log in tx_receipt["logs"]:
             log_data, event = get_event_object(web3_container, contract, log, tx_receipt)
             if log_data:
+                # TODO: For some reason it thinks `log` is `str` instead of `EventData`
                 formatted_log = {
-                    "address": [log["address"] for log in log_data],
-                    "args": [log["args"] for log in log_data],
-                    "blockHash": [log["blockHash"].hex() for log in log_data],
-                    "blockNumber": [log["blockNumber"] for log in log_data],
-                    "event": [event["name"] for _ in log_data],
-                    "logIndex": [log["logIndex"] for log in log_data],
-                    "transactionIndex": [log["transactionIndex"] for log in log_data],
-                    "transactionHash": [log["transactionHash"].hex() for log in log_data],
+                    "address": [log.address for log in log_data],  # type: ignore
+                    "args": [log.args for log in log_data],  # type: ignore
+                    "blockHash": [log.blockHash.hex() for log in log_data],  # type: ignore
+                    "blockNumber": [log.blockNumber for log in log_data],  # type: ignore
+                    "event": [event["name"] for _ in log_data],  # type: ignore
+                    "logIndex": [log.logIndex for log in log_data],  # type: ignore
+                    "transactionIndex": [log.transactionIndex for log in log_data],  # type: ignore
+                    "transactionHash": [log.transactionHash.hex() for log in log_data],  # type: ignore
                 }
                 logs.append(formatted_log)
     return logs
