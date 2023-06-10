@@ -120,7 +120,7 @@ class Config(types.FrozenClass):
 
     def __str__(self) -> str:
         # cls arg tells json how to handle numpy objects and nested dataclasses
-        return json.dumps(self.__dict__, sort_keys=True, indent=2, cls=output_utils.CustomEncoder)
+        return json.dumps(self.__dict__, sort_keys=True, indent=2, cls=output_utils.ExtendedJSONEncoder)
 
     def copy(self) -> Config:
         """Returns a new copy of self"""
