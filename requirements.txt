@@ -15,6 +15,7 @@ python-dotenv
 scipy
 tomli
 typing_extensions==4.5.0
+web3
 
 # Hackweek requirements
 streamlit
