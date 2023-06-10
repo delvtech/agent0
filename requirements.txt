@@ -15,3 +15,7 @@ python-dotenv
 scipy
 tomli
 typing_extensions==4.5.0
+
+# Hackweek requirements
+streamlit
+mlpfinance

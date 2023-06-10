@@ -1,5 +1,6 @@
-# TODO fix this file
+# TODO This file isn't working, using just as a template
 # pylint: disable=all
+# pyright: reportUndefinedVariable=false
 
 # ---
 # jupyter:
