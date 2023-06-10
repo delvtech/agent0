@@ -1,14 +1,20 @@
+""" Script to run the streamlab demo """
+
 from __future__ import annotations
-from extract_data_logs import read_json_to_pd, explode_transaction_data, get_combined_data
+import time
+
 
 import matplotlib.pyplot as plt
-import mplfinance as mpf
 import streamlit as st
-import pandas as pd
-import time
 
 from plot_ohlcv import plot_ohlcv, calc_ohlcv
 from plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
+
+from extract_data_logs import (
+    read_json_to_pd,
+    explode_transaction_data,
+    get_combined_data,
+)
 
 
 # creating a single-element container
@@ -17,11 +23,10 @@ placeholder = st.empty()
 # %%
 # near real-time / live feed simulation
 
-while True:
-    # Hard coding location for now
-    # trans_data = "hyperTransRecs_updated.json"
+# pylint: disable=invalid-name
+## Get transactions from data
 
-    ## Get transactions from data
+while True:
     trans_data = "../../.logging/transactions.json"
     config_data = "../../.logging/hyperdrive_config.json"
     pool_info_data = "../../.logging/hyperdrive_pool_info.json"

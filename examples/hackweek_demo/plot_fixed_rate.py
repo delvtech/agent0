@@ -1,21 +1,23 @@
 """simulation for the Hyperdrive market"""
 from __future__ import annotations
-from extract_data_logs import read_json_to_pd, explode_transaction_data
 
 import matplotlib.pyplot as plt
-import mplfinance as mpf
-import streamlit as st
 import pandas as pd
 import numpy as np
-import time
 from matplotlib import ticker as mpl_ticker
 from matplotlib import dates as mdates
 
 
 # %%
 def calculate_spot_price_2(
-    share_reserves, bond_reserves, lp_total_supply, maturity_timestamp, block_timestamp, position_duration
+    share_reserves,
+    bond_reserves,
+    lp_total_supply,
+    maturity_timestamp,
+    block_timestamp,
+    position_duration,
 ):
+    # pylint: disable=too-many-arguments
     """Calculate spot price."""
     # Hard coding variables to calculate spot price
     initial_share_price = 1
@@ -30,8 +32,10 @@ def calculate_spot_price_2(
 
 
 def calc_fixed_rate(trade_data):
+    """
+    Calculates the fixed rate given trade data
+    """
     # %%
-    NUMBER_OF_DATA_ROWS_TO_PROCESS = len(trade_data)
     position_duration = max(trade_data["maturity_time"] - trade_data["block_timestamp"])
     position_duration_days = round(position_duration / 60 / 60 / 24)
     print(f"assuming position_duration is {position_duration_days}")
@@ -58,7 +62,8 @@ def calc_fixed_rate(trade_data):
 
 
 def plot_fixed_rate(x_data, y_data):
-    fig = plt.figure()
+    """Plots the fixed rate plot"""
+    plt.figure()
     plt.plot(x_data, y_data)
     # change y-axis unit format to 0.1%
     plt.gca().yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(x, "0.3%")))

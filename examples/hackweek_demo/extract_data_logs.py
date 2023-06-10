@@ -1,15 +1,22 @@
+"""
+Utilities for extracting data from logs
+"""
+
 from __future__ import annotations
 import json
-import pandas as pd
 import time
+import pandas as pd
 
 
 def read_json_to_pd(json_file):
+    """
+    Generic function to read json file path to pandas dataframe
+    """
     # Race condition if background process is writing, keep trying until it passes
     while True:
         try:
-            with open(json_file, "r", encoding="utf8") as f:
-                json_data = json.load(f)
+            with open(json_file, "r", encoding="utf8") as file:
+                json_data = json.load(file)
             break
         except json.JSONDecodeError:
             time.sleep(0.1)
@@ -19,12 +26,21 @@ def read_json_to_pd(json_file):
 
 
 def explode_transaction_data(data):
-    cat_data = pd.concat([pd.json_normalize(data["transaction"]), pd.json_normalize(data["receipt"])], axis=1)
+    """
+    Extract transaction dataframe column to dataframe
+    """
+    cat_data = pd.concat(
+        [pd.json_normalize(data["transaction"]), pd.json_normalize(data["receipt"])],
+        axis=1,
+    )
     cat_data = cat_data.loc[:, ~cat_data.columns.duplicated()].copy()
     return cat_data
 
 
 def calculate_spot_price(pool_info_data):
+    """
+    Calculates the spot price given the pool info data
+    """
     # Hard coding variables to calculate spot price
     initial_share_price = 1
     time_remaining_stretched = 0.045071688063194093
@@ -36,6 +52,11 @@ def calculate_spot_price(pool_info_data):
 
 
 def get_combined_data(trans_data, pool_info_data):
+    """
+    Takes the transaction data nad pool info data and
+    combines the two dataframes into a single dataframe
+    """
+
     pool_info_data.index = pool_info_data.index.astype(int)
     trans_data.index = trans_data["blockNumber"]
     # Combine pool info data and trans data by block number
@@ -54,7 +75,6 @@ def get_combined_data(trans_data, pool_info_data):
         "args.id": "id",  # missing
         "args.value": "value",  # missing
         "prefix": "prefix",  # missing
-        "input.params._maturityTime": "maturity_timestamp",
         "input.method": "trade_type",
         "shareReserves": "share_reserves",
         "bondReserves": "bond_reserves",
@@ -70,7 +90,7 @@ def get_combined_data(trans_data, pool_info_data):
     }
 
     # %%
-    columns = [k for k in rename_dict.keys()]
+    columns = list(rename_dict.keys())
 
     # TODO remove this hack, only grab columns that exist from data
     columns = [c for c in columns if c in data.columns]

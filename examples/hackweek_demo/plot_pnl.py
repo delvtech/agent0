@@ -1,3 +1,6 @@
+# TODO fix this file
+# pylint: disable=all
+
 # ---
 # jupyter:
 #   jupytext:
@@ -26,7 +29,10 @@ import elfpy.utils.apeworx_integrations as ape_utils
 from collections import namedtuple
 from elfpy import types
 from elfpy.math import FixedPoint
-from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
+from elfpy.markets.hyperdrive.hyperdrive_market import (
+    HyperdriveMarket,
+    HyperdriveMarketState,
+)
 from elfpy.markets.hyperdrive import HyperdrivePricingModel
 from matplotlib import ticker as mpl_ticker
 from matplotlib import dates as mdates
@@ -325,7 +331,12 @@ position_duration = position_duration_days * 60 * 60 * 24
 
 # %%
 def calculate_spot_price(
-    share_reserves, bond_reserves, lp_total_supply, maturity_timestamp, block_timestamp, position_duration
+    share_reserves,
+    bond_reserves,
+    lp_total_supply,
+    maturity_timestamp,
+    block_timestamp,
+    position_duration,
 ):
     """Calculate spot price."""
     # Hard coding variables to calculate spot price

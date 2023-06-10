@@ -15,13 +15,11 @@
 # %%
 """simulation for the Hyperdrive market"""
 from __future__ import annotations
-from extract_data_logs import read_json_to_pd, explode_transaction_data, calculate_spot_price
+from extract_data_logs import calculate_spot_price
 
-import matplotlib.pyplot as plt
 import mplfinance as mpf
 import streamlit as st
 import pandas as pd
-import time
 
 
 # %%
@@ -52,5 +50,6 @@ def calc_ohlcv(pool_info_data, freq="D"):
 
 
 def plot_ohlcv(ohlcv):
+    """Plots the ohlcv plot"""
     fig = mpf.plot(ohlcv, style="mike", type="candle", returnfig=True)
     return fig
