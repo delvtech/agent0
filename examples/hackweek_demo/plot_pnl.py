@@ -42,13 +42,8 @@ pool_info_data = "../../.logging/hyperdrive_pool_info.json"
 trans_data = explode_transaction_data(read_json_to_pd(trans_data))
 config_data = read_json_to_pd(config_data)
 pool_info_data = read_json_to_pd(pool_info_data).T
-pool_info_data.index = pool_info_data.index.astype(int)
 
-trans_data.index = trans_data['blockNumber']
-
-# Combine pool info data and trans data by block number
-data = trans_data.merge(pool_info_data, left_index=True, right_index=True)
-
+data = get_combined_data(trans_data, pool_data)
 
 # %%
 #data = data[~data["args.id"].isna()]

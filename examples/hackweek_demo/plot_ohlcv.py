@@ -51,35 +51,8 @@ def calc_ohlcv(pool_info_data, freq='D'):
 
     return ohlcv
 
-# creating a single-element container
-placeholder = st.empty()
+def plot_ohlcv(ohlcv):
+    fig = mpf.plot(ohlcv, style='mike', type='candle', returnfig=True)
+    return fig
 
-# %%
-# near real-time / live feed simulation
-
-while True:
-    # Hard coding location for now
-    # trans_data = "hyperTransRecs_updated.json"
-
-    ## Get transactions from data
-    trans_data = "../../.logging/transactions.json"
-    config_data = "../../.logging/hyperdrive_config.json"
-    pool_info_data = "../../.logging/hyperdrive_pool_info.json"
-
-    trans_data = explode_transaction_data(read_json_to_pd(trans_data))
-    config_data = read_json_to_pd(config_data)
-    pool_info_data = read_json_to_pd(pool_info_data).T
-
-    ohlcv = calc_ohlcv(pool_info_data, freq='5T')
-
-    with placeholder.container():
-        # create three columns
-        fig_col = st.columns(1)[0]
-        plt.close('all')
-        fig = mpf.plot(ohlcv, style='mike', type='candle', returnfig=True)
-        with fig_col:
-            st.markdown("## OHLCV plot")
-            st.write(fig[0])
-
-    time.sleep(.1)
 
