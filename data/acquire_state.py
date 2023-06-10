@@ -106,9 +106,9 @@ def get_smart_contract_read_call(contract: Contract, function_name: str, **funct
 
 def setup_web3(ethereum_node: URI | str) -> Web3:
     """Create the Web3 provider and inject a geth Proof of Authority (poa) middleware."""
-    web3 = Web3(Web3.HTTPProvider(ethereum_node))
-    web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
-    return web3
+    web3_container = Web3(Web3.HTTPProvider(ethereum_node))
+    web3_container.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
+    return web3_container
 
 
 @attr.s
