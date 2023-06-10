@@ -5,14 +5,17 @@ import json
 import os
 import time
 from json import JSONEncoder
+from typing import Iterable
 
 import requests
 import toml
 from eth_utils.address import to_checksum_address
 from hexbytes import HexBytes
 from web3 import Web3
+from web3.contract.contract import Contract, ContractEvent
 from web3.datastructures import AttributeDict, MutableAttributeDict
 from web3.middleware import geth_poa
+from web3.types import ABIEvent, EventData, LogReceipt, TxReceipt
 
 # python `open` will infer the encoding if we do not specified, which is the behavior we want for now
 # pylint: disable=unspecified-encoding
@@ -55,44 +58,47 @@ def recursive_dict_conversion(obj):
     return obj
 
 
-def get_event_object(web3_instance, contract, log):
+def get_event_object(
+    web3_container: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
+) -> tuple[Iterable[EventData], ABIEvent] | tuple[None, None]:
     """Retrieves the event object and anonymous types for a  given contract and log"""
-    for event in [e for e in dir(contract.events) if not e.startswith("_")]:
-        event_cls = getattr(contract.events, event)
-        if log["topics"][0] == web3_instance.keccak(text=event):
-            return event_cls(), event_cls._anonymous_types  # pylint: disable=protected-access
-    return None, []
+    abi_events = [abi for abi in contract.abi if abi["type"] == "event"]  # type: ignore
+    for event in abi_events:  # type: ignore
+        # Get event signature components
+        name = event["name"]  # type: ignore
+        inputs = [param["type"] for param in event["inputs"]]  # type: ignore
+        inputs = ",".join(inputs)
+        # Hash event signature
+        event_signature_text = f"{name}({inputs})"
+        event_signature_hex = web3_container.keccak(text=event_signature_text).hex()
+        # Find match between log's event signature and ABI's event signature
+        receipt_event_signature_hex = log["topics"][0].hex()
+        if event_signature_hex == receipt_event_signature_hex:
+            # Decode matching log
+            contract_event: ContractEvent = contract.events[event["name"]]()  # type: ignore
+            decoded_logs: Iterable[EventData] = contract_event.process_receipt(tx_receipt)
+            return decoded_logs, event
+    return (None, None)
 
 
-def fetch_and_decode_logs(web3_container, contract, tx_receipt):
+def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: TxReceipt):
     """Decode logs from a transaction receipt"""
     logs = []
     if tx_receipt.get("logs"):
         for log in tx_receipt["logs"]:
-            event_obj, anonymous_types = get_event_object(web3_container, contract, log)
-            if event_obj:
-                log_data = event_obj.processLog(log)
+            log_data, event = get_event_object(web3_container, contract, log, tx_receipt)
+            if log_data:
+                # TODO: For some reason it thinks `log` is `str` instead of `EventData`
                 formatted_log = {
-                    "event": event_obj.event_name,
-                    "args": {k: str(v) for k, v in log_data["args"].items()},
-                    "logIndex": log_data["logIndex"],
-                    "transactionIndex": log_data["transactionIndex"],
-                    "transactionHash": log_data["transactionHash"].hex(),
-                    "address": log_data["address"],
-                    "blockHash": log_data["blockHash"].hex(),
-                    "blockNumber": log_data["blockNumber"],
+                    "address": [log.address for log in log_data],  # type: ignore
+                    "args": [log.args for log in log_data],  # type: ignore
+                    "blockHash": [log.blockHash.hex() for log in log_data],  # type: ignore
+                    "blockNumber": [log.blockNumber for log in log_data],  # type: ignore
+                    "event": [event["name"] for _ in log_data],  # type: ignore
+                    "logIndex": [log.logIndex for log in log_data],  # type: ignore
+                    "transactionIndex": [log.transactionIndex for log in log_data],  # type: ignore
+                    "transactionHash": [log.transactionHash.hex() for log in log_data],  # type: ignore
                 }
-                # Decode indexed and non-indexed event params
-                arg_names = [
-                    arg["name"] for arg in event_obj._transaction_parser.inputs  # pylint: disable=protected-access
-                ]
-                formatted_topics = [(arg_names[i], topic.hex()) for i, topic in enumerate(log["topics"][1:])]
-                decoded_topics = {
-                    arg["name"]: web3_container.codec.decode_single(arg["type"], topic)
-                    for arg, topic in zip(anonymous_types, log["topics"][1:])
-                }
-                formatted_log["args"].update(decoded_topics)
-                formatted_log["topics"] = formatted_topics
                 logs.append(formatted_log)
     return logs
 
