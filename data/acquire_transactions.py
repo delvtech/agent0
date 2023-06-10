@@ -59,7 +59,9 @@ def recursive_dict_conversion(obj):
     return obj
 
 
-def get_event_object(web3: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt) -> Iterable[EventData]:
+def get_event_object(
+    web3_container: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
+) -> Iterable[EventData]:
     """Retrieves the event object and anonymous types for a  given contract and log"""
     abi_events = [abi for abi in contract.abi if abi["type"] == "event"]
     for event in abi_events:
@@ -69,7 +71,7 @@ def get_event_object(web3: Web3, contract: Contract, log: LogReceipt, tx_receipt
         inputs = ",".join(inputs)
         # Hash event signature
         event_signature_text = f"{name}({inputs})"
-        event_signature_hex = web3.keccak(text=event_signature_text).hex()
+        event_signature_hex = web3_container.keccak(text=event_signature_text).hex()
         # Find match between log's event signature and ABI's event signature
         receipt_event_signature_hex = log["topics"][0].hex()
         if event_signature_hex == receipt_event_signature_hex:
