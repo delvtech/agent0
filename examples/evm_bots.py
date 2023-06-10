@@ -17,14 +17,12 @@ from typing import cast
 import ape
 import numpy as np
 import requests
-import tqdm
 from ape import accounts
 from ape.api import ProviderAPI, ReceiptAPI
 from ape.contracts import ContractInstance
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from eth_account import Account as EthAccount
-from tqdm import trange
 
 import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 
@@ -97,13 +95,18 @@ def get_devnet_addresses(
         with open(address_file_path, "r", encoding="utf-8") as file:
             deployed_addresses = json.load(file)
     else:  # otherwise get deployed addresses from artifacts server
-        for _ in trange(100, desc="artifacts.."):
-            response = requests.get(args.artifacts_url + "/addresses.json", timeout=1)
+        logging.info(
+            "Attempting to load addresses.json, which requires waiting for the contract deployment to complete."
+        )
+        num_attempts = 100
+        for attempt_num in range(num_attempts):
+            logging.info("\tAttempt %s out of %s", attempt_num + 1, num_attempts)
+            response = requests.get(args.artifacts_url + "/addresses.json", timeout=10)
             if response.status_code == 200:
                 deployed_addresses = response.json()
                 break
-            tqdm.desc = f"artifacts.. {response.status_code}"
             sleep(1)
+        logging.info("Contracts deployed; addresses loaded.")
     if "baseToken" in deployed_addresses:
         addresses["baseToken"] = deployed_addresses["baseToken"]
         logging.info("found devnet base address: %s", addresses["baseToken"])
@@ -364,23 +367,13 @@ def do_trade(
         "agent": agent_contract,
         "amount": amount,
     }
-    if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
-        params["maturity_time"] = int(trade.mint_time + SECONDS_IN_YEAR)
-
-        # check if we have enough on-chain balance to close this
-        prefix = 1 if trade.action_type.name == "CLOSE_LONG" else 2  # LONG = 1, SHORT = 2
-        position_id = hyperdrive_assets.encode_asset_id(prefix=prefix, timestamp=params["maturity_time"])
-        on_chain_balance = hyperdrive_instance.balanceOf(position_id, agent_contract.address)
-        print(f"trying to {trade.action_type.name} {params['amount']=} with {on_chain_balance=}")
-
-        if params["amount"] > on_chain_balance:
-            print("oops")
     logging.info(
-        " agent_%s has Eth=%s Base=%s",
+        "agent_%s has Eth=%s Base=%s",
         agent_contract.address[:8],
         fmt(agent_contract.balance / 1e18),
         fmt(base_instance.balanceOf(agent_contract.address) / 1e18),
     )
+    logging.info("\trade %s", trade.action_type.name)
     # execute the trade using key-word arguments
     pool_state, _ = ape_utils.ape_trade(**params)
     return pool_state
@@ -601,7 +594,9 @@ def main():
         experiment_config, args, provider, hyperdrive_instance, base_instance, addresses, deployer_account
     )
     ape_utils.dump_agent_info(sim_agents, experiment_config)
-
+    logging.info("Constructed %s agents:", len(sim_agents))
+    for agent_name in sim_agents:
+        logging.info("\t%s", agent_name)
     start_timestamp = ape.chain.blocks[-1].timestamp
     while True:  # hyper drive forever into the sunset
         latest_block = ape.chain.blocks[-1]
@@ -631,4 +626,5 @@ def main():
 
 
 if __name__ == "__main__":
+    output_utils.setup_logging(".logging/evm_bots.log", log_file_and_stdout=True)
     main()

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import time
+import logging
 from typing import Iterable
 
 import attr
@@ -35,7 +36,7 @@ def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
         response = requests.get(contracts_url, timeout=60)
         # Check the status code and retry the request if it fails
         if response.status_code != 200:
-            print(f"Request failed with status code {response.status_code} @ {time.ctime()}")
+            logging.warning("Request failed with status code %s @ %s", response.status_code, time.ctime())
             time.sleep(10)
             continue
         attempt_num += 1
@@ -73,9 +74,7 @@ def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: 
 def fetch_transactions(web3_container, contract, start_block, current_block):
     """Fetch transactions related to the hyperdrive_address contract"""
     transactions = []
-    print(f"Processing Block Range {start_block}/{current_block}")
     for block in range(start_block, current_block):
-        print(f"Processing Block {block}/{current_block}")
         block = web3_container.eth.get_block(block, full_transactions=True)
         for transaction in block["transactions"]:
             tx_dict = dict(transaction)

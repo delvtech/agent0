@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 
@@ -39,7 +40,7 @@ def main(config_file_path, contracts_url, ethereum_node, save_dir, abi_file_path
         response = requests.get(contracts_url, timeout=60)
         # Check the status code and retry the request if it fails
         if response.status_code != 200:
-            print(f"Request failed with status code {response.status_code} @ {time.ctime()}")
+            logging.warning("Request failed with status code %s @ %s", response.status_code, time.ctime())
             time.sleep(10)
             continue
         # Load the deployed contract addresses from the server response
@@ -52,6 +53,7 @@ def main(config_file_path, contracts_url, ethereum_node, save_dir, abi_file_path
             starting_block = config["settings"]["startBlock"]
         # Get the current block number from the Ethereum node
         current_block = web3_container.eth.block_number
+        logging.info("Fetching transactions up to block %s", current_block)
         # Fetch transactions related to the hyperdrive_address contract
         transactions = contract_interface.fetch_transactions(web3_container, contract, starting_block, current_block)
         # Save the updated transactions to the output file with custom encoder
@@ -71,4 +73,5 @@ if __name__ == "__main__":
     ETHEREUM_NODE = "http://localhost:8545"
     SAVE_DIR = ".logging"
     ABI_FILE_PATH = "./hyperdrive_solidity/.build/Hyperdrive.json"
+    output_utils.setup_logging(".logging/acquire_transactions.log", log_file_and_stdout=True)
     main(CONFIG_FILE_PATH, CONTRACTS_URL, ETHEREUM_NODE, SAVE_DIR, ABI_FILE_PATH)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 
 from eth_typing import URI
@@ -35,6 +36,7 @@ def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url:
     # get pool config from hyperdrive contract
     pool_config = contract_interface.get_smart_contract_read_call(hyperdrive_contract, "getPoolConfig")
     contract_file = os.path.join(output_location, "hyperdrive_config.json")
+    logging.info("Writing pool config.")
     with open(contract_file, mode="w", encoding="UTF-8") as file:
         json.dump(pool_config, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
     # write the initial pool info
@@ -49,12 +51,14 @@ def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url:
     with open(contract_file, mode="w", encoding="UTF-8") as file:
         json.dump(pool_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
     # monitor for new blocks & add pool info per block
+    logging.info("Monitoring for pool info updates...")
     while True:
         latest_block_number: int = web3_container.eth.get_block_number()
         # if we are on a new block
         if latest_block_number != block_number:
             # Backfilling for blocks that need updating
             for block_number in range(block_number + 1, latest_block_number + 1):
+                logging.info("Block %s", block_number)
                 latest_block_timestamp: BlockData = web3_container.eth.get_block(
                     block_identifier=block_number
                 ).timestamp
@@ -74,4 +78,5 @@ if __name__ == "__main__":
     CONTRACTS_URL = "http://localhost:80/addresses.json"
     ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
     OUTPUT_LOCATION = ".logging"
+    output_utils.setup_logging(".logging/acquire_state.log", log_file_and_stdout=True)
     main(ETHEREUM_NODE, ABI_FILE_PATH, CONTRACTS_URL, OUTPUT_LOCATION)
