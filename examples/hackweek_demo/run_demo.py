@@ -32,8 +32,7 @@ while True:
 
     combined_data = get_combined_data(trans_data, pool_info_data)
 
-
-    ohlcv = calc_ohlcv(pool_info_data, freq='5T')
+    ohlcv = calc_ohlcv(pool_info_data, freq="5T")
 
     # TODO fix this plot
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data)
@@ -44,11 +43,10 @@ while True:
 
     # Fix axes labels
 
-
     with placeholder.container():
         # create three columns
         (fig_col_1, fig_col_2) = st.columns(2)
-        plt.close('all')
+        plt.close("all")
         with fig_col_1:
             st.markdown("## OHLCV plot")
             fig = plot_ohlcv(ohlcv)
@@ -58,5 +56,4 @@ while True:
             fig = plot_fixed_rate(fixed_rate_x, fixed_rate_y)
             st.write(fig)
 
-    time.sleep(.1)
-
+    time.sleep(0.1)

@@ -29,30 +29,28 @@ import time
 st.set_page_config(
     page_title="Bots dashboard",
     layout="wide",
-    )
-st.set_option('deprecation.showPyplotGlobalUse', False)
+)
+st.set_option("deprecation.showPyplotGlobalUse", False)
 
-def calc_ohlcv(pool_info_data, freq='D'):
+
+def calc_ohlcv(pool_info_data, freq="D"):
     """
     freq var: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
     """
     spot_prices = calculate_spot_price(pool_info_data).to_frame().astype(float)
-    spot_prices.columns = ['spot_price']
-    timestamp = pool_info_data['timestamp']
-    spot_prices['timestamp'] = pd.to_datetime(timestamp, unit='s')
-    spot_prices = spot_prices.set_index('timestamp')
+    spot_prices.columns = ["spot_price"]
+    timestamp = pool_info_data["timestamp"]
+    spot_prices["timestamp"] = pd.to_datetime(timestamp, unit="s")
+    spot_prices = spot_prices.set_index("timestamp")
 
-    ohlcv = spot_prices.groupby([
-        pd.Grouper(freq=freq)
-    ]).agg({'spot_price':['first', 'last', 'max', 'min']})
+    ohlcv = spot_prices.groupby([pd.Grouper(freq=freq)]).agg({"spot_price": ["first", "last", "max", "min"]})
 
-    ohlcv.columns = ['Open', 'Close', 'High', 'Low']
-    ohlcv.index.name = 'Date'
+    ohlcv.columns = ["Open", "Close", "High", "Low"]
+    ohlcv.index.name = "Date"
 
     return ohlcv
 
+
 def plot_ohlcv(ohlcv):
-    fig = mpf.plot(ohlcv, style='mike', type='candle', returnfig=True)
+    fig = mpf.plot(ohlcv, style="mike", type="candle", returnfig=True)
     return fig
-
-

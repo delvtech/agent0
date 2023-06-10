@@ -46,13 +46,13 @@ pool_info_data = read_json_to_pd(pool_info_data).T
 data = get_combined_data(trans_data, pool_data)
 
 # %%
-#data = data[~data["args.id"].isna()]
-#data = data.reset_index(drop=True)
-#prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(data["args.id"].values)
-#trade_type = pd.DataFrame(prefix).apply(lambda x: hyperdrive_assets.AssetIdPrefix(x.values).name, axis=1)
+# data = data[~data["args.id"].isna()]
+# data = data.reset_index(drop=True)
+# prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(data["args.id"].values)
+# trade_type = pd.DataFrame(prefix).apply(lambda x: hyperdrive_assets.AssetIdPrefix(x.values).name, axis=1)
 
 # %%
-#data["prefix"] = prefix
+# data["prefix"] = prefix
 data["timestamp"] = data["timestamp"].astype(int)
 
 rename_dict = {
@@ -61,12 +61,12 @@ rename_dict = {
     "blockNumber": "block_number",
     "blockHash": "block_hash",
     "transactionIndex": "transaction_index",
-    "args.operator": "operator",# missing
-    "args.from": "from", # missing
-    "args.to": "to", # missing
-    "args.id": "id", # missing
-    "args.value": "value", # missing
-    "prefix": "prefix", # missing
+    "args.operator": "operator",  # missing
+    "args.from": "from",  # missing
+    "args.to": "to",  # missing
+    "args.id": "id",  # missing
+    "args.value": "value",  # missing
+    "prefix": "prefix",  # missing
     "input.params._maturityTime": "maturity_timestamp",
     "input.method": "trade_type",
     "shareReserves": "share_reserves",
@@ -91,7 +91,8 @@ columns = [c for c in columns if c in data.columns]
 # Filter data based on columns
 trade_data = data[columns]
 # Rename columns
-trade_data = trade_data.rename(columns = rename_dict)
+trade_data = trade_data.rename(columns=rename_dict)
+
 
 # %%
 def get_wallet_from_onchain_trade_info(
@@ -206,6 +207,7 @@ agent_wallets = {
     for a in agents
 }
 
+
 # %% attempt to mock up trade closeout
 def get_wallet_state(agent_wallet: Wallet, market: HyperdriveMarket) -> dict[str, FixedPoint]:
     r"""The wallet's current state of public variables
@@ -273,6 +275,7 @@ def get_wallet_state(agent_wallet: Wallet, market: HyperdriveMarket) -> dict[str
         f"agent{agent_wallet.address}_total_shorts_no_mock": shorts_value_no_mock,
     }
 
+
 # %%
 # WE ARE MISSING INFOMRATION REQUIRED TO CREATE THESE OBJECTS
 # THIS IS TRACKED IN ISSUE #530
@@ -336,6 +339,7 @@ def calculate_spot_price(
 
     return full_term_spot_price * time_left_in_years + 1 * (1 - time_left_in_years)
 
+
 # %% pre-define column names to store agent pnl
 agent_col_names = []
 for i in range(len(agents)):
@@ -347,7 +351,7 @@ print(f"{agent_col_names=}")
 # %%
 NUMBER_OF_DATA_ROWS_TO_PROCESS = len(trade_data)
 
-for idx, row in trade_data.loc[0:NUMBER_OF_DATA_ROWS_TO_PROCESS,:].iterrows():
+for idx, row in trade_data.loc[0:NUMBER_OF_DATA_ROWS_TO_PROCESS, :].iterrows():
     for agent in agents:
         agent_index = agents.index(agent)
         # get their wallet
@@ -374,8 +378,8 @@ for idx, row in trade_data.loc[0:NUMBER_OF_DATA_ROWS_TO_PROCESS,:].iterrows():
         # print(f"{spot_price=}")
 
         # LP value (TODO: check why certain agents own more than 100% of the pool)
-        total_lp_value = row.share_reserves/1e18 * row.share_price/1e18 + row.bond_reserves/1e18 * spot_price
-        share_of_pool = float(agent_wallets[agent].lp_tokens) / (row.lp_total_supply/1e18)
+        total_lp_value = row.share_reserves / 1e18 * row.share_price / 1e18 + row.bond_reserves / 1e18 * spot_price
+        share_of_pool = float(agent_wallets[agent].lp_tokens) / (row.lp_total_supply / 1e18)
         # print(f"{float(agent_wallets[agent].lp_tokens)=}")
         # print(f"{row.lp_total_supply/1e18=}")
         pnl = share_of_pool * total_lp_value
@@ -386,16 +390,16 @@ for idx, row in trade_data.loc[0:NUMBER_OF_DATA_ROWS_TO_PROCESS,:].iterrows():
             pnl += float(long.balance) * spot_price
         # for each SHORT
         for mint_time, short in agent_wallets[agent].shorts.items():
-            pnl += float(short.balance) * (1-spot_price)
+            pnl += float(short.balance) * (1 - spot_price)
 
         trade_data.loc[idx, f"agent_{agent_index}_pnl"] = pnl
 
 # %%
-x_data = pd.to_datetime(trade_data.loc[:,"block_timestamp"], unit="s")
+x_data = pd.to_datetime(trade_data.loc[:, "block_timestamp"], unit="s")
 col_names = agent_col_names[:-1]
 print(f"{col_names=}")
-y_data = trade_data.loc[:,col_names]
-plt.plot(x_data, y_data);
+y_data = trade_data.loc[:, col_names]
+plt.plot(x_data, y_data)
 # change y-axis unit format to #,###.0f
 plt.gca().yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(int(x), ",")))
 plt.xlabel("block timestamp")
@@ -406,6 +410,6 @@ plt.title("pnl over time")
 plt.gcf().autofmt_xdate()
 
 # make this work: col_names.replace("_pnl","")
-plt.legend([col_names.replace("_pnl","") for col_names in col_names])
+plt.legend([col_names.replace("_pnl", "") for col_names in col_names])
 
 # %%

@@ -79,7 +79,7 @@ def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url:
                 latest_block_timestamp: BlockData = web3.eth.get_block(block_identifier=block_number).timestamp
                 # get pool info from hyperdrive contract
                 block_pool_info = get_smart_contract_read_call(
-                        hyperdrive_contract, "getPoolInfo", block_identifier=block_number
+                    hyperdrive_contract, "getPoolInfo", block_identifier=block_number
                 )
                 block_pool_info.update({"timestamp": latest_block_timestamp})
                 pool_info[block_number] = block_pool_info
