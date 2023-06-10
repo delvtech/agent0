@@ -9,9 +9,8 @@ from eth_utils import address
 from web3.contract import Contract  # type: ignore=reportPrivateImportUsage
 from web3.types import BlockData
 
+from elfpy.data import contract_interface
 from elfpy.utils import outputs as output_utils
-
-from . import contract_interface
 
 # TODO: Fix these later
 # pyright: reportPrivateImportUsage=false, reportGeneralTypeIssues=false
@@ -72,7 +71,7 @@ def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url:
 
 if __name__ == "__main__":
     ETHEREUM_NODE = "http://localhost:8545"
-    ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
     CONTRACTS_URL = "http://localhost:80/addresses.json"
+    ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
     OUTPUT_LOCATION = ".logging"
     main(ETHEREUM_NODE, ABI_FILE_PATH, CONTRACTS_URL, OUTPUT_LOCATION)

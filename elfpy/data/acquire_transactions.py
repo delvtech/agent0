@@ -11,9 +11,9 @@ from eth_utils import address
 from web3 import Web3
 from web3.middleware import geth_poa
 
+from elfpy.data import contract_interface
 from elfpy.utils import outputs as output_utils
 
-from . import contract_interface
 
 # python `open` will infer the encoding if we do not specified, which is the behavior we want for now
 # pylint: disable=unspecified-encoding
@@ -66,7 +66,7 @@ def main(config_file_path, contracts_url, ethereum_node, save_dir, abi_file_path
 
 
 if __name__ == "__main__":
-    CONFIG_FILE_PATH = "./data/config/dataConfig.toml"
+    CONFIG_FILE_PATH = "elfpy/data/config/dataConfig.toml"
     CONTRACTS_URL = "http://localhost:80/addresses.json"
     ETHEREUM_NODE = "http://localhost:8545"
     SAVE_DIR = ".logging"
