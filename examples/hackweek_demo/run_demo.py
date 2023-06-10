@@ -32,9 +32,17 @@ while True:
 
     combined_data = get_combined_data(trans_data, pool_info_data)
 
+
     ohlcv = calc_ohlcv(pool_info_data, freq='5T')
 
+    # TODO fix this plot
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data)
+
+    # Plot reserve levels (share and bond reserves, in poolinfo)
+
+    # Trade ticker (openLong, openLong, closeLong)
+
+    # Fix axes labels
 
 
     with placeholder.container():

@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import time
 from matplotlib import ticker as mpl_ticker
+from matplotlib import dates as mdates
 
 # %%
 def calculate_spot_price_2(
@@ -54,7 +55,7 @@ def calc_fixed_rate(trade_data):
     return (x_data, y_data)
 
 def plot_fixed_rate(x_data, y_data):
-
+    fig = plt.figure()
     plt.plot(x_data, y_data);
     # change y-axis unit format to 0.1%
     plt.gca().yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(x, "0.3%")))
@@ -62,8 +63,9 @@ def plot_fixed_rate(x_data, y_data):
     plt.ylabel("rate (%)")
     plt.title("pnl over time")
     # format x-axis as time
-    # plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    plt.gcf().autofmt_xdate()
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+
+    #plt.gcf().autofmt_xdate()
 
     # make this work: col_names.replace("_pnl","")
     #plt.legend([col_names.replace("_pnl","") for col_names in col_names])
