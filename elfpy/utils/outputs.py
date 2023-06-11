@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 from logging.handlers import RotatingFileHandler
+from numpy.random._generator import Generator as NumpyGenerator
 from typing import TYPE_CHECKING, Any
 
 import matplotlib.pyplot as plt
@@ -478,6 +479,8 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return o.tolist()
         if isinstance(o, FixedPoint):
             return str(o)
+        if isinstance(o, NumpyGenerator):
+            return "NumpyGenerator"
         try:
             return o.__dict__
         except AttributeError:
