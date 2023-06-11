@@ -4,6 +4,7 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 # stdlib
+import argparse
 import json
 import logging
 import os
@@ -28,25 +29,23 @@ from eth_account import Account as EthAccount
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
 from elfpy import types
+from elfpy.agents.policies import LongLouie, ShortSally, RandomAgent
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
 from elfpy.bots.bot_info import BotInfo
 
 # from elfpy.bots.get_config import get_config
-from elfpy.bots import get_config
+from elfpy.bots import BotConfig
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
 from elfpy.math import FixedPoint
-from elfpy.simulators.config import Config
-from elfpy.utils.outputs import str_with_precision as fmt
+from elfpy.utils.outputs import str_with_precision
 
 
-def get_devnet_addresses(
-    experiment_config: Config, env_args: get_config.EnvironmentArguments, addresses: dict[str, str]
-) -> tuple[dict[str, str], str]:
+def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
     deployed_addresses = {}
     # get deployed addresses from local file, if it exists
-    address_file_path = experiment_config.scratch["project_dir"] / "hyperdrive_solidity/artifacts/addresses.json"
+    address_file_path = bot_config.scratch["project_dir"] / "hyperdrive_solidity/artifacts/addresses.json"
     if os.path.exists(address_file_path):
         with open(address_file_path, "r", encoding="utf-8") as file:
             deployed_addresses = json.load(file)
@@ -57,7 +56,7 @@ def get_devnet_addresses(
         num_attempts = 100
         for attempt_num in range(num_attempts):
             logging.info("\tAttempt %s out of %s", attempt_num + 1, num_attempts)
-            response = requests.get(env_args.artifacts_url + "/addresses.json", timeout=10)
+            response = requests.get(bot_config.artifacts_url + "/addresses.json", timeout=10)
             if response.status_code == 200:
                 deployed_addresses = response.json()
                 break
@@ -76,9 +75,9 @@ def get_devnet_addresses(
     return addresses
 
 
-def get_accounts(experiment_config: Config) -> list[KeyfileAccount]:
+def get_accounts(bot_config: BotConfig) -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
-    num = sum(experiment_config.scratch[f"num_{bot}"] for bot in experiment_config.scratch["bot_names"])
+    num = sum(bot_config.scratch[f"num_{bot}"] for bot in bot_config.scratch["bot_names"])
     assert (mnemonic := " ".join(["wolf"] * 24)), "You must provide a mnemonic in .env to run this script."
     keys = generate_dev_accounts(mnemonic=mnemonic, number_of_accounts=num)
     for num, key in enumerate(keys):
@@ -101,8 +100,7 @@ def create_agent(
     base_instance: ContractInstance,
     on_chain_trade_info: ape_utils.OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
-    experiment_config: Config,
-    env_args: get_config.EnvironmentArguments,
+    bot_config: BotConfig,
     deployer_account: KeyfileAccount,
 ) -> Agent:
     """Create an agent as defined in bot_info, assign its address, give it enough base.
@@ -121,10 +119,8 @@ def create_agent(
         Information about on-chain trades.
     hyperdrive_contract : ContractInstance
         Contract for hyperdrive
-    experiment_config : simulators.Config
-        The experiment config.
-    env_args : EnvironmentArguments
-        The command line arguments.
+    bot_config : BotConfig
+        Configuration parameters for the experiment
     deployer_account : KeyfileAccount
         The deployer account.
 
@@ -137,32 +133,32 @@ def create_agent(
     assert bot.index is not None, "Bot must have an index."
     assert isinstance(bot.policy, type(Agent)), "Bot must have a policy of type Agent."
     params = {
-        "trade_chance": experiment_config.scratch["trade_chance"],
+        "trade_chance": bot_config.scratch["trade_chance"],
         "budget": FixedPoint(
             str(
                 np.clip(
-                    experiment_config.rng.normal(loc=bot.budget.mean, scale=bot.budget.std),
+                    bot_config.rng.normal(loc=bot.budget.mean, scale=bot.budget.std),
                     bot.budget.min,
                     bot.budget.max,
                 )
             )
         ),
     }
-    params["rng"] = experiment_config.rng
+    params["rng"] = bot_config.rng
     if bot.risk_threshold and bot.name != "random":  # random agent doesn't use risk threshold
         params["risk_threshold"] = bot.risk_threshold  # if risk threshold is manually set, we use it
     if bot.name != "random":  # if risk threshold isn't manually set, we get a random one
         params["risk_threshold"] = np.clip(
-            experiment_config.rng.normal(loc=bot.risk.mean, scale=bot.risk.std), bot.risk.min, bot.risk.max
+            bot_config.rng.normal(loc=bot.risk.mean, scale=bot.risk.std), bot.risk.min, bot.risk.max
         )
     agent = Agent(wallet_address=dev_accounts[bot.index].address, policy=bot.policy(**params))
     agent.contract = dev_accounts[bot.index]  # assign its onchain contract
-    if env_args.devnet:
+    if bot_config.devnet:
         agent.contract.balance += int(1e18)  # give it some eth
     if (need_to_mint := (params["budget"].scaled_value - base_instance.balanceOf(agent.contract.address)) / 1e18) > 0:
-        logging.info(" agent_%s needs to mint %s Base", agent.contract.address[:8], fmt(need_to_mint))
+        logging.info(" agent_%s needs to mint %s Base", agent.contract.address[:8], str_with_precision(need_to_mint))
         with ape.accounts.use_sender(agent.contract):
-            if env_args.devnet:
+            if bot_config.devnet:
                 txn_receipt: ReceiptAPI = base_instance.mint(
                     agent.contract.address, int(50_000 * 1e18), sender=deployer_account
                 )
@@ -174,9 +170,9 @@ def create_agent(
         " agent_%s is a %s with budget=%s Eth=%s Base=%s",
         agent.contract.address[:8],
         bot.name,
-        fmt(params["budget"]),
-        fmt(agent.contract.balance / 1e18),
-        fmt(base_instance.balanceOf(agent.contract.address) / 1e18),
+        str_with_precision(params["budget"]),
+        str_with_precision(agent.contract.balance / 1e18),
+        str_with_precision(base_instance.balanceOf(agent.contract.address) / 1e18),
     )
     agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
         address=agent.contract.address,
@@ -189,8 +185,7 @@ def create_agent(
 
 
 def set_up_agents(
-    experiment_config: Config,
-    env_args: get_config.EnvironmentArguments,
+    bot_config: BotConfig,
     provider: ProviderAPI,
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
@@ -201,10 +196,8 @@ def set_up_agents(
 
     Parameters
     ----------
-    experiment_config : simulators.Config
-        The experiment config.
-    env_args : EnvironmentArguments
-        The env var arguments.
+    bot_config : BotConfig
+        Configuration parameters for the experiment
     provider : ape.api.ProviderAPI
         The Ape object that connects to the Ethereum network.
     hyperdrive_instance : ContractInstance
@@ -224,32 +217,30 @@ def set_up_agents(
         Information about on-chain trades.
     """
     # pylint: disable=too-many-arguments, too-many-locals
-    dev_accounts: list[KeyfileAccount] = get_accounts(experiment_config)
+    dev_accounts: list[KeyfileAccount] = get_accounts(bot_config)
     faucet = None
-    if not env_args.devnet:
+    if not bot_config.devnet:
         faucet = ape_utils.get_instance(addresses["goerli_faucet"], provider=provider)
     bot_num = 0
-    for bot_name in experiment_config.scratch["bot_names"]:
-        policy = experiment_config.scratch[bot_name].policy
+    for bot_name in bot_config.scratch["bot_names"]:
+        policy = bot_config.scratch[bot_name].policy
         logging.info(
             "%s: n=%s with policy=%s",
             bot_name,
-            experiment_config.scratch[f"num_{bot_name}"],
+            bot_config.scratch[f"num_{bot_name}"],
             policy.__name__ if policy.__module__ == "__main__" else policy.__module__,
         )
-        bot_num += experiment_config.scratch[f"num_{bot_name}"]
+        bot_num += bot_config.scratch[f"num_{bot_name}"]
     sim_agents = {}
     start_time_ = now()
     on_chain_trade_info: ape_utils.OnChainTradeInfo = ape_utils.get_on_chain_trade_info(
         hyperdrive_contract=hyperdrive_instance
     )
-    logging.debug("Getting on-chain trade info took %s seconds", fmt(now() - start_time_))
-    for bot_name in [
-        name for name in experiment_config.scratch["bot_names"] if experiment_config.scratch[f"num_{name}"] > 0
-    ]:
-        bot_info = experiment_config.scratch[bot_name]
+    logging.debug("Getting on-chain trade info took %s seconds", str_with_precision(now() - start_time_))
+    for bot_name in [name for name in bot_config.scratch["bot_names"] if bot_config.scratch[f"num_{name}"] > 0]:
+        bot_info = bot_config.scratch[bot_name]
         bot_info.name = bot_name
-        for _ in range(experiment_config.scratch[f"num_{bot_name}"]):  # loop across number of bots of this type
+        for _ in range(bot_config.scratch[f"num_{bot_name}"]):  # loop across number of bots of this type
             bot_info.index = len(sim_agents)
             logging.debug("Creating %s agent %s/%s: %s", bot_name, bot_info.index + 1, bot_num, bot_info)
             agent = create_agent(
@@ -259,8 +250,7 @@ def set_up_agents(
                 base_instance=base_instance,
                 on_chain_trade_info=on_chain_trade_info,
                 hyperdrive_contract=hyperdrive_instance,
-                experiment_config=experiment_config,
-                env_args=env_args,
+                bot_config=bot_config,
                 deployer_account=deployer_account,
             )
             sim_agents[f"agent_{agent.wallet.address}"] = agent
@@ -326,8 +316,8 @@ def do_trade(
     logging.info(
         "agent_%s has Eth=%s Base=%s",
         agent_contract.address[:8],
-        fmt(agent_contract.balance / 1e18),
-        fmt(base_instance.balanceOf(agent_contract.address) / 1e18),
+        str_with_precision(agent_contract.balance / 1e18),
+        str_with_precision(base_instance.balanceOf(agent_contract.address) / 1e18),
     )
     logging.info("\trade %s", trade.action_type.name)
     # execute the trade using key-word arguments
@@ -365,7 +355,7 @@ def log_and_show_block_info(
     base_fee = getattr(block, "base_fee") / 1e9
     logging.info(
         "Block number: %s, Block time: %s, Trades without crashing: %s, base_fee: %s",
-        fmt(block_number),
+        str_with_precision(block_number),
         datetime.fromtimestamp(block_timestamp),
         no_crash_streak,
         base_fee,
@@ -373,7 +363,7 @@ def log_and_show_block_info(
 
 
 def set_up_devnet(
-    addresses, project: ape_utils.HyperdriveProject, provider, experiment_config, pricing_model
+    addresses, project: ape_utils.HyperdriveProject, provider, bot_config: BotConfig, pricing_model
 ) -> tuple[ContractInstance, ContractInstance, dict[str, str]]:
     """Load deployed devnet addresses or deploy new contracts.
 
@@ -385,8 +375,8 @@ def set_up_devnet(
         The Ape project that contains a Hyperdrive contract.
     provider : ape.api.ProviderAPI
         The Ape object that connects to the Ethereum blockchain.
-    experiment_config : simulators.Config
-        The experiment configuration object.
+    bot_config : BotConfig
+        Configuration parameters for the experiment
     pricing_model : HyperdrivePricingModel
         The elf-simulations pricing model.
 
@@ -415,15 +405,14 @@ def set_up_devnet(
         )
     else:  # deploy a new hyperdrive
         hyperdrive_instance: ContractInstance = ape_utils.deploy_hyperdrive(
-            experiment_config, base_instance, deployer_account, pricing_model, project
+            bot_config, base_instance, deployer_account, pricing_model, project
         )
         addresses["hyperdrive"] = hyperdrive_instance.address
     return base_instance, hyperdrive_instance, addresses, deployer_account
 
 
 def set_up_ape(
-    experiment_config: Config,
-    env_args: get_config.EnvironmentArguments,
+    bot_config: BotConfig,
     provider_settings: dict,
     addresses: dict,
     network_choice: str,
@@ -433,10 +422,8 @@ def set_up_ape(
 
     Parameters
     ----------
-    experiment_config : simulators.Config
-        The experiment configuration, a list of variables that define the elf-simulations run.
-    env_args : EnvironmentArguments
-        The environmental vars arguments.
+    bot_config : BotConfig
+        Configuration parameters for the experiment
     provider_settings : dict
         Custom parameters passed to the provider.
     addresses : dict
@@ -468,21 +455,21 @@ def set_up_ape(
     ).push_provider()
     logging.info(
         "connected to %s, latest block %s",
-        "devnet" if env_args.devnet else network_choice,
+        "devnet" if bot_config.devnet else network_choice,
         provider.get_block("latest").number,
     )
     project: ape_utils.HyperdriveProject = ape_utils.HyperdriveProject(
         path=Path.cwd(),
-        hyperdrive_address=addresses["hyperdrive"] if env_args.devnet else addresses["goerli_hyperdrive"],
+        hyperdrive_address=addresses["hyperdrive"] if bot_config.devnet else addresses["goerli_hyperdrive"],
     )
 
     # quick test
     # hyperdrive_instance = project.get_contract("IHyperdrive").at("0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9")
     # test_result = hyperdrive_instance.getPoolConfig()
 
-    if env_args.devnet:  # we're on devnet
+    if bot_config.devnet:  # we're on devnet
         base_instance, hyperdrive_instance, addresses, deployer_account = set_up_devnet(
-            addresses, project, provider, experiment_config, pricing_model
+            addresses, project, provider, bot_config, pricing_model
         )
     else:  # not on devnet, means we're on goerli, so we use known goerli addresses
         base_instance: ContractInstance = ape_utils.get_instance(
@@ -505,7 +492,7 @@ def do_policy(
     sim_agents: dict[str, Agent],
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
-    env_args: get_config.EnvironmentArguments,
+    bot_config: BotConfig,
 ):  # pylint: disable=too-many-arguments
     """Execute an agent's policy."""
     trades: list[types.Trade] = agent.get_trades(market=elfpy_market)
@@ -526,41 +513,52 @@ def do_policy(
         except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
             logging.info("Crashed with error: %s", exc)
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file, reset=True)  # set and save to file
-            if env_args.halt_on_errors:
+            if bot_config.halt_on_errors:
                 raise exc
     return no_crash_streak
 
 
 def main(
-    env_args: get_config.EnvironmentArguments,
+    bot_config: BotConfig,
     crash_file: str,
     network_choice: str,
     provider_settings: str,
 ):
     """Run the simulation."""
     # pylint: disable=too-many-locals
+    # Custom parameters for this experiment
+    bot_config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
+    bot_config.scratch["louie"] = BotInfo(
+        policy=LongLouie, trade_chance=bot_config.trade_chance, risk_threshold=bot_config.risk_threshold
+    )
+    bot_config.scratch["frida"] = BotInfo(
+        policy=ShortSally, trade_chance=bot_config.trade_chance, risk_threshold=bot_config.risk_threshold
+    )
+    bot_config.scratch["random"] = BotInfo(
+        policy=RandomAgent, trade_chance=bot_config.trade_chance, risk_threshold=bot_config.risk_threshold
+    )
+    bot_config.scratch["bot_names"] = {"louie", "frida", "random"}
     # hard-code goerli addresses
-    experiment_config = get_config.get_config(env_args)
     addresses = {
         "goerli_faucet": "0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2",
         "goerli_sdai": "0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844",
         "goerli_hyperdrive": "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2",
     }
-    if env_args.devnet:
-        addresses = get_devnet_addresses(experiment_config, env_args, addresses)
+    if bot_config.devnet:
+        addresses = get_devnet_addresses(bot_config, addresses)
     pricing_model = HyperdrivePricingModel()
     no_crash_streak = 0
     last_executed_block = 0
     output_utils.setup_logging(
-        log_filename=experiment_config.log_filename, log_level=experiment_config.log_level, max_bytes=env_args.max_bytes
+        log_filename=bot_config.log_filename,
+        log_level=bot_config.log_level,
+        max_bytes=bot_config.max_bytes,
     )
     provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
-        experiment_config, env_args, provider_settings, addresses, network_choice, pricing_model
+        bot_config, provider_settings, addresses, network_choice, pricing_model
     )
-    sim_agents, _ = set_up_agents(
-        experiment_config, env_args, provider, hyperdrive_instance, base_instance, addresses, deployer_account
-    )
-    ape_utils.dump_agent_info(sim_agents, experiment_config)
+    sim_agents, _ = set_up_agents(bot_config, provider, hyperdrive_instance, base_instance, addresses, deployer_account)
+    ape_utils.dump_agent_info(sim_agents, bot_config)
     logging.info("Constructed %s agents:", len(sim_agents))
     for agent_name in sim_agents:
         logging.info("\t%s", agent_name)
@@ -583,21 +581,43 @@ def main(
                     sim_agents,
                     hyperdrive_instance,
                     base_instance,
-                    env_args,
+                    bot_config,
                 )
             last_executed_block = block_number
-        if env_args.devnet and automine:  # anvil automatically mines after you send a transaction. or manually.
+        if bot_config.devnet and automine:  # anvil automatically mines after you send a transaction. or manually.
             ape.chain.mine()
         else:  # either on goerli or on devnet with automine disabled (which means time-based mining is enabled)
             sleep(1)
 
 
+def get_argparser() -> argparse.ArgumentParser:
+    """Define & parse arguments from stdin"""
+    parser = argparse.ArgumentParser(
+        prog="evm_bots",
+        description="Example execution script for running bots using Elfpy",
+        epilog="See the README on https://github.com/delvtech/elf-simulations/ for more implementation details",
+    )
+    parser.add_argument(
+        "-c",
+        "--configuration-json",
+        help="Location of the configuration json file.",
+        type=str,
+    )
+    return parser
+
+
 if __name__ == "__main__":
-    output_utils.setup_logging(".logging/evm_bots.log", log_file_and_stdout=True)
-    ENV_ARGS = get_config.get_env_args()
-    CRASH_FILE = f".logging/no_crash_streak{'_devnet' if ENV_ARGS.devnet else ''}.txt"
+    CONFIG = BotConfig()
+    CONFIG.load_from_json(get_argparser().parse_args()["configuration-json"])
+    output_utils.setup_logging(
+        log_filename=CONFIG.log_filename,
+        max_bytes=CONFIG.max_bytes,
+        log_level=CONFIG.log_level,
+        log_file_and_stdout=CONFIG.log_file_and_stdout,
+    )
+    CRASH_FILE = f".logging/no_crash_streak{'_devnet' if CONFIG.devnet else ''}.txt"
     # inputs
-    NETWORK_CHOICE = "ethereum:local:" + ("alchemy" if ENV_ARGS.alchemy else "foundry")
-    PROVIDER_SETTINGS = {"host": ENV_ARGS.rpc_url}
+    NETWORK_CHOICE = "ethereum:local:" + ("alchemy" if CONFIG.alchemy else "foundry")
+    PROVIDER_SETTINGS = {"host": CONFIG.rpc_url}
     # dynamically load devnet addresses from address file
-    main(ENV_ARGS, CRASH_FILE, NETWORK_CHOICE, PROVIDER_SETTINGS)
+    main(CONFIG, CRASH_FILE, NETWORK_CHOICE, PROVIDER_SETTINGS)
