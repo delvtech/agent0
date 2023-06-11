@@ -462,7 +462,7 @@ def close_logging(delete_logs=True):
 
 class ExtendedJSONEncoder(json.JSONEncoder):
     r"""Custom encoder for JSON string dumps"""
-    # pylint: disable=too-many-statements
+    # pylint: disable=too-many-return-statements
 
     def default(self, o):
         r"""Override default behavior"""

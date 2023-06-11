@@ -32,6 +32,7 @@ class HyperdriveAddressesJson:
 def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
     """Fetch addresses for deployed contracts in the Hyperdrive system."""
     attempt_num = 0
+    response = None
     while attempt_num < 100:
         response = requests.get(contracts_url, timeout=60)
         # Check the status code and retry the request if it fails
@@ -40,6 +41,8 @@ def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
             time.sleep(10)
             continue
         attempt_num += 1
+    if response is None:
+        raise ConnectionError("Request failed, returning status `None`")
     if response.status_code != 200:
         raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
     addresses_json = response.json()
@@ -121,13 +124,13 @@ def get_smart_contract_read_call(contract: Contract, function_name: str, **funct
     """Get a smart contract read call"""
     # decode ABI to get pool info variable names
     abi = contract.abi
+    # TODO: pyright does not like the TypedDict variables from web3,
+    #   Could not access item; `key` is not a defined key in "ABIEvent",
+    #   so access may result in runtime exception (reportGeneralTypeIssues)
     # TODO: Fix this up to actually decode the ABI using web3
-    return_value_keys = [
-        component["name"]
-        for component in abi[[idx for idx in range(len(abi)) if abi[idx]["name"] == function_name][0]]["outputs"][0][
-            "components"
-        ]
-    ]
+    abi_function_index = [idx for idx in range(len(abi)) if abi[idx]["name"] == function_name][0]  # type: ignore
+    abi_components = abi[abi_function_index]["outputs"][0]["components"]  # type: ignore
+    return_value_keys = [component["name"] for component in abi_components]  # type: ignore
     function: ContractFunction = contract.get_function_by_name(function_name)()
     return_values = function.call(**function_args)
     # associate pool info with the keys

@@ -1,8 +1,8 @@
 """A demo for executing an arbitrary number of trades bots on testnet."""
 # pylint: disable=too-many-lines
+# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 from __future__ import annotations  # types will be strings by default in 3.11
 
-# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 # stdlib
 import json
 import logging
@@ -24,12 +24,10 @@ from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from eth_account import Account as EthAccount
 
-import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
-
 # elfpy core repo
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
-from elfpy import SECONDS_IN_YEAR, types
+from elfpy import types
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
 from elfpy.bots.bot_info import BotInfo
