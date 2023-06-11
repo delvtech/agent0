@@ -601,6 +601,7 @@ def get_argparser() -> argparse.ArgumentParser:
         "-c",
         "--configuration-json",
         help="Location of the configuration json file.",
+        default="",
         type=str,
     )
     return parser
@@ -608,7 +609,9 @@ def get_argparser() -> argparse.ArgumentParser:
 
 if __name__ == "__main__":
     CONFIG = BotConfig()
-    CONFIG.load_from_json(get_argparser().parse_args()["configuration-json"])
+    ARGS = get_argparser().parse_args()
+    if ARGS["configuration-json"]:  # empty string default is falsy
+        CONFIG.load_from_json(ARGS["configuration-json"])
     output_utils.setup_logging(
         log_filename=CONFIG.log_filename,
         max_bytes=CONFIG.max_bytes,

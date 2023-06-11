@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import json
-import logging
-import numpy as np
 from dataclasses import dataclass, field
-from numpy.random._generator import Generator as NumpyGenerator
 from typing import Any
+
+from numpy.random._generator import Generator as NumpyGenerator
 
 from elfpy import DEFAULT_LOG_MAXBYTES, DEFAULT_LOG_LEVEL, types
 from elfpy.utils import outputs as output_utils
