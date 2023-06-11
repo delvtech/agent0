@@ -76,3 +76,8 @@ class BotConfig(types.FrozenClass):
         with open(json_file_location, mode="r", encoding="UTF-8") as file:
             json_config = json.load(file)
         self.__dict__.update(**json_config)
+
+    def save_as_json(self, json_file_location: str) -> None:
+        """Save configuration settings in JSON format"""
+        with open(json_file_location, mode="w", encoding="UTF-8") as file:
+            json.dump(self.__dict__, file, sort_keys=True, indent=2, cls=output_utils.ExtendedJSONEncoder)
