@@ -481,7 +481,9 @@ class ExtendedJSONEncoder(json.JSONEncoder):
         try:
             return o.__dict__
         except AttributeError:
-            return repr(o)
+            pass
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, o)
 
 
 def str_with_precision(value, precision=3, min_digits=0, debug=False):
