@@ -27,6 +27,7 @@ from eth_account import Account as EthAccount
 from numpy.random._generator import Generator as NumpyGenerator
 
 # elfpy core repo
+import elfpy
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
 from elfpy import types
@@ -317,6 +318,8 @@ def do_trade(
         "agent": agent_contract,
         "amount": amount,
     }
+    if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
+        params["maturity_time"] = int(trade.mint_time + elfpy.SECONDS_IN_YEAR)
     logging.info(
         "agent_%s has Eth=%s Base=%s",
         agent_contract.address[:8],
