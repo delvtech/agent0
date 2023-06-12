@@ -77,7 +77,6 @@ def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tu
 
 def get_accounts(bot_config: BotConfig) -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
-    print(bot_config.scratch)
     num = sum(bot_config.scratch[f"num_{bot}"] for bot in bot_config.scratch["bot_names"])
     assert (mnemonic := " ".join(["wolf"] * 24)), "You must provide a mnemonic in .env to run this script."
     keys = generate_dev_accounts(mnemonic=mnemonic, number_of_accounts=num)
