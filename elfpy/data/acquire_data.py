@@ -8,7 +8,6 @@ import time
 
 from eth_typing import BlockNumber, URI
 from web3 import Web3
-from web3.types import BlockData
 
 from elfpy.data import contract_interface
 from elfpy.utils import outputs as output_utils
@@ -41,10 +40,7 @@ def main(
     config_file = os.path.join(save_dir, "hyperdrive_config.json")
     contract_interface.hyperdrive_config_to_json(config_file, state_hyperdrive_contract)
     # write the initial pool info
-    block: BlockData = web3_container.eth.get_block(start_block)
-    block_number = block.get("number")
-    if block_number is None:
-        raise AssertionError("Block has no number")
+    block_number: BlockNumber = BlockNumber(start_block)
     pool_info = {}
     pool_info[block_number] = contract_interface.get_block_pool_info(
         web3_container, state_hyperdrive_contract, block_number
@@ -57,17 +53,18 @@ def main(
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
     while True:
-        latest_block_number: BlockNumber = web3_container.eth.get_block_number()
+        latest_block_number = web3_container.eth.get_block_number()
         # if we are on a new block
         if latest_block_number != block_number:
             # Backfilling for blocks that need updating
-            for current_block_number in range(block_number + 1, latest_block_number + 1):
-                logging.info("Block %s", current_block_number)
-                pool_info[current_block_number] = contract_interface.get_block_pool_info(
-                    web3_container, state_hyperdrive_contract, current_block_number
+            for block_int in range(block_number + 1, latest_block_number + 1):
+                block_number: BlockNumber = BlockNumber(block_int)
+                logging.info("Block %s", block_number)
+                pool_info[block_number] = contract_interface.get_block_pool_info(
+                    web3_container, state_hyperdrive_contract, block_number
                 )
-                transaction_info[current_block_number] = contract_interface.fetch_transactions_for_block(
-                    web3_container, transactions_hyperdrive_contract, current_block_number
+                transaction_info[block_number] = contract_interface.fetch_transactions_for_block(
+                    web3_container, transactions_hyperdrive_contract, block_number
                 )
             with open(pool_info_file, mode="w", encoding="UTF-8") as file:
                 json.dump(pool_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)

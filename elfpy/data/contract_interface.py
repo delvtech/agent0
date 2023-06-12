@@ -70,7 +70,7 @@ def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: 
 
 
 def fetch_transactions_for_block(
-    web3_container: Web3, contract: Contract, block_number: BlockNumber | int
+    web3_container: Web3, contract: Contract, block_number: BlockNumber
 ) -> list[dict[str, Any]]:
     """Fetch transactions related to the hyperdrive_address contract"""
     block: BlockData = web3_container.eth.get_block(block_number, full_transactions=True)
@@ -132,7 +132,7 @@ def get_event_object(
 
 
 def get_block_pool_info(
-    web3_container: Web3, hyperdrive_contract: Contract, block_number: BlockNumber | int
+    web3_container: Web3, hyperdrive_contract: Contract, block_number: BlockNumber
 ) -> dict[str | Any, Any]:
     """Returns the block pool info from the Hyperdrive contract"""
     block_pool_info = get_smart_contract_read_call(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
