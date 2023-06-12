@@ -87,7 +87,7 @@ while True:
             plot_fixed_rate(fixed_rate_x, fixed_rate_y, ax_fixed_rate)
             plot_pnl(pnl_x, pnl_y, ax_pnl)
 
-            fig.autofmt_xdate()
-            st.pyplot(fig=fig)
+            fig.autofmt_xdate()  # type: ignore
+            st.pyplot(fig=fig)  # type: ignore
 
     time.sleep(0.1)
