@@ -562,11 +562,6 @@ def main(
     pricing_model = HyperdrivePricingModel()
     no_crash_streak = 0
     last_executed_block = 0
-    output_utils.setup_logging(
-        log_filename=bot_config.log_filename,
-        log_level=bot_config.log_level,
-        max_bytes=bot_config.max_bytes,
-    )
     provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
         bot_config, provider_settings, addresses, network_choice, pricing_model
     )
@@ -630,6 +625,7 @@ if __name__ == "__main__":
         log_filename=config.log_filename,
         max_bytes=config.max_bytes,
         log_level=config.log_level,
+        delete_previous_logs=config.delete_previous_logs,
         log_file_and_stdout=config.log_file_and_stdout,
     )
     ape_logger.set_level(logging.ERROR)

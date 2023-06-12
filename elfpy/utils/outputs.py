@@ -421,7 +421,7 @@ def setup_logging(
     log_file_and_stdout: bool = False,
 ) -> None:
     r"""Setup logging and handlers with default settings"""
-    if log_filename is None and log_file_and_stdout:
+    if log_filename is None and log_file_and_stdout is True:
         raise ValueError(f"{log_filename=} cannot be None and {log_file_and_stdout=} be True")
     handlers = []
     log_formatter = logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME)
@@ -442,7 +442,7 @@ def setup_logging(
         file_handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
         file_handler.setFormatter(log_formatter)
         handlers.append(file_handler)
-    if log_file_and_stdout or log_filename is None:
+    if log_file_and_stdout is True or log_filename is None:
         handlers.append(stream_handler)
     logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
     logging.getLogger().handlers = handlers  # overwrite handlers with the desired one
