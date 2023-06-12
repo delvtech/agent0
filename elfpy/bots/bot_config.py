@@ -46,13 +46,8 @@ class BotConfig(types.FrozenClass):
     # In general the bot will be more risk averse as it grows to infinity.
     # A value of 0 will usually disable it.
     risk_threshold: float = 0.0
-    # random number generator used in the simulation
-    rng: NumpyGenerator = field(init=False, compare=False)
     # scratch space for any application-specific & extraneous parameters
     scratch: dict[Any, Any] = field(default_factory=dict)
-
-    def __post_init__(self):
-        self.rng = np.random.default_rng(self.random_seed)
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)
