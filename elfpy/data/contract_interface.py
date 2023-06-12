@@ -4,11 +4,13 @@ from __future__ import annotations
 import json
 import logging
 import time
+from typing import Any
 
 import attr
 import requests
 import toml
 from eth_typing import URI
+from eth_utils import address
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract, ContractEvent, ContractFunction
@@ -16,6 +18,7 @@ from web3.middleware import geth_poa
 from web3.types import ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
 
 from elfpy.utils import apeworx_integrations as ape_utils
+from elfpy.utils import outputs as output_utils
 
 
 @attr.s
@@ -51,7 +54,7 @@ def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
     return addresses
 
 
-def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: TxReceipt):
+def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: TxReceipt) -> list[dict[Any, Any]]:
     """Decode logs from a transaction receipt"""
     logs = []
     if tx_receipt.get("logs"):
@@ -66,39 +69,42 @@ def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: 
     return logs
 
 
-def fetch_transactions_for_block_range(web3_container: Web3, contract: Contract, start_block: int, ending_block: int):
+def fetch_transactions_for_block_range(
+    web3_container: Web3, contract: Contract, block_number: int
+) -> list[dict[str, Any]]:
     """Fetch transactions related to the hyperdrive_address contract"""
+    block: BlockData = web3_container.eth.get_block(block_number, full_transactions=True)
+    transactions = block.get("transactions")
+    if not transactions:
+        logging.info("no transactions in block %s", block.get("number"))
+        return {}
     decoded_transactions = []
-    for block_number in range(start_block, ending_block):
-        block: BlockData = web3_container.eth.get_block(block_number, full_transactions=True)
-
-        transactions = block.get("transactions")
-        if not transactions:
-            logging.info("no transactions in block %s", block.get("number"))
+    for transaction in transactions:
+        if isinstance(transaction, HexBytes):
+            logging.warning("transaction HexBytes")
             continue
-
-        for transaction in transactions:
-            if isinstance(transaction, HexBytes):
-                logging.warning("transaction HexBytes")
-                continue
-            if transaction.get("to") != contract.address:
-                logging.warning("transaction not from hyperdrive contract")
-                continue
-            transaction_dict = dict(transaction)
-            # Convert the HexBytes fields to their hex representation
-            tx_hash = transaction.get("hash") or HexBytes("")
-            transaction_dict["hash"] = tx_hash.hex()
-            # Decode the transaction input
-            try:
-                method, params = contract.decode_function_input(transaction["input"])
-                transaction_dict["input"] = {"method": method.fn_name, "params": params}
-            except ValueError:  # if the input is not meant for the contract, ignore it
-                continue
-            tx_receipt = web3_container.eth.get_transaction_receipt(tx_hash)
-            logs = fetch_and_decode_logs(web3_container, contract, tx_receipt)
-            decoded_transactions.append(
-                {"transaction": transaction_dict, "logs": logs, "receipt": recursive_dict_conversion(tx_receipt)}
-            )
+        if transaction.get("to") != contract.address:
+            logging.warning("transaction not from hyperdrive contract")
+            continue
+        transaction_dict = dict(transaction)
+        # Convert the HexBytes fields to their hex representation
+        tx_hash = transaction.get("hash") or HexBytes("")
+        transaction_dict["hash"] = tx_hash.hex()
+        # Decode the transaction input
+        try:
+            method, params = contract.decode_function_input(transaction["input"])
+            transaction_dict["input"] = {"method": method.fn_name, "params": params}
+        except ValueError:  # if the input is not meant for the contract, ignore it
+            continue
+        tx_receipt = web3_container.eth.get_transaction_receipt(tx_hash)
+        logs = fetch_and_decode_logs(web3_container, contract, tx_receipt)
+        decoded_transactions.append(
+            {
+                "transaction": transaction_dict,
+                "logs": logs,
+                "receipt": recursive_dict_conversion(tx_receipt),
+            }
+        )
     return decoded_transactions
 
 
@@ -125,7 +131,28 @@ def get_event_object(
     return (None, None)
 
 
-def get_smart_contract_read_call(contract: Contract, function_name: str, **function_args):
+def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, block_number: int) -> dict[str | Any, Any]:
+    """Returns the block pool info from the Hyperdrive contract"""
+    block_pool_info = get_smart_contract_read_call(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
+    latest_block_timestamp: BlockData = web3_container.eth.get_block("latest").timestamp
+    block_pool_info.update({"timestamp": latest_block_timestamp})
+    return block_pool_info
+
+
+def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3_container: Web3) -> Contract:
+    """Get the hyperdrive contract for a given abi"""
+    addresses = fetch_addresses(contracts_url)
+    # Load the ABI from the JSON file
+    with open(abi_file_path, "r", encoding="UTF-8") as file:
+        state_abi = json.load(file)["abi"]
+    # get contract instance of hyperdrive
+    hyperdrive_contract: Contract = web3_container.eth.contract(
+        address=address.to_checksum_address(addresses.hyperdrive), abi=state_abi
+    )
+    return hyperdrive_contract
+
+
+def get_smart_contract_read_call(contract: Contract, function_name: str, **function_args) -> dict[Any, Any]:
     """Get a smart contract read call"""
     # decode ABI to get pool info variable names
     abi = contract.abi
@@ -142,6 +169,14 @@ def get_smart_contract_read_call(contract: Contract, function_name: str, **funct
     assert len(return_value_keys) == len(return_values)
     result = dict((variable_name, info) for variable_name, info in zip(return_value_keys, return_values))
     return result
+
+
+def hyperdrive_config_to_json(config_file: str, hyperdrive_contract: Contract) -> None:
+    """Write the Hyperdrive config to a json file"""
+    pool_config = get_smart_contract_read_call(hyperdrive_contract, "getPoolConfig")
+    logging.info("Writing pool config.")
+    with open(config_file, mode="w", encoding="UTF-8") as file:
+        json.dump(pool_config, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
 
 
 def load_abi(file_path):
