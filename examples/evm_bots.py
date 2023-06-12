@@ -21,6 +21,7 @@ import requests
 from ape import accounts
 from ape.api import ProviderAPI, ReceiptAPI
 from ape.contracts import ContractInstance
+from ape.logging import logger as ape_logger
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from eth_account import Account as EthAccount
@@ -35,8 +36,6 @@ from elfpy.agents.policies import LongLouie, ShortSally, RandomAgent
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies.base import BasePolicy
 from elfpy.bots.bot_info import BotInfo
-
-# from elfpy.bots.get_config import get_config
 from elfpy.bots import BotConfig
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
 from elfpy.math import FixedPoint
@@ -630,6 +629,7 @@ if __name__ == "__main__":
         log_level=config.log_level,
         log_file_and_stdout=config.log_file_and_stdout,
     )
+    ape_logger.set_level(logging.ERROR)
     CRASH_FILE = f".logging/no_crash_streak{'_devnet' if config.devnet else ''}.txt"
     # inputs
     NETWORK_CHOICE = "ethereum:local:" + ("alchemy" if config.alchemy else "foundry")
