@@ -528,6 +528,9 @@ def main(
     # pylint: disable=too-many-locals
     # Custom parameters for this experiment
     bot_config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
+    bot_config.scratch["num_louie"]: int = 1
+    bot_config.scratch["num_sally"]: int = 1
+    bot_config.scratch["num_random"]: int = 4
     bot_config.scratch["louie"] = BotInfo(
         policy=LongLouie, trade_chance=bot_config.trade_chance, risk_threshold=bot_config.risk_threshold
     )
