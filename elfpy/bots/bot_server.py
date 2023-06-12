@@ -27,10 +27,9 @@ def run_script():
     # Execute the python script with the provided JSON as an argument
     script_id = len(running_processes) + 1
     script_path = app.config["SCRIPT_PATH"]
-    process = subprocess.Popen(["python", script_path, temp_file_path])
-
-    # Store the process in the dictionary
-    running_processes[script_id] = process
+    with subprocess.Popen(["python", script_path, temp_file_path]) as process:
+        # Store the process in the dictionary
+        running_processes[script_id] = process
 
     return jsonify({"id": script_id}), 200
 
@@ -51,8 +50,8 @@ def kill_script():
         process.kill()
         del running_processes[script_id]
         return jsonify({"message": f"Script with ID {script_id} has been killed."}), 200
-    else:
-        return jsonify({"message": f"Script with ID {script_id} is not running."}), 404
+
+    return jsonify({"message": f"Script with ID {script_id} is not running."}), 404
 
 
 @app.route("/list_processes", methods=["GET"])
