@@ -10,7 +10,9 @@ from typing import TYPE_CHECKING, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
+from hexbytes import HexBytes
 from matplotlib import gridspec
+from web3.datastructures import AttributeDict, MutableAttributeDict
 
 import elfpy
 from elfpy.math.fixed_point import FixedPoint
@@ -458,11 +460,16 @@ def close_logging(delete_logs=True):
             handler.close()
 
 
-class CustomEncoder(json.JSONEncoder):
+class ExtendedJSONEncoder(json.JSONEncoder):
     r"""Custom encoder for JSON string dumps"""
+    # pylint: disable=too-many-return-statements
 
     def default(self, o):
         r"""Override default behavior"""
+        if isinstance(o, HexBytes):
+            return o.hex()
+        if isinstance(o, (AttributeDict, MutableAttributeDict)):
+            return dict(o)
         if isinstance(o, np.integer):
             return int(o)
         if isinstance(o, np.floating):
