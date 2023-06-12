@@ -419,12 +419,13 @@ def setup_logging(
     log_level: int = elfpy.DEFAULT_LOG_LEVEL,
     delete_previous_logs: bool = False,
     log_file_and_stdout: bool = False,
+    log_formatter: str = elfpy.DEFAULT_LOG_FORMATTER,
 ) -> None:
     r"""Setup logging and handlers with default settings"""
     if log_filename is None and log_file_and_stdout is True:
         raise ValueError(f"{log_filename=} cannot be None and {log_file_and_stdout=} be True")
     handlers = []
-    log_formatter = logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME)
+    log_formatter = logging.Formatter(log_formatter, elfpy.DEFAULT_LOG_DATETIME)
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(log_formatter)
     if log_filename is not None:

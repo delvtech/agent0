@@ -627,6 +627,7 @@ if __name__ == "__main__":
         log_level=config.log_level,
         delete_previous_logs=config.delete_previous_logs,
         log_file_and_stdout=config.log_file_and_stdout,
+        log_formatter=config.log_formatter,
     )
     ape_logger.set_level(logging.ERROR)
     CRASH_FILE = f".logging/no_crash_streak{'_devnet' if config.devnet else ''}.txt"
