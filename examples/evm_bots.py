@@ -621,7 +621,6 @@ if __name__ == "__main__":
     config = BotConfig()
     args = get_argparser().parse_args()
     config.load_from_json(args.configuration_json[0])
-    rng = np.random.default_rng(config.random_seed)
     output_utils.setup_logging(
         log_filename=config.log_filename,
         max_bytes=config.max_bytes,
@@ -633,4 +632,4 @@ if __name__ == "__main__":
     NETWORK_CHOICE = "ethereum:local:" + ("alchemy" if config.alchemy else "foundry")
     PROVIDER_SETTINGS = {"host": config.rpc_url}
     # dynamically load devnet addresses from address file
-    main(config, rng, CRASH_FILE, NETWORK_CHOICE, PROVIDER_SETTINGS)
+    main(config, np.random.default_rng(config.random_seed), CRASH_FILE, NETWORK_CHOICE, PROVIDER_SETTINGS)
