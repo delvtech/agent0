@@ -71,19 +71,18 @@ def fetch_transactions_for_block_range(web3_container: Web3, contract: Contract,
     decoded_transactions = []
     for block_number in range(start_block, ending_block):
         block: BlockData = web3_container.eth.get_block(block_number, full_transactions=True)
-        print(f"{block.get('number')=}")
 
         transactions = block.get("transactions")
         if not transactions:
-            print(f"no transactions in block {block.get('number')}")
+            logging.info("no transactions in block %s", block.get("number"))
             continue
 
         for transaction in transactions:
             if isinstance(transaction, HexBytes):
-                print("transaction HexBytes")
+                logging.warning("transaction HexBytes")
                 continue
             if transaction.get("to") != contract.address:
-                print("transaction not from hyperdrive contract")
+                logging.warning("transaction not from hyperdrive contract")
                 continue
             transaction_dict = dict(transaction)
             # Convert the HexBytes fields to their hex representation
