@@ -39,5 +39,3 @@ class BotInfo:
     risk: Risk = Risk(mean=0.02, std=0.01, min=0.0, max=0.06)
     index: int | None = None
     name: str = "botty mcbotface"
-
-    # def __repr__(self):
