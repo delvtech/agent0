@@ -80,6 +80,7 @@ while True:
             # Clears all axes
             ax_ohlcv.clear()
             ax_fixed_rate.clear()
+            ax_vol.clear()
             ax_pnl.clear()
 
             # TODO add in volume
