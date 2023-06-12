@@ -1,7 +1,3 @@
-# TODO This file isn't working, using just as a template
-# pylint: disable=all
-# pyright: reportUndefinedVariable=false
-
 # ---
 # jupyter:
 #   jupytext:
@@ -16,8 +12,6 @@
 #     name: python3
 # ---
 
-# %%
-"""simulation for the Hyperdrive market"""
 from __future__ import annotations
 import json
 import pandas as pd
@@ -26,82 +20,16 @@ import numpy as np
 import elfpy
 from elfpy.wallet.wallet import Wallet, Long, Short
 from elfpy.markets.hyperdrive import hyperdrive_assets
-import elfpy.utils.apeworx_integrations as ape_utils
 from collections import namedtuple
 from elfpy import types
 from elfpy.math import FixedPoint
 from elfpy.markets.hyperdrive.hyperdrive_market import (
     HyperdriveMarket,
-    HyperdriveMarketState,
 )
-from elfpy.markets.hyperdrive import HyperdrivePricingModel
 from matplotlib import ticker as mpl_ticker
-from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
+from extract_data_logs import calculate_spot_price
 
-from extract_data_logs import read_json_to_pd, explode_transaction_data
-
-## Get transactions from data
-trans_data = "../../.logging/transactions.json"
-config_data = "../../.logging/hyperdrive_config.json"
-pool_info_data = "../../.logging/hyperdrive_pool_info.json"
-
-trans_data = explode_transaction_data(read_json_to_pd(trans_data))
-config_data = read_json_to_pd(config_data)
-pool_info_data = read_json_to_pd(pool_info_data).T
-
-data = get_combined_data(trans_data, pool_data)
-
-# %%
-# data = data[~data["args.id"].isna()]
-# data = data.reset_index(drop=True)
-# prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(data["args.id"].values)
-# trade_type = pd.DataFrame(prefix).apply(lambda x: hyperdrive_assets.AssetIdPrefix(x.values).name, axis=1)
-
-# %%
-# data["prefix"] = prefix
-data["timestamp"] = data["timestamp"].astype(int)
-
-rename_dict = {
-    "contractAddress": "contract_address",
-    "transactionHash": "transaction_hash",
-    "blockNumber": "block_number",
-    "blockHash": "block_hash",
-    "transactionIndex": "transaction_index",
-    "args.operator": "operator",  # missing
-    "args.from": "from",  # missing
-    "args.to": "to",  # missing
-    "args.id": "id",  # missing
-    "args.value": "value",  # missing
-    "prefix": "prefix",  # missing
-    "input.params._maturityTime": "maturity_timestamp",
-    "input.method": "trade_type",
-    "shareReserves": "share_reserves",
-    "bondReserves": "bond_reserves",
-    "lpTotalSupply": "lp_total_supply",
-    "sharePrice": "share_price",
-    "longsOutstanding": "longs_outstanding",
-    "longAverageMaturityTime": "longs_average_maturity_time",
-    "shortsOutstanding": "shorts_outstanding",
-    "shortAverageMaturityTime": "short_average_maturity_time",
-    "shortBaseVolume": "short_base_volume",
-    "timestamp": "block_timestamp",
-}
-
-# %%
-columns = [k for k in rename_dict.keys()]
-
-# TODO remove this hack, only grab columns that exist from data
-columns = [c for c in columns if c in data.columns]
-
-# %%
-# Filter data based on columns
-trade_data = data[columns]
-# Rename columns
-trade_data = trade_data.rename(columns=rename_dict)
-
-
-# %%
 def get_wallet_from_onchain_trade_info(
     address: str,
     trades: pd.DataFrame,
@@ -112,7 +40,7 @@ def get_wallet_from_onchain_trade_info(
 
     r"""Construct wallet balances from on-chain trade info.
 
-    Arguments
+   Arguments
     ---------
     address : str
         Address of the wallet.
@@ -145,9 +73,10 @@ def get_wallet_from_onchain_trade_info(
     balance = positive_balance - negative_balance
 
     asset_prefix = trades["prefix"].iloc[0]
-    asset_type = trades["trade_type"].iloc[0]
+    asset_type = trades["trade_enum"].iloc[0]
     maturity = trades["maturity_timestamp"].iloc[0]
-    mint_time = maturity - elfpy.SECONDS_IN_YEAR
+    mint_time = int(maturity) - elfpy.SECONDS_IN_YEAR
+
 
     # check if there's an outstanding balance
     if balance != 0:
@@ -170,7 +99,7 @@ def get_wallet_from_onchain_trade_info(
             previous_share_price = wallet.shorts[mint_time].open_share_price if mint_time in wallet.shorts else 0
 
             marginal_position_change = FixedPoint(scaled_value=balance)
-            marginal_open_share_price = FixedPoint(scaled_value=trades.open_share_price)
+            marginal_open_share_price = FixedPoint(scaled_value=int(trades.share_price))
 
             new_balance = previous_balance + marginal_position_change
 
@@ -202,18 +131,6 @@ def get_wallet_from_onchain_trade_info(
         elif asset_type == "LP":
             wallet.lp_tokens += FixedPoint(scaled_value=balance)
     return wallet
-
-
-# %%
-agents = trade_data["operator"].value_counts().index.tolist()
-agent_wallets = {
-    a: Wallet(
-        address=agents.index(a),
-        balance=types.Quantity(amount=FixedPoint(0), unit=types.TokenType.BASE),
-    )
-    for a in agents
-}
-
 
 # %% attempt to mock up trade closeout
 def get_wallet_state(agent_wallet: Wallet, market: HyperdriveMarket) -> dict[str, FixedPoint]:
@@ -282,146 +199,108 @@ def get_wallet_state(agent_wallet: Wallet, market: HyperdriveMarket) -> dict[str
         f"agent{agent_wallet.address}_total_shorts_no_mock": shorts_value_no_mock,
     }
 
-
-# %%
-# WE ARE MISSING INFOMRATION REQUIRED TO CREATE THESE OBJECTS
-# THIS IS TRACKED IN ISSUE #530
-# https://github.com/delvtech/elf-simulations/issues/530
-
-# pool_info_columns = ['share_price',
-#        'longs_outstanding', 'average_maturity_time', 'long_base_volume',
-#        'shorts_outstanding', 'short_average_maturity_time',
-#        'short_base_volume']
-# def get_market_state_from_row(row) -> HyperdriveMarketState:
-#     return HyperdriveMarketState(
-#         lp_total_supply=FixedPoint(scaled_value=row.lp_total_supply),
-#         share_reserves=FixedPoint(scaled_value=row.share_reserves),
-#         bond_reserves=FixedPoint(scaled_value=row.bond_reserves),
-#         base_buffer=FixedPoint(0),
-#         variable_apr=???,
-
-# def create_elfpy_market_without_contracts():
-#     elfpy_market = HyperdriveMarket(
-#         pricing_model=HyperdrivePricingModel(),
-#         market_state=HyperdriveMarketState(
-
-#         )
-#         position_duration=time.StretchedTime(
-#             days=FixedPoint(hyperdrive_config["term_length"]),
-#             time_stretch=FixedPoint(hyperdrive_config["timeStretch"]),
-#             normalizing_constant=FixedPoint(hyperdrive_config["term_length"]),
-#         ),
-#         block_time=time.BlockTime(
-#             _time=FixedPoint((block_timestamp - start_timestamp) / 365),
-#             _block_number=FixedPoint(block_number),
-#             _step_size=FixedPoint("1.0") / FixedPoint("365.0"),
-#         ),
-#     )
+def calculate_pnl(trade_data):
 
 
-# %% estimate position duration and add it in
-position_duration = max(trade_data.maturity_timestamp - trade_data.block_timestamp)
-# print(f"empirically observed position_duration in seconds: {position_duration}")
-# print(f"empirically observed position_duration in minutes: {position_duration/60}")
-# print(f"empirically observed position_duration in hours: {position_duration/60/60}")
-# print(f"empirically observed position_duration in days: {position_duration/60/60/24}")
-position_duration_days = round(position_duration / 60 / 60 / 24)
-# print(f"assuming position_duration is {position_duration_days}")
-position_duration = position_duration_days * 60 * 60 * 24
+    # Drop all rows with nan maturity timestamps
+    trade_data = trade_data[~trade_data['maturity_timestamp'].isna()]
 
+    # %% estimate position duration and add it in
+    position_duration = max(trade_data.maturity_timestamp - trade_data.block_timestamp)
+    # print(f"empirically observed position_duration in seconds: {position_duration}")
+    # print(f"empirically observed position_duration in minutes: {position_duration/60}")
+    # print(f"empirically observed position_duration in hours: {position_duration/60/60}")
+    # print(f"empirically observed position_duration in days: {position_duration/60/60/24}")
+    position_duration_days = round(position_duration / 60 / 60 / 24)
+    # print(f"assuming position_duration is {position_duration_days}")
+    position_duration = position_duration_days * 60 * 60 * 24
 
-# %%
-def calculate_spot_price(
-    share_reserves,
-    bond_reserves,
-    lp_total_supply,
-    maturity_timestamp,
-    block_timestamp,
-    position_duration,
-):
-    """Calculate spot price."""
-    # Hard coding variables to calculate spot price
-    initial_share_price = 1
-    time_remaining_stretched = 0.045071688063194093
-    full_term_spot_price = (
-        (initial_share_price * (share_reserves / 1e18)) / ((bond_reserves / 1e18) + (lp_total_supply / 1e18))
-    ) ** time_remaining_stretched
-
-    time_left_in_years = (maturity_timestamp - block_timestamp) / position_duration
-
-    return full_term_spot_price * time_left_in_years + 1 * (1 - time_left_in_years)
-
-
-# %% pre-define column names to store agent pnl
-agent_col_names = []
-for i in range(len(agents)):
-    agent_col_name = f"agent_{i}_pnl"
-    trade_data[agent_col_name] = 0
-    agent_col_names.append(agent_col_name)
-print(f"{agent_col_names=}")
-
-# %%
-NUMBER_OF_DATA_ROWS_TO_PROCESS = len(trade_data)
-
-for idx, row in trade_data.loc[0:NUMBER_OF_DATA_ROWS_TO_PROCESS, :].iterrows():
-    for agent in agents:
-        agent_index = agents.index(agent)
-        # get their wallet
-        wallet = agent_wallets[agent]
-
-        marginal_trades = pd.DataFrame(row).T
-
-        # pass in one trade at a time, and get out the updated wallet
-        agent_wallets[agent] = get_wallet_from_onchain_trade_info(
-            address=agent,
-            trades=marginal_trades,
-            index=agents.index(agent),
-            add_to_existing_wallet=agent_wallets[agent],
+    agents = trade_data["operator"].value_counts().index.tolist()
+    agent_wallets = {
+        a: Wallet(
+            address=agents.index(a),
+            balance=types.Quantity(amount=FixedPoint(0), unit=types.TokenType.BASE),
         )
+        for a in agents
+    }
 
-        spot_price = calculate_spot_price(
-            row.share_reserves,
-            row.bond_reserves,
-            row.lp_total_supply,
-            row.maturity_timestamp,
-            row.block_timestamp,
-            position_duration,
-        )
-        # print(f"{spot_price=}")
+    # %% pre-define column names to store agent pnl
+    pnl_data = pd.DataFrame(index=trade_data.index)
+    agent_col_names = []
+    for i in range(len(agents)):
+        agent_col_name = f"agent_{i}_pnl"
+        pnl_data[agent_col_name] = 0
+        agent_col_names.append(agent_col_name)
 
-        # LP value (TODO: check why certain agents own more than 100% of the pool)
-        total_lp_value = row.share_reserves / 1e18 * row.share_price / 1e18 + row.bond_reserves / 1e18 * spot_price
-        share_of_pool = float(agent_wallets[agent].lp_tokens) / (row.lp_total_supply / 1e18)
-        # print(f"{float(agent_wallets[agent].lp_tokens)=}")
-        # print(f"{row.lp_total_supply/1e18=}")
-        pnl = share_of_pool * total_lp_value
-        # print(f"agent {row.operator[:8]} has {pnl} from LP only (owns {share_of_pool:,.0%} of the pool)")
+    # %%
+    NUMBER_OF_DATA_ROWS_TO_PROCESS = len(trade_data)
 
-        # for each LONG
-        for mint_time, long in agent_wallets[agent].longs.items():
-            pnl += float(long.balance) * spot_price
-        # for each SHORT
-        for mint_time, short in agent_wallets[agent].shorts.items():
-            pnl += float(short.balance) * (1 - spot_price)
+    for idx, row in trade_data.loc[0:NUMBER_OF_DATA_ROWS_TO_PROCESS, :].iterrows():
+        for agent in agents:
+            agent_index = agents.index(agent)
+            # get their wallet
+            wallet = agent_wallets[agent]
 
-        trade_data.loc[idx, f"agent_{agent_index}_pnl"] = pnl
+            marginal_trades = pd.DataFrame(row).T
 
-# %%
-x_data = pd.to_datetime(trade_data.loc[:, "block_timestamp"], unit="s")
-col_names = agent_col_names[:-1]
-print(f"{col_names=}")
-y_data = trade_data.loc[:, col_names]
-plt.plot(x_data, y_data)
-# change y-axis unit format to #,###.0f
-plt.gca().yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(int(x), ",")))
-plt.xlabel("block timestamp")
-plt.ylabel("pnl")
-plt.title("pnl over time")
-# format x-axis as time
-# plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-plt.gcf().autofmt_xdate()
+            # pass in one trade at a time, and get out the updated wallet
+            agent_wallets[agent] = get_wallet_from_onchain_trade_info(
+                address=agent,
+                trades=marginal_trades,
+                index=agents.index(agent),
+                add_to_existing_wallet=agent_wallets[agent],
+            )
 
-# make this work: col_names.replace("_pnl","")
-plt.legend([col_names.replace("_pnl", "") for col_names in col_names])
+            spot_price = calculate_spot_price(
+                row.share_reserves,
+                row.bond_reserves,
+                row.lp_total_supply,
+                row.maturity_timestamp,
+                row.block_timestamp,
+                position_duration,
+            )
+            # print(f"{spot_price=}")
 
-# %%
+            # LP value (TODO: check why certain agents own more than 100% of the pool)
+            total_lp_value = row.share_reserves / 1e18 * row.share_price / 1e18 + row.bond_reserves / 1e18 * spot_price
+            share_of_pool = float(agent_wallets[agent].lp_tokens) / (row.lp_total_supply / 1e18)
+            # print(f"{float(agent_wallets[agent].lp_tokens)=}")
+            # print(f"{row.lp_total_supply/1e18=}")
+            pnl = share_of_pool * total_lp_value
+            # print(f"agent {row.operator[:8]} has {pnl} from LP only (owns {share_of_pool:,.0%} of the pool)")
+
+            # for each LONG
+            for mint_time, long in agent_wallets[agent].longs.items():
+                pnl += float(long.balance) * spot_price
+            # for each SHORT
+            for mint_time, short in agent_wallets[agent].shorts.items():
+                pnl += float(short.balance) * (1 - spot_price)
+
+            pnl_data.loc[idx, f"agent_{agent_index}_pnl"] = pnl
+
+    # %%
+    x_data = pd.to_datetime(trade_data.loc[:, "block_timestamp"], unit="s")
+
+    return (x_data, pnl_data)
+
+def plot_pnl(x_data, y_data, ax):
+
+    ax.plot(x_data, y_data)
+    # change y-axis unit format to #,###.0f
+    ax.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(int(x), ",")))
+
+    # TODO fix these top use axes
+    ax.set_xlabel("block timestamp")
+    ax.set_ylabel("pnl")
+    ax.yaxis.set_label_position('right')
+    ax.yaxis.tick_right()
+    ax.set_title("pnl over time")
+
+    # make this work: col_names.replace("_pnl","")
+    col_names = y_data.columns
+    ax.legend([col_names.replace("_pnl", "") for col_names in col_names])
+
+    # %%
+
+
+
