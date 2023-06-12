@@ -6,12 +6,8 @@ import logging
 import os
 import time
 
-import requests
-import toml
 from eth_utils import address
-from web3 import Web3
 from web3.contract.contract import Contract
-from web3.middleware import geth_poa
 
 from elfpy.data import contract_interface
 from elfpy.utils import outputs as output_utils
@@ -22,7 +18,7 @@ from elfpy.utils import outputs as output_utils
 # pylint: disable=too-many-locals
 
 
-def main(start_block: int, contracts_url: str, ethereum_node: str, save_dir: str, abi_file_path: str):
+def main(contracts_url: str, ethereum_node: str, save_dir: str, abi_file_path: str):
     """Main execution entry point"""
     # Define necessary variables/objects
     if not os.path.exists(save_dir):  # create save_dir if necessary
@@ -46,7 +42,7 @@ def main(start_block: int, contracts_url: str, ethereum_node: str, save_dir: str
         logging.info("Fetching transactions up to block %s", current_block)
         # Fetch transactions related to the hyperdrive_address contract
         transactions = contract_interface.fetch_transactions_for_block_range(
-            web3_container, hyperdrive_contract, start_block, current_block
+            web3_container, hyperdrive_contract, start_block=0, ending_block=current_block
         )
         # Save the updated transactions to the output file with custom encoder
         with open(transactions_output_file, "w", encoding="UTF-8") as file:
@@ -56,10 +52,14 @@ def main(start_block: int, contracts_url: str, ethereum_node: str, save_dir: str
 
 
 if __name__ == "__main__":
+    ABI_FILE_PATH = "./hyperdrive_solidity/.build/Hyperdrive.json"
     CONTRACTS_URL = "http://localhost:80/addresses.json"
     ETHEREUM_NODE = "http://localhost:8545"
     SAVE_DIR = ".logging"
-    ABI_FILE_PATH = "./hyperdrive_solidity/.build/Hyperdrive.json"
-    START_BLOCK = 0
     output_utils.setup_logging(".logging/acquire_transactions.log", log_file_and_stdout=True)
-    main(START_BLOCK, CONTRACTS_URL, ETHEREUM_NODE, SAVE_DIR, ABI_FILE_PATH)
+    main(
+        CONTRACTS_URL,
+        ETHEREUM_NODE,
+        SAVE_DIR,
+        ABI_FILE_PATH,
+    )

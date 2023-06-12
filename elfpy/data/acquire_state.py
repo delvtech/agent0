@@ -18,7 +18,7 @@ from elfpy.utils import outputs as output_utils
 # pyright: reportTypedDictNotRequiredAccess=false, reportUnboundVariable=false
 
 
-def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url: str, output_location: str):
+def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url: str, save_dir: str):
     """Main entry point for accessing contract & writing pool info"""
     # pylint: disable=too-many-locals
     # get web3 provider
@@ -34,7 +34,7 @@ def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url:
         address=address.to_checksum_address(addresses.hyperdrive), abi=abi
     )
     # get pool config from hyperdrive contract
-    config_file = os.path.join(output_location, "hyperdrive_config.json")
+    config_file = os.path.join(save_dir, "hyperdrive_config.json")
     contract_interface.hyperdrive_config_to_json(config_file, hyperdrive_contract)
     # write the initial pool info
     block: BlockData = web3_container.eth.get_block("latest")
@@ -44,7 +44,7 @@ def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url:
     pool_info[latest_block_number] = contract_interface.get_block_pool_info(
         web3_container, hyperdrive_contract, block_number
     )
-    pool_info_file = os.path.join(output_location, "hyperdrive_pool_info.json")
+    pool_info_file = os.path.join(save_dir, "hyperdrive_pool_info.json")
     with open(pool_info_file, mode="w", encoding="UTF-8") as file:
         json.dump(pool_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
     # monitor for new blocks & add pool info per block
@@ -64,9 +64,14 @@ def main(ethereum_node: URI | str, hyperdrive_abi_file_path: str, contracts_url:
 
 
 if __name__ == "__main__":
-    ETHEREUM_NODE = "http://localhost:8545"
-    CONTRACTS_URL = "http://localhost:80/addresses.json"
     ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
-    OUTPUT_LOCATION = ".logging"
+    CONTRACTS_URL = "http://localhost:80/addresses.json"
+    ETHEREUM_NODE = "http://localhost:8545"
+    SAVE_DIR = ".logging"
     output_utils.setup_logging(".logging/acquire_state.log", log_file_and_stdout=True)
-    main(ETHEREUM_NODE, ABI_FILE_PATH, CONTRACTS_URL, OUTPUT_LOCATION)
+    main(
+        ETHEREUM_NODE,
+        ABI_FILE_PATH,
+        CONTRACTS_URL,
+        SAVE_DIR,
+    )
