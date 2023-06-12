@@ -15,14 +15,13 @@ from web3.middleware import geth_poa
 from elfpy.data import contract_interface
 from elfpy.utils import outputs as output_utils
 
-
 # python `open` will infer the encoding if we do not specified, which is the behavior we want for now
 # pylint: disable=unspecified-encoding
 
 # pylint: disable=too-many-locals
 
 
-def main(config_file_path, contracts_url, ethereum_node, save_dir, abi_file_path):
+def main(config_file_path: str, contracts_url: str, ethereum_node: str, save_dir: str, abi_file_path: str):
     """Main execution entry point"""
     # Define necessary variables/objects
     if not os.path.exists(save_dir):  # create save_dir if necessary
@@ -55,7 +54,9 @@ def main(config_file_path, contracts_url, ethereum_node, save_dir, abi_file_path
         current_block = web3_container.eth.block_number
         logging.info("Fetching transactions up to block %s", current_block)
         # Fetch transactions related to the hyperdrive_address contract
-        transactions = contract_interface.fetch_transactions(web3_container, contract, starting_block, current_block)
+        transactions = contract_interface.fetch_transactions_for_block_range(
+            web3_container, contract, starting_block, current_block
+        )
         # Save the updated transactions to the output file with custom encoder
         with open(transactions_output_file, "w", encoding="UTF-8") as file:
             json.dump(transactions, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
