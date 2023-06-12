@@ -40,8 +40,4 @@ class BotInfo:
     index: int | None = None
     name: str = "botty mcbotface"
 
-    def __repr__(self) -> str:
-        """Return a string representation of the object."""
-        return f"{self.name} " + ",".join(
-            [f"{key}={value}" if value else "" for key, value in self.__dict__.items() if key not in ["name", "policy"]]
-        )
+    # def __repr__(self):

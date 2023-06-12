@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
+import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 
 from elfpy import DEFAULT_LOG_MAXBYTES, DEFAULT_LOG_LEVEL, types
@@ -55,6 +56,9 @@ class BotConfig(types.FrozenClass):
     rng: NumpyGenerator = field(init=False, compare=False)
     # scratch space for any application-specific & extraneous parameters
     scratch: dict[Any, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        self.rng = np.random.default_rng(self.random_seed)
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)

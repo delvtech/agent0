@@ -36,3 +36,6 @@ class BasePolicy:
     def action(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
         """Returns an empty list, indicating no action"""
         raise NotImplementedError
+
+    # def __repr__(self):
+    # attributes = self.__annotations__

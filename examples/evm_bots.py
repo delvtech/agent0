@@ -77,6 +77,7 @@ def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tu
 
 def get_accounts(bot_config: BotConfig) -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
+    print(bot_config.scratch)
     num = sum(bot_config.scratch[f"num_{bot}"] for bot in bot_config.scratch["bot_names"])
     assert (mnemonic := " ".join(["wolf"] * 24)), "You must provide a mnemonic in .env to run this script."
     keys = generate_dev_accounts(mnemonic=mnemonic, number_of_accounts=num)
@@ -133,7 +134,7 @@ def create_agent(
     assert bot.index is not None, "Bot must have an index."
     assert isinstance(bot.policy, type(Agent)), "Bot must have a policy of type Agent."
     params = {
-        "trade_chance": bot_config.scratch["trade_chance"],
+        "trade_chance": FixedPoint(bot_config.trade_chance),
         "budget": FixedPoint(
             str(
                 np.clip(
@@ -146,10 +147,10 @@ def create_agent(
     }
     params["rng"] = bot_config.rng
     if bot.risk_threshold and bot.name != "random":  # random agent doesn't use risk threshold
-        params["risk_threshold"] = bot.risk_threshold  # if risk threshold is manually set, we use it
+        params["risk_threshold"] = FixedPoint(bot.risk_threshold)  # if risk threshold is manually set, we use it
     if bot.name != "random":  # if risk threshold isn't manually set, we get a random one
-        params["risk_threshold"] = np.clip(
-            bot_config.rng.normal(loc=bot.risk.mean, scale=bot.risk.std), bot.risk.min, bot.risk.max
+        params["risk_threshold"] = FixedPoint(
+            np.clip(bot_config.rng.normal(loc=bot.risk.mean, scale=bot.risk.std), bot.risk.min, bot.risk.max).item()
         )
     agent = Agent(wallet_address=dev_accounts[bot.index].address, policy=bot.policy(**params))
     agent.contract = dev_accounts[bot.index]  # assign its onchain contract
@@ -531,13 +532,13 @@ def main(
     bot_config.scratch["louie"] = BotInfo(
         policy=LongLouie, trade_chance=bot_config.trade_chance, risk_threshold=bot_config.risk_threshold
     )
-    bot_config.scratch["frida"] = BotInfo(
+    bot_config.scratch["sally"] = BotInfo(
         policy=ShortSally, trade_chance=bot_config.trade_chance, risk_threshold=bot_config.risk_threshold
     )
     bot_config.scratch["random"] = BotInfo(
         policy=RandomAgent, trade_chance=bot_config.trade_chance, risk_threshold=bot_config.risk_threshold
     )
-    bot_config.scratch["bot_names"] = {"louie", "frida", "random"}
+    bot_config.scratch["bot_names"] = {"louie", "sally", "random"}
     # hard-code goerli addresses
     addresses = {
         "goerli_faucet": "0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2",
@@ -598,11 +599,11 @@ def get_argparser() -> argparse.ArgumentParser:
         epilog="See the README on https://github.com/delvtech/elf-simulations/ for more implementation details",
     )
     parser.add_argument(
-        "-c",
-        "--configuration-json",
-        help="Location of the configuration json file.",
+        "configuration_json",
+        nargs=1,
         default="",
         type=str,
+        help="Location of the configuration json file.",
     )
     return parser
 
@@ -610,8 +611,7 @@ def get_argparser() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     config = BotConfig()
     args = get_argparser().parse_args()
-    if args["configuration-json"]:  # empty string default is falsy
-        config.load_from_json(args["configuration-json"])
+    config.load_from_json(args.configuration_json[0])
     output_utils.setup_logging(
         log_filename=config.log_filename,
         max_bytes=config.max_bytes,

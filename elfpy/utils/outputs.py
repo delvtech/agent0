@@ -467,6 +467,8 @@ class ExtendedJSONEncoder(json.JSONEncoder):
 
     def default(self, o):
         r"""Override default behavior"""
+        if isinstance(o, set):
+            return list(o)
         if isinstance(o, HexBytes):
             return o.hex()
         if isinstance(o, (AttributeDict, MutableAttributeDict)):
