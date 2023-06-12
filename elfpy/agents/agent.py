@@ -32,8 +32,10 @@ class Agent:
         Random number generator, constructed using np.random.default_rng(seed)
     """
 
-    def __init__(self, wallet_address: int, policy: BasePolicy = NoActionPolicy()):
+    def __init__(self, wallet_address: int, policy: BasePolicy = None):
         """Store agent wallet"""
+        if policy is None:
+            policy = NoActionPolicy()
         self.policy = policy
         self.wallet: Wallet = Wallet(
             address=wallet_address, balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE)

@@ -72,10 +72,6 @@ class BotConfig(types.FrozenClass):
         """Load configuration settings from a JSON file and update self"""
         with open(json_file_location, mode="r", encoding="UTF-8") as file:
             json_config = json.load(file)
-            if "rng" in json_config:  # do not want to override this
-                json_config.pop("rng", None)
-                if "random_seed" in json_config:
-                    self.rng = np.random.default_rng(json_config["random_seed"])
         self.__dict__.update(**json_config)
 
     def save_as_json(self, json_file_location: str) -> None:

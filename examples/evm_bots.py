@@ -24,6 +24,7 @@ from ape.contracts import ContractInstance
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from eth_account import Account as EthAccount
+from numpy.random._generator import Generator as NumpyGenerator
 
 # elfpy core repo
 import elfpy.utils.apeworx_integrations as ape_utils
@@ -102,6 +103,7 @@ def create_agent(
     hyperdrive_contract: ContractInstance,
     bot_config: BotConfig,
     deployer_account: KeyfileAccount,
+    rng: NumpyGenerator,
 ) -> Agent:
     """Create an agent as defined in bot_info, assign its address, give it enough base.
 
@@ -137,19 +139,19 @@ def create_agent(
         "budget": FixedPoint(
             str(
                 np.clip(
-                    bot_config.rng.normal(loc=bot.budget.mean, scale=bot.budget.std),
+                    rng.normal(loc=bot.budget.mean, scale=bot.budget.std),
                     bot.budget.min,
                     bot.budget.max,
                 )
             )
         ),
     }
-    params["rng"] = bot_config.rng
+    params["rng"] = rng
     if bot.risk_threshold and bot.name != "random":  # random agent doesn't use risk threshold
         params["risk_threshold"] = FixedPoint(bot.risk_threshold)  # if risk threshold is manually set, we use it
     if bot.name != "random":  # if risk threshold isn't manually set, we get a random one
         params["risk_threshold"] = FixedPoint(
-            np.clip(bot_config.rng.normal(loc=bot.risk.mean, scale=bot.risk.std), bot.risk.min, bot.risk.max).item()
+            np.clip(rng.normal(loc=bot.risk.mean, scale=bot.risk.std), bot.risk.min, bot.risk.max).item()
         )
     agent = Agent(wallet_address=dev_accounts[bot.index].address, policy=bot.policy(**params))
     agent.contract = dev_accounts[bot.index]  # assign its onchain contract
@@ -191,6 +193,7 @@ def set_up_agents(
     base_instance: ContractInstance,
     addresses: dict[str, str],
     deployer_account: KeyfileAccount,
+    rng: NumpyGenerator,
 ) -> tuple[dict[str, Agent], ape_utils.OnChainTradeInfo]:
     """Set up python agents & corresponding on-chain accounts.
 
@@ -252,6 +255,7 @@ def set_up_agents(
                 hyperdrive_contract=hyperdrive_instance,
                 bot_config=bot_config,
                 deployer_account=deployer_account,
+                rng=rng,
             )
             sim_agents[f"agent_{agent.wallet.address}"] = agent
     return sim_agents, on_chain_trade_info
@@ -520,6 +524,7 @@ def do_policy(
 
 def main(
     bot_config: BotConfig,
+    rng: NumpyGenerator,
     crash_file: str,
     network_choice: str,
     provider_settings: str,
@@ -560,7 +565,9 @@ def main(
     provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
         bot_config, provider_settings, addresses, network_choice, pricing_model
     )
-    sim_agents, _ = set_up_agents(bot_config, provider, hyperdrive_instance, base_instance, addresses, deployer_account)
+    sim_agents, _ = set_up_agents(
+        bot_config, provider, hyperdrive_instance, base_instance, addresses, deployer_account, rng
+    )
     ape_utils.dump_agent_info(sim_agents, bot_config)
     logging.info("Constructed %s agents:", len(sim_agents))
     for agent_name in sim_agents:
@@ -614,6 +621,7 @@ if __name__ == "__main__":
     config = BotConfig()
     args = get_argparser().parse_args()
     config.load_from_json(args.configuration_json[0])
+    rng = np.random.default_rng(config.random_seed)
     output_utils.setup_logging(
         log_filename=config.log_filename,
         max_bytes=config.max_bytes,
@@ -625,4 +633,4 @@ if __name__ == "__main__":
     NETWORK_CHOICE = "ethereum:local:" + ("alchemy" if config.alchemy else "foundry")
     PROVIDER_SETTINGS = {"host": config.rpc_url}
     # dynamically load devnet addresses from address file
-    main(config, CRASH_FILE, NETWORK_CHOICE, PROVIDER_SETTINGS)
+    main(config, rng, CRASH_FILE, NETWORK_CHOICE, PROVIDER_SETTINGS)
