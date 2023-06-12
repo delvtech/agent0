@@ -12,8 +12,6 @@ from plot_ohlcv import plot_ohlcv, calc_ohlcv
 from plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
 from plot_pnl import calculate_pnl, plot_pnl
 
-from mplfinance._mplwraps import Mpf_Figure
-
 from extract_data_logs import (
     read_json_to_pd,
     explode_transaction_data,
