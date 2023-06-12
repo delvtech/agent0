@@ -64,11 +64,11 @@ def main(
                 )
             with open(pool_info_file, mode="w", encoding="UTF-8") as file:
                 json.dump(pool_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
-                transaction_info[block_number] = contract_interface.fetch_transactions_for_block_range(
-                    web3_container, transactions_hyperdrive_contract, block_number
-                )
+            transaction_info[block_number] = contract_interface.fetch_transactions_for_block_range(
+                web3_container, transactions_hyperdrive_contract, block_number
+            )
             with open(transaction_info_file, mode="w", encoding="UTF-8") as file:
-                json.dump(transaction_info_file, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
+                json.dump(transaction_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
         time.sleep(sleep_amount)
 
 
