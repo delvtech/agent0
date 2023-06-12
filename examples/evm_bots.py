@@ -608,19 +608,19 @@ def get_argparser() -> argparse.ArgumentParser:
 
 
 if __name__ == "__main__":
-    CONFIG = BotConfig()
-    ARGS = get_argparser().parse_args()
-    if ARGS["configuration-json"]:  # empty string default is falsy
-        CONFIG.load_from_json(ARGS["configuration-json"])
+    config = BotConfig()
+    args = get_argparser().parse_args()
+    if args["configuration-json"]:  # empty string default is falsy
+        config.load_from_json(args["configuration-json"])
     output_utils.setup_logging(
-        log_filename=CONFIG.log_filename,
-        max_bytes=CONFIG.max_bytes,
-        log_level=CONFIG.log_level,
-        log_file_and_stdout=CONFIG.log_file_and_stdout,
+        log_filename=config.log_filename,
+        max_bytes=config.max_bytes,
+        log_level=config.log_level,
+        log_file_and_stdout=config.log_file_and_stdout,
     )
-    CRASH_FILE = f".logging/no_crash_streak{'_devnet' if CONFIG.devnet else ''}.txt"
+    CRASH_FILE = f".logging/no_crash_streak{'_devnet' if config.devnet else ''}.txt"
     # inputs
-    NETWORK_CHOICE = "ethereum:local:" + ("alchemy" if CONFIG.alchemy else "foundry")
-    PROVIDER_SETTINGS = {"host": CONFIG.rpc_url}
+    NETWORK_CHOICE = "ethereum:local:" + ("alchemy" if config.alchemy else "foundry")
+    PROVIDER_SETTINGS = {"host": config.rpc_url}
     # dynamically load devnet addresses from address file
-    main(CONFIG, CRASH_FILE, NETWORK_CHOICE, PROVIDER_SETTINGS)
+    main(config, CRASH_FILE, NETWORK_CHOICE, PROVIDER_SETTINGS)

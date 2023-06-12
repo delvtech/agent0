@@ -73,15 +73,15 @@ from elfpy.bots import BotConfig
 
 if __name__ == "__main__":
     # load the config file
-    CONFIG = BotConfig()
+    config = BotConfig()
 
     # modify params as needed
-    CONFIG.random_seed = 1234
-    CONFIG.log_filename = "my_experiment.log"
+    config.random_seed = 1234
+    config.log_filename = "my_experiment.log"
     # ... etc
 
     # Write config to json
-    CONFIG.save_as_json("my_config.json")
+    config.save_as_json("my_config.json")
 ```
 
 Finally, you can execute the file and pass the location of `my_config.json` as an argument. e.g.: `evm_bots.py -c my_config.json`.
