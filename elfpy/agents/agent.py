@@ -26,15 +26,16 @@ class Agent:
     ----------
     wallet_address : int
         Random ID used to identify this specific agent in the simulation
-    budget : FixedPoint
-        Total amount of assets that this agent has available for spending in the simulation
-    rng : Generator
-        Random number generator, constructed using np.random.default_rng(seed)
+    policy : BasePolicy
+        Elfpy policy for producing agent actions
     """
 
-    def __init__(self, wallet_address: int, policy: BasePolicy = NoActionPolicy()):
-        """Store agent wallet"""
-        self.policy = policy
+    def __init__(self, wallet_address: int, policy: BasePolicy | None = None):
+        r"""Store agent wallet & policy"""
+        if policy is None:
+            self.policy: BasePolicy = NoActionPolicy()
+        else:
+            self.policy: BasePolicy = policy
         self.wallet: Wallet = Wallet(
             address=wallet_address, balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE)
         )

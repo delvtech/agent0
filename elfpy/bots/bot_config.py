@@ -5,9 +5,6 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-import numpy as np
-from numpy.random._generator import Generator as NumpyGenerator
-
 from elfpy import DEFAULT_LOG_MAXBYTES, DEFAULT_LOG_LEVEL, types
 from elfpy.utils import outputs as output_utils
 
@@ -46,13 +43,8 @@ class BotConfig(types.FrozenClass):
     # In general the bot will be more risk averse as it grows to infinity.
     # A value of 0 will usually disable it.
     risk_threshold: float = 0.0
-    # random number generator used in the simulation
-    rng: NumpyGenerator = field(init=False, compare=False)
     # scratch space for any application-specific & extraneous parameters
     scratch: dict[Any, Any] = field(default_factory=dict)
-
-    def __post_init__(self):
-        self.rng = np.random.default_rng(self.random_seed)
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)
@@ -72,10 +64,6 @@ class BotConfig(types.FrozenClass):
         """Load configuration settings from a JSON file and update self"""
         with open(json_file_location, mode="r", encoding="UTF-8") as file:
             json_config = json.load(file)
-            if "rng" in json_config:  # do not want to override this
-                json_config.pop("rng", None)
-                if "random_seed" in json_config:
-                    self.rng = np.random.default_rng(json_config["random_seed"])
         self.__dict__.update(**json_config)
 
     def save_as_json(self, json_file_location: str) -> None:
