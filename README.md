@@ -84,4 +84,4 @@ if __name__ == "__main__":
     config.save_as_json("my_config.json")
 ```
 
-Finally, you can execute the file and pass the location of `my_config.json` as an argument. e.g.: `evm_bots.py -c my_config.json`.
+Finally, you can execute the file and pass the location of `my_config.json` as an argument. e.g.: `evm_bots.py my_config.json`.
