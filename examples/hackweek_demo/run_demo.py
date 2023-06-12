@@ -5,7 +5,6 @@ import time
 import os
 
 
-import matplotlib.pyplot as plt
 import streamlit as st
 import mplfinance as mpf
 
@@ -29,15 +28,17 @@ placeholder = st.empty()
 # pylint: disable=invalid-name
 ## Get transactions from data
 
+
 def get_ticker(data):
+    """Given transaction data, return a subset of the dataframe"""
     # Return reverse of methods to put most recent transactions at the top
-    out = trans_data['input.method'].iloc[::-1]
+    out = data["input.method"].iloc[::-1]
     return out
 
 
 curr_file_dir = os.path.dirname(os.path.abspath(__file__))
 
-fig = mpf.figure(style='mike', figsize=(15,15))
+fig = mpf.figure(style="mike", figsize=(15, 15))
 ax_ohlcv = fig.add_subplot(2, 2, 1)
 ax_fixed_rate = fig.add_subplot(2, 2, 2)
 ax_vol = fig.add_subplot(2, 2, 3)
@@ -61,7 +62,6 @@ while True:
 
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data)
 
-
     (pnl_x, pnl_y) = calculate_pnl(combined_data)
 
     # Plot reserve levels (share and bond reserves, in poolinfo)
@@ -71,7 +71,6 @@ while True:
     # Add ticker
 
     with placeholder.container():
-
         (ticker_col,) = st.columns(1)
         with ticker_col:
             st.write(ticker.iloc[:100])
@@ -90,12 +89,5 @@ while True:
 
             fig.autofmt_xdate()
             st.pyplot(fig=fig)
-
-
-
-
-
-
-
 
     time.sleep(0.1)

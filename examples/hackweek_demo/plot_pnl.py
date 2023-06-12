@@ -1,34 +1,14 @@
-# ---
-# jupyter:
-#   jupytext:
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.14.6
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
-# ---
+"""Plots the pnl"""
 
 from __future__ import annotations
-import json
 import pandas as pd
-import os
-import numpy as np
 import elfpy
 from elfpy.wallet.wallet import Wallet, Long, Short
-from elfpy.markets.hyperdrive import hyperdrive_assets
-from collections import namedtuple
 from elfpy import types
 from elfpy.math import FixedPoint
-from elfpy.markets.hyperdrive.hyperdrive_market import (
-    HyperdriveMarket,
-)
 from matplotlib import ticker as mpl_ticker
-from matplotlib import pyplot as plt
 from extract_data_logs import calculate_spot_price
+
 
 def get_wallet_from_onchain_trade_info(
     address: str,
@@ -36,23 +16,22 @@ def get_wallet_from_onchain_trade_info(
     index: int = 0,
     add_to_existing_wallet: Wallet | None = None,
 ) -> Wallet:
-    # pylint: disable=too-many-arguments, too-many-branches
-
+    # pylint: disable=too-many-arguments, too-many-branches, too-many-locals
     r"""Construct wallet balances from on-chain trade info.
 
-   Arguments
-    ---------
-    address : str
-        Address of the wallet.
-    info : OnChainTradeInfo
-        On-chain trade info.
-    index : int
-        Index of the wallet among ALL agents.
+    Arguments
+     ---------
+     address : str
+         Address of the wallet.
+     info : OnChainTradeInfo
+         On-chain trade info.
+     index : int
+         Index of the wallet among ALL agents.
 
-    Returns
-    -------
-    Wallet
-        Wallet with Short, Long, and LP positions.
+     Returns
+     -------
+     Wallet
+         Wallet with Short, Long, and LP positions.
     """
     share_price = trades.share_price
 
@@ -72,11 +51,9 @@ def get_wallet_from_onchain_trade_info(
     negative_balance = int(trades.loc[(trades_in_position) & (trades["from"] == address), "value"].sum())
     balance = positive_balance - negative_balance
 
-    asset_prefix = trades["prefix"].iloc[0]
     asset_type = trades["trade_enum"].iloc[0]
     maturity = trades["maturity_timestamp"].iloc[0]
     mint_time = int(maturity) - elfpy.SECONDS_IN_YEAR
-
 
     # check if there's an outstanding balance
     if balance != 0:
@@ -92,7 +69,6 @@ def get_wallet_from_onchain_trade_info(
                 sum_product_of_open_share_price_and_value += (
                     value * share_price[trades.loc[specific_trade, "block_number"]]
                 )
-            open_share_price = int(sum_product_of_open_share_price_and_value / sum_value)
 
             # WEIGHTED AVERAGR FROM A MARGINAL UPDATE
             previous_balance = wallet.shorts[mint_time].balance if mint_time in wallet.shorts else 0
@@ -132,78 +108,12 @@ def get_wallet_from_onchain_trade_info(
             wallet.lp_tokens += FixedPoint(scaled_value=balance)
     return wallet
 
-# %% attempt to mock up trade closeout
-def get_wallet_state(agent_wallet: Wallet, market: HyperdriveMarket) -> dict[str, FixedPoint]:
-    r"""The wallet's current state of public variables
-
-    .. todo:: This will go away once we finish refactoring the state
-    """
-    lp_token_value = FixedPoint(0)
-    # proceed further only if the agent has LP tokens and avoid divide by zero
-    if agent_wallet.lp_tokens > FixedPoint(0) and market.market_state.lp_total_supply > FixedPoint(0):
-        share_of_pool = agent_wallet.lp_tokens / market.market_state.lp_total_supply
-        pool_value = (
-            market.market_state.bond_reserves * market.spot_price  # in base
-            + market.market_state.share_reserves * market.market_state.share_price  # in base
-        )
-        lp_token_value = pool_value * share_of_pool  # in base
-    share_reserves = market.market_state.share_reserves
-    # compute long values in units of base
-    longs_value = FixedPoint(0)
-    longs_value_no_mock = FixedPoint(0)
-    for mint_time, long in agent_wallet.longs.items():
-        if long.balance > FixedPoint(0) and share_reserves:
-            balance = hyperdrive_actions.calc_close_long(
-                bond_amount=long.balance,
-                market_state=market.market_state,
-                position_duration=market.position_duration,
-                pricing_model=market.pricing_model,
-                block_time=market.block_time.time,
-                mint_time=mint_time,
-                is_trade=True,
-            )[1].balance.amount
-        else:
-            balance = FixedPoint(0)
-        longs_value += balance
-        longs_value_no_mock += long.balance * market.spot_price
-    # compute short values in units of base
-    shorts_value = FixedPoint(0)
-    shorts_value_no_mock = FixedPoint(0)
-    for mint_time, short in agent_wallet.shorts.items():
-        balance = FixedPoint(0)
-        if (
-            short.balance > FixedPoint(0)
-            and share_reserves > FixedPoint(0)
-            and market.market_state.bond_reserves - market.market_state.bond_buffer > short.balance
-        ):
-            balance = hyperdrive_actions.calc_close_short(
-                bond_amount=short.balance,
-                market_state=market.market_state,
-                position_duration=market.position_duration,
-                pricing_model=market.pricing_model,
-                block_time=market.block_time.time,
-                mint_time=mint_time,
-                open_share_price=short.open_share_price,
-            )[1].balance.amount
-        shorts_value += balance
-        base_no_mock = short.balance * (FixedPoint("1.0") - market.spot_price)
-        shorts_value_no_mock += base_nomock
-    return {
-        f"agent{agent_wallet.address}_base": agentwallet.balance.amount,
-        f"agent{agent_wallet.address}_lp_tokens": lp_tokenvalue,
-        f"agent{agent_wallet.address}_num_longs": FixedPoint(len(agentwallet.longs)),
-        f"agent{agent_wallet.address}_num_shorts": FixedPoint(len(agentwallet.shorts)),
-        f"agent{agent_wallet.address}_total_longs": longsvalue,
-        f"agent{agent_wallet.address}_total_shorts": shortsvalue,
-        f"agent{agent_wallet.address}_total_longs_no_mock": longs_value_nomock,
-        f"agent{agent_wallet.address}_total_shorts_no_mock": shorts_value_no_mock,
-    }
 
 def calculate_pnl(trade_data):
-
-
+    # pylint: disable=too-many-locals
+    """Calculates the pnl given trade data"""
     # Drop all rows with nan maturity timestamps
-    trade_data = trade_data[~trade_data['maturity_timestamp'].isna()]
+    trade_data = trade_data[~trade_data["maturity_timestamp"].isna()]
 
     # %% estimate position duration and add it in
     position_duration = max(trade_data.maturity_timestamp - trade_data.block_timestamp)
@@ -233,13 +143,11 @@ def calculate_pnl(trade_data):
         agent_col_names.append(agent_col_name)
 
     # %%
-    NUMBER_OF_DATA_ROWS_TO_PROCESS = len(trade_data)
+    process_rows = len(trade_data)
 
-    for idx, row in trade_data.loc[0:NUMBER_OF_DATA_ROWS_TO_PROCESS, :].iterrows():
+    for idx, row in trade_data.loc[0:process_rows, :].iterrows():
         for agent in agents:
             agent_index = agents.index(agent)
-            # get their wallet
-            wallet = agent_wallets[agent]
 
             marginal_trades = pd.DataFrame(row).T
 
@@ -267,13 +175,13 @@ def calculate_pnl(trade_data):
             # print(f"{float(agent_wallets[agent].lp_tokens)=}")
             # print(f"{row.lp_total_supply/1e18=}")
             pnl = share_of_pool * total_lp_value
-            # print(f"agent {row.operator[:8]} has {pnl} from LP only (owns {share_of_pool:,.0%} of the pool)")
 
             # for each LONG
-            for mint_time, long in agent_wallets[agent].longs.items():
+            for _, long in agent_wallets[agent].longs.items():
                 pnl += float(long.balance) * spot_price
+
             # for each SHORT
-            for mint_time, short in agent_wallets[agent].shorts.items():
+            for _, short in agent_wallets[agent].shorts.items():
                 pnl += float(short.balance) * (1 - spot_price)
 
             pnl_data.loc[idx, f"agent_{agent_index}_pnl"] = pnl
@@ -283,24 +191,22 @@ def calculate_pnl(trade_data):
 
     return (x_data, pnl_data)
 
-def plot_pnl(x_data, y_data, ax):
 
-    ax.plot(x_data, y_data)
+def plot_pnl(x_data, y_data, axes):
+    """Plots the pnl data"""
+    axes.plot(x_data, y_data)
     # change y-axis unit format to #,###.0f
-    ax.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(int(x), ",")))
+    axes.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(int(x), ",")))
 
     # TODO fix these top use axes
-    ax.set_xlabel("block timestamp")
-    ax.set_ylabel("pnl")
-    ax.yaxis.set_label_position('right')
-    ax.yaxis.tick_right()
-    ax.set_title("pnl over time")
+    axes.set_xlabel("block timestamp")
+    axes.set_ylabel("pnl")
+    axes.yaxis.set_label_position("right")
+    axes.yaxis.tick_right()
+    axes.set_title("pnl over time")
 
     # make this work: col_names.replace("_pnl","")
     col_names = y_data.columns
-    ax.legend([col_names.replace("_pnl", "") for col_names in col_names])
+    axes.legend([col_names.replace("_pnl", "") for col_names in col_names])
 
     # %%
-
-
-

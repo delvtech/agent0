@@ -5,12 +5,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from matplotlib import ticker as mpl_ticker
-from matplotlib import dates as mdates
 
-# TODO move calculate_spot_price
 from extract_data_logs import calculate_spot_price
 
 # %%
+
 
 def calc_fixed_rate(trade_data):
     """
@@ -31,17 +30,16 @@ def calc_fixed_rate(trade_data):
     return (x_data, y_data)
 
 
-def plot_fixed_rate(x_data, y_data, ax):
+def plot_fixed_rate(x_data, y_data, axes):
     """Plots the fixed rate plot"""
-    ax.plot(x_data, y_data)
+    axes.plot(x_data, y_data)
     # change y-axis unit format to 0.1%
-    ax.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(x, "0.3%")))
-    ax.yaxis.set_label_position('right')
-    ax.yaxis.tick_right()
-    ax.set_xlabel("block timestamp")
-    ax.set_ylabel("rate (%)")
-    ax.set_title("Fixed rate")
-
+    axes.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(x, "0.3%")))
+    axes.yaxis.set_label_position("right")
+    axes.yaxis.tick_right()
+    axes.set_xlabel("block timestamp")
+    axes.set_ylabel("rate (%)")
+    axes.set_title("Fixed rate")
 
     # make this work: col_names.replace("_pnl","")
     # plt.legend([col_names.replace("_pnl","") for col_names in col_names])
