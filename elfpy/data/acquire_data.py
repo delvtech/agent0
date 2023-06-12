@@ -22,6 +22,7 @@ def main(
     state_abi_file_path: str,
     transactions_abi_file_path: str,
     save_dir: str,
+    start_block: int,
     sleep_amount: int,
 ):
     """Main entry point for accessing contract & writing pool info"""
@@ -40,11 +41,10 @@ def main(
     config_file = os.path.join(save_dir, "hyperdrive_config.json")
     contract_interface.hyperdrive_config_to_json(config_file, state_hyperdrive_contract)
     # write the initial pool info
-    block: BlockData = web3_container.eth.get_block("latest")
+    block: BlockData = web3_container.eth.get_block(start_block)
     block_number: BlockNumber = block.number  # type: ignore
-    latest_block_number: BlockNumber = block_number
     pool_info = {}
-    pool_info[latest_block_number] = contract_interface.get_block_pool_info(
+    pool_info[block_number] = contract_interface.get_block_pool_info(
         web3_container, state_hyperdrive_contract, block_number
     )
     pool_info_file = os.path.join(save_dir, "hyperdrive_pool_info.json")
@@ -64,7 +64,7 @@ def main(
                 pool_info[current_block_number] = contract_interface.get_block_pool_info(
                     web3_container, state_hyperdrive_contract, current_block_number
                 )
-                transaction_info[current_block_number] = contract_interface.fetch_transactions_for_block_range(
+                transaction_info[current_block_number] = contract_interface.fetch_transactions_for_block(
                     web3_container, transactions_hyperdrive_contract, current_block_number
                 )
             with open(pool_info_file, mode="w", encoding="UTF-8") as file:
@@ -81,6 +81,7 @@ if __name__ == "__main__":
     SAVE_DIR = ".logging"
     STATE_ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
     TRANSACTIONS_ABI_FILE_PATH = "./hyperdrive_solidity/.build/Hyperdrive.json"
+    START_BLOCK = 0
     SLEEP_AMOUNT = 5
     output_utils.setup_logging(".logging/acquire_data.log", log_file_and_stdout=True)
     main(
@@ -89,5 +90,6 @@ if __name__ == "__main__":
         STATE_ABI_FILE_PATH,
         TRANSACTIONS_ABI_FILE_PATH,
         SAVE_DIR,
+        START_BLOCK,
         SLEEP_AMOUNT,
     )

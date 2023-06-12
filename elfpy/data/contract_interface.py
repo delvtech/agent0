@@ -69,7 +69,7 @@ def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: 
     return logs
 
 
-def fetch_transactions_for_block_range(
+def fetch_transactions_for_block(
     web3_container: Web3, contract: Contract, block_number: BlockNumber | int
 ) -> list[dict[str, Any]]:
     """Fetch transactions related to the hyperdrive_address contract"""
