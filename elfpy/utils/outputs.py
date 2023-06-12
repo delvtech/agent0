@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from hexbytes import HexBytes
 from matplotlib import gridspec
+from numpy.random._generator import Generator as NumpyGenerator
 from web3.datastructures import AttributeDict, MutableAttributeDict
 
 import elfpy
@@ -466,6 +467,8 @@ class ExtendedJSONEncoder(json.JSONEncoder):
 
     def default(self, o):
         r"""Override default behavior"""
+        if isinstance(o, set):
+            return list(o)
         if isinstance(o, HexBytes):
             return o.hex()
         if isinstance(o, (AttributeDict, MutableAttributeDict)):
@@ -478,10 +481,14 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return o.tolist()
         if isinstance(o, FixedPoint):
             return str(o)
+        if isinstance(o, NumpyGenerator):
+            return "NumpyGenerator"
         try:
             return o.__dict__
         except AttributeError:
-            return repr(o)
+            pass
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, o)
 
 
 def str_with_precision(value, precision=3, min_digits=0, debug=False):
