@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 import json
-import time
 import logging
-from typing import Iterable
+import time
 
 import attr
 import requests
@@ -12,9 +11,9 @@ import toml
 from eth_typing import URI
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.contract.contract import ContractFunction, Contract, ContractEvent
+from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
-from web3.types import ABIEvent, EventData, LogReceipt, TxReceipt
+from web3.types import ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
 
 from elfpy.utils import apeworx_integrations as ape_utils
 
@@ -57,49 +56,56 @@ def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: 
     logs = []
     if tx_receipt.get("logs"):
         for log in tx_receipt["logs"]:
-            log_data, event = get_event_object(web3_container, contract, log, tx_receipt)
-            if log_data:
+            event_data, event = get_event_object(web3_container, contract, log, tx_receipt)
+            if event_data and event:
                 # TODO: For some reason it thinks `log` is `str` instead of `EventData`
-                formatted_log = {
-                    "address": [log.address for log in log_data],  # type: ignore
-                    "args": [log.args for log in log_data],  # type: ignore
-                    "blockHash": [log.blockHash.hex() for log in log_data],  # type: ignore
-                    "blockNumber": [log.blockNumber for log in log_data],  # type: ignore
-                    "event": [event["name"] for _ in log_data],  # type: ignore
-                    "logIndex": [log.logIndex for log in log_data],  # type: ignore
-                    "transactionIndex": [log.transactionIndex for log in log_data],  # type: ignore
-                    "transactionHash": [log.transactionHash.hex() for log in log_data],  # type: ignore
-                }
+                formatted_log = dict(event_data)
+                formatted_log["event"] = event.get("name")
+                formatted_log["args"] = dict(event_data["args"])
                 logs.append(formatted_log)
     return logs
 
 
-def fetch_transactions(web3_container, contract, start_block, current_block):
+def fetch_transactions_for_block_range(web3_container: Web3, contract: Contract, start_block: int, ending_block: int):
     """Fetch transactions related to the hyperdrive_address contract"""
-    transactions = []
-    for block in range(start_block, current_block):
-        block = web3_container.eth.get_block(block, full_transactions=True)
-        for transaction in block["transactions"]:
-            tx_dict = dict(transaction)
+    decoded_transactions = []
+    for block_number in range(start_block, ending_block):
+        block: BlockData = web3_container.eth.get_block(block_number, full_transactions=True)
+        print(f"{block.get('number')=}")
+
+        transactions = block.get("transactions")
+        if not transactions:
+            print(f"no transactions in block {block.get('number')}")
+            continue
+
+        for transaction in transactions:
+            if isinstance(transaction, HexBytes):
+                print("transaction HexBytes")
+                continue
+            if transaction.get("to") != contract.address:
+                print("transaction not from hyperdrive contract")
+                continue
+            transaction_dict = dict(transaction)
             # Convert the HexBytes fields to their hex representation
-            tx_dict["hash"] = transaction["hash"].hex()
+            tx_hash = transaction.get("hash") or HexBytes("")
+            transaction_dict["hash"] = tx_hash.hex()
             # Decode the transaction input
             try:
                 method, params = contract.decode_function_input(transaction["input"])
-                tx_dict["input"] = {"method": method.fn_name, "params": params}
+                transaction_dict["input"] = {"method": method.fn_name, "params": params}
             except ValueError:  # if the input is not meant for the contract, ignore it
                 continue
-            tx_receipt = web3_container.eth.get_transaction_receipt(transaction["hash"])
+            tx_receipt = web3_container.eth.get_transaction_receipt(tx_hash)
             logs = fetch_and_decode_logs(web3_container, contract, tx_receipt)
-            transactions.append(
-                {"transaction": tx_dict, "logs": logs, "receipt": recursive_dict_conversion(tx_receipt)}
+            decoded_transactions.append(
+                {"transaction": transaction_dict, "logs": logs, "receipt": recursive_dict_conversion(tx_receipt)}
             )
-    return transactions
+    return decoded_transactions
 
 
 def get_event_object(
     web3_container: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
-) -> tuple[Iterable[EventData], ABIEvent] | tuple[None, None]:
+) -> tuple[EventData, ABIEvent] | tuple[None, None]:
     """Retrieves the event object and anonymous types for a  given contract and log"""
     abi_events = [abi for abi in contract.abi if abi["type"] == "event"]  # type: ignore
     for event in abi_events:  # type: ignore
@@ -115,8 +121,8 @@ def get_event_object(
         if event_signature_hex == receipt_event_signature_hex:
             # Decode matching log
             contract_event: ContractEvent = contract.events[event["name"]]()  # type: ignore
-            decoded_logs: Iterable[EventData] = contract_event.process_receipt(tx_receipt)
-            return decoded_logs, event
+            event_data: EventData = contract_event.process_receipt(tx_receipt)[0]
+            return event_data, event  # type: ignore
     return (None, None)
 
 
