@@ -9,13 +9,13 @@ from typing import Any
 import attr
 import requests
 import toml
-from eth_typing import URI
+from eth_typing import BlockNumber, URI
 from eth_utils import address
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
-from web3.types import ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
+from web3.types import ABIEvent, BlockData, EventData, LogReceipt, Timestamp, TxReceipt
 
 from elfpy.utils import apeworx_integrations as ape_utils
 from elfpy.utils import outputs as output_utils
@@ -70,14 +70,14 @@ def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: 
 
 
 def fetch_transactions_for_block_range(
-    web3_container: Web3, contract: Contract, block_number: int
+    web3_container: Web3, contract: Contract, block_number: BlockNumber | int
 ) -> list[dict[str, Any]]:
     """Fetch transactions related to the hyperdrive_address contract"""
     block: BlockData = web3_container.eth.get_block(block_number, full_transactions=True)
     transactions = block.get("transactions")
     if not transactions:
         logging.info("no transactions in block %s", block.get("number"))
-        return {}
+        return [{}]
     decoded_transactions = []
     for transaction in transactions:
         if isinstance(transaction, HexBytes):
@@ -131,10 +131,13 @@ def get_event_object(
     return (None, None)
 
 
-def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, block_number: int) -> dict[str | Any, Any]:
+def get_block_pool_info(
+    web3_container: Web3, hyperdrive_contract: Contract, block_number: BlockNumber | int
+) -> dict[str | Any, Any]:
     """Returns the block pool info from the Hyperdrive contract"""
     block_pool_info = get_smart_contract_read_call(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
-    latest_block_timestamp: BlockData = web3_container.eth.get_block("latest").timestamp
+    latest_block: BlockData = web3_container.eth.get_block("latest")
+    latest_block_timestamp: Timestamp = latest_block.timestamp  # type: ignore
     block_pool_info.update({"timestamp": latest_block_timestamp})
     return block_pool_info
 
