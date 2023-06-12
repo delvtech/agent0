@@ -42,7 +42,9 @@ def main(
     contract_interface.hyperdrive_config_to_json(config_file, state_hyperdrive_contract)
     # write the initial pool info
     block: BlockData = web3_container.eth.get_block(start_block)
-    block_number: BlockNumber = block.number  # type: ignore
+    block_number = block.get("number")
+    if block_number is None:
+        raise AssertionError("Block has no number")
     pool_info = {}
     pool_info[block_number] = contract_interface.get_block_pool_info(
         web3_container, state_hyperdrive_contract, block_number

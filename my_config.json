@@ -1,0 +1,21 @@
+{
+  "alchemy": false,
+  "artifacts_url": "http://localhost:80",
+  "devnet": true,
+  "frozen": false,
+  "halt_on_errors": false,
+  "log_file_and_stdout": true,
+  "log_filename": "bot_demo.log",
+  "log_level": 20,
+  "max_bytes": 2000000,
+  "no_new_attribs": true,
+  "random_seed": 1234,
+  "risk_threshold": 0.0,
+  "rpc_url": "http://localhost:8545",
+  "scratch": {
+    "num_louie": 4,
+    "num_random": 4,
+    "num_sally": 2
+  },
+  "trade_chance": 0.1
+}
