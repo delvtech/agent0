@@ -45,7 +45,7 @@ ax_ohlcv = fig.add_subplot(2, 2, 1)
 ax_fixed_rate = fig.add_subplot(2, 2, 2)
 ax_vol = fig.add_subplot(2, 2, 3)
 ax_pnl = fig.add_subplot(2, 2, 4)
-fig.set_tight_layout(True)
+fig.set_tight_layout(True) # type: ignore
 
 while True:
     trans_data = curr_file_dir + "/../../.logging/transactions.json"
