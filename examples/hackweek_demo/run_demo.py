@@ -40,7 +40,7 @@ def get_ticker(data):
 
 curr_file_dir = os.path.dirname(os.path.abspath(__file__))
 
-fig = mpf.figure(style="mike", figsize=(15, 15)) # type: ignore
+fig = mpf.figure(style="mike", figsize=(15, 15))  # type: ignore
 ax_ohlcv = fig.add_subplot(2, 2, 1)
 ax_fixed_rate = fig.add_subplot(2, 2, 2)
 ax_vol = fig.add_subplot(2, 2, 3)
