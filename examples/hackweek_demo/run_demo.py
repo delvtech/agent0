@@ -71,12 +71,11 @@ while True:
     # Add ticker
 
     with placeholder.container():
-        ticker_col = st.columns(1)[0]
+        ticker_col, plots_col = st.columns([0.2, 1], gap="small")
         with ticker_col:
-            st.write(ticker.iloc[:100])
+            st.dataframe(ticker.iloc[:100], height=1250, width=170)
 
-        col = st.columns(1)[0]
-        with col:
+        with plots_col:
             # Clears all axes
             ax_ohlcv.clear()
             ax_fixed_rate.clear()

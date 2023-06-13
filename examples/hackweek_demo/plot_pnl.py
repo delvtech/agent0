@@ -1,9 +1,11 @@
 """Plots the pnl"""
-
 from __future__ import annotations
+from datetime import datetime
+
 import pandas as pd
 from matplotlib import ticker as mpl_ticker
 from extract_data_logs import calculate_spot_price
+
 import elfpy
 from elfpy.wallet.wallet import Wallet, Long, Short
 from elfpy import types
@@ -134,18 +136,11 @@ def calculate_pnl(trade_data):
         for a in agents
     }
 
-    # %% pre-define column names to store agent pnl
-    pnl_data = pd.DataFrame(index=trade_data.index)
-    agent_col_names = []
-    for i in range(len(agents)):
-        agent_col_name = f"agent_{i}_pnl"
-        pnl_data[agent_col_name] = 0
-        agent_col_names.append(agent_col_name)
-
     # %%
-    process_rows = len(trade_data)
-
-    for idx, row in trade_data.loc[0:process_rows, :].iterrows():
+    pnl_data: list[dict[str, float]] = []
+    time_data: list[datetime] = []  # TODO: Figure out type of timestamps. datetime?
+    for _, row in trade_data.iterrows():
+        all_pnl: dict[str, float] = {}
         for agent in agents:
             agent_index = agents.index(agent)
 
@@ -184,12 +179,16 @@ def calculate_pnl(trade_data):
             for _, short in agent_wallets[agent].shorts.items():
                 pnl += float(short.balance) * (1 - spot_price)
 
-            pnl_data.loc[idx, f"agent_{agent_index}_pnl"] = pnl
+            all_pnl[f"agent_{agent_index}_pnl"] = pnl
+        pnl_data.append(all_pnl)
+        time_data.append(pd.to_datetime(row["block_timestamp"], unit="s"))
+        # pnl_data.loc[idx, f"agent_{agent_index}_pnl"] = pnl
 
     # %%
-    x_data = pd.to_datetime(trade_data.loc[:, "block_timestamp"], unit="s")
-
-    return (x_data, pnl_data)
+    # x_data = pd.to_datetime(trade_data.loc[:, "block_timestamp"], unit="s")
+    y_data = pd.DataFrame(pnl_data)
+    x_data = pd.DataFrame(time_data)
+    return (x_data, y_data)
 
 
 def plot_pnl(x_data, y_data, axes):
