@@ -182,10 +182,8 @@ def calculate_pnl(trade_data):
             new_pnl[f"agent_{agent_index}_pnl"] = pnl
         pnl_data.append(new_pnl)
         time_data.append(pd.to_datetime(row["block_timestamp"], unit="s"))
-        # pnl_data.loc[idx, f"agent_{agent_index}_pnl"] = pnl
 
     # %%
-    # x_data = pd.to_datetime(trade_data.loc[:, "block_timestamp"], unit="s")
     y_data = pd.DataFrame(pnl_data)
     x_data = pd.DataFrame(time_data)
     return (x_data, y_data)
