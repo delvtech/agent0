@@ -19,6 +19,7 @@ from extract_data_logs import (
 )
 
 
+# set up streamlit
 # creating a single-element container
 placeholder = st.empty()
 
@@ -37,6 +38,9 @@ def get_ticker(data):
 
 
 curr_file_dir = os.path.dirname(os.path.abspath(__file__))
+txn_file = curr_file_dir + "/../../.logging/hyperdrive_transactions.json"
+config_file = curr_file_dir + "/../../.logging/hyperdrive_config.json"
+pool_info_file = curr_file_dir + "/../../.logging/hyperdrive_pool_info.json"
 
 fig = mpf.figure(style="mike", figsize=(15, 15))  # type: ignore
 ax_ohlcv = fig.add_subplot(2, 2, 1)
@@ -45,14 +49,11 @@ ax_vol = fig.add_subplot(2, 2, 3)
 ax_pnl = fig.add_subplot(2, 2, 4)
 fig.set_tight_layout(True)  # type: ignore
 
-while True:
-    txn_data = curr_file_dir + "/../../.logging/hyperdrive_transactions.json"
-    config_data = curr_file_dir + "/../../.logging/hyperdrive_config.json"
-    pool_info_data = curr_file_dir + "/../../.logging/hyperdrive_pool_info.json"
 
-    txn_data = explode_transaction_data(read_json_to_pd(txn_data))
-    config_data = read_json_to_pd(config_data)
-    pool_info_data = read_json_to_pd(pool_info_data)
+while True:
+    txn_data = explode_transaction_data(read_json_to_pd(txn_file))
+    config_data = read_json_to_pd(config_file)
+    pool_info_data = read_json_to_pd(pool_info_file)
 
     combined_data = get_combined_data(txn_data, pool_info_data)
 
@@ -73,7 +74,7 @@ while True:
     with placeholder.container():
         ticker_col, plots_col = st.columns([0.2, 1], gap="small")
         with ticker_col:
-            st.dataframe(ticker.iloc[:100], height=1250, width=170)
+            st.dataframe(ticker.iloc[:100], height=900, width=170)
 
         with plots_col:
             # Clears all axes

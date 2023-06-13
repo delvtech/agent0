@@ -140,7 +140,7 @@ def calculate_pnl(trade_data):
     pnl_data: list[dict[str, float]] = []
     time_data: list[datetime] = []  # TODO: Figure out type of timestamps. datetime?
     for _, row in trade_data.iterrows():
-        all_pnl: dict[str, float] = {}
+        new_pnl: dict[str, float] = {}
         for agent in agents:
             agent_index = agents.index(agent)
 
@@ -179,8 +179,8 @@ def calculate_pnl(trade_data):
             for _, short in agent_wallets[agent].shorts.items():
                 pnl += float(short.balance) * (1 - spot_price)
 
-            all_pnl[f"agent_{agent_index}_pnl"] = pnl
-        pnl_data.append(all_pnl)
+            new_pnl[f"agent_{agent_index}_pnl"] = pnl
+        pnl_data.append(new_pnl)
         time_data.append(pd.to_datetime(row["block_timestamp"], unit="s"))
         # pnl_data.loc[idx, f"agent_{agent_index}_pnl"] = pnl
 
@@ -193,7 +193,7 @@ def calculate_pnl(trade_data):
 
 def plot_pnl(x_data, y_data, axes):
     """Plots the pnl data"""
-    axes.plot(x_data, y_data)
+    axes.plot(x_data, y_data.ffill())
     # change y-axis unit format to #,###.0f
     axes.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(int(x), ",")))
 
