@@ -28,11 +28,16 @@ class BotConfig(types.FrozenClass):
     # optional output filename for logging
     log_filename: str = "agent0-bots"
     # log level; should be in ["DEBUG", "INFO", "WARNING"]
-    log_level: int = DEFAULT_LOG_LEVEL
-    # log location; if True, save to file and write to stdout, else just save to file
+    log_level: str = DEFAULT_LOG_LEVEL  # INFO
+    # delete_previous_logs; if True, delete existing logs at the start of the run
+    delete_previous_logs: bool = False
+    # log log_file_and_stdout; if True, save to file and write to stdout, else just save to file
     log_file_and_stdout: bool = False
+    # log_formatter; specifies the format in which the logger saves the logs
+    # see https://docs.python.org/3/library/logging.html#logrecord-attributes for which attributes can be used
+    log_formatter: str = "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s"
     # maximum log file output size, in bytes
-    max_bytes: int = DEFAULT_LOG_MAXBYTES
+    max_bytes: int = DEFAULT_LOG_MAXBYTES  # int(2e6) or 2MB
     # location of RPC
     rpc_url: str = "http://localhost:8545"
     # chance for a bot to execute a trade

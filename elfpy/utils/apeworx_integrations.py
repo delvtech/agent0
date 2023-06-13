@@ -934,7 +934,7 @@ def ape_trade(
         return get_pool_state(txn_receipt=txn_receipt, hyperdrive_contract=hyperdrive_contract), txn_receipt
     except TransactionError as exc:
         logging.error(
-            "Failed to execute %s: %s\n =>  Amount: %s\n => Agent: %s\n => Pool: %s\n",
+            "Failed to execute %s: %s\n =>  Amount: %s\n => Agent: %s\n => Pool: %s",
             trade_type,
             exc,
             output_utils.str_with_precision(amount),
