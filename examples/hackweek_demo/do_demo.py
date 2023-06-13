@@ -29,12 +29,12 @@ def prepare_data(trades, pool):
     pool_df["bondReserves"] = pool_df["bondReserves"].astype(float)
     pool_df["lpTotalSupply"] = pool_df["lpTotalSupply"].astype(float)
     pool_df["sharePrice"] = pool_df["sharePrice"].astype(float)
+    pool_df["timestamp"] = pool_df["timestamp"].iloc[0]+pool_df["blockNumber"]*12
     pool_df["spot_price"] = calculate_spot_price(
         share_reserves=pool_df["shareReserves"],
         bond_reserves=pool_df["bondReserves"],
         lp_total_supply=pool_df["lpTotalSupply"],
     )
-    pool_df = pool_df.reset_index(names="blockNumber")
     txns, logs, receipts = [], [], []
     for block in trades.values():
         for txn in block:
@@ -46,16 +46,17 @@ def prepare_data(trades, pool):
             )
             receipts.append(txn["receipt"])  # 1 per txn
     print(f"{len(txns)=} {len(logs)=} {len(receipts)=}")
-    # add fields from pool info to logs_df
+    # merge pool_info fields
     fields_to_add = ["blockNumber", "timestamp", "sharePrice", "shareReserves", "bondReserves", "lpTotalSupply"]
     logs_df = pd.merge(pd.DataFrame(logs), pool_df.loc[:, fields_to_add])
     return logs_df, pool_df
 
 
-def save_data(logs_df, pool_df, save_folder):
+def save_data(logs_df, pool_df, config_df, save_folder):
     """Save data to csv."""
     logs_df.to_csv(f"{save_folder}/logs.csv", index=False)
     pool_df.to_csv(f"{save_folder}/pool.csv", index=False)
+    config_df.to_csv(f"{save_folder}/pool_config.csv", index=False)
 
 
 def main(
@@ -82,6 +83,8 @@ def main(
     )
     # get pool config from hyperdrive contract
     pool_config = contract_interface.get_smart_contract_read_call(state_hyperdrive_contract, "getPoolConfig")
+    pool_config["curve_fee"], pool_config["flat_fee"], pool_config["governance_fee"] = pool_config.pop("fees")
+    config_df = pd.DataFrame(pool_config, index=[0])
     # initialize records
     pool_info = {}
     transaction_info = {}
@@ -108,7 +111,7 @@ def main(
                 if block_transactions is not None:
                     transaction_info[block_number] = block_transactions
             logs_df, pool_df = prepare_data(transaction_info, pool_info)
-            save_data(logs_df, pool_df, save_folder)
+            save_data(logs_df, pool_df, config_df, save_folder)
         time.sleep(sleep_amount)
 
 

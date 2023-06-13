@@ -39,6 +39,13 @@ ax = DataAxes(
 )
 fig.set_tight_layout(True)  # type: ignore
 
+conf_file = SAVE_FOLDER / "pool_config.csv"
+config_df = pd.read_csv(conf_file) if conf_file.exists() else None
+if config_df is None:
+    placeholder.warning("Waiting for config...")
+else:
+    placeholder.success("Config loaded")
+
 # while True:
 pool_file = SAVE_FOLDER / "pool.csv"
 logs_file = SAVE_FOLDER / "logs.csv"
@@ -50,7 +57,7 @@ else:
     # Calculate OHLCV and fixed rate (in poolinfo)
     ohlcv = calc_ohlcv(pool_df, freq="5T")
     fixed_rate_x, fixed_rate_y = calc_fixed_rate(pool_df)
-    pnl_x, pnl_y = calculate_pnl(logs_df)
+    pnl_x, pnl_y = calculate_pnl(logs_df, config_df)
     logs_df["base"] = logs_df["baseAmount"].astype(float) / 1e18
     logs_df["bonds"] = logs_df["bondAmount"].astype(float) / 1e18
     logs_df["shareReserves"] = round(logs_df["shareReserves"].astype(float) / 1e18)

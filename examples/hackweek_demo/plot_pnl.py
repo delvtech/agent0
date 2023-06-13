@@ -111,15 +111,12 @@ def get_wallet_from_onchain_trade_info(
     return wallet
 
 
-def calculate_pnl(logs_df):
+def calculate_pnl(logs_df, config_df):
     """Calculates the pnl given trade data"""
     # pylint: disable=too-many-locals
     # Drop all rows with nan maturity timestamps
 
-    idx = ~logs_df["maturityTime"].isna()
-    position_duration = max(logs_df.maturityTime[idx] - logs_df.timestamp[idx])
-    position_duration_days = round(position_duration / 60 / 60 / 24)
-    position_duration = position_duration_days * 60 * 60 * 24
+    position_duration = int(config_df.positionDuration.iloc[0])
 
     def decode_id(row):
         if row["id"] != row["id"]:
@@ -144,14 +141,9 @@ def calculate_pnl(logs_df):
     }
 
     # pre-define column names to store agent pnl
-    pnl_data = pd.DataFrame(index=logs_df.index)
-    agent_col_names = []
-    for i in range(len(agents)):
-        agent_col_name = f"agent_{i}_pnl"
-        pnl_data[agent_col_name] = np.nan
-        agent_col_names.append(agent_col_name)
-
-    for idx, row in logs_df.iterrows():
+    pnl_data = []
+    for _, row in logs_df.iterrows():
+        new_pnl = {}
         for agent in agents:
             agent_index = agents.index(agent)
 
@@ -189,11 +181,16 @@ def calculate_pnl(logs_df):
             for _, short in agent_wallets[agent].shorts.items():
                 pnl += float(short.balance) * (1 - spot_price)
 
-            pnl_data.loc[idx, f"agent_{agent_index}_pnl"] = pnl
+            # new_pnl is a dict which contains the pnl for this row, for each agent
+            new_pnl[f"agent_{agent_index}_pnl"] = pnl
 
+        # pnl_data is a list of dicts of pnl's
+        pnl_data.append(new_pnl)
+
+    pnl_data_df = pd.DataFrame(pnl_data)
     x_data = pd.to_datetime(logs_df.loc[:, "timestamp"], unit="s")
 
-    return x_data, pnl_data
+    return x_data, pnl_data_df
 
 
 def plot_pnl(x_data, y_data, axes):
