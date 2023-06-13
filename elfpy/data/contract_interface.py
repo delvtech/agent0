@@ -5,6 +5,7 @@ import json
 import logging
 import time
 from typing import Any
+import re
 
 import attr
 import requests
@@ -17,7 +18,6 @@ from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
 from web3.types import ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
 
-from elfpy.utils import apeworx_integrations as ape_utils
 from elfpy.utils import outputs as output_utils
 
 
@@ -30,6 +30,10 @@ class HyperdriveAddressesJson:
     hyperdrive: str = attr.ib()
     base_token: str = attr.ib()
 
+def camel_to_snake(camel_string: str) -> str:
+    """Convert camelCase to snake_case"""
+    snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", camel_string)
+    return snake_string.lower()
 
 def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
     """Fetch addresses for deployed contracts in the Hyperdrive system."""
@@ -49,7 +53,7 @@ def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
         raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
     addresses_json = response.json()
     addresses = HyperdriveAddressesJson(
-        **{ape_utils.camel_to_snake(key): value for key, value in addresses_json.items()}
+        **{camel_to_snake(key): value for key, value in addresses_json.items()}
     )
     return addresses
 
@@ -128,7 +132,7 @@ def get_event_object(
             contract_event: ContractEvent = contract.events[event["name"]]()  # type: ignore
             event_data: EventData = contract_event.process_receipt(tx_receipt)[0]
             return event_data, event  # type: ignore
-    return (None, None)
+    return None, None
 
 
 def get_block_pool_info(
