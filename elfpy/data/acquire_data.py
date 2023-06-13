@@ -41,15 +41,16 @@ def main(
     contract_interface.hyperdrive_config_to_json(config_file, state_hyperdrive_contract)
     # write the initial pool info
     block_number: BlockNumber = BlockNumber(start_block)
-    pool_info = {}
-    pool_info[block_number] = contract_interface.get_block_pool_info(
+    pool_info = []
+    block_pool_info: dict = contract_interface.get_block_pool_info(
         web3_container, state_hyperdrive_contract, block_number
     )
+    pool_info.append(block_pool_info)
     pool_info_file = os.path.join(save_dir, "hyperdrive_pool_info.json")
     transaction_info_file = os.path.join(save_dir, "hyperdrive_transactions.json")
     with open(pool_info_file, mode="w", encoding="UTF-8") as file:
         json.dump(pool_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
-    transaction_info = {}
+    transaction_info = []
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
     while True:
@@ -60,12 +61,16 @@ def main(
             for block_int in range(block_number + 1, latest_block_number + 1):
                 block_number: BlockNumber = BlockNumber(block_int)
                 logging.info("Block %s", block_number)
-                pool_info[block_number] = contract_interface.get_block_pool_info(
+                block_pool_info = contract_interface.get_block_pool_info(
                     web3_container, state_hyperdrive_contract, block_number
                 )
-                transaction_info[block_number] = contract_interface.fetch_transactions_for_block(
+                if block_pool_info:
+                    pool_info.append(block_pool_info)
+                block_transactions = contract_interface.fetch_transactions_for_block(
                     web3_container, transactions_hyperdrive_contract, block_number
                 )
+                if block_transactions:
+                    transaction_info.extend(block_transactions)
             with open(pool_info_file, mode="w", encoding="UTF-8") as file:
                 json.dump(pool_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
             with open(transaction_info_file, mode="w", encoding="UTF-8") as file:
@@ -80,8 +85,8 @@ if __name__ == "__main__":
     SAVE_DIR = ".logging"
     STATE_ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
     TRANSACTIONS_ABI_FILE_PATH = "./hyperdrive_solidity/.build/Hyperdrive.json"
-    START_BLOCK = 0
-    SLEEP_AMOUNT = 5
+    START_BLOCK = 6
+    SLEEP_AMOUNT = 1
     output_utils.setup_logging(".logging/acquire_data.log", log_file_and_stdout=True)
     main(
         CONTRACTS_URL,

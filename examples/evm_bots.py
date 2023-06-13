@@ -54,7 +54,7 @@ def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tu
         logging.info(
             "Attempting to load addresses.json, which requires waiting for the contract deployment to complete."
         )
-        num_attempts = 100
+        num_attempts = 120
         for attempt_num in range(num_attempts):
             logging.info("\tAttempt %s out of %s", attempt_num + 1, num_attempts)
             response = requests.get(bot_config.artifacts_url + "/addresses.json", timeout=10)

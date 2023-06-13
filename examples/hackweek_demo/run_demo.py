@@ -46,19 +46,19 @@ ax_pnl = fig.add_subplot(2, 2, 4)
 fig.set_tight_layout(True)  # type: ignore
 
 while True:
-    trans_data = curr_file_dir + "/../../.logging/transactions.json"
+    txn_data = curr_file_dir + "/../../.logging/hyperdrive_transactions.json"
     config_data = curr_file_dir + "/../../.logging/hyperdrive_config.json"
     pool_info_data = curr_file_dir + "/../../.logging/hyperdrive_pool_info.json"
 
-    trans_data = explode_transaction_data(read_json_to_pd(trans_data))
+    txn_data = explode_transaction_data(read_json_to_pd(txn_data))
     config_data = read_json_to_pd(config_data)
-    pool_info_data = read_json_to_pd(pool_info_data).T
+    pool_info_data = read_json_to_pd(pool_info_data)
 
-    combined_data = get_combined_data(trans_data, pool_info_data)
+    combined_data = get_combined_data(txn_data, pool_info_data)
 
     ohlcv = calc_ohlcv(combined_data, freq="5T")
 
-    ticker = get_ticker(trans_data)
+    ticker = get_ticker(txn_data)
 
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data)
 

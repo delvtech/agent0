@@ -16,16 +16,15 @@ def read_json_to_pd(json_file):
     """
     Generic function to read json file path to pandas dataframe
     """
-    # Race condition if background process is writing, keep trying until it passes
+    # Avoids race condition if background process is writing, keep trying until it passes
     while True:
         try:
-            with open(json_file, "r", encoding="utf8") as file:
+            with open(json_file, mode="r", encoding="UTF-8") as file:
                 json_data = json.load(file)
             break
         except json.JSONDecodeError:
             time.sleep(0.1)
             continue
-
     return pd.DataFrame(json_data)
 
 
@@ -46,7 +45,6 @@ def explode_transaction_data(data):
     log_data = log_data.reset_index(drop=True)
 
     # We're only interested in TransferSingle
-
     log_data = log_data[log_data["event"] == "TransferSingle"]
     log_data = log_data.set_index("index")
     transaction_data = pd.json_normalize(data["transaction"])
@@ -87,50 +85,49 @@ def calculate_spot_price(
     return full_term_spot_price * time_left_in_years + 1 * (1 - time_left_in_years)
 
 
-def get_combined_data(trans_data, pool_info_data):
+def get_combined_data(txn_data, pool_info_data):
     """
     Takes the transaction data nad pool info data and
     combines the two dataframes into a single dataframe
     """
-
     pool_info_data.index = pool_info_data.index.astype(int)
-    trans_data.index = trans_data["blockNumber"]
+    # txn_data.index = txn_data["blockNumber"]
     # Combine pool info data and trans data by block number
-    data = trans_data.merge(pool_info_data, left_index=True, right_index=True)
+    data = txn_data.merge(pool_info_data)
     data["timestamp"] = data["timestamp"].astype(int)
 
     rename_dict = {
-        "contractAddress": "contract_address",
-        "transactionHash": "transaction_hash",
-        "blockNumber": "block_number",
-        "blockHash": "block_hash",
-        "transactionIndex": "transaction_index",
         "args.operator": "operator",
         "args.from": "from",
         "args.to": "to",
         "args.id": "id",
         "args.value": "value",
-        "input.method": "trade_type",
-        "shareReserves": "share_reserves",
         "bondReserves": "bond_reserves",
-        "lpTotalSupply": "lp_total_supply",
-        "sharePrice": "share_price",
+        "blockNumber": "block_number",
+        "blockHash": "block_hash",
+        "contractAddress": "contract_address",
+        "input.method": "trade_type",
         "longsOutstanding": "longs_outstanding",
         "longAverageMaturityTime": "longs_average_maturity_time",
-        "shortsOutstanding": "shorts_outstanding",
+        "lpTotalSupply": "lp_total_supply",
+        "sharePrice": "share_price",
+        "shareReserves": "share_reserves",
         "shortAverageMaturityTime": "short_average_maturity_time",
         "shortBaseVolume": "short_base_volume",
+        "shortsOutstanding": "shorts_outstanding",
         "timestamp": "block_timestamp",
+        "transactionHash": "transaction_hash",
+        "transactionIndex": "transaction_index",
     }
 
     # %%
-    columns = list(rename_dict.keys())
-
-    # %%
     # Filter data based on columns
-    trade_data = data[columns]
+    trade_data = data[list(rename_dict)]
     # Rename columns
     trade_data = trade_data.rename(columns=rename_dict)
+
+    # TODO: Fix this -- will break if we allow multiple trades per block
+    trade_data.index = trade_data["block_number"]
 
     # Calculate trade type and timetsamp from args.id
 

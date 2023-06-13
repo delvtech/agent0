@@ -67,7 +67,7 @@ def get_wallet_from_onchain_trade_info(
                 value *= -1 if trades.loc[specific_trade, "from"] == address else 1
                 sum_value += value
                 sum_product_of_open_share_price_and_value += (
-                    value * share_price[trades.loc[specific_trade, "block_number"]]
+                    value * share_price.loc[trades.loc[specific_trade, "block_number"]]
                 )
 
             # WEIGHTED AVERAGR FROM A MARGINAL UPDATE
