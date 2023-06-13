@@ -595,6 +595,7 @@ def main(
                 )
             last_executed_block = block_number
         if bot_config.devnet and automine:  # anvil automatically mines after you send a transaction. or manually.
+            sleep(0.5)
             ape.chain.mine()
         else:  # either on goerli or on devnet with automine disabled (which means time-based mining is enabled)
             sleep(1)
