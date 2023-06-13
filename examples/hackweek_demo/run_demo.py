@@ -62,7 +62,7 @@ while True:
 
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data)
 
-    (pnl_x, pnl_y) = calculate_pnl(combined_data)
+    pnl_x, pnl_y = calculate_pnl(combined_data)
 
     # Plot reserve levels (share and bond reserves, in poolinfo)
 
@@ -71,11 +71,11 @@ while True:
     # Add ticker
 
     with placeholder.container():
-        (ticker_col,) = st.columns(1)
+        ticker_col = st.columns(1)[0]
         with ticker_col:
             st.write(ticker.iloc[:100])
 
-        (col,) = st.columns(1)
+        col = st.columns(1)[0]
         with col:
             # Clears all axes
             ax_ohlcv.clear()
