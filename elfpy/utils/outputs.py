@@ -422,6 +422,7 @@ def setup_logging(
     log_formatter: str = elfpy.DEFAULT_LOG_FORMATTER,
 ) -> None:
     r"""Setup logging and handlers with default settings"""
+    # pylint: disable=too-many-arguments
     if log_filename is None and log_file_and_stdout is True:
         raise ValueError(f"{log_filename=} cannot be None and {log_file_and_stdout=} be True")
     handlers = []
