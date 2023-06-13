@@ -22,7 +22,6 @@ def main(
     transactions_abi_file_path: str,
     save_dir: str,
     start_block: int,
-    first_deployed_block: int,
     sleep_amount: int,
 ):
     """Main entry point for accessing contract & writing pool info"""
@@ -97,6 +96,5 @@ if __name__ == "__main__":
         TRANSACTIONS_ABI_FILE_PATH,
         SAVE_DIR,
         START_BLOCK,
-        FIRST_DEPLOYED_BLOCK,
         SLEEP_AMOUNT,
     )
