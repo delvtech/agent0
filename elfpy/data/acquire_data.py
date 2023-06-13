@@ -63,9 +63,11 @@ def main(
                 pool_info[block_number] = contract_interface.get_block_pool_info(
                     web3_container, state_hyperdrive_contract, block_number
                 )
-                transaction_info[block_number] = contract_interface.fetch_transactions_for_block(
+                block_transactions = contract_interface.fetch_transactions_for_block(
                     web3_container, transactions_hyperdrive_contract, block_number
                 )
+                if block_transactions is not None:
+                    transaction_info[block_number] = block_transactions
             with open(pool_info_file, mode="w", encoding="UTF-8") as file:
                 json.dump(pool_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
             with open(transaction_info_file, mode="w", encoding="UTF-8") as file:
@@ -80,7 +82,7 @@ if __name__ == "__main__":
     SAVE_DIR = ".logging"
     STATE_ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
     TRANSACTIONS_ABI_FILE_PATH = "./hyperdrive_solidity/.build/Hyperdrive.json"
-    START_BLOCK = 0
+    START_BLOCK = 6
     SLEEP_AMOUNT = 5
     output_utils.setup_logging(".logging/acquire_data.log", log_file_and_stdout=True)
     main(

@@ -71,13 +71,13 @@ def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: 
 
 def fetch_transactions_for_block(
     web3_container: Web3, contract: Contract, block_number: BlockNumber
-) -> list[dict[str, Any]]:
+) -> list[dict[str, Any]] | None:
     """Fetch transactions related to the hyperdrive_address contract"""
     block: BlockData = web3_container.eth.get_block(block_number, full_transactions=True)
     transactions = block.get("transactions")
     if not transactions:
         logging.info("no transactions in block %s", block.get("number"))
-        return [{}]
+        return None
     decoded_transactions = []
     for transaction in transactions:
         if isinstance(transaction, HexBytes):
@@ -105,6 +105,8 @@ def fetch_transactions_for_block(
                 "receipt": recursive_dict_conversion(tx_receipt),
             }
         )
+    if decoded_transactions:  # if empty will return False
+        return None
     return decoded_transactions
 
 
