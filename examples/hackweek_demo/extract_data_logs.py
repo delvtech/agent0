@@ -126,7 +126,7 @@ def get_combined_data(txn_data, pool_info_data):
     # Rename columns
     trade_data = trade_data.rename(columns=rename_dict)
 
-    # FIXME: Fix this -- will break if we allow multiple trades per block
+    # TODO: Fix this -- will break if we allow multiple trades per block
     trade_data.index = trade_data["block_number"]
 
     # Calculate trade type and timetsamp from args.id
