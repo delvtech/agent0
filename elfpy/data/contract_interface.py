@@ -78,7 +78,7 @@ def fetch_transactions_for_block(
     if not transactions:
         logging.info("no transactions in block %s", block.get("number"))
         return None
-    decoded_transactions = []
+    decoded_block_transactions = []
     for transaction in transactions:
         if isinstance(transaction, HexBytes):
             logging.warning("transaction HexBytes")
@@ -98,16 +98,14 @@ def fetch_transactions_for_block(
             continue
         tx_receipt = web3_container.eth.get_transaction_receipt(tx_hash)
         logs = fetch_and_decode_logs(web3_container, contract, tx_receipt)
-        decoded_transactions.append(
+        decoded_block_transactions.append(
             {
                 "transaction": transaction_dict,
                 "logs": logs,
                 "receipt": recursive_dict_conversion(tx_receipt),
             }
         )
-    if decoded_transactions:  # if empty will return False
-        return None
-    return decoded_transactions
+    return decoded_block_transactions
 
 
 def get_event_object(
@@ -143,6 +141,7 @@ def get_block_pool_info(
     if latest_block_timestamp is None:
         raise AssertionError("Latest block has no timestamp")
     block_pool_info.update({"timestamp": latest_block_timestamp})
+    block_pool_info.update({"blockNumber": block_number})
     return block_pool_info
 
 
