@@ -29,7 +29,7 @@ def prepare_data(trades, pool):
     pool_df["bondReserves"] = pool_df["bondReserves"].astype(float)
     pool_df["lpTotalSupply"] = pool_df["lpTotalSupply"].astype(float)
     pool_df["sharePrice"] = pool_df["sharePrice"].astype(float)
-    pool_df["timestamp"] = pool_df["timestamp"].iloc[0]+pool_df["blockNumber"]*12
+    pool_df["timestamp"] = pool_df["timestamp"].iloc[0] + pool_df["blockNumber"] * 12
     pool_df["spot_price"] = calculate_spot_price(
         share_reserves=pool_df["shareReserves"],
         bond_reserves=pool_df["bondReserves"],

@@ -195,12 +195,12 @@ def calculate_pnl(logs_df, config_df):
 
 def plot_pnl(x_data, y_data, axes):
     """Plots the pnl data"""
-    lines = axes.plot(x_data,y_data.ffill())
+    lines = axes.plot(x_data, y_data.ffill())
     # get colors from lines
     colors = [line.get_color() for line in lines]
     # scatter with same colors
-    for i in range(len(colors)):
-        axes.scatter(x_data,y_data.loc[:,y_data.columns[i]],color=colors[i])
+    for idx, color in enumerate(colors):
+        axes.scatter(x_data, y_data.loc[:, y_data.columns[idx]], color=color)
     # change y-axis unit format to #,###.0f
     axes.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(int(x), ",")))
 
