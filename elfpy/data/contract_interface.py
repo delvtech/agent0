@@ -30,10 +30,12 @@ class HyperdriveAddressesJson:
     hyperdrive: str = attr.ib()
     base_token: str = attr.ib()
 
+
 def camel_to_snake(camel_string: str) -> str:
     """Convert camelCase to snake_case"""
     snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", camel_string)
     return snake_string.lower()
+
 
 def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
     """Fetch addresses for deployed contracts in the Hyperdrive system."""
@@ -52,9 +54,7 @@ def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
     if response.status_code != 200:
         raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
     addresses_json = response.json()
-    addresses = HyperdriveAddressesJson(
-        **{camel_to_snake(key): value for key, value in addresses_json.items()}
-    )
+    addresses = HyperdriveAddressesJson(**{camel_to_snake(key): value for key, value in addresses_json.items()})
     return addresses
 
 

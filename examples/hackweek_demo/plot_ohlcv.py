@@ -19,6 +19,7 @@ from __future__ import annotations
 import mplfinance as mpf
 import pandas as pd
 
+
 # %%
 def calc_ohlcv(pool_df, freq="D"):
     """
@@ -29,7 +30,7 @@ def calc_ohlcv(pool_df, freq="D"):
     value.iloc[0] = 0
 
     pool_df["timestamp"] = pd.to_datetime(pool_df["timestamp"], unit="s")
-    pool_df["value"] = value/1e18
+    pool_df["value"] = value / 1e18
     pool_df["value"] = pool_df["value"].astype("float64")
     pool_df = pool_df.set_index("timestamp")
 
