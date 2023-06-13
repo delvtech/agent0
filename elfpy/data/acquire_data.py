@@ -14,7 +14,6 @@ from elfpy.utils import outputs as output_utils
 
 # pylint: disable=too-many-arguments
 
-
 def main(
     contracts_url: str,
     ethereum_node: URI | str,
@@ -22,6 +21,7 @@ def main(
     transactions_abi_file_path: str,
     save_dir: str,
     start_block: int,
+    first_deployed_block: int,
     sleep_amount: int,
 ):
     """Main entry point for accessing contract & writing pool info"""
@@ -87,13 +87,9 @@ if __name__ == "__main__":
     TRANSACTIONS_ABI_FILE_PATH = "./hyperdrive_solidity/.build/Hyperdrive.json"
     START_BLOCK = 6
     SLEEP_AMOUNT = 1
-    output_utils.setup_logging(".logging/acquire_data.log", log_file_and_stdout=True)
-    main(
-        CONTRACTS_URL,
-        ETHEREUM_NODE,
-        STATE_ABI_FILE_PATH,
         TRANSACTIONS_ABI_FILE_PATH,
         SAVE_DIR,
         START_BLOCK,
+        FIRST_DEPLOYED_BLOCK,
         SLEEP_AMOUNT,
     )
