@@ -71,7 +71,11 @@ def main(
 
                 # Explicit check against loopback block limit
                 if (latest_block_number - block_number) > lookback_block_limit:
-                    logging.warning("Querying block_number %s out of %s, unable to keep up with chain block iteration")
+                    logging.warning(
+                        "Querying block_number %s out of %s, unable to keep up with chain block iteration",
+                        block_number,
+                        latest_block_number,
+                    )
                     continue
 
                 # get_block_pool_info crashes randomly with ValueError on some intermediate block, keep trying until it returns
