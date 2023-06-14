@@ -43,8 +43,9 @@ def main(
     # write the initial pool info
     block_number: BlockNumber = BlockNumber(start_block)
     latest_block_number = web3_container.eth.get_block_number()
+    lookback_block_limit = BlockNumber(lookback_block_limit)
     if (latest_block_number - block_number) > lookback_block_limit:
-        block_number = latest_block_number - lookback_block_limit
+        block_number = BlockNumber(latest_block_number - lookback_block_limit)
         logging.warning("Starting block is past lookback block limit, starting at block %s", block_number)
 
     pool_info = []
