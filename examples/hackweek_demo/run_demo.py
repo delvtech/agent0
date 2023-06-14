@@ -80,7 +80,7 @@ while True:  # main loop
         logs_df.rename(columns={"blockNumber": "block"}, inplace=True)
         cols = ["event", "block", "base", "bonds", "shareReserves", "bondReserves", "lpTotalSupply"]
         trades = logs_df.loc[logs_df.event != "TransferSingle", :]
-        lhs.dataframe(trades.loc[:-100:-1, cols], height=850)
+        lhs.dataframe(trades.loc[:-100:-1, cols], height=850, hide_index=True)
         for a in ax:  # clear all axes
             a.clear()
         plot_ohlcv(ohlcv, ax.ohlcv, ax.volume)
