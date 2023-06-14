@@ -57,7 +57,7 @@ def explode_transaction_data(data):
     cat_data = pd.concat([transaction_data, log_data, receipt_data], axis=1)
 
     # Drop duplicate columns here, will keep first one
-    cat_data = cat_data.loc[:, ~cat_data.columns.duplicated(keep="first")].copy()
+    cat_data = cat_data.loc[:, ~cat_data.columns.duplicated(keep="first")].copy()  # type: ignore
 
     return cat_data
 
