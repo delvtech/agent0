@@ -78,7 +78,8 @@ def main(
                     )
                     continue
 
-                # get_block_pool_info crashes randomly with ValueError on some intermediate block, keep trying until it returns
+                # get_block_pool_info crashes randomly with ValueError on some intermediate block,
+                # keep trying until it returns
                 while True:
                     try:
                         block_pool_info = contract_interface.get_block_pool_info(
