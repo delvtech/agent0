@@ -23,9 +23,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          python -m pip install .[with-dependencies]
           ape plugins install .
-          python -m pip install .
 
       - name: Ensure clear Jupyter Notebooks
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
