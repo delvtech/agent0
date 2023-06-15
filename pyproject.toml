@@ -24,7 +24,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 line-length = "120"
-dependencies = [
+
+[project.optional-dependencies]
+with-dependencies = [
     # Specify requirements
     "astunparse",
     "black",
@@ -51,8 +53,7 @@ dependencies = [
     "flask",
 ]
 
-[project.optional-dependencies]
-doc = [
+docs = [
     "tomli>=2.0.1",
     "sphinx>=5.3",
     "sphinx_autodoc_typehints>=1.21.8",
