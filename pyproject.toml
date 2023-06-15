@@ -24,6 +24,48 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 line-length = "120"
+dependencies = [
+    # Specify requirements
+    "astunparse",
+    "black",
+    # commit after "make cached keys warning use logging"
+    "eth-ape @ git+https://github.com/apeworx/ape@236cc5257763c97439065fd8837082922967008b",
+    "ipython",
+    "jupytext",
+    "matplotlib",
+    "nbconvert",
+    "numpy",
+    "pandas",
+    "pylint",
+    "pyright",
+    "pytest",
+    "python-dotenv",
+    "scipy",
+    "tomli",
+    "typing_extensions==4.5.0",
+    "web3",
+
+    # Hackweek requirements
+    "streamlit",
+    "mplfinance",
+    "flask",
+]
+
+[project.optional-dependencies]
+doc = [
+    "tomli>=2.0.1",
+    "sphinx>=5.3",
+    "sphinx_autodoc_typehints>=1.21.8",
+    "sphinx-autoapi>=2.0.1",
+    "myst-parser>=0.18.1",
+    "numpydoc>=1.5.0",
+    "sphinxcontrib-napoleon>=0.7",
+    "autodocsumm>=0.2.10",
+    "nbsphinx>=0.8.12",
+    "sphinx-rtd-theme>=1.1.1",
+    # urllib3 v2 requires OpenSSL v1.1.1+, but Vercel uses v1.0.2
+    "urllib3<2.0",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/delvtech/analysis"
