@@ -5,7 +5,7 @@
 # 2022-05-31
 # FROM ghcr.io/delvtech/hyperdrive/migrations:nightly-3188e7df62a07a77c61c467ab640aeec836c79fe as migrations
 # v0.0.3 w/ relative path imports to work with ape
-FROM ghcr.io/delvtech/hyperdrive/migrations:212b56881cdc26135da4e11801b18b3a62dc4ae2
+FROM ghcr.io/delvtech/hyperdrive/migrations:212b56881cdc26135da4e11801b18b3a62dc4ae2 as migrations
 
 # copy hyperdrive contracts from migrations image
 COPY --from=migrations /src/ ./hyperdrive_solidity/
