@@ -56,11 +56,14 @@ def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tu
         )
         num_attempts = 120
         for attempt_num in range(num_attempts):
-            logging.info("\tAttempt %s out of %s", attempt_num + 1, num_attempts)
-            response = requests.get(f"{bot_config.artifacts_url}/addresses.json", timeout=10)
-            if response.status_code == 200:
-                deployed_addresses = response.json()
-                break
+            logging.info("\tAttempt %s out of %s to %s", attempt_num + 1, num_attempts, bot_config.artifacts_url)
+            try:
+                response = requests.get(f"{bot_config.artifacts_url}/addresses.json", timeout=10)
+                if response.status_code == 200:
+                    deployed_addresses = response.json()
+                    break
+            except requests.exceptions.ConnectionError as exc:
+                logging.info("Connection error: %s", exc)
             sleep(1)
         logging.info("Contracts deployed; addresses loaded.")
     if "baseToken" in deployed_addresses:
@@ -105,7 +108,6 @@ def create_agent(
     on_chain_trade_info: ape_utils.OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
     bot_config: BotConfig,
-    deployer_account: KeyfileAccount,
     rng: NumpyGenerator,
 ) -> Agent:
     """Create an agent as defined in bot_info, assign its address, give it enough base.
@@ -126,8 +128,6 @@ def create_agent(
         Contract for hyperdrive
     bot_config : BotConfig
         Configuration parameters for the experiment
-    deployer_account : KeyfileAccount
-        The deployer account.
 
     Returns
     -------
@@ -164,9 +164,7 @@ def create_agent(
         logging.info(" agent_%s needs to mint %s Base", agent.contract.address[:8], str_with_precision(need_to_mint))
         with ape.accounts.use_sender(agent.contract):
             if bot_config.devnet:
-                txn_receipt: ReceiptAPI = base_instance.mint(
-                    agent.contract.address, int(50_000 * 1e18), sender=deployer_account
-                )
+                txn_receipt: ReceiptAPI = base_instance.mint(agent.contract.address, int(50_000 * 1e18))
             else:
                 assert faucet is not None, "Faucet must be provided to mint base on testnet."
                 txn_receipt: ReceiptAPI = faucet.mint(base_instance.address, agent.wallet.address, int(50_000 * 1e18))
@@ -195,7 +193,6 @@ def set_up_agents(
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
     addresses: dict[str, str],
-    deployer_account: KeyfileAccount,
     rng: NumpyGenerator,
 ) -> tuple[dict[str, Agent], ape_utils.OnChainTradeInfo]:
     """Set up python agents & corresponding on-chain accounts.
@@ -257,7 +254,6 @@ def set_up_agents(
                 on_chain_trade_info=on_chain_trade_info,
                 hyperdrive_contract=hyperdrive_instance,
                 bot_config=bot_config,
-                deployer_account=deployer_account,
                 rng=rng,
             )
             sim_agents[f"agent_{agent.wallet.address}"] = agent
@@ -471,11 +467,6 @@ def set_up_ape(
         path=Path.cwd(),
         hyperdrive_address=addresses["hyperdrive"] if bot_config.devnet else addresses["goerli_hyperdrive"],
     )
-
-    # quick test
-    # hyperdrive_instance = project.get_contract("IHyperdrive").at("0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9")
-    # test_result = hyperdrive_instance.getPoolConfig()
-
     if bot_config.devnet:  # we're on devnet
         base_instance, hyperdrive_instance, addresses, deployer_account = set_up_devnet(
             addresses, project, provider, bot_config, pricing_model
@@ -565,12 +556,10 @@ def main(
     pricing_model = HyperdrivePricingModel()
     no_crash_streak = 0
     last_executed_block = 0
-    provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
+    provider, automine, base_instance, hyperdrive_instance, hyperdrive_config = set_up_ape(
         bot_config, provider_settings, addresses, network_choice, pricing_model
     )
-    sim_agents, _ = set_up_agents(
-        bot_config, provider, hyperdrive_instance, base_instance, addresses, deployer_account, rng
-    )
+    sim_agents, _ = set_up_agents(bot_config, provider, hyperdrive_instance, base_instance, addresses, rng)
     ape_utils.dump_agent_info(sim_agents, bot_config)
     logging.info("Constructed %s agents:", len(sim_agents))
     for agent_name in sim_agents:
