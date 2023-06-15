@@ -7,6 +7,12 @@
 # v0.0.3 w/ relative path imports to work with ape
 FROM ghcr.io/delvtech/hyperdrive/migrations:212b56881cdc26135da4e11801b18b3a62dc4ae2
 
+# copy hyperdrive contracts from migrations image
+COPY --from=migrations /src/ ./hyperdrive_solidity/
+
+# copy foundry over from migrations image
+COPY --from=migrations /usr/local/bin/ /usr/local/bin
+
 # ### Python Image ###
 FROM python:3.9.16-bullseye
 
@@ -25,12 +31,6 @@ RUN ape plugins install .
 
 # install dev dependencies
 RUN python -m pip install --no-cache-dir -r requirements-dev.txt
-
-# copy hyperdrive contracts from migrations image
-COPY --from=migrations /src/ ./hyperdrive_solidity/
-
-# copy foundry over from migrations image
-COPY --from=migrations /usr/local/bin/ /usr/local/bin
 
 # install elf-simulations
 RUN python -m pip install -e .
