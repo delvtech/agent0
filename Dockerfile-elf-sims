@@ -26,5 +26,5 @@ COPY --from=migrations /usr/local/bin/ /usr/local/bin
 # compile contracts
 RUN ape compile
 
-# install elf-simulations
+# install elf-simulations without dependencies
 RUN python -m pip install -e .
