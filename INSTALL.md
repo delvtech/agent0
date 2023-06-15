@@ -31,7 +31,11 @@ python -m pip install --upgrade pip
 python -m pip install -e .[with-dependencies]
 ```
 
-If you intend to improve the documentation, then you must also install the packages via `python -m pip install -e .[with-dependencies,docs]`.
+If you intend to improve the documentation, then you must also install the packages:
+
+```bash
+python -m pip install -e .[with-dependencies,docs]
+```
 
 - `pyenv install 3.9` You should now see the correct version when you run `pyenv versions`.
 - `pyenv local 3.9` This command creates a `.python-version` file in your current directory. If you have pyenv active in your environment, this file will automatically activate this version for you.
