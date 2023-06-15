@@ -22,6 +22,7 @@ def run_script():
     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
         json_data = json.dumps(data).encode("utf-8")
         temp_file.write(json_data)
+        print(f"Received new bot with specification:\n{json_data}")
         temp_file_path = temp_file.name
 
     # Execute the python script with the provided JSON as an argument
@@ -69,4 +70,4 @@ if __name__ == "__main__":
     SCRIPT_PATH = sys.argv[1]
     app.config["SCRIPT_PATH"] = SCRIPT_PATH
 
-    app.run()
+    app.run(host='0.0.0.0', port=5000)
