@@ -112,7 +112,7 @@ if __name__ == "__main__":
     ETHEREUM_NODE = "http://localhost:8545"
     SAVE_DIR = ".logging"
     STATE_ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
-    TRANSACTIONS_ABI_FILE_PATH = "./hyperdrive_solidity/.build/Hyperdrive.json"
+    TRANSACTIONS_ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
     START_BLOCK = 6
     # Look back limit for backfilling
     LOOKBACK_BLOCK_LIMIT = 1000
