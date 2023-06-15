@@ -56,7 +56,7 @@ class HyperdriveProject(ProjectManager):
 
     def __post_init__(self):
         """Set up contracts after init"""
-        self.load_contracts()
+        # self.load_contracts()
         try:
             self.hyperdrive_container: ContractContainer = self.get_contract("Hyperdrive")
         except AttributeError as err:

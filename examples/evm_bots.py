@@ -162,15 +162,17 @@ def create_agent(
     agent.contract = dev_accounts[bot.index]  # assign its onchain contract
     if bot_config.devnet:
         agent.contract.balance += int(1e18)  # give it some eth
+
+    # mint base tokens for the agents
     if (need_to_mint := (params["budget"].scaled_value - base_instance.balanceOf(agent.contract.address)) / 1e18) > 0:
         logging.info(" agent_%s needs to mint %s Base", agent.contract.address[:8], str_with_precision(need_to_mint))
-        with ape.accounts.use_sender(agent.contract):
-            if bot_config.devnet:
-                txn_receipt: ReceiptAPI = base_instance.mint(agent.contract.address, int(50_000 * 1e18))
-            else:
-                assert faucet is not None, "Faucet must be provided to mint base on testnet."
-                txn_receipt: ReceiptAPI = faucet.mint(base_instance.address, agent.wallet.address, int(50_000 * 1e18))
-            txn_receipt.await_confirmations()
+        if bot_config.devnet:
+            txn_args = agent.contract.address, int(50_000 * 1e18)
+            ape_utils.attempt_txn(agent.contract, base_instance.mint, *txn_args)
+        else:
+            assert faucet is not None, "Faucet must be provided to mint base on testnet."
+            txn_args = base_instance.address, agent.wallet.address, int(50_000 * 1e18)
+            ape_utils.attempt_txn(agent.contract, faucet.mint, *txn_args)
     logging.info(
         " agent_%s is a %s with budget=%s Eth=%s Base=%s",
         agent.contract.address[:8],

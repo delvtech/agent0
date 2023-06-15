@@ -32,5 +32,8 @@ COPY --from=migrations /src/ ./hyperdrive_solidity/
 # copy foundry over from migrations image
 COPY --from=migrations /usr/local/bin/ /usr/local/bin
 
+# compile with ape
+RUN rm -rf hyperdrive_solidity/.build && rm -rf hyperdrive_solidity/contracts/.cache && rm -rf hyperdrive_solidity/forge-cache && ape compile --force
+
 # install elf-simulations
 RUN python -m pip install -e .
