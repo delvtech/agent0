@@ -58,6 +58,7 @@ docs/source/_autosummary
 docs/source/generated
 docs/source/autoapi
 docs/source/examples
+docs/source/_static/*.html
 docs/build
 docs/make_outputs.log
 

@@ -7,9 +7,12 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # pylint: disable=invalid-name
 
-import sys
-import os
 import datetime
+import os
+import re
+import sys
+
+import requests
 import tomli
 
 # indicate where the elfpy Python package lives
@@ -20,13 +23,27 @@ sys.path.insert(0, elfpy_root)
 
 # -- Auto notebook index creation --------------------------------------------
 
-static_indir = "examples/_static"
+example_root_url = "https://delvtech.github.io/elf-simulations-examples/"
+r = requests.get(example_root_url, timeout=5)
+# Find all strings in quotes, which should result in all notebook htmls
+files = re.findall(r"\".*?\"", r.content.decode("utf-8"))
+# Remove first and last quotes from strings
+files = [f[1:-1] for f in files]
+
+# Download files to _static
+for f in files:
+    notebook_url = example_root_url + f
+    raw_html = requests.get(notebook_url, timeout=5).content.decode("utf-8")
+    out_html_file = "_static/" + f
+    with open(out_html_file, "w", encoding="UTF-8") as file:
+        file.write(raw_html)
+
 rst_outdir = "examples/notebook/"
 
-if os.path.exists(static_indir):
-    files = os.listdir("examples/_static")
-else:
-    files = []
+# if os.path.exists(static_indir):
+#    files = os.listdir("examples/_static")
+# else:
+#    files = []
 
 if not os.path.exists(rst_outdir):
     os.makedirs(rst_outdir)
@@ -44,7 +61,7 @@ for f in files:
     title_name = raw_name.replace("_", " ").title()
 
     with open(rst_outdir + raw_name + ".rst", "w", encoding="UTF-8") as file:
-        file.write(title_name + middle_text + "../_static/" + f + "\n")
+        file.write(title_name + middle_text + "../../_static/" + f + "\n")
 
 text = """Examples
 =================================================
