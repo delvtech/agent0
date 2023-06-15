@@ -203,8 +203,6 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
     HyperdriveMarketState
     """
     pool_state = hyperdrive_contract.getPoolInfo(**kwargs).__dict__
-    for key, value in pool_state.items():
-        log_and_show(f"{key}: {value}")
     hyper_config = hyperdrive_contract.getPoolConfig(**kwargs).__dict__
     hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)  # convert to elf-sims format
     hyper_config["term_length"] = hyper_config["positionDuration"] / (60 * 60 * 24)  # in days
