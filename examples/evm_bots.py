@@ -41,6 +41,8 @@ from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 from elfpy.utils.outputs import str_with_precision
 
+ape_logger.set_level(logging.ERROR)
+
 
 def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
@@ -481,7 +483,7 @@ def set_up_ape(
     hyperdrive_config = ape_utils.get_hyperdrive_config(hyperdrive_instance)
     # becomes provider.get_auto_mine() with this PR: https://github.com/ApeWorX/ape-foundry/pull/51
     automine = provider._make_request("anvil_getAutomine", parameters={})  # pylint: disable=protected-access
-    return provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account
+    return provider, automine, base_instance, hyperdrive_instance, hyperdrive_config
 
 
 def do_policy(
@@ -621,7 +623,6 @@ if __name__ == "__main__":
         log_file_and_stdout=config.log_file_and_stdout,
         log_formatter=config.log_formatter,
     )
-    ape_logger.set_level(logging.ERROR)
     CRASH_FILE = f".logging/no_crash_streak{'_devnet' if config.devnet else ''}.txt"
     # inputs
     NETWORK_CHOICE = "ethereum:local:" + ("alchemy" if config.alchemy else "foundry")
