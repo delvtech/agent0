@@ -57,7 +57,7 @@ def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tu
         num_attempts = 120
         for attempt_num in range(num_attempts):
             logging.info("\tAttempt %s out of %s", attempt_num + 1, num_attempts)
-            response = requests.get(bot_config.artifacts_url + "/addresses.json", timeout=10)
+            response = requests.get(f"{bot_config.artifacts_url}/addresses.json", timeout=10)
             if response.status_code == 200:
                 deployed_addresses = response.json()
                 break
@@ -68,11 +68,14 @@ def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tu
         logging.info("found devnet base address: %s", addresses["baseToken"])
     else:
         addresses["baseToken"] = None
-    if "hyperdrive" in deployed_addresses:
-        addresses["hyperdrive"] = deployed_addresses["hyperdrive"]
+    if "mockHyperdrive" in deployed_addresses:
+        addresses["hyperdrive"] = deployed_addresses["mockHyperdrive"]
         logging.info("found devnet hyperdrive address: %s", addresses["hyperdrive"])
     else:
         addresses["hyperdrive"] = None
+    if "mockHyperdriveMath" in deployed_addresses:
+        addresses["hyperdriveMath"] = deployed_addresses["mockHyperdriveMath"]
+        logging.info("found devnet hyperdriveMath address: %s", addresses["hyperdriveMath"])
     return addresses
 
 
