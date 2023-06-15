@@ -16,6 +16,7 @@ dependencies:
 
 solidity:
   import_remapping:
+    - "@openzeppelin/contracts=OpenZeppelin/4.9.0"
     - "openzeppelin-contracts/contracts=OpenZeppelin/4.9.0"
     - "@aave=Aave/1.17.2"
     - "forge-std=../../lib/forge-std/src"
