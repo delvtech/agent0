@@ -10,10 +10,12 @@ Set up your favorite python virtual environment. We use:
 We also use [Docker](docs.docker.com/get-docker) for building images.
 
 # Install -- steps
+
 Clone the repo into a <repo_location> of your choice.
 Next, follow the installation instructions provided by [pyenv](https://github.com/pyenv/pyenv#installation).
 
 After installation, we can use pyenv to install Python from within the repo.
+
 ```bash
 cd <repo_location>
 pyenv install 3.9
@@ -21,19 +23,24 @@ pyenv local 3.9
 python -m venv .venv
 source .venv/bin/activate
 ```
-Once you're in your virtual environment, install the project dependencies:
+
+Once you're in your virtual environment, install elfpy with project dependencies:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m pip install -e .
+python -m pip install -e .[with-dependencies]
 ```
-If you intend to improve the documentation, then you must also install the packages in `requirements-dev.txt`.
 
-* `pyenv install 3.9` You should now see the correct version when you run `pyenv versions`.
-* `pyenv local 3.9` This command creates a `.python-version` file in your current directory. If you have pyenv active in your environment, this file will automatically activate this version for you.
-* `python -m venv .venv` This will create a `.venv` folder in your repo directory that stores the local python build & packages. After this command you should be able to type which python and see that it points to an executable inside `.venv/`.
-* `python -m pip install -e .` This installs elfpy locally such that the install updates automatically any time you change the source code. 
+If you intend to improve the documentation, then you must also install the packages:
+
+```bash
+python -m pip install -e .[with-dependencies,docs]
+```
+
+- `pyenv install 3.9` You should now see the correct version when you run `pyenv versions`.
+- `pyenv local 3.9` This command creates a `.python-version` file in your current directory. If you have pyenv active in your environment, this file will automatically activate this version for you.
+- `python -m venv .venv` This will create a `.venv` folder in your repo directory that stores the local python build & packages. After this command you should be able to type which python and see that it points to an executable inside `.venv/`.
+- `python -m pip install -e .[with-dependencies]` This installs elfpy locally such that the install updates automatically any time you change the source code. This also installs all dependencies defined in `pyproject.toml`.
 
 Finally, you can test that everything is working by calling:
 `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest tests/`

@@ -6,8 +6,7 @@ on:
     branches:
       - main
     paths:
-      - 'requirements.txt'
-      - 'requirements-dev.txt'
+      - 'pyproject.toml'
 
 env:
   REGISTRY: ghcr.io
