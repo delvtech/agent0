@@ -1,17 +1,18 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx."""
 from __future__ import annotations
-from dataclasses import dataclass
 
-import os
 import json
 import logging
+import os
+import re
 from collections import namedtuple
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
 
+import ape
 import numpy as np
 import pandas as pd
-import ape
 from ape import Contract
 from ape.api import BlockAPI, ProviderAPI, ReceiptAPI, TransactionAPI
 from ape.contracts import ContractContainer
@@ -21,15 +22,13 @@ from ape.managers.project import ProjectManager
 from ape.types import AddressType, ContractType
 from ape_accounts.accounts import KeyfileAccount
 
-import elfpy
 from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, simulators, time, types
+from elfpy.markets.hyperdrive import AssetIdPrefix, HyperdriveMarketState, HyperdrivePricingModel, hyperdrive_assets
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
-from elfpy.simulators.config import Config
-from elfpy.markets.hyperdrive import hyperdrive_assets, AssetIdPrefix, HyperdriveMarketState
 from elfpy.math import FixedPoint
+from elfpy.simulators.config import Config
+from elfpy.utils import outputs as output_utils
 from elfpy.utils import sim_utils
-from elfpy.utils.outputs import log_and_show
-from elfpy.utils.outputs import number_to_string as fmt
 from elfpy.wallet.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:
@@ -54,6 +53,9 @@ class HyperdriveProject(ProjectManager):
         if hyperdrive_address is not None:
             self.hyperdrive_address = hyperdrive_address
         super().__init__(path)
+
+    def __post_init__(self):
+        """Set up contracts after init"""
         self.load_contracts()
         try:
             self.hyperdrive_container: ContractContainer = self.get_contract("Hyperdrive")
@@ -63,40 +65,6 @@ class HyperdriveProject(ProjectManager):
     def get_hyperdrive_contract(self) -> ContractInstance:
         """Get the Hyperdrive contract instance."""
         return self.hyperdrive_container.at(self.conversion_manager.convert(self.hyperdrive_address, AddressType))
-
-
-def get_simulator(
-    experiment_config: Config, pricing_model: elfpy.pricing_models.base.PricingModel
-) -> simulators.Simulator:
-    """Instantiate and return an initialized elfpy Simulator object."""
-    market, _, _ = sim_utils.get_initialized_hyperdrive_market(
-        pricing_model=pricing_model, block_time=time.BlockTime(), config=experiment_config
-    )
-    return simulators.Simulator(experiment_config, market, time.BlockTime())
-
-
-def get_hyperdrive_config(hyperdrive_instance) -> dict:
-    """Get the hyperdrive config from a deployed hyperdrive contract.
-
-    Parameters
-    ----------
-    hyperdrive_instance : ContractInstance
-        The deployed hyperdrive contract instance.
-
-    Returns
-    -------
-    hyperdrive_config : dict
-        The hyperdrive config.
-    """
-    hyperdrive_config: dict = hyperdrive_instance.getPoolConfig().__dict__
-    hyperdrive_config["timeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
-    log_and_show(f"Hyperdrive config deployed at {hyperdrive_instance.address}:")
-    for key, value in hyperdrive_config.items():
-        divisor = 1 if key in ["positionDuration", "checkpointDuration", "timeStretch"] else 1e18
-        formatted_value = fmt(value / divisor) if isinstance(value, (int, float)) else value
-        log_and_show(f" {key}: {formatted_value}")
-    hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
-    return hyperdrive_config
 
 
 @dataclass
@@ -117,11 +85,32 @@ class DefaultHyperdriveConfig:
     target_liquidity = FixedPoint(1 * 10**6)
 
 
+def get_hyperdrive_config(hyperdrive_instance) -> dict:
+    """Get the hyperdrive config from a deployed hyperdrive contract.
+
+    Parameters
+    ----------
+    hyperdrive_instance : ContractInstance
+        The deployed hyperdrive contract instance.
+
+    Returns
+    -------
+    hyperdrive_config : dict
+        The hyperdrive config.
+    """
+    hyperdrive_config: dict = hyperdrive_instance.getPoolConfig().__dict__
+    hyperdrive_config["timeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
+    logging.info("Hyperdrive config deployed at %s: ", hyperdrive_instance.address)
+    logging.info("Hyperdrive config: %s", hyperdrive_config)
+    hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
+    return hyperdrive_config
+
+
 def deploy_hyperdrive(
     experiment_config: Config,
     base_instance: ContractInstance,
     deployer_account: KeyfileAccount,
-    pricing_model: elfpy.pricing_models.base.PricingModel,
+    pricing_model: HyperdrivePricingModel,
     project: HyperdriveProject,
 ) -> ContractInstance:
     """Deploy Hyperdrive when operating on a fresh fork.
@@ -134,9 +123,9 @@ def deploy_hyperdrive(
         The base token contract instance.
     deployer_account : Account
         The account used to deploy smart contracts.
-    pricing_model : elfpy.pricing_models.base.PricingModel
+    pricing_model : HyperdrivePricingModel
         The elf-simulations pricing model.
-    project : ape_utils.HyperdriveProject
+    project : HyperdriveProject
         The Ape project that contains a Hyperdrive contract.
 
     Returns
@@ -144,9 +133,12 @@ def deploy_hyperdrive(
     hyperdrive : ContractInstance
         The deployed Hyperdrive contract instance.
     """
-    initial_supply = FixedPoint(experiment_config.target_liquidity, decimal_places=18)
-    initial_apr = FixedPoint(experiment_config.target_fixed_apr, decimal_places=18)
-    simulator = get_simulator(experiment_config, pricing_model)  # Instantiate the sim market
+    initial_supply = FixedPoint(experiment_config.target_liquidity)
+    initial_apr = FixedPoint(experiment_config.target_fixed_apr)
+    market, _, _ = sim_utils.get_initialized_hyperdrive_market(
+        pricing_model=pricing_model, block_time=time.BlockTime(), config=experiment_config
+    )
+    simulator = simulators.Simulator(experiment_config, market, time.BlockTime())
     base_instance.mint(
         initial_supply.scaled_value,
         sender=deployer_account,  # minted amount goes to sender
@@ -345,7 +337,7 @@ def get_wallet_from_onchain_trade_info(
         trades_in_position = ((info.trades["from"] == address) | (info.trades["to"] == address)) & (
             info.trades["id"] == position_id
         )
-        log_and_show("found %s trades for %s in position %s", sum(trades_in_position), address[:8], position_id)
+        logging.info("found %s trades for %s in position %s", sum(trades_in_position), address[:8], position_id)
         positive_balance = int(info.trades.loc[(trades_in_position) & (info.trades["to"] == address), "value"].sum())
         negative_balance = int(info.trades.loc[(trades_in_position) & (info.trades["from"] == address), "value"].sum())
         balance = positive_balance - negative_balance
@@ -355,7 +347,7 @@ def get_wallet_from_onchain_trade_info(
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = AssetIdPrefix(asset_prefix).name
         mint_time = maturity - SECONDS_IN_YEAR
-        log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
+        logging.info(" => %s(%s) maturity=%s mint_time=%s", asset_type, asset_prefix, maturity, mint_time)
 
         on_chain_balance = 0
         # verify our calculation against the onchain balance
@@ -367,7 +359,7 @@ def get_wallet_from_onchain_trade_info(
                     f"events {balance=} and {on_chain_balance=} disagree by "
                     f"more than {MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address}"
                 )
-            log_and_show(f" => calculated balance = on_chain = {fmt(balance)}")
+            logging.info(" => calculated balance = on_chain = %s", output_utils.str_with_precision(balance))
         # check if there's an outstanding balance
         if balance != 0 or on_chain_balance != 0:
             if asset_type == "SHORT":
@@ -421,7 +413,7 @@ def get_wallet_from_onchain_trade_info(
 
 
 def create_elfpy_market(
-    pricing_model: elfpy.pricing_models.base.PricingModel,
+    pricing_model: HyperdrivePricingModel,
     hyperdrive_instance: ContractInstance,
     hyperdrive_config: dict,
     block_number: int,
@@ -432,7 +424,7 @@ def create_elfpy_market(
 
     Parameters
     ----------
-    pricing_model : elfpy.pricing_models.base.PricingModel
+    pricing_model : HyperdrivePricingModel
         The pricing model to use.
     hyperdrive_instance : ContractInstance
         The deployed Hyperdrive instance.
@@ -602,14 +594,15 @@ def get_pool_state(txn_receipt: ReceiptAPI, hyperdrive_contract: ContractInstanc
     return PoolState(**hyper_dict)
 
 
-def _snake_to_camel(_snake):
-    """Convert snake_case to camelCase."""
+def snake_to_camel(_snake):
+    """Convert snake_case to camelCase"""
     return "".join(word.capitalize() for word in _snake.split("_"))
 
 
-def _camel_to_snake(_camel):
-    """Convert camelCase to snake_case."""
-    return _camel.lower().replace(" ", "_")
+def camel_to_snake(camel_string: str) -> str:
+    """Convert camelCase to snake_case"""
+    snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", camel_string)
+    return snake_string.lower()
 
 
 @dataclass
@@ -635,10 +628,10 @@ class PoolState:
 
     def __getattribute__(self, __snake: str) -> Any:
         """Convert from snake_case to camelCase for the dataclass."""
-        return super().__getattribute__(_snake_to_camel(__snake))
+        return super().__getattribute__(snake_to_camel(__snake))
 
     def __setattr__(self, __snake: str, __value: Any) -> None:
-        super().__setattr__(_snake_to_camel(__snake), __value)
+        super().__setattr__(snake_to_camel(__snake), __value)
 
 
 PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
@@ -815,7 +808,7 @@ def select_abi(method: Callable, params: dict | None = None, args: tuple | None 
             + (f" with missing arguments: {missing_args}" if missing_args else "")
         )
     lstr = f" => {selected_abi.name}({', '.join(f'{inpt.name}={arg}' for arg, inpt in zip(args, selected_abi.inputs))})"
-    log_and_show(lstr)
+    logging.info(lstr)
     return selected_abi, args
 
 
@@ -941,10 +934,10 @@ def ape_trade(
         return get_pool_state(txn_receipt=txn_receipt, hyperdrive_contract=hyperdrive_contract), txn_receipt
     except TransactionError as exc:
         logging.error(
-            "Failed to execute %s: %s\n =>  Amount: %s\n => Agent: %s\n => Pool: %s\n",
+            "Failed to execute %s: %s\n =>  Amount: %s\n => Agent: %s\n => Pool: %s",
             trade_type,
             exc,
-            fmt(amount),
+            output_utils.str_with_precision(amount),
             agent,
             hyperdrive_contract.getPoolInfo().__dict__,
         )
@@ -1003,7 +996,9 @@ def attempt_txn(
             raise ValueError("latest block does not have base_fee")
         base_fee = getattr(latest, "base_fee")
         logging.debug(
-            "latest block %s has base_fee %s", fmt(getattr(latest, "number")), fmt(base_fee / 1e9, min_digits=3)
+            "latest block %s has base_fee %s",
+            output_utils.str_with_precision(getattr(latest, "number")),
+            output_utils.str_with_precision(base_fee / 1e9, min_digits=3),
         )
         kwargs["max_priority_fee_per_gas"] = int(
             agent.provider.priority_fee * (1 + priority_fee_multiple * (attempt - 1))
@@ -1016,7 +1011,9 @@ def attempt_txn(
         # kwargs["gas_price"] = kwargs["max_fee_per_gas"]
         formatted_items = []
         for key, value in kwargs.items():
-            value = fmt(value / 1e9) if "fee" in key else fmt(value)
+            value = (
+                output_utils.str_with_precision(value / 1e9) if "fee" in key else output_utils.str_with_precision(value)
+            )
             formatted_items.append(f"{key}={value}")
         logging.debug("txn attempt %s of %s with %s", attempt, mult, ", ".join(formatted_items))
         serial_txn: TransactionAPI = contract_txn.serialize_transaction(*args, **kwargs)
@@ -1031,12 +1028,12 @@ def attempt_txn(
             return txn_receipt
         except TransactionError as exc:
             if "replacement transaction underpriced" not in str(exc) or not isinstance(exc, TransactionNotFoundError):
-                log_and_show(f"Txn failed in unexpected way on attempt {attempt} of {mult}: {exc}")
+                logging.info("Txn failed in unexpected way on attempt %s of %s: %s", attempt, mult, exc)
                 raise exc
-            log_and_show(f"Txn failed in expected way: {exc}")
+            logging.info("Txn failed in expected way: %s", exc)
             if attempt == mult:
-                log_and_show(" => max attempts reached, raising exception")
+                logging.info(" => max attempts reached, raising exception")
                 raise exc
-            log_and_show(f" => retrying with higher gas price: {attempt + 1} of {mult}")
+            logging.info(" => retrying with higher gas price: %s of %s", attempt + 1, mult)
             continue
     raise TimeoutError("Failed to execute transaction")

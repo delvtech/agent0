@@ -30,7 +30,7 @@ MAX_RESERVES_DIFFERENCE = FixedPoint(2e10)
 PRECISION_THRESHOLD: FixedPoint = FixedPoint(1 * 10**10)  # 1e-8 * 1e18 = 1e10
 
 # Logging defaults
-DEFAULT_LOG_LEVEL = logging.INFO
+DEFAULT_LOG_LEVEL = "INFO"
 DEFAULT_LOG_FORMATTER = "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s"
 DEFAULT_LOG_DATETIME = "%y-%m-%d %H:%M:%S"
 DEFAULT_LOG_MAXBYTES = int(2e6)  # 2MB

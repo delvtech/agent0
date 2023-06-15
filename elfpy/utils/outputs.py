@@ -1,22 +1,24 @@
 """Helper functions for delivering simulation outputs"""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-import os
-import sys
 import json
 import logging
+import os
+import sys
 from logging.handlers import RotatingFileHandler
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from hexbytes import HexBytes
 from matplotlib import gridspec
+from numpy.random._generator import Generator as NumpyGenerator
+from web3.datastructures import AttributeDict, MutableAttributeDict
 
 import elfpy
 from elfpy.math.fixed_point import FixedPoint
 
 if TYPE_CHECKING:
-    from typing import Optional, Any
     import pandas as pd
     from matplotlib.figure import Figure
     from matplotlib.gridspec import GridSpec
@@ -411,24 +413,23 @@ def annotate(axis_handle, text, major_offset, minor_offset, val):
 
 
 ## Logging
-def delete_log_file() -> None:
-    r"""If the logger's handler if a file handler, delete the underlying file."""
-    handler = logging.getLogger().handlers[0]
-    if isinstance(handler, logging.FileHandler):
-        os.remove(handler.baseFilename)
-    logging.getLogger().removeHandler(handler)
-
-
 def setup_logging(
-    log_filename: Optional[str] = None,
+    log_filename: str | None = None,
     max_bytes: int = elfpy.DEFAULT_LOG_MAXBYTES,
     log_level: int = elfpy.DEFAULT_LOG_LEVEL,
     delete_previous_logs: bool = False,
+    log_file_and_stdout: bool = False,
+    log_formatter: str = elfpy.DEFAULT_LOG_FORMATTER,
 ) -> None:
     r"""Setup logging and handlers with default settings"""
-    if log_filename is None:
-        handler = logging.StreamHandler(sys.stdout)
-    else:  # we have a filename
+    # pylint: disable=too-many-arguments
+    if log_filename is None and log_file_and_stdout is True:
+        raise ValueError(f"{log_filename=} cannot be None and {log_file_and_stdout=} be True")
+    handlers = []
+    log_formatter = logging.Formatter(log_formatter, elfpy.DEFAULT_LOG_DATETIME)
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(log_formatter)
+    if log_filename is not None:
         log_dir, log_name = os.path.split(log_filename)
         if not log_name.endswith(".log"):
             log_name += ".log"
@@ -440,11 +441,13 @@ def setup_logging(
         # delete the log file if it exists
         if delete_previous_logs and os.path.exists(os.path.join(log_dir, log_name)):
             os.remove(os.path.join(log_dir, log_name))
-        handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
-
+        file_handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
+        file_handler.setFormatter(log_formatter)
+        handlers.append(file_handler)
+    if log_file_and_stdout is True or log_filename is None:
+        handlers.append(stream_handler)
     logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
-    handler.setFormatter(logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME))
-    logging.getLogger().handlers = [handler]  # overwrite handlers with the desired one
+    logging.getLogger().handlers = handlers  # overwrite handlers with the desired one
 
 
 def close_logging(delete_logs=True):
@@ -454,47 +457,24 @@ def close_logging(delete_logs=True):
         for handler in logging.getLogger().handlers:
             if hasattr(handler, "baseFilename") and not isinstance(handler, logging.StreamHandler):
                 # access baseFilename in a type safe way
-                handler_file_name = getattr(handler, "baseFilename")
-                if os.path.exists(handler_file_name):
+                handler_file_name = getattr(handler, "baseFilename", None)
+                if handler_file_name is not None and os.path.exists(handler_file_name):
                     os.remove(handler_file_name)
             handler.close()
 
 
-def text_to_log_level(logging_text: str) -> int:
-    r"""Converts logging level description to an integer
-
-    Arguments
-    ----------
-    logging_text : str
-        String description of the logging level; must be in ["debug", "info", "warning", "error", "critical"]
-
-    Returns
-    -------
-    int
-        Logging level integer corresponding to the string input
-    """
-    if logging_text.lower() == "notset":
-        level = logging.NOTSET
-    elif logging_text.lower() == "debug":
-        level = logging.DEBUG
-    elif logging_text.lower() == "info":
-        level = logging.INFO
-    elif logging_text.lower() == "warning":
-        level = logging.WARNING
-    elif logging_text.lower() == "error":
-        level = logging.ERROR
-    elif logging_text.lower() == "critical":
-        level = logging.CRITICAL
-    else:
-        raise ValueError(f'{logging_text=} must be in ["debug", "info", "warning", "error", "critical"]')
-    return level
-
-
-class CustomEncoder(json.JSONEncoder):
+class ExtendedJSONEncoder(json.JSONEncoder):
     r"""Custom encoder for JSON string dumps"""
+    # pylint: disable=too-many-return-statements
 
     def default(self, o):
         r"""Override default behavior"""
+        if isinstance(o, set):
+            return list(o)
+        if isinstance(o, HexBytes):
+            return o.hex()
+        if isinstance(o, (AttributeDict, MutableAttributeDict)):
+            return dict(o)
         if isinstance(o, np.integer):
             return int(o)
         if isinstance(o, np.floating):
@@ -503,13 +483,17 @@ class CustomEncoder(json.JSONEncoder):
             return o.tolist()
         if isinstance(o, FixedPoint):
             return str(o)
+        if isinstance(o, NumpyGenerator):
+            return "NumpyGenerator"
         try:
             return o.__dict__
         except AttributeError:
-            return repr(o)
+            pass
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, o)
 
 
-def number_to_string(value, precision=3, min_digits=0, debug=False):
+def str_with_precision(value, precision=3, min_digits=0, debug=False):
     """
     Format a float to a string with a given precision
     this follows the significant figure behavior, irrepective of number size
@@ -541,35 +525,3 @@ def number_to_string(value, precision=3, min_digits=0, debug=False):
     if abs(value) > 0.01:
         return f"{value:,.{decimals}f}"
     return f"{value:0.{precision - 1}e}"
-
-
-def log_and_show(string: str, *args) -> None:
-    """Log to default logger and to stdout.
-
-    Arguments
-    ----------
-    string : str
-        String to log
-    *args
-        Arguments to log
-    """
-
-    # try to get the stdout logger
-    stdout_logger = logging.getLogger("stdout")
-
-    # if it doesn't exist, set it up
-    if not stdout_logger.handlers:
-        stdout_handler = logging.StreamHandler(sys.stdout)
-        stdout_handler.setFormatter(logging.Formatter("%(message)s"))
-        stdout_logger = logging.getLogger("stdout")
-        stdout_logger.addHandler(stdout_handler)
-        stdout_logger.setLevel(logging.INFO)
-
-    # log to both default logger and stdout, depending on whether there are args
-    if args:
-        formatted_string = string % args
-        # logging.info(formatted_string)
-        stdout_logger.info(formatted_string)
-    else:
-        # logging.info(string)
-        stdout_logger.info(string)

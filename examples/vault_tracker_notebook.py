@@ -1,6 +1,7 @@
 """Agent that tracks the vault apr"""
 # %%
 from __future__ import annotations
+import logging
 
 import os
 
@@ -150,7 +151,9 @@ config.random_seed = 123
 
 config.log_filename = "vault_tracker"  # Output filename for logging
 
-config.log_level = "DEBUG"  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]. ERROR to suppress all logging.
+config.log_level = (
+    logging.DEBUG
+)  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]. ERROR to suppress all logging.
 config.pricing_model_name = "Hyperdrive"  # can be yieldspace or hyperdrive
 
 config.num_trading_days = 365  # Number of simulated trading days, default is 180
@@ -394,10 +397,7 @@ if os.path.exists(config.log_filename):
     os.remove(config.log_filename)
 
 # define root logging parameters
-output_utils.setup_logging(
-    log_filename=config.log_filename,
-    log_level=output_utils.text_to_log_level(config.log_level),
-)
+output_utils.setup_logging(log_filename=config.log_filename, log_level=logging.DEBUG)
 
 simulator = sim_utils.get_simulator(config)
 simulator.collect_and_execute_trades()

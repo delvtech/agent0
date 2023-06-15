@@ -1,7 +1,6 @@
 """Implements abstract classes that control agent behavior"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-import json
 import logging
 from typing import TYPE_CHECKING
 
@@ -10,7 +9,6 @@ from elfpy.wallet.wallet import Wallet
 from elfpy.math import FixedPoint
 from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Quantity, TokenType, Trade
-import elfpy.utils.outputs as output_utils
 
 if TYPE_CHECKING:
     from elfpy.markets.hyperdrive import HyperdriveMarket
@@ -28,23 +26,19 @@ class Agent:
     ----------
     wallet_address : int
         Random ID used to identify this specific agent in the simulation
-    budget : FixedPoint
-        Total amount of assets that this agent has available for spending in the simulation
-    rng : Generator
-        Random number generator, constructed using np.random.default_rng(seed)
+    policy : BasePolicy
+        Elfpy policy for producing agent actions
     """
 
-    def __init__(self, wallet_address: int, policy: BasePolicy = NoActionPolicy()):
-        """Store agent wallet"""
-        self.policy = policy
+    def __init__(self, wallet_address: int, policy: BasePolicy | None = None):
+        r"""Store agent wallet & policy"""
+        if policy is None:
+            self.policy: BasePolicy = NoActionPolicy()
+        else:
+            self.policy: BasePolicy = policy
         self.wallet: Wallet = Wallet(
             address=wallet_address, balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE)
         )
-
-    def __str__(self) -> str:
-        # cls arg tells json how to handle numpy objects and nested dataclasses
-        dict_to_encode = {str(key): str(value) for key, value in self.__dict__.items()}
-        return json.dumps(dict_to_encode, sort_keys=True, indent=2, cls=output_utils.CustomEncoder)
 
     def action(self, market: BaseMarket) -> list[Trade]:
         r"""Abstract method meant to be implemented by the specific policy

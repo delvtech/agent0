@@ -13,9 +13,6 @@ dependencies:
   - name: Aave
     github: aave/aave-v3-core
     version: 1.17.2
-  - name: Mocks
-    local: hyperdrive_solidity/test/
-    contracts_folder: src/contracts
 
 solidity:
   import_remapping:
