@@ -18,19 +18,13 @@ WORKDIR /app
 # copy everything in elf-simulations
 COPY . ./
 
-# install base dependencies
+# install elfpy
 RUN python -m pip install --no-cache-dir --upgrade pip
-RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir -e .[with-dependencies,docs]
 RUN ape plugins install .
-
-# install dev dependencies
-RUN python -m pip install --no-cache-dir -r requirements-dev.txt
 
 # copy hyperdrive contracts from migrations image
 COPY --from=migrations /src/ ./hyperdrive_solidity/
 
 # copy foundry over from migrations image
 COPY --from=migrations /usr/local/bin/ /usr/local/bin
-
-# install elf-simulations
-RUN python -m pip install -e .
