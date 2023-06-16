@@ -7,9 +7,12 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # pylint: disable=invalid-name
 
-import sys
-import os
 import datetime
+import os
+import re
+import sys
+
+import requests
 import tomli
 
 # indicate where the elfpy Python package lives
@@ -20,13 +23,23 @@ sys.path.insert(0, elfpy_root)
 
 # -- Auto notebook index creation --------------------------------------------
 
-static_indir = "examples/_static"
+example_root_url = "https://delvtech.github.io/elf-simulations-examples/"
 rst_outdir = "examples/notebook/"
 
-if os.path.exists(static_indir):
-    files = os.listdir("examples/_static")
-else:
-    files = []
+index_response = requests.get(example_root_url, timeout=5)
+# Find all strings in quotes ending in _notebook.html, which should result in all notebook htmls
+html_files = re.findall(r"\".*_notebook\.html?\"", index_response.content.decode("utf-8"))
+
+# Remove first and last quotes from strings
+html_files = [file[1:-1] for file in html_files]
+
+# Download files to _static
+for html_file in html_files:
+    notebook_url = example_root_url + html_file
+    raw_html = requests.get(notebook_url, timeout=5).content.decode("utf-8")
+    out_html_file = "_static/" + html_file
+    with open(out_html_file, "w", encoding="UTF-8") as file:
+        file.write(raw_html)
 
 if not os.path.exists(rst_outdir):
     os.makedirs(rst_outdir)
@@ -39,14 +52,14 @@ middle_text = """
     :file: """
 
 # Create an rst file per notebook output
-for f in files:
-    raw_name = f.split(".")[0]
+for html_file in html_files:
+    raw_name = html_file.split(".")[0]
     title_name = raw_name.replace("_", " ").title()
 
     with open(rst_outdir + raw_name + ".rst", "w", encoding="UTF-8") as file:
-        file.write(title_name + middle_text + "../_static/" + f + "\n")
+        file.write(title_name + middle_text + "../../_static/" + html_file + "\n")
 
-text = """Examples
+index_rst_text = """Examples
 =================================================
 
 .. toctree::
@@ -55,12 +68,12 @@ text = """Examples
 """
 
 # Create outer index.rst for examples
-for f in files:
-    raw_name = f.split(".")[0]
-    text += "   /" + rst_outdir + raw_name + "\n"
+for html_file in html_files:
+    raw_name = html_file.split(".")[0]
+    index_rst_text += "   /" + rst_outdir + raw_name + "\n"
 
 with open("examples/index.rst", "w", encoding="UTF-8") as file:
-    file.write(text)
+    file.write(index_rst_text)
 
 
 # -- Project information -----------------------------------------------------
