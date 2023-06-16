@@ -12,8 +12,5 @@ COPY ape-config.yaml.example ./ape-config.yaml
 
 # install base dependencies
 RUN python -m pip install --upgrade pip
-RUN python -m pip install -r requirements.txt
+RUN python -m pip install .[with-dependencies, docs]
 RUN ape plugins install .
-
-# install dev dependencies
-RUN python -m pip install -r requirements-dev.txt
