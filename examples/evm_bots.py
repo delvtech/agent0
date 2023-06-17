@@ -482,8 +482,7 @@ def set_up_ape(
         hyperdrive_instance: ContractInstance = project.get_hyperdrive_contract()
     # read the hyperdrive config from the contract, and log (and print) it
     hyperdrive_config = ape_utils.get_hyperdrive_config(hyperdrive_instance)
-    # becomes provider.get_auto_mine() with this PR: https://github.com/ApeWorX/ape-foundry/pull/51
-    automine = provider._make_request("anvil_getAutomine", parameters={})  # pylint: disable=protected-access
+    automine = provider.get_auto_mine()
     return provider, automine, base_instance, hyperdrive_instance, hyperdrive_config
 
 
