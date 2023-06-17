@@ -3,12 +3,12 @@
 # v0.0.1 (2022-05-23)
 # FROM ghcr.io/delvtech/hyperdrive/migrations:0.0.1 as migrations
 # 2022-05-31
-FROM ghcr.io/delvtech/hyperdrive/migrations:nightly-3188e7df62a07a77c61c467ab640aeec836c79fe as migrations
+# FROM ghcr.io/delvtech/hyperdrive/migrations:nightly-3188e7df62a07a77c61c467ab640aeec836c79fe as migrations
+# v0.0.3 w/ relative path imports to work with ape
+FROM ghcr.io/delvtech/hyperdrive/migrations:212b56881cdc26135da4e11801b18b3a62dc4ae2 as migrations
 
 # ### Python Image ###
-# pinned to a specific image chosen from https://github.com/delvtech/elf-simulations/pkgs/container/elf-simulations%2Fpython-base
-# 2022-05-31 using ape v0.6.10.420
-FROM ghcr.io/delvtech/elf-simulations/python-base:nightly-28db487e38d1060e6a2864e1e994b0f2ee01fc21
+FROM python:3.9.16-bullseye
 
 # set bash as default shell
 SHELL ["/bin/bash", "-c"]
@@ -18,13 +18,13 @@ WORKDIR /app
 # copy everything in elf-simulations
 COPY . ./
 
+# install elfpy
+RUN python -m pip install --no-cache-dir --upgrade pip
+RUN python -m pip install --no-cache-dir -e .[with-dependencies,docs]
+RUN ape plugins install .
+
 # copy hyperdrive contracts from migrations image
 COPY --from=migrations /src/ ./hyperdrive_solidity/
+
 # copy foundry over from migrations image
 COPY --from=migrations /usr/local/bin/ /usr/local/bin
-
-# compile contracts
-RUN ape compile
-
-# install elf-simulations without dependencies
-RUN python -m pip install -e .

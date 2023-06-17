@@ -16,9 +16,11 @@ dependencies:
 
 solidity:
   import_remapping:
+    - "@openzeppelin/contracts=OpenZeppelin/4.9.0"
     - "openzeppelin-contracts/contracts=OpenZeppelin/4.9.0"
     - "@aave=Aave/1.17.2"
     - "forge-std=../../lib/forge-std/src"
+    - "solmate=../../lib/solmate/src"
 
 ethereum:
   default_network: local
@@ -28,7 +30,6 @@ ethereum:
     required_confirmations: 1
 
 foundry:
-  # port 8555 for CI
   anvil:
     timestamp: 0
     block_base_fee_per_gas: 0

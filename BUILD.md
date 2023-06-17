@@ -1,15 +1,22 @@
 # Build
 
-Our docker containers automatically build in the GitHub CI. However, if you wish to build it yourself you can do by following these steps:
+We use Docker to manage our build environment.
 
-First build the Python environment
-```
-docker build -t local-tag-python -f Dockerfile-python-base
+This requires access to the private hyperdrive repo, available only to Delv team members currently.
+
+To build a local image, make sure you have Docker installed and running, then use:
+
+```bash
+chmod +x build_local_docker_image.sh
+./build_local_docker_image.sh
 ```
 
-Next build the elfpy packages
+If built successfully, a `docker image ls` command should look like this:
+
 ```
-docker build -t local-tag-elfpy -f Dockerfile-elf-sims
+REPOSITORY    TAG       IMAGE ID       CREATED          SIZE
+elf-sims      latest    fd84351979d7   21 minutes ago   2.04GB
 ```
 
-Then in your Docker compose you can build with `image: local-tag-elfpy:latest`.
+This image receives the `elf-sims` tag and can be reference with`image: elf-sims:latest`,
+for instance if you're using Docker Compose.

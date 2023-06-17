@@ -19,7 +19,7 @@ import ape
 import numpy as np
 import requests
 from ape import accounts
-from ape.api import ProviderAPI, ReceiptAPI
+from ape.api import ProviderAPI
 from ape.contracts import ContractInstance
 from ape.logging import logger as ape_logger
 from ape.utils import generate_dev_accounts
@@ -41,6 +41,8 @@ from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
 from elfpy.math import FixedPoint
 from elfpy.utils.outputs import str_with_precision
 
+ape_logger.set_level(logging.ERROR)
+
 
 def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
@@ -56,11 +58,14 @@ def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tu
         )
         num_attempts = 120
         for attempt_num in range(num_attempts):
-            logging.info("\tAttempt %s out of %s", attempt_num + 1, num_attempts)
-            response = requests.get(bot_config.artifacts_url + "/addresses.json", timeout=10)
-            if response.status_code == 200:
-                deployed_addresses = response.json()
-                break
+            logging.info("\tAttempt %s out of %s to %s", attempt_num + 1, num_attempts, bot_config.artifacts_url)
+            try:
+                response = requests.get(f"{bot_config.artifacts_url}/addresses.json", timeout=10)
+                if response.status_code == 200:
+                    deployed_addresses = response.json()
+                    break
+            except requests.exceptions.ConnectionError as exc:
+                logging.info("Connection error: %s", exc)
             sleep(1)
         logging.info("Contracts deployed; addresses loaded.")
     if "baseToken" in deployed_addresses:
@@ -68,11 +73,14 @@ def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tu
         logging.info("found devnet base address: %s", addresses["baseToken"])
     else:
         addresses["baseToken"] = None
-    if "hyperdrive" in deployed_addresses:
-        addresses["hyperdrive"] = deployed_addresses["hyperdrive"]
+    if "mockHyperdrive" in deployed_addresses:
+        addresses["hyperdrive"] = deployed_addresses["mockHyperdrive"]
         logging.info("found devnet hyperdrive address: %s", addresses["hyperdrive"])
     else:
         addresses["hyperdrive"] = None
+    if "mockHyperdriveMath" in deployed_addresses:
+        addresses["hyperdriveMath"] = deployed_addresses["mockHyperdriveMath"]
+        logging.info("found devnet hyperdriveMath address: %s", addresses["hyperdriveMath"])
     return addresses
 
 
@@ -102,7 +110,6 @@ def create_agent(
     on_chain_trade_info: ape_utils.OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
     bot_config: BotConfig,
-    deployer_account: KeyfileAccount,
     rng: NumpyGenerator,
 ) -> Agent:
     """Create an agent as defined in bot_info, assign its address, give it enough base.
@@ -113,18 +120,16 @@ def create_agent(
         The bot to create.
     dev_accounts : list[KeyfileAccount]
         The list of dev accounts.
-    faucet : ContractInstance
+    faucet : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract for faucet that mints the testnet base token
-    base_instance : ContractInstance
+    base_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract for base token
     on_chain_trade_info : ape_utils.OnChainTradeInfo
         Information about on-chain trades.
-    hyperdrive_contract : ContractInstance
+    hyperdrive_contract : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract for hyperdrive
     bot_config : BotConfig
         Configuration parameters for the experiment
-    deployer_account : KeyfileAccount
-        The deployer account.
 
     Returns
     -------
@@ -157,17 +162,17 @@ def create_agent(
     agent.contract = dev_accounts[bot.index]  # assign its onchain contract
     if bot_config.devnet:
         agent.contract.balance += int(1e18)  # give it some eth
+
+    # mint base tokens for the agents
     if (need_to_mint := (params["budget"].scaled_value - base_instance.balanceOf(agent.contract.address)) / 1e18) > 0:
         logging.info(" agent_%s needs to mint %s Base", agent.contract.address[:8], str_with_precision(need_to_mint))
-        with ape.accounts.use_sender(agent.contract):
-            if bot_config.devnet:
-                txn_receipt: ReceiptAPI = base_instance.mint(
-                    agent.contract.address, int(50_000 * 1e18), sender=deployer_account
-                )
-            else:
-                assert faucet is not None, "Faucet must be provided to mint base on testnet."
-                txn_receipt: ReceiptAPI = faucet.mint(base_instance.address, agent.wallet.address, int(50_000 * 1e18))
-            txn_receipt.await_confirmations()
+        if bot_config.devnet:
+            txn_args = agent.contract.address, int(50_000 * 1e18)
+            ape_utils.attempt_txn(agent.contract, base_instance.mint, *txn_args)
+        else:
+            assert faucet is not None, "Faucet must be provided to mint base on testnet."
+            txn_args = base_instance.address, agent.wallet.address, int(50_000 * 1e18)
+            ape_utils.attempt_txn(agent.contract, faucet.mint, *txn_args)
     logging.info(
         " agent_%s is a %s with budget=%s Eth=%s Base=%s",
         agent.contract.address[:8],
@@ -192,7 +197,6 @@ def set_up_agents(
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
     addresses: dict[str, str],
-    deployer_account: KeyfileAccount,
     rng: NumpyGenerator,
 ) -> tuple[dict[str, Agent], ape_utils.OnChainTradeInfo]:
     """Set up python agents & corresponding on-chain accounts.
@@ -203,9 +207,9 @@ def set_up_agents(
         Configuration parameters for the experiment
     provider : ape.api.ProviderAPI
         The Ape object that connects to the Ethereum network.
-    hyperdrive_instance : ContractInstance
+    hyperdrive_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         The hyperdrive contract instance.
-    base_instance : ContractInstance
+    base_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         The base token contract instance.
     addresses : dict[str, str]
         Addresses of deployed contracts.
@@ -254,7 +258,6 @@ def set_up_agents(
                 on_chain_trade_info=on_chain_trade_info,
                 hyperdrive_contract=hyperdrive_instance,
                 bot_config=bot_config,
-                deployer_account=deployer_account,
                 rng=rng,
             )
             sim_agents[f"agent_{agent.wallet.address}"] = agent
@@ -275,9 +278,9 @@ def do_trade(
         The trade to execute.
     sim_agents : dict[str, Agent]
         Dict of agents used in the simulation.
-    hyperdrive_instance : ContractInstance
+    hyperdrive_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         The hyperdrive contract instance.
-    base_instance : ContractInstance
+    base_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         The base token contract instance.
 
     Returns
@@ -295,12 +298,6 @@ def do_trade(
     trade = market_trade.trade
     agent_contract = sim_agents[f"agent_{trade.wallet.address}"].contract
     amount = trade.trade_amount.scaled_value  # ape works with ints
-
-    # print(f"scaling down from {type(amount)}{amount=}", end="")
-    ## amount = int(np.floor(amount/1e18) * 1e18)
-    ## amount -= int(1e18)
-    # amount = int(amount / 2)
-    # print(f" to {type(amount)}{amount=}")
 
     # If agent does not have enough base approved for this trade, then approve another 50k
     # allowance(address owner, address spender) → uint256
@@ -369,7 +366,11 @@ def log_and_show_block_info(
 
 
 def set_up_devnet(
-    addresses, project: ape_utils.HyperdriveProject, provider, bot_config: BotConfig, pricing_model
+    addresses,
+    project: ape_utils.HyperdriveProject,
+    provider,
+    bot_config: BotConfig,
+    pricing_model: HyperdrivePricingModel,
 ) -> tuple[ContractInstance, ContractInstance, dict[str, str]]:
     """Load deployed devnet addresses or deploy new contracts.
 
@@ -388,8 +389,14 @@ def set_up_devnet(
 
     Returns
     -------
+    base_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        Ape object representing an instance of a deployed base token contract.
+    hyperdrive_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        Ape object representing an instance of a deployed base Hyperdrive contract.
     addresses : dict
-        The addresses of the deployed contracts.
+        The addresses of deployed Hyperdrive contracts.
+    deployer_account : KeyfileAccount
+        The account used to deploy the contracts.
     """
     # pylint: disable=too-many-arguments
     deployer_account = ape.accounts.test_accounts[0]
@@ -414,7 +421,7 @@ def set_up_devnet(
             bot_config, base_instance, deployer_account, pricing_model, project
         )
         addresses["hyperdrive"] = hyperdrive_instance.address
-    return base_instance, hyperdrive_instance, addresses, deployer_account
+    return base_instance, hyperdrive_instance, addresses
 
 
 def set_up_ape(
@@ -443,18 +450,13 @@ def set_up_ape(
     -------
     provider : ProviderAPI
         The Ape object that represents your connection to the Ethereum network.
-    base_instance : ContractInstance
+    base_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         The deployed base token instance.
-    hyperdrive_instance : ContractInstance
+    hyperdrive_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         The deployed Hyperdrive instance.
     hyperdrive_config : dict
         The configuration of the deployed Hyperdrive instance
-    deployer_account : KeyfileAccount
-        The account used to deploy the contracts.
     """
-    # pylint: disable=too-many-arguments
-    # sourcery skip: inline-variable, move-assign
-    deployer_account = None
     provider: ProviderAPI = ape.networks.parse_network_choice(
         network_choice=network_choice,
         provider_settings=provider_settings,
@@ -468,13 +470,8 @@ def set_up_ape(
         path=Path.cwd(),
         hyperdrive_address=addresses["hyperdrive"] if bot_config.devnet else addresses["goerli_hyperdrive"],
     )
-
-    # quick test
-    # hyperdrive_instance = project.get_contract("IHyperdrive").at("0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9")
-    # test_result = hyperdrive_instance.getPoolConfig()
-
     if bot_config.devnet:  # we're on devnet
-        base_instance, hyperdrive_instance, addresses, deployer_account = set_up_devnet(
+        base_instance, hyperdrive_instance, addresses = set_up_devnet(
             addresses, project, provider, bot_config, pricing_model
         )
     else:  # not on devnet, means we're on goerli, so we use known goerli addresses
@@ -487,7 +484,7 @@ def set_up_ape(
     hyperdrive_config = ape_utils.get_hyperdrive_config(hyperdrive_instance)
     # becomes provider.get_auto_mine() with this PR: https://github.com/ApeWorX/ape-foundry/pull/51
     automine = provider._make_request("anvil_getAutomine", parameters={})  # pylint: disable=protected-access
-    return provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account
+    return provider, automine, base_instance, hyperdrive_instance, hyperdrive_config
 
 
 def do_policy(
@@ -562,12 +559,10 @@ def main(
     pricing_model = HyperdrivePricingModel()
     no_crash_streak = 0
     last_executed_block = 0
-    provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
+    provider, automine, base_instance, hyperdrive_instance, hyperdrive_config = set_up_ape(
         bot_config, provider_settings, addresses, network_choice, pricing_model
     )
-    sim_agents, _ = set_up_agents(
-        bot_config, provider, hyperdrive_instance, base_instance, addresses, deployer_account, rng
-    )
+    sim_agents, _ = set_up_agents(bot_config, provider, hyperdrive_instance, base_instance, addresses, rng)
     ape_utils.dump_agent_info(sim_agents, bot_config)
     logging.info("Constructed %s agents:", len(sim_agents))
     for agent_name in sim_agents:
@@ -629,7 +624,6 @@ if __name__ == "__main__":
         log_file_and_stdout=config.log_file_and_stdout,
         log_formatter=config.log_formatter,
     )
-    ape_logger.set_level(logging.ERROR)
     CRASH_FILE = f".logging/no_crash_streak{'_devnet' if config.devnet else ''}.txt"
     # inputs
     NETWORK_CHOICE = "ethereum:local:" + ("alchemy" if config.alchemy else "foundry")
