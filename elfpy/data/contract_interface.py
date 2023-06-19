@@ -27,8 +27,9 @@ class HyperdriveAddressesJson:
 
     # pylint: disable=too-few-public-methods
 
-    hyperdrive: str = attr.ib()
     base_token: str = attr.ib()
+    mock_hyperdrive: str = attr.ib()
+    mock_hyperdrive_math: str = attr.ib()
 
 
 def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
@@ -153,7 +154,7 @@ def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3_contain
         state_abi = json.load(file)["abi"]
     # get contract instance of hyperdrive
     hyperdrive_contract: Contract = web3_container.eth.contract(
-        address=address.to_checksum_address(addresses.hyperdrive), abi=state_abi
+        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
     )
     return hyperdrive_contract
 
