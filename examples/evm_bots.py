@@ -482,8 +482,7 @@ def set_up_ape(
         hyperdrive_instance: ContractInstance = project.get_hyperdrive_contract()
     # read the hyperdrive config from the contract, and log (and print) it
     hyperdrive_config = ape_utils.get_hyperdrive_config(hyperdrive_instance)
-    automine = provider.get_auto_mine()
-    return provider, automine, base_instance, hyperdrive_instance, hyperdrive_config
+    return provider, base_instance, hyperdrive_instance, hyperdrive_config
 
 
 def do_policy(
@@ -558,7 +557,7 @@ def main(
     pricing_model = HyperdrivePricingModel()
     no_crash_streak = 0
     last_executed_block = 0
-    provider, automine, base_instance, hyperdrive_instance, hyperdrive_config = set_up_ape(
+    provider, base_instance, hyperdrive_instance, hyperdrive_config = set_up_ape(
         bot_config, provider_settings, addresses, network_choice, pricing_model
     )
     sim_agents, _ = set_up_agents(bot_config, provider, hyperdrive_instance, base_instance, addresses, rng)
@@ -588,7 +587,8 @@ def main(
                     bot_config,
                 )
             last_executed_block = block_number
-        if bot_config.devnet and automine:  # anvil automatically mines after you send a transaction. or manually.
+        if bot_config.devnet and provider.automine:  # anvil automatically mines after you send a transaction. or manually.
+            sleep(0.5)
             ape.chain.mine()
         else:  # either on goerli or on devnet with automine disabled (which means time-based mining is enabled)
             sleep(1)
