@@ -69,8 +69,8 @@ docs = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/delvtech/analysis"
-"Bug Tracker" = "https://github.com/delvtech/analysis/issues"
+"Homepage" = "https://github.com/delvtech/elf-simulations"
+"Bug Tracker" = "https://github.com/delvtech/elf-simulations/issues"
 
 [build-system]
 requires = ["flit_core>=3.2"]
