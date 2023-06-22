@@ -1,6 +1,9 @@
 # APE temprorary until we get the GH actions & workflow set up
 # ape-config.yaml
 
+# for create configuration jsons to run bot scripts
+.configs
+
 # default logging directory
 .logging
 
