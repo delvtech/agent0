@@ -1,14 +1,19 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx."""
 from __future__ import annotations
 
+# std libs
 import json
 import logging
 import os
+import re
+from time import sleep
 from collections import namedtuple
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
 
+# third party libs
+import requests
 import ape
 import numpy as np
 import pandas as pd
@@ -22,9 +27,12 @@ from ape.types import AddressType, ContractType
 from ape_accounts.accounts import KeyfileAccount
 from fixedpointmath import FixedPoint
 
+# custom libs
 from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, simulators, time, types
 from elfpy.markets.hyperdrive import AssetIdPrefix, HyperdriveMarketState, HyperdrivePricingModel, hyperdrive_assets
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
+from elfpy.bots import BotConfig
+from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.utils import outputs as output_utils
 from elfpy.utils import sim_utils
@@ -120,6 +128,50 @@ class DefaultHyperdriveConfig:
     position_duration_seconds: int = checkpoint_duration_seconds * checkpoints
     target_liquidity = FixedPoint(1 * 10**6)
 
+def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str] | None = None) -> tuple[dict[str, str], str]:
+    """Get devnet addresses from address file."""
+    if addresses is None:
+        addresses = {}
+    deployed_addresses = {}
+    # get deployed addresses from local file, if it exists
+    address_file_path = bot_config.scratch["project_dir"] / "hyperdrive_solidity/artifacts/addresses.json"
+    if os.path.exists(address_file_path):
+        logging.info("Loading addresses.json from local file. This should only be used for development.")
+        with open(address_file_path, "r", encoding="utf-8") as file:
+            deployed_addresses = json.load(file)
+    else:  # otherwise get deployed addresses from artifacts server
+        logging.info(
+            "Attempting to load addresses.json, which requires waiting for the contract deployment to complete."
+        )
+        num_attempts = 120
+        for attempt_num in range(num_attempts):
+            logging.info("\tAttempt %s out of %s to %s", attempt_num + 1, num_attempts, bot_config.artifacts_url)
+            try:
+                response = requests.get(f"{bot_config.artifacts_url}/addresses.json", timeout=10)
+                if response.status_code == 200:
+                    deployed_addresses = response.json()
+                    break
+            except requests.exceptions.ConnectionError as exc:
+                logging.info("Connection error: %s", exc)
+            sleep(1)
+        logging.info("Contracts deployed; addresses loaded.")
+    if "baseToken" in deployed_addresses:
+        addresses["baseToken"] = deployed_addresses["baseToken"]
+        logging.info("found devnet base address: %s", addresses["baseToken"])
+    else:
+        addresses["baseToken"] = None
+    if "mockHyperdrive" in deployed_addresses:
+        addresses["hyperdrive"] = deployed_addresses["mockHyperdrive"]
+        logging.info("found devnet hyperdrive address: %s", addresses["hyperdrive"])
+    elif "hyperdrive" in deployed_addresses:
+        addresses["hyperdrive"] = deployed_addresses["hyperdrive"]
+        logging.info("found devnet hyperdrive address: %s", addresses["hyperdrive"])
+    else:
+        addresses["hyperdrive"] = None
+    if "mockHyperdriveMath" in deployed_addresses:
+        addresses["hyperdriveMath"] = deployed_addresses["mockHyperdriveMath"]
+        logging.info("found devnet hyperdriveMath address: %s", addresses["hyperdriveMath"])
+    return addresses
 
 def get_hyperdrive_config(hyperdrive_instance) -> dict:
     """Get the hyperdrive config from a deployed hyperdrive contract.
