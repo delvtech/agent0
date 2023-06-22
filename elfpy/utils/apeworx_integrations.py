@@ -431,7 +431,7 @@ def get_wallet_from_onchain_trade_info(
                 if new_balance == 0:
                     # remove key of "mint_time" from the "wallet.shorts" dict
                     wallet.shorts.pop(mint_time, None)
-                else:
+                else:  # position balance is not zero
                     wallet.shorts.update(
                         {
                             mint_time: Short(
@@ -454,7 +454,8 @@ def get_wallet_from_onchain_trade_info(
                 if new_balance == 0:
                     # remove key of "mint_time" from the "wallet.longs" dict
                     wallet.longs.pop(mint_time, None)
-                wallet.longs.update({mint_time: Long(balance=new_balance)})
+                else:  # position balance is not zero
+                    wallet.longs.update({mint_time: Long(balance=new_balance)})
                 logging.debug("storing in wallet as %s", {mint_time: Long(balance=balance)})
             elif asset_type == "LP":
                 wallet.lp_tokens += FixedPoint(scaled_value=balance)
