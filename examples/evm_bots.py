@@ -7,7 +7,6 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import argparse
 import json
 import logging
-import os
 from datetime import datetime
 from pathlib import Path
 from time import sleep
@@ -17,7 +16,7 @@ from typing import cast
 # external lib
 import ape
 import numpy as np
-import requests
+import pandas as pd
 from ape import accounts
 from ape.api import ProviderAPI
 from ape.contracts import ContractInstance
@@ -42,47 +41,6 @@ from elfpy.math import FixedPoint
 from elfpy.utils.outputs import str_with_precision
 
 ape_logger.set_level(logging.ERROR)
-
-
-def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
-    """Get devnet addresses from address file."""
-    deployed_addresses = {}
-    # get deployed addresses from local file, if it exists
-    address_file_path = bot_config.scratch["project_dir"] / "hyperdrive_solidity/artifacts/addresses.json"
-    if os.path.exists(address_file_path):
-        with open(address_file_path, "r", encoding="utf-8") as file:
-            deployed_addresses = json.load(file)
-    else:  # otherwise get deployed addresses from artifacts server
-        logging.info(
-            "Attempting to load addresses.json, which requires waiting for the contract deployment to complete."
-        )
-        num_attempts = 120
-        for attempt_num in range(num_attempts):
-            logging.info("\tAttempt %s out of %s to %s", attempt_num + 1, num_attempts, bot_config.artifacts_url)
-            try:
-                response = requests.get(f"{bot_config.artifacts_url}/addresses.json", timeout=10)
-                if response.status_code == 200:
-                    deployed_addresses = response.json()
-                    break
-            except requests.exceptions.ConnectionError as exc:
-                logging.info("Connection error: %s", exc)
-            sleep(1)
-        logging.info("Contracts deployed; addresses loaded.")
-    if "baseToken" in deployed_addresses:
-        addresses["baseToken"] = deployed_addresses["baseToken"]
-        logging.info("found devnet base address: %s", addresses["baseToken"])
-    else:
-        addresses["baseToken"] = None
-    if "mockHyperdrive" in deployed_addresses:
-        addresses["hyperdrive"] = deployed_addresses["mockHyperdrive"]
-        logging.info("found devnet hyperdrive address: %s", addresses["hyperdrive"])
-    else:
-        addresses["hyperdrive"] = None
-    if "mockHyperdriveMath" in deployed_addresses:
-        addresses["hyperdriveMath"] = deployed_addresses["mockHyperdriveMath"]
-        logging.info("found devnet hyperdriveMath address: %s", addresses["hyperdriveMath"])
-    return addresses
-
 
 def get_accounts(bot_config: BotConfig) -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
@@ -521,6 +479,25 @@ def do_policy(
     return no_crash_streak
 
 
+def dump_state(provider, bot_config, block_number, rng, hyperdrive_instance):
+    """Dump relevant pieces of information: full node state from anvil, random generator state, and trade history."""
+    dump_name = f"state_dump_rng_{bot_config.random_seed}_block_{block_number}"  # we name our dumps in this house
+    node_state_hex = provider._make_request("anvil_dumpState", parameters={})  # pylint: disable=protected-access
+    node_state_dump_file_name = f"{dump_name}_node_state.json"
+    with open(bot_config.scratch["state_dump_file_path"] / node_state_dump_file_name, "w", encoding="utf-8") as file:
+        json.dump(node_state_hex, file)
+    random_state_dump_file_name = f"{dump_name}_random_state.json"
+    with open(bot_config.scratch["state_dump_file_path"] / random_state_dump_file_name, "w", encoding="utf-8") as file:
+        print(f"printing {rng.bit_generator.state=}")
+        json.dump(rng.bit_generator.state, file)
+    on_chain_trade_info = ape_utils.get_on_chain_trade_info(hyperdrive_instance)  # get all trades ever
+    trade_history_dump_file_name = f"{dump_name}_trade_history.csv"
+    df_share_price = pd.DataFrame(on_chain_trade_info.share_price.items(), columns=["block_number", "share_price"])
+    pd.merge(on_chain_trade_info.trades, df_share_price, on="block_number").to_csv(
+        bot_config.scratch["state_dump_file_path"] / trade_history_dump_file_name, index=False
+    )
+
+
 def main(
     bot_config: BotConfig,
     rng: NumpyGenerator,
@@ -532,6 +509,10 @@ def main(
     # pylint: disable=too-many-locals
     # Custom parameters for this experiment
     bot_config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
+    bot_config.scratch["state_dump_file_path"] = bot_config.scratch["project_dir"] / "state_dumps"
+    # make dir if it doesn't exist
+    if not bot_config.scratch["state_dump_file_path"].exists():
+        bot_config.scratch["state_dump_file_path"].mkdir()
     if "num_louie" not in bot_config.scratch:
         bot_config.scratch["num_louie"]: int = 1
     if "num_sally" not in bot_config.scratch:
@@ -555,7 +536,7 @@ def main(
         "goerli_hyperdrive": "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2",
     }
     if bot_config.devnet:
-        addresses = get_devnet_addresses(bot_config, addresses)
+        addresses = ape_utils.get_devnet_addresses(bot_config, addresses)
     pricing_model = HyperdrivePricingModel()
     no_crash_streak = 0
     last_executed_block = 0
@@ -574,6 +555,9 @@ def main(
         block_timestamp = latest_block.timestamp
         if block_number > last_executed_block:
             log_and_show_block_info(provider, no_crash_streak, block_number, block_timestamp)
+            # dump state at the beginning of every new block
+            dump_state(provider, bot_config, block_number, rng, hyperdrive_instance)
+            # create market object needed for agent execution
             elfpy_market = ape_utils.create_elfpy_market(
                 pricing_model, hyperdrive_instance, hyperdrive_config, block_number, block_timestamp, start_timestamp
             )
