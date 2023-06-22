@@ -86,10 +86,8 @@ class Agent:
         for action in actions:  # edit each action in place
             if action.market == MarketType.HYPERDRIVE and action.trade.mint_time is None:
                 action.trade.mint_time = market.latest_checkpoint_time
-        # TODO: Add safety checks
-        # e.g. if trade amount > 0, whether there is enough money in the account
-        # agent wallet Long and Short balances should not be able to be negative
-        # issue #57
+                if action.trade.trade_amount <= 0:
+                    raise ValueError("Trade amount cannot be zero or negative.")
         return actions
 
     def get_liquidation_trades(self, market: HyperdriveMarket) -> list[Trade]:
