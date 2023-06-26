@@ -1,6 +1,6 @@
 # Install -- overview
 
-Python 3.9 is required currently, to maintain compatibility with Google Colaboratory.
+Elf-simulations has been tested with Python 3.9 and 3.10.
 
 Set up your favorite python virtual environment. We use:
 
@@ -18,8 +18,8 @@ After installation, we can use pyenv to install Python from within the repo.
 
 ```bash
 cd <repo_location>
-pyenv install 3.9
-pyenv local 3.9
+pyenv install 3.10
+pyenv local 3.10
 python -m venv .venv
 source .venv/bin/activate
 ```
@@ -28,22 +28,20 @@ Once you're in your virtual environment, install elfpy with project dependencies
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install -e .[with-dependencies]
+python -m pip install --upgrade -e ".[with-dependencies]"
 ```
 
 If you intend to improve the documentation, then you must also install the packages:
 
 ```bash
-python -m pip install -e .[with-dependencies,docs]
+python -m pip install --upgrade -e ".[with-dependencies,docs]"
 ```
 
-- `pyenv install 3.9` You should now see the correct version when you run `pyenv versions`.
-- `pyenv local 3.9` This command creates a `.python-version` file in your current directory. If you have pyenv active in your environment, this file will automatically activate this version for you.
+An explanation of what the above steps do:
+- `pyenv install 3.10` You should now see the correct version when you run `pyenv versions`.
+- `pyenv local 3.10` This command creates a `.python-version` file in your current directory. If you have pyenv active in your environment, this file will automatically activate this version for you.
 - `python -m venv .venv` This will create a `.venv` folder in your repo directory that stores the local python build & packages. After this command you should be able to type which python and see that it points to an executable inside `.venv/`.
-- `python -m pip install -e .[with-dependencies]` This installs elfpy locally such that the install updates automatically any time you change the source code. This also installs all dependencies defined in `pyproject.toml`.
-
-Finally, you can test that everything is working by calling:
-`PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest tests/`
+- `python -m pip install --upgrade -e ".[with-dependencies]"` This installs elfpy locally such that the install updates automatically any time you change the source code. This also installs all dependencies defined in `pyproject.toml`.
 
 ## Apeworks and Contract Integration
 
@@ -68,8 +66,10 @@ ape plugins install .
 ape compile
 ```
 
-You should now be able to test that everything is working with `pytest .`
+## Testing
 
-NOTE: These steps also set you up to run a local blockchain instance without Docker. To do so, you can run `ape compile -v DEBUG` to compile the hyperdrive repo without optimizations. You'll need to repreat this command any time you change a Hyperdrive solidity file. Then to start the service run `anvil --port [PREFERRED-PORT] --block-time [SECONDS-PER-BLOCK] --host 0.0.0.0`, where you fill in the commands you need. For example `8549` for the port and `12` for the seconds per block.
+You can test that everything is working by calling: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest .`
+
+You can test against a local testnet node using [Anvil]([url](https://book.getfoundry.sh/reference/anvil/)) with `anvil`.
 
 NOTE: `pip` might complain about dependency incompatibility between eth-ape and some plugins. This discrepancy comes from apeworx, although our examples should run without dealing with the incompatibility.
