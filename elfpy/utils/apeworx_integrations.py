@@ -128,6 +128,7 @@ class DefaultHyperdriveConfig:
     position_duration_seconds: int = checkpoint_duration_seconds * checkpoints
     target_liquidity = FixedPoint(1 * 10**6)
 
+
 def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str] | None = None) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
     if addresses is None:
@@ -172,6 +173,7 @@ def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str] | None
         addresses["hyperdriveMath"] = deployed_addresses["mockHyperdriveMath"]
         logging.info("found devnet hyperdriveMath address: %s", addresses["hyperdriveMath"])
     return addresses
+
 
 def get_hyperdrive_config(hyperdrive_instance) -> dict:
     """Get the hyperdrive config from a deployed hyperdrive contract.
@@ -323,30 +325,29 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
     )
 
 
-def get_on_chain_trade_info(hyperdrive_contract: ContractInstance, block_number: int | None = None) -> OnChainTradeInfo:
+OnChainTradeInfo = namedtuple(
+    "OnChainTradeInfo", ["trades", "unique_maturities", "unique_ids", "unique_block_numbers", "share_price"]
+)
+
+
+def get_trade_history(hyperdrive_contract: ContractInstance, block_number: int | None = None) -> pd.DataFrame:
     r"""Get all trades from hyperdrive contract.
 
     Arguments
     ---------
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
+    block_number : int, Optional
+        The block number at which to start querying. If not provided, query from the beginning.
 
     Returns
     -------
-    OnChainTradeInfo
-        Named tuple containing the following fields:
-        - trades : pd.DataFrame
-            DataFrame containing all trades from the Hyperdrive contract.
-        - unique_maturities : list
-            List of unique maturity timestamps across all assets.
-        - unique_ids : list
-            List of unique ids across all assets.
-        - unique_block_numbers_ : list
-            List of unique block numbers across all trades.
-        - share_price_
-            Map of share price to block number.
+    pd.DataFrame | None
+        History of all trade events.
     """
     trades = hyperdrive_contract.TransferSingle.query("*", start_block=block_number or 0, stop_block=block_number)
+    if len(trades) == 0:
+        return None
     trades = pd.concat(  # flatten event_arguments
         [
             trades.loc[:, [c for c in trades.columns if c != "event_arguments"]],
@@ -357,32 +358,22 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance, block_number:
     tuple_series = trades.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)  # type: ignore
     trades["prefix"], trades["maturity_timestamp"] = zip(*tuple_series)  # split into two columns
     trades["trade_type"] = trades["prefix"].apply(lambda x: AssetIdPrefix(x).name)
-
-    unique_maturities_ = trades["maturity_timestamp"].unique()
-    unique_maturities_ = unique_maturities_[unique_maturities_ != 0]
-
-    unique_ids_: np.ndarray = trades["id"].unique()
-    unique_ids_ = unique_ids_[unique_ids_ != 0]
-
-    unique_block_numbers_ = trades["block_number"].unique()
-
     share_price_ = {
         block_number_: hyperdrive_contract.getPoolInfo(block_identifier=int(block_number_))["sharePrice"]
-        for block_number_ in unique_block_numbers_
+        for block_number_ in trades["block_number"].unique()
     }
-    for block_number_, price in share_price_.items():
-        logging.debug(("block_number_={}, price={}", block_number_, price))
-
-    return OnChainTradeInfo(trades, unique_maturities_, unique_ids_, unique_block_numbers_, share_price_)
+    df_share_price = pd.DataFrame(share_price_.items(), columns=["block_number", "share_price"])
+    return pd.merge(trades, df_share_price, on="block_number")
 
 
-def get_wallet_from_onchain_trade_info(
+def get_wallet_from_trade_history(
     address: str,
-    info: OnChainTradeInfo,
+    trade_history: pd.DataFrame,
     hyperdrive_contract: ContractInstance,
     base_contract: ContractInstance,
     index: int = 0,
     add_to_existing_wallet: Wallet | None = None,
+    tolerance = None,
 ) -> Wallet:
     # pylint: disable=too-many-arguments, too-many-branches
 
@@ -392,8 +383,8 @@ def get_wallet_from_onchain_trade_info(
     ---------
     address : str
         Address of the wallet.
-    info : OnChainTradeInfo
-        On-chain trade info.
+    trade_history : pd.DataFrame
+        History of all trade events.
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
     base_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
@@ -407,6 +398,8 @@ def get_wallet_from_onchain_trade_info(
         Wallet with Short, Long, and LP positions.
     """
     # TODO: remove restriction forcing Wallet index to be an int (issue #415)
+    if tolerance is None:
+        tolerance = MAXIMUM_BALANCE_MISMATCH_IN_WEI
     if add_to_existing_wallet is None:
         wallet = Wallet(
             address=index,
@@ -416,13 +409,13 @@ def get_wallet_from_onchain_trade_info(
         )
     else:
         wallet = add_to_existing_wallet
-    for position_id in info.unique_ids:  # loop across all unique positions
-        trades_in_position = ((info.trades["from"] == address) | (info.trades["to"] == address)) & (
-            info.trades["id"] == position_id
-        )
-        logging.info("found %s trades for %s in position %s", sum(trades_in_position), address[:8], position_id)
-        positive_balance = int(info.trades.loc[(trades_in_position) & (info.trades["to"] == address), "value"].sum())
-        negative_balance = int(info.trades.loc[(trades_in_position) & (info.trades["from"] == address), "value"].sum())
+    for position_id in trade_history["id"].unique():  # loop across all unique positions
+        from_agent = trade_history["from"] == address
+        to_agent = trade_history["to"] == address
+        relevant_trades = ((from_agent) | (to_agent)) & (trade_history["id"] == position_id)
+        logging.debug("found %s trades for %s in position %s", sum(relevant_trades), address[:8], position_id)
+        positive_balance = int(trade_history.loc[relevant_trades & (to_agent), "value"].sum())
+        negative_balance = int(trade_history.loc[relevant_trades & (from_agent), "value"].sum())
         balance = positive_balance - negative_balance
         logging.debug(
             "balance %s = positive_balance %s - negative_balance %s", balance, positive_balance, negative_balance
@@ -430,34 +423,34 @@ def get_wallet_from_onchain_trade_info(
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = AssetIdPrefix(asset_prefix).name
         mint_time = maturity - SECONDS_IN_YEAR
-        logging.info(" => %s(%s) maturity=%s mint_time=%s", asset_type, asset_prefix, maturity, mint_time)
+        logging.debug(" => %s(%s) maturity=%s mint_time=%s", asset_type, asset_prefix, maturity, mint_time)
 
         on_chain_balance = 0
         # verify our calculation against the onchain balance
-        if add_to_existing_wallet is None:
+        if add_to_existing_wallet is None and position_id != 0:
             on_chain_balance = hyperdrive_contract.balanceOf(position_id, address)
             # only do balance checks if not marignal update
-            if abs(balance - on_chain_balance) > MAXIMUM_BALANCE_MISMATCH_IN_WEI:
+            if abs(balance - on_chain_balance) > tolerance:
                 raise ValueError(
                     f"events {balance=} and {on_chain_balance=} disagree by "
-                    f"more than {MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address}"
+                    f"more than {tolerance} wei for {address}"
                 )
-            logging.info(" => calculated balance = on_chain = %s", output_utils.str_with_precision(balance))
+            logging.debug(" => calculated balance = on_chain = %s", output_utils.str_with_precision(balance))
         # check if there's an outstanding balance
         if balance != 0 or on_chain_balance != 0:
             if asset_type == "SHORT":
                 # loop across all the positions owned by this wallet
                 sum_product_of_open_share_price_and_value, sum_value = 0, 0
-                for specific_trade in trades_in_position.index[trades_in_position]:
-                    value = info.trades.loc[specific_trade, "value"]
-                    value *= -1 if info.trades.loc[specific_trade, "from"] == address else 1
+                for specific_trade in relevant_trades.index[relevant_trades]:
+                    value = trade_history.loc[specific_trade, "value"]
+                    value *= -1 if trade_history.loc[specific_trade, "from"] == address else 1
                     sum_value += value
                     sum_product_of_open_share_price_and_value += (
-                        value * info.share_price[info.trades.loc[specific_trade, "block_number"]]
+                        value * trade_history.loc[specific_trade, "share_price"]
                     )
                 open_share_price = int(sum_product_of_open_share_price_and_value / sum_value)
                 assert (
-                    abs(balance - sum_value) <= MAXIMUM_BALANCE_MISMATCH_IN_WEI
+                    abs(balance - sum_value) <= tolerance
                 ), "weighted average open share price calculation is wrong"
                 logging.debug("calculated weighted average open share price of %s", open_share_price)
                 previous_balance = wallet.shorts[mint_time].balance if mint_time in wallet.shorts else 0
@@ -732,9 +725,7 @@ def get_agent_deltas(txn_receipt: ReceiptAPI, trade, addresses, trade_type, pool
                 )
             },
         )
-    else:
-        if trade_type != "closeShort":
-            raise ValueError(f"Unknown trade type: {trade_type}")
+    elif trade_type == "closeShort":
         agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),
@@ -745,6 +736,8 @@ def get_agent_deltas(txn_receipt: ReceiptAPI, trade, addresses, trade_type, pool
                 )
             },
         )
+    else:
+        raise ValueError(f"Unknown trade type: {trade_type}")
     return agent_deltas
 
 
@@ -977,7 +970,7 @@ def ape_trade(
         return get_pool_state(txn_receipt=txn_receipt, hyperdrive_contract=hyperdrive_contract), txn_receipt
     except TransactionError as exc:
         logging.error(
-            "Failed to execute %s: %s\n =>  Amount: %s\n => Agent: %s\n => Pool: %s",
+            "Failed to execute %s: %s\n => Amount: %s\n => Agent: %s\n => Pool: %s",
             trade_type,
             exc,
             output_utils.str_with_precision(amount),

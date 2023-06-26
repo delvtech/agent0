@@ -48,6 +48,10 @@ class BotConfig(types.FrozenClass):
     # In general the bot will be more risk averse as it grows to infinity.
     # A value of 0 will usually disable it.
     risk_threshold: float = 0.0
+    # whether or not to dump state at every block
+    dump_state: bool = False
+    # whether to initialize state from a specific point
+    load_state_id: str | None = None
     # scratch space for any application-specific & extraneous parameters
     scratch: dict[Any, Any] = field(default_factory=dict)
 
