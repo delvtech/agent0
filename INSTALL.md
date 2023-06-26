@@ -43,32 +43,27 @@ An explanation of what the above steps do:
 - `python -m venv .venv` This will create a `.venv` folder in your repo directory that stores the local python build & packages. After this command you should be able to type which python and see that it points to an executable inside `.venv/`.
 - `python -m pip install --upgrade -e ".[with-dependencies]"` This installs elfpy locally such that the install updates automatically any time you change the source code. This also installs all dependencies defined in `pyproject.toml`.
 
-## Apeworks and Contract Integration
+## Working with smart contracts
 
 We run several tests and offer utilities that depend on executing Hyperdrive solidity contracts. This is not required to use elfpy.
 
 NOTE: The Hyperdrive solidity implementation is currently under security review, and thus is not available publicly.
 The following instructions will not work for anyone who is not a member of Delv.
 
-First, [install Forge](https://github.com/foundry-rs/foundry#installatio://github.com/foundry-rs/foundry#installation).
-
-Next, to use apeworx with elfpy, clone and sym link the hyperdrive repo, into `hyperdrive_solidity/`, i.e.:
+Clone and sym link the hyperdrive repo, into `hyperdrive_solidity/`, i.e.:
 
 ```bash
 git clone https://github.com/delvtech/hyperdrive.git ../hyperdrive
 ln -s ../hyperdrive hyperdrive_solidity
 ```
 
-then run:
+Complete the steps in [Hyperdrive's Pre-requisites section](https://github.com/delvtech/hyperdrive#pre-requisites).
 
-```bash
-ape plugins install .
-ape compile
-```
+Install Ape plugins with `ape plugins install .`
 
 ## Testing
 
-You can test that everything is working by calling: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest .`
+You can test that everything is working by calling: `python -m pytest .`
 
 You can test against a local testnet node using [Anvil]([url](https://book.getfoundry.sh/reference/anvil/)) with `anvil`.
 
