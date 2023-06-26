@@ -149,6 +149,7 @@ def create_agent(
         trade_history=trade_history,
         hyperdrive_contract=hyperdrive_contract,
         base_contract=base_instance,
+        tolerance=1e16 if bot_config.load_state_id is not None else None
     )
     return agent
 
@@ -594,11 +595,8 @@ def load_state(bot_config, rng) -> tuple[int, list[str], list[str], pd.DataFrame
     state_id = bot_config.load_state_id.replace(".json", "")
     with open(bot_config.scratch["state_dump_file_path"] / f"{state_id}.json", "r", encoding="utf-8") as file:
         state = json.load(file)
-    # se tthe random seed
     bot_config.random_seed = state["rand_seed"]
-    # set the state of the rng
     rng.bit_generator.state = state["rand_state"]
-    # reconstitute
     trade_history = pd.DataFrame(state["trade_history"][0])
     return state["block_number"], state["addresses"], state["agent_addresses"], trade_history
 
@@ -657,31 +655,7 @@ def main(
     sim_agents, trade_history, dev_accounts = set_up_agents(
         bot_config, provider, hyperdrive_instance, base_instance, addresses, rng, trade_history
     )
-    # list_of_addresses = list(set(trade_history["from"].to_list()+trade_history["to"].to_list()))
-    # list_of_addresses = [l for l in list_of_addresses if l != "0x0000000000000000000000000000000000000000"]
-    list_of_addresses = dev_accounts
-    for idx, address in enumerate(list_of_addresses):
-        print(f"querying agent_{idx} at addr={address}")
-        wallet = ape_utils.get_wallet_from_trade_history(
-            address=str(address),
-            index=idx,
-            trade_history=trade_history,
-            hyperdrive_contract=hyperdrive_instance,
-            base_contract=base_instance,
-        )
-        print(f"{wallet=}")
-        log_str = f"agent_{idx} has wallet:"
-        for _, long in wallet.longs.items():
-            print(f"{long=}")
-            print(f"{type(long)=}")
-            log_str += f"  long {long.balance}"
-        for _, short in wallet.shorts.items():
-            print(f"{short=}")
-            print(f"{type(short)=}")
-            log_str += f"  short {short.balance}"
-        log_str += f"  lp_tokens {wallet.lp_tokens}"
-        print(log_str)
-        logging.info("inspected kek")
+    ape_utils.inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_instance)
     ape_utils.dump_agent_info(sim_agents, bot_config)
     logging.info("Constructed %s agents:", len(sim_agents))
     for agent_name in sim_agents:
