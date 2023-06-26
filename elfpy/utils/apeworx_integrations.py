@@ -129,6 +129,73 @@ class DefaultHyperdriveConfig:
     target_liquidity = FixedPoint(1 * 10**6)
 
 
+def inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_instance, tolerance = 1e16):
+    """Sanity check trade history and balances.
+
+    """
+    for idx, address in enumerate(agent_addresses):
+        log_str = f"querying agent_{idx} at addr={address}"
+
+        # create wallet
+        wallet = get_wallet_from_trade_history(
+            address=str(address),
+            index=idx,
+            trade_history=trade_history,
+            hyperdrive_contract=hyperdrive_instance,
+            base_contract=base_instance,
+            tolerance=1e16,  # allow being off by $0.01
+        )
+
+        # print what's in wallet
+        log_str += f"{wallet=}"
+        log_str = f"agent_{idx} has:"
+        log_str += "\n wallet:"
+        for _, long in wallet.longs.items():
+            log_str += f"\n  long {long.balance}"
+        for _, short in wallet.shorts.items():
+            log_str += f"\n  short {short.balance}"
+        log_str += f"\n  lp_tokens {wallet.lp_tokens}"
+
+        # print trade counts
+        from_agent = trade_history["from"] == address
+        to_agent = trade_history["to"] == address
+        num_trades = sum((from_agent | to_agent))
+        num_longs = sum((from_agent | to_agent) & (trade_history["trade_type"] == "LONG"))
+        num_shorts = sum((from_agent | to_agent) & (trade_history["trade_type"] == "SHORT"))
+        num_lp = sum((from_agent | to_agent) & (trade_history["trade_type"] == "LP"))
+        num_withdrawal = sum((from_agent | to_agent) & (trade_history["trade_type"] == "WITHDRAWAL_SHARE"))
+        log_str += "\n trade counts:"
+        log_str += f"\n  {num_trades:2.0f} total"
+        log_str += f"\n  {num_longs:2.0f} long"
+        log_str += f"\n  {num_shorts:2.0f} short"
+        log_str += f"\n  {num_lp:2.0f} LP"
+        log_str += f"\n  {num_withdrawal:2.0f} withdrawal share"
+        if num_trades!= (num_longs + num_shorts + num_lp + num_withdrawal):
+            log_str += "\n  trade counts don't add up to total ❌"
+        else:
+            log_str += "\n  trade counts add up to total ✅"
+
+        # compare off-chain to on-chain balances
+        log_str += "tuples of balances by position by calculation source. balance = (trade_history, onchain)"
+        log_str += f" tolerance = {tolerance} aka ${tolerance/1e18}"
+        for position_id in trade_history["id"].unique():  # loop across all unique positions
+            from_agent = trade_history["from"] == address
+            to_agent = trade_history["to"] == address
+            relevant_trades = ((from_agent) | (to_agent)) & (trade_history["id"] == position_id)
+            positive_balance = int(trade_history.loc[relevant_trades & (to_agent), "value"].sum())
+            negative_balance = int(trade_history.loc[relevant_trades & (from_agent), "value"].sum())
+            balance = positive_balance - negative_balance
+            on_chain_balance = hyperdrive_instance.balanceOf(position_id, address)
+            first_relevant_row = relevant_trades.index[relevant_trades][0]
+            info = trade_history.loc[first_relevant_row, :]
+            if abs(balance - on_chain_balance) > tolerance:
+                log_str += f"{address[:8]} {info.trade_type:16} balance = ({balance/1e18:0.5f},{on_chain_balance/1e18:0.5f})"
+                log_str += " mismatch ❌"
+            else:
+                log_str += f"{address[:8]} {info.trade_type:16} balance = ({balance/1e18:0.0f},{on_chain_balance/1e18:0.0f})"
+                log_str += " match ✅"
+        logging.info(log_str)
+
 def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str] | None = None) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
     if addresses is None:
