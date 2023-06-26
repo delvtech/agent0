@@ -2,19 +2,15 @@
 
 Elf-simulations has been tested with Python 3.9 and 3.10.
 
-Set up your favorite python virtual environment. We use:
+1. Install Pyenv
 
-- [pyenv](https://github.com/pyenv/pyenv#how-it-works) to manage python versions
-- [venv](https://docs.python.org/3/library/venv.html) standard library to manage virtual environments
+Follow [Pyenv install instructions](https://github.com/pyenv/pyenv#installation).
 
-We also use [Docker](docs.docker.com/get-docker) for building images.
+2. Clone Elf-simulations repo
 
-# Install -- steps
+Clone the repo into a <repo_location> of your choice, i.e. `git clone https://github.com/delvtech/elf-simulations.git <repo_location>`
 
-Clone the repo into a <repo_location> of your choice.
-Next, follow the installation instructions provided by [pyenv](https://github.com/pyenv/pyenv#installation).
-
-After installation, we can use pyenv to install Python from within the repo.
+3. Set up virtual environment.
 
 ```bash
 cd <repo_location>
@@ -24,7 +20,7 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-Once you're in your virtual environment, install elfpy with project dependencies:
+4. Install Elf-simulations.
 
 ```bash
 python -m pip install --upgrade pip
@@ -43,12 +39,14 @@ An explanation of what the above steps do:
 - `python -m venv .venv` This will create a `.venv` folder in your repo directory that stores the local python build & packages. After this command you should be able to type which python and see that it points to an executable inside `.venv/`.
 - `python -m pip install --upgrade -e ".[with-dependencies]"` This installs elfpy locally such that the install updates automatically any time you change the source code. This also installs all dependencies defined in `pyproject.toml`.
 
-## Working with smart contracts
+## Working with smart contracts (optional)
 
 We run several tests and offer utilities that depend on executing Hyperdrive solidity contracts. This is not required to use elfpy.
 
 NOTE: The Hyperdrive solidity implementation is currently under security review, and thus is not available publicly.
 The following instructions will not work for anyone who is not a member of Delv.
+
+5. Set up smart contracts
 
 Clone and sym link the hyperdrive repo, into `hyperdrive_solidity/`, i.e.:
 
@@ -57,11 +55,15 @@ git clone https://github.com/delvtech/hyperdrive.git ../hyperdrive
 ln -s ../hyperdrive hyperdrive_solidity
 ```
 
+6. Install Hyperdrive pre-requisites
+
 Complete the steps in [Hyperdrive's Pre-requisites section](https://github.com/delvtech/hyperdrive#pre-requisites).
+
+7. Install ape plugins
 
 Install Ape plugins with `ape plugins install .`
 
-## Testing
+## Notes
 
 You can test that everything is working by calling: `python -m pytest .`
 
