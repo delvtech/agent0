@@ -8,6 +8,9 @@ from elfpy.data.postgres import Base, PoolInfoTable
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)
 
+# fixture arguments in test function have to be the same as the fixture name
+# pylint: disable=redefined-outer-name
+
 
 @pytest.fixture(scope="function")
 def session():
@@ -39,7 +42,7 @@ class TestPoolInfoTable:
         session.commit()
 
         # TODO: Solve this type issue.  I read the sqlmypy can do this but I wasn't successful.
-        pool_info.timeStamp = 1628472001 # type: ignore
+        pool_info.timeStamp = 1628472001  # type: ignore
         session.commit()
 
         updated_pool_info = session.query(PoolInfoTable).filter_by(blockNumber=1).first()

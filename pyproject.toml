@@ -42,6 +42,7 @@ with-dependencies = [
     "numpy",
     "pandas",
     "pylint",
+    "psycopg2",
     "pyright",
     "pytest",
     "python-dotenv",

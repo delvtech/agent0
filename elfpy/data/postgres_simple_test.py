@@ -1,8 +1,5 @@
 """Simple Read/Write Test"""
 
-import json
-from dataclasses import asdict
-
 from elfpy.data import postgres
 from elfpy.data.pool_info import PoolInfo
 
