@@ -533,7 +533,11 @@ def do_policy(
                 anvil_regular = bot_config.scratch["project_dir"] / "anvil_regular.json"
                 anvil_crash = bot_config.scratch["project_dir"] / "anvil_crash.json"
                 Path.rename(anvil_regular, anvil_crash)
-                logging.info("CRASHED, anvil state saved to %s", anvil_crash)
+                # rename elfpy_regular.json to elfpy_crash.json
+                elfpy_regular = bot_config.scratch["project_dir"] / "elfpy_regular.json"
+                elfpy_crash = bot_config.scratch["project_dir"] / "elfpy_crash.json"
+                Path.rename(elfpy_regular, elfpy_crash)
+                logging.info(" => anvil state saved to %s, elfpy state saved to %s", anvil_crash, elfpy_crash)
                 raise exc
     return no_crash_streak
 
@@ -569,7 +573,7 @@ def dump_state(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_
             "agent_addresses": [agent.contract.address for agent in sim_agents.values()],
         },
         fp=open(
-            bot_config.scratch["state_dump_file_path"] / f"randseed_{bot_config.random_seed}.json",
+            bot_config.scratch["project_dir"] / "elfpy_regular.json",
             "w",
             encoding="utf-8",
         ),
@@ -598,7 +602,7 @@ def load_state(bot_config, rng) -> tuple[int, list[str], list[str], pd.DataFrame
         History of previously completed trades.
     """
     state_id = bot_config.load_state_id.replace(".json", "")
-    file_path = bot_config.scratch["state_dump_file_path"] / f"{state_id}.json"
+    file_path = bot_config.scratch["project_dir"] / f"{state_id}.json"
     with open(file_path, "r", encoding="utf-8") as file:
         state = json.load(file)
     bot_config.random_seed = state["rand_seed"]
