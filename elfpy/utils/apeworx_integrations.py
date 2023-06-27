@@ -132,13 +132,13 @@ def inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_insta
         log_str += f"\n  {num_lp:2.0f} LP"
         log_str += f"\n  {num_withdrawal:2.0f} withdrawal share"
         if num_trades!= (num_longs + num_shorts + num_lp + num_withdrawal):
-            log_str += "\n  trade counts don't add up to total ❌"
+            log_str += "\n  trade counts DON'T add up to total"
         else:
-            log_str += "\n  trade counts add up to total ✅"
+            log_str += "\n  trade counts add up to total\n"
 
         # compare off-chain to on-chain balances
-        log_str += "tuples of balances by position by calculation source. balance = (trade_history, onchain)"
-        log_str += f" tolerance = {tolerance} aka ${tolerance/1e18}"
+        log_str += "tuples of balances by position by calculation source. balance = (trade_history, onchain)\n"
+        log_str += f" tolerance = {tolerance} aka ${tolerance/1e18}\n"
         for position_id in trade_history["id"].unique():  # loop across all unique positions
             from_agent = trade_history["from"] == address
             to_agent = trade_history["to"] == address
@@ -151,10 +151,10 @@ def inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_insta
             info = trade_history.loc[first_relevant_row, :]
             if abs(balance - on_chain_balance) > tolerance:
                 log_str += f"{address[:8]} {info.trade_type:16} balance = ({balance/1e18:0.5f},{on_chain_balance/1e18:0.5f})"
-                log_str += " mismatch ❌"
+                log_str += " MISMATCH\n"
             else:
                 log_str += f"{address[:8]} {info.trade_type:16} balance = ({balance/1e18:0.0f},{on_chain_balance/1e18:0.0f})"
-                log_str += " match ✅"
+                log_str += " match\n"
         logging.info(log_str)
 
 def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str] | None = None) -> tuple[dict[str, str], str]:

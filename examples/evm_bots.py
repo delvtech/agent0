@@ -149,7 +149,7 @@ def create_agent(
         trade_history=trade_history,
         hyperdrive_contract=hyperdrive_contract,
         base_contract=base_instance,
-        tolerance=1e16 if bot_config.load_state_id is not None else None
+        tolerance=1e16 if bot_config.load_state_id is not None else None,
     )
     return agent
 
@@ -529,6 +529,11 @@ def do_policy(
             logging.info("Crashed with error: %s", exc)
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file, reset=True)  # set and save to file
             if bot_config.halt_on_errors:
+                # rename anvil_regular.json to anvil_crash.json
+                anvil_regular = bot_config.scratch["project_dir"] / "anvil_regular.json"
+                anvil_crash = bot_config.scratch["project_dir"] / "anvil_crash.json"
+                Path.rename(anvil_regular, anvil_crash)
+                logging.info("CRASHED, anvil state saved to %s", anvil_crash)
                 raise exc
     return no_crash_streak
 
@@ -553,7 +558,7 @@ def dump_state(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_
     """
     trade_history = ape_utils.get_trade_history(hyperdrive_instance)
     if trade_history is not None:
-        trade_history = trade_history.to_dict(orient="records"),  # make it JSON serializable
+        trade_history = (trade_history.to_dict(orient="records"),)  # make it JSON serializable
     json.dump(
         {
             "rand_seed": bot_config.random_seed,
@@ -593,11 +598,19 @@ def load_state(bot_config, rng) -> tuple[int, list[str], list[str], pd.DataFrame
         History of previously completed trades.
     """
     state_id = bot_config.load_state_id.replace(".json", "")
-    with open(bot_config.scratch["state_dump_file_path"] / f"{state_id}.json", "r", encoding="utf-8") as file:
+    file_path = bot_config.scratch["state_dump_file_path"] / f"{state_id}.json"
+    with open(file_path, "r", encoding="utf-8") as file:
         state = json.load(file)
     bot_config.random_seed = state["rand_seed"]
     rng.bit_generator.state = state["rand_state"]
     trade_history = pd.DataFrame(state["trade_history"][0])
+    logging.info(
+        "STATE loaded from %s with:\n rand_seed %s\n rand_state %s\n trades %s",
+        file_path,
+        bot_config.random_seed,
+        rng.bit_generator.state,
+        len(trade_history),
+    )
     return state["block_number"], state["addresses"], state["agent_addresses"], trade_history
 
 
