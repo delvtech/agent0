@@ -15,7 +15,7 @@ COPY . ./
 
 # install elfpy
 RUN python -m pip install --no-cache-dir --upgrade pip
-RUN python -m pip install --no-cache-dir -e ."[with-dependencies,docs]""
+RUN python -m pip install --no-cache-dir -e ."[with-dependencies,docs]"
 RUN ape plugins install .
 
 # copy hyperdrive contracts from migrations image
