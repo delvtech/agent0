@@ -1,4 +1,5 @@
 """Initialize Postgres Server"""
+
 from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -11,7 +12,7 @@ Base = declarative_base()
 engine = create_engine("postgresql://admin:password@localhost:5432/postgres_db")
 
 
-class UserEntry(Base):
+class UserTable(Base):
     """User Schema"""
 
     __tablename__ = "users"
@@ -20,7 +21,7 @@ class UserEntry(Base):
     id = Column(String, primary_key=True)
 
 
-class TransactionEntry(Base):
+class TransactionTable(Base):
     """Transactions Schema"""
 
     __tablename__ = "transactions"
@@ -30,7 +31,7 @@ class TransactionEntry(Base):
     amount = Column(Integer)
 
 
-class PoolInfoEntry(Base):
+class PoolInfoTable(Base):
     """PoolInfo Schema"""
 
     __tablename__ = "poolinfo"
@@ -60,6 +61,10 @@ def initialize_session():
     # create a session
     session = session_class()
 
+    # clear the tables
+    session.query(PoolInfoTable).delete()
+    session.commit()
+
     # create tables
     Base.metadata.create_all(engine)
 
@@ -78,7 +83,7 @@ def add_pool_infos(pool_infos: list[PoolInfo], session):
     """Add a pool info to the poolinfo table"""
 
     for pool_info in pool_infos:
-        pool_info_entry = PoolInfoEntry(
+        pool_info_entry = PoolInfoTable(
             # primary key
             blockNumber=pool_info.blockNumber,
             # indexed
