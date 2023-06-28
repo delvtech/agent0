@@ -25,6 +25,10 @@ from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceip
 class TestAccount:
     """Web3 account that has helper functions & associated funding source"""
 
+    # TODO: We should be adding more methods to this class.
+    # If not, we can delete it at the end of the refactor.
+    # pylint: disable=too-few-public-methods
+
     def __init__(self, extra_entropy: str = "TEST ACCOUNT"):
         """Initialize an account"""
         self.account: LocalAccount = Account().create(extra_entropy=extra_entropy)
