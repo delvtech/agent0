@@ -34,11 +34,6 @@ class TestAccount:
         """Return the address of the account"""
         return self.account.address
 
-    @property
-    def balance(self, funding_contract: Contract) -> int:
-        """Return the balance of the account"""
-        return funding_contract.functions.balanceOf(self.address).call()
-
 
 @attr.s
 class HyperdriveAddressesJson:
@@ -49,6 +44,11 @@ class HyperdriveAddressesJson:
     base_token: str = attr.ib()
     mock_hyperdrive: str = attr.ib()
     mock_hyperdrive_math: str = attr.ib()
+
+
+def get_account_balance_for_contract(funding_contract: Contract, account_address: str) -> int:
+    """Return the balance of the account"""
+    return funding_contract.functions.balanceOf(account_address).call()
 
 
 def fund_account(funding_contract: Contract, account_address: str, amount: int) -> HexBytes:
