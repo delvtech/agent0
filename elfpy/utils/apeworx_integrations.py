@@ -90,10 +90,8 @@ class DefaultHyperdriveConfig:
     target_liquidity = FixedPoint(1 * 10**6)
 
 
-def inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_instance, tolerance = 1e16):
-    """Sanity check trade history and balances.
-
-    """
+def inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_instance, tolerance=1e16):
+    """Sanity check trade history and balances."""
     for idx, address in enumerate(agent_addresses):
         log_str = f"querying agent_{idx} at addr={address}"
 
@@ -131,7 +129,7 @@ def inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_insta
         log_str += f"\n  {num_shorts:2.0f} short"
         log_str += f"\n  {num_lp:2.0f} LP"
         log_str += f"\n  {num_withdrawal:2.0f} withdrawal share"
-        if num_trades!= (num_longs + num_shorts + num_lp + num_withdrawal):
+        if num_trades != (num_longs + num_shorts + num_lp + num_withdrawal):
             log_str += "\n  trade counts DON'T add up to total"
         else:
             log_str += "\n  trade counts add up to total\n"
@@ -149,13 +147,13 @@ def inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_insta
             on_chain_balance = hyperdrive_instance.balanceOf(position_id, address)
             first_relevant_row = relevant_trades.index[relevant_trades][0]
             info = trade_history.loc[first_relevant_row, :]
+            log_str += f"{address[:8]} {info.trade_type:16} balance = "
             if abs(balance - on_chain_balance) > tolerance:
-                log_str += f"{address[:8]} {info.trade_type:16} balance = ({balance/1e18:0.5f},{on_chain_balance/1e18:0.5f})"
-                log_str += " MISMATCH\n"
+                log_str += f"({balance/1e18:0.5f},{on_chain_balance/1e18:0.5f}) MISMATCH\n"
             else:
-                log_str += f"{address[:8]} {info.trade_type:16} balance = ({balance/1e18:0.0f},{on_chain_balance/1e18:0.0f})"
-                log_str += " match\n"
+                log_str += f"({balance/1e18:0.0f},{on_chain_balance/1e18:0.0f}) match\n"
         logging.info(log_str)
+
 
 def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str] | None = None) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
@@ -358,24 +356,30 @@ OnChainTradeInfo = namedtuple(
 )
 
 
-def get_trade_history(hyperdrive_contract: ContractInstance, block_number: int | None = None) -> pd.DataFrame:
+def get_trade_history(
+    hyperdrive_contract: ContractInstance, start_block: int = 0, stop_block: int | None = None, add_to: pd.DataFrame | None = None
+) -> pd.DataFrame:
     r"""Get all trades from hyperdrive contract.
 
     Arguments
     ---------
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
-    block_number : int, Optional
-        The block number at which to start querying. If not provided, query from the beginning.
+    start_block : int, Optional
+        The block number at which to start querying. Default is 0.
+    stop_block : int, Optional
+        The block number at which to stop querying.
 
     Returns
     -------
     pd.DataFrame | None
         History of all trade events.
     """
-    trades = hyperdrive_contract.TransferSingle.query("*", start_block=block_number or 0, stop_block=block_number)
+    if stop_block is not None and start_block > stop_block:
+        return add_to
+    trades = hyperdrive_contract.TransferSingle.query("*", start_block=start_block, stop_block=stop_block)
     if len(trades) == 0:
-        return None
+        return add_to
     trades = pd.concat(  # flatten event_arguments
         [
             trades.loc[:, [c for c in trades.columns if c != "event_arguments"]],
@@ -391,7 +395,11 @@ def get_trade_history(hyperdrive_contract: ContractInstance, block_number: int |
         for block_number_ in trades["block_number"].unique()
     }
     df_share_price = pd.DataFrame(share_price_.items(), columns=["block_number", "share_price"])
-    return pd.merge(trades, df_share_price, on="block_number")
+    trades = pd.merge(trades, df_share_price, on="block_number")
+    # add marginal update to previous DataFrame
+    if add_to is not None:
+        trades = pd.concat([add_to, trades], axis=0).reset_index(drop=True)
+    return trades
 
 
 def get_wallet_from_trade_history(
@@ -401,7 +409,7 @@ def get_wallet_from_trade_history(
     base_contract: ContractInstance,
     index: int = 0,
     add_to_existing_wallet: Wallet | None = None,
-    tolerance = None,
+    tolerance=None,
 ) -> Wallet:
     # pylint: disable=too-many-arguments, too-many-branches
 
@@ -460,8 +468,7 @@ def get_wallet_from_trade_history(
             # only do balance checks if not marignal update
             if abs(balance - on_chain_balance) > tolerance:
                 raise ValueError(
-                    f"events {balance=} and {on_chain_balance=} disagree by "
-                    f"more than {tolerance} wei for {address}"
+                    f"events {balance=} and {on_chain_balance=} disagree by more than {tolerance} wei for {address}"
                 )
             logging.debug(" => calculated balance = on_chain = %s", output_utils.str_with_precision(balance))
         # check if there's an outstanding balance
@@ -477,9 +484,7 @@ def get_wallet_from_trade_history(
                         value * trade_history.loc[specific_trade, "share_price"]
                     )
                 open_share_price = int(sum_product_of_open_share_price_and_value / sum_value)
-                assert (
-                    abs(balance - sum_value) <= tolerance
-                ), "weighted average open share price calculation is wrong"
+                assert abs(balance - sum_value) <= tolerance, "weighted average open share price calculation is wrong"
                 logging.debug("calculated weighted average open share price of %s", open_share_price)
                 previous_balance = wallet.shorts[mint_time].balance if mint_time in wallet.shorts else 0
                 new_balance = previous_balance + FixedPoint(scaled_value=balance)
@@ -986,6 +991,7 @@ def create_trade(
     selected_abi, args = select_abi(params=params, method=info[trade_type].method)
     # create a transaction with the selected ABI
     contract_txn: ContractTransaction = ContractTransaction(abi=selected_abi, address=hyperdrive_contract.address)
+    args = [arg.scaled_value if isinstance(arg, FixedPoint) else arg for arg in args]
     return contract_txn, args, selected_abi
 
 
