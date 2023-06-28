@@ -69,7 +69,7 @@ def camel_to_snake(camel_string: str) -> str:
     return snake_string.lower()
 
 
-def collect_files(folder_path: str, extension: str = ".json") -> list[dict]:
+def collect_files(folder_path: str, extension: str = ".json") -> list[str]:
     """Load all files with the given extension into a list"""
     collected_files = []
     for root, _, files in os.walk(folder_path):
@@ -223,20 +223,6 @@ def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs:
     web3 = Web3(provider)
     web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
     return web3
-
-
-def deploy_contract(web3: Web3, contract_interface: dict) -> TxReceipt:
-    """Deploy contract to an address"""
-    tx_hash = (
-        web3.eth.contract(
-            abi=contract_interface["abi"],
-            bytecode=contract_interface["bin"],
-        )
-        .constructor()
-        .transact()
-    )
-    deploy_address: TxReceipt = web3.eth.get_transaction_receipt(tx_hash)["contractAddress"]
-    return deploy_address
 
 
 def fetch_address_from_url(contracts_url: str) -> HyperdriveAddressesJson:
