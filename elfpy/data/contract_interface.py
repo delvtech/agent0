@@ -6,7 +6,7 @@ import logging
 import os
 import re
 import time
-from typing import Any
+from typing import Any, Sequence
 
 import attr
 import requests
