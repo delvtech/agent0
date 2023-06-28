@@ -33,7 +33,7 @@ class FundableAccount:
     ):
         """Initialize an account"""
         self.funding_contract: Contract = funding_contract
-        self.account: LocalAccount = Account.create(extra_entropy=extra_entropy)
+        self.account: LocalAccount = Account().create(extra_entropy=extra_entropy)
         self.fund_account(initial_supply)
 
     def fund_account(self, amount: int) -> HexBytes:
@@ -207,8 +207,8 @@ def recursive_dict_conversion(obj):
 
 
 def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs: dict | None = None) -> Web3:
-    """Initialize a Web3 instance using an HTTP provider
-    and inject a geth Proof of Authority (poa) middleware.
+    """Initialize a Web3 instance using an HTTP provider and inject a geth Proof of Authority (poa) middleware.
+
     Arguments
     ---------
     ethereum_node: URI | str
