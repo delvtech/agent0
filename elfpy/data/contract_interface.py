@@ -30,14 +30,14 @@ class TestAccount:
         self.account: LocalAccount = Account().create(extra_entropy=extra_entropy)
 
     @property
-    def balance(self, funding_contract: Contract) -> int:
-        """Return the balance of the account"""
-        return funding_contract.functions.balanceOf(self.address).call()
-
-    @property
     def address(self) -> str:
         """Return the address of the account"""
         return self.account.address
+
+    @property
+    def balance(self, funding_contract: Contract) -> int:
+        """Return the balance of the account"""
+        return funding_contract.functions.balanceOf(self.address).call()
 
 
 @attr.s
