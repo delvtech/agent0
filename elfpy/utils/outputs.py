@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-from fixedpointmath.fixed_point import FixedPoint
+from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from matplotlib import gridspec
 from numpy.random._generator import Generator as NumpyGenerator

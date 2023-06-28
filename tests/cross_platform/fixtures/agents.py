@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import ape
 import pytest
 from ape.api.accounts import TestAccountAPI
-from fixedpointmath.fixed_point import FixedPoint
+from fixedpointmath import FixedPoint
 
 from elfpy.agents.agent import Agent
 

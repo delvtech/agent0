@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 import pytest
-from fixedpointmath.fixed_point import FixedPoint
+from fixedpointmath import FixedPoint
 
 
 @dataclass

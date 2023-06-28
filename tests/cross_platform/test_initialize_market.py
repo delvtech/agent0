@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fixedpointmath.fixed_point import FixedPoint
+from fixedpointmath import FixedPoint
 
 # elfpy core repo
 from conftest import HyperdriveFixture, TestCaseWithHyperdriveFixture
