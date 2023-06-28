@@ -197,6 +197,20 @@ def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs:
     return web3
 
 
+def deploy_contract(web3: Web3, contract_interface: dict) -> TxReceipt:
+    """Deploy contract to an address"""
+    tx_hash = (
+        web3.eth.contract(
+            abi=contract_interface["abi"],
+            bytecode=contract_interface["bin"],
+        )
+        .constructor()
+        .transact()
+    )
+    deploy_address: TxReceipt = web3.eth.get_transaction_receipt(tx_hash)["contractAddress"]
+    return deploy_address
+
+
 def fetch_address_from_url(contracts_url: str) -> HyperdriveAddressesJson:
     """Fetch addresses for deployed contracts in the Hyperdrive system."""
     attempt_num = 0
@@ -218,19 +232,6 @@ def fetch_address_from_url(contracts_url: str) -> HyperdriveAddressesJson:
     return addresses
 
 
-def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3: Web3) -> Contract:
-    """Get the hyperdrive contract for a given abi"""
-    addresses = fetch_address_from_url(contracts_url)
-    # Load the ABI from the JSON file
-    with open(abi_file_path, "r", encoding="UTF-8") as file:
-        state_abi = json.load(file)["abi"]
-    # get contract instance of hyperdrive
-    hyperdrive_contract: Contract = web3.eth.contract(
-        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
-    )
-    return hyperdrive_contract
-
-
 def get_block_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str | Any, Any]:
     """Returns the block pool info from the Hyperdrive contract"""
     block_pool_info = get_smart_contract_read_call(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
@@ -243,12 +244,17 @@ def get_block_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number:
     return block_pool_info
 
 
-def hyperdrive_config_to_json(config_file: str, hyperdrive_contract: Contract) -> None:
-    """Write the Hyperdrive config to a json file"""
-    pool_config = get_smart_contract_read_call(hyperdrive_contract, "getPoolConfig")
-    logging.info("Writing pool config.")
-    with open(config_file, mode="w", encoding="UTF-8") as file:
-        json.dump(pool_config, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
+def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3: Web3) -> Contract:
+    """Get the hyperdrive contract for a given abi"""
+    addresses = fetch_address_from_url(contracts_url)
+    # Load the ABI from the JSON file
+    with open(abi_file_path, "r", encoding="UTF-8") as file:
+        state_abi = json.load(file)["abi"]
+    # get contract instance of hyperdrive
+    hyperdrive_contract: Contract = web3.eth.contract(
+        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
+    )
+    return hyperdrive_contract
 
 
 def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict:
