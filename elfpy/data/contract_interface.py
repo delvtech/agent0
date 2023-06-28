@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import time
 from typing import Any
@@ -16,7 +17,7 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
-from web3.types import ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
+from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
 
 from elfpy.utils import apeworx_integrations as ape_utils
 from elfpy.utils import outputs as output_utils
@@ -37,6 +38,33 @@ def camel_to_snake(camel_string: str) -> str:
     """Convert camelCase to snake_case"""
     snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", camel_string)
     return snake_string.lower()
+
+
+def collect_files(folder_path: str, extension: str = ".json") -> list[dict]:
+    """Load all files with the given extension into a list"""
+    collected_files = []
+    for root, _, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith(extension):
+                file_path = os.path.join(root, file)
+                collected_files.append(file_path)
+    return collected_files
+
+
+def load_all_abis(abi_folder: str) -> dict:
+    """Load the ABI from the JSON file"""
+    abis = {}
+    abi_files = collect_files(abi_folder)
+    for abi_file in abi_files:
+        file_name = os.path.splitext(os.path.basename(abi_file))[0]
+        with open(abi_file, mode="r", encoding="UTF-8") as file:
+            data = json.load(file)
+        if "abi" in data:
+            logging.info("Loaded ABI file %s", abi_file)
+            abis[file_name] = data["abi"]
+        else:
+            logging.warning("JSON file %s did not contain an ABI", abi_file)
+    return abis
 
 
 def fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt) -> list[dict[Any, Any]]:
@@ -118,21 +146,24 @@ def get_event_object(
 
 def get_smart_contract_read_call(contract: Contract, function_name: str, **function_args) -> dict[Any, Any]:
     """Get a smart contract read call"""
-    # decode ABI to get pool info variable names
-    abi = contract.abi
-    # TODO: pyright does not like the TypedDict variables from web3,
-    #   Could not access item; `key` is not a defined key in "ABIEvent",
-    #   so access may result in runtime exception (reportGeneralTypeIssues)
     # TODO: Fix this up to actually decode the ABI using web3
-    abi_function_index = [idx for idx in range(len(abi)) if abi[idx]["name"] == function_name][0]  # type: ignore
-    abi_components = abi[abi_function_index]["outputs"][0]["components"]  # type: ignore
-    return_value_keys = [component["name"] for component in abi_components]  # type: ignore
+    # decode ABI to get variable names
+    abi: ABI = contract.abi
+    abi_function_index = [idx for idx in range(len(abi)) if abi[idx].get("name") == function_name][0]
+    abi_outputs = abi[abi_function_index].get("outputs")
+    if not isinstance(abi_outputs, Sequence):
+        raise AssertionError("could not find outputs in the abi")
+    abi_components = abi_outputs[0].get("components")
+    if abi_components is None:
+        raise AssertionError("could not find output components in the abi")
+    return_value_keys = [component.get("name") for component in abi_components]
+    # get the callable contract function from function_name & call it
     function: ContractFunction = contract.get_function_by_name(function_name)()
     return_values = function.call(**function_args)
-    # associate pool info with the keys
+    # associate returned values with the keys
     assert len(return_value_keys) == len(return_values)
-    result = dict((variable_name, info) for variable_name, info in zip(return_value_keys, return_values))
-    return result
+    function_return_dict = dict((variable_name, info) for variable_name, info in zip(return_value_keys, return_values))
+    return function_return_dict
 
 
 def load_abi(file_path):
