@@ -55,12 +55,12 @@ def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
     return addresses
 
 
-def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: TxReceipt) -> list[dict[Any, Any]]:
+def fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt) -> list[dict[Any, Any]]:
     """Decode logs from a transaction receipt"""
     logs = []
     if tx_receipt.get("logs"):
         for log in tx_receipt["logs"]:
-            event_data, event = get_event_object(web3_container, contract, log, tx_receipt)
+            event_data, event = get_event_object(web3, contract, log, tx_receipt)
             if event_data and event:
                 # TODO: For some reason it thinks `log` is `str` instead of `EventData`
                 formatted_log = dict(event_data)
@@ -71,10 +71,10 @@ def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: 
 
 
 def fetch_transactions_for_block(
-    web3_container: Web3, contract: Contract, block_number: BlockNumber
+    web3: Web3, contract: Contract, block_number: BlockNumber
 ) -> list[dict[str, Any]] | None:
     """Fetch transactions related to the hyperdrive_address contract"""
-    block: BlockData = web3_container.eth.get_block(block_number, full_transactions=True)
+    block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
     transactions = block.get("transactions")
     if not transactions:
         logging.info("no transactions in block %s", block.get("number"))
@@ -97,8 +97,8 @@ def fetch_transactions_for_block(
             transaction_dict["input"] = {"method": method.fn_name, "params": params}
         except ValueError:  # if the input is not meant for the contract, ignore it
             continue
-        tx_receipt = web3_container.eth.get_transaction_receipt(tx_hash)
-        logs = fetch_and_decode_logs(web3_container, contract, tx_receipt)
+        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
+        logs = fetch_and_decode_logs(web3, contract, tx_receipt)
         decoded_block_transactions.append(
             {
                 "transaction": transaction_dict,
@@ -110,7 +110,7 @@ def fetch_transactions_for_block(
 
 
 def get_event_object(
-    web3_container: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
+    web3: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
 ) -> tuple[EventData, ABIEvent] | tuple[None, None]:
     """Retrieves the event object and anonymous types for a  given contract and log"""
     abi_events = [abi for abi in contract.abi if abi["type"] == "event"]  # type: ignore
@@ -121,7 +121,7 @@ def get_event_object(
         inputs = ",".join(inputs)
         # Hash event signature
         event_signature_text = f"{name}({inputs})"
-        event_signature_hex = web3_container.keccak(text=event_signature_text).hex()
+        event_signature_hex = web3.keccak(text=event_signature_text).hex()
         # Find match between log's event signature and ABI's event signature
         receipt_event_signature_hex = log["topics"][0].hex()
         if event_signature_hex == receipt_event_signature_hex:
@@ -132,12 +132,10 @@ def get_event_object(
     return (None, None)
 
 
-def get_block_pool_info(
-    web3_container: Web3, hyperdrive_contract: Contract, block_number: BlockNumber
-) -> dict[str | Any, Any]:
+def get_block_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str | Any, Any]:
     """Returns the block pool info from the Hyperdrive contract"""
     block_pool_info = get_smart_contract_read_call(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
-    latest_block: BlockData = web3_container.eth.get_block("latest")
+    latest_block: BlockData = web3.eth.get_block("latest")
     latest_block_timestamp = latest_block.get("timestamp")
     if latest_block_timestamp is None:
         raise AssertionError("Latest block has no timestamp")
@@ -146,14 +144,14 @@ def get_block_pool_info(
     return block_pool_info
 
 
-def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3_container: Web3) -> Contract:
+def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3: Web3) -> Contract:
     """Get the hyperdrive contract for a given abi"""
     addresses = fetch_addresses(contracts_url)
     # Load the ABI from the JSON file
     with open(abi_file_path, "r", encoding="UTF-8") as file:
         state_abi = json.load(file)["abi"]
     # get contract instance of hyperdrive
-    hyperdrive_contract: Contract = web3_container.eth.contract(
+    hyperdrive_contract: Contract = web3.eth.contract(
         address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
     )
     return hyperdrive_contract
@@ -212,6 +210,6 @@ def save_config(config, file_path):
 
 def setup_web3(ethereum_node: URI | str) -> Web3:
     """Create the Web3 provider and inject a geth Proof of Authority (poa) middleware."""
-    web3_container = Web3(Web3.HTTPProvider(ethereum_node))
-    web3_container.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
-    return web3_container
+    web3 = Web3(Web3.HTTPProvider(ethereum_node))
+    web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
+    return web3
