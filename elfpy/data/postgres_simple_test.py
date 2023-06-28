@@ -13,8 +13,11 @@ if __name__ == "__main__":
         pool_info[0].timestamp = i * 1000
         postgres.add_pool_infos(pool_info, session)
 
-    retrieved_infos = session.query(postgres.PoolInfoTable).all()
+    retrieved_infos: list[postgres.PoolInfoTable] = session.query(postgres.PoolInfoTable).all()
 
-    for info in retrieved_infos:
-        print(info.__dict__)
-    postgres.close_session(session)
+    if not retrieved_infos:
+        postgres.close_session(session)
+    else:
+        for info in retrieved_infos:
+            print(info.__dict__)
+        postgres.close_session(session)

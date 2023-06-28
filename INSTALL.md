@@ -9,6 +9,7 @@ Follow [Pyenv install instructions](https://github.com/pyenv/pyenv#installation)
 ### 2. Clone Elf-simulations repo
 
 Clone the repo into a <repo_location> of your choice.
+
 ```bash
 git clone https://github.com/delvtech/elf-simulations.git <repo_location>
 ```
@@ -39,10 +40,14 @@ python -m pip install --upgrade -e ".[with-dependencies,docs]"
 ```
 
 An explanation of what the above steps do:
+
 - `pyenv install 3.10` You should now see the correct version when you run `pyenv versions`.
 - `pyenv local 3.10` This command creates a `.python-version` file in your current directory. If you have pyenv active in your environment, this file will automatically activate this version for you.
 - `python -m venv .venv` This will create a `.venv` folder in your repo directory that stores the local python build & packages. After this command you should be able to type which python and see that it points to an executable inside `.venv/`.
 - `python -m pip install --upgrade -e ".[with-dependencies]"` This installs elfpy locally such that the install updates automatically any time you change the source code. This also installs all dependencies defined in `pyproject.toml`.
+
+If you intend to work postgres then you'll also need to install
+pyscopg2
 
 ## Working with smart contracts (optional)
 
@@ -72,7 +77,7 @@ Install Ape plugins with `ape plugins install .`
 
 You can test that everything is working by calling: `python -m pytest .`
 
-You can test against a local testnet node using [Anvil]([url](https://book.getfoundry.sh/reference/anvil/)) with `anvil`.
+You can test against a local testnet node using [Anvil](<[url](https://book.getfoundry.sh/reference/anvil/)>) with `anvil`.
 
 We use [Docker](docs.docker.com/get-docker) for building images.
 
