@@ -166,13 +166,6 @@ def get_smart_contract_read_call(contract: Contract, function_name: str, **funct
     return function_return_dict
 
 
-def load_abi(file_path):
-    """Load the Application Binary Interface (ABI) from a JSON file"""
-    with open(file_path, mode="r", encoding="UTF-8") as file:
-        data = json.load(file)
-    return data["abi"]
-
-
 def recursive_dict_conversion(obj):
     """Recursively converts a dictionary to convert objects to hex values"""
     if isinstance(obj, HexBytes):
@@ -182,12 +175,6 @@ def recursive_dict_conversion(obj):
     if hasattr(obj, "items"):
         return {key: recursive_dict_conversion(value) for key, value in obj.items()}
     return obj
-
-
-def save_config(config, file_path):
-    """Saves the config file in TOML format"""
-    with open(file_path, "w", encoding="UTF-8") as file:
-        toml.dump(config, file)
 
 
 def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs: dict | None = None) -> Web3:
@@ -210,7 +197,7 @@ def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs:
     return web3
 
 
-def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
+def fetch_address_from_url(contracts_url: str) -> HyperdriveAddressesJson:
     """Fetch addresses for deployed contracts in the Hyperdrive system."""
     attempt_num = 0
     response = None
@@ -227,15 +214,13 @@ def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
     if response.status_code != 200:
         raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
     addresses_json = response.json()
-    addresses = HyperdriveAddressesJson(
-        **{ape_utils.camel_to_snake(key): value for key, value in addresses_json.items()}
-    )
+    addresses = HyperdriveAddressesJson(**{camel_to_snake(key): value for key, value in addresses_json.items()})
     return addresses
 
 
 def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3: Web3) -> Contract:
     """Get the hyperdrive contract for a given abi"""
-    addresses = fetch_addresses(contracts_url)
+    addresses = fetch_address_from_url(contracts_url)
     # Load the ABI from the JSON file
     with open(abi_file_path, "r", encoding="UTF-8") as file:
         state_abi = json.load(file)["abi"]
