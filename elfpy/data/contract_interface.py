@@ -22,29 +22,17 @@ from web3.middleware import geth_poa
 from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
 
 
-class FundableAccount:
+class TestAccount:
     """Web3 account that has helper functions & associated funding source"""
 
-    def __init__(
-        self,
-        funding_contract: Contract,
-        extra_entropy: str = "TEST ACCOUNT",
-        initial_supply: int = 0,
-    ):
+    def __init__(self, extra_entropy: str = "TEST ACCOUNT"):
         """Initialize an account"""
-        self.funding_contract: Contract = funding_contract
         self.account: LocalAccount = Account().create(extra_entropy=extra_entropy)
-        self.fund_account(initial_supply)
-
-    def fund_account(self, amount: int) -> HexBytes:
-        """Add funds to the account"""
-        tx_receipt = self.funding_contract.functions.mint(self.address, amount).transact()
-        return tx_receipt
 
     @property
-    def balance(self) -> int:
+    def balance(self, funding_contract: Contract) -> int:
         """Return the balance of the account"""
-        return self.funding_contract.functions.balanceOf(self.address).call()
+        return funding_contract.functions.balanceOf(self.address).call()
 
     @property
     def address(self) -> str:
@@ -61,6 +49,12 @@ class HyperdriveAddressesJson:
     base_token: str = attr.ib()
     mock_hyperdrive: str = attr.ib()
     mock_hyperdrive_math: str = attr.ib()
+
+
+def fund_account(funding_contract: Contract, account_address: str, amount: int) -> HexBytes:
+    """Add funds to the account"""
+    tx_receipt = funding_contract.functions.mint(account_address, amount).transact()
+    return tx_receipt
 
 
 def camel_to_snake(camel_string: str) -> str:
@@ -272,7 +266,19 @@ def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3: Web3) 
 
 
 def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict:
-    """Get the hyperdrive config from a deployed hyperdrive contract."""
+    """Get the hyperdrive config from a deployed hyperdrive contract.
+
+    Arguments
+    ----------
+    hyperdrive_contract : Contract
+        The deployed hyperdrive contract instance.
+
+    Returns
+    -------
+    hyperdrive_config : dict
+        The hyperdrive config.
+
+    """
     hyperdrive_config: dict = get_smart_contract_read_call(hyperdrive_contract, "getPoolConfig")
     hyperdrive_config["invScaledTimeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
     hyperdrive_config["termLength"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
