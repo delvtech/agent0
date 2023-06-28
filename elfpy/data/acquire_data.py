@@ -28,31 +28,28 @@ def main(
     """Main entry point for accessing contract & writing pool info"""
     # pylint: disable=too-many-locals
     # get web3 provider
-    web3_container: Web3 = contract_interface.setup_web3(ethereum_node)
+    web3: Web3 = contract_interface.initialize_web3_with_http_provider(ethereum_node, request_kwargs={"timeout": 60})
     # send a request to the local server to fetch the deployed contract addresses and
     # load the deployed Hyperdrive contract addresses from the server response
-    state_hyperdrive_contract = contract_interface.get_hyperdrive_contract(
-        state_abi_file_path, contracts_url, web3_container
-    )
+    state_hyperdrive_contract = contract_interface.get_hyperdrive_contract(state_abi_file_path, contracts_url, web3)
     transactions_hyperdrive_contract = contract_interface.get_hyperdrive_contract(
-        transactions_abi_file_path, contracts_url, web3_container
+        transactions_abi_file_path, contracts_url, web3
     )
     # get pool config from hyperdrive contract
     config_file = os.path.join(save_dir, "hyperdrive_config.json")
-    contract_interface.hyperdrive_config_to_json(config_file, state_hyperdrive_contract)
+    config_dict = contract_interface.get_hyperdrive_config(state_hyperdrive_contract)
+    logging.info("Writing pool config.")
+    with open(config_file, mode="w", encoding="UTF-8") as file:
+        json.dump(config_dict, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
     # write the initial pool info
     block_number: BlockNumber = BlockNumber(start_block)
-    latest_block_number = web3_container.eth.get_block_number()
+    latest_block_number = web3.eth.get_block_number()
     lookback_block_limit = BlockNumber(lookback_block_limit)
     if (latest_block_number - block_number) > lookback_block_limit:
         block_number = BlockNumber(latest_block_number - lookback_block_limit)
         logging.warning("Starting block is past lookback block limit, starting at block %s", block_number)
-
     pool_info = []
-
-    block_pool_info: dict = contract_interface.get_block_pool_info(
-        web3_container, state_hyperdrive_contract, block_number
-    )
+    block_pool_info: dict = contract_interface.get_block_pool_info(web3, state_hyperdrive_contract, block_number)
     pool_info.append(block_pool_info)
     pool_info_file = os.path.join(save_dir, "hyperdrive_pool_info.json")
     transaction_info_file = os.path.join(save_dir, "hyperdrive_transactions.json")
@@ -62,7 +59,7 @@ def main(
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
     while True:
-        latest_block_number = web3_container.eth.get_block_number()
+        latest_block_number = web3.eth.get_block_number()
         # if we are on a new block
         if latest_block_number > block_number:
             # Backfilling for blocks that need updating
@@ -84,7 +81,7 @@ def main(
                 while True:
                     try:
                         block_pool_info = contract_interface.get_block_pool_info(
-                            web3_container, state_hyperdrive_contract, block_number
+                            web3, state_hyperdrive_contract, block_number
                         )
                         break
                     except ValueError:
@@ -95,7 +92,7 @@ def main(
                 if block_pool_info:
                     pool_info.append(block_pool_info)
                 block_transactions = contract_interface.fetch_transactions_for_block(
-                    web3_container, transactions_hyperdrive_contract, block_number
+                    web3, transactions_hyperdrive_contract, block_number
                 )
                 if block_transactions:
                     transaction_info.extend(block_transactions)
