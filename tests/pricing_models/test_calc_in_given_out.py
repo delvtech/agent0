@@ -13,8 +13,8 @@ from calc_test_dataclasses import (
     CalcInGivenOutSuccessTestResult,
 )
 from fixedpointmath import FixedPoint
+from fixedpointmath import errors as fperrors
 
-import elfpy.errors.errors as errors
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
@@ -344,7 +344,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(
                     days=FixedPoint("365.0"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
                 ),
-                exception_type=(errors.DivisionByZero),
+                exception_type=(fperrors.DivisionByZero),
             ),
             CalcInGivenOutFailureTestCase(  # test 10
                 out=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
@@ -360,7 +360,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(
                     days=FixedPoint("500.0"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
-                exception_type=(AssertionError, errors.DivisionByZero),
+                exception_type=(AssertionError, fperrors.DivisionByZero),
             ),
             CalcInGivenOutFailureTestCase(  # test 11
                 # amount very high, can't make trade
