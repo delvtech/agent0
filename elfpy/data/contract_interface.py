@@ -1,4 +1,4 @@
-"""Functions and classes for interfacing with Hyperdrive smart contracts"""
+"""Functions and classes for interfacing with smart contracts"""
 from __future__ import annotations
 
 import json
@@ -39,29 +39,6 @@ def camel_to_snake(camel_string: str) -> str:
     return snake_string.lower()
 
 
-def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
-    """Fetch addresses for deployed contracts in the Hyperdrive system."""
-    attempt_num = 0
-    response = None
-    while attempt_num < 100:
-        response = requests.get(contracts_url, timeout=60)
-        # Check the status code and retry the request if it fails
-        if response.status_code != 200:
-            logging.warning("Request failed with status code %s @ %s", response.status_code, time.ctime())
-            time.sleep(10)
-            continue
-        attempt_num += 1
-    if response is None:
-        raise ConnectionError("Request failed, returning status `None`")
-    if response.status_code != 200:
-        raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
-    addresses_json = response.json()
-    addresses = HyperdriveAddressesJson(
-        **{ape_utils.camel_to_snake(key): value for key, value in addresses_json.items()}
-    )
-    return addresses
-
-
 def fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt) -> list[dict[Any, Any]]:
     """Decode logs from a transaction receipt"""
     logs = []
@@ -80,7 +57,7 @@ def fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt)
 def fetch_transactions_for_block(
     web3: Web3, contract: Contract, block_number: BlockNumber
 ) -> list[dict[str, Any]] | None:
-    """Fetch transactions related to the hyperdrive_address contract"""
+    """Fetch transactions related to the contract"""
     block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
     transactions = block.get("transactions")
     if not transactions:
@@ -92,7 +69,7 @@ def fetch_transactions_for_block(
             logging.warning("transaction HexBytes")
             continue
         if transaction.get("to") != contract.address:
-            logging.warning("transaction not from hyperdrive contract")
+            logging.warning("transaction not from contract")
             continue
         transaction_dict = dict(transaction)
         # Convert the HexBytes fields to their hex representation
@@ -139,31 +116,6 @@ def get_event_object(
     return (None, None)
 
 
-def get_block_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str | Any, Any]:
-    """Returns the block pool info from the Hyperdrive contract"""
-    block_pool_info = get_smart_contract_read_call(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
-    latest_block: BlockData = web3.eth.get_block("latest")
-    latest_block_timestamp = latest_block.get("timestamp")
-    if latest_block_timestamp is None:
-        raise AssertionError("Latest block has no timestamp")
-    block_pool_info.update({"timestamp": latest_block_timestamp})
-    block_pool_info.update({"blockNumber": block_number})
-    return block_pool_info
-
-
-def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3: Web3) -> Contract:
-    """Get the hyperdrive contract for a given abi"""
-    addresses = fetch_addresses(contracts_url)
-    # Load the ABI from the JSON file
-    with open(abi_file_path, "r", encoding="UTF-8") as file:
-        state_abi = json.load(file)["abi"]
-    # get contract instance of hyperdrive
-    hyperdrive_contract: Contract = web3.eth.contract(
-        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
-    )
-    return hyperdrive_contract
-
-
 def get_smart_contract_read_call(contract: Contract, function_name: str, **function_args) -> dict[Any, Any]:
     """Get a smart contract read call"""
     # decode ABI to get pool info variable names
@@ -181,14 +133,6 @@ def get_smart_contract_read_call(contract: Contract, function_name: str, **funct
     assert len(return_value_keys) == len(return_values)
     result = dict((variable_name, info) for variable_name, info in zip(return_value_keys, return_values))
     return result
-
-
-def hyperdrive_config_to_json(config_file: str, hyperdrive_contract: Contract) -> None:
-    """Write the Hyperdrive config to a json file"""
-    pool_config = get_smart_contract_read_call(hyperdrive_contract, "getPoolConfig")
-    logging.info("Writing pool config.")
-    with open(config_file, mode="w", encoding="UTF-8") as file:
-        json.dump(pool_config, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
 
 
 def load_abi(file_path):
@@ -233,6 +177,62 @@ def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs:
     web3 = Web3(provider)
     web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
     return web3
+
+
+def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
+    """Fetch addresses for deployed contracts in the Hyperdrive system."""
+    attempt_num = 0
+    response = None
+    while attempt_num < 100:
+        response = requests.get(contracts_url, timeout=60)
+        # Check the status code and retry the request if it fails
+        if response.status_code != 200:
+            logging.warning("Request failed with status code %s @ %s", response.status_code, time.ctime())
+            time.sleep(10)
+            continue
+        attempt_num += 1
+    if response is None:
+        raise ConnectionError("Request failed, returning status `None`")
+    if response.status_code != 200:
+        raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
+    addresses_json = response.json()
+    addresses = HyperdriveAddressesJson(
+        **{ape_utils.camel_to_snake(key): value for key, value in addresses_json.items()}
+    )
+    return addresses
+
+
+def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3: Web3) -> Contract:
+    """Get the hyperdrive contract for a given abi"""
+    addresses = fetch_addresses(contracts_url)
+    # Load the ABI from the JSON file
+    with open(abi_file_path, "r", encoding="UTF-8") as file:
+        state_abi = json.load(file)["abi"]
+    # get contract instance of hyperdrive
+    hyperdrive_contract: Contract = web3.eth.contract(
+        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
+    )
+    return hyperdrive_contract
+
+
+def get_block_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str | Any, Any]:
+    """Returns the block pool info from the Hyperdrive contract"""
+    block_pool_info = get_smart_contract_read_call(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
+    latest_block: BlockData = web3.eth.get_block("latest")
+    latest_block_timestamp = latest_block.get("timestamp")
+    if latest_block_timestamp is None:
+        raise AssertionError("Latest block has no timestamp")
+    block_pool_info.update({"timestamp": latest_block_timestamp})
+    block_pool_info.update({"blockNumber": block_number})
+    return block_pool_info
+
+
+def hyperdrive_config_to_json(config_file: str, hyperdrive_contract: Contract) -> None:
+    """Write the Hyperdrive config to a json file"""
+    pool_config = get_smart_contract_read_call(hyperdrive_contract, "getPoolConfig")
+    logging.info("Writing pool config.")
+    with open(config_file, mode="w", encoding="UTF-8") as file:
+        json.dump(pool_config, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
 
 
 def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict:
