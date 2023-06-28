@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from typing import Any
 
@@ -30,6 +31,12 @@ class HyperdriveAddressesJson:
     base_token: str = attr.ib()
     mock_hyperdrive: str = attr.ib()
     mock_hyperdrive_math: str = attr.ib()
+
+
+def camel_to_snake(camel_string: str) -> str:
+    """Convert camelCase to snake_case"""
+    snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", camel_string)
+    return snake_string.lower()
 
 
 def fetch_addresses(contracts_url: str) -> HyperdriveAddressesJson:
