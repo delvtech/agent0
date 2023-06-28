@@ -226,3 +226,11 @@ def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs:
     web3 = Web3(provider)
     web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
     return web3
+
+
+def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict:
+    """Get the hyperdrive config from a deployed hyperdrive contract."""
+    hyperdrive_config: dict = get_smart_contract_read_call(hyperdrive_contract, "getPoolConfig")
+    hyperdrive_config["invScaledTimeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
+    hyperdrive_config["termLength"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
+    return hyperdrive_config

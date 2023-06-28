@@ -37,7 +37,10 @@ def main(
     )
     # get pool config from hyperdrive contract
     config_file = os.path.join(save_dir, "hyperdrive_config.json")
-    contract_interface.hyperdrive_config_to_json(config_file, state_hyperdrive_contract)
+    config_dict = contract_interface.get_hyperdrive_config(state_hyperdrive_contract)
+    logging.info("Writing pool config.")
+    with open(config_file, mode="w", encoding="UTF-8") as file:
+        json.dump(config_dict, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
     # write the initial pool info
     block_number: BlockNumber = BlockNumber(start_block)
     latest_block_number = web3.eth.get_block_number()
@@ -45,9 +48,7 @@ def main(
     if (latest_block_number - block_number) > lookback_block_limit:
         block_number = BlockNumber(latest_block_number - lookback_block_limit)
         logging.warning("Starting block is past lookback block limit, starting at block %s", block_number)
-
     pool_info = []
-
     block_pool_info: dict = contract_interface.get_block_pool_info(web3, state_hyperdrive_contract, block_number)
     pool_info.append(block_pool_info)
     pool_info_file = os.path.join(save_dir, "hyperdrive_pool_info.json")
