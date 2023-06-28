@@ -10,7 +10,9 @@ from typing import Any, Sequence
 
 import attr
 import requests
-import toml
+
+from eth_account import Account
+from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, URI
 from eth_utils import address
 from hexbytes import HexBytes
@@ -19,8 +21,35 @@ from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
 from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
 
-from elfpy.utils import apeworx_integrations as ape_utils
-from elfpy.utils import outputs as output_utils
+
+class FundableAccount:
+    """Web3 account that has helper functions & associated funding source"""
+
+    def __init__(
+        self,
+        funding_contract: Contract,
+        extra_entropy: str = "TEST ACCOUNT",
+        initial_supply: int = 0,
+    ):
+        """Initialize an account"""
+        self.funding_contract: Contract = funding_contract
+        self.account: LocalAccount = Account.create(extra_entropy=extra_entropy)
+        self.fund_account(initial_supply)
+
+    def fund_account(self, amount: int) -> HexBytes:
+        """Add funds to the account"""
+        tx_receipt = self.funding_contract.functions.mint(self.address, amount).transact()
+        return tx_receipt
+
+    @property
+    def balance(self) -> int:
+        """Return the balance of the account"""
+        return self.funding_contract.functions.balanceOf(self.address).call()
+
+    @property
+    def address(self) -> str:
+        """Return the address of the account"""
+        return self.account.address
 
 
 @attr.s
