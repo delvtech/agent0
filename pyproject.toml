@@ -36,7 +36,7 @@ with-dependencies = [
     # Install fixedpointmath from github
     # Note that this is pointing to main, so if any changes are made to fixedpointmath, we'll have to
     # upgrade this package
-    "fixedpointmath @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/fixedpointmath",
+    "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
     "matplotlib",
     "nbconvert",
     "numpy",
