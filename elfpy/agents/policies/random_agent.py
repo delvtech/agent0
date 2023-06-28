@@ -3,9 +3,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from fixedpointmath import FixedPoint
+
 from elfpy import WEI
 from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
-from elfpy.math import FixedPoint
 from elfpy.types import MarketType, Trade
 
 from .base import BasePolicy
@@ -13,8 +14,8 @@ from .base import BasePolicy
 if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
-    from elfpy.wallet.wallet import Wallet
     from elfpy.markets.hyperdrive import HyperdriveMarket
+    from elfpy.wallet.wallet import Wallet
 
 
 class RandomAgent(BasePolicy):

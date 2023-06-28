@@ -1,27 +1,28 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
+from fixedpointmath import FixedPoint, FixedPointMath
+
 import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
-
-from elfpy.wallet.wallet_deltas import WalletDeltas
-from elfpy.wallet.wallet import Short, Long
 from elfpy.markets.base import BaseMarketAction
-from elfpy.math import FixedPoint, FixedPointMath
 from elfpy.math.update_weighted_average import update_weighted_average
 from elfpy.time.time import StretchedTime
+from elfpy.wallet.wallet import Long, Short
+from elfpy.wallet.wallet_deltas import WalletDeltas
 
 from .checkpoint import Checkpoint
 from .hyperdrive_market_deltas import HyperdriveMarketDeltas
 from .hyperdrive_pricing_model import HyperdrivePricingModel
 
 if TYPE_CHECKING:
-    from elfpy.wallet.wallet import Wallet
     from elfpy.markets.hyperdrive import HyperdriveMarketState
+    from elfpy.wallet.wallet import Wallet
 
 
 # TODO: clean up to avoid these

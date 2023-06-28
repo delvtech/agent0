@@ -2,12 +2,12 @@
 
 import unittest
 
-import elfpy.time as time
+from fixedpointmath import FixedPoint
 
+import elfpy.time as time
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
-from elfpy.markets.hyperdrive import hyperdrive_actions, HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
-from elfpy.math import FixedPoint
+from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel, hyperdrive_actions
 
 
 class TestAddLiquidity(unittest.TestCase):

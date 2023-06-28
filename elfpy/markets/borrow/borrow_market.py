@@ -1,20 +1,21 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from elfpy.types import freezable, Quantity, TokenType
-from elfpy.wallet.wallet_deltas import WalletDeltas
-from elfpy.wallet.wallet import Borrow
+from fixedpointmath import FixedPoint
 
 from elfpy.markets.base import BaseMarket, BaseMarketAction
-from elfpy.math import FixedPoint
+from elfpy.types import Quantity, TokenType, freezable
+from elfpy.wallet.wallet import Borrow
+from elfpy.wallet.wallet_deltas import WalletDeltas
 
-from .borrow_pricing_model import BorrowPricingModel
-from .borrow_market_state import BorrowMarketState
 from .borrow_market_deltas import BorrowMarketDeltas
+from .borrow_market_state import BorrowMarketState
+from .borrow_pricing_model import BorrowPricingModel
 
 if TYPE_CHECKING:
     from elfpy.wallet.wallet import Wallet

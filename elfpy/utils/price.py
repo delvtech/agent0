@@ -1,8 +1,9 @@
 """Utilities for price calculations"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
+from fixedpointmath import FixedPoint
+
 import elfpy.time as time
-from elfpy.math import FixedPoint
 
 
 ### Spot Price and APR ###

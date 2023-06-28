@@ -2,8 +2,7 @@
 import ape
 import pytest
 from ape.api.accounts import TestAccountAPI
-
-from elfpy.math.fixed_point import FixedPoint
+from fixedpointmath.fixed_point import FixedPoint
 
 
 @pytest.fixture(scope="function")

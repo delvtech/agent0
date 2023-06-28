@@ -1,12 +1,12 @@
 """Market initialization tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy.time as time
+from fixedpointmath import FixedPoint
 
+import elfpy.time as time
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
-from elfpy.math import FixedPoint
 from elfpy.time.time import BlockTime
 
 # pylint: disable=too-many-instance-attributes

@@ -1,14 +1,15 @@
 """Testing for the utility methods in the pricing models"""
-import unittest
 import logging
+import unittest
 from typing import Union
+
+from fixedpointmath import FixedPoint
 
 import elfpy.errors.errors as errors
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.utils.outputs as output_utils
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
-from elfpy.math import FixedPoint
+import elfpy.utils.outputs as output_utils
 
 
 class BasePricingModelUtilsTest(unittest.TestCase):

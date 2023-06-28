@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 import elfpy.types as types
-from elfpy.math import FixedPoint
+from fixedpointmath import FixedPoint
 
 
 @types.freezable(frozen=True, no_new_attribs=True)

@@ -1,23 +1,22 @@
 """Testing for the ElfPy package modules"""
 from __future__ import annotations
-import builtins
 
+import builtins
 import logging
 import unittest
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+from fixedpointmath import FixedPoint
 from numpy.random import RandomState
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
-import elfpy.types as types
-
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import SingleLongAgent
-from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.simulators.simulation_state import (
     BlockSimVariables,

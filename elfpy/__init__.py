@@ -6,8 +6,7 @@ from collections import defaultdict
 from typing import Any
 
 import matplotlib as mpl
-
-from elfpy.math import FixedPoint
+from fixedpointmath import FixedPoint
 
 # Setup barebones logging without a handler for users to adapt to their needs.
 logging.getLogger(__name__).addHandler(logging.NullHandler())

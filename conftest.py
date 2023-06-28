@@ -9,9 +9,9 @@ from ape.api.accounts import TestAccountAPI
 from ape.api.providers import ProviderAPI
 from ape.managers.project import ProjectManager
 from attr import dataclass
+from fixedpointmath import FixedPoint
 
 from elfpy.markets.hyperdrive import HyperdriveMarket
-from elfpy.math.fixed_point import FixedPoint
 from tests.cross_platform import fixtures
 
 # load all fixtures, this can only be done in a root level conftest.py file.

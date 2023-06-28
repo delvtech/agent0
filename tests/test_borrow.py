@@ -5,14 +5,12 @@ import logging
 import unittest
 
 import numpy as np
-from elfpy.markets.borrow import BorrowPricingModel, BorrowMarketState
+from fixedpointmath import FixedPoint
 
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-
-from elfpy.markets.borrow import BorrowMarket
-from elfpy.math import FixedPoint
+from elfpy.markets.borrow import BorrowMarket, BorrowMarketState, BorrowPricingModel
 
 
 class TestBorrow(unittest.TestCase):

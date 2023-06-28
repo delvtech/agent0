@@ -1,11 +1,12 @@
 """Class that holds the state for the borrow market"""
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 
-import elfpy.types as types
+from fixedpointmath import FixedPoint
 
+import elfpy.types as types
 from elfpy.markets.base import BaseMarketState
-from elfpy.math import FixedPoint
 
 from .borrow_market_deltas import BorrowMarketDeltas
 

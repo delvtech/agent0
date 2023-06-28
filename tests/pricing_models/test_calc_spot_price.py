@@ -1,12 +1,12 @@
 """Testing for spot price calculations in Pricing Models and Price utils"""
 import unittest
 
-import elfpy.utils.price as price_utils
-import elfpy.time as time
+from fixedpointmath import FixedPoint
 
+import elfpy.time as time
+import elfpy.utils.price as price_utils
 from elfpy.markets.base import BasePricingModel
 from elfpy.markets.hyperdrive import HyperdriveMarketState
-from elfpy.math import FixedPoint
 
 
 class TestSpotPriceCalculations(unittest.TestCase):

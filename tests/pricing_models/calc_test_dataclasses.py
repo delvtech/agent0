@@ -5,10 +5,11 @@ import builtins
 from dataclasses import dataclass
 from typing import Optional, Type
 
+from fixedpointmath import FixedPoint
+
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.math import FixedPoint
 
 
 @dataclass

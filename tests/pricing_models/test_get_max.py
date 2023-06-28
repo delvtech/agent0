@@ -1,17 +1,18 @@
 """Testing for the get_max_long function of the pricing models"""
 from __future__ import annotations
+
 import copy
 import logging
-from dataclasses import dataclass
 import unittest
+from dataclasses import dataclass
+
+from fixedpointmath import FixedPoint
 
 import elfpy.markets.trades as trades
-import elfpy.types as types
 import elfpy.time as time
+import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-
-from elfpy.markets.hyperdrive import HyperdrivePricingModel, HyperdriveMarketDeltas, HyperdriveMarketState
-from elfpy.math import FixedPoint
+from elfpy.markets.hyperdrive import HyperdriveMarketDeltas, HyperdriveMarketState, HyperdrivePricingModel
 
 
 @dataclass

@@ -1,26 +1,22 @@
 """Implements helper functions for setting up a simulation"""
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
+
+from fixedpointmath import FixedPoint
 
 import elfpy.simulators as simulators
 import elfpy.time as time
-
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import InitializeLiquidityAgent
 from elfpy.markets.hyperdrive import (
     HyperdriveMarket,
-    HyperdriveMarketState,
     HyperdriveMarketDeltas,
+    HyperdriveMarketState,
     HyperdrivePricingModel,
 )
-from elfpy.math import FixedPoint
 from elfpy.simulators import Config
-from elfpy.simulators.simulation_state import (
-    BlockSimVariables,
-    DaySimVariables,
-    RunSimVariables,
-    TradeSimVariables,
-)
+from elfpy.simulators.simulation_state import BlockSimVariables, DaySimVariables, RunSimVariables, TradeSimVariables
 
 if TYPE_CHECKING:
     from elfpy.wallet.wallet_deltas import WalletDeltas

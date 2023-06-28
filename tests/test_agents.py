@@ -6,29 +6,28 @@ from dataclasses import dataclass
 from os import path, walk
 
 import numpy as np
+from fixedpointmath import FixedPoint
 
 import elfpy.agents.policies as policies
 import elfpy.time as time
 import elfpy.types as types
-
 from elfpy.agents.agent import Agent
-from elfpy.wallet.wallet_deltas import WalletDeltas
 from elfpy.agents.get_wallet_state import get_wallet_state
-from elfpy.agents.policies.base import BasePolicy
 from elfpy.agents.policies import (
     InitializeLiquidityAgent,
+    LongLouie,
     LpAndWithdrawAgent,
     NoActionPolicy,
     RandomAgent,
+    ShortSally,
     SingleLongAgent,
     SingleLpAgent,
     SingleShortAgent,
-    LongLouie,
-    ShortSally,
 )
+from elfpy.agents.policies.base import BasePolicy
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
-from elfpy.math import FixedPoint
-from elfpy.wallet.wallet import Wallet, Long
+from elfpy.wallet.wallet import Long, Wallet
+from elfpy.wallet.wallet_deltas import WalletDeltas
 
 # pylint: disable=too-few-public-methods
 

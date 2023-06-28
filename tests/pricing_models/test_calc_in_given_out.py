@@ -12,19 +12,18 @@ from calc_test_dataclasses import (
     CalcInGivenOutSuccessTestCase,
     CalcInGivenOutSuccessTestResult,
 )
+from fixedpointmath import FixedPoint
 
 import elfpy.errors.errors as errors
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-
 from elfpy.markets.hyperdrive import (
-    hyperdrive_actions,
     HyperdriveMarketState,
     HyperdrivePricingModel,
     YieldspacePricingModel,
+    hyperdrive_actions,
 )
-from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     from elfpy.markets.base import BasePricingModel

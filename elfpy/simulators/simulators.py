@@ -1,17 +1,17 @@
 """Simulator class wraps the pricing models and markets for experiment tracking and execution"""
 from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
+from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 
 import elfpy.time as time
 import elfpy.types as types
-
 from elfpy.agents.get_wallet_state import get_wallet_state
 from elfpy.markets.hyperdrive import HyperdriveMarketDeltas
-from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.simulators.simulation_state import (
     BlockSimVariables,

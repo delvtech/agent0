@@ -5,12 +5,12 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Generic, TypeVar
 
+from fixedpointmath import FixedPoint
+
 import elfpy.types as types
-from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.time as time
-
     from elfpy.wallet.wallet import Wallet
     from elfpy.wallet.wallet_deltas import WalletDeltas
 

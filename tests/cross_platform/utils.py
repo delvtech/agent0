@@ -10,11 +10,11 @@ from __future__ import annotations
 import ape
 from ape.contracts import ContractInstance
 from eth_typing import HexAddress
+from fixedpointmath.fixed_point import FixedPoint
 
 # elfpy core repo
 import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-from elfpy.math.fixed_point import FixedPoint
 from tests.cross_platform.fixtures.hyperdrive_config import HyperdriveConfig
 
 

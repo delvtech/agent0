@@ -1,10 +1,11 @@
 """Trade related classes and functions"""
 from dataclasses import dataclass
 
+from fixedpointmath import FixedPoint
+
 import elfpy.agents.agent_trade_result as agent_trade_result
 import elfpy.markets.hyperdrive.market_action_result as market_action_result
 import elfpy.types as types
-from elfpy.math import FixedPoint
 
 
 @types.freezable(frozen=True, no_new_attribs=True)

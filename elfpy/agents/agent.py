@@ -4,16 +4,17 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 from typing import TYPE_CHECKING
 
+from fixedpointmath import FixedPoint
+
 from elfpy.agents.policies import NoActionPolicy
-from elfpy.wallet.wallet import Wallet
-from elfpy.math import FixedPoint
 from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Quantity, TokenType, Trade
+from elfpy.wallet.wallet import Wallet
 
 if TYPE_CHECKING:
-    from elfpy.markets.hyperdrive import HyperdriveMarket
-    from elfpy.markets.base import BaseMarket
     from elfpy.agents.policies.base import BasePolicy
+    from elfpy.markets.base import BaseMarket
+    from elfpy.markets.hyperdrive import HyperdriveMarket
 
 
 class Agent:
