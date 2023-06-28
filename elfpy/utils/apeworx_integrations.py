@@ -41,6 +41,44 @@ if TYPE_CHECKING:
 # pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 
 
+PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
+
+OnChainTradeInfo = namedtuple(
+    "OnChainTradeInfo", ["trades", "unique_maturities", "unique_ids", "unique_block_numbers", "share_price"]
+)
+
+Info = namedtuple("Info", ["method", "prefix"])
+
+
+@dataclass
+class PoolState:
+    """A dataclass to hold the state of the pool at a given block."""
+
+    # pylint: disable=invalid-name, too-many-instance-attributes
+    shareReserves: int
+    bondReserves: int
+    lpTotalSupply: int
+    sharePrice: int
+    longsOutstanding: int
+    longAverageMaturityTime: int
+    shortsOutstanding: int
+    shortAverageMaturityTime: int
+    shortBaseVolume: int
+    withdrawalSharesReadyToWithdraw: int
+    withdrawalSharesProceeds: int
+    block_number: int
+    token_id: int
+    prefix: str
+    maturity_timestamp: int
+
+    def __getattribute__(self, __snake: str) -> Any:
+        """Convert from snake_case to camelCase for the dataclass."""
+        return super().__getattribute__(snake_to_camel(__snake))
+
+    def __setattr__(self, __snake: str, __value: Any) -> None:
+        super().__setattr__(snake_to_camel(__snake), __value)
+
+
 class HyperdriveProject(ProjectManager):
     """Hyperdrive project class, to provide static typing for the Hyperdrive contract."""
 
@@ -232,11 +270,6 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
         withdraw_shares_ready_to_withdraw=FixedPoint(scaled_value=pool_state["withdrawalSharesReadyToWithdraw"]),
         withdraw_capital=FixedPoint(0),
     )
-
-
-OnChainTradeInfo = namedtuple(
-    "OnChainTradeInfo", ["trades", "unique_maturities", "unique_ids", "unique_block_numbers", "share_price"]
-)
 
 
 def get_on_chain_trade_info(hyperdrive_contract: ContractInstance, block_number: int | None = None) -> OnChainTradeInfo:
@@ -599,44 +632,6 @@ def snake_to_camel(_snake):
     return "".join(word.capitalize() for word in _snake.split("_"))
 
 
-def camel_to_snake(camel_string: str) -> str:
-    """Convert camelCase to snake_case"""
-    snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", camel_string)
-    return snake_string.lower()
-
-
-@dataclass
-class PoolState:
-    """A dataclass to hold the state of the pool at a given block."""
-
-    # pylint: disable=invalid-name, too-many-instance-attributes
-    shareReserves: int
-    bondReserves: int
-    lpTotalSupply: int
-    sharePrice: int
-    longsOutstanding: int
-    longAverageMaturityTime: int
-    shortsOutstanding: int
-    shortAverageMaturityTime: int
-    shortBaseVolume: int
-    withdrawalSharesReadyToWithdraw: int
-    withdrawalSharesProceeds: int
-    block_number: int
-    token_id: int
-    prefix: str
-    maturity_timestamp: int
-
-    def __getattribute__(self, __snake: str) -> Any:
-        """Convert from snake_case to camelCase for the dataclass."""
-        return super().__getattribute__(snake_to_camel(__snake))
-
-    def __setattr__(self, __snake: str, __value: Any) -> None:
-        super().__setattr__(snake_to_camel(__snake), __value)
-
-
-PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
-
-
 def get_agent_deltas(txn_receipt: ReceiptAPI, trade, addresses, trade_type, pool_info: PoolInfo):
     """Get the change in an agent's wallet from a transaction receipt."""
     # TODO: verify the accuracy of this function through more testing
@@ -810,9 +805,6 @@ def select_abi(method: Callable, params: dict | None = None, args: tuple | None 
     lstr = f" => {selected_abi.name}({', '.join(f'{inpt.name}={arg}' for arg, inpt in zip(args, selected_abi.inputs))})"
     logging.info(lstr)
     return selected_abi, args
-
-
-Info = namedtuple("Info", ["method", "prefix"])
 
 
 def create_trade(
