@@ -28,7 +28,7 @@ def main(
     """Main entry point for accessing contract & writing pool info"""
     # pylint: disable=too-many-locals
     # get web3 provider
-    web3: Web3 = contract_interface.setup_web3(ethereum_node)
+    web3: Web3 = contract_interface.initialize_web3_with_http_provider(ethereum_node, request_kwargs={"timeout": 60})
     # send a request to the local server to fetch the deployed contract addresses and
     # load the deployed Hyperdrive contract addresses from the server response
     state_hyperdrive_contract = contract_interface.get_hyperdrive_contract(state_abi_file_path, contracts_url, web3)

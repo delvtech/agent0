@@ -208,8 +208,21 @@ def save_config(config, file_path):
         toml.dump(config, file)
 
 
-def setup_web3(ethereum_node: URI | str) -> Web3:
-    """Create the Web3 provider and inject a geth Proof of Authority (poa) middleware."""
-    web3 = Web3(Web3.HTTPProvider(ethereum_node))
+def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs: dict | None = None) -> Web3:
+    """Initialize a Web3 instance using an HTTP provider
+    and inject a geth Proof of Authority (poa) middleware.
+    Arguments
+    ---------
+    ethereum_node: URI | str
+        Address of the http provider
+    request_kwargs: dict
+        The HTTPProvider uses the python requests library for making requests.
+        If you would like to modify how requests are made,
+        you can use the request_kwargs to do so.
+    """
+    if request_kwargs is None:
+        request_kwargs = {}
+    provider = Web3.HTTPProvider(ethereum_node, request_kwargs)
+    web3 = Web3(provider)
     web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
     return web3
