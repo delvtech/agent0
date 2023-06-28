@@ -440,8 +440,8 @@ def set_up_ape(
     if config.load_state_id is not None:  # load state from specified id
         logging.info("Loading state from id: %s", config.load_state_id)
         load_state_block_number, addresses, agent_addresses, trade_history = load_state(bot_config, rng)
-        print(f"Loaded state up to block number {load_state_block_number}")
-        print(f"{provider.get_block('latest').number=}")
+        # print(f"Loaded state up to block number {load_state_block_number}")
+        # print(f"{provider.get_block('latest').number=}")
     project: ape_utils.HyperdriveProject = ape_utils.HyperdriveProject(
         path=Path.cwd(),
         hyperdrive_address=addresses["hyperdrive"] if bot_config.devnet else addresses["goerli_hyperdrive"],
@@ -625,21 +625,24 @@ def load_state(bot_config, rng) -> tuple[int, list[str], list[str], pd.DataFrame
         state = json.load(file)
     bot_config.random_seed = state["rand_seed"]
     rng.bit_generator.state = state["rand_state"]
-    trade_history = pd.DataFrame.from_parquet(
+    trade_history = pd.read_parquet(
         bot_config.scratch["project_dir"] / "trades_crash.parquet", engine="pyarrow"
     )
-    convert_cols = [
-        "block_number",
-        "log_index",
-        "transaction_index",
-        "prefix",
-        "id",
-        "value",
-        "maturity_timestamp",
-        "share_price",
-    ]
-    for col in convert_cols:
-        trade_history[col] = trade_history[col].astype(np.int64)
+    convert_types = {
+        "block_number": int,
+        "log_index": int,
+        "transaction_index": int,
+        "prefix": int,
+        "id": int,
+        "value": FixedPoint,
+        "maturity_timestamp": int,
+        "share_price": int,
+    }
+    for col, dtype in convert_types.items():
+        if dtype == FixedPoint:
+            trade_history[col] = trade_history[col].apply(FixedPoint)
+        else:
+            trade_history[col] = trade_history[col].astype(dtype)
     logging.info(
         "STATE loaded from %s with:\n rand_seed %s\n rand_state %s\n trades %s",
         file_path,

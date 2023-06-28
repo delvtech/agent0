@@ -456,15 +456,19 @@ def get_wallet_from_trade_history(
         logging.debug(
             "balance %s = positive_balance %s - negative_balance %s", balance, positive_balance, negative_balance
         )
-        asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
-        asset_type = AssetIdPrefix(asset_prefix).name
+        if "prefix" in trade_history.columns and len(trade_history.loc[relevant_trades,:])>0:
+            asset_prefix = trade_history.loc[relevant_trades, "prefix"].iloc[0]
+            maturity = trade_history.loc[relevant_trades, "maturity_timestamp"].iloc[0]
+        else:
+            asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         mint_time = maturity - SECONDS_IN_YEAR
+        asset_type = AssetIdPrefix(asset_prefix).name
         logging.debug(" => %s(%s) maturity=%s mint_time=%s", asset_type, asset_prefix, maturity, mint_time)
 
         on_chain_balance = 0
         # verify our calculation against the onchain balance
         if add_to_existing_wallet is None and position_id != 0:
-            on_chain_balance = hyperdrive_contract.balanceOf(position_id, address)
+            on_chain_balance = hyperdrive_contract.balanceOf(int(position_id), address)
             # only do balance checks if not marignal update
             if abs(balance - on_chain_balance) > tolerance:
                 raise ValueError(

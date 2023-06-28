@@ -84,7 +84,6 @@ examples/pics
 examples/abi/
 state_dumps/
 config_json_generator.py
-*.json
 
 # Local artifacts
 artifacts/
