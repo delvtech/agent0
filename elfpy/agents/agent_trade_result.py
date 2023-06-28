@@ -1,8 +1,9 @@
 """Agent trade results"""
 from dataclasses import dataclass
 
-import elfpy.types as types
 from fixedpointmath import FixedPoint
+
+import elfpy.types as types
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
