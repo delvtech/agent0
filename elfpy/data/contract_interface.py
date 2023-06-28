@@ -103,7 +103,6 @@ def fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt)
         for log in tx_receipt["logs"]:
             event_data, event = get_event_object(web3, contract, log, tx_receipt)
             if event_data and event:
-                # TODO: For some reason it thinks `log` is `str` instead of `EventData`
                 formatted_log = dict(event_data)
                 formatted_log["event"] = event.get("name")
                 formatted_log["args"] = dict(event_data["args"])

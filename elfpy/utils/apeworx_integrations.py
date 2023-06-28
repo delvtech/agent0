@@ -136,9 +136,9 @@ def get_hyperdrive_config(hyperdrive_instance) -> dict:
     """
     hyperdrive_config: dict = hyperdrive_instance.getPoolConfig().__dict__
     hyperdrive_config["timeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
+    hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
     logging.info("Hyperdrive config deployed at %s: ", hyperdrive_instance.address)
     logging.info("Hyperdrive config: %s", hyperdrive_config)
-    hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
     return hyperdrive_config
 
 
