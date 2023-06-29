@@ -223,16 +223,6 @@ def set_up_agents(
                 bot_config=bot_config,
                 rng=rng,
             )
-            log_str = "Created %s agent with wallet:"
-            for long in agent.wallet.longs:
-                print(f"{long=}")
-                print(f"{type(long)=}")
-                log_str += "  long "
-            for short in agent.wallet.shorts:
-                print(f"{short=}")
-                print(f"{type(short)=}")
-                log_str += "  short "
-            logging.info("created kek")
             sim_agents[f"agent_{agent.wallet.address}"] = agent
     return sim_agents, trade_history, dev_accounts
 
@@ -450,8 +440,8 @@ def set_up_ape(
     if config.load_state_id is not None:  # load state from specified id
         logging.info("Loading state from id: %s", config.load_state_id)
         load_state_block_number, addresses, agent_addresses, trade_history = load_state(bot_config, rng)
-        print(f"Loaded state up to block number {load_state_block_number}")
-        print(f"{provider.get_block('latest').number=}")
+        # print(f"Loaded state up to block number {load_state_block_number}")
+        # print(f"{provider.get_block('latest').number=}")
     project: ape_utils.HyperdriveProject = ape_utils.HyperdriveProject(
         path=Path.cwd(),
         hyperdrive_address=addresses["hyperdrive"] if bot_config.devnet else addresses["goerli_hyperdrive"],
@@ -482,6 +472,7 @@ def do_policy(
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
     bot_config: BotConfig,
+    trade_history: pd.DataFrame | None = None,
 ) -> int:
     """Execute an agent's policy.
 
@@ -503,6 +494,8 @@ def do_policy(
         Contract for base token
     bot_config : BotConfig
         The bot configuration.
+    trade_history : pd.DataFrame, Optional
+        History of previously completed trades. If not provided, it will be queried.
 
     Returns
     -------
@@ -518,7 +511,7 @@ def do_policy(
             # marginal update to wallet
             agent.wallet = ape_utils.get_wallet_from_trade_history(
                 address=agent.contract.address,
-                trade_history=ape_utils.get_trade_history(hyperdrive_instance, ape.chain.blocks[-1].number),
+                trade_history=trade_history,
                 hyperdrive_contract=hyperdrive_instance,
                 base_contract=base_instance,
                 add_to_existing_wallet=agent.wallet,
@@ -537,12 +530,16 @@ def do_policy(
                 elfpy_regular = bot_config.scratch["project_dir"] / "elfpy_regular.json"
                 elfpy_crash = bot_config.scratch["project_dir"] / "elfpy_crash.json"
                 Path.rename(elfpy_regular, elfpy_crash)
-                logging.info(" => anvil state saved to %s, elfpy state saved to %s", anvil_crash, elfpy_crash)
+                logging.info(
+                    " => anvil state saved to %s\n => elfpy state saved to %s",
+                    anvil_crash,
+                    elfpy_crash,
+                )
                 raise exc
     return no_crash_streak
 
 
-def dump_state(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_instance):
+def dump_state(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_instance, trade_history=None):
     """Dump relevant pieces of information: full node state from anvil, random generator state, and trade history.
 
     Parameters
@@ -559,24 +556,21 @@ def dump_state(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_
         Dict of agents used in the simulation.
     hyperdrive_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         The hyperdrive contract instance.
+    trade_history : pd.DataFrame, Optional
+        History of previously completed trades.
     """
-    trade_history = ape_utils.get_trade_history(hyperdrive_instance)
-    if trade_history is not None:
-        trade_history = (trade_history.to_dict(orient="records"),)  # make it JSON serializable
+    if trade_history is None:
+        trade_history = ape_utils.get_trade_history(hyperdrive_instance)
     json.dump(
         {
             "rand_seed": bot_config.random_seed,
             "rand_state": rng.bit_generator.state,
-            "trade_history": trade_history,
             "block_number": block_number,
             "addresses": addresses,
+            "trade_history": trade_history.to_dict(),
             "agent_addresses": [agent.contract.address for agent in sim_agents.values()],
         },
-        fp=open(
-            bot_config.scratch["project_dir"] / "elfpy_regular.json",
-            "w",
-            encoding="utf-8",
-        ),
+        fp=open(bot_config.scratch["project_dir"] / "elfpy_regular.json","w",encoding="utf-8"),
     )
 
 
@@ -607,7 +601,7 @@ def load_state(bot_config, rng) -> tuple[int, list[str], list[str], pd.DataFrame
         state = json.load(file)
     bot_config.random_seed = state["rand_seed"]
     rng.bit_generator.state = state["rand_state"]
-    trade_history = pd.DataFrame(state["trade_history"][0])
+    trade_history = pd.DataFrame(state["trade_history"])
     logging.info(
         "STATE loaded from %s with:\n rand_seed %s\n rand_state %s\n trades %s",
         file_path,
@@ -629,10 +623,10 @@ def main(
     # pylint: disable=too-many-locals
     # Custom parameters for this experiment
     bot_config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
-    bot_config.scratch["state_dump_file_path"] = bot_config.scratch["project_dir"] / "state_dumps"
+    # bot_config.scratch["state_dump_file_path"] = bot_config.scratch["project_dir"] / "state_dumps"
     # make dir if it doesn't exist
-    if not bot_config.scratch["state_dump_file_path"].exists():
-        bot_config.scratch["state_dump_file_path"].mkdir()
+    # if not bot_config.scratch["state_dump_file_path"].exists():
+    #     bot_config.scratch["state_dump_file_path"].mkdir()
     if "num_louie" not in bot_config.scratch:
         bot_config.scratch["num_louie"]: int = 1
     if "num_sally" not in bot_config.scratch:
@@ -672,7 +666,8 @@ def main(
     sim_agents, trade_history, dev_accounts = set_up_agents(
         bot_config, provider, hyperdrive_instance, base_instance, addresses, rng, trade_history
     )
-    ape_utils.inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_instance)
+    if bot_config.load_state_id is not None:
+        ape_utils.inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_instance)
     ape_utils.dump_agent_info(sim_agents, bot_config)
     logging.info("Constructed %s agents:", len(sim_agents))
     for agent_name in sim_agents:
@@ -685,8 +680,15 @@ def main(
         block_timestamp = latest_block.timestamp
         if block_number > last_executed_block:
             log_and_show_block_info(provider, no_crash_streak, block_number, block_timestamp)
+            # marginal update to trade_history
+            start_block = trade_history.block_number.max() + 1
+            start_time = now()
+            trade_history = ape_utils.get_trade_history(hyperdrive_instance, start_block, block_number, trade_history)
+            logging.info("Trade history updated in %s seconds", now() - start_time)
             if config.dump_state is True:  # dump state at the beginning of every new block
-                dump_state(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_instance)
+                start_time = now()
+                dump_state(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_instance, trade_history)
+                logging.info("Dumped state in %s seconds", now() - start_time)
             # create market object needed for agent execution
             elfpy_market = ape_utils.create_elfpy_market(
                 pricing_model, hyperdrive_instance, hyperdrive_config, block_number, block_timestamp, start_timestamp
@@ -701,6 +703,7 @@ def main(
                     hyperdrive_instance,
                     base_instance,
                     bot_config,
+                    trade_history,
                 )
             last_executed_block = block_number
         if (
