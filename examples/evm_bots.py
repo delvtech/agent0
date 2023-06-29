@@ -250,7 +250,6 @@ def create_agent(
             ape_utils.attempt_txn(agent.contract, faucet.mint, *txn_args)
     logging.info(
         " agent_%s is a %s with budget=%s Eth=%s Base=%s",
-        # agent.contract.address[:8],
         bot.index,
         bot.name,
         str_with_precision(params["budget"]),
