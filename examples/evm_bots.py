@@ -405,24 +405,22 @@ def do_trade(
     return pool_state
 
 
-def set_days_without_crashing(current_streak, crash_file, reset: bool = False):
-    """Calculate the number of days without crashing."""
+def save_trade_streak(current_streak, trade_streak_file, reset: bool = False):
+    """Save to file our trade streak so we can resume it on interrupt."""
     streak = 0 if reset is True else current_streak + 1
-    with open(crash_file, "w", encoding="utf-8") as file:
+    with open(trade_streak_file, "w", encoding="utf-8") as file:
         file.write(f"{streak}")
     return streak
 
 
-def log_and_show_block_info(
-    provider: ape.api.ProjectAPI, no_crash_streak: int, block_number: int, block_timestamp: int
-):
+def log_and_show_block_info(provider: ape.api.ProjectAPI, trade_streak: int, block_number: int, block_timestamp: int):
     """Get and show the latest block number and gas fees.
 
     Parameters
     ----------
     provider : `ape.api.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
         The Ape object that represents your connection to the Ethereum network.
-    no_crash_streak : int
+    trade_streak : int
         The number of trades without crashing.
     block_number : int
         The number of the latest block.
@@ -437,7 +435,7 @@ def log_and_show_block_info(
         "Block number: %s, Block time: %s, Trades without crashing: %s, base_fee: %s",
         str_with_precision(block_number),
         datetime.fromtimestamp(block_timestamp),
-        no_crash_streak,
+        trade_streak,
         base_fee,
     )
 
@@ -578,8 +576,8 @@ def set_up_ape(
 def do_policy(
     agent: BasePolicy,
     elfpy_market: HyperdriveMarket,
-    no_crash_streak: int,
-    crash_file: str,
+    trade_streak: int,
+    trade_streak_file: Path.PathLike,
     sim_agents: dict[str, Agent],
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
@@ -593,10 +591,10 @@ def do_policy(
         The agent object used in elf-simulations.
     elfpy_market : HyperdriveMarket
         The elf-simulations object representing the Hyperdrive market.
-    no_crash_streak : int
+    trade_streak : int
         Number of trades in a row without a crash.
-    crash_file : str
-        Location of the file to which we store `no_crash_streak`.
+    trade_streak_file : Path.PathLike
+        Location of the file to which we store our trade streak (continues on interrupt, resets on crash).
     sim_agents : dict[str, Agent]
         Dict of agents used in the simulation.
     hyperdrive_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
@@ -610,7 +608,7 @@ def do_policy(
 
     Returns
     -------
-    no_crash_streak : int
+    trade_streak : int
         Number of trades in a row without a crash.
     """
     # pylint: disable=too-many-arguments
@@ -627,8 +625,8 @@ def do_policy(
             add_to_existing_wallet=agent.wallet,
         )
         logging.debug("%s", agent.wallet)
-        no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file)  # set and save to file
-    return no_crash_streak
+        trade_streak = save_trade_streak(trade_streak, trade_streak_file)  # set and save to file
+    return trade_streak
 
 
 def process_crash(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_instance, trade_history=None):
@@ -712,7 +710,6 @@ def load_state(bot_config, rng) -> tuple[list[str], list[str], pd.DataFrame]:
 def main(
     bot_config: BotConfig,
     rng: NumpyGenerator,
-    crash_file: str,
     network_choice: str,
     provider_settings: str,
 ):
@@ -720,10 +717,9 @@ def main(
     # pylint: disable=too-many-locals
     # Custom parameters for this experiment
     bot_config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
-    # bot_config.scratch["state_dump_file_path"] = bot_config.scratch["project_dir"] / "state_dumps"
-    # make dir if it doesn't exist
-    # if not bot_config.scratch["state_dump_file_path"].exists():
-    #     bot_config.scratch["state_dump_file_path"].mkdir()
+    bot_config.scratch["trade_streak"] = (
+        bot_config.scratch["project_dir"] / f".logging/trade_streak{'_devnet' if config.devnet else ''}.txt"
+    )
     if "num_louie" not in bot_config.scratch:
         bot_config.scratch["num_louie"]: int = 1
     if "num_sally" not in bot_config.scratch:
@@ -758,7 +754,6 @@ def main(
         agent_addresses,
         trade_history,
     ) = set_up_ape(bot_config, provider_settings, addresses, network_choice, pricing_model, rng)
-    no_crash_streak = 0
     # set up the environment
     sim_agents, trade_history = set_up_agents(
         bot_config, provider, hyperdrive_instance, base_instance, addresses, rng, trade_history
@@ -770,29 +765,30 @@ def main(
     for agent_name in sim_agents:
         logging.info("\t%s", agent_name)
     start_timestamp = ape.chain.blocks[-1].timestamp
+    trade_streak = 0
     last_executed_block = 0
     while True:  # hyper drive forever into the sunset
         latest_block = ape.chain.blocks[-1]
         block_number = latest_block.number
         block_timestamp = latest_block.timestamp
         if block_number > last_executed_block:
-            log_and_show_block_info(provider, no_crash_streak, block_number, block_timestamp)
+            log_and_show_block_info(provider, trade_streak, block_number, block_timestamp)
             # marginal update to trade_history
             start_block = trade_history.block_number.max() + 1
             start_time = now()
             trade_history = ape_utils.get_trade_history(hyperdrive_instance, start_block, block_number, trade_history)
-            logging.info("Trade history updated in %s seconds", now() - start_time)
+            logging.debug("Trade history updated in %s seconds", now() - start_time)
             # create market object needed for agent execution
             elfpy_market = ape_utils.create_elfpy_market(
                 pricing_model, hyperdrive_instance, hyperdrive_config, block_number, block_timestamp, start_timestamp
             )
             try:
                 for agent in sim_agents.values():
-                    no_crash_streak = do_policy(
+                    trade_streak = do_policy(
                         agent,
                         elfpy_market,
-                        no_crash_streak,
-                        crash_file,
+                        trade_streak,
+                        bot_config.scratch["trade_streak"],
                         sim_agents,
                         hyperdrive_instance,
                         base_instance,
@@ -800,8 +796,8 @@ def main(
                     )
             except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
                 logging.info("Crashed with error: %s", exc)
-                no_crash_streak = set_days_without_crashing(
-                    no_crash_streak, crash_file, reset=True
+                trade_streak = save_trade_streak(
+                    trade_streak, bot_config.scratch["trade_streak"], reset=True
                 )  # set and save to file
                 process_crash(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_instance, trade_history)
                 if bot_config.halt_on_errors:
@@ -845,9 +841,7 @@ if __name__ == "__main__":
         log_file_and_stdout=config.log_file_and_stdout,
         log_formatter=config.log_formatter,
     )
-    CRASH_FILE = f".logging/no_crash_streak{'_devnet' if config.devnet else ''}.txt"
     # inputs
     NETWORK_CHOICE = "ethereum:local:" + ("alchemy" if config.alchemy else "foundry")
     PROVIDER_SETTINGS = {"host": config.rpc_url}
-    # dynamically load devnet addresses from address file
-    main(config, np.random.default_rng(config.random_seed), CRASH_FILE, NETWORK_CHOICE, PROVIDER_SETTINGS)
+    main(config, np.random.default_rng(config.random_seed), NETWORK_CHOICE, PROVIDER_SETTINGS)
