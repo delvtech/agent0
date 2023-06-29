@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import re
 from collections import namedtuple
 from dataclasses import dataclass
 from pathlib import Path
@@ -339,8 +338,6 @@ def get_wallet_from_trade_history(
     add_to_existing_wallet: Wallet | None = None,
     tolerance=None,
 ) -> Wallet:
-    # pylint: disable=too-many-arguments, too-many-branches
-
     r"""Construct wallet balances from on-chain trade info.
 
     Arguments
@@ -361,6 +358,7 @@ def get_wallet_from_trade_history(
     Wallet
         Wallet with Short, Long, and LP positions.
     """
+    # pylint: disable=too-many-arguments, too-many-branches, disable=too-many-statements
     # TODO: remove restriction forcing Wallet index to be an int (issue #415)
     if tolerance is None:
         tolerance = MAXIMUM_BALANCE_MISMATCH_IN_WEI

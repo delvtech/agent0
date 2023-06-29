@@ -126,7 +126,7 @@ def test_trans_lib_wallet():
     return ape_utils.get_wallet_from_trade_history(
         address=test.test_account.address,
         index=1,  # index of the agent in the list of ALL agents, assigned in set_up_agents() to len(sim_agents)
-        trade_history=ape_utils.get_on_chain_trade_info(test.hyperdrive_instance),
+        trade_history=ape_utils.get_trade_history(test.hyperdrive_instance),
         hyperdrive_contract=test.hyperdrive_instance,
         base_contract=test.base_instance,
     )

@@ -48,6 +48,7 @@ ape_logger.set_level(logging.ERROR)
 
 def check_state_vs_onchain_balances(trade_history, agent_addresses, hyperdrive_instance, base_instance, tolerance=1e16):
     """Inspect the dump we just loaded to ensure accuracy between balances from trade history on-chain queries."""
+    # pylint: disable=too-many-locals, too-many-arguments
     for idx, address in enumerate(agent_addresses):
         log_str = f"querying agent_{idx} at addr={address}"
 
@@ -538,6 +539,7 @@ def set_up_ape(
     trade_history : pd.DataFrame
         History of previously completed trades.
     """
+    # pylint: disable=too-many-arguments
     provider: ProviderAPI = ape.networks.parse_network_choice(
         network_choice=network_choice,
         provider_settings=provider_settings,
@@ -648,21 +650,21 @@ def process_crash(bot_config, block_number, rng, addresses, sim_agents, hyperdri
     trade_history : pd.DataFrame, Optional
         History of previously completed trades.
     """
+    # pylint: disable=too-many-arguments
     start_time = now()
     if trade_history is None:
         trade_history = ape_utils.get_trade_history(hyperdrive_instance)
     elfpy_crash = bot_config.scratch["project_dir"] / "elfpy_crash.json"
-    json.dump(
-        {
-            "rand_seed": bot_config.random_seed,
-            "rand_state": rng.bit_generator.state,
-            "block_number": block_number,
-            "addresses": addresses,
-            "trade_history": trade_history.to_dict(),
-            "agent_addresses": [agent.contract.address for agent in sim_agents.values()],
-        },
-        fp=open(elfpy_crash, "w", encoding="utf-8"),
-    )
+    dump_dict = {
+        "rand_seed": bot_config.random_seed,
+        "rand_state": rng.bit_generator.state,
+        "block_number": block_number,
+        "addresses": addresses,
+        "trade_history": trade_history.to_dict(),
+        "agent_addresses": [agent.contract.address for agent in sim_agents.values()],
+    }
+    with open(elfpy_crash, "w", encoding="utf-8") as file:
+        json.dump(dump_dict, fp=file)
     logging.info("Dumped state in %s seconds", now() - start_time)
     anvil_regular = bot_config.scratch["project_dir"] / "anvil_regular.json"
     anvil_crash = bot_config.scratch["project_dir"] / "anvil_crash.json"
@@ -713,7 +715,7 @@ def main(
     provider_settings: str,
 ):
     """Run the simulation."""
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     # Custom parameters for this experiment
     bot_config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
     bot_config.scratch["trade_streak"] = (
@@ -802,10 +804,8 @@ def main(
                 if bot_config.halt_on_errors:
                     raise exc
             last_executed_block = block_number
-        if (
-            bot_config.devnet and provider.auto_mine
-        ):  # anvil automatically mines after you send a transaction. or manually.
-            sleep(0.5)
+        if bot_config.devnet and automine:
+            # "automine" means anvil automatically mines a new block after you send a transaction, not time-based.
             ape.chain.mine()
         else:  # either on goerli or on devnet with automine disabled (which means time-based mining is enabled)
             sleep(1)
