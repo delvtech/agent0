@@ -44,8 +44,8 @@ from elfpy.utils.outputs import str_with_precision
 ape_logger.set_level(logging.ERROR)
 
 
-def inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_instance, tolerance=1e16):
-    """Sanity check trade history and balances."""
+def check_state_vs_onchain_balances(trade_history, agent_addresses, hyperdrive_instance, base_instance, tolerance=1e16):
+    """Inspect the dump we just loaded to ensure accuracy between balances from trade history on-chain queries."""
     for idx, address in enumerate(agent_addresses):
         log_str = f"querying agent_{idx} at addr={address}"
 
@@ -779,7 +779,7 @@ def main(
         bot_config, provider, hyperdrive_instance, base_instance, addresses, rng, trade_history
     )
     if bot_config.load_state_id is not None:
-        inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_instance)
+        check_state_vs_onchain_balances(trade_history, agent_addresses, hyperdrive_instance, base_instance)
     ape_utils.dump_agent_info(sim_agents, bot_config)
     logging.info("Constructed %s agents:", len(sim_agents))
     for agent_name in sim_agents:
