@@ -46,6 +46,7 @@ with-dependencies = [
     "pyright",
     "pytest",
     "python-dotenv",
+    "sqlalchemy",
     "scipy",
     "tomli",
     "typing_extensions==4.5.0",

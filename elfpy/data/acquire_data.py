@@ -101,6 +101,7 @@ def main(
                         continue
 
                 if block_pool_info:
+                    postgres.add_pool_infos([block_pool_info], session)
                     pool_info.append(block_pool_info)
                 block_transactions = contract_interface.fetch_transactions_for_block(
                     web3, transactions_hyperdrive_contract, block_number
@@ -110,7 +111,6 @@ def main(
             # save pool info to file and postgres
             with open(pool_info_file, mode="w", encoding="UTF-8") as file:
                 json.dump(pool_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
-            postgres.add_pool_infos(pool_info, session)
             # save transactions to file
             with open(transaction_info_file, mode="w", encoding="UTF-8") as file:
                 json.dump(transaction_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)

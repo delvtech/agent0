@@ -1,5 +1,6 @@
 """Initialize Postgres Server"""
 
+import sqlalchemy
 from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -39,18 +40,19 @@ class PoolInfoTable(Base):
     blockNumber = Column(Integer, primary_key=True)
     timeStamp = Column(Integer, index=True)
 
-    amount = Column(Integer)
-    shareReserves = Column(Integer)
-    bondReserves = Column(Integer)
-    lpTotalSupply = Column(Integer)
-    sharePrice = Column(Integer)
-    longsOutstanding = Column(Integer)
-    longAverageMaturityTime = Column(Integer)
-    shortsOutstanding = Column(Integer)
-    shortAverageMaturityTime = Column(Integer)
-    shortBaseVolume = Column(Integer)
-    withdrawalSharesReadyToWithdraw = Column(Integer)
-    withdrawalSharesProceeds = Column(Integer)
+    # strings must be used to store uint256 values.
+    amount = Column(String)
+    shareReserves = Column(String)
+    bondReserves = Column(String)
+    lpTotalSupply = Column(String)
+    sharePrice = Column(String)
+    longsOutstanding = Column(String)
+    longAverageMaturityTime = Column(String)
+    shortsOutstanding = Column(String)
+    shortAverageMaturityTime = Column(String)
+    shortBaseVolume = Column(String)
+    withdrawalSharesReadyToWithdraw = Column(String)
+    withdrawalSharesProceeds = Column(String)
 
 
 def initialize_session():
@@ -61,12 +63,12 @@ def initialize_session():
     # create a session
     session = session_class()
 
+    # create tables
+    Base.metadata.create_all(engine)
+
     # clear the tables
     session.query(PoolInfoTable).delete()
     session.commit()
-
-    # create tables
-    Base.metadata.create_all(engine)
 
     # commit the transaction
     session.commit()
@@ -85,22 +87,26 @@ def add_pool_infos(pool_infos: list[PoolInfo], session):
     for pool_info in pool_infos:
         pool_info_entry = PoolInfoTable(
             # primary key
-            blockNumber=pool_info.blockNumber,
-            # indexed
-            timeStamp=pool_info.timestamp,
-            # other
-            shareReserves=pool_info.shareReserves,
-            bondReserves=pool_info.bondReserves,
-            lpTotalSupply=pool_info.lpTotalSupply,
-            sharePrice=pool_info.sharePrice,
-            longsOutstanding=pool_info.longsOutstanding,
-            longAverageMaturityTime=pool_info.longAverageMaturityTime,
-            shortsOutstanding=pool_info.shortsOutstanding,
-            shortAverageMaturityTime=pool_info.shortAverageMaturityTime,
-            shortBaseVolume=pool_info.shortBaseVolume,
-            withdrawalSharesReadyToWithdraw=pool_info.withdrawalSharesReadyToWithdraw,
-            withdrawalSharesProceeds=pool_info.withdrawalSharesProceeds,
+            blockNumber=str(pool_info.blockNumber),
+            # indexe),
+            timeStamp=str(pool_info.timestamp),
+            # othe),
+            shareReserves=str(pool_info.shareReserves),
+            bondReserves=str(pool_info.bondReserves),
+            lpTotalSupply=str(pool_info.lpTotalSupply),
+            sharePrice=str(pool_info.sharePrice),
+            longsOutstanding=str(pool_info.longsOutstanding),
+            longAverageMaturityTime=str(pool_info.longAverageMaturityTime),
+            shortsOutstanding=str(pool_info.shortsOutstanding),
+            shortAverageMaturityTime=str(pool_info.shortAverageMaturityTime),
+            shortBaseVolume=str(pool_info.shortBaseVolume),
+            withdrawalSharesReadyToWithdraw=str(pool_info.withdrawalSharesReadyToWithdraw),
+            withdrawalSharesProceeds=str(pool_info.withdrawalSharesProceeds),
         )
         session.add(pool_info_entry)
 
-    session.commit()
+    try:
+        session.commit()
+    except sqlalchemy.exc.DataError as err:
+        print(f"{pool_infos=}")
+        raise err

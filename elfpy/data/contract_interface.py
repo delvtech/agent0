@@ -338,7 +338,7 @@ def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, blo
     pool_info_data_dict.update({"timestamp": latest_block_timestamp})
     pool_info_data_dict.update({"blockNumber": block_number})
     # Populating the dataclass from the dictionary
-    pool_info = PoolInfo(**{key: pool_info_data_dict.get(key, 0) for key in asdict(PoolInfo).keys()})
+    pool_info = PoolInfo(**{key: pool_info_data_dict.get(key, 0) for key in PoolInfo.__annotations__.keys()})
 
     return pool_info
 
