@@ -551,9 +551,7 @@ def set_up_ape(
     agent_addresses, trade_history = None, None
     if config.load_state_id is not None:  # load state from specified id
         logging.info("Loading state from id: %s", config.load_state_id)
-        load_state_block_number, addresses, agent_addresses, trade_history = load_state(bot_config, rng)
-        # print(f"Loaded state up to block number {load_state_block_number}")
-        # print(f"{provider.get_block('latest').number=}")
+        addresses, agent_addresses, trade_history = load_state(bot_config, rng)
     project: ape_utils.HyperdriveProject = ape_utils.HyperdriveProject(
         path=Path.cwd(),
         hyperdrive_address=addresses["hyperdrive"] if bot_config.devnet else addresses["goerli_hyperdrive"],
@@ -686,7 +684,7 @@ def dump_state(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_
     )
 
 
-def load_state(bot_config, rng) -> tuple[int, list[str], list[str], pd.DataFrame]:
+def load_state(bot_config, rng) -> tuple[list[str], list[str], pd.DataFrame]:
     """Load relevant pieces of information: full node state from anvil, random generator state, and trade history.
 
     Parameters
@@ -698,8 +696,6 @@ def load_state(bot_config, rng) -> tuple[int, list[str], list[str], pd.DataFrame
 
     Returns
     -------
-    state["block_number"] : int
-        The block number of the state loaded.
     state["addresses"] : list[str]
         List of deployed contract addresses.
     state["agent_addresses"] : list[str]
@@ -721,7 +717,7 @@ def load_state(bot_config, rng) -> tuple[int, list[str], list[str], pd.DataFrame
         rng.bit_generator.state,
         len(trade_history),
     )
-    return state["block_number"], state["addresses"], state["agent_addresses"], trade_history
+    return state["addresses"], state["agent_addresses"], trade_history
 
 
 def main(
