@@ -4,10 +4,11 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 # stdlib
+import os
 import argparse
 import json
 import logging
-import requests
+import shutil
 from datetime import datetime
 from pathlib import Path
 from time import sleep
@@ -16,6 +17,7 @@ from typing import cast
 
 # external lib
 import ape
+import requests
 import numpy as np
 import pandas as pd
 from ape import accounts
@@ -581,7 +583,6 @@ def do_policy(
     sim_agents: dict[str, Agent],
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
-    bot_config: BotConfig,
     trade_history: pd.DataFrame | None = None,
 ) -> int:
     """Execute an agent's policy.
@@ -615,41 +616,22 @@ def do_policy(
     # pylint: disable=too-many-arguments
     trades: list[types.Trade] = agent.get_trades(market=elfpy_market)
     for trade_object in trades:
-        try:
-            logging.debug(trade_object)
-            do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
-            # marginal update to wallet
-            agent.wallet = ape_utils.get_wallet_from_trade_history(
-                address=agent.contract.address,
-                trade_history=trade_history,
-                hyperdrive_contract=hyperdrive_instance,
-                base_contract=base_instance,
-                add_to_existing_wallet=agent.wallet,
-            )
-            logging.debug("%s", agent.wallet)
-            no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file)  # set and save to file
-        except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
-            logging.info("Crashed with error: %s", exc)
-            no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file, reset=True)  # set and save to file
-            if bot_config.halt_on_errors:
-                # rename anvil_regular.json to anvil_crash.json
-                anvil_regular = bot_config.scratch["project_dir"] / "anvil_regular.json"
-                anvil_crash = bot_config.scratch["project_dir"] / "anvil_crash.json"
-                Path.rename(anvil_regular, anvil_crash)
-                # rename elfpy_regular.json to elfpy_crash.json
-                elfpy_regular = bot_config.scratch["project_dir"] / "elfpy_regular.json"
-                elfpy_crash = bot_config.scratch["project_dir"] / "elfpy_crash.json"
-                Path.rename(elfpy_regular, elfpy_crash)
-                logging.info(
-                    " => anvil state saved to %s\n => elfpy state saved to %s",
-                    anvil_crash,
-                    elfpy_crash,
-                )
-                raise exc
+        logging.debug(trade_object)
+        do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
+        # marginal update to wallet
+        agent.wallet = ape_utils.get_wallet_from_trade_history(
+            address=agent.contract.address,
+            trade_history=trade_history,
+            hyperdrive_contract=hyperdrive_instance,
+            base_contract=base_instance,
+            add_to_existing_wallet=agent.wallet,
+        )
+        logging.debug("%s", agent.wallet)
+        no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file)  # set and save to file
     return no_crash_streak
 
 
-def dump_state(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_instance, trade_history=None):
+def process_crash(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_instance, trade_history=None):
     """Dump relevant pieces of information: full node state from anvil, random generator state, and trade history.
 
     Parameters
@@ -669,8 +651,10 @@ def dump_state(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_
     trade_history : pd.DataFrame, Optional
         History of previously completed trades.
     """
+    start_time = now()
     if trade_history is None:
         trade_history = ape_utils.get_trade_history(hyperdrive_instance)
+    elfpy_crash = bot_config.scratch["project_dir"] / "elfpy_crash.json"
     json.dump(
         {
             "rand_seed": bot_config.random_seed,
@@ -680,8 +664,13 @@ def dump_state(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_
             "trade_history": trade_history.to_dict(),
             "agent_addresses": [agent.contract.address for agent in sim_agents.values()],
         },
-        fp=open(bot_config.scratch["project_dir"] / "elfpy_regular.json", "w", encoding="utf-8"),
+        fp=open(elfpy_crash, "w", encoding="utf-8"),
     )
+    logging.info("Dumped state in %s seconds", now() - start_time)
+    anvil_regular = bot_config.scratch["project_dir"] / "anvil_regular.json"
+    anvil_crash = bot_config.scratch["project_dir"] / "anvil_crash.json"
+    shutil.copy(anvil_regular, anvil_crash)  # save anvil's state, so we can reproduce the crash
+    logging.info(" => anvil state saved to %s\n => elfpy state saved to %s",anvil_crash,elfpy_crash)
 
 
 def load_state(bot_config, rng) -> tuple[list[str], list[str], pd.DataFrame]:
@@ -793,26 +782,28 @@ def main(
             start_time = now()
             trade_history = ape_utils.get_trade_history(hyperdrive_instance, start_block, block_number, trade_history)
             logging.info("Trade history updated in %s seconds", now() - start_time)
-            if config.dump_state is True:  # dump state at the beginning of every new block
-                start_time = now()
-                dump_state(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_instance, trade_history)
-                logging.info("Dumped state in %s seconds", now() - start_time)
             # create market object needed for agent execution
             elfpy_market = ape_utils.create_elfpy_market(
                 pricing_model, hyperdrive_instance, hyperdrive_config, block_number, block_timestamp, start_timestamp
             )
-            for agent in sim_agents.values():
-                no_crash_streak = do_policy(
-                    agent,
-                    elfpy_market,
-                    no_crash_streak,
-                    crash_file,
-                    sim_agents,
-                    hyperdrive_instance,
-                    base_instance,
-                    bot_config,
-                    trade_history,
-                )
+            try:
+                for agent in sim_agents.values():
+                    no_crash_streak = do_policy(
+                        agent,
+                        elfpy_market,
+                        no_crash_streak,
+                        crash_file,
+                        sim_agents,
+                        hyperdrive_instance,
+                        base_instance,
+                        trade_history,
+                    )
+            except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
+                logging.info("Crashed with error: %s", exc)
+                no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file, reset=True)  # set and save to file
+                process_crash(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_instance, trade_history)
+                if bot_config.halt_on_errors:
+                    raise exc
             last_executed_block = block_number
         if (
             bot_config.devnet and provider.auto_mine
