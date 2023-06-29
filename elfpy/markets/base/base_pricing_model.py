@@ -5,11 +5,12 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from fixedpointmath import FixedPoint
+
 import elfpy
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
-from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.markets.trades as trades

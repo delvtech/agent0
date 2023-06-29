@@ -2,8 +2,9 @@
 from dataclasses import dataclass
 from enum import Enum
 
+from fixedpointmath import FixedPoint, FixedPointMath
+
 import elfpy.types as types
-from elfpy.math import FixedPoint, FixedPointMath
 
 
 class TimeUnit(Enum):

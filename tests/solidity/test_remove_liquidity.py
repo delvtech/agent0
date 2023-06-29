@@ -1,12 +1,12 @@
 """Remove liquidity market trade tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy.time as time
+from fixedpointmath import FixedPoint, FixedPointMath
 
+import elfpy.time as time
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
-from elfpy.math import FixedPoint, FixedPointMath
 
 # pylint: disable=too-many-arguments
 

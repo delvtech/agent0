@@ -5,8 +5,9 @@ import copy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from elfpy.math import FixedPoint
-from elfpy.types import freezable, Quantity, TokenType
+from fixedpointmath import FixedPoint
+
+from elfpy.types import Quantity, TokenType, freezable
 
 if TYPE_CHECKING:
     from elfpy.wallet.wallet import Borrow, Long, Short

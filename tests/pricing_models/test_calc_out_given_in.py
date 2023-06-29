@@ -10,20 +10,19 @@ from calc_test_dataclasses import (
     CalcOutGivenInSuccessTestCase,
     CalcOutGivenInSuccessTestResult,
 )
+from fixedpointmath import FixedPoint
+from fixedpointmath import errors as fperrors
 
-import elfpy.errors.errors as errors
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-
 from elfpy.markets.base import BasePricingModel
 from elfpy.markets.hyperdrive import (
-    hyperdrive_actions,
     HyperdriveMarketState,
     HyperdrivePricingModel,
     YieldspacePricingModel,
+    hyperdrive_actions,
 )
-from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-lines
 
@@ -1590,7 +1589,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=time.StretchedTime(
                     days=FixedPoint("-91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
                 ),
-                exception_type=(AssertionError, errors.DivisionByZero),
+                exception_type=(AssertionError, fperrors.DivisionByZero),
             ),
             CalcOutGivenInFailureTestCase(  # test 9
                 in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
@@ -1606,7 +1605,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=time.StretchedTime(
                     days=FixedPoint("365.0"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
                 ),
-                exception_type=(AssertionError, errors.DivisionByZero),
+                exception_type=(AssertionError, fperrors.DivisionByZero),
             ),
             CalcOutGivenInFailureTestCase(  # test 10
                 in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
@@ -1622,7 +1621,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=time.StretchedTime(
                     days=FixedPoint("500.0"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
                 ),
-                exception_type=(AssertionError, errors.DivisionByZero),
+                exception_type=(AssertionError, fperrors.DivisionByZero),
             ),
             CalcOutGivenInFailureTestCase(  # test 11
                 # amount very high, can't make trade
@@ -1638,7 +1637,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=time.StretchedTime(
                     days=FixedPoint("91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
                 ),
-                exception_type=(ValueError, errors.DivisionByZero),
+                exception_type=(ValueError, fperrors.DivisionByZero),
             ),
             CalcOutGivenInFailureTestCase(  # test 12
                 in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),

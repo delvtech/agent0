@@ -6,7 +6,7 @@ from enum import Enum
 from functools import wraps
 from typing import Any, Type
 
-from elfpy.math import FixedPoint
+from fixedpointmath import FixedPoint
 
 
 class FrozenClass:

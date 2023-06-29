@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import unittest
-from elfpy.markets.borrow import BorrowMarket, BorrowMarketState, BorrowPricingModel
+
+from fixedpointmath import FixedPoint
 
 import elfpy.time as time
-
+from elfpy.markets.borrow import BorrowMarket, BorrowMarketState, BorrowPricingModel
 from elfpy.markets.hyperdrive import (
     Checkpoint,
     HyperdriveMarket,
@@ -13,7 +14,6 @@ from elfpy.markets.hyperdrive import (
     HyperdrivePricingModel,
     YieldspacePricingModel,
 )
-from elfpy.math import FixedPoint
 
 # TODO: remove this after FixedPoint PRs are finished
 

@@ -1,19 +1,20 @@
 """Testing for the ElfPy package modules"""
 from __future__ import annotations
+
 import logging
 import unittest
+
+from fixedpointmath import FixedPoint
 
 import elfpy.time as time
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
-
 from elfpy.markets.hyperdrive import (
     HyperdriveMarket,
-    HyperdriveMarketState,
     HyperdriveMarketDeltas,
+    HyperdriveMarketState,
     HyperdrivePricingModel,
 )
-from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 
 # pylint: disable=too-many-locals

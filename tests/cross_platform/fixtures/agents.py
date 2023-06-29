@@ -5,11 +5,10 @@ from dataclasses import dataclass
 
 import ape
 import pytest
-
 from ape.api.accounts import TestAccountAPI
+from fixedpointmath import FixedPoint
 
 from elfpy.agents.agent import Agent
-from elfpy.math.fixed_point import FixedPoint
 
 # pylint: disable=redefined-outer-name
 

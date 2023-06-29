@@ -3,9 +3,10 @@ from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 
+from fixedpointmath import FixedPoint
+
 import elfpy.time as time
 import elfpy.utils.price as price_utils
-from elfpy.math import FixedPoint
 
 
 class BasePriceTest(unittest.TestCase):

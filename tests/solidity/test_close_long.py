@@ -1,13 +1,13 @@
 """Close long market trade tests that match those being executed in the solidity repo"""
 import unittest
 
+from fixedpointmath import FixedPoint
+
 import elfpy.time as time
 import elfpy.types as types
-
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
 from elfpy.markets.hyperdrive import Checkpoint, HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
-from elfpy.math import FixedPoint
 from elfpy.time.time import TimeUnit
 
 # pylint: disable=too-many-arguments

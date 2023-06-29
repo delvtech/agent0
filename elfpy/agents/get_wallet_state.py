@@ -1,8 +1,9 @@
 """Gets all the state variables in a wallet."""
 from __future__ import annotations
 
-from elfpy.markets.hyperdrive import hyperdrive_actions, HyperdriveMarket
-from elfpy.math import FixedPoint
+from fixedpointmath import FixedPoint
+
+from elfpy.markets.hyperdrive import HyperdriveMarket, hyperdrive_actions
 from elfpy.wallet.wallet import Wallet
 
 

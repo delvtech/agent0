@@ -1,10 +1,11 @@
 """Class for for storing the delta values for MarketState"""
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 
-import elfpy.types as types
+from fixedpointmath import FixedPoint
 
-from elfpy.math import FixedPoint
+import elfpy.types as types
 from elfpy.markets.base import BaseMarketDeltas
 
 

@@ -1,10 +1,10 @@
 """Pricing model for the borrow market"""
 from __future__ import annotations
 
-import elfpy.types as types
+from fixedpointmath import FixedPoint
 
+import elfpy.types as types
 from elfpy.markets.base import BasePricingModel
-from elfpy.math import FixedPoint
 
 
 class BorrowPricingModel(BasePricingModel):

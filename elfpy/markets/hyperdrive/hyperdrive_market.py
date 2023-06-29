@@ -1,9 +1,12 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations
+
 import copy
 import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
+
+from fixedpointmath import FixedPoint
 
 import elfpy
 import elfpy.errors.errors as errors
@@ -11,9 +14,7 @@ import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
-
 from elfpy.markets.base import BaseMarket, BaseMarketState
-from elfpy.math import FixedPoint
 from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet_deltas import WalletDeltas
 

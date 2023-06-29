@@ -4,15 +4,15 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from fixedpointmath import FixedPoint
 from numpy.random import default_rng
-from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
-    from elfpy.wallet.wallet import Wallet
     from elfpy.markets.base import BaseMarket
     from elfpy.types import Trade
+    from elfpy.wallet.wallet import Wallet
 
 
 class BasePolicy:

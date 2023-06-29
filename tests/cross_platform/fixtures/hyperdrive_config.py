@@ -2,8 +2,7 @@
 from dataclasses import dataclass
 
 import pytest
-
-from elfpy.math.fixed_point import FixedPoint
+from fixedpointmath import FixedPoint
 
 
 @dataclass

@@ -25,6 +25,7 @@ from ape.logging import logger as ape_logger
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from eth_account import Account as EthAccount
+from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 
 # elfpy core repo
@@ -32,13 +33,12 @@ import elfpy
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
 from elfpy import types
-from elfpy.agents.policies import LongLouie, ShortSally, RandomAgent
 from elfpy.agents.agent import Agent
+from elfpy.agents.policies import LongLouie, RandomAgent, ShortSally
 from elfpy.agents.policies.base import BasePolicy
-from elfpy.bots.bot_info import BotInfo
 from elfpy.bots import BotConfig
+from elfpy.bots.bot_info import BotInfo
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
-from elfpy.math import FixedPoint
 from elfpy.utils.outputs import str_with_precision
 
 ape_logger.set_level(logging.ERROR)

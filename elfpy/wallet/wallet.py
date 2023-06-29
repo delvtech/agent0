@@ -6,9 +6,10 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from fixedpointmath import FixedPoint
+
 from elfpy import check_non_zero
-from elfpy.math import FixedPoint
-from elfpy.types import freezable, Quantity, TokenType
+from elfpy.types import Quantity, TokenType, freezable
 from elfpy.wallet.wallet_deltas import WalletDeltas
 
 if TYPE_CHECKING:

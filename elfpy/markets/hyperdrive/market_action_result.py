@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from fixedpointmath import FixedPoint
+
 from elfpy import types
 from elfpy.markets.base import BaseMarketActionResult
-from elfpy.math import FixedPoint
 
 
 @types.freezable(frozen=True, no_new_attribs=True)

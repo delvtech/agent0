@@ -2,14 +2,14 @@
 
 import unittest
 
-import elfpy.time as time
+from fixedpointmath import FixedPoint
 
+import elfpy.time as time
 from elfpy import types
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
 from elfpy.errors import errors
 from elfpy.markets.hyperdrive import Checkpoint, HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
-from elfpy.math import FixedPoint
 
 # TODO: refactor solidity tests as a separate PR to consolidate setUps
 # TODO: Remove duplicate code disable once float code is removed

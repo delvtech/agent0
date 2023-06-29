@@ -3,8 +3,9 @@ from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 
+from fixedpointmath import FixedPoint
+
 import elfpy.time as time
-from elfpy.math import FixedPoint
 
 
 class TestTimeUtils(unittest.TestCase):

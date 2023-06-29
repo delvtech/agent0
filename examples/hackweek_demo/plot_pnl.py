@@ -1,15 +1,16 @@
 """Plots the pnl"""
 from __future__ import annotations
+
 from datetime import datetime
 
 import pandas as pd
-from matplotlib import ticker as mpl_ticker
 from extract_data_logs import calculate_spot_price
+from fixedpointmath import FixedPoint
+from matplotlib import ticker as mpl_ticker
 
 import elfpy
-from elfpy.wallet.wallet import Wallet, Long, Short
 from elfpy import types
-from elfpy.math import FixedPoint
+from elfpy.wallet.wallet import Long, Short, Wallet
 
 
 def get_wallet_from_onchain_trade_info(

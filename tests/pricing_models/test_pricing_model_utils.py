@@ -1,14 +1,15 @@
 """Testing for the utility methods in the pricing models"""
-import unittest
 import logging
+import unittest
 from typing import Union
 
-import elfpy.errors.errors as errors
+from fixedpointmath import FixedPoint
+from fixedpointmath import errors as fperrors
+
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.utils.outputs as output_utils
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
-from elfpy.math import FixedPoint
+import elfpy.utils.outputs as output_utils
 
 
 class BasePricingModelUtilsTest(unittest.TestCase):
@@ -114,7 +115,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 #     = 1/1 * (1*5000000)**0.50 + (2*5000000+2*5000000)**0.50
                 #     = 6708.203932499369
                 "is_error_case": True,  # failure case
-                "expected_result": errors.DivisionByZero,
+                "expected_result": fperrors.DivisionByZero,
             },
         ]
         for test_number, test_case in enumerate(test_cases):
