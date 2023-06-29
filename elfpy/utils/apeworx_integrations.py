@@ -6,14 +6,12 @@ import json
 import logging
 import os
 import re
-from time import sleep
 from collections import namedtuple
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
 
 # third party libs
-import requests
 import ape
 import numpy as np
 import pandas as pd
@@ -31,7 +29,6 @@ from fixedpointmath import FixedPoint
 from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, simulators, time, types
 from elfpy.markets.hyperdrive import AssetIdPrefix, HyperdriveMarketState, HyperdrivePricingModel, hyperdrive_assets
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
-from elfpy.bots import BotConfig
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.utils import outputs as output_utils
@@ -127,117 +124,6 @@ class DefaultHyperdriveConfig:
     gov_fee: FixedPoint = FixedPoint(0)
     position_duration_seconds: int = checkpoint_duration_seconds * checkpoints
     target_liquidity = FixedPoint(1 * 10**6)
-
-
-def inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_instance, tolerance=1e16):
-    """Sanity check trade history and balances."""
-    for idx, address in enumerate(agent_addresses):
-        log_str = f"querying agent_{idx} at addr={address}"
-
-        # create wallet
-        wallet = get_wallet_from_trade_history(
-            address=str(address),
-            index=idx,
-            trade_history=trade_history,
-            hyperdrive_contract=hyperdrive_instance,
-            base_contract=base_instance,
-            tolerance=1e16,  # allow being off by $0.01
-        )
-
-        # print what's in wallet
-        log_str += f"{wallet=}"
-        log_str = f"agent_{idx} has:"
-        log_str += "\n wallet:"
-        for _, long in wallet.longs.items():
-            log_str += f"\n  long {long.balance}"
-        for _, short in wallet.shorts.items():
-            log_str += f"\n  short {short.balance}"
-        log_str += f"\n  lp_tokens {wallet.lp_tokens}"
-
-        # print trade counts
-        from_agent = trade_history["from"] == address
-        to_agent = trade_history["to"] == address
-        num_trades = sum((from_agent | to_agent))
-        num_longs = sum((from_agent | to_agent) & (trade_history["trade_type"] == "LONG"))
-        num_shorts = sum((from_agent | to_agent) & (trade_history["trade_type"] == "SHORT"))
-        num_lp = sum((from_agent | to_agent) & (trade_history["trade_type"] == "LP"))
-        num_withdrawal = sum((from_agent | to_agent) & (trade_history["trade_type"] == "WITHDRAWAL_SHARE"))
-        log_str += "\n trade counts:"
-        log_str += f"\n  {num_trades:2.0f} total"
-        log_str += f"\n  {num_longs:2.0f} long"
-        log_str += f"\n  {num_shorts:2.0f} short"
-        log_str += f"\n  {num_lp:2.0f} LP"
-        log_str += f"\n  {num_withdrawal:2.0f} withdrawal share"
-        if num_trades != (num_longs + num_shorts + num_lp + num_withdrawal):
-            log_str += "\n  trade counts DON'T add up to total"
-        else:
-            log_str += "\n  trade counts add up to total\n"
-
-        # compare off-chain to on-chain balances
-        log_str += "tuples of balances by position by calculation source. balance = (trade_history, onchain)\n"
-        log_str += f" tolerance = {tolerance} aka ${tolerance/1e18}\n"
-        for position_id in trade_history["id"].unique():  # loop across all unique positions
-            from_agent = trade_history["from"] == address
-            to_agent = trade_history["to"] == address
-            relevant_trades = ((from_agent) | (to_agent)) & (trade_history["id"] == position_id)
-            positive_balance = int(trade_history.loc[relevant_trades & (to_agent), "value"].sum())
-            negative_balance = int(trade_history.loc[relevant_trades & (from_agent), "value"].sum())
-            balance = positive_balance - negative_balance
-            on_chain_balance = hyperdrive_instance.balanceOf(position_id, address)
-            first_relevant_row = relevant_trades.index[relevant_trades][0]
-            info = trade_history.loc[first_relevant_row, :]
-            log_str += f"{address[:8]} {info.trade_type:16} balance = "
-            if abs(balance - on_chain_balance) > tolerance:
-                log_str += f"({balance/1e18:0.5f},{on_chain_balance/1e18:0.5f}) MISMATCH\n"
-            else:
-                log_str += f"({balance/1e18:0.0f},{on_chain_balance/1e18:0.0f}) match\n"
-        logging.info(log_str)
-
-
-def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str] | None = None) -> tuple[dict[str, str], str]:
-    """Get devnet addresses from address file."""
-    if addresses is None:
-        addresses = {}
-    deployed_addresses = {}
-    # get deployed addresses from local file, if it exists
-    address_file_path = bot_config.scratch["project_dir"] / "hyperdrive_solidity/artifacts/addresses.json"
-    if os.path.exists(address_file_path):
-        logging.info("Loading addresses.json from local file. This should only be used for development.")
-        with open(address_file_path, "r", encoding="utf-8") as file:
-            deployed_addresses = json.load(file)
-    else:  # otherwise get deployed addresses from artifacts server
-        logging.info(
-            "Attempting to load addresses.json, which requires waiting for the contract deployment to complete."
-        )
-        num_attempts = 120
-        for attempt_num in range(num_attempts):
-            logging.info("\tAttempt %s out of %s to %s", attempt_num + 1, num_attempts, bot_config.artifacts_url)
-            try:
-                response = requests.get(f"{bot_config.artifacts_url}/addresses.json", timeout=10)
-                if response.status_code == 200:
-                    deployed_addresses = response.json()
-                    break
-            except requests.exceptions.ConnectionError as exc:
-                logging.info("Connection error: %s", exc)
-            sleep(1)
-        logging.info("Contracts deployed; addresses loaded.")
-    if "baseToken" in deployed_addresses:
-        addresses["baseToken"] = deployed_addresses["baseToken"]
-        logging.info("found devnet base address: %s", addresses["baseToken"])
-    else:
-        addresses["baseToken"] = None
-    if "mockHyperdrive" in deployed_addresses:
-        addresses["hyperdrive"] = deployed_addresses["mockHyperdrive"]
-        logging.info("found devnet hyperdrive address: %s", addresses["hyperdrive"])
-    elif "hyperdrive" in deployed_addresses:
-        addresses["hyperdrive"] = deployed_addresses["hyperdrive"]
-        logging.info("found devnet hyperdrive address: %s", addresses["hyperdrive"])
-    else:
-        addresses["hyperdrive"] = None
-    if "mockHyperdriveMath" in deployed_addresses:
-        addresses["hyperdriveMath"] = deployed_addresses["mockHyperdriveMath"]
-        logging.info("found devnet hyperdriveMath address: %s", addresses["hyperdriveMath"])
-    return addresses
 
 
 def get_hyperdrive_config(hyperdrive_instance) -> dict:
@@ -396,7 +282,10 @@ OnChainTradeInfo = namedtuple(
 
 
 def get_trade_history(
-    hyperdrive_contract: ContractInstance, start_block: int = 0, stop_block: int | None = None, add_to: pd.DataFrame | None = None
+    hyperdrive_contract: ContractInstance,
+    start_block: int = 0,
+    stop_block: int | None = None,
+    add_to: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     r"""Get all trades from hyperdrive contract.
 
@@ -495,7 +384,7 @@ def get_wallet_from_trade_history(
         logging.debug(
             "balance %s = positive_balance %s - negative_balance %s", balance, positive_balance, negative_balance
         )
-        if "prefix" in trade_history.columns and len(trade_history.loc[relevant_trades,:])>0:
+        if "prefix" in trade_history.columns and len(trade_history.loc[relevant_trades, :]) > 0:
             asset_prefix = trade_history.loc[relevant_trades, "prefix"].iloc[0]
             maturity = trade_history.loc[relevant_trades, "maturity_timestamp"].iloc[0]
         else:

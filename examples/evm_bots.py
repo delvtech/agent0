@@ -7,6 +7,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import argparse
 import json
 import logging
+import requests
 from datetime import datetime
 from pathlib import Path
 from time import sleep
@@ -41,6 +42,117 @@ from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
 from elfpy.utils.outputs import str_with_precision
 
 ape_logger.set_level(logging.ERROR)
+
+
+def inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_instance, tolerance=1e16):
+    """Sanity check trade history and balances."""
+    for idx, address in enumerate(agent_addresses):
+        log_str = f"querying agent_{idx} at addr={address}"
+
+        # create wallet
+        wallet = ape_utils.get_wallet_from_trade_history(
+            address=str(address),
+            index=idx,
+            trade_history=trade_history,
+            hyperdrive_contract=hyperdrive_instance,
+            base_contract=base_instance,
+            tolerance=1e16,  # allow being off by $0.01
+        )
+
+        # print what's in wallet
+        log_str += f"{wallet=}"
+        log_str = f"agent_{idx} has:"
+        log_str += "\n wallet:"
+        for _, long in wallet.longs.items():
+            log_str += f"\n  long {long.balance}"
+        for _, short in wallet.shorts.items():
+            log_str += f"\n  short {short.balance}"
+        log_str += f"\n  lp_tokens {wallet.lp_tokens}"
+
+        # print trade counts
+        from_agent = trade_history["from"] == address
+        to_agent = trade_history["to"] == address
+        num_trades = sum((from_agent | to_agent))
+        num_longs = sum((from_agent | to_agent) & (trade_history["trade_type"] == "LONG"))
+        num_shorts = sum((from_agent | to_agent) & (trade_history["trade_type"] == "SHORT"))
+        num_lp = sum((from_agent | to_agent) & (trade_history["trade_type"] == "LP"))
+        num_withdrawal = sum((from_agent | to_agent) & (trade_history["trade_type"] == "WITHDRAWAL_SHARE"))
+        log_str += "\n trade counts:"
+        log_str += f"\n  {num_trades:2.0f} total"
+        log_str += f"\n  {num_longs:2.0f} long"
+        log_str += f"\n  {num_shorts:2.0f} short"
+        log_str += f"\n  {num_lp:2.0f} LP"
+        log_str += f"\n  {num_withdrawal:2.0f} withdrawal share"
+        if num_trades != (num_longs + num_shorts + num_lp + num_withdrawal):
+            log_str += "\n  trade counts DON'T add up to total"
+        else:
+            log_str += "\n  trade counts add up to total\n"
+
+        # compare off-chain to on-chain balances
+        log_str += "tuples of balances by position by calculation source. balance = (trade_history, onchain)\n"
+        log_str += f" tolerance = {tolerance} aka ${tolerance/1e18}\n"
+        for position_id in trade_history["id"].unique():  # loop across all unique positions
+            from_agent = trade_history["from"] == address
+            to_agent = trade_history["to"] == address
+            relevant_trades = ((from_agent) | (to_agent)) & (trade_history["id"] == position_id)
+            positive_balance = int(trade_history.loc[relevant_trades & (to_agent), "value"].sum())
+            negative_balance = int(trade_history.loc[relevant_trades & (from_agent), "value"].sum())
+            balance = positive_balance - negative_balance
+            on_chain_balance = hyperdrive_instance.balanceOf(position_id, address)
+            first_relevant_row = relevant_trades.index[relevant_trades][0]
+            info = trade_history.loc[first_relevant_row, :]
+            log_str += f"{address[:8]} {info.trade_type:16} balance = "
+            if abs(balance - on_chain_balance) > tolerance:
+                log_str += f"({balance/1e18:0.5f},{on_chain_balance/1e18:0.5f}) MISMATCH\n"
+            else:
+                log_str += f"({balance/1e18:0.0f},{on_chain_balance/1e18:0.0f}) match\n"
+        logging.info(log_str)
+
+
+def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str] | None = None) -> tuple[dict[str, str], str]:
+    """Get devnet addresses from address file."""
+    if addresses is None:
+        addresses = {}
+    deployed_addresses = {}
+    # get deployed addresses from local file, if it exists
+    address_file_path = bot_config.scratch["project_dir"] / "hyperdrive_solidity/artifacts/addresses.json"
+    if os.path.exists(address_file_path):
+        logging.info("Loading addresses.json from local file. This should only be used for development.")
+        with open(address_file_path, "r", encoding="utf-8") as file:
+            deployed_addresses = json.load(file)
+    else:  # otherwise get deployed addresses from artifacts server
+        logging.info(
+            "Attempting to load addresses.json, which requires waiting for the contract deployment to complete."
+        )
+        num_attempts = 120
+        for attempt_num in range(num_attempts):
+            logging.info("\tAttempt %s out of %s to %s", attempt_num + 1, num_attempts, bot_config.artifacts_url)
+            try:
+                response = requests.get(f"{bot_config.artifacts_url}/addresses.json", timeout=10)
+                if response.status_code == 200:
+                    deployed_addresses = response.json()
+                    break
+            except requests.exceptions.ConnectionError as exc:
+                logging.info("Connection error: %s", exc)
+            sleep(1)
+        logging.info("Contracts deployed; addresses loaded.")
+    if "baseToken" in deployed_addresses:
+        addresses["baseToken"] = deployed_addresses["baseToken"]
+        logging.info("found devnet base address: %s", addresses["baseToken"])
+    else:
+        addresses["baseToken"] = None
+    if "mockHyperdrive" in deployed_addresses:
+        addresses["hyperdrive"] = deployed_addresses["mockHyperdrive"]
+        logging.info("found devnet hyperdrive address: %s", addresses["hyperdrive"])
+    elif "hyperdrive" in deployed_addresses:
+        addresses["hyperdrive"] = deployed_addresses["hyperdrive"]
+        logging.info("found devnet hyperdrive address: %s", addresses["hyperdrive"])
+    else:
+        addresses["hyperdrive"] = None
+    if "mockHyperdriveMath" in deployed_addresses:
+        addresses["hyperdriveMath"] = deployed_addresses["mockHyperdriveMath"]
+        logging.info("found devnet hyperdriveMath address: %s", addresses["hyperdriveMath"])
+    return addresses
 
 
 def get_accounts(bot_config: BotConfig) -> list[KeyfileAccount]:
@@ -570,7 +682,7 @@ def dump_state(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_
             "trade_history": trade_history.to_dict(),
             "agent_addresses": [agent.contract.address for agent in sim_agents.values()],
         },
-        fp=open(bot_config.scratch["project_dir"] / "elfpy_regular.json","w",encoding="utf-8"),
+        fp=open(bot_config.scratch["project_dir"] / "elfpy_regular.json", "w", encoding="utf-8"),
     )
 
 
@@ -650,7 +762,7 @@ def main(
         "goerli_hyperdrive": "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2",
     }
     if bot_config.devnet:
-        addresses = ape_utils.get_devnet_addresses(bot_config, addresses)
+        addresses = get_devnet_addresses(bot_config, addresses)
     pricing_model = HyperdrivePricingModel()
     (
         provider,
@@ -667,7 +779,7 @@ def main(
         bot_config, provider, hyperdrive_instance, base_instance, addresses, rng, trade_history
     )
     if bot_config.load_state_id is not None:
-        ape_utils.inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_instance)
+        inspect_dump(trade_history, agent_addresses, hyperdrive_instance, base_instance)
     ape_utils.dump_agent_info(sim_agents, bot_config)
     logging.info("Constructed %s agents:", len(sim_agents))
     for agent_name in sim_agents:
