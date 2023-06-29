@@ -6,12 +6,10 @@ import logging
 import os
 import re
 import time
-from dataclasses import asdict
 from typing import Any, Sequence
 
 import attr
 import requests
-import toml
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI, BlockNumber
@@ -23,8 +21,6 @@ from web3.middleware import geth_poa
 from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
 
 from elfpy.data.pool_info import PoolInfo
-from elfpy.utils import apeworx_integrations as ape_utils
-from elfpy.utils import outputs as output_utils
 
 
 class TestAccount:
@@ -247,83 +243,6 @@ def fetch_address_from_url(contracts_url: str) -> HyperdriveAddressesJson:
     addresses_json = response.json()
     addresses = HyperdriveAddressesJson(**{camel_to_snake(key): value for key, value in addresses_json.items()})
     return addresses
-
-
-def fetch_and_decode_logs(web3_container: Web3, contract: Contract, tx_receipt: TxReceipt) -> list[dict[Any, Any]]:
-    """Decode logs from a transaction receipt"""
-    logs = []
-    if tx_receipt.get("logs"):
-        for log in tx_receipt["logs"]:
-            event_data, event = get_event_object(web3_container, contract, log, tx_receipt)
-            if event_data and event:
-                # TODO: For some reason it thinks `log` is `str` instead of `EventData`
-                formatted_log = dict(event_data)
-                formatted_log["event"] = event.get("name")
-                formatted_log["args"] = dict(event_data["args"])
-                logs.append(formatted_log)
-    return logs
-
-
-def fetch_transactions_for_block(
-    web3_container: Web3, contract: Contract, block_number: BlockNumber
-) -> list[dict[str, Any]] | None:
-    """Fetch transactions related to the hyperdrive_address contract"""
-    block: BlockData = web3_container.eth.get_block(block_number, full_transactions=True)
-    transactions = block.get("transactions")
-    if not transactions:
-        logging.info("no transactions in block %s", block.get("number"))
-        return None
-    decoded_block_transactions = []
-    for transaction in transactions:
-        if isinstance(transaction, HexBytes):
-            logging.warning("transaction HexBytes")
-            continue
-        if transaction.get("to") != contract.address:
-            logging.warning("transaction not from hyperdrive contract")
-            continue
-        transaction_dict = dict(transaction)
-        # Convert the HexBytes fields to their hex representation
-        tx_hash = transaction.get("hash") or HexBytes("")
-        transaction_dict["hash"] = tx_hash.hex()
-        # Decode the transaction input
-        try:
-            method, params = contract.decode_function_input(transaction["input"])
-            transaction_dict["input"] = {"method": method.fn_name, "params": params}
-        except ValueError:  # if the input is not meant for the contract, ignore it
-            continue
-        tx_receipt = web3_container.eth.get_transaction_receipt(tx_hash)
-        logs = fetch_and_decode_logs(web3_container, contract, tx_receipt)
-        decoded_block_transactions.append(
-            {
-                "transaction": transaction_dict,
-                "logs": logs,
-                "receipt": recursive_dict_conversion(tx_receipt),
-            }
-        )
-    return decoded_block_transactions
-
-
-def get_event_object(
-    web3_container: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
-) -> tuple[EventData, ABIEvent] | tuple[None, None]:
-    """Retrieves the event object and anonymous types for a  given contract and log"""
-    abi_events = [abi for abi in contract.abi if abi["type"] == "event"]  # type: ignore
-    for event in abi_events:  # type: ignore
-        # Get event signature components
-        name = event["name"]  # type: ignore
-        inputs = [param["type"] for param in event["inputs"]]  # type: ignore
-        inputs = ",".join(inputs)
-        # Hash event signature
-        event_signature_text = f"{name}({inputs})"
-        event_signature_hex = web3_container.keccak(text=event_signature_text).hex()
-        # Find match between log's event signature and ABI's event signature
-        receipt_event_signature_hex = log["topics"][0].hex()
-        if event_signature_hex == receipt_event_signature_hex:
-            # Decode matching log
-            contract_event: ContractEvent = contract.events[event["name"]]()  # type: ignore
-            event_data: EventData = contract_event.process_receipt(tx_receipt)[0]
-            return event_data, event  # type: ignore
-    return (None, None)
 
 
 def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:

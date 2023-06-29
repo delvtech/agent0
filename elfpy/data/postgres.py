@@ -7,6 +7,9 @@ from sqlalchemy.orm import sessionmaker
 
 from elfpy.data.pool_info import PoolInfo
 
+# classes for sqlalchemy that define table schemas have no methods.
+# pylint: disable=too-few-public-methods
+
 Base = declarative_base()
 
 # replace the user, password, and db_name with credentials
@@ -34,6 +37,9 @@ class TransactionTable(Base):
 
 class PoolInfoTable(Base):
     """PoolInfo Schema"""
+
+    # names are in snake case to indicate values came from solidity
+    # pylint: disable=invalid-name
 
     __tablename__ = "poolinfo"
 
@@ -107,6 +113,6 @@ def add_pool_infos(pool_infos: list[PoolInfo], session):
 
     try:
         session.commit()
-    except sqlalchemy.exc.DataError as err:
+    except sqlalchemy.exc.DataError as err:  # type: ignore
         print(f"{pool_infos=}")
         raise err

@@ -27,7 +27,9 @@ def main(
     sleep_amount: int,
 ):
     """Main entry point for accessing contract & writing pool info"""
+    # TODO: refactor this function, its waaay to big as indicated by these pylints
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-statements
     # initialize the postgres session
     session = postgres.initialize_session()
     # get web3 provider
