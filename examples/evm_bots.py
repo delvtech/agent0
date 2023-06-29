@@ -338,7 +338,7 @@ def set_up_agents(
                 rng=rng,
             )
             sim_agents[f"agent_{agent.wallet.address}"] = agent
-    return sim_agents, trade_history, dev_accounts
+    return sim_agents, trade_history
 
 
 def do_trade(
@@ -670,7 +670,7 @@ def process_crash(bot_config, block_number, rng, addresses, sim_agents, hyperdri
     anvil_regular = bot_config.scratch["project_dir"] / "anvil_regular.json"
     anvil_crash = bot_config.scratch["project_dir"] / "anvil_crash.json"
     shutil.copy(anvil_regular, anvil_crash)  # save anvil's state, so we can reproduce the crash
-    logging.info(" => anvil state saved to %s\n => elfpy state saved to %s",anvil_crash,elfpy_crash)
+    logging.info(" => anvil state saved to %s\n => elfpy state saved to %s", anvil_crash, elfpy_crash)
 
 
 def load_state(bot_config, rng) -> tuple[list[str], list[str], pd.DataFrame]:
@@ -760,7 +760,7 @@ def main(
     ) = set_up_ape(bot_config, provider_settings, addresses, network_choice, pricing_model, rng)
     no_crash_streak = 0
     # set up the environment
-    sim_agents, trade_history, dev_accounts = set_up_agents(
+    sim_agents, trade_history = set_up_agents(
         bot_config, provider, hyperdrive_instance, base_instance, addresses, rng, trade_history
     )
     if bot_config.load_state_id is not None:
@@ -800,7 +800,9 @@ def main(
                     )
             except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
                 logging.info("Crashed with error: %s", exc)
-                no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file, reset=True)  # set and save to file
+                no_crash_streak = set_days_without_crashing(
+                    no_crash_streak, crash_file, reset=True
+                )  # set and save to file
                 process_crash(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_instance, trade_history)
                 if bot_config.halt_on_errors:
                     raise exc
