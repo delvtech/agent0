@@ -48,7 +48,7 @@ class BotConfig(types.FrozenClass):
     # In general the bot will be more risk averse as it grows to infinity.
     # A value of 0 will usually disable it.
     risk_threshold: float = 0.0
-    # whether or not to dump state at every block
+    # whether or not to dump state on a crash
     dump_state: bool = False
     # whether to initialize state from a specific point
     load_state_id: str | None = None
