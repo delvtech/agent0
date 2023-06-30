@@ -66,7 +66,7 @@ def test_agent(agent, hyperdrive_sim, tmp_path):
     # save the state
     with open(tmp_path / "state.pkl", "wb") as file:
         pickle.dump(state, file)
-        
+
     # get the agent's 11th trade
     trade1 = agent.get_trades(market=hyperdrive_sim)
     print(f"{trade1=}")
