@@ -40,38 +40,45 @@ def main(
     transactions_hyperdrive_contract = contract_interface.get_hyperdrive_contract(
         transactions_abi_file_path, contracts_url, web3
     )
+
     # get pool config from hyperdrive contract
+    # TODO should this be added to postgres to put everything in one place?
     config_file = os.path.join(save_dir, "hyperdrive_config.json")
     config_dict = contract_interface.get_hyperdrive_config(state_hyperdrive_contract)
     logging.info("Writing pool config.")
     with open(config_file, mode="w", encoding="UTF-8") as file:
         json.dump(config_dict, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
-    # write the initial pool info
+
+    # Get last entry of pool info in db
+    data_latest_block_number = postgres.get_latest_block_number(session)
+
+    # Using max of latest block in database or specified start block
+    start_block = max(start_block, data_latest_block_number)
+
+    # Parameterized start block number
     block_number: BlockNumber = BlockNumber(start_block)
+
     latest_block_number = web3.eth.get_block_number()
+
     lookback_block_limit = BlockNumber(lookback_block_limit)
     if (latest_block_number - block_number) > lookback_block_limit:
         block_number = BlockNumber(latest_block_number - lookback_block_limit)
         logging.warning("Starting block is past lookback block limit, starting at block %s", block_number)
 
-    pool_info: list[PoolInfo] = []
-    pool_info_file = os.path.join(save_dir, "hyperdrive_pool_info.json")
-
     block_pool_info: PoolInfo = contract_interface.get_block_pool_info(web3, state_hyperdrive_contract, block_number)
-    pool_info.append(block_pool_info)
 
-    # save backfilled pool info to file
-    with open(pool_info_file, mode="w", encoding="UTF-8") as file:
-        json.dump(pool_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
-    # save pool info to postgres
-    postgres.add_pool_infos(pool_info, session)
+    # This if statement executes only on initial run
+    if block_number > data_latest_block_number:
+        postgres.add_pool_infos([block_pool_info], session)
 
+    # TODO move transactions to db
     transaction_info = []
     transaction_info_file = os.path.join(save_dir, "hyperdrive_transactions.json")
 
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
     while True:
+        pool_info: list[PoolInfo] = []
         latest_block_number = web3.eth.get_block_number()
         # if we are on a new block
         if latest_block_number > block_number:
@@ -103,16 +110,17 @@ def main(
                         continue
 
                 if block_pool_info:
-                    postgres.add_pool_infos([block_pool_info], session)
                     pool_info.append(block_pool_info)
+
                 block_transactions = contract_interface.fetch_transactions_for_block(
                     web3, transactions_hyperdrive_contract, block_number
                 )
                 if block_transactions:
                     transaction_info.extend(block_transactions)
-            # save pool info to file and postgres
-            with open(pool_info_file, mode="w", encoding="UTF-8") as file:
-                json.dump(pool_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
+
+            # Add to postgres
+            postgres.add_pool_infos(pool_info, session)
+
             # save transactions to file
             with open(transaction_info_file, mode="w", encoding="UTF-8") as file:
                 json.dump(transaction_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)

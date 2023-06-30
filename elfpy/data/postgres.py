@@ -70,14 +70,6 @@ class PoolInfoTable(Base):
 def initialize_session():
     """Initialize the database if not already initialized"""
 
-    # clear the tables
-    # TODO remove this after testing
-    with engine.connect() as conn:
-        conn.execute(text("DROP TABLE IF EXISTS poolinfo;"))
-        conn.execute(text("DROP TABLE IF EXISTS transactions;"))
-        conn.execute(text("DROP TABLE IF EXISTS users;"))
-        conn.commit()
-
     # create a configured "Session" class
     session_class = sessionmaker(bind=engine)
 
@@ -102,6 +94,7 @@ def add_pool_infos(pool_infos: list[PoolInfo], session):
     """Add a pool info to the poolinfo table"""
 
     for pool_info in pool_infos:
+        print(f"Adding block {pool_info.blockNumber} to db")
         insert_dict = asdict(pool_info)
         insert_dict["timestamp"] = datetime.fromtimestamp(pool_info.timestamp)
         for key, value in insert_dict.items():
@@ -116,3 +109,11 @@ def add_pool_infos(pool_infos: list[PoolInfo], session):
     except sqlalchemy.exc.DataError as err:  # type: ignore
         print(f"{pool_infos=}")
         raise err
+
+
+def get_latest_block_number(session):
+    query_results = session.query(PoolInfoTable).order_by(PoolInfoTable.timestamp.desc()).first()
+    if query_results is None:
+        return 0
+    else:
+        return int(query_results.blockNumber)
