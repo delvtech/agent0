@@ -7,7 +7,6 @@ on:
       - main
     tags:
       - "v*"
-      - "main"
 
 env:
   REGISTRY: ghcr.io
