@@ -14,6 +14,7 @@ from eth_account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI, BlockNumber
 from eth_utils import address
+from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract, ContractEvent, ContractFunction
