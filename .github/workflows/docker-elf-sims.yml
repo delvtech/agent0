@@ -3,8 +3,8 @@ name: "Docker: Build and push elf-sims image"
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
-    tags: ["v*"]
+    branches: ["main", "dpaiton/fix-docker-deploy"]
+    tags: ["*"]
 
 env:
   REGISTRY: ghcr.io
