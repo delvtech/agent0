@@ -49,5 +49,4 @@ jobs:
           file: ./Dockerfile
           tags: |
             ${{ steps.meta.outputs.tags }}
-            edge: ${{ github.ref == 'refs/heads/main' }}
           labels: ${{ steps.meta.outputs.labels }}
