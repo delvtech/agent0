@@ -250,11 +250,11 @@ def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, blo
     pool_info_data_dict = get_smart_contract_read_call(
         hyperdrive_contract, "getPoolInfo", block_identifier=block_number
     )
-    latest_block: BlockData = web3_container.eth.get_block("latest")
-    latest_block_timestamp = latest_block.get("timestamp")
-    if latest_block_timestamp is None:
-        raise AssertionError("Latest block has no timestamp")
-    pool_info_data_dict.update({"timestamp": latest_block_timestamp})
+    current_block: BlockData = web3_container.eth.get_block(block_number)
+    current_block_timestamp = current_block.get("timestamp")
+    if current_block_timestamp is None:
+        raise AssertionError("Current block has no timestamp")
+    pool_info_data_dict.update({"timestamp": current_block_timestamp})
     pool_info_data_dict.update({"blockNumber": block_number})
     # Populating the dataclass from the dictionary
     pool_info = PoolInfo(**{key: pool_info_data_dict.get(key, 0) for key in PoolInfo.__annotations__.keys()})
