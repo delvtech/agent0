@@ -3,10 +3,8 @@ name: "Docker: Build and push elf-sims image"
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-    tags:
-      - "v*"
+    branches: ["main"]
+    tags: ["v*"]
 
 env:
   REGISTRY: ghcr.io
@@ -37,11 +35,6 @@ jobs:
         uses: docker/metadata-action@v4.5.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            # Add a version tag when a valid semver tag is pushed.
-            type=semver,pattern={{version}}
-            # Add the edge tag to every image to represent the latest commit to main
-            type=raw,value=edge,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4.1.0
