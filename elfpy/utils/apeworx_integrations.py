@@ -274,11 +274,6 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
     )
 
 
-OnChainTradeInfo = namedtuple(
-    "OnChainTradeInfo", ["trades", "unique_maturities", "unique_ids", "unique_block_numbers", "share_price"]
-)
-
-
 def get_trade_history(
     hyperdrive_contract: ContractInstance,
     start_block: int = 0,

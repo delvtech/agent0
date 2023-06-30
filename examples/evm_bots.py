@@ -4,10 +4,11 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 # stdlib
-import os
 import argparse
 import json
 import logging
+import os
+import pickle
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -17,9 +18,9 @@ from typing import cast
 
 # external lib
 import ape
-import requests
 import numpy as np
 import pandas as pd
+import requests
 from ape import accounts
 from ape.api import ProviderAPI
 from ape.contracts import ContractInstance
@@ -293,6 +294,8 @@ def set_up_agents(
         Addresses of deployed contracts.
     rng : NumpyGenerator
         The random number generator.
+    trade_history : pd.DataFrame, Optional
+        History of previously completed trades.
 
     Returns
     -------
@@ -499,15 +502,25 @@ def set_up_devnet(
     return base_instance, hyperdrive_instance, addresses
 
 
-def set_up_ape(
+def set_up_experiment(
     bot_config: BotConfig,
     provider_settings: dict,
     addresses: dict,
     network_choice: str,
     pricing_model: HyperdrivePricingModel,
     rng: NumpyGenerator,
-) -> tuple[ProviderAPI, ContractInstance, ContractInstance, dict, KeyfileAccount]:
-    r"""Set up ape.
+) -> tuple[
+    ProviderAPI,
+    ContractInstance,
+    ContractInstance,
+    dict,
+    list[str] | None,
+    pd.DataFrame,
+    dict[str, Agent],
+    NumpyGenerator,
+    dict | None,
+]:
+    r"""Set up Ape objects, agent addresses, trade history, and simulation agents.
 
     Parameters
     ----------
@@ -538,6 +551,12 @@ def set_up_ape(
         List of deployed agent addresses, if loading state, otherwise None.
     trade_history : pd.DataFrame
         History of previously completed trades.
+    sim_agents : dict[str, Agent]
+        Dict of agents used in the simulation.
+    rng : NumpyGenerator
+        The random number generator.
+    random_state : dict | None
+        The state of the random number generator, from the start of the latest block.
     """
     # pylint: disable=too-many-arguments
     provider: ProviderAPI = ape.networks.parse_network_choice(
@@ -549,10 +568,10 @@ def set_up_ape(
         "devnet" if bot_config.devnet else network_choice,
         provider.get_block("latest").number,
     )
-    agent_addresses, trade_history = None, None
+    agent_addresses, trade_history, sim_agents, random_state = None, None, None, None
     if config.load_state_id is not None:  # load state from specified id
         logging.info("Loading state from id: %s", config.load_state_id)
-        addresses, agent_addresses, trade_history = load_state(bot_config, rng)
+        addresses, agent_addresses, trade_history, rng, sim_agents, random_state = load_state(bot_config, rng)
     project: ape_utils.HyperdriveProject = ape_utils.HyperdriveProject(
         path=Path.cwd(),
         hyperdrive_address=addresses["hyperdrive"] if bot_config.devnet else addresses["goerli_hyperdrive"],
@@ -567,11 +586,23 @@ def set_up_ape(
             provider=provider,
         )
         hyperdrive_instance: ContractInstance = project.get_hyperdrive_contract()
-    # read the hyperdrive config from the contract, and log (and print) it
-    hyperdrive_config = ape_utils.get_hyperdrive_config(hyperdrive_instance)
-    # becomes provider.get_auto_mine() with this PR: https://github.com/ApeWorX/ape-foundry/pull/51
-    automine = provider._make_request("anvil_getAutomine", parameters={})  # pylint: disable=protected-access
-    return provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, agent_addresses, trade_history
+
+    if config.load_state_id is None:  # create sim_agents because they're not loaded from state
+        sim_agents, trade_history = set_up_agents(
+            bot_config, provider, hyperdrive_instance, base_instance, addresses, rng, trade_history
+        )
+    return (
+        provider,
+        provider.auto_mine,
+        base_instance,
+        hyperdrive_instance,
+        ape_utils.get_hyperdrive_config(hyperdrive_instance),
+        agent_addresses,
+        trade_history,
+        sim_agents,
+        rng,
+        random_state,
+    )
 
 
 def do_policy(
@@ -630,7 +661,15 @@ def do_policy(
     return trade_streak
 
 
-def process_crash(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_instance, trade_history=None):
+def process_crash(
+    bot_config,
+    block_number,
+    addresses,
+    sim_agents,
+    hyperdrive_instance,
+    random_state_at_start_of_block,
+    trade_history=None,
+):
     """Dump relevant pieces of information: full node state from anvil, random generator state, and trade history.
 
     Parameters
@@ -639,14 +678,14 @@ def process_crash(bot_config, block_number, rng, addresses, sim_agents, hyperdri
         The bot configuration.
     block_number : int
         The block number to load the state from.
-    rng : NumpyGenerator
-        The random number generator.
     addresses : dict
         List of deployed contract addresses.
     sim_agents : dict[str, Agent]
         Dict of agents used in the simulation.
     hyperdrive_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         The hyperdrive contract instance.
+    random_state_at_start_of_block : dict
+        The state of the random number generator, from the start of this block.
     trade_history : pd.DataFrame, Optional
         History of previously completed trades.
     """
@@ -657,14 +696,18 @@ def process_crash(bot_config, block_number, rng, addresses, sim_agents, hyperdri
     elfpy_crash = bot_config.scratch["project_dir"] / "elfpy_crash.json"
     dump_dict = {
         "rand_seed": bot_config.random_seed,
-        "rand_state": rng.bit_generator.state,
+        "rand_state": random_state_at_start_of_block,
         "block_number": block_number,
         "addresses": addresses,
         "trade_history": trade_history.to_dict(),
         "agent_addresses": [agent.contract.address for agent in sim_agents.values()],
+        "agent_keys": list(sim_agents.keys()),
     }
     with open(elfpy_crash, "w", encoding="utf-8") as file:
         json.dump(dump_dict, fp=file)
+    for agent_key, agent in sim_agents.items():
+        with open(bot_config.scratch["project_dir"] / f"{agent_key}.pickle", "wb") as file:
+            pickle.dump(agent, file)
     logging.info("Dumped state in %s seconds", now() - start_time)
     anvil_regular = bot_config.scratch["project_dir"] / "anvil_regular.json"
     anvil_crash = bot_config.scratch["project_dir"] / "anvil_crash.json"
@@ -672,7 +715,7 @@ def process_crash(bot_config, block_number, rng, addresses, sim_agents, hyperdri
     logging.info(" => anvil state saved to %s\n => elfpy state saved to %s", anvil_crash, elfpy_crash)
 
 
-def load_state(bot_config, rng) -> tuple[list[str], list[str], pd.DataFrame]:
+def load_state(bot_config, rng) -> tuple[list[str], list[str], pd.DataFrame, NumpyGenerator]:
     """Load relevant pieces of information: full node state from anvil, random generator state, and trade history.
 
     Parameters
@@ -690,14 +733,25 @@ def load_state(bot_config, rng) -> tuple[list[str], list[str], pd.DataFrame]:
         List of agent addresses.
     trade_history : pd.DataFrame
         History of previously completed trades.
+    rng : NumpyGenerator
+        The random number generator.
+    state["rand_state"] : dict
+        The state of the random number generator, from the start of the latest block.
     """
     state_id = bot_config.load_state_id.replace(".json", "")
     file_path = bot_config.scratch["project_dir"] / f"{state_id}.json"
     with open(file_path, "r", encoding="utf-8") as file:
         state = json.load(file)
     bot_config.random_seed = state["rand_seed"]
+    rng = np.random.default_rng(bot_config.random_seed)
     rng.bit_generator.state = state["rand_state"]
     trade_history = pd.DataFrame(state["trade_history"])
+    sim_agents = {}
+    for agent_key in state["agent_keys"]:
+        with open(bot_config.scratch["project_dir"] / f"{agent_key}.pickle", "rb") as file:
+            agent = pickle.load(file)
+            agent.policy.rng = rng
+            sim_agents[agent_key] = agent
     logging.info(
         "STATE loaded from %s with:\n rand_seed %s\n rand_state %s\n trades %s",
         file_path,
@@ -705,7 +759,47 @@ def load_state(bot_config, rng) -> tuple[list[str], list[str], pd.DataFrame]:
         rng.bit_generator.state,
         len(trade_history),
     )
-    return state["addresses"], state["agent_addresses"], trade_history
+    return state["addresses"], state["agent_addresses"], trade_history, rng, sim_agents, state["rand_state"]
+
+
+def check_rng_matches(rng, _random_state, bot_config, agent=None):
+    """Check that the random number generator matches the provided random state.
+
+    Parameters
+    ----------
+    rng : NumpyGenerator
+        The random number generator.
+    _random_state : dict
+        The state of the random number generator.
+    bot_config : BotConfig
+        The bot configuration.
+    agent : Agent, Optional
+        The agent to check.
+    """
+    if _random_state is not None and bot_config.load_state_id is not None:
+        assert rng.bit_generator.state == _random_state, (
+            "Random state doesn't match:\n"
+            f"rng.bit_generator.state\n{rng.bit_generator.state}\n"
+            f"random_state_at_start_of_block\n{_random_state}"
+        )
+        logging.debug(
+            "Random state does match:\nrng.bit_generator.state\n%s\nrandom_state_at_start_of_block\n%s",
+            rng.bit_generator.state,
+            _random_state,
+        )
+        if agent is not None:
+            assert agent.policy.rng.bit_generator.state == _random_state, (
+                "AGENT Random state doesn't match:\n"
+                f"agent.policy.rng.bit_generator.state\n{agent.policy.rng.bit_generator.state}\n"
+                f"random_state_at_start_of_block\n{_random_state}"
+            )
+            logging.debug(
+                "AGENT Random state does match:\n"
+                "agent.policy.rng.bit_generator.state\n%s\n"
+                "random_state_at_start_of_block\n%s",
+                agent.policy.rng.bit_generator.state,
+                _random_state,
+            )
 
 
 def main(
@@ -754,11 +848,11 @@ def main(
         hyperdrive_config,
         agent_addresses,
         trade_history,
-    ) = set_up_ape(bot_config, provider_settings, addresses, network_choice, pricing_model, rng)
-    # set up the environment
-    sim_agents, trade_history = set_up_agents(
-        bot_config, provider, hyperdrive_instance, base_instance, addresses, rng, trade_history
-    )
+        sim_agents,
+        rng,
+        random_state_at_start_of_block,
+    ) = set_up_experiment(bot_config, provider_settings, addresses, network_choice, pricing_model, rng)
+    assert isinstance(sim_agents, dict), "sim_agents wasn't created or loaded properly."
     if bot_config.load_state_id is not None:
         check_state_vs_onchain_balances(trade_history, agent_addresses, hyperdrive_instance, base_instance)
     ape_utils.dump_agent_info(sim_agents, bot_config)
@@ -783,8 +877,12 @@ def main(
             elfpy_market = ape_utils.create_elfpy_market(
                 pricing_model, hyperdrive_instance, hyperdrive_config, block_number, block_timestamp, start_timestamp
             )
+            check_rng_matches(rng, random_state_at_start_of_block, bot_config)
+            random_state_at_start_of_block = rng.bit_generator.state
             try:
-                for agent in sim_agents.values():
+                for idx, agent in enumerate(sim_agents.values()):
+                    if idx == 0:
+                        check_rng_matches(rng, random_state_at_start_of_block, bot_config, agent)
                     trade_streak = do_policy(
                         agent,
                         elfpy_market,
@@ -800,7 +898,15 @@ def main(
                 trade_streak = save_trade_streak(
                     trade_streak, bot_config.scratch["trade_streak"], reset=True
                 )  # set and save to file
-                process_crash(bot_config, block_number, rng, addresses, sim_agents, hyperdrive_instance, trade_history)
+                process_crash(
+                    bot_config,
+                    block_number,
+                    addresses,
+                    sim_agents,
+                    hyperdrive_instance,
+                    random_state_at_start_of_block,
+                    trade_history,
+                )
                 if bot_config.halt_on_errors:
                     raise exc
             last_executed_block = block_number
@@ -812,7 +918,7 @@ def main(
 
 
 def get_argparser() -> argparse.ArgumentParser:
-    """Define & parse arguments from stdin"""
+    """Define & parse arguments from stdin."""
     parser = argparse.ArgumentParser(
         prog="evm_bots",
         description="Example execution script for running bots using Elfpy",
