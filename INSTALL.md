@@ -39,15 +39,19 @@ If you intend to improve the documentation, then you must also install the packa
 python -m pip install --upgrade -e ".[with-dependencies,docs]"
 ```
 
+If you intend to work postgres then you'll also need to install the postgres and the required packages:
+
+```bash
+brew install postgres
+python -m pip install --upgrade -e ".[with-dependencies,postgres]"
+```
+
 An explanation of what the above steps do:
 
 - `pyenv install 3.10` You should now see the correct version when you run `pyenv versions`.
 - `pyenv local 3.10` This command creates a `.python-version` file in your current directory. If you have pyenv active in your environment, this file will automatically activate this version for you.
 - `python -m venv .venv` This will create a `.venv` folder in your repo directory that stores the local python build & packages. After this command you should be able to type which python and see that it points to an executable inside `.venv/`.
 - `python -m pip install --upgrade -e ".[with-dependencies]"` This installs elfpy locally such that the install updates automatically any time you change the source code. This also installs all dependencies defined in `pyproject.toml`.
-
-If you intend to work postgres then you'll also need to install
-pyscopg2
 
 ## Working with smart contracts (optional)
 
