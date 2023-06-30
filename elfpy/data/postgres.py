@@ -1,7 +1,11 @@
 """Initialize Postgres Server"""
 
+from dataclasses import asdict
+from datetime import datetime
+
 import sqlalchemy
-from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
+from fixedpointmath import FixedPoint
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -43,26 +47,37 @@ class PoolInfoTable(Base):
 
     __tablename__ = "poolinfo"
 
-    blockNumber = Column(Integer, primary_key=True)
-    timeStamp = Column(Integer, index=True)
+    # Generate schema from PoolInfo data class
+    # These member variables match exactly with the dataclass pool_info
 
-    # strings must be used to store uint256 values.
-    amount = Column(String)
-    shareReserves = Column(String)
-    bondReserves = Column(String)
-    lpTotalSupply = Column(String)
-    sharePrice = Column(String)
-    longsOutstanding = Column(String)
-    longAverageMaturityTime = Column(String)
-    shortsOutstanding = Column(String)
-    shortAverageMaturityTime = Column(String)
-    shortBaseVolume = Column(String)
-    withdrawalSharesReadyToWithdraw = Column(String)
-    withdrawalSharesProceeds = Column(String)
+    blockNumber = Column(Integer, primary_key=True)
+    # All timestamps are stored without timezone, in UTC.
+    timestamp = Column(DateTime, index=True)
+
+    shareReserves = Column(Numeric)
+    bondReserves = Column(Numeric)
+    lpTotalSupply = Column(Numeric)
+    sharePrice = Column(Numeric)
+    longsOutstanding = Column(Numeric)
+    longAverageMaturityTime = Column(Numeric)
+    shortsOutstanding = Column(Numeric)
+    shortAverageMaturityTime = Column(Numeric)
+    shortBaseVolume = Column(Numeric)
+    withdrawalSharesReadyToWithdraw = Column(Numeric)
+    withdrawalSharesProceeds = Column(Numeric)
 
 
 def initialize_session():
     """Initialize the database if not already initialized"""
+
+    # clear the tables
+    # TODO remove this after testing
+    with engine.connect() as conn:
+        conn.execute(text("DROP TABLE IF EXISTS poolinfo;"))
+        conn.execute(text("DROP TABLE IF EXISTS transactions;"))
+        conn.execute(text("DROP TABLE IF EXISTS users;"))
+        conn.commit()
+
     # create a configured "Session" class
     session_class = sessionmaker(bind=engine)
 
@@ -71,10 +86,6 @@ def initialize_session():
 
     # create tables
     Base.metadata.create_all(engine)
-
-    # clear the tables
-    session.query(PoolInfoTable).delete()
-    session.commit()
 
     # commit the transaction
     session.commit()
@@ -91,24 +102,13 @@ def add_pool_infos(pool_infos: list[PoolInfo], session):
     """Add a pool info to the poolinfo table"""
 
     for pool_info in pool_infos:
-        pool_info_entry = PoolInfoTable(
-            # primary key
-            blockNumber=str(pool_info.blockNumber),
-            # indexe),
-            timeStamp=str(pool_info.timestamp),
-            # othe),
-            shareReserves=str(pool_info.shareReserves),
-            bondReserves=str(pool_info.bondReserves),
-            lpTotalSupply=str(pool_info.lpTotalSupply),
-            sharePrice=str(pool_info.sharePrice),
-            longsOutstanding=str(pool_info.longsOutstanding),
-            longAverageMaturityTime=str(pool_info.longAverageMaturityTime),
-            shortsOutstanding=str(pool_info.shortsOutstanding),
-            shortAverageMaturityTime=str(pool_info.shortAverageMaturityTime),
-            shortBaseVolume=str(pool_info.shortBaseVolume),
-            withdrawalSharesReadyToWithdraw=str(pool_info.withdrawalSharesReadyToWithdraw),
-            withdrawalSharesProceeds=str(pool_info.withdrawalSharesProceeds),
-        )
+        insert_dict = asdict(pool_info)
+        insert_dict["timestamp"] = datetime.fromtimestamp(pool_info.timestamp)
+        for key, value in insert_dict.items():
+            if isinstance(value, FixedPoint):
+                insert_dict[key] = float(value)
+
+        pool_info_entry = PoolInfoTable(**insert_dict)
         session.add(pool_info_entry)
 
     try:

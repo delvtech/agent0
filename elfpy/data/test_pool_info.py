@@ -1,4 +1,6 @@
 """CRUD tests for PoolInfoTable"""
+from datetime import datetime
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -27,30 +29,34 @@ class TestPoolInfoTable:
 
     def test_create_pool_info(self, session):
         """Create and entry"""
-        pool_info = PoolInfoTable(blockNumber=1, timeStamp=1628472000)  # add your other columns here...
+        timestamp = datetime.fromtimestamp(1628472000)
+        pool_info = PoolInfoTable(blockNumber=1, timestamp=timestamp)  # add your other columns here...
         session.add(pool_info)
         session.commit()
 
         retrieved_pool_info = session.query(PoolInfoTable).filter_by(blockNumber=1).first()
         assert retrieved_pool_info is not None
-        assert retrieved_pool_info.timeStamp == 1628472000
+        assert retrieved_pool_info.timestamp == timestamp
 
     def test_update_pool_info(self, session):
         """Update an entry"""
-        pool_info = PoolInfoTable(blockNumber=1, timeStamp=1628472000)
+        timestamp = datetime.fromtimestamp(1628472000)
+        pool_info = PoolInfoTable(blockNumber=1, timestamp=timestamp)
         session.add(pool_info)
         session.commit()
 
         # TODO: Solve this type issue.  I read the sqlmypy can do this but I wasn't successful.
-        pool_info.timeStamp = 1628472001  # type: ignore
+        new_timestamp = datetime.fromtimestamp(1628472001)
+        pool_info.timestamp = new_timestamp  # type: ignore
         session.commit()
 
         updated_pool_info = session.query(PoolInfoTable).filter_by(blockNumber=1).first()
-        assert updated_pool_info.timeStamp == 1628472001
+        assert updated_pool_info.timestamp == new_timestamp
 
     def test_delete_pool_info(self, session):
         """Delete an entry"""
-        pool_info = PoolInfoTable(blockNumber=1, timeStamp=1628472000)
+        timestamp = datetime.fromtimestamp(1628472000)
+        pool_info = PoolInfoTable(blockNumber=1, timestamp=timestamp)
         session.add(pool_info)
         session.commit()
 

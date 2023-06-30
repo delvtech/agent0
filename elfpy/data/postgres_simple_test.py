@@ -6,7 +6,7 @@ from elfpy.data.pool_info import PoolInfo
 if __name__ == "__main__":
     session = postgres.initialize_session()
 
-    pool_info: list[PoolInfo] = [PoolInfo()]
+    pool_info: list[PoolInfo] = [PoolInfo(blockNumber=0, timestamp=0)]
 
     for i in range(1, 100):
         pool_info[0].blockNumber = i
