@@ -15,7 +15,7 @@ from elfpy.agents.policies import RandomAgent
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket, HyperdriveMarketState
 from elfpy.markets.hyperdrive.hyperdrive_pricing_model import HyperdrivePricingModel
 
-RAND_SEED = np.random.randint(1000)
+RAND_SEED = 123
 
 # pylint: disable=redefined-outer-name
 
