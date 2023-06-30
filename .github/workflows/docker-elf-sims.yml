@@ -39,7 +39,7 @@ jobs:
             # Add a version tag when a valid semver tag is pushed.
             type=semver,pattern={{version}}
             # Add the edge tag to every image to represent the latest commit to main
-            type=raw,value=edge,enable={{is_default_branch}}
+            type=edge,branch=main
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4.1.0
