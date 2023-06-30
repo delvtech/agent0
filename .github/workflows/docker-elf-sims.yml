@@ -3,7 +3,7 @@ name: "Docker: Build and push elf-sims image"
 on:
   workflow_dispatch:
   push:
-    branches: ["main", "dpaiton/fix-docker-deploy"]
+    branches: ["main"]
     tags: ["*"]
 
 env:
