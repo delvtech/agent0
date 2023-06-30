@@ -60,6 +60,10 @@ def test_agent(agent, hyperdrive_sim, tmp_path):
     # get the state we want to save
     state = agent.policy.rng.bit_generator.state
 
+    # get the agent's 11th trade, last before it crashes
+    trade1 = agent.get_trades(market=hyperdrive_sim)
+    print(f"{trade1=}")
+
     # save the agent
     with open(tmp_path / "agent.pkl", "wb") as file:
         pickle.dump(agent, file)
@@ -67,18 +71,21 @@ def test_agent(agent, hyperdrive_sim, tmp_path):
     with open(tmp_path / "state.pkl", "wb") as file:
         pickle.dump(state, file)
 
-    # get the agent's 11th trade
-    trade1 = agent.get_trades(market=hyperdrive_sim)
-    print(f"{trade1=}")
-
     # reload the agent and call it agent2
     agent2 = None
     with open(tmp_path / "agent.pkl", "rb") as file:
         agent2 = pickle.load(file)
-        agent2.policy.rng = np.random.default_rng(RAND_SEED)
-        agent2.policy.rng.bit_generator.state = state
 
-    # get the loaded agent's next trade
+    # get the loaded agent's next trade immediately
+    trade2 = agent2.get_trades(market=hyperdrive_sim)
+    # assert that this fails
+    assert trade1 != trade2
+
+    # update the agent's rng state
+    agent2.policy.rng = np.random.default_rng(RAND_SEED)
+    agent2.policy.rng.bit_generator.state = state
+
+    # get the loaded agent's next trade after setting its rng state
     trade2 = agent2.get_trades(market=hyperdrive_sim)
     print(f"{trade2=}")
 
