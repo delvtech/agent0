@@ -10,16 +10,17 @@ from typing import Any, Sequence
 
 import attr
 import requests
-
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
-from eth_typing import BlockNumber, URI
+from eth_typing import URI, BlockNumber
 from eth_utils import address
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
 from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
+
+from elfpy.data.pool_info import PoolInfo
 
 
 class TestAccount:
@@ -244,16 +245,21 @@ def fetch_address_from_url(contracts_url: str) -> HyperdriveAddressesJson:
     return addresses
 
 
-def get_block_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str | Any, Any]:
+def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:
     """Returns the block pool info from the Hyperdrive contract"""
-    block_pool_info = get_smart_contract_read_call(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
-    latest_block: BlockData = web3.eth.get_block("latest")
+    pool_info_data_dict = get_smart_contract_read_call(
+        hyperdrive_contract, "getPoolInfo", block_identifier=block_number
+    )
+    latest_block: BlockData = web3_container.eth.get_block("latest")
     latest_block_timestamp = latest_block.get("timestamp")
     if latest_block_timestamp is None:
         raise AssertionError("Latest block has no timestamp")
-    block_pool_info.update({"timestamp": latest_block_timestamp})
-    block_pool_info.update({"blockNumber": block_number})
-    return block_pool_info
+    pool_info_data_dict.update({"timestamp": latest_block_timestamp})
+    pool_info_data_dict.update({"blockNumber": block_number})
+    # Populating the dataclass from the dictionary
+    pool_info = PoolInfo(**{key: pool_info_data_dict.get(key, 0) for key in PoolInfo.__annotations__.keys()})
+
+    return pool_info
 
 
 def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3: Web3) -> Contract:

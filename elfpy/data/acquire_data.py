@@ -6,10 +6,11 @@ import logging
 import os
 import time
 
-from eth_typing import BlockNumber, URI
+from eth_typing import URI, BlockNumber
 from web3 import Web3
 
-from elfpy.data import contract_interface
+from elfpy.data import contract_interface, postgres
+from elfpy.data.pool_info import PoolInfo
 from elfpy.utils import outputs as output_utils
 
 # pylint: disable=too-many-arguments
@@ -26,7 +27,11 @@ def main(
     sleep_amount: int,
 ):
     """Main entry point for accessing contract & writing pool info"""
+    # TODO: refactor this function, its waaay to big as indicated by these pylints
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-statements
+    # initialize the postgres session
+    session = postgres.initialize_session()
     # get web3 provider
     web3: Web3 = contract_interface.initialize_web3_with_http_provider(ethereum_node, request_kwargs={"timeout": 60})
     # send a request to the local server to fetch the deployed contract addresses and
@@ -48,14 +53,22 @@ def main(
     if (latest_block_number - block_number) > lookback_block_limit:
         block_number = BlockNumber(latest_block_number - lookback_block_limit)
         logging.warning("Starting block is past lookback block limit, starting at block %s", block_number)
-    pool_info = []
-    block_pool_info: dict = contract_interface.get_block_pool_info(web3, state_hyperdrive_contract, block_number)
-    pool_info.append(block_pool_info)
+
+    pool_info: list[PoolInfo] = []
     pool_info_file = os.path.join(save_dir, "hyperdrive_pool_info.json")
-    transaction_info_file = os.path.join(save_dir, "hyperdrive_transactions.json")
+
+    block_pool_info: PoolInfo = contract_interface.get_block_pool_info(web3, state_hyperdrive_contract, block_number)
+    pool_info.append(block_pool_info)
+
+    # save backfilled pool info to file
     with open(pool_info_file, mode="w", encoding="UTF-8") as file:
         json.dump(pool_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
+    # save pool info to postgres
+    postgres.add_pool_infos(pool_info, session)
+
     transaction_info = []
+    transaction_info_file = os.path.join(save_dir, "hyperdrive_transactions.json")
+
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
     while True:
@@ -90,14 +103,17 @@ def main(
                         continue
 
                 if block_pool_info:
+                    postgres.add_pool_infos([block_pool_info], session)
                     pool_info.append(block_pool_info)
                 block_transactions = contract_interface.fetch_transactions_for_block(
                     web3, transactions_hyperdrive_contract, block_number
                 )
                 if block_transactions:
                     transaction_info.extend(block_transactions)
+            # save pool info to file and postgres
             with open(pool_info_file, mode="w", encoding="UTF-8") as file:
                 json.dump(pool_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
+            # save transactions to file
             with open(transaction_info_file, mode="w", encoding="UTF-8") as file:
                 json.dump(transaction_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
         time.sleep(sleep_amount)
