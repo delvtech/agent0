@@ -1,11 +1,11 @@
-"""CRUD tests for PoolInfoTable"""
+"""CRUD tests for PoolInfo"""
 from datetime import datetime
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from elfpy.data.postgres import Base, PoolInfoTable
+from elfpy.data.postgres import Base, PoolInfo
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)
@@ -30,18 +30,18 @@ class TestPoolInfoTable:
     def test_create_pool_info(self, session):
         """Create and entry"""
         timestamp = datetime.fromtimestamp(1628472000)
-        pool_info = PoolInfoTable(blockNumber=1, timestamp=timestamp)  # add your other columns here...
+        pool_info = PoolInfo(blockNumber=1, timestamp=timestamp)  # add your other columns here...
         session.add(pool_info)
         session.commit()
 
-        retrieved_pool_info = session.query(PoolInfoTable).filter_by(blockNumber=1).first()
+        retrieved_pool_info = session.query(PoolInfo).filter_by(blockNumber=1).first()
         assert retrieved_pool_info is not None
         assert retrieved_pool_info.timestamp == timestamp
 
     def test_update_pool_info(self, session):
         """Update an entry"""
         timestamp = datetime.fromtimestamp(1628472000)
-        pool_info = PoolInfoTable(blockNumber=1, timestamp=timestamp)
+        pool_info = PoolInfo(blockNumber=1, timestamp=timestamp)
         session.add(pool_info)
         session.commit()
 
@@ -50,18 +50,18 @@ class TestPoolInfoTable:
         pool_info.timestamp = new_timestamp  # type: ignore
         session.commit()
 
-        updated_pool_info = session.query(PoolInfoTable).filter_by(blockNumber=1).first()
+        updated_pool_info = session.query(PoolInfo).filter_by(blockNumber=1).first()
         assert updated_pool_info.timestamp == new_timestamp
 
     def test_delete_pool_info(self, session):
         """Delete an entry"""
         timestamp = datetime.fromtimestamp(1628472000)
-        pool_info = PoolInfoTable(blockNumber=1, timestamp=timestamp)
+        pool_info = PoolInfo(blockNumber=1, timestamp=timestamp)
         session.add(pool_info)
         session.commit()
 
         session.delete(pool_info)
         session.commit()
 
-        deleted_pool_info = session.query(PoolInfoTable).filter_by(blockNumber=1).first()
+        deleted_pool_info = session.query(PoolInfo).filter_by(blockNumber=1).first()
         assert deleted_pool_info is None
