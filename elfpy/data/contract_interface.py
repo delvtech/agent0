@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import time
+from datetime import datetime
 from typing import Any, Sequence
 
 import attr
@@ -21,7 +22,7 @@ from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
 from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
 
-from elfpy.data.pool_info import PoolInfo
+from elfpy.data.db_schema import PoolInfo
 
 
 class TestAccount:
@@ -252,9 +253,12 @@ def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, blo
         hyperdrive_contract, "getPoolInfo", block_identifier=block_number
     )
 
-    # All data returned from this call is in fixedpoint notation, cast here
+    # All data returned from this call is in scaled notation
+    # We cast to FixedPoint, then to floats to keep noise to a minimum
+    # This is assuming there's no loss of precision going from Fixedpoint to float
+    # Once this gets fed into postgres, postgres has fixed precision Numeric type
     pool_info_data_dict: dict[Any, Any] = {
-        key: FixedPoint(scaled_value=value) for (key, value) in pool_info_data_dict.items()
+        key: float(FixedPoint(scaled_value=value)) for (key, value) in pool_info_data_dict.items()
     }
 
     current_block: BlockData = web3_container.eth.get_block(block_number)
@@ -268,7 +272,9 @@ def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, blo
     pool_info_dict = {}
     for key in PoolInfo.__annotations__.keys():
         # Required keys
-        if key == "timestamp" or key == "blockNumber":
+        if key == "timestamp":
+            pool_info_dict[key] = datetime.fromtimestamp(pool_info_data_dict[key])
+        elif key == "blockNumber":
             pool_info_dict[key] = pool_info_data_dict[key]
         # Otherwise default to None if not exist
         else:

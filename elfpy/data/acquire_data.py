@@ -10,7 +10,7 @@ from eth_typing import URI, BlockNumber
 from web3 import Web3
 
 from elfpy.data import contract_interface, postgres
-from elfpy.data.pool_info import PoolInfo
+from elfpy.data.db_schema import PoolInfo
 from elfpy.utils import outputs as output_utils
 
 # pylint: disable=too-many-arguments
@@ -65,11 +65,17 @@ def main(
         block_number = BlockNumber(latest_block_number - lookback_block_limit)
         logging.warning("Starting block is past lookback block limit, starting at block %s", block_number)
 
-    block_pool_info: PoolInfo = contract_interface.get_block_pool_info(web3, state_hyperdrive_contract, block_number)
-
     # This if statement executes only on initial run
     if block_number > data_latest_block_number:
+        # Query and add block_pool_info
+        block_pool_info = contract_interface.get_block_pool_info(web3, state_hyperdrive_contract, block_number)
         postgres.add_pool_infos([block_pool_info], session)
+
+        # Query and add block transactions
+        block_transactions = contract_interface.fetch_transactions_for_block(
+            web3, transactions_hyperdrive_contract, block_number
+        )
+        # postgres.add_block_transactions(block_transactions, session)
 
     # TODO move transactions to db
     transaction_info = []

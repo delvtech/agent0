@@ -9,62 +9,32 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, c
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from elfpy.data.pool_info import PoolInfo
+from elfpy.data.db_schema import Base, PoolInfo
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
-
-Base = declarative_base()
 
 # replace the user, password, and db_name with credentials
 engine = create_engine("postgresql://admin:password@localhost:5432/postgres_db")
 
 
-class UserTable(Base):
-    """User Schema"""
-
-    __tablename__ = "users"
-
-    # address
-    id = Column(String, primary_key=True)
-
-
-class TransactionTable(Base):
-    """Transactions Schema"""
-
-    __tablename__ = "transactions"
-
-    id = Column(String, primary_key=True)
-    user_id = Column(String, ForeignKey("users.id"))
-    amount = Column(Integer)
-
-
-class PoolInfoTable(Base):
-    """PoolInfo Schema"""
-
-    # names are in snake case to indicate values came from solidity
-    # pylint: disable=invalid-name
-
-    __tablename__ = "poolinfo"
-
-    # Generate schema from PoolInfo data class
-    # These member variables match exactly with the dataclass pool_info
-
-    # All timestamps are stored without timezone, in UTC.
-    timestamp = Column(DateTime, index=True)
-    blockNumber = Column(Integer, primary_key=True)
-
-    shareReserves = Column(Numeric)
-    bondReserves = Column(Numeric)
-    lpTotalSupply = Column(Numeric)
-    sharePrice = Column(Numeric)
-    longsOutstanding = Column(Numeric)
-    longAverageMaturityTime = Column(Numeric)
-    shortsOutstanding = Column(Numeric)
-    shortAverageMaturityTime = Column(Numeric)
-    shortBaseVolume = Column(Numeric)
-    withdrawalSharesReadyToWithdraw = Column(Numeric)
-    withdrawalSharesProceeds = Column(Numeric)
+# class UserTable(Base):
+#    """User Schema"""
+#
+#    __tablename__ = "users"
+#
+#    # address
+#    id = Column(String, primary_key=True)
+#
+#
+# class TransactionTable(Base):
+#    """Transactions Schema"""
+#
+#    __tablename__ = "transactions"
+#
+#    id = Column(String, primary_key=True)
+#    user_id = Column(String, ForeignKey("users.id"))
+#    amount = Column(Integer)
 
 
 def initialize_session():
@@ -95,14 +65,7 @@ def add_pool_infos(pool_infos: list[PoolInfo], session):
 
     for pool_info in pool_infos:
         print(f"Adding block {pool_info.blockNumber} to db")
-        insert_dict = asdict(pool_info)
-        insert_dict["timestamp"] = datetime.fromtimestamp(pool_info.timestamp)
-        for key, value in insert_dict.items():
-            if isinstance(value, FixedPoint):
-                insert_dict[key] = float(value)
-
-        pool_info_entry = PoolInfoTable(**insert_dict)
-        session.add(pool_info_entry)
+        session.add(pool_info)
 
     try:
         session.commit()
@@ -113,7 +76,8 @@ def add_pool_infos(pool_infos: list[PoolInfo], session):
 
 def get_latest_block_number(session):
     """Gets the latest block number based on the pool info table in the db"""
-    query_results = session.query(PoolInfoTable).order_by(PoolInfoTable.timestamp.desc()).first()
+    # query_results = session.query(PoolInfoTable).order_by(PoolInfoTable.timestamp.desc()).first()
+    query_results = session.query(PoolInfo).order_by(PoolInfo.timestamp.desc()).first()
     if query_results is None:
         return 0
     else:
