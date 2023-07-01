@@ -5,7 +5,7 @@ from datetime import datetime
 
 import sqlalchemy
 from fixedpointmath import FixedPoint
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, create_engine, text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -50,9 +50,9 @@ class PoolInfoTable(Base):
     # Generate schema from PoolInfo data class
     # These member variables match exactly with the dataclass pool_info
 
-    blockNumber = Column(Integer, primary_key=True)
     # All timestamps are stored without timezone, in UTC.
     timestamp = Column(DateTime, index=True)
+    blockNumber = Column(Integer, primary_key=True)
 
     shareReserves = Column(Numeric)
     bondReserves = Column(Numeric)
@@ -112,6 +112,7 @@ def add_pool_infos(pool_infos: list[PoolInfo], session):
 
 
 def get_latest_block_number(session):
+    """Gets the latest block number based on the pool info table in the db"""
     query_results = session.query(PoolInfoTable).order_by(PoolInfoTable.timestamp.desc()).first()
     if query_results is None:
         return 0
