@@ -1,7 +1,9 @@
 """Simple Read/Write Test"""
 
+from datetime import datetime
+
 from elfpy.data import postgres
-from elfpy.data.pool_info import PoolInfo
+from elfpy.data.db_schema import PoolInfo
 
 if __name__ == "__main__":
     session = postgres.initialize_session()
@@ -10,10 +12,10 @@ if __name__ == "__main__":
 
     for i in range(1, 100):
         pool_info[0].blockNumber = i
-        pool_info[0].timestamp = i * 1000
+        pool_info[0].timestamp = datetime.fromtimestamp(i * 1000)
         postgres.add_pool_infos(pool_info, session)
 
-    retrieved_infos: list[postgres.PoolInfoTable] = session.query(postgres.PoolInfoTable).all()
+    retrieved_infos: list[PoolInfo] = session.query(PoolInfo).all()
 
     if not retrieved_infos:
         postgres.close_session(session)
