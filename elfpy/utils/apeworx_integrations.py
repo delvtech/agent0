@@ -874,6 +874,7 @@ def create_trade(
     selected_abi, args = select_abi(params=params, method=info[trade_type].method)
     # create a transaction with the selected ABI
     contract_txn: ContractTransaction = ContractTransaction(abi=selected_abi, address=hyperdrive_contract.address)
+    args = [arg.scaled_value if isinstance(arg, FixedPoint) else arg for arg in args]
     return contract_txn, args, selected_abi
 
 
