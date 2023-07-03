@@ -112,6 +112,90 @@ def fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt)
     return logs
 
 
+def convert_fixedpoint(input: int | None) -> float:
+    """Given a scaled value int, converts it to an unscaled value in float, while dealing with Nones"""
+
+    # We cast to FixedPoint, then to floats to keep noise to a minimum
+    # This is assuming there's no loss of precision going from Fixedpoint to float
+    # Once this gets fed into postgres, postgres has fixed precision Numeric type
+    if input is not None:
+        return float(FixedPoint(scaled_value=input))
+    else:
+        return None
+
+
+# TODO receipt isn't used, but adding it here to map previous implementation of writing this to file
+# Remove if necessary
+def build_transaction_object(
+    transaction_dict: dict[str, Any],
+    logs: list[dict[str, Any]],
+    receipt: dict[str, Any],
+) -> Transaction:
+    """Conversion function to translate output of chain queries to the Transaction object"""
+
+    # Build output obj dict incrementally to be passed into Transaction
+    # i.e., Transaction(**out_dict)
+
+    # Base transaction fields
+    out_dict: dict[str, Any] = {
+        "blockNumber": transaction_dict["blockNumber"],
+        "transactionIndex": transaction_dict["transactionIndex"],
+        "nonce": transaction_dict["nonce"],
+        "transactionHash": transaction_dict["hash"],
+        "txn_to": transaction_dict["to"],
+        "txn_from": transaction_dict["from"],
+        # "gasUsed": receipt["gasUsed"],
+    }
+
+    # Input solidity methods and parameters
+    # TODO can the input field ever be empty or not exist?
+    out_dict["input_method"] = transaction_dict["input"]["method"]
+    input_params = transaction_dict["input"]["params"]
+    out_dict["input_params_contribution"] = convert_fixedpoint(input_params.get("_contribution", None))
+    out_dict["input_params_apr"] = convert_fixedpoint(input_params.get("_apr", None))
+    out_dict["input_params_destination"] = input_params.get("_destination", None)
+    out_dict["input_params_asUnderlying"] = input_params.get("_asUnderlying", None)
+    out_dict["input_params_baseAmount"] = convert_fixedpoint(input_params.get("_baseAmount", None))
+    out_dict["input_params_minOutput"] = convert_fixedpoint(input_params.get("_minOutput", None))
+    out_dict["input_params_bondAmount"] = convert_fixedpoint(input_params.get("_bondAmount", None))
+    out_dict["input_params_maxDeposit"] = convert_fixedpoint(input_params.get("_maxDeposit", None))
+    out_dict["input_params_maturityTime"] = input_params.get("_maturityTime", None)
+    out_dict["input_params_minApr"] = convert_fixedpoint(input_params.get("_minApr", None))
+    out_dict["input_params_maxApr"] = convert_fixedpoint(input_params.get("_maxApr", None))
+    out_dict["input_params_shares"] = convert_fixedpoint(input_params.get("_shares", None))
+
+    # Assuming one TransferSingle per transfer
+    # TODO Fix this below eventually
+    # There can be two transfer singles
+    # Currently grab first transfer single (e.g., Minting hyperdrive long, so address 0 to agent)
+    # Eventually need grabbing second transfer single (e.g., DAI from agent to hyperdrive)
+    event_logs = [log for log in logs if log["event"] == "TransferSingle"]
+    if len(event_logs) == 0:
+        event_args: dict[str, Any] = {}
+        # Set args as None
+    elif len(event_logs) == 1:
+        event_args: dict[str, Any] = event_logs[0]["args"]
+    else:
+        logging.warning("Tranfer event contains multiple TransferSingle logs, selecting first")
+        event_args: dict[str, Any] = event_logs[0]["args"]
+
+    out_dict["event_value"] = convert_fixedpoint(event_args.get("value", None))
+    out_dict["event_from"] = event_args.get("from", None)
+    out_dict["event_to"] = event_args.get("to", None)
+    out_dict["event_operator"] = event_args.get("operator", None)
+    out_dict["event_id"] = event_args.get("id", None)
+
+    # Decode logs here
+    if out_dict["event_id"]:
+        event_prefix, event_maturity_time = hyperdrive_assets.decode_asset_id(out_dict["event_id"])
+        out_dict["event_prefix"] = event_prefix
+        out_dict["event_maturity_time"] = event_maturity_time
+
+    transaction = Transaction(**out_dict)
+
+    return transaction
+
+
 def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[Transaction]:
     """Fetch transactions related to the contract"""
     block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
@@ -140,66 +224,9 @@ def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: B
             continue
         tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
         logs = fetch_and_decode_logs(web3, contract, tx_receipt)
+        receipt: dict[str, Any] = recursive_dict_conversion(tx_receipt)  # type: ignore
 
-        # decoded_block_transactions.append(
-        #    {
-        #        "transaction": transaction_dict,
-        #        "logs": logs,
-        #        "receipt": recursive_dict_conversion(tx_receipt),
-        #    }
-        # )
-
-        block_number = transaction_dict["blockNumber"]
-        transaction_index = transaction_dict["transactionIndex"]
-
-        # Assuming one TransferSingle per transfer
-        # TODO ensure this is right
-        transfer_logs = [log for log in logs if log["event"] == "TransferSingle"]
-        if len(transfer_logs) == 0:
-            log_args: dict[str, Any] = {}
-            # Set args as None
-        elif len(transfer_logs) == 1:
-            log_args: dict[str, Any] = transfer_logs[0]["args"]
-        else:
-            logging.warning("Tranfer event contains multiple TransferSingle logs, selecting first")
-            log_args: dict[str, Any] = transfer_logs[0]["args"]
-
-        # We cast to FixedPoint, then to floats to keep noise to a minimum
-        # This is assuming there's no loss of precision going from Fixedpoint to float
-        # Once this gets fed into postgres, postgres has fixed precision Numeric type
-        args_value: int = log_args.get("value", None)
-        if args_value is not None:
-            args_value_float = float(FixedPoint(scaled_value=args_value))
-        else:
-            args_value_float = None
-
-        # args_from = log_args.get("from", None)
-        # args_to = log_args.get("to", None)
-        args_operator = log_args.get("operator", None)
-        args_id = log_args.get("id", None)
-        # Decode logs here
-        if args_id:
-            args_prefix, args_maturity_time = hyperdrive_assets.decode_asset_id(args_id)
-        else:
-            args_prefix = None
-            args_maturity_time = None
-        args_event = log_args.get("event", None)
-
-        out_transactions.append(
-            Transaction(
-                blockNumber=block_number,
-                transactionIndex=transaction_index,
-                input_method=transaction_dict["input"]["method"],
-                args_value=args_value_float,
-                # args_from=args_from,
-                # args_to=args_to,
-                args_operator=args_operator,
-                args_id=args_id,
-                args_prefix=args_prefix,
-                args_maturity_time=args_maturity_time,
-                args_event=args_event,
-            )
-        )
+        out_transactions.append(build_transaction_object(transaction_dict, logs, receipt))
 
     return out_transactions
 

@@ -58,6 +58,10 @@ def main(
     # Parameterized start block number
     block_number: BlockNumber = BlockNumber(start_block)
 
+    # Make sure to not grab current block, as the current block is subject to change
+    # Current block is still currently being built
+    # latest_mined_block = web3.eth.get_block_number() - 1
+
     latest_block_number = web3.eth.get_block_number()
 
     lookback_block_limit = BlockNumber(lookback_block_limit)
