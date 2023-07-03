@@ -1,7 +1,7 @@
 """Initialize Postgres Server"""
 
 import sqlalchemy
-from sqlalchemy import MetaData, create_engine
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from elfpy.data.db_schema import Base, PoolInfo, Transaction
@@ -23,31 +23,10 @@ engine = create_engine("postgresql://admin:password@localhost:5432/postgres_db")
 #    id = Column(String, primary_key=True)
 #
 #
-# class TransactionTable(Base):
-#    """Transactions Schema"""
-#
-#    __tablename__ = "transactions"
-#
-#    id = Column(String, primary_key=True)
-#    user_id = Column(String, ForeignKey("users.id"))
-#    amount = Column(Integer)
-
-
-def drop_tables():
-    meta = MetaData()
-    meta.reflect(bind=engine)
-    if "transactions" in meta.tables:
-        meta.tables["transactions"].drop(engine)
-    if "poolinfo" in meta.tables:
-        meta.tables["poolinfo"].drop(engine)
 
 
 def initialize_session():
     """Initialize the database if not already initialized"""
-
-    # TODO for debugging only
-    # Drop all available tables
-    drop_tables()
 
     # create a configured "Session" class
     session_class = sessionmaker(bind=engine)
@@ -102,5 +81,4 @@ def get_latest_block_number(session):
     # If the table is empty, query_results will return None
     if query_results is None:
         return 0
-    else:
-        return int(query_results.blockNumber)
+    return int(query_results.blockNumber)

@@ -120,8 +120,7 @@ def convert_fixedpoint(input_val: int | None) -> float | None:
     # Once this gets fed into postgres, postgres has fixed precision Numeric type
     if input is not None:
         return float(FixedPoint(scaled_value=input_val))
-    else:
-        return None
+    return None
 
 
 # TODO receipt isn't used, but adding it here to map previous implementation of writing this to file

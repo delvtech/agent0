@@ -3,8 +3,14 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import BIGINT, Boolean, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+# Schema file doesn't need any methods in these dataclasses
+# pylint: disable=too-few-public-methods
+
+# solidity returns things in camelCase.  Keeping the formatting to indicate the source.
+# pylint: disable=invalid-name
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
@@ -17,11 +23,9 @@ class PoolInfo(Base):
     Mapped class that is a data class on the python side, and an declarative base on the sql side.
     """
 
-    # solidity returns things in camelCase.  Keeping the formatting to indicate the source.
-
     __tablename__ = "poolinfo"
 
-    blockNumber: Mapped[int] = mapped_column(BIGINT, primary_key=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
     shareReserves: Mapped[float | None] = mapped_column(Numeric, default=None)
     bondReserves: Mapped[float | None] = mapped_column(Numeric, default=None)
@@ -45,10 +49,14 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     # Default table primary key
-    id: Mapped[int] = mapped_column(BIGINT, primary_key=True, init=False, autoincrement=True)
+    # Note that we use postgres in production and sqlite in testing, but sqlite has issues with
+    # autoincrement with BigIntegers. Hence, we use the Integer variant when using sqlite in tests
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, init=False, autoincrement=True
+    )
 
     #### Fields from base transactions ####
-    blockNumber: Mapped[int] = mapped_column(BIGINT, ForeignKey("poolinfo.blockNumber"))
+    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"))
     transactionIndex: Mapped[int | None] = mapped_column(Integer, default=None)
     nonce: Mapped[int | None] = mapped_column(Integer, default=None)
     transactionHash: Mapped[str | None] = mapped_column(String, default=None)
