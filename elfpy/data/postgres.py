@@ -1,12 +1,7 @@
 """Initialize Postgres Server"""
 
-from dataclasses import asdict
-from datetime import datetime
-
 import sqlalchemy
-from fixedpointmath import FixedPoint
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, create_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from elfpy.data.db_schema import Base, PoolInfo
@@ -78,6 +73,7 @@ def get_latest_block_number(session):
     """Gets the latest block number based on the pool info table in the db"""
     # query_results = session.query(PoolInfoTable).order_by(PoolInfoTable.timestamp.desc()).first()
     query_results = session.query(PoolInfo).order_by(PoolInfo.timestamp.desc()).first()
+    # If the table is empty, query_results will return None
     if query_results is None:
         return 0
     else:

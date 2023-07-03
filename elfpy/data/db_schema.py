@@ -3,9 +3,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fixedpointmath import FixedPoint
 from sqlalchemy import BIGINT, DateTime, Numeric
-from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, registry
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
