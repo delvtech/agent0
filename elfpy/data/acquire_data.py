@@ -60,13 +60,11 @@ def main(
 
     # Make sure to not grab current block, as the current block is subject to change
     # Current block is still currently being built
-    # latest_mined_block = web3.eth.get_block_number() - 1
-
-    latest_block_number = web3.eth.get_block_number()
+    latest_mined_block = web3.eth.get_block_number() - 1
 
     lookback_block_limit = BlockNumber(lookback_block_limit)
-    if (latest_block_number - block_number) > lookback_block_limit:
-        block_number = BlockNumber(latest_block_number - lookback_block_limit)
+    if (latest_mined_block - block_number) > lookback_block_limit:
+        block_number = BlockNumber(latest_mined_block - lookback_block_limit)
         logging.warning("Starting block is past lookback block limit, starting at block %s", block_number)
 
     # This if statement executes only on initial run
@@ -86,20 +84,20 @@ def main(
     while True:
         pool_info: list[PoolInfo] = []
         transactions: list[Transaction] = []
-        latest_block_number = web3.eth.get_block_number()
+        latest_mined_block = web3.eth.get_block_number() - 1
         # if we are on a new block
-        if latest_block_number > block_number:
+        if latest_mined_block > block_number:
             # Backfilling for blocks that need updating
-            for block_int in range(block_number + 1, latest_block_number + 1):
+            for block_int in range(block_number + 1, latest_mined_block + 1):
                 block_number: BlockNumber = BlockNumber(block_int)
                 logging.info("Block %s", block_number)
 
                 # Explicit check against loopback block limit
-                if (latest_block_number - block_number) > lookback_block_limit:
+                if (latest_mined_block - block_number) > lookback_block_limit:
                     logging.warning(
                         "Querying block_number %s out of %s, unable to keep up with chain block iteration",
                         block_number,
-                        latest_block_number,
+                        latest_mined_block,
                     )
                     continue
 
