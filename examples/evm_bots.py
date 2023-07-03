@@ -17,6 +17,7 @@ from typing import cast
 # external lib
 import ape
 import numpy as np
+import pandas as pd
 import requests
 from ape import accounts
 from ape.api import ProviderAPI
@@ -44,12 +45,15 @@ from elfpy.utils.outputs import str_with_precision
 ape_logger.set_level(logging.ERROR)
 
 
-def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
+def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str] | None = None) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
+    if addresses is None:
+        addresses = {}
     deployed_addresses = {}
     # get deployed addresses from local file, if it exists
     address_file_path = bot_config.scratch["project_dir"] / "hyperdrive_solidity/artifacts/addresses.json"
     if os.path.exists(address_file_path):
+        logging.info("Loading addresses.json from local file. This should only be used for development.")
         with open(address_file_path, "r", encoding="utf-8") as file:
             deployed_addresses = json.load(file)
     else:  # otherwise get deployed addresses from artifacts server
@@ -75,6 +79,9 @@ def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str]) -> tu
         addresses["baseToken"] = None
     if "mockHyperdrive" in deployed_addresses:
         addresses["hyperdrive"] = deployed_addresses["mockHyperdrive"]
+        logging.info("found devnet hyperdrive address: %s", addresses["hyperdrive"])
+    elif "hyperdrive" in deployed_addresses:
+        addresses["hyperdrive"] = deployed_addresses["hyperdrive"]
         logging.info("found devnet hyperdrive address: %s", addresses["hyperdrive"])
     else:
         addresses["hyperdrive"] = None
@@ -107,7 +114,7 @@ def create_agent(
     dev_accounts: list[KeyfileAccount],
     faucet: ContractInstance | None,
     base_instance: ContractInstance,
-    on_chain_trade_info: ape_utils.OnChainTradeInfo,
+    trade_history: pd.DataFrame,
     hyperdrive_contract: ContractInstance,
     bot_config: BotConfig,
     rng: NumpyGenerator,
@@ -124,12 +131,14 @@ def create_agent(
         Contract for faucet that mints the testnet base token
     base_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract for base token
-    on_chain_trade_info : ape_utils.OnChainTradeInfo
-        Information about on-chain trades.
+    trade_history : pd.DataFrame
+        History of previously completed trades.
     hyperdrive_contract : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract for hyperdrive
     bot_config : BotConfig
         Configuration parameters for the experiment
+    rng : NumpyGenerator
+        The random number generator.
 
     Returns
     -------
@@ -175,18 +184,19 @@ def create_agent(
             ape_utils.attempt_txn(agent.contract, faucet.mint, *txn_args)
     logging.info(
         " agent_%s is a %s with budget=%s Eth=%s Base=%s",
-        agent.contract.address[:8],
+        bot.index,
         bot.name,
         str_with_precision(params["budget"]),
         str_with_precision(agent.contract.balance / 1e18),
         str_with_precision(base_instance.balanceOf(agent.contract.address) / 1e18),
     )
-    agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
+    agent.wallet = ape_utils.get_wallet_from_trade_history(
         address=agent.contract.address,
         index=bot.index,
-        info=on_chain_trade_info,
+        trade_history=trade_history,
         hyperdrive_contract=hyperdrive_contract,
         base_contract=base_instance,
+        tolerance=None,  # when recovering form crash, set tolerance to 1e16
     )
     return agent
 
@@ -198,30 +208,33 @@ def set_up_agents(
     base_instance: ContractInstance,
     addresses: dict[str, str],
     rng: NumpyGenerator,
-) -> tuple[dict[str, Agent], ape_utils.OnChainTradeInfo]:
+    trade_history: pd.DataFrame | None = None,
+) -> tuple[dict[str, Agent], pd.DataFrame]:
     """Set up python agents & corresponding on-chain accounts.
 
     Parameters
     ----------
     bot_config : BotConfig
         Configuration parameters for the experiment
-    provider : ape.api.ProviderAPI
-        The Ape object that connects to the Ethereum network.
+    provider : `ape.api.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
+        The Ape object that represents your connection to the Ethereum network.
     hyperdrive_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         The hyperdrive contract instance.
     base_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         The base token contract instance.
     addresses : dict[str, str]
         Addresses of deployed contracts.
-    deployer_account : KeyfileAccount
-        The deployer account.
+    rng : NumpyGenerator
+        The random number generator.
+    trade_history : pd.DataFrame, Optional
+        History of previously completed trades.
 
     Returns
     -------
     sim_agents : dict[str, Agent]
         Dict of agents used in the simulation.
-    on_chain_trade_info : ape_utils.OnChainTradeInfo
-        Information about on-chain trades.
+    trade_history : pd.DataFrame
+        History of previously completed trades.
     """
     # pylint: disable=too-many-arguments, too-many-locals
     dev_accounts: list[KeyfileAccount] = get_accounts(bot_config)
@@ -240,28 +253,27 @@ def set_up_agents(
         bot_num += bot_config.scratch[f"num_{bot_name}"]
     sim_agents = {}
     start_time_ = now()
-    on_chain_trade_info: ape_utils.OnChainTradeInfo = ape_utils.get_on_chain_trade_info(
-        hyperdrive_contract=hyperdrive_instance
-    )
+    if trade_history is None:
+        trade_history = ape_utils.get_trade_history(hyperdrive_contract=hyperdrive_instance)
     logging.debug("Getting on-chain trade info took %s seconds", str_with_precision(now() - start_time_))
     for bot_name in [name for name in bot_config.scratch["bot_names"] if bot_config.scratch[f"num_{name}"] > 0]:
         bot_info = bot_config.scratch[bot_name]
         bot_info.name = bot_name
         for _ in range(bot_config.scratch[f"num_{bot_name}"]):  # loop across number of bots of this type
             bot_info.index = len(sim_agents)
-            logging.debug("Creating %s agent %s/%s: %s", bot_name, bot_info.index + 1, bot_num, bot_info)
+            logging.info("Creating %s agent %s/%s: %s", bot_name, bot_info.index + 1, bot_num, bot_info)
             agent = create_agent(
                 bot=bot_info,
                 dev_accounts=dev_accounts,
                 faucet=faucet,
                 base_instance=base_instance,
-                on_chain_trade_info=on_chain_trade_info,
+                trade_history=trade_history,
                 hyperdrive_contract=hyperdrive_instance,
                 bot_config=bot_config,
                 rng=rng,
             )
             sim_agents[f"agent_{agent.wallet.address}"] = agent
-    return sim_agents, on_chain_trade_info
+    return sim_agents, trade_history
 
 
 def do_trade(
@@ -328,24 +340,22 @@ def do_trade(
     return pool_state
 
 
-def set_days_without_crashing(current_streak, crash_file, reset: bool = False):
-    """Calculate the number of days without crashing."""
+def save_trade_streak(current_streak, trade_streak_file, reset: bool = False):
+    """Save to file our trade streak so we can resume it on interrupt."""
     streak = 0 if reset is True else current_streak + 1
-    with open(crash_file, "w", encoding="utf-8") as file:
+    with open(trade_streak_file, "w", encoding="utf-8") as file:
         file.write(f"{streak}")
     return streak
 
 
-def log_and_show_block_info(
-    provider: ape.api.ProjectAPI, no_crash_streak: int, block_number: int, block_timestamp: int
-):
+def log_and_show_block_info(provider: ape.api.ProjectAPI, trade_streak: int, block_number: int, block_timestamp: int):
     """Get and show the latest block number and gas fees.
 
     Parameters
     ----------
-    provider : ape.api.ProviderAPI
-        The Ape object that connects to the Ethereum blockchain.
-    no_crash_streak : int
+    provider : `ape.api.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
+        The Ape object that represents your connection to the Ethereum network.
+    trade_streak : int
         The number of trades without crashing.
     block_number : int
         The number of the latest block.
@@ -360,7 +370,7 @@ def log_and_show_block_info(
         "Block number: %s, Block time: %s, Trades without crashing: %s, base_fee: %s",
         str_with_precision(block_number),
         datetime.fromtimestamp(block_timestamp),
-        no_crash_streak,
+        trade_streak,
         base_fee,
     )
 
@@ -380,8 +390,8 @@ def set_up_devnet(
         The addresses of the deployed contracts.
     project : HyperdriveProject
         The Ape project that contains a Hyperdrive contract.
-    provider : ape.api.ProviderAPI
-        The Ape object that connects to the Ethereum blockchain.
+    provider : `ape.api.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
+        The Ape object that represents your connection to the Ethereum network.
     bot_config : BotConfig
         Configuration parameters for the experiment
     pricing_model : HyperdrivePricingModel
@@ -424,14 +434,15 @@ def set_up_devnet(
     return base_instance, hyperdrive_instance, addresses
 
 
-def set_up_ape(
+def set_up_experiment(
     bot_config: BotConfig,
     provider_settings: dict,
     addresses: dict,
     network_choice: str,
     pricing_model: HyperdrivePricingModel,
-) -> tuple[ProviderAPI, ContractInstance, ContractInstance, dict, KeyfileAccount]:
-    r"""Set up ape.
+    rng: NumpyGenerator,
+) -> tuple[ProviderAPI, ContractInstance, ContractInstance, dict, pd.DataFrame, dict[str, Agent], NumpyGenerator,]:
+    r"""Set up Ape objects, agent addresses, trade history, and simulation agents.
 
     Parameters
     ----------
@@ -445,10 +456,12 @@ def set_up_ape(
         The network to connect to.
     pricing_model : BasePricingModel
         The elf-simulations pricing model to use.
+    rng : NumpyGenerator
+        The random number generator.
 
     Returns
     -------
-    provider : ProviderAPI
+    provider : `ape.api.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
         The Ape object that represents your connection to the Ethereum network.
     base_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         The deployed base token instance.
@@ -456,7 +469,14 @@ def set_up_ape(
         The deployed Hyperdrive instance.
     hyperdrive_config : dict
         The configuration of the deployed Hyperdrive instance
+    trade_history : pd.DataFrame
+        History of previously completed trades.
+    sim_agents : dict[str, Agent]
+        Dict of agents used in the simulation.
+    rng : NumpyGenerator
+        The random number generator.
     """
+    # pylint: disable=too-many-arguments
     provider: ProviderAPI = ape.networks.parse_network_choice(
         network_choice=network_choice,
         provider_settings=provider_settings,
@@ -480,56 +500,89 @@ def set_up_ape(
             provider=provider,
         )
         hyperdrive_instance: ContractInstance = project.get_hyperdrive_contract()
-    # read the hyperdrive config from the contract, and log (and print) it
-    hyperdrive_config = ape_utils.get_hyperdrive_config(hyperdrive_instance)
-    return provider, base_instance, hyperdrive_instance, hyperdrive_config
+
+    sim_agents, trade_history = set_up_agents(bot_config, provider, hyperdrive_instance, base_instance, addresses, rng)
+    return (
+        provider,
+        provider.auto_mine,
+        base_instance,
+        hyperdrive_instance,
+        ape_utils.get_hyperdrive_config(hyperdrive_instance),
+        trade_history,
+        sim_agents,
+        rng,
+    )
 
 
 def do_policy(
     agent: BasePolicy,
     elfpy_market: HyperdriveMarket,
-    no_crash_streak: int,
-    crash_file: str,
+    trade_streak: int,
+    trade_streak_file: Path.PathLike,
     sim_agents: dict[str, Agent],
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
-    bot_config: BotConfig,
-):  # pylint: disable=too-many-arguments
-    """Execute an agent's policy."""
+    trade_history: pd.DataFrame | None = None,
+) -> int:
+    """Execute an agent's policy.
+
+    Parameters
+    ----------
+    agent : BasePolicy
+        The agent object used in elf-simulations.
+    elfpy_market : HyperdriveMarket
+        The elf-simulations object representing the Hyperdrive market.
+    trade_streak : int
+        Number of trades in a row without a crash.
+    trade_streak_file : Path.PathLike
+        Location of the file to which we store our trade streak (continues on interrupt, resets on crash).
+    sim_agents : dict[str, Agent]
+        Dict of agents used in the simulation.
+    hyperdrive_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        The hyperdrive contract instance.
+    base_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        Contract for base token
+    bot_config : BotConfig
+        The bot configuration.
+    trade_history : pd.DataFrame, Optional
+        History of previously completed trades. If not provided, it will be queried.
+
+    Returns
+    -------
+    trade_streak : int
+        Number of trades in a row without a crash.
+    """
+    # pylint: disable=too-many-arguments
     trades: list[types.Trade] = agent.get_trades(market=elfpy_market)
     for trade_object in trades:
-        try:
-            logging.debug(trade_object)
-            do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
-            # marginal update to wallet
-            agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
-                address=agent.contract.address,
-                info=ape_utils.get_on_chain_trade_info(hyperdrive_instance, ape.chain.blocks[-1].number),
-                hyperdrive_contract=hyperdrive_instance,
-                base_contract=base_instance,
-                add_to_existing_wallet=agent.wallet,
-            )
-            logging.debug("%s", agent.wallet)
-            no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file)  # set and save to file
-        except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
-            logging.info("Crashed with error: %s", exc)
-            no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file, reset=True)  # set and save to file
-            if bot_config.halt_on_errors:
-                raise exc
-    return no_crash_streak
+        logging.debug(trade_object)
+        do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
+        # marginal update to wallet
+        agent.wallet = ape_utils.get_wallet_from_trade_history(
+            address=agent.contract.address,
+            trade_history=trade_history,
+            hyperdrive_contract=hyperdrive_instance,
+            base_contract=base_instance,
+            add_to_existing_wallet=agent.wallet,
+        )
+        logging.debug("%s", agent.wallet)
+        trade_streak = save_trade_streak(trade_streak, trade_streak_file)  # set and save to file
+    return trade_streak
 
 
 def main(
     bot_config: BotConfig,
     rng: NumpyGenerator,
-    crash_file: str,
     network_choice: str,
     provider_settings: str,
 ):
     """Run the simulation."""
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     # Custom parameters for this experiment
     bot_config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
+    bot_config.scratch["trade_streak"] = (
+        bot_config.scratch["project_dir"] / f".logging/trade_streak{'_devnet' if config.devnet else ''}.txt"
+    )
     if "num_louie" not in bot_config.scratch:
         bot_config.scratch["num_louie"]: int = 1
     if "num_sally" not in bot_config.scratch:
@@ -555,49 +608,68 @@ def main(
     if bot_config.devnet:
         addresses = get_devnet_addresses(bot_config, addresses)
     pricing_model = HyperdrivePricingModel()
-    no_crash_streak = 0
-    last_executed_block = 0
-    provider, base_instance, hyperdrive_instance, hyperdrive_config = set_up_ape(
-        bot_config, provider_settings, addresses, network_choice, pricing_model
-    )
-    sim_agents, _ = set_up_agents(bot_config, provider, hyperdrive_instance, base_instance, addresses, rng)
+    (
+        provider,
+        automine,
+        base_instance,
+        hyperdrive_instance,
+        hyperdrive_config,
+        trade_history,
+        sim_agents,
+        rng,
+    ) = set_up_experiment(bot_config, provider_settings, addresses, network_choice, pricing_model, rng)
+    assert isinstance(sim_agents, dict), "sim_agents wasn't created or loaded properly."
     ape_utils.dump_agent_info(sim_agents, bot_config)
     logging.info("Constructed %s agents:", len(sim_agents))
     for agent_name in sim_agents:
         logging.info("\t%s", agent_name)
     start_timestamp = ape.chain.blocks[-1].timestamp
+    trade_streak = 0
+    last_executed_block = 0
     while True:  # hyper drive forever into the sunset
         latest_block = ape.chain.blocks[-1]
         block_number = latest_block.number
         block_timestamp = latest_block.timestamp
         if block_number > last_executed_block:
-            log_and_show_block_info(provider, no_crash_streak, block_number, block_timestamp)
+            log_and_show_block_info(provider, trade_streak, block_number, block_timestamp)
+            # marginal update to trade_history
+            start_block = trade_history.block_number.max() + 1
+            start_time = now()
+            trade_history = ape_utils.get_trade_history(hyperdrive_instance, start_block, block_number, trade_history)
+            logging.debug("Trade history updated in %s seconds", now() - start_time)
+            # create market object needed for agent execution
             elfpy_market = ape_utils.create_elfpy_market(
                 pricing_model, hyperdrive_instance, hyperdrive_config, block_number, block_timestamp, start_timestamp
             )
-            for agent in sim_agents.values():
-                no_crash_streak = do_policy(
-                    agent,
-                    elfpy_market,
-                    no_crash_streak,
-                    crash_file,
-                    sim_agents,
-                    hyperdrive_instance,
-                    base_instance,
-                    bot_config,
-                )
+            try:
+                for agent in sim_agents.values():
+                    trade_streak = do_policy(
+                        agent,
+                        elfpy_market,
+                        trade_streak,
+                        bot_config.scratch["trade_streak"],
+                        sim_agents,
+                        hyperdrive_instance,
+                        base_instance,
+                        trade_history,
+                    )
+            except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
+                logging.info("Crashed with error: %s", exc)
+                trade_streak = save_trade_streak(
+                    trade_streak, bot_config.scratch["trade_streak"], reset=True
+                )  # set and save to file
+                if bot_config.halt_on_errors:
+                    raise exc
             last_executed_block = block_number
-        if (
-            bot_config.devnet and provider.auto_mine
-        ):  # anvil automatically mines after you send a transaction. or manually.
-            sleep(0.5)
+        if bot_config.devnet and automine:
+            # "automine" means anvil automatically mines a new block after you send a transaction, not time-based.
             ape.chain.mine()
         else:  # either on goerli or on devnet with automine disabled (which means time-based mining is enabled)
             sleep(1)
 
 
 def get_argparser() -> argparse.ArgumentParser:
-    """Define & parse arguments from stdin"""
+    """Define & parse arguments from stdin."""
     parser = argparse.ArgumentParser(
         prog="evm_bots",
         description="Example execution script for running bots using Elfpy",
@@ -625,9 +697,7 @@ if __name__ == "__main__":
         log_file_and_stdout=config.log_file_and_stdout,
         log_formatter=config.log_formatter,
     )
-    CRASH_FILE = f".logging/no_crash_streak{'_devnet' if config.devnet else ''}.txt"
     # inputs
     NETWORK_CHOICE = "ethereum:local:" + ("alchemy" if config.alchemy else "foundry")
     PROVIDER_SETTINGS = {"host": config.rpc_url}
-    # dynamically load devnet addresses from address file
-    main(config, np.random.default_rng(config.random_seed), CRASH_FILE, NETWORK_CHOICE, PROVIDER_SETTINGS)
+    main(config, np.random.default_rng(config.random_seed), NETWORK_CHOICE, PROVIDER_SETTINGS)
