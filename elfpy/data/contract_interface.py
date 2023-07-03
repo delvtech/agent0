@@ -112,14 +112,14 @@ def fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt)
     return logs
 
 
-def convert_fixedpoint(input: int | None) -> float | None:
+def convert_fixedpoint(input_val: int | None) -> float | None:
     """Given a scaled value int, converts it to an unscaled value in float, while dealing with Nones"""
 
     # We cast to FixedPoint, then to floats to keep noise to a minimum
     # This is assuming there's no loss of precision going from Fixedpoint to float
     # Once this gets fed into postgres, postgres has fixed precision Numeric type
     if input is not None:
-        return float(FixedPoint(scaled_value=input))
+        return float(FixedPoint(scaled_value=input_val))
     else:
         return None
 
