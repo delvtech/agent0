@@ -56,8 +56,7 @@ class Transaction(Base):
     # Almost always from wallet address to smart contract address
     txn_to: Mapped[str | None] = mapped_column(String, default=None)
     txn_from: Mapped[str | None] = mapped_column(String, default=None)
-
-    # gasUsed
+    gasUsed: Mapped[int | None] = mapped_column(Numeric, default=None)
 
     #### Fields from solidity function calls ####
     # These fields map solidity function calls and their corresponding arguments

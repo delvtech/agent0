@@ -112,7 +112,7 @@ def fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt)
     return logs
 
 
-def convert_fixedpoint(input: int | None) -> float:
+def convert_fixedpoint(input: int | None) -> float | None:
     """Given a scaled value int, converts it to an unscaled value in float, while dealing with Nones"""
 
     # We cast to FixedPoint, then to floats to keep noise to a minimum
@@ -144,7 +144,7 @@ def build_transaction_object(
         "transactionHash": transaction_dict["hash"],
         "txn_to": transaction_dict["to"],
         "txn_from": transaction_dict["from"],
-        # "gasUsed": receipt["gasUsed"],
+        "gasUsed": receipt["gasUsed"],
     }
 
     # Input solidity methods and parameters
