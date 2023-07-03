@@ -10,7 +10,7 @@ from eth_typing import URI, BlockNumber
 from web3 import Web3
 
 from elfpy.data import contract_interface, postgres
-from elfpy.data.db_schema import PoolInfo
+from elfpy.data.db_schema import PoolInfo, Transaction
 from elfpy.utils import outputs as output_utils
 
 # pylint: disable=too-many-arguments
@@ -75,16 +75,13 @@ def main(
         block_transactions = contract_interface.fetch_transactions_for_block(
             web3, transactions_hyperdrive_contract, block_number
         )
-        # postgres.add_block_transactions(block_transactions, session)
-
-    # TODO move transactions to db
-    transaction_info = []
-    transaction_info_file = os.path.join(save_dir, "hyperdrive_transactions.json")
+        postgres.add_transactions(block_transactions, session)
 
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
     while True:
         pool_info: list[PoolInfo] = []
+        transactions: list[Transaction] = []
         latest_block_number = web3.eth.get_block_number()
         # if we are on a new block
         if latest_block_number > block_number:
@@ -122,14 +119,12 @@ def main(
                     web3, transactions_hyperdrive_contract, block_number
                 )
                 if block_transactions:
-                    transaction_info.extend(block_transactions)
+                    transactions.extend(block_transactions)
 
             # Add to postgres
             postgres.add_pool_infos(pool_info, session)
+            postgres.add_transactions(transactions, session)
 
-            # save transactions to file
-            with open(transaction_info_file, mode="w", encoding="UTF-8") as file:
-                json.dump(transaction_info, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
         time.sleep(sleep_amount)
 
 

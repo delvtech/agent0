@@ -1,15 +1,16 @@
 """Initialize Postgres Server"""
 
 import sqlalchemy
-from sqlalchemy import create_engine
+from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import sessionmaker
 
-from elfpy.data.db_schema import Base, PoolInfo
+from elfpy.data.db_schema import Base, PoolInfo, Transaction
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
 
 # replace the user, password, and db_name with credentials
+# TODO remove engine as global
 engine = create_engine("postgresql://admin:password@localhost:5432/postgres_db")
 
 
@@ -32,8 +33,21 @@ engine = create_engine("postgresql://admin:password@localhost:5432/postgres_db")
 #    amount = Column(Integer)
 
 
+def drop_tables():
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    if "transactions" in meta.tables:
+        meta.tables["transactions"].drop(engine)
+    if "poolinfo" in meta.tables:
+        meta.tables["poolinfo"].drop(engine)
+
+
 def initialize_session():
     """Initialize the database if not already initialized"""
+
+    # TODO for debugging only
+    # Drop all available tables
+    drop_tables()
 
     # create a configured "Session" class
     session_class = sessionmaker(bind=engine)
@@ -59,13 +73,25 @@ def add_pool_infos(pool_infos: list[PoolInfo], session):
     """Add a pool info to the poolinfo table"""
 
     for pool_info in pool_infos:
-        print(f"Adding block {pool_info.blockNumber} to db")
         session.add(pool_info)
 
     try:
         session.commit()
     except sqlalchemy.exc.DataError as err:  # type: ignore
         print(f"{pool_infos=}")
+        raise err
+
+
+def add_transactions(transactions: list[Transaction], session):
+    """Add transactions to the poolinfo table"""
+
+    for transaction in transactions:
+        session.add(transaction)
+
+    try:
+        session.commit()
+    except sqlalchemy.exc.DataError as err:  # type: ignore
+        print(f"{transactions=}")
         raise err
 
 

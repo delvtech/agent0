@@ -22,7 +22,8 @@ from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
 from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
 
-from elfpy.data.db_schema import PoolInfo
+from elfpy.data.db_schema import PoolInfo, Transaction
+from elfpy.markets.hyperdrive import hyperdrive_assets
 
 
 class TestAccount:
@@ -111,16 +112,15 @@ def fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt)
     return logs
 
 
-def fetch_transactions_for_block(
-    web3: Web3, contract: Contract, block_number: BlockNumber
-) -> list[dict[str, Any]] | None:
+def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[Transaction]:
     """Fetch transactions related to the contract"""
     block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
     transactions = block.get("transactions")
     if not transactions:
         logging.info("no transactions in block %s", block.get("number"))
-        return None
-    decoded_block_transactions = []
+        return []
+    # decoded_block_transactions = []
+    out_transactions = []
     for transaction in transactions:
         if isinstance(transaction, HexBytes):
             logging.warning("transaction HexBytes")
@@ -128,7 +128,7 @@ def fetch_transactions_for_block(
         if transaction.get("to") != contract.address:
             logging.warning("transaction not from contract")
             continue
-        transaction_dict = dict(transaction)
+        transaction_dict: dict[str, Any] = dict(transaction)
         # Convert the HexBytes fields to their hex representation
         tx_hash = transaction.get("hash") or HexBytes("")
         transaction_dict["hash"] = tx_hash.hex()
@@ -140,14 +140,68 @@ def fetch_transactions_for_block(
             continue
         tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
         logs = fetch_and_decode_logs(web3, contract, tx_receipt)
-        decoded_block_transactions.append(
-            {
-                "transaction": transaction_dict,
-                "logs": logs,
-                "receipt": recursive_dict_conversion(tx_receipt),
-            }
+
+        # decoded_block_transactions.append(
+        #    {
+        #        "transaction": transaction_dict,
+        #        "logs": logs,
+        #        "receipt": recursive_dict_conversion(tx_receipt),
+        #    }
+        # )
+
+        block_number = transaction_dict["blockNumber"]
+        transaction_index = transaction_dict["transactionIndex"]
+
+        # Assuming one TransferSingle per transfer
+        # TODO ensure this is right
+        transfer_logs = [log for log in logs if log["event"] == "TransferSingle"]
+        if len(transfer_logs) == 0:
+            log_args: dict[str, Any] = {}
+            # Set args as None
+        elif len(transfer_logs) == 1:
+            log_args: dict[str, Any] = transfer_logs[0]["args"]
+        else:
+            logging.warning("Tranfer event contains multiple TransferSingle logs, selecting first")
+            log_args: dict[str, Any] = transfer_logs[0]["args"]
+
+        # We cast to FixedPoint, then to floats to keep noise to a minimum
+        # This is assuming there's no loss of precision going from Fixedpoint to float
+        # Once this gets fed into postgres, postgres has fixed precision Numeric type
+        args_value: int = log_args.get("value", None)
+        if args_value is not None:
+            args_value_float = float(FixedPoint(scaled_value=args_value))
+        else:
+            args_value_float = None
+
+        # args_from = log_args.get("from", None)
+        # args_to = log_args.get("to", None)
+        args_operator = log_args.get("operator", None)
+        args_id = log_args.get("id", None)
+        # Decode logs here
+        if args_id:
+            args_prefix, args_maturity_time = hyperdrive_assets.decode_asset_id(args_id)
+        else:
+            args_prefix = None
+            args_maturity_time = None
+        args_event = log_args.get("event", None)
+
+        out_transactions.append(
+            Transaction(
+                blockNumber=block_number,
+                transactionIndex=transaction_index,
+                input_method=transaction_dict["input"]["method"],
+                args_value=args_value_float,
+                # args_from=args_from,
+                # args_to=args_to,
+                args_operator=args_operator,
+                args_id=args_id,
+                args_prefix=args_prefix,
+                args_maturity_time=args_maturity_time,
+                args_event=args_event,
+            )
         )
-    return decoded_block_transactions
+
+    return out_transactions
 
 
 def get_event_object(
