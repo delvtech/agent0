@@ -123,8 +123,6 @@ def convert_fixedpoint(input_val: int | None) -> float | None:
     return None
 
 
-# TODO receipt isn't used, but adding it here to map previous implementation of writing this to file
-# Remove if necessary
 def build_transaction_object(
     transaction_dict: dict[str, Any],
     logs: list[dict[str, Any]],
@@ -333,12 +331,8 @@ def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, blo
         hyperdrive_contract, "getPoolInfo", block_identifier=block_number
     )
 
-    # All data returned from this call is in scaled notation
-    # We cast to FixedPoint, then to floats to keep noise to a minimum
-    # This is assuming there's no loss of precision going from Fixedpoint to float
-    # Once this gets fed into postgres, postgres has fixed precision Numeric type
     pool_info_data_dict: dict[Any, Any] = {
-        key: float(FixedPoint(scaled_value=value)) for (key, value) in pool_info_data_dict.items()
+        key: convert_fixedpoint(value) for (key, value) in pool_info_data_dict.items()
     }
 
     current_block: BlockData = web3_container.eth.get_block(block_number)

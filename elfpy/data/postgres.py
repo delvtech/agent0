@@ -17,6 +17,7 @@ from elfpy.data.db_schema import Base, PoolInfo, Transaction
 engine = create_engine("postgresql://admin:password@localhost:5432/postgres_db")
 
 
+# TODO figure out what this table is supposed to hold
 # class UserTable(Base):
 #    """User Schema"""
 #
@@ -100,7 +101,10 @@ def get_pool_info(session: Session, start_block: int | None = None, end_block: i
 
 
 def get_transactions(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
-    """Gets all transactions and returns as a pandas dataframe"""
+    """
+    Gets all transactions and returns as a pandas dataframe
+    start_block and end_block match slicing notation, e.g., list[:3] or list[:-3]
+    """
 
     query = session.query(Transaction)
 
