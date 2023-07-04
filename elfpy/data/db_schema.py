@@ -56,7 +56,7 @@ class Transaction(Base):
     )
 
     #### Fields from base transactions ####
-    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"))
+    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), index=True)
     transactionIndex: Mapped[int | None] = mapped_column(Integer, default=None)
     nonce: Mapped[int | None] = mapped_column(Integer, default=None)
     transactionHash: Mapped[str | None] = mapped_column(String, default=None)

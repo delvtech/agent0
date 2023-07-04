@@ -1,15 +1,20 @@
 """CRUD tests for Transaction"""
+import pandas as pd
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from elfpy.data.postgres import Base, Transaction
+from elfpy.data import postgres
+from elfpy.data.db_schema import Base, Transaction
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)
 
 # fixture arguments in test function have to be the same as the fixture name
 # pylint: disable=redefined-outer-name
+
+# Explicitly testing protected access function, i.e., _get_latest_block_number_transactions(session)
+# pylint: disable=protected-access
 
 
 @pytest.fixture(scope="function")
@@ -22,8 +27,8 @@ def session():
     Base.metadata.drop_all(engine)  # drop tables
 
 
-class TestPoolInfoTable:
-    """CRUD tests for poolinfo table"""
+class TestTransactionTable:
+    """CRUD tests for transaction table"""
 
     def test_create_transaction(self, session):
         """Create and entry"""
@@ -63,3 +68,54 @@ class TestPoolInfoTable:
 
         deleted_transaction = session.query(Transaction).filter_by(blockNumber=1).first()
         assert deleted_transaction is None
+
+
+class TestTransactionInterface:
+    """Testing postgres interface for transaction table"""
+
+    def test_latest_block_number(self, session):
+        """Testing retrevial of pool info via interface"""
+        transaction_1 = Transaction(blockNumber=1, event_value=3.0)  # add your other columns here...
+        postgres.add_transactions([transaction_1], session)
+
+        latest_block_number = postgres._get_latest_block_number_transactions(session)
+        assert latest_block_number == 1
+
+        transaction_2 = Transaction(blockNumber=2, event_value=3.2)  # add your other columns here...
+        transaction_3 = Transaction(blockNumber=3, event_value=3.4)  # add your other columns here...
+        postgres.add_transactions([transaction_2, transaction_3], session)
+
+        latest_block_number = postgres._get_latest_block_number_transactions(session)
+        assert latest_block_number == 3
+
+    def test_get_transactions(self, session):
+        """Testing retrevial of transactions via interface"""
+        transaction_1 = Transaction(blockNumber=0, event_value=3.1)  # add your other columns here...
+        transaction_2 = Transaction(blockNumber=1, event_value=3.2)  # add your other columns here...
+        transaction_3 = Transaction(blockNumber=2, event_value=3.3)  # add your other columns here...
+        postgres.add_transactions([transaction_1, transaction_2, transaction_3], session)
+
+        transactions_df = postgres.get_transactions(session)
+        assert transactions_df["event_value"].equals(pd.Series([3.1, 3.2, 3.3], name="event_value"))
+
+    def test_block_query_transactions(self, session):
+        """Testing querying by block number of transactions via interface"""
+        transaction_1 = Transaction(blockNumber=0, event_value=3.1)  # add your other columns here...
+        transaction_2 = Transaction(blockNumber=1, event_value=3.2)  # add your other columns here...
+        transaction_3 = Transaction(blockNumber=2, event_value=3.3)  # add your other columns here...
+        postgres.add_transactions([transaction_1, transaction_2, transaction_3], session)
+
+        transactions_df = postgres.get_transactions(session, start_block=1)
+        assert transactions_df["event_value"].equals(pd.Series([3.2, 3.3], name="event_value"))
+
+        transactions_df = postgres.get_transactions(session, start_block=-1)
+        assert transactions_df["event_value"].equals(pd.Series([3.3], name="event_value"))
+
+        transactions_df = postgres.get_transactions(session, end_block=1)
+        assert transactions_df["event_value"].equals(pd.Series([3.1], name="event_value"))
+
+        transactions_df = postgres.get_transactions(session, end_block=-1)
+        assert transactions_df["event_value"].equals(pd.Series([3.1, 3.2], name="event_value"))
+
+        transactions_df = postgres.get_transactions(session, start_block=1, end_block=-1)
+        assert transactions_df["event_value"].equals(pd.Series([3.2], name="event_value"))
