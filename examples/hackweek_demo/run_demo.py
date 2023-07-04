@@ -33,7 +33,7 @@ placeholder = st.empty()
 def get_ticker(data):
     """Given transaction data, return a subset of the dataframe"""
     # Return reverse of methods to put most recent transactions at the top
-    out = data["input_method"].iloc[::-1]
+    out = data[["blockNumber", "input_method"]].set_index("blockNumber").iloc[::-1]
     return out
 
 
