@@ -3,12 +3,13 @@ Utilities for extracting data from logs
 """
 
 from __future__ import annotations
+
 import json
 import time
+
 import numpy as np
 import pandas as pd
 
-from elfpy.markets.hyperdrive import hyperdrive_assets
 from elfpy.markets.hyperdrive import AssetIdPrefix
 
 
@@ -26,40 +27,6 @@ def read_json_to_pd(json_file):
             time.sleep(0.1)
             continue
     return pd.DataFrame(json_data)
-
-
-def explode_transaction_data(data):
-    """
-    Extract transaction dataframe column to dataframe
-    """
-
-    assert len(data["transaction"]) == len(data["logs"])
-    assert len(data["logs"]) == len(data["receipt"])
-
-    # Expand logs while keeping original index
-    log_data = data["logs"].reset_index().explode("logs")
-    log_idxs = log_data["index"]
-    log_data = pd.json_normalize(log_data["logs"])
-    log_data["index"] = log_idxs.values
-    # Reindex exploded data, index column keeps track of idx in original data
-    log_data = log_data.reset_index(drop=True)
-
-    # We're only interested in TransferSingle
-    log_data = log_data[log_data["event"] == "TransferSingle"]
-    log_data = log_data.set_index("index")
-    transaction_data = pd.json_normalize(data["transaction"])
-    # Drop logs here, we have decoded logs in data["logs"]
-    receipt_data = pd.json_normalize(data["receipt"]).drop(["logs"], axis=1)
-
-    # Concatenate all three columns into one dataframe
-    # Note that concat will take into account index of all 3 dfs
-    # so log_data will map to the other two dfs
-    cat_data = pd.concat([transaction_data, log_data, receipt_data], axis=1)
-
-    # Drop duplicate columns here, will keep first one
-    cat_data = cat_data.loc[:, ~cat_data.columns.duplicated(keep="first")].copy()  # type: ignore
-
-    return cat_data
 
 
 def calculate_spot_price(
@@ -94,19 +61,18 @@ def get_combined_data(txn_data, pool_info_data):
     # txn_data.index = txn_data["blockNumber"]
     # Combine pool info data and trans data by block number
     data = txn_data.merge(pool_info_data)
-    data["timestamp"] = data["timestamp"].astype(int)
 
     rename_dict = {
-        "args.operator": "operator",
-        "args.from": "from",
-        "args.to": "to",
-        "args.id": "id",
-        "args.value": "value",
+        "event_operator": "operator",
+        "event_from": "from",
+        "event_to": "to",
+        "event_id": "id",
+        "event_prefix": "prefix",
+        "event_maturity_time": "maturity_time",
+        "event_value": "value",
         "bondReserves": "bond_reserves",
         "blockNumber": "block_number",
-        "blockHash": "block_hash",
-        "contractAddress": "contract_address",
-        "input.method": "trade_type",
+        "input_method": "trade_type",
         "longsOutstanding": "longs_outstanding",
         "longAverageMaturityTime": "longs_average_maturity_time",
         "lpTotalSupply": "lp_total_supply",
@@ -130,16 +96,6 @@ def get_combined_data(txn_data, pool_info_data):
     trade_data.index = trade_data["block_number"]
 
     # Calculate trade type and timetsamp from args.id
-
-    def decode_id(row):
-        # Check for nans
-        # pylint disable=comparison-with-itself
-        if row["id"] != row["id"]:
-            out = (np.nan, np.nan)
-        else:
-            out = hyperdrive_assets.decode_asset_id(int(row["id"]))
-        return out
-
     def decode_prefix(row):
         # Check for nans
         if np.isnan(row):
@@ -148,11 +104,8 @@ def get_combined_data(txn_data, pool_info_data):
             out = AssetIdPrefix(row).name
         return out
 
-    tuple_series = trade_data.apply(func=decode_id, axis=1)
-    prefix, maturity_time = zip(*tuple_series)
-    trade_data["prefix"] = prefix
-    trade_data["maturity_timestamp"] = maturity_time
-
     trade_data["trade_enum"] = trade_data["prefix"].apply(decode_prefix)
+    trade_data["timestamp"] = trade_data["block_timestamp"]
+    trade_data["block_timestamp"] = trade_data["block_timestamp"].astype(int)
 
     return trade_data

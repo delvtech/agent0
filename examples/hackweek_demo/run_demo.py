@@ -1,23 +1,24 @@
 """ Script to run the streamlab demo """
 
 from __future__ import annotations
-import time
+
 import os
+import time
 
-
-import streamlit as st
 import mplfinance as mpf
-
-from plot_ohlcv import plot_ohlcv, calc_ohlcv
+import streamlit as st
+from extract_data_logs import get_combined_data, read_json_to_pd
 from plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
+from plot_ohlcv import calc_ohlcv, plot_ohlcv
 from plot_pnl import calculate_pnl, plot_pnl
 
-from extract_data_logs import (
-    read_json_to_pd,
-    explode_transaction_data,
-    get_combined_data,
-)
+from elfpy.data import postgres
 
+# pylint: disable=invalid-name
+
+# The number of blocks to view at a time, e.g., only the last 500 blocks
+# None to view all
+view_window = None
 
 # set up streamlit
 # creating a single-element container
@@ -26,21 +27,18 @@ placeholder = st.empty()
 # %%
 # near real-time / live feed simulation
 
-# pylint: disable=invalid-name
 ## Get transactions from data
 
 
 def get_ticker(data):
     """Given transaction data, return a subset of the dataframe"""
     # Return reverse of methods to put most recent transactions at the top
-    out = data["input.method"].iloc[::-1]
+    out = data["input_method"].iloc[::-1]
     return out
 
 
 curr_file_dir = os.path.dirname(os.path.abspath(__file__))
-txn_file = curr_file_dir + "/../../.logging/hyperdrive_transactions.json"
 config_file = curr_file_dir + "/../../.logging/hyperdrive_config.json"
-pool_info_file = curr_file_dir + "/../../.logging/hyperdrive_pool_info.json"
 
 fig = mpf.figure(style="mike", figsize=(15, 15))  # type: ignore
 ax_ohlcv = fig.add_subplot(2, 2, 1)
@@ -50,10 +48,19 @@ ax_pnl = fig.add_subplot(2, 2, 4)
 fig.set_tight_layout(True)  # type: ignore
 
 
+session = postgres.initialize_session()
+
+if view_window is not None:
+    start_block = -view_window
+else:
+    start_block = None
+
 while True:
-    txn_data = explode_transaction_data(read_json_to_pd(txn_file))
+    # TODO currently still reading/writing to config file, add this to postgres
     config_data = read_json_to_pd(config_file)
-    pool_info_data = read_json_to_pd(pool_info_file)
+
+    txn_data = postgres.get_transactions(session, start_block=start_block)
+    pool_info_data = postgres.get_pool_info(session, start_block=start_block)
 
     combined_data = get_combined_data(txn_data, pool_info_data)
 
