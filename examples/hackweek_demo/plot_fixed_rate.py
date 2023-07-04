@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from extract_data_logs import calculate_spot_price
 from matplotlib import ticker as mpl_ticker
 
