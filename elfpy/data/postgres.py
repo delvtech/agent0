@@ -97,6 +97,9 @@ def get_pool_info(session: Session, start_block: int | None = None, end_block: i
     if end_block is not None:
         query = query.filter(PoolInfo.blockNumber < end_block)
 
+    # Always sort by time in order
+    query = query.order_by(PoolInfo.timestamp)
+
     return pd.read_sql(query.statement, con=session.connection())
 
 
