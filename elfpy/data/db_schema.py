@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Union
 
 from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
@@ -24,21 +25,21 @@ class PoolConfig(Base):
 
     __tablename__ = "poolconfig"
 
-    contractAddress: Mapped[str | None] = mapped_column(String, primary_key=True)
-    baseToken: Mapped[str | None] = mapped_column(String, default=None)
-    initializeSharePrice: Mapped[float | None] = mapped_column(Numeric, default=None)
-    positionDuration: Mapped[int | None] = mapped_column(Integer, default=None)
-    checkpointDuration: Mapped[int | None] = mapped_column(Integer, default=None)
-    timeStretch: Mapped[float | None] = mapped_column(Numeric, default=None)
-    governance: Mapped[str | None] = mapped_column(String, default=None)
-    feeCollector: Mapped[str | None] = mapped_column(String, default=None)
-    curveFee: Mapped[float | None] = mapped_column(Numeric, default=None)
-    flatFee: Mapped[float | None] = mapped_column(Numeric, default=None)
-    governanceFee: Mapped[float | None] = mapped_column(Numeric, default=None)
-    oracleSize: Mapped[int | None] = mapped_column(Integer, default=None)
-    updateGap: Mapped[int | None] = mapped_column(Integer, default=None)
-    invTimeStretch: Mapped[float | None] = mapped_column(Numeric, default=None)
-    termLength: Mapped[float | None] = mapped_column(Numeric, default=None)
+    contractAddress: Mapped[Union[str, None]] = mapped_column(String, primary_key=True)
+    baseToken: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    initializeSharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    positionDuration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
+    checkpointDuration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
+    timeStretch: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    governance: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    feeCollector: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    curveFee: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    flatFee: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    governanceFee: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    oracleSize: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
+    updateGap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
+    invTimeStretch: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    termLength: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
 
 
 class PoolInfo(Base):
@@ -51,17 +52,17 @@ class PoolInfo(Base):
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
-    shareReserves: Mapped[float | None] = mapped_column(Numeric, default=None)
-    bondReserves: Mapped[float | None] = mapped_column(Numeric, default=None)
-    lpTotalSupply: Mapped[float | None] = mapped_column(Numeric, default=None)
-    sharePrice: Mapped[float | None] = mapped_column(Numeric, default=None)
-    longsOutstanding: Mapped[float | None] = mapped_column(Numeric, default=None)
-    longAverageMaturityTime: Mapped[float | None] = mapped_column(Numeric, default=None)
-    shortsOutstanding: Mapped[float | None] = mapped_column(Numeric, default=None)
-    shortAverageMaturityTime: Mapped[float | None] = mapped_column(Numeric, default=None)
-    shortBaseVolume: Mapped[float | None] = mapped_column(Numeric, default=None)
-    withdrawalSharesReadyToWithdraw: Mapped[float | None] = mapped_column(Numeric, default=None)
-    withdrawalSharesProceeds: Mapped[float | None] = mapped_column(Numeric, default=None)
+    shareReserves: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    bondReserves: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    lpTotalSupply: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    sharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    longsOutstanding: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    longAverageMaturityTime: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    shortsOutstanding: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    shortAverageMaturityTime: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    shortBaseVolume: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    withdrawalSharesReadyToWithdraw: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    withdrawalSharesProceeds: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
 
 
 class Transaction(Base):
@@ -81,40 +82,40 @@ class Transaction(Base):
 
     #### Fields from base transactions ####
     blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), index=True)
-    transactionIndex: Mapped[int | None] = mapped_column(Integer, default=None)
-    nonce: Mapped[int | None] = mapped_column(Integer, default=None)
-    transactionHash: Mapped[str | None] = mapped_column(String, default=None)
+    transactionIndex: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
+    nonce: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
+    transactionHash: Mapped[Union[str, None]] = mapped_column(String, default=None)
     # Transaction receipt to/from
     # Almost always from wallet address to smart contract address
-    txn_to: Mapped[str | None] = mapped_column(String, default=None)
-    txn_from: Mapped[str | None] = mapped_column(String, default=None)
-    gasUsed: Mapped[int | None] = mapped_column(Numeric, default=None)
+    txn_to: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    txn_from: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    gasUsed: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
 
     #### Fields from solidity function calls ####
     # These fields map solidity function calls and their corresponding arguments
     # The params list is exhaustive against all possible methods
-    input_method: Mapped[str | None] = mapped_column(String, default=None)
+    input_method: Mapped[Union[str, None]] = mapped_column(String, default=None)
 
     # Method: initialize
-    input_params_contribution: Mapped[float | None] = mapped_column(Numeric, default=None)
-    input_params_apr: Mapped[float | None] = mapped_column(Numeric, default=None)
-    input_params_destination: Mapped[str | None] = mapped_column(String, default=None)
-    input_params_asUnderlying: Mapped[bool | None] = mapped_column(Boolean, default=None)
+    input_params_contribution: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    input_params_apr: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    input_params_destination: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    input_params_asUnderlying: Mapped[Union[bool, None]] = mapped_column(Boolean, default=None)
 
     # Method: openLong
-    input_params_baseAmount: Mapped[float | None] = mapped_column(Numeric, default=None)
-    input_params_minOutput: Mapped[float | None] = mapped_column(Numeric, default=None)
+    input_params_baseAmount: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    input_params_minOutput: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     # input_params_destination
     # input_params_asUnderlying
 
     # Method: openShort
-    input_params_bondAmount: Mapped[float | None] = mapped_column(Numeric, default=None)
-    input_params_maxDeposit: Mapped[float | None] = mapped_column(Numeric, default=None)
+    input_params_bondAmount: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    input_params_maxDeposit: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     # input_params_destination
     # input_params_asUnderlying
 
     # Method: closeLong
-    input_params_maturityTime: Mapped[int | None] = mapped_column(Numeric, default=None)
+    input_params_maturityTime: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
     # input_params_bondAmount
     # input_params_minOutput
     # input_params_destination
@@ -129,30 +130,30 @@ class Transaction(Base):
 
     # Method: addLiquidity
     # input_params_contribution
-    input_params_minApr: Mapped[float | None] = mapped_column(Numeric, default=None)
-    input_params_maxApr: Mapped[float | None] = mapped_column(Numeric, default=None)
+    input_params_minApr: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    input_params_maxApr: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     # input_params_destination
     # input_params_asUnderlying
 
     # Method: removeLiquidity
-    input_params_shares: Mapped[float | None] = mapped_column(Numeric, default=None)
+    input_params_shares: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     # input_params_minOutput
     # input_params_destination
     # input_params_asUnderlying
 
     #### Fields from event logs ####
     # Addresses in event logs
-    event_from: Mapped[str | None] = mapped_column(String, default=None)
-    event_to: Mapped[str | None] = mapped_column(String, default=None)
+    event_from: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    event_to: Mapped[Union[str, None]] = mapped_column(String, default=None)
     # args_owner
     # args_spender
     # args_id
-    event_value: Mapped[float | None] = mapped_column(Numeric, default=None)
-    event_operator: Mapped[str | None] = mapped_column(String, default=None)
-    event_id: Mapped[int | None] = mapped_column(Numeric, default=None)
+    event_value: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    event_operator: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    event_id: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
     # Fields calculated from base
-    event_prefix: Mapped[int | None] = mapped_column(Integer, default=None)
-    event_maturity_time: Mapped[int | None] = mapped_column(Numeric, default=None)
+    event_prefix: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
+    event_maturity_time: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
 
     # Fields not used by postprocessing
 
