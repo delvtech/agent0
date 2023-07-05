@@ -13,6 +13,10 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_co
 # solidity returns things in camelCase.  Keeping the formatting to indicate the source.
 # pylint: disable=invalid-name
 
+# Ideally, we'd use `Mapped[str | None]`, but this breaks using Python 3.9:
+# https://github.com/sqlalchemy/sqlalchemy/issues/9110
+# Currently using `Mapped[Union[str, None]]` for backwards compatibility
+
 
 class Base(MappedAsDataclass, DeclarativeBase):
     """Base class to subclass from to define the schema"""
@@ -25,7 +29,7 @@ class PoolConfig(Base):
 
     __tablename__ = "poolconfig"
 
-    contractAddress: Mapped[Union[str, None]] = mapped_column(String, primary_key=True)
+    contractAddress: Mapped[str] = mapped_column(String, primary_key=True)
     baseToken: Mapped[Union[str, None]] = mapped_column(String, default=None)
     initializeSharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     positionDuration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
