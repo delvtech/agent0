@@ -55,7 +55,7 @@ def get_wallet_from_onchain_trade_info(
     balance = positive_balance - negative_balance
 
     asset_type = trades["trade_enum"].iloc[0]
-    maturity = trades["maturity_timestamp"].iloc[0]
+    maturity = trades["maturity_time"].iloc[0]
     mint_time = int(maturity) - elfpy.SECONDS_IN_YEAR
 
     # check if there's an outstanding balance
@@ -116,10 +116,10 @@ def calculate_pnl(trade_data):
     # pylint: disable=too-many-locals
     """Calculates the pnl given trade data"""
     # Drop all rows with nan maturity timestamps
-    trade_data = trade_data[~trade_data["maturity_timestamp"].isna()]
+    trade_data = trade_data[~trade_data["maturity_time"].isna()]
 
     # %% estimate position duration and add it in
-    position_duration = max(trade_data.maturity_timestamp - trade_data.block_timestamp)
+    position_duration = max(trade_data.maturity_time - trade_data.block_timestamp)
     # print(f"empirically observed position_duration in seconds: {position_duration}")
     # print(f"empirically observed position_duration in minutes: {position_duration/60}")
     # print(f"empirically observed position_duration in hours: {position_duration/60/60}")
@@ -159,7 +159,7 @@ def calculate_pnl(trade_data):
                 row.share_reserves,
                 row.bond_reserves,
                 row.lp_total_supply,
-                row.maturity_timestamp,
+                row.maturity_time,
                 row.block_timestamp,
                 position_duration,
             )
@@ -182,7 +182,7 @@ def calculate_pnl(trade_data):
 
             new_pnl[f"agent_{agent_index}_pnl"] = pnl
         pnl_data.append(new_pnl)
-        time_data.append(pd.to_datetime(row["block_timestamp"], unit="s"))
+        time_data.append(row["timestamp"])
 
     # %%
     y_data = pd.DataFrame(pnl_data)

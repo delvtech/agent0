@@ -2,11 +2,9 @@
 from __future__ import annotations
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
-from matplotlib import ticker as mpl_ticker
-
 from extract_data_logs import calculate_spot_price
+from matplotlib import ticker as mpl_ticker
 
 # %%
 
@@ -24,7 +22,7 @@ def calc_fixed_rate(trade_data):
         )
         trade_data.loc[idx, "rate"] = (1 - spot_price) / spot_price
 
-    x_data = pd.to_datetime(trade_data.loc[:, "block_timestamp"], unit="s")
+    x_data = trade_data.loc[:, "timestamp"]
     col_names = ["rate"]
     y_data = trade_data.loc[:, col_names]
     return (x_data, y_data)

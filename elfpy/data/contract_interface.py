@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import time
+from datetime import datetime
 from typing import Any, Sequence
 
 import attr
@@ -14,13 +15,15 @@ from eth_account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI, BlockNumber
 from eth_utils import address
+from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
 from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
 
-from elfpy.data.pool_info import PoolInfo
+from elfpy.data.db_schema import PoolInfo, Transaction
+from elfpy.markets.hyperdrive import hyperdrive_assets
 
 
 class TestAccount:
@@ -109,16 +112,95 @@ def fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt)
     return logs
 
 
-def fetch_transactions_for_block(
-    web3: Web3, contract: Contract, block_number: BlockNumber
-) -> list[dict[str, Any]] | None:
+def convert_fixedpoint(input_val: int | None) -> float | None:
+    """Given a scaled value int, converts it to an unscaled value in float, while dealing with Nones"""
+
+    # We cast to FixedPoint, then to floats to keep noise to a minimum
+    # This is assuming there's no loss of precision going from Fixedpoint to float
+    # Once this gets fed into postgres, postgres has fixed precision Numeric type
+    if input is not None:
+        return float(FixedPoint(scaled_value=input_val))
+    return None
+
+
+def build_transaction_object(
+    transaction_dict: dict[str, Any],
+    logs: list[dict[str, Any]],
+    receipt: dict[str, Any],
+) -> Transaction:
+    """Conversion function to translate output of chain queries to the Transaction object"""
+
+    # Build output obj dict incrementally to be passed into Transaction
+    # i.e., Transaction(**out_dict)
+
+    # Base transaction fields
+    out_dict: dict[str, Any] = {
+        "blockNumber": transaction_dict["blockNumber"],
+        "transactionIndex": transaction_dict["transactionIndex"],
+        "nonce": transaction_dict["nonce"],
+        "transactionHash": transaction_dict["hash"],
+        "txn_to": transaction_dict["to"],
+        "txn_from": transaction_dict["from"],
+        "gasUsed": receipt["gasUsed"],
+    }
+
+    # Input solidity methods and parameters
+    # TODO can the input field ever be empty or not exist?
+    out_dict["input_method"] = transaction_dict["input"]["method"]
+    input_params = transaction_dict["input"]["params"]
+    out_dict["input_params_contribution"] = convert_fixedpoint(input_params.get("_contribution", None))
+    out_dict["input_params_apr"] = convert_fixedpoint(input_params.get("_apr", None))
+    out_dict["input_params_destination"] = input_params.get("_destination", None)
+    out_dict["input_params_asUnderlying"] = input_params.get("_asUnderlying", None)
+    out_dict["input_params_baseAmount"] = convert_fixedpoint(input_params.get("_baseAmount", None))
+    out_dict["input_params_minOutput"] = convert_fixedpoint(input_params.get("_minOutput", None))
+    out_dict["input_params_bondAmount"] = convert_fixedpoint(input_params.get("_bondAmount", None))
+    out_dict["input_params_maxDeposit"] = convert_fixedpoint(input_params.get("_maxDeposit", None))
+    out_dict["input_params_maturityTime"] = input_params.get("_maturityTime", None)
+    out_dict["input_params_minApr"] = convert_fixedpoint(input_params.get("_minApr", None))
+    out_dict["input_params_maxApr"] = convert_fixedpoint(input_params.get("_maxApr", None))
+    out_dict["input_params_shares"] = convert_fixedpoint(input_params.get("_shares", None))
+
+    # Assuming one TransferSingle per transfer
+    # TODO Fix this below eventually
+    # There can be two transfer singles
+    # Currently grab first transfer single (e.g., Minting hyperdrive long, so address 0 to agent)
+    # Eventually need grabbing second transfer single (e.g., DAI from agent to hyperdrive)
+    event_logs = [log for log in logs if log["event"] == "TransferSingle"]
+    if len(event_logs) == 0:
+        event_args: dict[str, Any] = {}
+        # Set args as None
+    elif len(event_logs) == 1:
+        event_args: dict[str, Any] = event_logs[0]["args"]
+    else:
+        logging.warning("Tranfer event contains multiple TransferSingle logs, selecting first")
+        event_args: dict[str, Any] = event_logs[0]["args"]
+
+    out_dict["event_value"] = convert_fixedpoint(event_args.get("value", None))
+    out_dict["event_from"] = event_args.get("from", None)
+    out_dict["event_to"] = event_args.get("to", None)
+    out_dict["event_operator"] = event_args.get("operator", None)
+    out_dict["event_id"] = event_args.get("id", None)
+
+    # Decode logs here
+    if out_dict["event_id"]:
+        event_prefix, event_maturity_time = hyperdrive_assets.decode_asset_id(out_dict["event_id"])
+        out_dict["event_prefix"] = event_prefix
+        out_dict["event_maturity_time"] = event_maturity_time
+
+    transaction = Transaction(**out_dict)
+
+    return transaction
+
+
+def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[Transaction]:
     """Fetch transactions related to the contract"""
     block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
     transactions = block.get("transactions")
     if not transactions:
         logging.info("no transactions in block %s", block.get("number"))
-        return None
-    decoded_block_transactions = []
+        return []
+    out_transactions = []
     for transaction in transactions:
         if isinstance(transaction, HexBytes):
             logging.warning("transaction HexBytes")
@@ -126,7 +208,7 @@ def fetch_transactions_for_block(
         if transaction.get("to") != contract.address:
             logging.warning("transaction not from contract")
             continue
-        transaction_dict = dict(transaction)
+        transaction_dict: dict[str, Any] = dict(transaction)
         # Convert the HexBytes fields to their hex representation
         tx_hash = transaction.get("hash") or HexBytes("")
         transaction_dict["hash"] = tx_hash.hex()
@@ -138,14 +220,11 @@ def fetch_transactions_for_block(
             continue
         tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
         logs = fetch_and_decode_logs(web3, contract, tx_receipt)
-        decoded_block_transactions.append(
-            {
-                "transaction": transaction_dict,
-                "logs": logs,
-                "receipt": recursive_dict_conversion(tx_receipt),
-            }
-        )
-    return decoded_block_transactions
+        receipt: dict[str, Any] = recursive_dict_conversion(tx_receipt)  # type: ignore
+
+        out_transactions.append(build_transaction_object(transaction_dict, logs, receipt))
+
+    return out_transactions
 
 
 def get_event_object(
@@ -250,14 +329,32 @@ def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, blo
     pool_info_data_dict = get_smart_contract_read_call(
         hyperdrive_contract, "getPoolInfo", block_identifier=block_number
     )
+
+    pool_info_data_dict: dict[Any, Any] = {
+        key: convert_fixedpoint(value) for (key, value) in pool_info_data_dict.items()
+    }
+
     current_block: BlockData = web3_container.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
     if current_block_timestamp is None:
         raise AssertionError("Current block has no timestamp")
+
     pool_info_data_dict.update({"timestamp": current_block_timestamp})
     pool_info_data_dict.update({"blockNumber": block_number})
+
+    pool_info_dict = {}
+    for key in PoolInfo.__annotations__.keys():
+        # Required keys
+        if key == "timestamp":
+            pool_info_dict[key] = datetime.fromtimestamp(pool_info_data_dict[key])
+        elif key == "blockNumber":
+            pool_info_dict[key] = pool_info_data_dict[key]
+        # Otherwise default to None if not exist
+        else:
+            pool_info_dict[key] = pool_info_data_dict.get(key, None)
+
     # Populating the dataclass from the dictionary
-    pool_info = PoolInfo(**{key: pool_info_data_dict.get(key, 0) for key in PoolInfo.__annotations__.keys()})
+    pool_info = PoolInfo(**pool_info_dict)
 
     return pool_info
 

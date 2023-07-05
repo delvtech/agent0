@@ -17,9 +17,8 @@
 from __future__ import annotations
 
 import mplfinance as mpf
-import streamlit as st
 import pandas as pd
-
+import streamlit as st
 from extract_data_logs import calculate_spot_price
 
 # %%
@@ -46,11 +45,10 @@ def calc_ohlcv(trade_data, freq="D"):
     )
 
     spot_prices.columns = ["spot_price"]
-    timestamp = trade_data["block_timestamp"]
     value = trade_data["value"]
 
-    spot_prices["timestamp"] = pd.to_datetime(timestamp, unit="s")
     spot_prices["value"] = value
+    spot_prices["timestamp"] = trade_data["timestamp"]
     spot_prices = spot_prices.set_index("timestamp")
 
     ohlcv = spot_prices.groupby([pd.Grouper(freq=freq)]).agg(
