@@ -33,17 +33,11 @@ python -m pip install --upgrade pip
 python -m pip install --upgrade -e ".[with-dependencies]"
 ```
 
+The dependencies includes postgresql, which is required to work with files in `elfpy/data`.
 If you intend to improve the documentation, then you must also install the packages:
 
 ```bash
 python -m pip install --upgrade -e ".[with-dependencies,docs]"
-```
-
-If you intend to work postgres then you'll also need to install the postgres and the required packages:
-
-```bash
-brew install postgres
-python -m pip install --upgrade -e ".[with-dependencies,postgres]"
 ```
 
 An explanation of what the above steps do:
