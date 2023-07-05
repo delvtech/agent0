@@ -6,7 +6,7 @@ import time
 
 import mplfinance as mpf
 import streamlit as st
-from extract_data_logs import get_combined_data, read_json_to_pd
+from extract_data_logs import get_combined_data
 from plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
 from plot_ohlcv import calc_ohlcv, plot_ohlcv
 from plot_pnl import calculate_pnl, plot_pnl

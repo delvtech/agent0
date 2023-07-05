@@ -57,8 +57,9 @@ def main(
         block_number = BlockNumber(latest_mined_block - lookback_block_limit)
         logging.warning("Starting block is past lookback block limit, starting at block %s", block_number)
 
-    # This if statement executes only on initial run, and if the chain has executed until start_block
-    if block_number > data_latest_block_number and block_number < latest_mined_block:
+    # This if statement executes only on initial run (based on data_latest_block_number check),
+    # and if the chain has executed until start_block (based on latest_mined_block check)
+    if data_latest_block_number < block_number < latest_mined_block:
         # Query and add block_pool_info
         block_pool_info = contract_interface.get_block_pool_info(web3, state_hyperdrive_contract, block_number)
         postgres.add_pool_infos([block_pool_info], session)
