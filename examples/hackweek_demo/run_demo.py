@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import os
 import time
 
 import mplfinance as mpf
 import streamlit as st
-from extract_data_logs import get_combined_data, read_json_to_pd
+from extract_data_logs import get_combined_data
 from plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
 from plot_ohlcv import calc_ohlcv, plot_ohlcv
 from plot_pnl import calculate_pnl, plot_pnl
@@ -37,9 +36,6 @@ def get_ticker(data):
     return out
 
 
-curr_file_dir = os.path.dirname(os.path.abspath(__file__))
-config_file = curr_file_dir + "/../../.logging/hyperdrive_config.json"
-
 fig = mpf.figure(style="mike", figsize=(15, 15))  # type: ignore
 ax_ohlcv = fig.add_subplot(2, 2, 1)
 ax_fixed_rate = fig.add_subplot(2, 2, 2)
@@ -55,10 +51,10 @@ if view_window is not None:
 else:
     start_block = None
 
-while True:
-    # TODO currently still reading/writing to config file, add this to postgres
-    config_data = read_json_to_pd(config_file)
+# pool config data is static, so just read once
+config_data = postgres.get_pool_config(session)
 
+while True:
     txn_data = postgres.get_transactions(session, start_block=start_block)
     pool_info_data = postgres.get_pool_info(session, start_block=start_block)
 
