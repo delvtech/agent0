@@ -382,7 +382,7 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
 
     Returns
     -------
-    hyperdrive_config : dict
+    hyperdrive_config : PoolConfig
         The hyperdrive config.
 
     """
