@@ -200,7 +200,6 @@ def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: B
     if not transactions:
         logging.info("no transactions in block %s", block.get("number"))
         return []
-    # decoded_block_transactions = []
     out_transactions = []
     for transaction in transactions:
         if isinstance(transaction, HexBytes):

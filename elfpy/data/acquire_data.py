@@ -51,15 +51,13 @@ def main(
 
     # Get last entry of pool info in db
     data_latest_block_number = postgres.get_latest_block_number(session)
-
     # Using max of latest block in database or specified start block
     start_block = max(start_block, data_latest_block_number)
-
     # Parameterized start block number
     block_number: BlockNumber = BlockNumber(start_block)
 
     # Make sure to not grab current block, as the current block is subject to change
-    # Current block is still currently being built
+    # Current block is still being built
     latest_mined_block = web3.eth.get_block_number() - 1
 
     lookback_block_limit = BlockNumber(lookback_block_limit)
@@ -113,7 +111,6 @@ def main(
                         logging.warning("Error in get_block_pool_info, retrying")
                         time.sleep(0.1)
                         continue
-
                 if block_pool_info:
                     pool_info.append(block_pool_info)
 
