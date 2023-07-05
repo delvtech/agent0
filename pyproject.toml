@@ -48,15 +48,11 @@ with-dependencies = [
     "scipy",
     "tomli",
     "typing_extensions==4.5.0",
+    # bot dependencies
     "web3",
-
-    # Hackweek requirements
     "streamlit",
     "mplfinance",
     "flask",
-]
-
-postgres = [
     "psycopg2-binary",
     "sqlalchemy",
 ]

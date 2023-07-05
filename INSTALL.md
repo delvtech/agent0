@@ -30,7 +30,7 @@ source .venv/bin/activate
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install --upgrade -e ".[with-dependencies,postgres]"
+python -m pip install --upgrade -e ".[with-dependencies]"
 ```
 
 If you intend to improve the documentation, then you must also install the packages:
