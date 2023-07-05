@@ -48,18 +48,17 @@ def main(
     start_block = max(start_block, data_latest_block_number)
     # Parameterized start block number
     block_number: BlockNumber = BlockNumber(start_block)
-
     # Make sure to not grab current block, as the current block is subject to change
     # Current block is still being built
     latest_mined_block = web3.eth.get_block_number() - 1
-
     lookback_block_limit = BlockNumber(lookback_block_limit)
+
     if (latest_mined_block - block_number) > lookback_block_limit:
         block_number = BlockNumber(latest_mined_block - lookback_block_limit)
         logging.warning("Starting block is past lookback block limit, starting at block %s", block_number)
 
-    # This if statement executes only on initial run
-    if block_number > data_latest_block_number:
+    # This if statement executes only on initial run, and if the chain has executed until start_block
+    if block_number > data_latest_block_number and block_number < latest_mined_block:
         # Query and add block_pool_info
         block_pool_info = contract_interface.get_block_pool_info(web3, state_hyperdrive_contract, block_number)
         postgres.add_pool_infos([block_pool_info], session)
@@ -126,7 +125,7 @@ if __name__ == "__main__":
     ETHEREUM_NODE = "http://localhost:8545"
     STATE_ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
     TRANSACTIONS_ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
-    START_BLOCK = 6
+    START_BLOCK = 0
     # Look back limit for backfilling
     LOOKBACK_BLOCK_LIMIT = 1000
     SLEEP_AMOUNT = 1
