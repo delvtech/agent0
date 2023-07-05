@@ -22,7 +22,7 @@ from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
 from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
 
-from elfpy.data.db_schema import PoolInfo, Transaction
+from elfpy.data.db_schema import PoolConfig, PoolInfo, Transaction
 from elfpy.markets.hyperdrive import hyperdrive_assets
 
 
@@ -372,7 +372,7 @@ def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3: Web3) 
     return hyperdrive_contract
 
 
-def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict:
+def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
     """Get the hyperdrive config from a deployed hyperdrive contract.
 
     Arguments
@@ -386,7 +386,37 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict:
         The hyperdrive config.
 
     """
-    hyperdrive_config: dict = get_smart_contract_read_call(hyperdrive_contract, "getPoolConfig")
-    hyperdrive_config["invScaledTimeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
-    hyperdrive_config["termLength"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
-    return hyperdrive_config
+
+    hyperdrive_config: dict[str, Any] = get_smart_contract_read_call(hyperdrive_contract, "getPoolConfig")
+
+    out_config = {}
+    out_config["contractAddress"] = hyperdrive_contract.address
+    out_config["baseToken"] = hyperdrive_config.get("baseToken", None)
+    out_config["initializeSharePrice"] = convert_fixedpoint(hyperdrive_config.get("initializeSharePrice", None))
+    out_config["positionDuration"] = hyperdrive_config.get("positionDuration", None)
+    out_config["checkpointDuration"] = hyperdrive_config.get("checkpointDuration", None)
+    config_time_stretch = hyperdrive_config.get("timeStretch", None)
+    if config_time_stretch:
+        fp_time_stretch = FixedPoint(scaled_value=config_time_stretch)
+        time_stretch = float(fp_time_stretch)
+        inv_time_stretch = float(1 / fp_time_stretch)
+    else:
+        time_stretch = None
+        inv_time_stretch = None
+    out_config["timeStretch"] = time_stretch
+    out_config["governance"] = hyperdrive_config.get("governance", None)
+    out_config["feeCollector"] = hyperdrive_config.get("feeCollector", None)
+    curve_fee, flat_fee, governance_fee = hyperdrive_config.get("fees", (None, None, None))
+    out_config["curveFee"] = convert_fixedpoint(curve_fee)
+    out_config["flatFee"] = convert_fixedpoint(flat_fee)
+    out_config["governanceFee"] = convert_fixedpoint(governance_fee)
+    out_config["oracleSize"] = hyperdrive_config.get("oracleSize", None)
+    out_config["updateGap"] = hyperdrive_config.get("updateGap", None)
+    out_config["invTimeStretch"] = inv_time_stretch
+    if out_config["positionDuration"] is not None:
+        term_length = out_config["positionDuration"] / 60 / 60 / 24  # in days
+    else:
+        term_length = None
+    out_config["termLength"] = term_length
+
+    return PoolConfig(**out_config)

@@ -7,7 +7,7 @@ import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from elfpy.data.db_schema import Base, PoolInfo, Transaction
+from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, Transaction
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -52,12 +52,39 @@ def close_session(session: Session):
     session.close()
 
 
+def add_pool_config(pool_config: PoolConfig, session: Session):
+    """
+    Add pool config to the pool config table if not exist
+    Verify pool config if it does exist
+    """
+
+    existing_pool_config = get_pool_config(session, contract_address=pool_config.contractAddress)
+
+    if len(existing_pool_config) == 0:
+        session.add(pool_config)
+        try:
+            session.commit()
+        except sqlalchemy.exc.DataError as err:  # type: ignore
+            print(f"{pool_config=}")
+            raise err
+    elif len(existing_pool_config) == 1:
+        # Verify pool config
+        for key in PoolConfig.__annotations__.keys():
+            new_value = getattr(pool_config, key)
+            old_value = existing_pool_config.loc[0, key]
+            if new_value != old_value:
+                raise ValueError(
+                    f"Adding pool configuration field: key {key} doesn't match (new: {new_value}, old:{old_value})"
+                )
+    else:
+        # Should never get here, contractAddress is primary_key, which is unique
+        raise ValueError
+
+
 def add_pool_infos(pool_infos: list[PoolInfo], session: Session):
     """Add a pool info to the poolinfo table"""
-
     for pool_info in pool_infos:
         session.add(pool_info)
-
     try:
         session.commit()
     except sqlalchemy.exc.DataError as err:  # type: ignore
@@ -67,15 +94,24 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session):
 
 def add_transactions(transactions: list[Transaction], session: Session):
     """Add transactions to the poolinfo table"""
-
     for transaction in transactions:
         session.add(transaction)
-
     try:
         session.commit()
     except sqlalchemy.exc.DataError as err:  # type: ignore
         print(f"{transactions=}")
         raise err
+
+
+def get_pool_config(session: Session, contract_address: str | None = None) -> pd.DataFrame:
+    """
+    Gets all pool info and returns as a pandas dataframe
+    start_block and end_block match slicing notation, e.g., list[:3] or list[:-3]
+    """
+    query = session.query(PoolConfig)
+    if contract_address is not None:
+        query = query.filter(PoolConfig.contractAddress == contract_address)
+    return pd.read_sql(query.statement, con=session.connection())
 
 
 def get_pool_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:

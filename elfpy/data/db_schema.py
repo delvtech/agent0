@@ -17,6 +17,30 @@ class Base(MappedAsDataclass, DeclarativeBase):
     """Base class to subclass from to define the schema"""
 
 
+class PoolConfig(Base):
+    """
+    Table/dataclass schema for pool config
+    """
+
+    __tablename__ = "poolconfig"
+
+    contractAddress: Mapped[str | None] = mapped_column(String, primary_key=True)
+    baseToken: Mapped[str | None] = mapped_column(String, default=None)
+    initializeSharePrice: Mapped[float | None] = mapped_column(Numeric, default=None)
+    positionDuration: Mapped[int | None] = mapped_column(Integer, default=None)
+    checkpointDuration: Mapped[int | None] = mapped_column(Integer, default=None)
+    timeStretch: Mapped[float | None] = mapped_column(Numeric, default=None)
+    governance: Mapped[str | None] = mapped_column(String, default=None)
+    feeCollector: Mapped[str | None] = mapped_column(String, default=None)
+    curveFee: Mapped[float | None] = mapped_column(Numeric, default=None)
+    flatFee: Mapped[float | None] = mapped_column(Numeric, default=None)
+    governanceFee: Mapped[float | None] = mapped_column(Numeric, default=None)
+    oracleSize: Mapped[int | None] = mapped_column(Integer, default=None)
+    updateGap: Mapped[int | None] = mapped_column(Integer, default=None)
+    invTimeStretch: Mapped[float | None] = mapped_column(Numeric, default=None)
+    termLength: Mapped[float | None] = mapped_column(Numeric, default=None)
+
+
 class PoolInfo(Base):
     """
     Table/dataclass schema for pool info

@@ -1,9 +1,7 @@
 """Script to format on-chain hyperdrive pool, config, and transaction data post-processing"""
 from __future__ import annotations
 
-import json
 import logging
-import os
 import time
 
 from eth_typing import URI, BlockNumber
@@ -21,7 +19,6 @@ def main(
     ethereum_node: URI | str,
     state_abi_file_path: str,
     transactions_abi_file_path: str,
-    save_dir: str,
     start_block: int,
     lookback_block_limit: int,
     sleep_amount: int,
@@ -42,12 +39,8 @@ def main(
     )
 
     # get pool config from hyperdrive contract
-    # TODO should this be added to postgres to put everything in one place?
-    config_file = os.path.join(save_dir, "hyperdrive_config.json")
-    config_dict = contract_interface.get_hyperdrive_config(state_hyperdrive_contract)
-    logging.info("Writing pool config.")
-    with open(config_file, mode="w", encoding="UTF-8") as file:
-        json.dump(config_dict, file, indent=2, cls=output_utils.ExtendedJSONEncoder)
+    pool_config = contract_interface.get_hyperdrive_config(state_hyperdrive_contract)
+    postgres.add_pool_config(pool_config, session)
 
     # Get last entry of pool info in db
     data_latest_block_number = postgres.get_latest_block_number(session)
@@ -131,7 +124,6 @@ if __name__ == "__main__":
     # setup constants
     CONTRACTS_URL = "http://localhost:80/addresses.json"
     ETHEREUM_NODE = "http://localhost:8545"
-    SAVE_DIR = ".logging"
     STATE_ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
     TRANSACTIONS_ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
     START_BLOCK = 6
@@ -144,7 +136,6 @@ if __name__ == "__main__":
         ETHEREUM_NODE,
         STATE_ABI_FILE_PATH,
         TRANSACTIONS_ABI_FILE_PATH,
-        SAVE_DIR,
         START_BLOCK,
         LOOKBACK_BLOCK_LIMIT,
         SLEEP_AMOUNT,
