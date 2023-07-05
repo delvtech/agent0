@@ -97,7 +97,6 @@ class TestPoolConfigInterface:
         assert pool_config_df_2.loc[0, "initializeSharePrice"] == 3.2
 
         # If we try to add another pool config with a different value, should throw a ValueError
-        # Nothing should happen if we give the same pool_config
         pool_config_3 = PoolConfig(contractAddress="0", initializeSharePrice=3.4)  # add your other columns here...
         with pytest.raises(ValueError):
             postgres.add_pool_config(pool_config_3, session)
