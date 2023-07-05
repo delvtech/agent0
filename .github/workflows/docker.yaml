@@ -1,4 +1,4 @@
-name: "Docker: Build and push elf-sims image"
+name: "Docker: Build and push elf-simulations image"
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/elf-sims
+  IMAGE_NAME: ${{ github.repository }}/elf-simulations
 
 jobs:
   build-and-push:
