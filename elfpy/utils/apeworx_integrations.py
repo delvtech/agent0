@@ -365,6 +365,8 @@ def get_wallet_from_trade_history(
         )
     else:
         wallet = add_to_existing_wallet
+    if trade_history is None:
+        return wallet
     for position_id in trade_history["id"].unique():  # loop across all unique positions
         from_agent = trade_history["from"] == address
         to_agent = trade_history["to"] == address

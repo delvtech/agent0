@@ -633,7 +633,7 @@ def main(
         if block_number > last_executed_block:
             log_and_show_block_info(provider, trade_streak, block_number, block_timestamp)
             # marginal update to trade_history
-            start_block = trade_history.block_number.max() + 1
+            start_block = trade_history.block_number.max() + 1 if trade_history is not None else 0
             start_time = now()
             trade_history = ape_utils.get_trade_history(hyperdrive_instance, start_block, block_number, trade_history)
             logging.debug("Trade history updated in %s seconds", now() - start_time)
