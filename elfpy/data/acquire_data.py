@@ -9,7 +9,6 @@ from web3 import Web3
 
 from elfpy.data import contract_interface, postgres
 from elfpy.utils import logs as log_utils
-from elfpy.utils import outputs as output_utils
 
 # pylint: disable=too-many-arguments
 
