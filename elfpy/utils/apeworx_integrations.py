@@ -420,15 +420,15 @@ def get_wallet_from_trade_history(
                         previous_share_price = (
                             wallet.shorts[mint_time].open_share_price if mint_time in wallet.shorts else 0
                         )
-                        delta_open_share_price = FixedPoint(scaled_value=int(trade_history.share_price.iloc[0]))
+                        delta_open_share_price = FixedPoint(scaled_value=trade_history.share_price.iloc[0])
                         # weighted average update: new_y = ( old_x * old_y + new_x * new_y ) / (old_x + new_x)
                         updated_open_share_price = (
                             previous_balance * previous_share_price + delta_balance * delta_open_share_price
                         ) / new_balance
-                        updated_open_share_price = FixedPoint(scaled_value=int(updated_open_share_price))
+                        updated_open_share_price = FixedPoint(scaled_value=updated_open_share_price)
                     else:  # weighted average across a bunch of trades, assuming trade_history contains EVERY trade
                         value = trades_df["value"] * np.where(trades_df["from"] == address, -1, 1)
-                        updated_open_share_price = FixedPoint(int(np.average(trades_df["share_price"], weights=value)))
+                        updated_open_share_price = FixedPoint(scaled_value=np.average(trades_df["share_price"], weights=value))
                         if abs(balance - value.sum()) > tolerance:
                             raise ValueError("weighted average open share price calculation is wrong")
                         logging.debug("calculated weighted average open share price of %s", updated_open_share_price)
