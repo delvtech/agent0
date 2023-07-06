@@ -25,6 +25,8 @@ jobs:
         with:
           cmd: install # will run `yarn install` command
         env:
+          # A warning is thrown here unnecessarily.  tracking issue here:
+          # https://github.com/github/vscode-github-actions/issues/222
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # if needed
 
       - name: install foundry
@@ -58,4 +60,6 @@ jobs:
         with:
           flags: unittests
           fail_ci_if_error: true
+          # A warning is thrown here unnecessarily.  tracking issue here:
+          # https://github.com/github/vscode-github-actions/issues/222
           token: ${{ secrets.CODECOV_TOKEN }}
