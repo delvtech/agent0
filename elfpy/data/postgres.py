@@ -185,6 +185,24 @@ def get_wallet_info(session: Session, start_block: int | None = None, end_block:
     return pd.read_sql(query.statement, con=session.connection())
 
 
+def get_current_wallet_info(session: Session, end_block: int | None = None) -> pd.DataFrame:
+    """
+    Queries wallet info and grabs the latest wallet information given end_block
+    """
+
+    all_wallet_info = get_wallet_info(session, end_block=end_block)
+    # Get last entry in the table of each wallet address and token type
+    current_wallet_info = (
+        all_wallet_info.sort_values("blockNumber", ascending=False)
+        .groupby(["walletAddress", "tokenType"])
+        .agg({"tokenValue": "first"})
+    )  # Get latest value of each token type
+
+    # TODO do we remove tokens that reached 0 value?
+
+    return current_wallet_info
+
+
 def _get_latest_block_number_wallet_info(session: Session) -> int:
     """
     Gets the latest block number based on the walletinfo table in the db
