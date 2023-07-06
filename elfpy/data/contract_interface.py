@@ -67,27 +67,10 @@ def fund_account(funding_contract: Contract, account_address: str, amount: int) 
     return tx_receipt
 
 
-def camel_to_snake(camel_string: str) -> str:
-    """Convert camelCase to snake_case"""
-    snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", camel_string)
-    return snake_string.lower()
-
-
-def collect_files(folder_path: str, extension: str = ".json") -> list[str]:
-    """Load all files with the given extension into a list"""
-    collected_files = []
-    for root, _, files in os.walk(folder_path):
-        for file in files:
-            if file.endswith(extension):
-                file_path = os.path.join(root, file)
-                collected_files.append(file_path)
-    return collected_files
-
-
 def load_all_abis(abi_folder: str) -> dict:
     """Load the ABI from the JSON file"""
     abis = {}
-    abi_files = collect_files(abi_folder)
+    abi_files = _collect_files(abi_folder)
     for abi_file in abi_files:
         file_name = os.path.splitext(os.path.basename(abi_file))[0]
         with open(abi_file, mode="r", encoding="UTF-8") as file:
@@ -196,8 +179,32 @@ def fetch_address_from_url(contracts_url: str) -> HyperdriveAddressesJson:
     if response.status_code != 200:
         raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
     addresses_json = response.json()
-    addresses = HyperdriveAddressesJson(**{camel_to_snake(key): value for key, value in addresses_json.items()})
+    addresses = HyperdriveAddressesJson(**{_camel_to_snake(key): value for key, value in addresses_json.items()})
     return addresses
+
+
+def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddressesJson) -> Contract:
+    """Get the hyperdrive contract given abis"""
+    if "IHyperdrive" not in abis:
+        raise AssertionError("IHyperdrive ABI was not provided")
+    state_abi = abis["IHyperdrive"]
+    # get contract instance of hyperdrive
+    hyperdrive_contract: Contract = web3.eth.contract(
+        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
+    )
+    return hyperdrive_contract
+
+
+def get_funding_contract(web3: Web3, abis: dict, addresses: HyperdriveAddressesJson) -> Contract:
+    """Get the hyperdrive contract for a given abi"""
+    if "ERC20Mintable" not in abis:
+        raise AssertionError("ERC20 ABI for minting base tokens was not provided")
+    state_abi = abis["ERC20Mintable"]
+    # get contract instance of hyperdrive
+    hyperdrive_contract: Contract = web3.eth.contract(
+        address=address.to_checksum_address(addresses.base_token), abi=state_abi
+    )
+    return hyperdrive_contract
 
 
 def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[Transaction]:
@@ -300,32 +307,6 @@ def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, blo
     pool_info = PoolInfo(**pool_info_dict)
 
     return pool_info
-
-
-def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3: Web3) -> Contract:
-    """Get the hyperdrive contract for a given abi"""
-    addresses = fetch_address_from_url(contracts_url)
-    # Load the ABI from the JSON file
-    with open(abi_file_path, "r", encoding="UTF-8") as file:
-        state_abi = json.load(file)["abi"]
-    # get contract instance of hyperdrive
-    hyperdrive_contract: Contract = web3.eth.contract(
-        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
-    )
-    return hyperdrive_contract
-
-
-def get_funding_contract(abi_file_path: str, contracts_url: str, web3: Web3) -> Contract:
-    """Get the hyperdrive contract for a given abi"""
-    addresses = fetch_address_from_url(contracts_url)
-    # Load the ABI from the JSON file
-    with open(abi_file_path, "r", encoding="UTF-8") as file:
-        state_abi = json.load(file)["abi"]
-    # get contract instance of hyperdrive
-    hyperdrive_contract: Contract = web3.eth.contract(
-        address=address.to_checksum_address(addresses.base_token), abi=state_abi
-    )
-    return hyperdrive_contract
 
 
 def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
@@ -520,7 +501,6 @@ def _build_transaction_object(
     -------
     Transaction
         A transaction object to be inserted into postgres
-
     """
 
     # Build output obj dict incrementally to be passed into Transaction
@@ -595,3 +575,20 @@ def _recursive_dict_conversion(obj):
     if hasattr(obj, "items"):
         return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
     return obj
+
+
+def _camel_to_snake(camel_string: str) -> str:
+    """Convert camelCase to snake_case"""
+    snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", camel_string)
+    return snake_string.lower()
+
+
+def _collect_files(folder_path: str, extension: str = ".json") -> list[str]:
+    """Load all files with the given extension into a list"""
+    collected_files = []
+    for root, _, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith(extension):
+                file_path = os.path.join(root, file)
+                collected_files.append(file_path)
+    return collected_files
