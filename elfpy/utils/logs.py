@@ -1,12 +1,17 @@
 """Utility functions for logging."""
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sys
 from logging.handlers import RotatingFileHandler
 
+from ape.exceptions import TransactionError
+
 import elfpy
+import elfpy.utils.format as format_utils
+from elfpy.data.db_schema import Base, PoolConfig, PoolInfo
 
 
 def setup_logging(
@@ -114,3 +119,73 @@ def _create_file_handler(log_dir: str, log_name: str, log_formatter: logging.For
     handler = RotatingFileHandler(log_path, mode="w", maxBytes=max_bytes)
     handler.setFormatter(log_formatter)
     return handler
+
+
+def setup_hyperdrive_crash_report_logging():
+    """Logging specifically for hyperdrive crash reporting.  Currently hijacking CRITICAL level
+    until we need a custom level."""
+    setup_logging(".logging/hyperdrive_test_crash_report.log", log_level=logging.CRITICAL)
+
+
+# TODO: move this to somewhere like elfpy/contracts/hyperdrive/logging.py
+# TODO: don't use ape's TransactionError, use web3's InvalidTransaction when we switch
+def log_hyperdrive_crash_report(
+    # TODO: better typing for this, an enum?
+    trade_type: str,
+    error: TransactionError,
+    amount: float,
+    agent_address: str,
+    pool_info: PoolInfo,
+    pool_config: PoolConfig,
+):
+    """Log a crash report for a hyperdrive transaction.
+
+    Arguments
+    ---------
+    trade_type : str
+        The type of trade being executed.
+
+    error : TransactionError
+        The transaction error that occurred.
+
+    amount : float
+        The amount of the transaction.
+
+    agent_address : str
+        The address of the agent executing the transaction.
+
+    pool_info : PoolInfo
+        Information about the pool involved in the transaction.
+
+    pool_config : PoolConfig
+        Configuration of the pool involved in the transaction.
+
+    Returns
+    -------
+    None
+        This function does not return any value.
+    """
+
+    pool_info_dict = _get_dict_from_schema(pool_info)
+    pool_info_dict["timestamp"] = int(pool_info.timestamp.timestamp())
+    formatted_pool_info = json.dumps(pool_info_dict, indent=4)
+
+    pool_config_dict = _get_dict_from_schema(pool_config)
+    formatted_pool_config = json.dumps(pool_config_dict, indent=4)
+    logging.critical(
+        """Failed to execute %s: %s\n Amount: %s\n Agent: %s\n PoolInfo: %s\n PoolConfig: %s\n""",
+        trade_type,
+        error,
+        format_utils.format_float_as_string(amount),
+        agent_address,
+        formatted_pool_info,
+        formatted_pool_config,
+    )
+
+
+def _get_dict_from_schema(db_schema: Base):
+    """Quick helper to convert a SqlAlcemcy Row into a dict for printing.  There might be a better
+    way to do this?"""
+    db_dict = db_schema.__dict__
+    del db_dict["_sa_instance_state"]
+    return db_dict
