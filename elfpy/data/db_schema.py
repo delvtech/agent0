@@ -38,7 +38,9 @@ class WalletInfo(Base):
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
     baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
     tokenValue: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     maturityTime: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
