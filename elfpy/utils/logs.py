@@ -21,6 +21,7 @@ def setup_logging(
     delete_previous_logs: bool = False,
     log_stdout: bool = True,
     log_formatter: logging.Formatter | None = None,
+    keep_previous_handlers: bool = False,
 ) -> None:
     # pylint: disable=too-many-arguments
     """
@@ -44,7 +45,7 @@ def setup_logging(
             Whether to delete previous log file if it exists. Defaults to False.
         log_file_and_stdout : (bool, optional)
             Whether to log to both file and standard output. Defaults to False.
-        log_formatter (logging.Formatter, optional):
+        log_formatter : (logging.Formatter, optional)
             Log formatter object. Defaults to None.
 
     Raises
@@ -54,7 +55,7 @@ def setup_logging(
     """
 
     # Create log handlers
-    handlers = logging.getLogger().handlers
+    handlers = logging.getLogger().handlers if keep_previous_handlers else []
 
     if log_formatter is None:
         log_formatter = logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME)
@@ -91,6 +92,7 @@ def close_logging(delete_logs=True):
                 if handler_file_name is not None and os.path.exists(handler_file_name):
                     os.remove(handler_file_name)
             handler.close()
+    # logging.getLogger().handlers = []
 
 
 def _prepare_log_path(log_filename: str):
@@ -124,7 +126,7 @@ def _create_file_handler(log_dir: str, log_name: str, log_formatter: logging.For
 def setup_hyperdrive_crash_report_logging():
     """Logging specifically for hyperdrive crash reporting.  Currently hijacking CRITICAL level
     until we need a custom level."""
-    setup_logging(".logging/hyperdrive_test_crash_report.log", log_level=logging.CRITICAL)
+    setup_logging(".logging/hyperdrive_test_crash_report.log", log_level=logging.CRITICAL, keep_previous_handlers=True)
 
 
 # TODO: move this to somewhere like elfpy/contracts/hyperdrive/logging.py
@@ -138,6 +140,7 @@ def log_hyperdrive_crash_report(
     pool_info: PoolInfo,
     pool_config: PoolConfig,
 ):
+    # pylint: disable=too-many-arguments
     """Log a crash report for a hyperdrive transaction.
 
     Arguments
