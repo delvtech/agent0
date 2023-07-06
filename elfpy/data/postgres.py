@@ -36,15 +36,25 @@ def initialize_session() -> Session:
 
 
 def close_session(session: Session):
-    """Close the session"""
+    """Close the session
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+    """
     session.close()
 
 
 def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session):
-    # TODO is there a case where a single wallet can make multiple trades with the same
-    # blockNumber, walletAddress, and tokenType?
-
-    """Add wallet info to the walletinfo table"""
+    """Add wallet info to the walletinfo table
+    Arguments
+    ---------
+    wallet_infos: list[WalletInfo]
+        A list of WalletInfo objects to insert into postgres
+    session: Session
+        The initialized session object
+    """
     for wallet_info in wallet_infos:
         session.add(wallet_info)
     try:
@@ -58,6 +68,13 @@ def add_pool_config(pool_config: PoolConfig, session: Session):
     """
     Add pool config to the pool config table if not exist
     Verify pool config if it does exist
+
+    Arguments
+    ---------
+    pool_config: PoolConfig
+        A PoolConfig object to insert into postgres
+    session: Session
+        The initialized session object
     """
 
     existing_pool_config = get_pool_config(session, contract_address=pool_config.contractAddress)
@@ -84,7 +101,15 @@ def add_pool_config(pool_config: PoolConfig, session: Session):
 
 
 def add_pool_infos(pool_infos: list[PoolInfo], session: Session):
-    """Add a pool info to the poolinfo table"""
+    """Add a pool info to the poolinfo table
+
+    Arguments
+    ---------
+    pool_infos: list[PoolInfo]
+        A list of PoolInfo objects to insert into postgres
+    session: Session
+        The initialized session object
+    """
     for pool_info in pool_infos:
         session.add(pool_info)
     try:
@@ -95,7 +120,15 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session):
 
 
 def add_transactions(transactions: list[Transaction], session: Session):
-    """Add transactions to the poolinfo table"""
+    """Add transactions to the poolinfo table
+
+    Arguments
+    ---------
+    transactions: list[Transaction]
+        A list of Transaction objects to insert into postgres
+    session: Session
+        The initialized session object
+    """
     for transaction in transactions:
         session.add(transaction)
     try:
@@ -107,8 +140,19 @@ def add_transactions(transactions: list[Transaction], session: Session):
 
 def get_pool_config(session: Session, contract_address: str | None = None) -> pd.DataFrame:
     """
-    Gets all pool info and returns as a pandas dataframe
-    start_block and end_block match slicing notation, e.g., list[:3] or list[:-3]
+    Gets all pool config and returns as a pandas dataframe
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+    contract_address: str | None
+        The contract_address to filter the results on. Return all if None
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried pool config data
     """
     query = session.query(PoolConfig)
     if contract_address is not None:
@@ -119,7 +163,22 @@ def get_pool_config(session: Session, contract_address: str | None = None) -> pd
 def get_pool_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
     """
     Gets all pool info and returns as a pandas dataframe
-    start_block and end_block match slicing notation, e.g., list[:3] or list[:-3]
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+    start_block: int | None
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block: int | None
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried pool info data
     """
 
     query = session.query(PoolInfo)
@@ -144,7 +203,22 @@ def get_pool_info(session: Session, start_block: int | None = None, end_block: i
 def get_transactions(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
     """
     Gets all transactions and returns as a pandas dataframe
-    start_block and end_block match slicing notation, e.g., list[:3] or list[:-3]
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+    start_block: int | None
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block: int | None
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried transactions data
     """
 
     query = session.query(Transaction)
@@ -165,8 +239,23 @@ def get_transactions(session: Session, start_block: int | None = None, end_block
 
 def get_all_wallet_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
     """
-    Gets all wallet_info and returns as a pandas dataframe
-    wallet_addr filters on a given wallet address
+    Gets all of the wallet_info data in history and returns as a pandas dataframe
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+    start_block: int | None
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block: int | None
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried wallet info data
     """
 
     query = session.query(WalletInfo)
@@ -188,10 +277,25 @@ def get_all_wallet_info(session: Session, start_block: int | None = None, end_bl
 def get_current_wallet_info(
     session: Session, start_block: int | None = None, end_block: int | None = None
 ) -> pd.DataFrame:
-    """
-    Queries wallet info and grabs the latest wallet information given end_block
+    """Gets the balance of a wallet and a given end_block
     Here, you can specify a start_block for performance reasons, but if a trade happens before the start_block,
     that token won't show up in the result.
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+    start_block: int | None
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block: int | None
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried wallet info data
     """
 
     all_wallet_info = get_all_wallet_info(session, start_block=start_block, end_block=end_block)
@@ -212,11 +316,31 @@ def get_current_wallet_info(
     return current_wallet_info
 
 
+def get_latest_block_number(session: Session) -> int:
+    """Gets the latest block number based on the pool info table in the db
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+
+    Returns
+    -------
+    int
+        The latest block number in the poolinfo table
+    """
+
+    # query_results = session.query(PoolInfoTable).order_by(PoolInfoTable.timestamp.desc()).first()
+    query_results = session.query(PoolInfo).order_by(PoolInfo.timestamp.desc()).first()
+    # If the table is empty, query_results will return None
+    if query_results is None:
+        return 0
+    return int(query_results.blockNumber)
+
+
 def _get_latest_block_number_wallet_info(session: Session) -> int:
     """
     Gets the latest block number based on the walletinfo table in the db
     This function shouldn't be called externally, as the pool info table should be the main keeper of block numbers
-    This is simply here to query transactions on blocks
     """
     query_results = session.query(WalletInfo).order_by(WalletInfo.id.desc()).first()
     # If the table is empty, query_results will return None
@@ -229,19 +353,8 @@ def _get_latest_block_number_transactions(session: Session) -> int:
     """
     Gets the latest block number based on the transactions table in the db
     This function shouldn't be called externally, as the pool info table should be the main keeper of block numbers
-    This is simply here to query transactions on blocks
     """
     query_results = session.query(Transaction).order_by(Transaction.id.desc()).first()
-    # If the table is empty, query_results will return None
-    if query_results is None:
-        return 0
-    return int(query_results.blockNumber)
-
-
-def get_latest_block_number(session: Session) -> int:
-    """Gets the latest block number based on the pool info table in the db"""
-    # query_results = session.query(PoolInfoTable).order_by(PoolInfoTable.timestamp.desc()).first()
-    query_results = session.query(PoolInfo).order_by(PoolInfo.timestamp.desc()).first()
     # If the table is empty, query_results will return None
     if query_results is None:
         return 0

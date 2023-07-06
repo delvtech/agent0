@@ -218,7 +218,6 @@ def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: B
     -------
     list[Transaction]
         A list of Transaction objects ready to be inserted into Postgres
-
     """
     block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
     transactions = block.get("transactions")
