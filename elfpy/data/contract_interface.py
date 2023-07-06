@@ -20,9 +20,10 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
-from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
+from web3.types import (ABI, ABIEvent, BlockData, EventData, LogReceipt,
+                        TxReceipt)
 
-from elfpy.data.db_schema import PoolConfig, PoolInfo, Transaction
+from elfpy.data.db_schema import PoolConfig, PoolInfo, Transaction, WalletInfo
 from elfpy.markets.hyperdrive import hyperdrive_assets
 
 
@@ -183,7 +184,7 @@ def build_transaction_object(
     out_dict["event_id"] = event_args.get("id", None)
 
     # Decode logs here
-    if out_dict["event_id"]:
+    if out_dict["event_id"] is not None:
         event_prefix, event_maturity_time = hyperdrive_assets.decode_asset_id(out_dict["event_id"])
         out_dict["event_prefix"] = event_prefix
         out_dict["event_maturity_time"] = event_maturity_time
@@ -372,6 +373,19 @@ def get_hyperdrive_contract(abi_file_path: str, contracts_url: str, web3: Web3) 
     return hyperdrive_contract
 
 
+def get_funding_contract(abi_file_path: str, contracts_url: str, web3: Web3) -> Contract:
+    """Get the hyperdrive contract for a given abi"""
+    addresses = fetch_address_from_url(contracts_url)
+    # Load the ABI from the JSON file
+    with open(abi_file_path, "r", encoding="UTF-8") as file:
+        state_abi = json.load(file)["abi"]
+    # get contract instance of hyperdrive
+    hyperdrive_contract: Contract = web3.eth.contract(
+        address=address.to_checksum_address(addresses.base_token), abi=state_abi
+    )
+    return hyperdrive_contract
+
+
 def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
     """Get the hyperdrive config from a deployed hyperdrive contract.
 
@@ -420,3 +434,66 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
     out_config["termLength"] = term_length
 
     return PoolConfig(**out_config)
+
+
+def get_wallet_info(
+    hyperdrive_contract: Contract,
+    base_contract: Contract,
+    block_number: BlockNumber,
+    transactions: list[Transaction],
+) -> list[WalletInfo]:
+    """Retrieves wallet information at a given block given a transaction
+    Transactions are needed here to get
+    (1) the wallet address of a transaction, and
+    (2) the token id of the transaction
+
+    """
+
+    out_wallet_info = []
+    for transaction in transactions:
+        wallet_addr = transaction.event_operator
+        token_id = transaction.event_id
+        token_prefix = transaction.event_prefix
+        token_maturity_time = transaction.event_maturity_time
+
+        num_base_token_fp: int = base_contract.functions.balanceOf(wallet_addr).call(block_identifier=block_number)
+        num_base_token = convert_fixedpoint(num_base_token_fp)
+        if (num_base_token is not None) and (wallet_addr is not None):
+            out_wallet_info.append(
+                WalletInfo(
+                    blockNumber=block_number,
+                    walletAddress=wallet_addr,
+                    baseTokenType="BASE",
+                    tokenType="BASE",
+                    tokenValue=num_base_token,
+                )
+            )
+
+        # Handle cases where these fields don't exist
+        if (wallet_addr is not None) and (token_id is not None) and (token_prefix is not None):
+            base_token_type = hyperdrive_assets.AssetIdPrefix(token_prefix).name
+            if (token_maturity_time is not None) and (token_maturity_time > 0):
+                token_type = base_token_type + "-" + str(token_maturity_time)
+                maturity_time = token_maturity_time
+            else:
+                token_type = base_token_type
+                maturity_time = None
+
+            num_custom_token_fp: int = hyperdrive_contract.functions.balanceOf(token_id, wallet_addr).call(
+                block_identifier=block_number
+            )
+            num_custom_token = convert_fixedpoint(num_custom_token_fp)
+
+            if num_custom_token is not None:
+                out_wallet_info.append(
+                    WalletInfo(
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType=base_token_type,
+                        tokenType=token_type,
+                        tokenValue=num_custom_token,
+                        maturityTime=maturity_time,
+                    )
+                )
+
+    return out_wallet_info

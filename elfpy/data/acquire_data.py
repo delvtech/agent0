@@ -8,7 +8,7 @@ from eth_typing import URI, BlockNumber
 from web3 import Web3
 
 from elfpy.data import contract_interface, postgres
-from elfpy.data.db_schema import PoolInfo, Transaction
+from elfpy.data.db_schema import PoolInfo, Transaction, WalletInfo
 from elfpy.utils import outputs as output_utils
 
 # pylint: disable=too-many-arguments
@@ -19,6 +19,7 @@ def main(
     ethereum_node: URI | str,
     state_abi_file_path: str,
     transactions_abi_file_path: str,
+    funding_abi_file_path: str,
     start_block: int,
     lookback_block_limit: int,
     sleep_amount: int,
@@ -37,6 +38,7 @@ def main(
     transactions_hyperdrive_contract = contract_interface.get_hyperdrive_contract(
         transactions_abi_file_path, contracts_url, web3
     )
+    base_contract = contract_interface.get_funding_contract(funding_abi_file_path, contracts_url, web3)
 
     # get pool config from hyperdrive contract
     pool_config = contract_interface.get_hyperdrive_config(state_hyperdrive_contract)
@@ -75,6 +77,7 @@ def main(
     while True:
         pool_info: list[PoolInfo] = []
         transactions: list[Transaction] = []
+        wallet_info: list[WalletInfo] = []
         latest_mined_block = web3.eth.get_block_number() - 1
         # if we are on a new block
         if latest_mined_block > block_number:
@@ -112,10 +115,15 @@ def main(
                 )
                 if block_transactions:
                     transactions.extend(block_transactions)
+                    wallet_info_for_transactions = contract_interface.get_wallet_info(
+                        state_hyperdrive_contract, base_contract, block_number, block_transactions
+                    )
+                    wallet_info.extend(wallet_info_for_transactions)
 
             # Add to postgres
             postgres.add_pool_infos(pool_info, session)
             postgres.add_transactions(transactions, session)
+            postgres.add_wallet_infos(wallet_info, session)
 
         time.sleep(sleep_amount)
 
@@ -126,6 +134,7 @@ if __name__ == "__main__":
     ETHEREUM_NODE = "http://localhost:8545"
     STATE_ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
     TRANSACTIONS_ABI_FILE_PATH = "./hyperdrive_solidity/.build/IHyperdrive.json"
+    FUNDING_ABI_FILE_PATH = "./hyperdrive_solidity/.build/ERC20Mintable.json"
     START_BLOCK = 0
     # Look back limit for backfilling
     LOOKBACK_BLOCK_LIMIT = 1000
@@ -136,6 +145,7 @@ if __name__ == "__main__":
         ETHEREUM_NODE,
         STATE_ABI_FILE_PATH,
         TRANSACTIONS_ABI_FILE_PATH,
+        FUNDING_ABI_FILE_PATH,
         START_BLOCK,
         LOOKBACK_BLOCK_LIMIT,
         SLEEP_AMOUNT,

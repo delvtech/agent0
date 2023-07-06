@@ -7,7 +7,7 @@ import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, Transaction
+from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, Transaction, WalletInfo
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -15,18 +15,6 @@ from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, Transaction
 # replace the user, password, and db_name with credentials
 # TODO remove engine as global
 engine = create_engine("postgresql://admin:password@localhost:5432/postgres_db")
-
-
-# TODO figure out what this table is supposed to hold
-# class UserTable(Base):
-#    """User Schema"""
-#
-#    __tablename__ = "users"
-#
-#    # address
-#    id = Column(String, primary_key=True)
-#
-#
 
 
 def initialize_session() -> Session:
@@ -50,6 +38,20 @@ def initialize_session() -> Session:
 def close_session(session: Session):
     """Close the session"""
     session.close()
+
+
+def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session):
+    # TODO is there a case where a single wallet can make multiple trades with the same
+    # blockNumber, walletAddress, and tokenType?
+
+    """Add wallet info to the walletinfo table"""
+    for wallet_info in wallet_infos:
+        session.add(wallet_info)
+    try:
+        session.commit()
+    except sqlalchemy.exc.DataError as err:  # type: ignore
+        print(f"{wallet_infos=}")
+        raise err
 
 
 def add_pool_config(pool_config: PoolConfig, session: Session):
@@ -159,6 +161,41 @@ def get_transactions(session: Session, start_block: int | None = None, end_block
         query = query.filter(Transaction.blockNumber < end_block)
 
     return pd.read_sql(query.statement, con=session.connection())
+
+
+def get_wallet_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+    """
+    Gets all wallet_info and returns as a pandas dataframe
+    wallet_addr filters on a given wallet address
+    """
+
+    query = session.query(WalletInfo)
+
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = _get_latest_block_number_wallet_info(session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = _get_latest_block_number_wallet_info(session) + end_block + 1
+
+    if start_block is not None:
+        query = query.filter(WalletInfo.blockNumber >= start_block)
+    if end_block is not None:
+        query = query.filter(WalletInfo.blockNumber < end_block)
+
+    return pd.read_sql(query.statement, con=session.connection())
+
+
+def _get_latest_block_number_wallet_info(session: Session) -> int:
+    """
+    Gets the latest block number based on the walletinfo table in the db
+    This function shouldn't be called externally, as the pool info table should be the main keeper of block numbers
+    This is simply here to query transactions on blocks
+    """
+    query_results = session.query(WalletInfo).order_by(WalletInfo.id.desc()).first()
+    # If the table is empty, query_results will return None
+    if query_results is None:
+        return 0
+    return int(query_results.blockNumber)
 
 
 def _get_latest_block_number_transactions(session: Session) -> int:
