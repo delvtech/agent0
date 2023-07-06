@@ -12,6 +12,8 @@ from elfpy.utils import outputs as output_utils
 
 # pylint: disable=too-many-arguments
 
+RETRY_COUNT = 10
+
 
 def main(
     contracts_url: str,
@@ -90,7 +92,8 @@ def main(
 
                 # get_block_pool_info crashes randomly with ValueError on some intermediate block,
                 # keep trying until it returns
-                while True:
+                block_pool_info = None
+                for _ in range(RETRY_COUNT):
                     try:
                         block_pool_info = contract_interface.get_block_pool_info(
                             web3, hyperdrive_contract, block_number
@@ -98,14 +101,22 @@ def main(
                         break
                     except ValueError:
                         logging.warning("Error in get_block_pool_info, retrying")
-                        time.sleep(0.1)
+                        time.sleep(1)
                         continue
                 if block_pool_info:
                     postgres.add_pool_infos([block_pool_info], session)
 
-                block_transactions = contract_interface.fetch_transactions_for_block(
-                    web3, hyperdrive_contract, block_number
-                )
+                block_transactions = None
+                for _ in range(RETRY_COUNT):
+                    try:
+                        block_transactions = contract_interface.fetch_transactions_for_block(
+                            web3, hyperdrive_contract, block_number
+                        )
+                        break
+                    except ValueError:
+                        logging.warning("Error in fetch_transactions_for_block, retrying")
+                        time.sleep(1)
+                        continue
                 if block_transactions:
                     postgres.add_transactions(block_transactions, session)
 
