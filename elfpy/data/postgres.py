@@ -194,17 +194,20 @@ def get_current_wallet_info(
     that token won't show up in the result.
     """
 
-    all_wallet_info = get_all_wallet_info(session, end_block=end_block)
+    all_wallet_info = get_all_wallet_info(session, start_block=start_block, end_block=end_block)
     # Get last entry in the table of each wallet address and token type
     # This should always return a dataframe
     # Pandas doesn't play nice with types
     current_wallet_info: pd.DataFrame = (
         all_wallet_info.sort_values("blockNumber", ascending=False)
         .groupby(["walletAddress", "tokenType"])
-        .agg({"tokenValue": "first"})
+        .agg({"tokenValue": "first", "baseTokenType": "first", "maturityTime": "first", "blockNumber": "first"})
     )  # type: ignore
 
-    # TODO do we remove tokens that reached 0 value?
+    # Rename blockNumber column
+    current_wallet_info = current_wallet_info.rename({"blockNumber": "latestUpdateBlock"}, axis=1)
+    # Filter current_wallet_info to remove 0 balance tokens
+    current_wallet_info = current_wallet_info[current_wallet_info["tokenValue"] > 0]
 
     return current_wallet_info
 
