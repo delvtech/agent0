@@ -114,121 +114,6 @@ def fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt)
     return logs
 
 
-def convert_fixedpoint(input_val: int | None) -> float | None:
-    """Given a scaled value int, converts it to an unscaled value in float, while dealing with Nones"""
-
-    # We cast to FixedPoint, then to floats to keep noise to a minimum
-    # This is assuming there's no loss of precision going from Fixedpoint to float
-    # Once this gets fed into postgres, postgres has fixed precision Numeric type
-    if input is not None:
-        return float(FixedPoint(scaled_value=input_val))
-    return None
-
-
-def build_transaction_object(
-    transaction_dict: dict[str, Any],
-    logs: list[dict[str, Any]],
-    receipt: dict[str, Any],
-) -> Transaction:
-    """Conversion function to translate output of chain queries to the Transaction object"""
-
-    # Build output obj dict incrementally to be passed into Transaction
-    # i.e., Transaction(**out_dict)
-
-    # Base transaction fields
-    out_dict: dict[str, Any] = {
-        "blockNumber": transaction_dict["blockNumber"],
-        "transactionIndex": transaction_dict["transactionIndex"],
-        "nonce": transaction_dict["nonce"],
-        "transactionHash": transaction_dict["hash"],
-        "txn_to": transaction_dict["to"],
-        "txn_from": transaction_dict["from"],
-        "gasUsed": receipt["gasUsed"],
-    }
-
-    # Input solidity methods and parameters
-    # TODO can the input field ever be empty or not exist?
-    out_dict["input_method"] = transaction_dict["input"]["method"]
-    input_params = transaction_dict["input"]["params"]
-    out_dict["input_params_contribution"] = convert_fixedpoint(input_params.get("_contribution", None))
-    out_dict["input_params_apr"] = convert_fixedpoint(input_params.get("_apr", None))
-    out_dict["input_params_destination"] = input_params.get("_destination", None)
-    out_dict["input_params_asUnderlying"] = input_params.get("_asUnderlying", None)
-    out_dict["input_params_baseAmount"] = convert_fixedpoint(input_params.get("_baseAmount", None))
-    out_dict["input_params_minOutput"] = convert_fixedpoint(input_params.get("_minOutput", None))
-    out_dict["input_params_bondAmount"] = convert_fixedpoint(input_params.get("_bondAmount", None))
-    out_dict["input_params_maxDeposit"] = convert_fixedpoint(input_params.get("_maxDeposit", None))
-    out_dict["input_params_maturityTime"] = input_params.get("_maturityTime", None)
-    out_dict["input_params_minApr"] = convert_fixedpoint(input_params.get("_minApr", None))
-    out_dict["input_params_maxApr"] = convert_fixedpoint(input_params.get("_maxApr", None))
-    out_dict["input_params_shares"] = convert_fixedpoint(input_params.get("_shares", None))
-
-    # Assuming one TransferSingle per transfer
-    # TODO Fix this below eventually
-    # There can be two transfer singles
-    # Currently grab first transfer single (e.g., Minting hyperdrive long, so address 0 to agent)
-    # Eventually need grabbing second transfer single (e.g., DAI from agent to hyperdrive)
-    event_logs = [log for log in logs if log["event"] == "TransferSingle"]
-    if len(event_logs) == 0:
-        event_args: dict[str, Any] = {}
-        # Set args as None
-    elif len(event_logs) == 1:
-        event_args: dict[str, Any] = event_logs[0]["args"]
-    else:
-        logging.warning("Tranfer event contains multiple TransferSingle logs, selecting first")
-        event_args: dict[str, Any] = event_logs[0]["args"]
-
-    out_dict["event_value"] = convert_fixedpoint(event_args.get("value", None))
-    out_dict["event_from"] = event_args.get("from", None)
-    out_dict["event_to"] = event_args.get("to", None)
-    out_dict["event_operator"] = event_args.get("operator", None)
-    out_dict["event_id"] = event_args.get("id", None)
-
-    # Decode logs here
-    if out_dict["event_id"] is not None:
-        event_prefix, event_maturity_time = hyperdrive_assets.decode_asset_id(out_dict["event_id"])
-        out_dict["event_prefix"] = event_prefix
-        out_dict["event_maturity_time"] = event_maturity_time
-
-    transaction = Transaction(**out_dict)
-
-    return transaction
-
-
-def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[Transaction]:
-    """Fetch transactions related to the contract"""
-    block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
-    transactions = block.get("transactions")
-    if not transactions:
-        logging.info("no transactions in block %s", block.get("number"))
-        return []
-    out_transactions = []
-    for transaction in transactions:
-        if isinstance(transaction, HexBytes):
-            logging.warning("transaction HexBytes")
-            continue
-        if transaction.get("to") != contract.address:
-            logging.warning("transaction not from contract")
-            continue
-        transaction_dict: dict[str, Any] = dict(transaction)
-        # Convert the HexBytes fields to their hex representation
-        tx_hash = transaction.get("hash") or HexBytes("")
-        transaction_dict["hash"] = tx_hash.hex()
-        # Decode the transaction input
-        try:
-            method, params = contract.decode_function_input(transaction["input"])
-            transaction_dict["input"] = {"method": method.fn_name, "params": params}
-        except ValueError:  # if the input is not meant for the contract, ignore it
-            continue
-        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
-        logs = fetch_and_decode_logs(web3, contract, tx_receipt)
-        receipt: dict[str, Any] = recursive_dict_conversion(tx_receipt)  # type: ignore
-
-        out_transactions.append(build_transaction_object(transaction_dict, logs, receipt))
-
-    return out_transactions
-
-
 def get_event_object(
     web3: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
 ) -> tuple[EventData, ABIEvent] | tuple[None, None]:
@@ -274,17 +159,6 @@ def get_smart_contract_read_call(contract: Contract, function_name: str, **funct
     return function_return_dict
 
 
-def recursive_dict_conversion(obj):
-    """Recursively converts a dictionary to convert objects to hex values"""
-    if isinstance(obj, HexBytes):
-        return obj.hex()
-    if isinstance(obj, dict):
-        return {key: recursive_dict_conversion(value) for key, value in obj.items()}
-    if hasattr(obj, "items"):
-        return {key: recursive_dict_conversion(value) for key, value in obj.items()}
-    return obj
-
-
 def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs: dict | None = None) -> Web3:
     """Initialize a Web3 instance using an HTTP provider and inject a geth Proof of Authority (poa) middleware.
 
@@ -326,14 +200,82 @@ def fetch_address_from_url(contracts_url: str) -> HyperdriveAddressesJson:
     return addresses
 
 
+def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[Transaction]:
+    """
+    Fetch transactions related to the contract
+    Returns the block pool info from the Hyperdrive contract
+
+    Arguments
+    ---------
+    web3_container: Web3
+        web3 provider object
+    hyperdrive_contract: Contract
+        The contract to query the pool info from
+    block_number: BlockNumber
+        The block number to query from the chain
+
+    Returns
+    -------
+    list[Transaction]
+        A list of Transaction objects ready to be inserted into Postgres
+
+    """
+    block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
+    transactions = block.get("transactions")
+    if not transactions:
+        logging.info("no transactions in block %s", block.get("number"))
+        return []
+    out_transactions = []
+    for transaction in transactions:
+        if isinstance(transaction, HexBytes):
+            logging.warning("transaction HexBytes")
+            continue
+        if transaction.get("to") != contract.address:
+            logging.warning("transaction not from contract")
+            continue
+        transaction_dict: dict[str, Any] = dict(transaction)
+        # Convert the HexBytes fields to their hex representation
+        tx_hash = transaction.get("hash") or HexBytes("")
+        transaction_dict["hash"] = tx_hash.hex()
+        # Decode the transaction input
+        try:
+            method, params = contract.decode_function_input(transaction["input"])
+            transaction_dict["input"] = {"method": method.fn_name, "params": params}
+        except ValueError:  # if the input is not meant for the contract, ignore it
+            continue
+        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
+        logs = fetch_and_decode_logs(web3, contract, tx_receipt)
+        receipt: dict[str, Any] = _recursive_dict_conversion(tx_receipt)  # type: ignore
+
+        out_transactions.append(_build_transaction_object(transaction_dict, logs, receipt))
+
+    return out_transactions
+
+
 def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:
-    """Returns the block pool info from the Hyperdrive contract"""
+    """
+    Returns the block pool info from the Hyperdrive contract
+
+    Arguments
+    ---------
+    web3_container: Web3
+        web3 provider object
+    hyperdrive_contract: Contract
+        The contract to query the pool info from
+    block_number: BlockNumber
+        The block number to query from the chain
+
+    Returns
+    -------
+    PoolInfo
+        A PoolInfo object ready to be inserted into Postgres
+    """
     pool_info_data_dict = get_smart_contract_read_call(
         hyperdrive_contract, "getPoolInfo", block_identifier=block_number
     )
 
     pool_info_data_dict: dict[Any, Any] = {
-        key: convert_fixedpoint(value) for (key, value) in pool_info_data_dict.items()
+        key: _convert_fixedpoint(value) for (key, value) in pool_info_data_dict.items()
     }
 
     current_block: BlockData = web3_container.eth.get_block(block_number)
@@ -399,7 +341,6 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
     -------
     hyperdrive_config : PoolConfig
         The hyperdrive config.
-
     """
 
     hyperdrive_config: dict[str, Any] = get_smart_contract_read_call(hyperdrive_contract, "getPoolConfig")
@@ -407,7 +348,7 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
     out_config = {}
     out_config["contractAddress"] = hyperdrive_contract.address
     out_config["baseToken"] = hyperdrive_config.get("baseToken", None)
-    out_config["initializeSharePrice"] = convert_fixedpoint(hyperdrive_config.get("initializeSharePrice", None))
+    out_config["initializeSharePrice"] = _convert_fixedpoint(hyperdrive_config.get("initializeSharePrice", None))
     out_config["positionDuration"] = hyperdrive_config.get("positionDuration", None)
     out_config["checkpointDuration"] = hyperdrive_config.get("checkpointDuration", None)
     config_time_stretch = hyperdrive_config.get("timeStretch", None)
@@ -422,9 +363,9 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
     out_config["governance"] = hyperdrive_config.get("governance", None)
     out_config["feeCollector"] = hyperdrive_config.get("feeCollector", None)
     curve_fee, flat_fee, governance_fee = hyperdrive_config.get("fees", (None, None, None))
-    out_config["curveFee"] = convert_fixedpoint(curve_fee)
-    out_config["flatFee"] = convert_fixedpoint(flat_fee)
-    out_config["governanceFee"] = convert_fixedpoint(governance_fee)
+    out_config["curveFee"] = _convert_fixedpoint(curve_fee)
+    out_config["flatFee"] = _convert_fixedpoint(flat_fee)
+    out_config["governanceFee"] = _convert_fixedpoint(governance_fee)
     out_config["oracleSize"] = hyperdrive_config.get("oracleSize", None)
     out_config["updateGap"] = hyperdrive_config.get("updateGap", None)
     out_config["invTimeStretch"] = inv_time_stretch
@@ -448,6 +389,21 @@ def get_wallet_info(
     (1) the wallet address of a transaction, and
     (2) the token id of the transaction
 
+    Arguments
+    ----------
+    hyperdrive_contract : Contract
+        The deployed hyperdrive contract instance.
+    base_contract : Contract
+        The deployed base contract instance
+    block_number : BlockNumber
+        The block number to query
+    transactions : list[Transaction]
+        The list of transactions to get events from
+
+    Returns
+    -------
+    list[WalletInfo]
+        The list of WalletInfo objects ready to be inserted into postgres
     """
 
     # pylint: disable=too-many-locals
@@ -472,7 +428,7 @@ def get_wallet_info(
                 time.sleep(1)
                 continue
 
-        num_base_token = convert_fixedpoint(num_base_token_fp)
+        num_base_token = _convert_fixedpoint(num_base_token_fp)
         if (num_base_token is not None) and (wallet_addr is not None):
             out_wallet_info.append(
                 WalletInfo(
@@ -504,7 +460,7 @@ def get_wallet_info(
                     logging.warning("Error in getting custom token balance, retrying")
                     time.sleep(1)
                     continue
-            num_custom_token = convert_fixedpoint(num_custom_token_fp)
+            num_custom_token = _convert_fixedpoint(num_custom_token_fp)
 
             if num_custom_token is not None:
                 out_wallet_info.append(
@@ -519,3 +475,124 @@ def get_wallet_info(
                 )
 
     return out_wallet_info
+
+
+def _convert_fixedpoint(input_val: int | None) -> float | None:
+    """
+    Given a scaled value int, converts it to an unscaled value in float, while dealing with Nones
+
+    Arguments
+    ----------
+    input_val: int | None
+        The scaled integer value to unscale and convert to float
+
+    Returns
+    -------
+    float | None
+        The unscaled floating point value
+    """
+
+    # We cast to FixedPoint, then to floats to keep noise to a minimum
+    # This is assuming there's no loss of precision going from Fixedpoint to float
+    # Once this gets fed into postgres, postgres has fixed precision Numeric type
+    if input is not None:
+        return float(FixedPoint(scaled_value=input_val))
+    return None
+
+
+def _build_transaction_object(
+    transaction_dict: dict[str, Any],
+    logs: list[dict[str, Any]],
+    receipt: dict[str, Any],
+) -> Transaction:
+    """
+    Conversion function to translate output of chain queries to the Transaction object
+
+    Arguments
+    ----------
+    transaction_dict : dict[str, Any]
+        A dictionary representing the decoded transactions from the query
+    logs: list[str, Any]
+        A dictionary representing the decoded logs from the query
+    receipt: dict[str, Any]
+        A dictionary representing the transaction receipt from the query
+
+    Returns
+    -------
+    Transaction
+        A transaction object to be inserted into postgres
+
+    """
+
+    # Build output obj dict incrementally to be passed into Transaction
+    # i.e., Transaction(**out_dict)
+
+    # Base transaction fields
+    out_dict: dict[str, Any] = {
+        "blockNumber": transaction_dict["blockNumber"],
+        "transactionIndex": transaction_dict["transactionIndex"],
+        "nonce": transaction_dict["nonce"],
+        "transactionHash": transaction_dict["hash"],
+        "txn_to": transaction_dict["to"],
+        "txn_from": transaction_dict["from"],
+        "gasUsed": receipt["gasUsed"],
+    }
+
+    # Input solidity methods and parameters
+    # TODO can the input field ever be empty or not exist?
+    out_dict["input_method"] = transaction_dict["input"]["method"]
+    input_params = transaction_dict["input"]["params"]
+    out_dict["input_params_contribution"] = _convert_fixedpoint(input_params.get("_contribution", None))
+    out_dict["input_params_apr"] = _convert_fixedpoint(input_params.get("_apr", None))
+    out_dict["input_params_destination"] = input_params.get("_destination", None)
+    out_dict["input_params_asUnderlying"] = input_params.get("_asUnderlying", None)
+    out_dict["input_params_baseAmount"] = _convert_fixedpoint(input_params.get("_baseAmount", None))
+    out_dict["input_params_minOutput"] = _convert_fixedpoint(input_params.get("_minOutput", None))
+    out_dict["input_params_bondAmount"] = _convert_fixedpoint(input_params.get("_bondAmount", None))
+    out_dict["input_params_maxDeposit"] = _convert_fixedpoint(input_params.get("_maxDeposit", None))
+    out_dict["input_params_maturityTime"] = input_params.get("_maturityTime", None)
+    out_dict["input_params_minApr"] = _convert_fixedpoint(input_params.get("_minApr", None))
+    out_dict["input_params_maxApr"] = _convert_fixedpoint(input_params.get("_maxApr", None))
+    out_dict["input_params_shares"] = _convert_fixedpoint(input_params.get("_shares", None))
+
+    # Assuming one TransferSingle per transfer
+    # TODO Fix this below eventually
+    # There can be two transfer singles
+    # Currently grab first transfer single (e.g., Minting hyperdrive long, so address 0 to agent)
+    # Eventually need grabbing second transfer single (e.g., DAI from agent to hyperdrive)
+    event_logs = [log for log in logs if log["event"] == "TransferSingle"]
+    if len(event_logs) == 0:
+        event_args: dict[str, Any] = {}
+        # Set args as None
+    elif len(event_logs) == 1:
+        event_args: dict[str, Any] = event_logs[0]["args"]
+    else:
+        logging.warning("Tranfer event contains multiple TransferSingle logs, selecting first")
+        event_args: dict[str, Any] = event_logs[0]["args"]
+
+    out_dict["event_value"] = _convert_fixedpoint(event_args.get("value", None))
+    out_dict["event_from"] = event_args.get("from", None)
+    out_dict["event_to"] = event_args.get("to", None)
+    out_dict["event_operator"] = event_args.get("operator", None)
+    out_dict["event_id"] = event_args.get("id", None)
+
+    # Decode logs here
+    if out_dict["event_id"] is not None:
+        event_prefix, event_maturity_time = hyperdrive_assets.decode_asset_id(out_dict["event_id"])
+        out_dict["event_prefix"] = event_prefix
+        out_dict["event_maturity_time"] = event_maturity_time
+
+    transaction = Transaction(**out_dict)
+
+    return transaction
+
+
+def _recursive_dict_conversion(obj):
+    """Recursively converts a dictionary to convert objects to hex values"""
+    if isinstance(obj, HexBytes):
+        return obj.hex()
+    if isinstance(obj, dict):
+        return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
+    if hasattr(obj, "items"):
+        return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
+    return obj
