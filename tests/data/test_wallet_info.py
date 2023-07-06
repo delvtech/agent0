@@ -95,7 +95,7 @@ class TestWalletInfoInterface:
         wallet_info_3 = WalletInfo(blockNumber=2, tokenValue=3.3)  # add your other columns here...
         postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
 
-        wallet_info_df = postgres.get_wallet_info(session)
+        wallet_info_df = postgres.get_all_wallet_info(session)
         assert wallet_info_df["tokenValue"].equals(pd.Series([3.1, 3.2, 3.3], name="tokenValue"))
 
     def test_block_query_wallet_info(self, session):
@@ -105,17 +105,40 @@ class TestWalletInfoInterface:
         wallet_info_3 = WalletInfo(blockNumber=2, tokenValue=3.3)  # add your other columns here...
         postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
 
-        wallet_info_df = postgres.get_wallet_info(session, start_block=1)
+        wallet_info_df = postgres.get_all_wallet_info(session, start_block=1)
         assert wallet_info_df["tokenValue"].equals(pd.Series([3.2, 3.3], name="tokenValue"))
 
-        wallet_info_df = postgres.get_wallet_info(session, start_block=-1)
+        wallet_info_df = postgres.get_all_wallet_info(session, start_block=-1)
         assert wallet_info_df["tokenValue"].equals(pd.Series([3.3], name="tokenValue"))
 
-        wallet_info_df = postgres.get_wallet_info(session, end_block=1)
+        wallet_info_df = postgres.get_all_wallet_info(session, end_block=1)
         assert wallet_info_df["tokenValue"].equals(pd.Series([3.1], name="tokenValue"))
 
-        wallet_info_df = postgres.get_wallet_info(session, end_block=-1)
+        wallet_info_df = postgres.get_all_wallet_info(session, end_block=-1)
         assert wallet_info_df["tokenValue"].equals(pd.Series([3.1, 3.2], name="tokenValue"))
 
-        wallet_info_df = postgres.get_wallet_info(session, start_block=1, end_block=-1)
+        wallet_info_df = postgres.get_all_wallet_info(session, start_block=1, end_block=-1)
         assert wallet_info_df["tokenValue"].equals(pd.Series([3.2], name="tokenValue"))
+
+    def test_current_wallet_info(self, session):
+        """Testing helper function to get current wallet values"""
+        wallet_info_1 = WalletInfo(
+            blockNumber=0, walletAddress="addr", tokenType="BASE", tokenValue=3.1
+        )  # add your other columns here...
+        wallet_info_2 = WalletInfo(
+            blockNumber=1, walletAddress="addr", tokenType="LP", tokenValue=5.1
+        )  # add your other columns here...
+        postgres.add_wallet_infos([wallet_info_1, wallet_info_2], session)
+
+        wallet_info_df = postgres.get_current_wallet_info(session).reset_index()
+        assert wallet_info_df["tokenType"].equals(pd.Series(["BASE", "LP"], name="tokenType"))
+        assert wallet_info_df["tokenValue"].equals(pd.Series([3.1, 5.1], name="tokenValue"))
+
+        # E.g., block 2, wallet base tokens gets updated to 6.1
+        wallet_info_3 = WalletInfo(
+            blockNumber=2, walletAddress="addr", tokenType="BASE", tokenValue=6.1
+        )  # add your other columns here...
+        postgres.add_wallet_infos([wallet_info_3], session)
+        wallet_info_df = postgres.get_current_wallet_info(session).reset_index()
+        assert wallet_info_df["tokenType"].equals(pd.Series(["BASE", "LP"], name="tokenType"))
+        assert wallet_info_df["tokenValue"].equals(pd.Series([6.1, 5.1], name="tokenValue"))

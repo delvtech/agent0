@@ -163,7 +163,7 @@ def get_transactions(session: Session, start_block: int | None = None, end_block
     return pd.read_sql(query.statement, con=session.connection())
 
 
-def get_wallet_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+def get_all_wallet_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
     """
     Gets all wallet_info and returns as a pandas dataframe
     wallet_addr filters on a given wallet address
@@ -190,7 +190,7 @@ def get_current_wallet_info(session: Session, end_block: int | None = None) -> p
     Queries wallet info and grabs the latest wallet information given end_block
     """
 
-    all_wallet_info = get_wallet_info(session, end_block=end_block)
+    all_wallet_info = get_all_wallet_info(session, end_block=end_block)
     # Get last entry in the table of each wallet address and token type
     current_wallet_info = (
         all_wallet_info.sort_values("blockNumber", ascending=False)
