@@ -63,25 +63,14 @@ To understand more, we recommend that you study the fixed point tests and source
 ## Modifying configuration for bot deployment
 Bots can be deployed using the `evm_bots.py` script in the examples folder.
 If you wish to run it with non-default parameters, then you must specify them as a JSON file.
-We recommend using Python to modify the config, and then write it to JSON to ensure type safety.
-To do this, first make the file. For example, by entering `touch config_json_generator.py` into a terminal window.
-Then, copy the following contents into the file:
+To generate a default configuration file, from the base directory, run:
 
-```python
-"""Example script for writing a custom bot config to json"""
-from elfpy.bots import BotConfig
-
-if __name__ == "__main__":
-    # load the config file
-    config = BotConfig()
-
-    # modify params as needed
-    config.random_seed = 1234
-    config.log_filename = "my_experiment.log"
-    # ... etc
-
-    # Write config to json
-    config.save_as_json("my_config.json")
+```bash
+python elfpy/bots/bots_default_config.py
 ```
 
-Finally, you can execute the file and pass the location of `my_config.json` as an argument. e.g.: `evm_bots.py my_config.json`.
+This will generate `bots_config.default.json`, which you can feed into `evm_bots.py`:
+
+```bash
+evm_bots.py bots_config.default.json
+```

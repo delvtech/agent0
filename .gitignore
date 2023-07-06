@@ -3,6 +3,7 @@
 
 # for create configuration jsons to run bot scripts
 .configs
+bots_config.default.json
 
 # default logging directory
 .logging
