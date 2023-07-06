@@ -185,9 +185,13 @@ def get_all_wallet_info(session: Session, start_block: int | None = None, end_bl
     return pd.read_sql(query.statement, con=session.connection())
 
 
-def get_current_wallet_info(session: Session, end_block: int | None = None) -> pd.DataFrame:
+def get_current_wallet_info(
+    session: Session, start_block: int | None = None, end_block: int | None = None
+) -> pd.DataFrame:
     """
     Queries wallet info and grabs the latest wallet information given end_block
+    Here, you can specify a start_block for performance reasons, but if a trade happens before the start_block,
+    that token won't show up in the result.
     """
 
     all_wallet_info = get_all_wallet_info(session, end_block=end_block)
