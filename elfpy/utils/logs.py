@@ -78,7 +78,7 @@ def close_logging(delete_logs=True):
             handler.close()
 
 
-def _prepare_log_path(log_filename):
+def _prepare_log_path(log_filename: str):
     """Prepare log file path and name"""
     log_dir, log_name = os.path.split(log_filename)
 
@@ -98,7 +98,7 @@ def _prepare_log_path(log_filename):
     return log_dir, log_name
 
 
-def _create_file_handler(log_dir, log_name, log_formatter, max_bytes):
+def _create_file_handler(log_dir: str, log_name: str, log_formatter: logging.Formatter, max_bytes: int):
     """Create a file handler for the given log file"""
     log_path = os.path.join(log_dir, log_name)
     handler = RotatingFileHandler(log_path, mode="w", maxBytes=max_bytes)
