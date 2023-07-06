@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import time
 
+from dotenv import load_dotenv
 from eth_typing import URI, BlockNumber
 from web3 import Web3
 
@@ -27,6 +28,7 @@ def main(
     # TODO: refactor this function, its waaay to big as indicated by these pylints
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
+
     # initialize the postgres session
     session = postgres.initialize_session()
     # get web3 provider
@@ -137,6 +139,10 @@ if __name__ == "__main__":
     # Look back limit for backfilling
     LOOKBACK_BLOCK_LIMIT = 1000
     SLEEP_AMOUNT = 1
+
+    # Get postgres env variables if exists
+    load_dotenv()
+
     log_utils.setup_logging(".logging/acquire_data.log", log_stdout=True)
     main(
         CONTRACTS_URL,

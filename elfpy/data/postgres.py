@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import os
+from dataclasses import dataclass
+
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import create_engine
+from sqlalchemy import URL, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, Transaction, WalletInfo
@@ -14,11 +17,61 @@ from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, Transaction, Wallet
 
 # replace the user, password, and db_name with credentials
 # TODO remove engine as global
-engine = create_engine("postgresql://admin:password@localhost:5432/postgres_db")
+
+
+@dataclass
+class PostgresConfig:
+    """The configuration dataclass for postgress connections"""
+
+    # default values for local postgres
+    # Matching environemnt variables to search for
+    # pylint: disable=invalid-name
+    POSTGRES_USER: str = "admin"
+    POSTGRES_PASSWORD: str = "password"
+    POSTGRES_DB: str = "postgres_db"
+    POSTGRES_HOST: str = "localhost"
+    POSTGRES_PORT: int = 5432
+
+
+def build_postgres_config() -> PostgresConfig:
+    """Build a PostgresConfig that looks for environmental variables
+    If env var exists, use that, otherwise, default
+    """
+    user = os.getenv("POSTGRES_USER")
+    password = os.getenv("POSTGRES_PASSWORD")
+    database = os.getenv("POSTGRES_DB")
+    host = os.getenv("POSTGRES_HOST")
+    port = os.getenv("POSTGRES_PORT")
+
+    arg_dict = {}
+    if user is not None:
+        arg_dict["POSTGRES_USER"] = user
+    if password is not None:
+        arg_dict["POSTGRES_PASSWORD"] = password
+    if database is not None:
+        arg_dict["POSTGRES_DB"] = database
+    if host is not None:
+        arg_dict["POSTGRES_HOST"] = host
+    if port is not None:
+        arg_dict["POSTGRES_PORT"] = port
+
+    return PostgresConfig(**arg_dict)
 
 
 def initialize_session() -> Session:
     """Initialize the database if not already initialized"""
+
+    postgres_config = build_postgres_config()
+
+    url_object = URL.create(
+        drivername="postgresql",
+        username=postgres_config.POSTGRES_USER,
+        password=postgres_config.POSTGRES_PASSWORD,
+        host=postgres_config.POSTGRES_HOST,
+        port=postgres_config.POSTGRES_PORT,
+        database=postgres_config.POSTGRES_DB,
+    )
+    engine = create_engine(url_object)
 
     # create a configured "Session" class
     session_class = sessionmaker(bind=engine)

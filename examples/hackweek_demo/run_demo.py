@@ -6,6 +6,7 @@ import time
 
 import mplfinance as mpf
 import streamlit as st
+from dotenv import load_dotenv
 from extract_data_logs import get_combined_data
 from plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
 from plot_ohlcv import calc_ohlcv, plot_ohlcv
@@ -44,6 +45,7 @@ ax_pnl = fig.add_subplot(2, 2, 4)
 fig.set_tight_layout(True)  # type: ignore
 
 
+load_dotenv()
 session = postgres.initialize_session()
 
 if view_window is not None:
