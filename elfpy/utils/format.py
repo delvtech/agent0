@@ -3,7 +3,7 @@ import logging
 import numpy as np
 
 
-def str_with_precision(value, precision=3, min_digits=0, debug=False):
+def format_float_as_string(value, precision=3, min_digits=0, debug=False):
     """
     Format a float to a string with a given precision
     this follows the significant figure behavior, irrepective of number size
