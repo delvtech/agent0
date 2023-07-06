@@ -450,6 +450,8 @@ def get_wallet_info(
 
     """
 
+    # pylint: disable=too-many-locals
+
     out_wallet_info = []
     for transaction in transactions:
         wallet_addr = transaction.event_operator

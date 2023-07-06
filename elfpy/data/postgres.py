@@ -192,11 +192,13 @@ def get_current_wallet_info(session: Session, end_block: int | None = None) -> p
 
     all_wallet_info = get_all_wallet_info(session, end_block=end_block)
     # Get last entry in the table of each wallet address and token type
-    current_wallet_info = (
+    # This should always return a dataframe
+    # Pandas doesn't play nice with types
+    current_wallet_info: pd.DataFrame = (
         all_wallet_info.sort_values("blockNumber", ascending=False)
         .groupby(["walletAddress", "tokenType"])
         .agg({"tokenValue": "first"})
-    )  # Get latest value of each token type
+    )  # type: ignore
 
     # TODO do we remove tokens that reached 0 value?
 

@@ -8,7 +8,6 @@ from eth_typing import URI, BlockNumber
 from web3 import Web3
 
 from elfpy.data import contract_interface, postgres
-from elfpy.data.db_schema import PoolInfo, Transaction, WalletInfo
 from elfpy.utils import outputs as output_utils
 
 # pylint: disable=too-many-arguments
@@ -117,6 +116,9 @@ def main(
                         state_hyperdrive_contract, base_contract, block_number, block_transactions
                     )
                     postgres.add_wallet_infos(wallet_info_for_transactions, session)
+
+        # fixme remove for testin
+        postgres.get_current_wallet_info(session)
 
         time.sleep(sleep_amount)
 
