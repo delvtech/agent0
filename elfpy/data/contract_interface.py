@@ -68,7 +68,13 @@ def fund_account(funding_contract: Contract, account_address: str, amount: int) 
 
 
 def load_all_abis(abi_folder: str) -> dict:
-    """Load the ABI from the JSON file"""
+    """Load all ABI jsons given an abi_folder
+
+    Arguments
+    ---------
+    abi_folder: str
+        The local directory that contains all abi json
+    """
     abis = {}
     abi_files = _collect_files(abi_folder)
     for abi_file in abi_files:
@@ -184,7 +190,22 @@ def fetch_address_from_url(contracts_url: str) -> HyperdriveAddressesJson:
 
 
 def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddressesJson) -> Contract:
-    """Get the hyperdrive contract given abis"""
+    """Get the hyperdrive contract given abis
+
+    Arguments
+    ---------
+    web3_container: Web3
+        web3 provider object
+    abis: dict
+        A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
+    addresses: HyperdriveAddressesJson
+        The block number to query from the chain
+
+    Returns
+    -------
+    Contract
+        The contract object returned from the query
+    """
     if "IHyperdrive" not in abis:
         raise AssertionError("IHyperdrive ABI was not provided")
     state_abi = abis["IHyperdrive"]
@@ -196,7 +217,21 @@ def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddress
 
 
 def get_funding_contract(web3: Web3, abis: dict, addresses: HyperdriveAddressesJson) -> Contract:
-    """Get the hyperdrive contract for a given abi"""
+    """Get the funding contract for a given abi
+    Arguments
+    ---------
+    web3_container: Web3
+        web3 provider object
+    abis: dict
+        A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
+    addresses: HyperdriveAddressesJson
+        The block number to query from the chain
+
+    Returns
+    -------
+    Contract
+        The contract object returned from the query
+    """
     if "ERC20Mintable" not in abis:
         raise AssertionError("ERC20 ABI for minting base tokens was not provided")
     state_abi = abis["ERC20Mintable"]
