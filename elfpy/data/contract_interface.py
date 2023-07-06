@@ -316,7 +316,7 @@ def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, blo
     )
 
     pool_info_data_dict: dict[Any, Any] = {
-        key: _convert_fixedpoint(value) for (key, value) in pool_info_data_dict.items()
+        key: _convert_scaled_value(value) for (key, value) in pool_info_data_dict.items()
     }
 
     current_block: BlockData = web3_container.eth.get_block(block_number)
@@ -363,7 +363,7 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
     out_config = {}
     out_config["contractAddress"] = hyperdrive_contract.address
     out_config["baseToken"] = hyperdrive_config.get("baseToken", None)
-    out_config["initializeSharePrice"] = _convert_fixedpoint(hyperdrive_config.get("initializeSharePrice", None))
+    out_config["initializeSharePrice"] = _convert_scaled_value(hyperdrive_config.get("initializeSharePrice", None))
     out_config["positionDuration"] = hyperdrive_config.get("positionDuration", None)
     out_config["checkpointDuration"] = hyperdrive_config.get("checkpointDuration", None)
     config_time_stretch = hyperdrive_config.get("timeStretch", None)
@@ -378,9 +378,9 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
     out_config["governance"] = hyperdrive_config.get("governance", None)
     out_config["feeCollector"] = hyperdrive_config.get("feeCollector", None)
     curve_fee, flat_fee, governance_fee = hyperdrive_config.get("fees", (None, None, None))
-    out_config["curveFee"] = _convert_fixedpoint(curve_fee)
-    out_config["flatFee"] = _convert_fixedpoint(flat_fee)
-    out_config["governanceFee"] = _convert_fixedpoint(governance_fee)
+    out_config["curveFee"] = _convert_scaled_value(curve_fee)
+    out_config["flatFee"] = _convert_scaled_value(flat_fee)
+    out_config["governanceFee"] = _convert_scaled_value(governance_fee)
     out_config["oracleSize"] = hyperdrive_config.get("oracleSize", None)
     out_config["updateGap"] = hyperdrive_config.get("updateGap", None)
     out_config["invTimeStretch"] = inv_time_stretch
@@ -433,17 +433,19 @@ def get_wallet_info(
         if wallet_addr is None:
             continue
 
-        num_base_token_fp = None
+        num_base_token_scaled = None
         for _ in range(RETRY_COUNT):
             try:
-                num_base_token_fp = base_contract.functions.balanceOf(wallet_addr).call(block_identifier=block_number)
+                num_base_token_scaled = base_contract.functions.balanceOf(wallet_addr).call(
+                    block_identifier=block_number
+                )
                 break
             except ValueError:
                 logging.warning("Error in getting base token balance, retrying")
                 time.sleep(1)
                 continue
 
-        num_base_token = _convert_fixedpoint(num_base_token_fp)
+        num_base_token = _convert_scaled_value(num_base_token_scaled)
         if (num_base_token is not None) and (wallet_addr is not None):
             out_wallet_info.append(
                 WalletInfo(
@@ -465,17 +467,17 @@ def get_wallet_info(
                 token_type = base_token_type
                 maturity_time = None
 
-            num_custom_token_fp = None
+            num_custom_token_scaled = None
             for _ in range(RETRY_COUNT):
                 try:
-                    num_custom_token_fp = hyperdrive_contract.functions.balanceOf(int(token_id), wallet_addr).call(
+                    num_custom_token_scaled = hyperdrive_contract.functions.balanceOf(int(token_id), wallet_addr).call(
                         block_identifier=block_number
                     )
                 except ValueError:
                     logging.warning("Error in getting custom token balance, retrying")
                     time.sleep(1)
                     continue
-            num_custom_token = _convert_fixedpoint(num_custom_token_fp)
+            num_custom_token = _convert_scaled_value(num_custom_token_scaled)
 
             if num_custom_token is not None:
                 out_wallet_info.append(
@@ -492,7 +494,7 @@ def get_wallet_info(
     return out_wallet_info
 
 
-def _convert_fixedpoint(input_val: int | None) -> float | None:
+def _convert_scaled_value(input_val: int | None) -> float | None:
     """
     Given a scaled value int, converts it to an unscaled value in float, while dealing with Nones
 
@@ -556,18 +558,18 @@ def _build_transaction_object(
     # TODO can the input field ever be empty or not exist?
     out_dict["input_method"] = transaction_dict["input"]["method"]
     input_params = transaction_dict["input"]["params"]
-    out_dict["input_params_contribution"] = _convert_fixedpoint(input_params.get("_contribution", None))
-    out_dict["input_params_apr"] = _convert_fixedpoint(input_params.get("_apr", None))
+    out_dict["input_params_contribution"] = _convert_scaled_value(input_params.get("_contribution", None))
+    out_dict["input_params_apr"] = _convert_scaled_value(input_params.get("_apr", None))
     out_dict["input_params_destination"] = input_params.get("_destination", None)
     out_dict["input_params_asUnderlying"] = input_params.get("_asUnderlying", None)
-    out_dict["input_params_baseAmount"] = _convert_fixedpoint(input_params.get("_baseAmount", None))
-    out_dict["input_params_minOutput"] = _convert_fixedpoint(input_params.get("_minOutput", None))
-    out_dict["input_params_bondAmount"] = _convert_fixedpoint(input_params.get("_bondAmount", None))
-    out_dict["input_params_maxDeposit"] = _convert_fixedpoint(input_params.get("_maxDeposit", None))
+    out_dict["input_params_baseAmount"] = _convert_scaled_value(input_params.get("_baseAmount", None))
+    out_dict["input_params_minOutput"] = _convert_scaled_value(input_params.get("_minOutput", None))
+    out_dict["input_params_bondAmount"] = _convert_scaled_value(input_params.get("_bondAmount", None))
+    out_dict["input_params_maxDeposit"] = _convert_scaled_value(input_params.get("_maxDeposit", None))
     out_dict["input_params_maturityTime"] = input_params.get("_maturityTime", None)
-    out_dict["input_params_minApr"] = _convert_fixedpoint(input_params.get("_minApr", None))
-    out_dict["input_params_maxApr"] = _convert_fixedpoint(input_params.get("_maxApr", None))
-    out_dict["input_params_shares"] = _convert_fixedpoint(input_params.get("_shares", None))
+    out_dict["input_params_minApr"] = _convert_scaled_value(input_params.get("_minApr", None))
+    out_dict["input_params_maxApr"] = _convert_scaled_value(input_params.get("_maxApr", None))
+    out_dict["input_params_shares"] = _convert_scaled_value(input_params.get("_shares", None))
 
     # Assuming one TransferSingle per transfer
     # TODO Fix this below eventually
@@ -584,7 +586,7 @@ def _build_transaction_object(
         logging.warning("Tranfer event contains multiple TransferSingle logs, selecting first")
         event_args: dict[str, Any] = event_logs[0]["args"]
 
-    out_dict["event_value"] = _convert_fixedpoint(event_args.get("value", None))
+    out_dict["event_value"] = _convert_scaled_value(event_args.get("value", None))
     out_dict["event_from"] = event_args.get("from", None)
     out_dict["event_to"] = event_args.get("to", None)
     out_dict["event_operator"] = event_args.get("operator", None)
