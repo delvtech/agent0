@@ -1,22 +1,11 @@
 """Helper functions for delivering simulation outputs"""
 from __future__ import annotations
 
-import json
-import logging
-import os
-import sys
-from logging.handlers import RotatingFileHandler
 from typing import TYPE_CHECKING, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-from fixedpointmath import FixedPoint
-from hexbytes import HexBytes
 from matplotlib import gridspec
-from numpy.random._generator import Generator as NumpyGenerator
-from web3.datastructures import AttributeDict, MutableAttributeDict
-
-import elfpy
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -410,118 +399,3 @@ def annotate(axis_handle, text, major_offset, minor_offset, val):
     annotation_handle.set_bbox(
         {"facecolor": "white", "edgecolor": "black", "alpha": val["alpha"], "linewidth": 0, "boxstyle": "round,pad=0.1"}
     )
-
-
-## Logging
-def setup_logging(
-    log_filename: str | None = None,
-    max_bytes: int = elfpy.DEFAULT_LOG_MAXBYTES,
-    log_level: int = elfpy.DEFAULT_LOG_LEVEL,
-    delete_previous_logs: bool = False,
-    log_file_and_stdout: bool = False,
-    log_formatter: str = elfpy.DEFAULT_LOG_FORMATTER,
-) -> None:
-    r"""Setup logging and handlers with default settings"""
-    # pylint: disable=too-many-arguments
-    if log_filename is None and log_file_and_stdout is True:
-        raise ValueError(f"{log_filename=} cannot be None and {log_file_and_stdout=} be True")
-    handlers = []
-    log_formatter = logging.Formatter(log_formatter, elfpy.DEFAULT_LOG_DATETIME)
-    stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setFormatter(log_formatter)
-    if log_filename is not None:
-        log_dir, log_name = os.path.split(log_filename)
-        if not log_name.endswith(".log"):
-            log_name += ".log"
-        if log_dir == "":  # we have just a filename, log to default .logging directory
-            base_folder = os.path.dirname(os.path.dirname(os.path.abspath(elfpy.__file__)))
-            log_dir = os.path.join(base_folder, ".logging")
-        if not os.path.exists(log_dir):  # create log_dir if necessary
-            os.makedirs(log_dir)
-        # delete the log file if it exists
-        if delete_previous_logs and os.path.exists(os.path.join(log_dir, log_name)):
-            os.remove(os.path.join(log_dir, log_name))
-        file_handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
-        file_handler.setFormatter(log_formatter)
-        handlers.append(file_handler)
-    if log_file_and_stdout is True or log_filename is None:
-        handlers.append(stream_handler)
-    logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
-    logging.getLogger().handlers = handlers  # overwrite handlers with the desired one
-
-
-def close_logging(delete_logs=True):
-    r"""Close logging and handlers for the test"""
-    logging.shutdown()
-    if delete_logs:
-        for handler in logging.getLogger().handlers:
-            if hasattr(handler, "baseFilename") and not isinstance(handler, logging.StreamHandler):
-                # access baseFilename in a type safe way
-                handler_file_name = getattr(handler, "baseFilename", None)
-                if handler_file_name is not None and os.path.exists(handler_file_name):
-                    os.remove(handler_file_name)
-            handler.close()
-
-
-class ExtendedJSONEncoder(json.JSONEncoder):
-    r"""Custom encoder for JSON string dumps"""
-    # pylint: disable=too-many-return-statements
-
-    def default(self, o):
-        r"""Override default behavior"""
-        if isinstance(o, set):
-            return list(o)
-        if isinstance(o, HexBytes):
-            return o.hex()
-        if isinstance(o, (AttributeDict, MutableAttributeDict)):
-            return dict(o)
-        if isinstance(o, np.integer):
-            return int(o)
-        if isinstance(o, np.floating):
-            return float(o)
-        if isinstance(o, np.ndarray):
-            return o.tolist()
-        if isinstance(o, FixedPoint):
-            return str(o)
-        if isinstance(o, NumpyGenerator):
-            return "NumpyGenerator"
-        try:
-            return o.__dict__
-        except AttributeError:
-            pass
-        # Let the base class default method raise the TypeError
-        return json.JSONEncoder.default(self, o)
-
-
-def str_with_precision(value, precision=3, min_digits=0, debug=False):
-    """
-    Format a float to a string with a given precision
-    this follows the significant figure behavior, irrepective of number size
-    """
-    if debug:
-        log_str = "value: {}, type: {}, precision: {}, min_digits: {}"
-        log_vars = value, type(value), precision, min_digits
-        logging.error(log_str, *log_vars)
-    if isinstance(value, float):  # only floats can be inf or nan
-        if np.isinf(value):
-            return "inf"
-        if np.isnan(value):
-            return "nan"
-    if value == 0:
-        return "0"
-    try:
-        digits = int(np.floor(np.log10(abs(value)))) + 1  #  calculate number of digits in value
-    except Exception as err:  # pylint: disable=broad-exception-caught
-        if debug:
-            log_str = "Error in float_to_string: value={}({}), precision={}, min_digits={}, \n error={}"
-            log_vars = value, type(value), precision, min_digits, err
-            logging.error(log_str, *log_vars)
-        return str(value)
-    decimals = np.clip(precision - digits, min_digits, precision)  # sigfigs to the right of the decimal
-    if debug:
-        log_str = "value: {}, type: {}, precision: {}, min_digits: {}"
-        log_vars = value, type(value), precision, min_digits
-        logging.error(log_str, *log_vars)
-    if abs(value) > 0.01:
-        return f"{value:,.{decimals}f}"
-    return f"{value:0.{precision - 1}e}"

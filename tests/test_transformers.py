@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import unittest
-
 from pathlib import Path
 
 import ape
@@ -14,7 +13,7 @@ import elfpy
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.utils.apeworx_integrations as ape_utils
-import elfpy.utils.outputs as output_utils
+import elfpy.utils.logs as log_utils
 import elfpy.utils.transformers as trans_utils
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import RandomAgent
@@ -48,7 +47,7 @@ class TransformerTest(unittest.TestCase):
         config.freeze()
 
         # %% setup
-        output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
+        log_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
         simulator = sim_utils.get_simulator(config)
         agent_policy = RandomAgent(rng=simulator.rng)
         agent = Agent(wallet_address=1, policy=agent_policy)

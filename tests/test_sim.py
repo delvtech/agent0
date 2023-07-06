@@ -13,7 +13,7 @@ from numpy.random import RandomState
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
-import elfpy.utils.outputs as output_utils
+import elfpy.utils.logs as log_utils
 import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import SingleLongAgent
@@ -35,7 +35,7 @@ class TestSimulator(unittest.TestCase):
     def setup_logging(log_level=logging.DEBUG):
         """Setup logging and handlers for the test"""
         log_filename = ".logging/test_sim.log"
-        output_utils.setup_logging(log_filename, log_level=log_level)
+        log_utils.setup_logging(log_filename, log_level=log_level)
 
     def test_hyperdrive_sim(self):
         """Tests hyperdrive simulation"""
@@ -47,7 +47,7 @@ class TestSimulator(unittest.TestCase):
         config.variable_apr = [0.01] * config.num_trading_days
         simulator = sim_utils.get_simulator(config)
         simulator.run_simulation()
-        output_utils.close_logging()
+        log_utils.close_logging()
 
     def test_yieldspace_sim(self):
         """Tests yieldspace simulation"""
@@ -59,7 +59,7 @@ class TestSimulator(unittest.TestCase):
         config.variable_apr = [0.01] * config.num_trading_days
         simulator = sim_utils.get_simulator(config)
         simulator.run_simulation()
-        output_utils.close_logging()
+        log_utils.close_logging()
 
     def test_set_rng(self):
         """Test error handling & resetting simulator random number generator"""
@@ -75,7 +75,7 @@ class TestSimulator(unittest.TestCase):
         for bad_input in ([1234, "1234", RandomState(1234)],):
             with self.assertRaises(TypeError):
                 simulator.set_rng(bad_input)  # type: ignore
-        output_utils.close_logging()
+        log_utils.close_logging()
 
     def test_simulation_state(self):
         """Test override & initalizaiton of random variables
@@ -110,7 +110,7 @@ class TestSimulator(unittest.TestCase):
                 f"\n\tlengths={[len(simulator.simulation_state[key]) for key in bad_keys]}"
                 f"\n\t{goal_writes=}"
             ) from exc
-        output_utils.close_logging()
+        log_utils.close_logging()
 
     def test_new_simulation_state(self):
         """Build a fake simulation state and then test it against the sim state aggregator"""

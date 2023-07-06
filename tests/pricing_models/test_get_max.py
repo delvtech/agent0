@@ -11,7 +11,7 @@ from fixedpointmath import FixedPoint
 import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
-import elfpy.utils.outputs as output_utils
+import elfpy.utils.logs as log_utils
 from elfpy.markets.hyperdrive import HyperdriveMarketDeltas, HyperdriveMarketState, HyperdrivePricingModel
 
 
@@ -35,7 +35,7 @@ class TestGetMax(unittest.TestCase):
             share_price * market_state.share_reserves >= base_buffer
             bond_reserves >= bond_buffer
         """
-        output_utils.setup_logging(log_filename="test_get_max")
+        log_utils.setup_logging(log_filename="test_get_max")
         pricing_model: HyperdrivePricingModel = HyperdrivePricingModel()
         test_cases: list[TestCaseGetMax] = [
             TestCaseGetMax(  # Test 0
@@ -241,7 +241,7 @@ class TestGetMax(unittest.TestCase):
                 test_case=test_case,
                 is_long=False,
             )
-        output_utils.close_logging()
+        log_utils.close_logging()
 
     def _ensure_market_safety(
         self,

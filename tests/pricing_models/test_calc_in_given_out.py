@@ -17,7 +17,7 @@ from fixedpointmath import errors as fperrors
 
 import elfpy.time as time
 import elfpy.types as types
-import elfpy.utils.outputs as output_utils
+import elfpy.utils.logs as log_utils
 from elfpy.markets.hyperdrive import (
     HyperdriveMarketState,
     HyperdrivePricingModel,
@@ -39,7 +39,7 @@ class TestCalcInGivenOut(unittest.TestCase):
     # TODO: Add tests for the full TradeResult object
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
-        output_utils.setup_logging("test_calc_in_given_out_failure")
+        log_utils.setup_logging("test_calc_in_given_out_failure")
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),
             HyperdrivePricingModel(),
@@ -102,7 +102,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     )
                 else:
                     raise AssertionError(f'Expected model_name to be or "YieldSpace", not {model_name}')
-        output_utils.close_logging()
+        log_utils.close_logging()
 
     def test_calc_in_given_out_precision(self):
         """
@@ -111,7 +111,7 @@ class TestCalcInGivenOut(unittest.TestCase):
 
         .. todo:: This should be multiple tests for base & pt trade type
         """
-        output_utils.setup_logging("test_calc_in_given_out")
+        log_utils.setup_logging("test_calc_in_given_out")
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),
             HyperdrivePricingModel(),
@@ -173,13 +173,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_remaining=time_remaining,
                 )
                 self.assertGreater(trade_result.breakdown.with_fee, FixedPoint("0.0"))
-        output_utils.close_logging()
+        log_utils.close_logging()
 
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     # issue #57
     def test_calc_in_given_out_failure(self):
         """Failure tests for calc_in_given_out"""
-        output_utils.setup_logging("test_calc_in_given_out_success")
+        log_utils.setup_logging("test_calc_in_given_out_success")
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),
             HyperdrivePricingModel(),
@@ -453,7 +453,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     hyperdrive_actions.check_output_assertions(
                         trade_result=trade_result,
                     )
-        output_utils.close_logging()
+        log_utils.close_logging()
 
 
 # Test cases where token_in = TokenType.BASE indicating that bonds are being

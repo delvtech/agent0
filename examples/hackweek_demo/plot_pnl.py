@@ -67,7 +67,7 @@ def get_wallet_from_onchain_trade_info(
             # WEIGHTED AVERAGE ACROSS A BUNCH OF TRADES
             for specific_trade in trades_in_position.index[trades_in_position]:
                 value = trades.loc[specific_trade, "value"]
-                value *= -1 if trades.loc[specific_trade, "from"] == address else 1
+                value *= -1 if trades.loc[specific_trade, "from"] == address else 1  # type: ignore
                 sum_value += value
                 sum_product_of_open_share_price_and_value += (
                     value * share_price.loc[trades.loc[specific_trade, "block_number"]]
@@ -78,7 +78,7 @@ def get_wallet_from_onchain_trade_info(
             previous_share_price = wallet.shorts[mint_time].open_share_price if mint_time in wallet.shorts else 0
 
             marginal_position_change = FixedPoint(scaled_value=balance)
-            marginal_open_share_price = FixedPoint(scaled_value=int(trades.share_price))
+            marginal_open_share_price = FixedPoint(scaled_value=int(trades.share_price))  # type: ignore
 
             new_balance = previous_balance + marginal_position_change
 

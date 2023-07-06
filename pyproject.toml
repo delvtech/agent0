@@ -90,6 +90,11 @@ max-line-length = "120"
 line-length = "120"
 extend-exclude = "\\.ipynb"
 
+[tool.pylance]
+exclude = [
+    "hyperdrive_solidity",
+]
+
 [tool.pyright]
 exclude = [
     ".venv",
@@ -117,11 +122,11 @@ fixable = ["A", "D", "I", "N", "PL"]
 unfixable = []
 
 # override pow in fixed_point, and allow literal comparison in tests
-per-file-ignores = { "elfpy/utils/math/fixed_point.py" = [
-    "A003",
-], "tests/*" = [
-    "PLR2004",
-] }
+# per-file-ignores = { "elfpy/utils/math/fixed_point.py" = [
+#     "A003",
+# ], "tests/*" = [
+#     "PLR2004",
+# ] }
 
 # Ignore builtins in elfpy/utils/math/fixed_point.py
 line-length = 120

@@ -29,8 +29,9 @@ from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, simulat
 from elfpy.markets.hyperdrive import AssetIdPrefix, HyperdriveMarketState, HyperdrivePricingModel, hyperdrive_assets
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 from elfpy.simulators.config import Config
-from elfpy.utils import outputs as output_utils
+from elfpy.utils import format as format_utils
 from elfpy.utils import sim_utils
+from elfpy.utils.logs import log_hyperdrive_crash_report
 from elfpy.wallet.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:
@@ -396,7 +397,7 @@ def get_wallet_from_trade_history(
                 raise ValueError(
                     f"events {balance=} and {on_chain_balance=} disagree by more than {tolerance} wei for {address}"
                 )
-            logging.debug(" => calculated balance = on_chain = %s", output_utils.str_with_precision(balance))
+            logging.debug(" => calculated balance = on_chain = %s", format_utils.format_float_as_string(balance))
         # check if there's an outstanding balance
         if balance != 0 or on_chain_balance != 0:
             if asset_type == "SHORT":
@@ -928,16 +929,27 @@ def ape_trade(
         if txn_receipt is None:
             return None, None
         return get_pool_state(txn_receipt=txn_receipt, hyperdrive_contract=hyperdrive_contract), txn_receipt
-    except TransactionError as exc:
+    except TransactionError as err:
+        formatted_amount = format_utils.format_float_as_string(amount)
+        pool_info = hyperdrive_contract.getPoolInfo()
+        pool_config = hyperdrive_contract.getPoolConfig()
         logging.error(
             "Failed to execute %s: %s\n => Amount: %s\n => Agent: %s\n => Pool: %s",
             trade_type,
-            exc,
-            output_utils.str_with_precision(amount),
+            err,
+            formatted_amount,
             agent,
-            hyperdrive_contract.getPoolInfo().__dict__,
+            dict(pool_info),
         )
-        raise exc
+        log_hyperdrive_crash_report(
+            amount=amount,
+            trade_type=trade_type,
+            error=err,
+            agent_address=agent.address,
+            pool_info=pool_info,
+            pool_config=pool_config,
+        )
+        raise err
 
 
 def attempt_txn(
@@ -993,8 +1005,8 @@ def attempt_txn(
         base_fee = getattr(latest, "base_fee")
         logging.debug(
             "latest block %s has base_fee %s",
-            output_utils.str_with_precision(getattr(latest, "number")),
-            output_utils.str_with_precision(base_fee / 1e9, min_digits=3),
+            format_utils.format_float_as_string(getattr(latest, "number")),
+            format_utils.format_float_as_string(base_fee / 1e9, min_digits=3),
         )
         kwargs["max_priority_fee_per_gas"] = int(
             agent.provider.priority_fee * (1 + priority_fee_multiple * (attempt - 1))
@@ -1008,7 +1020,9 @@ def attempt_txn(
         formatted_items = []
         for key, value in kwargs.items():
             value = (
-                output_utils.str_with_precision(value / 1e9) if "fee" in key else output_utils.str_with_precision(value)
+                format_utils.format_float_as_string(value / 1e9)
+                if "fee" in key
+                else format_utils.format_float_as_string(value)
             )
             formatted_items.append(f"{key}={value}")
         logging.debug("txn attempt %s of %s with %s", attempt, mult, ", ".join(formatted_items))

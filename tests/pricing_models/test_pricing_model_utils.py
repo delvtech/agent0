@@ -9,7 +9,7 @@ from fixedpointmath import errors as fperrors
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
-import elfpy.utils.outputs as output_utils
+import elfpy.utils.logs as log_utils
 
 
 class BasePricingModelUtilsTest(unittest.TestCase):
@@ -23,7 +23,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
         """Unit tests for calc_k_const function
         .. todo:: fix test to use new y+s expected value instead of 2y+cz
         """
-        output_utils.setup_logging("test_pricing_model_utils")
+        log_utils.setup_logging("test_pricing_model_utils")
         test_cases = [
             # test 0: 500k share_reserves; 500k bond_reserves
             #   1 share price; 1 init_share_price; 3mo elapsed
@@ -149,7 +149,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 )
                 self.assertAlmostEqual(k, test_case["expected_result"], delta=self.APPROX_EQ)
 
-        output_utils.close_logging()
+        log_utils.close_logging()
 
 
 class TestPricingModelUtils(BasePricingModelUtilsTest):
