@@ -44,7 +44,7 @@ class TestTransactionTable:
         # event_value retreieved from postgres is in Decimal, cast to float
         assert float(retrieved_transaction.event_value) == 3.2
 
-    def test_update_pool_info(self, session):
+    def test_update_transaction(self, session):
         """Update an entry"""
         transaction = Transaction(blockNumber=1, event_value=3.2)
         session.add(transaction)
@@ -53,11 +53,11 @@ class TestTransactionTable:
         transaction.event_value = 5.0
         session.commit()
 
-        updated_pool_info = session.query(Transaction).filter_by(blockNumber=1).first()
+        updated_transaction = session.query(Transaction).filter_by(blockNumber=1).first()
         # event_value retreieved from postgres is in Decimal, cast to float
-        assert float(updated_pool_info.event_value) == 5.0
+        assert float(updated_transaction.event_value) == 5.0
 
-    def test_delete_pool_info(self, session):
+    def test_delete_transaction(self, session):
         """Delete an entry"""
         transaction = Transaction(blockNumber=1, event_value=3.2)
         session.add(transaction)
@@ -74,7 +74,7 @@ class TestTransactionInterface:
     """Testing postgres interface for transaction table"""
 
     def test_latest_block_number(self, session):
-        """Testing retrevial of pool info via interface"""
+        """Testing retrevial of transaction via interface"""
         transaction_1 = Transaction(blockNumber=1, event_value=3.0)  # add your other columns here...
         postgres.add_transactions([transaction_1], session)
 

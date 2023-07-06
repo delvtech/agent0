@@ -22,6 +22,30 @@ class Base(MappedAsDataclass, DeclarativeBase):
     """Base class to subclass from to define the schema"""
 
 
+class WalletInfo(Base):
+    """
+    Table/dataclass schema for pool config
+    """
+
+    __tablename__ = "walletinfo"
+
+    # Default table primary key
+    # Note that we use postgres in production and sqlite in testing, but sqlite has issues with
+    # autoincrement with BigIntegers. Hence, we use the Integer variant when using sqlite in tests
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, init=False, autoincrement=True
+    )
+
+    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), index=True)
+    walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
+    baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
+    tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    tokenValue: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    maturityTime: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+
+
 class PoolConfig(Base):
     """
     Table/dataclass schema for pool config
