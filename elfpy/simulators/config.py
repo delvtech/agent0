@@ -1,15 +1,16 @@
 """State object for setting experiment configuration"""
 from __future__ import annotations
-from typing import Any
+
 import json
 import logging
 from dataclasses import dataclass, field
+from typing import Any
+
 import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 
-
 import elfpy.types as types
-import elfpy.utils.outputs as output_utils
+import elfpy.utils.json as output_utils
 
 
 @types.freezable(frozen=False, no_new_attribs=True)

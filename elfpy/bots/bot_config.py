@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from elfpy import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, types
-from elfpy.utils import outputs as output_utils
+from elfpy.utils import json as output_utils
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
