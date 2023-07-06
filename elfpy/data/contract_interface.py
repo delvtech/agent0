@@ -20,11 +20,12 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
-from web3.types import (ABI, ABIEvent, BlockData, EventData, LogReceipt,
-                        TxReceipt)
+from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
 
 from elfpy.data.db_schema import PoolConfig, PoolInfo, Transaction, WalletInfo
 from elfpy.markets.hyperdrive import hyperdrive_assets
+
+RETRY_COUNT = 10
 
 
 class TestAccount:
@@ -456,7 +457,19 @@ def get_wallet_info(
         token_prefix = transaction.event_prefix
         token_maturity_time = transaction.event_maturity_time
 
-        num_base_token_fp: int = base_contract.functions.balanceOf(wallet_addr).call(block_identifier=block_number)
+        if wallet_addr is None:
+            continue
+
+        num_base_token_fp = None
+        for _ in range(RETRY_COUNT):
+            try:
+                num_base_token_fp = base_contract.functions.balanceOf(wallet_addr).call(block_identifier=block_number)
+                break
+            except ValueError:
+                logging.warning("Error in getting base token balance, retrying")
+                time.sleep(1)
+                continue
+
         num_base_token = convert_fixedpoint(num_base_token_fp)
         if (num_base_token is not None) and (wallet_addr is not None):
             out_wallet_info.append(
@@ -470,7 +483,7 @@ def get_wallet_info(
             )
 
         # Handle cases where these fields don't exist
-        if (wallet_addr is not None) and (token_id is not None) and (token_prefix is not None):
+        if (token_id is not None) and (token_prefix is not None):
             base_token_type = hyperdrive_assets.AssetIdPrefix(token_prefix).name
             if (token_maturity_time is not None) and (token_maturity_time > 0):
                 token_type = base_token_type + "-" + str(token_maturity_time)
@@ -479,9 +492,16 @@ def get_wallet_info(
                 token_type = base_token_type
                 maturity_time = None
 
-            num_custom_token_fp: int = hyperdrive_contract.functions.balanceOf(token_id, wallet_addr).call(
-                block_identifier=block_number
-            )
+            num_custom_token_fp = None
+            for _ in range(RETRY_COUNT):
+                try:
+                    num_custom_token_fp = hyperdrive_contract.functions.balanceOf(int(token_id), wallet_addr).call(
+                        block_identifier=block_number
+                    )
+                except ValueError:
+                    logging.warning("Error in getting custom token balance, retrying")
+                    time.sleep(1)
+                    continue
             num_custom_token = convert_fixedpoint(num_custom_token_fp)
 
             if num_custom_token is not None:

@@ -75,9 +75,6 @@ def main(
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
     while True:
-        pool_info: list[PoolInfo] = []
-        transactions: list[Transaction] = []
-        wallet_info: list[WalletInfo] = []
         latest_mined_block = web3.eth.get_block_number() - 1
         # if we are on a new block
         if latest_mined_block > block_number:
@@ -108,22 +105,18 @@ def main(
                         time.sleep(0.1)
                         continue
                 if block_pool_info:
-                    pool_info.append(block_pool_info)
+                    postgres.add_pool_infos([block_pool_info], session)
 
                 block_transactions = contract_interface.fetch_transactions_for_block(
                     web3, transactions_hyperdrive_contract, block_number
                 )
                 if block_transactions:
-                    transactions.extend(block_transactions)
+                    postgres.add_transactions(block_transactions, session)
+
                     wallet_info_for_transactions = contract_interface.get_wallet_info(
                         state_hyperdrive_contract, base_contract, block_number, block_transactions
                     )
-                    wallet_info.extend(wallet_info_for_transactions)
-
-            # Add to postgres
-            postgres.add_pool_infos(pool_info, session)
-            postgres.add_transactions(transactions, session)
-            postgres.add_wallet_infos(wallet_info, session)
+                    postgres.add_wallet_infos(wallet_info_for_transactions, session)
 
         time.sleep(sleep_amount)
 
