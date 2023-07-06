@@ -6,4 +6,4 @@ if __name__ == "__main__":
     config = BotConfig()
 
     # Write config to json
-    config.save_as_json("bots_config.json")
+    config.save_as_json("bots_config.default.json")
