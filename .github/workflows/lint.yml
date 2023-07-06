@@ -11,6 +11,10 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
+      - name: Check GitHub rate limit at start
+        run: |
+          curl -sI -H "Authorization: token ${{ secrets.GH_GITHUB_COM_TOKEN }}" https://api.github.com/rate_limit | grep X-Ratelimit-Remaining
+
       - uses: actions/checkout@v3
         with:
           token: ${{ secrets.GH_GITHUB_COM_TOKEN }}
@@ -34,3 +38,7 @@ jobs:
 
       - name: Run pylint
         run: python -m pylint $(git ls-files '*.py')
+
+      - name: Check GitHub rate limit at end
+        run: |
+          curl -sI -H "Authorization: token ${{ secrets.GH_GITHUB_COM_TOKEN }}" https://api.github.com/rate_limit | grep X-Ratelimit-Remaining

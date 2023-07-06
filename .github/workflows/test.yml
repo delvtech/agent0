@@ -11,6 +11,10 @@ jobs:
     name: test
     runs-on: ubuntu-latest
     steps:
+      - name: Check GitHub rate limit at start
+        run: |
+          curl -sI -H "Authorization: token ${{ secrets.GH_GITHUB_COM_TOKEN }}" https://api.github.com/rate_limit | grep X-Ratelimit-Remaining
+
       - uses: actions/checkout@v3
         with:
           token: ${{ secrets.GH_GITHUB_COM_TOKEN }}
@@ -63,3 +67,8 @@ jobs:
           # A warning is thrown here unnecessarily.  tracking issue here:
           # https://github.com/github/vscode-github-actions/issues/222
           token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Check GitHub rate limit at end
+        run: |
+          curl -sI -H "Authorization: token ${{ secrets.GH_GITHUB_COM_TOKEN }}" https://api.github.com/rate_limit | grep X-Ratelimit-Remaining
+  
