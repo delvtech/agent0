@@ -935,7 +935,7 @@ def ape_trade(
             exc,
             output_utils.str_with_precision(amount),
             agent,
-            hyperdrive_contract.getPoolInfo().__dict__,
+            dict(hyperdrive_contract.getPoolInfo()),
         )
         raise exc
 
