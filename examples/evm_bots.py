@@ -40,7 +40,7 @@ from elfpy.agents.policies.base import BasePolicy
 from elfpy.bots import BotConfig
 from elfpy.bots.bot_info import BotInfo
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
-from elfpy.utils.outputs import str_with_precision
+from elfpy.utils.format import str_with_precision
 
 ape_logger.set_level(logging.ERROR)
 

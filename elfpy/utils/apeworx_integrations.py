@@ -29,7 +29,7 @@ from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, simulat
 from elfpy.markets.hyperdrive import AssetIdPrefix, HyperdriveMarketState, HyperdrivePricingModel, hyperdrive_assets
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 from elfpy.simulators.config import Config
-from elfpy.utils import outputs as output_utils
+from elfpy.utils import format as output_utils
 from elfpy.utils import sim_utils
 from elfpy.wallet.wallet import Long, Short, Wallet
 
