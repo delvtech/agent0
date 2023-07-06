@@ -49,7 +49,8 @@ def setup_logging(
     """
 
     # Create log handlers
-    handlers = []
+    handlers = logging.getLogger().handlers
+
     if log_formatter is None:
         log_formatter = logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME)
 
