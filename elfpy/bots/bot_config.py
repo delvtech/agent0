@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-from elfpy import DEFAULT_LOG_MAXBYTES, DEFAULT_LOG_LEVEL, types
+from elfpy import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, types
 from elfpy.utils import outputs as output_utils
 
 
@@ -27,8 +27,8 @@ class BotConfig(types.FrozenClass):
     halt_on_errors: bool = False
     # optional output filename for logging
     log_filename: str = "agent0-bots"
-    # log level; should be in ["DEBUG", "INFO", "WARNING"]
-    log_level: str = DEFAULT_LOG_LEVEL  # INFO
+    # log level; should be in [logging.DEBUG, logging.INFO, logging.WARNING]
+    log_level: int = DEFAULT_LOG_LEVEL  # INFO
     # delete_previous_logs; if True, delete existing logs at the start of the run
     delete_previous_logs: bool = False
     # log log_file_and_stdout; if True, save to file and write to stdout, else just save to file

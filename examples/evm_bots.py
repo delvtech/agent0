@@ -32,7 +32,7 @@ from numpy.random._generator import Generator as NumpyGenerator
 # elfpy core repo
 import elfpy
 import elfpy.utils.apeworx_integrations as ape_utils
-import elfpy.utils.outputs as output_utils
+import elfpy.utils.logs as log_utils
 from elfpy import types
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import LongLouie, RandomAgent, ShortSally
@@ -689,7 +689,7 @@ if __name__ == "__main__":
     config = BotConfig()
     args = get_argparser().parse_args()
     config.load_from_json(args.configuration_json[0])
-    output_utils.setup_logging(
+    log_utils.setup_logging(
         log_filename=config.log_filename,
         max_bytes=config.max_bytes,
         log_level=config.log_level,

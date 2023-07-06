@@ -7,7 +7,7 @@ import os
 import sys
 import unittest
 
-import elfpy.utils.outputs as output_utils
+import elfpy.utils.logs as log_utils
 from elfpy.simulators.config import Config
 from elfpy.utils import sim_utils
 
@@ -52,34 +52,34 @@ class TestLogging(unittest.TestCase):
             simulator.run_simulation()  # run
             self.assertLogs(level=level)
             if handler_type == "file":
-                output_utils.close_logging()
+                log_utils.close_logging()
 
     def test_log_config_variables(self):
         """Verfies that the config variables are successfully logged"""
         log_filename = ".logging/test_logging.log"
-        output_utils.setup_logging(log_filename, log_level=logging.INFO)
+        log_utils.setup_logging(log_filename, log_level=logging.INFO)
         config = Config()
         logging.info("%s", config)
         self.assertLogs(level=logging.INFO)
-        output_utils.close_logging()
+        log_utils.close_logging()
 
     def test_multiple_handlers(self):
         """Verfies that two handlers are created if we log to file and stdout"""
         log_filename = ".logging/test_logging.log"
         # one handler because we're logging to file only
-        output_utils.setup_logging(log_filename, log_file_and_stdout=False)
+        log_utils.setup_logging(log_filename, log_file_and_stdout=False)
         self.assertEqual(len(logging.getLogger().handlers), 1)
-        output_utils.close_logging()
+        log_utils.close_logging()
         # one handler because we're logging to stdout only
-        output_utils.setup_logging()
+        log_utils.setup_logging()
         self.assertEqual(len(logging.getLogger().handlers), 1)
-        output_utils.close_logging()
+        log_utils.close_logging()
         # two handlers because we're logging to file and stdout
-        output_utils.setup_logging(log_filename, log_file_and_stdout=True)
+        log_utils.setup_logging(log_filename, log_file_and_stdout=True)
         self.assertEqual(len(logging.getLogger().handlers), 2)
-        output_utils.close_logging()
+        log_utils.close_logging()
 
     def test_logging_argument_failure(self):
         """Verfies that two handlers are created if we log to file and stdout"""
         with self.assertRaises(ValueError):
-            output_utils.setup_logging(log_file_and_stdout=True)
+            log_utils.setup_logging(log_file_and_stdout=True)

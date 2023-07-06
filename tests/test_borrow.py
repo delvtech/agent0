@@ -9,7 +9,7 @@ from fixedpointmath import FixedPoint
 
 import elfpy.time as time
 import elfpy.types as types
-import elfpy.utils.outputs as output_utils
+import elfpy.utils.logs as log_utils
 from elfpy.markets.borrow import BorrowMarket, BorrowMarketState, BorrowPricingModel
 
 
@@ -20,7 +20,7 @@ class TestBorrow(unittest.TestCase):
 
     def test_open_borrow(self, delete_logs=True):
         """Borrow 100 BASE"""
-        output_utils.setup_logging(log_filename=".logging/test_borrow.log", log_level=logging.DEBUG)
+        log_utils.setup_logging(log_filename=".logging/test_borrow.log", log_level=logging.DEBUG)
         for loan_to_value, collateral_exponent, collateral_token in itertools.product(
             range(1, 100, 5), range(0, 8, 2), [types.TokenType.BASE, types.TokenType.PT]
         ):
@@ -59,7 +59,7 @@ class TestBorrow(unittest.TestCase):
                     agent_deltas.borrows[FixedPoint(0)].borrow_amount, expected_borrow_amount, delta=self.APPROX_EQ
                 )
                 if delete_logs:
-                    output_utils.close_logging()
+                    log_utils.close_logging()
 
     def test_close_borrow(self):
         """Borrow 100 BASE"""

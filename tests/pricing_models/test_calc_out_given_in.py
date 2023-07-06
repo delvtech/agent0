@@ -15,7 +15,7 @@ from fixedpointmath import errors as fperrors
 
 import elfpy.time as time
 import elfpy.types as types
-import elfpy.utils.outputs as output_utils
+import elfpy.utils.logs as log_utils
 from elfpy.markets.base import BasePricingModel
 from elfpy.markets.hyperdrive import (
     HyperdriveMarketState,
@@ -1439,7 +1439,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     def test_calc_out_given_in_failure(self):
         """Failure tests for calc_out_given_in"""
-        output_utils.setup_logging("test_calc_out_given_in")
+        log_utils.setup_logging("test_calc_out_given_in")
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),
             HyperdrivePricingModel(),
@@ -1713,4 +1713,4 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         time_remaining=test_case.time_remaining,
                     )
                     hyperdrive_actions.check_output_assertions(trade_result=trade_result)
-        output_utils.close_logging()
+        log_utils.close_logging()

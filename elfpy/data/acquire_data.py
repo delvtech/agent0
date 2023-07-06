@@ -8,6 +8,7 @@ from eth_typing import URI, BlockNumber
 from web3 import Web3
 
 from elfpy.data import contract_interface, postgres
+from elfpy.utils import logs as log_utils
 from elfpy.utils import outputs as output_utils
 
 # pylint: disable=too-many-arguments
@@ -137,7 +138,7 @@ if __name__ == "__main__":
     # Look back limit for backfilling
     LOOKBACK_BLOCK_LIMIT = 1000
     SLEEP_AMOUNT = 1
-    output_utils.setup_logging(".logging/acquire_data.log", log_file_and_stdout=True)
+    log_utils.setup_logging(".logging/acquire_data.log", log_file_and_stdout=True)
     main(
         CONTRACTS_URL,
         ETHEREUM_NODE,

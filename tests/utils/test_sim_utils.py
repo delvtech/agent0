@@ -7,7 +7,7 @@ import unittest
 from fixedpointmath import FixedPoint
 
 import elfpy.time as time
-import elfpy.utils.outputs as output_utils
+import elfpy.utils.logs as log_utils
 import elfpy.utils.sim_utils as sim_utils
 from elfpy.markets.hyperdrive import (
     HyperdriveMarket,
@@ -27,7 +27,7 @@ class SimUtilsTest(unittest.TestCase):
 
     def test_get_initialized_market(self):
         """Compare two methods of initializing liquidity: agent-based as above, and the direct calc_liquidity method"""
-        output_utils.setup_logging(log_filename="test_sim_utils", log_level=logging.DEBUG)
+        log_utils.setup_logging(log_filename="test_sim_utils", log_level=logging.DEBUG)
         for target_liquidity in (1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9):
             for target_fixed_apr in (0.01, 0.03, 0.05, 0.10, 0.25, 0.5, 1.0, 1.1):
                 for num_position_days in [90, 365]:
@@ -135,4 +135,4 @@ class SimUtilsTest(unittest.TestCase):
                                 f"off by {(abs(FixedPoint(target_fixed_apr) - market.fixed_apr))=}."
                             ),
                         )
-        output_utils.close_logging()
+        log_utils.close_logging()
