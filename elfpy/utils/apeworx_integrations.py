@@ -31,6 +31,7 @@ from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 from elfpy.simulators.config import Config
 from elfpy.utils import format as format_utils
 from elfpy.utils import sim_utils
+from elfpy.utils.logs import log_hyperdrive_crash_report
 from elfpy.wallet.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:
@@ -929,13 +930,24 @@ def ape_trade(
             return None, None
         return get_pool_state(txn_receipt=txn_receipt, hyperdrive_contract=hyperdrive_contract), txn_receipt
     except TransactionError as err:
+        formatted_amount = format_utils.format_float_as_string(amount)
+        pool_info = hyperdrive_contract.getPoolInfo()
+        pool_config = hyperdrive_contract.getPoolConfig()
         logging.error(
             "Failed to execute %s: %s\n => Amount: %s\n => Agent: %s\n => Pool: %s",
             trade_type,
             err,
-            format_utils.format_float_as_string(amount),
+            formatted_amount,
             agent,
-            dict(hyperdrive_contract.getPoolInfo()),
+            dict(pool_info),
+        )
+        log_hyperdrive_crash_report(
+            amount=amount,
+            trade_type=trade_type,
+            error=err,
+            agent_address=agent.address,
+            pool_info=pool_info,
+            pool_config=pool_config,
         )
         raise err
 

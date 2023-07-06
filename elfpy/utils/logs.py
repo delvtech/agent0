@@ -184,8 +184,7 @@ def log_hyperdrive_crash_report(
 
 
 def _get_dict_from_schema(db_schema: Base):
-    """Quick helper to convert a SqlAlcemcy Row into a dict for printing.  There might be a better
-    way to do this?"""
+    """Quick helper to convert a SqlAlcemcy Row into a dict for printing.  There might be a better way to do this?"""
     db_dict = db_schema.__dict__
     del db_dict["_sa_instance_state"]
     return db_dict
