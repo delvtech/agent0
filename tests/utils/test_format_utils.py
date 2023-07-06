@@ -1,3 +1,4 @@
+"""Unit tests for formatting utilities."""
 import logging
 
 import numpy as np
@@ -6,8 +7,10 @@ from elfpy.utils.format import format_float_as_string
 
 
 class TestFormatFloatAsString:
+    """Unit tests for format_float_as_string."""
+
     def test_positive_values(self):
-        # Test positive values
+        """Test positive values"""
         assert format_float_as_string(123.456, precision=7) == "123.4560"
         assert format_float_as_string(123.456, precision=6) == "123.456"
         assert format_float_as_string(123.456, precision=5) == "123.46"
@@ -16,37 +19,37 @@ class TestFormatFloatAsString:
         assert format_float_as_string(1000000, precision=7) == "1,000,000"
 
     def test_negative_values(self):
-        # Test negative values
+        """Test negative values"""
         assert format_float_as_string(-123.456, precision=6) == "-123.456"
         assert format_float_as_string(-0.12345, precision=3) == "-0.123"
         assert format_float_as_string(-1000000, precision=7) == "-1,000,000"
 
     def test_values_less_than_one(self):
-        # Test values less than 1
+        """Test values less than 1"""
         assert format_float_as_string(0.0000123, precision=7) == "0.0000123"
         assert format_float_as_string(0.000001, precision=7) == "0.0000010"
         assert format_float_as_string(0.0000001, precision=7) == "0.0000001"
 
     def test_large_values(self):
-        # Test large values
+        """Test large values"""
         assert format_float_as_string(1e12, precision=13) == "1,000,000,000,000"
         assert format_float_as_string(1e9, precision=10) == "1,000,000,000"
         assert format_float_as_string(1e6, precision=7) == "1,000,000"
 
     def test_zero_value(self):
-        # Test zero value
+        """Test zero value"""
         assert format_float_as_string(0) == "0"
 
     def test_inf_value(self):
-        # Test infinity
+        """Test infinity"""
         assert format_float_as_string(np.inf) == "inf"
 
     def test_nan_value(self):
-        # Test NaN
+        """Test NaN"""
         assert format_float_as_string(np.nan) == "nan"
 
     def test_debug_mode(self, caplog):
-        # Test debug mode
+        """Test debug mode"""
         with caplog.at_level(logging.ERROR):
             format_float_as_string(123.456, debug=True)
             assert "value: 123.456, type: <class 'float'>, precision: 3, min_digits: 0" in caplog.text

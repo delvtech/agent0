@@ -67,7 +67,7 @@ class TestLogging(unittest.TestCase):
         """Verfies that two handlers are created if we log to file and stdout"""
         log_filename = ".logging/test_logging.log"
         # one handler because we're logging to file only
-        log_utils.setup_logging(log_filename, log_file_and_stdout=False)
+        log_utils.setup_logging(log_filename, log_stdout=False)
         self.assertEqual(len(logging.getLogger().handlers), 1)
         log_utils.close_logging()
         # one handler because we're logging to stdout only
@@ -75,11 +75,6 @@ class TestLogging(unittest.TestCase):
         self.assertEqual(len(logging.getLogger().handlers), 1)
         log_utils.close_logging()
         # two handlers because we're logging to file and stdout
-        log_utils.setup_logging(log_filename, log_file_and_stdout=True)
+        log_utils.setup_logging(log_filename, log_stdout=True)
         self.assertEqual(len(logging.getLogger().handlers), 2)
         log_utils.close_logging()
-
-    def test_logging_argument_failure(self):
-        """Verfies that two handlers are created if we log to file and stdout"""
-        with self.assertRaises(ValueError):
-            log_utils.setup_logging(log_file_and_stdout=True)

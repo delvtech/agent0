@@ -2,9 +2,6 @@
 from __future__ import annotations
 
 import json
-import os
-import sys
-from logging.handlers import RotatingFileHandler
 from typing import TYPE_CHECKING, Any
 
 import matplotlib.pyplot as plt
@@ -14,8 +11,6 @@ from hexbytes import HexBytes
 from matplotlib import gridspec
 from numpy.random._generator import Generator as NumpyGenerator
 from web3.datastructures import AttributeDict, MutableAttributeDict
-
-import elfpy
 
 if TYPE_CHECKING:
     import pandas as pd

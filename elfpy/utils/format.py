@@ -1,3 +1,4 @@
+"""Formatting utilities to aid in human-readable values."""
 import logging
 
 import numpy as np

@@ -1,3 +1,6 @@
+"""Utility functions for logging."""
+from __future__ import annotations
+
 import logging
 import os
 import sys
@@ -11,40 +14,49 @@ def setup_logging(
     max_bytes: int = elfpy.DEFAULT_LOG_MAXBYTES,
     log_level: int = elfpy.DEFAULT_LOG_LEVEL,
     delete_previous_logs: bool = False,
-    log_file_and_stdout: bool = False,
+    log_stdout: bool = True,
     log_formatter: logging.Formatter | None = None,
 ) -> None:
+    # pylint: disable=too-many-arguments
     """
     Setup logging and handlers with default settings.
 
-    Parameters:
-        log_filename (str, optional): Path and name of the log file.
-        max_bytes (int, optional): Maximum size of the log file in bytes. Defaults to elfpy.DEFAULT_LOG_MAXBYTES.
-        log_level (int, optional): Log level to track. Defaults to elfpy.DEFAULT_LOG_LEVEL.
-        delete_previous_logs (bool, optional): Whether to delete previous log file if it exists. Defaults to False.
-        log_file_and_stdout (bool, optional): Whether to log to both file and standard output. Defaults to False.
-        log_formatter (logging.Formatter, optional): Log formatter object. Defaults to None.
-
-    Raises:
-        ValueError: If log_filename is None and log_file_and_stdout is True.
-
     Note:
         The log_filename can be a path to the log file. If log_filename is not provided,
-        log_file_and_stdout can be set to True to log to both file and standard output (console).
-        If neither log_filename nor log_file_and_stdout is specified, the log messages will be sent to standard output only.
-    """
+        log_file_and_stdout can be set to True to log to both file and standard output (console). If
+        neither log_filename nor log_file_and_stdout is specified, the log messages will be sent to
+        standard output only.
 
-    # Validate arguments
-    if log_filename is None and log_file_and_stdout is True:
-        raise ValueError(f"{log_filename=} cannot be None and {log_file_and_stdout=} be True")
+    Arguments
+    ----------
+        log_filename : (str, optional)
+            Path and name of the log file.
+        max_bytes : (int, optional)
+            Maximum size of the log file in bytes. Defaults to elfpy.DEFAULT_LOG_MAXBYTES.
+        log_level : (int, optional)
+            Log level to track. Defaults to elfpy.DEFAULT_LOG_LEVEL.
+        delete_previous_logs : (bool, optional)
+            Whether to delete previous log file if it exists. Defaults to False.
+        log_file_and_stdout : (bool, optional)
+            Whether to log to both file and standard output. Defaults to False.
+        log_formatter (logging.Formatter, optional):
+            Log formatter object. Defaults to None.
+
+    Raises
+    ------
+        ValueError: If log_filename is None and log_file_and_stdout is True.
+
+    """
 
     # Create log handlers
     handlers = []
     if log_formatter is None:
         log_formatter = logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME)
 
-    stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setFormatter(log_formatter)
+    if log_stdout:
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setFormatter(log_formatter)
+        handlers.append(stream_handler)
 
     if log_filename is not None:
         log_dir, log_name = _prepare_log_path(log_filename)
@@ -55,9 +67,6 @@ def setup_logging(
 
         file_handler = _create_file_handler(log_dir, log_name, log_formatter, max_bytes)
         handlers.append(file_handler)
-
-    if log_file_and_stdout is True or log_filename is None:
-        handlers.append(stream_handler)
 
     # Configure the root logger
     logger = logging.getLogger()
