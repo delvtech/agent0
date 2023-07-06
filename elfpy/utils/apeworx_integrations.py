@@ -335,6 +335,15 @@ def get_wallet_from_trade_history(
 ) -> Wallet:
     r"""Construct wallet balances from on-chain trade info.
 
+    CASE ONE: marginal update, where trade_history contains only one trade.
+    - This is done for regular updates during execution, between every trade.
+    - This case is triggered by passing in `add_to_existing_wallet`.
+
+    CASE TWO: complete update, where trade_history contains the entire trade history.
+    - This is done at startup when we find existing trades executed previously.
+    - In this case, we check against queried on-chain balance for correctness.
+    - recovering from a crash requireds a higher tolerance, as we lose precision in the trade history
+
     Arguments
     ---------
     address : str
@@ -347,6 +356,10 @@ def get_wallet_from_trade_history(
         Contract pointing to the base currency (e.g. ERC20)
     index : int
         Index of the wallet among ALL agents.
+    add_to_existing_wallet : Wallet, Optional
+        Wallet to which to add the trade history, provided in the case of a marginal update.
+    tolerance : float, Optional
+        Tolerance to use when comparing calculated to on-chain balances
 
     Returns
     -------
