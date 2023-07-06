@@ -117,9 +117,6 @@ def main(
                     )
                     postgres.add_wallet_infos(wallet_info_for_transactions, session)
 
-        # fixme remove for testin
-        postgres.get_current_wallet_info(session)
-
         time.sleep(sleep_amount)
 
 
