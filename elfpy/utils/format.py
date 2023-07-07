@@ -1,4 +1,6 @@
 """Formatting utilities to aid in human-readable values."""
+from __future__ import annotations  # types will be strings by default in 3.11
+
 import logging
 
 import numpy as np

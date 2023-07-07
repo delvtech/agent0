@@ -1021,7 +1021,7 @@ def attempt_txn(
         for key, value in kwargs.items():
             if "fee" in key:
                 value = format_utils.format_float_as_string(value / 1e9)
-            elif isinstance(value, float) or isinstance(value, FixedPoint):
+            elif isinstance(value, (FixedPoint, float)):
                 value = format_utils.format_float_as_string(value)
             # Otherwise, do nothing
             formatted_items.append(f"{key}={value}")
