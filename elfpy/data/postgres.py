@@ -53,7 +53,7 @@ def build_postgres_config() -> PostgresConfig:
     if host is not None:
         arg_dict["POSTGRES_HOST"] = host
     if port is not None:
-        arg_dict["POSTGRES_PORT"] = port
+        arg_dict["POSTGRES_PORT"] = int(port)
 
     return PostgresConfig(**arg_dict)
 
