@@ -18,8 +18,9 @@ jobs:
       packages: write
     steps:
       - name: Check GitHub rate limit at start
-        run: |
-          curl -sI -H "Authorization: token ${{ secrets.GH_GITHUB_COM_TOKEN }}" https://api.github.com/rate_limit | grep X-Ratelimit-Remaining
+        uses: wakamex/rate-limit-action@master
+        with:
+          token: ${{ secrets.GH_GITHUB_COM_TOKEN}}
 
       - name: Check out code
         uses: actions/checkout@v3
@@ -56,5 +57,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Check GitHub rate limit at end
-        run: |
-          curl -sI -H "Authorization: token ${{ secrets.GH_GITHUB_COM_TOKEN }}" https://api.github.com/rate_limit | grep X-Ratelimit-Remaining
+        uses: wakamex/rate-limit-action@master
+        with:
+          token: ${{ secrets.GH_GITHUB_COM_TOKEN}}

@@ -12,8 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check GitHub rate limit at start
-        run: |
-          curl -sI -H "Authorization: token ${{ secrets.GH_GITHUB_COM_TOKEN }}" https://api.github.com/rate_limit | grep X-Ratelimit-Remaining
+        uses: wakamex/rate-limit-action@master
+        with:
+          token: ${{ secrets.GH_GITHUB_COM_TOKEN}}
 
       - uses: actions/checkout@v3
         with:
@@ -69,6 +70,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Check GitHub rate limit at end
-        run: |
-          curl -sI -H "Authorization: token ${{ secrets.GH_GITHUB_COM_TOKEN }}" https://api.github.com/rate_limit | grep X-Ratelimit-Remaining
-  
+        uses: wakamex/rate-limit-action@master
+        with:
+          token: ${{ secrets.GH_GITHUB_COM_TOKEN}}
