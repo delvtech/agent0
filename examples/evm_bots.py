@@ -40,7 +40,7 @@ from elfpy.agents.policies.base import BasePolicy
 from elfpy.bots import BotConfig
 from elfpy.bots.bot_info import BotInfo
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
-from elfpy.utils.format import format_float_as_string
+from elfpy.utils.format import format_numeric_string
 
 ape_logger.set_level(logging.ERROR)
 
@@ -174,9 +174,7 @@ def create_agent(
 
     # mint base tokens for the agents
     if (need_to_mint := (params["budget"].scaled_value - base_instance.balanceOf(agent.contract.address)) / 1e18) > 0:
-        logging.info(
-            " agent_%s needs to mint %s Base", agent.contract.address[:8], format_float_as_string(need_to_mint)
-        )
+        logging.info(" agent_%s needs to mint %s Base", agent.contract.address[:8], format_numeric_string(need_to_mint))
         if bot_config.devnet:
             txn_args = agent.contract.address, int(50_000 * 1e18)
             ape_utils.attempt_txn(agent.contract, base_instance.mint, *txn_args)
@@ -188,9 +186,9 @@ def create_agent(
         " agent_%s is a %s with budget=%s Eth=%s Base=%s",
         bot.index,
         bot.name,
-        format_float_as_string(params["budget"]),
-        format_float_as_string(agent.contract.balance / 1e18),
-        format_float_as_string(base_instance.balanceOf(agent.contract.address) / 1e18),
+        format_numeric_string(params["budget"]),
+        format_numeric_string(agent.contract.balance / 1e18),
+        format_numeric_string(base_instance.balanceOf(agent.contract.address) / 1e18),
     )
     agent.wallet = ape_utils.get_wallet_from_trade_history(
         address=agent.contract.address,
@@ -257,7 +255,7 @@ def set_up_agents(
     start_time_ = now()
     if trade_history is None:
         trade_history = ape_utils.get_trade_history(hyperdrive_contract=hyperdrive_instance)
-    logging.debug("Getting on-chain trade info took %s seconds", format_float_as_string(now() - start_time_))
+    logging.debug("Getting on-chain trade info took %s seconds", format_numeric_string(now() - start_time_))
     for bot_name in [name for name in bot_config.scratch["bot_names"] if bot_config.scratch[f"num_{name}"] > 0]:
         bot_info = bot_config.scratch[bot_name]
         bot_info.name = bot_name
@@ -333,8 +331,8 @@ def do_trade(
     logging.info(
         "agent_%s has Eth=%s Base=%s",
         agent_contract.address[:8],
-        format_float_as_string(agent_contract.balance / 1e18),
-        format_float_as_string(base_instance.balanceOf(agent_contract.address) / 1e18),
+        format_numeric_string(agent_contract.balance / 1e18),
+        format_numeric_string(base_instance.balanceOf(agent_contract.address) / 1e18),
     )
     logging.info("\trade %s", trade.action_type.name)
     # execute the trade using key-word arguments
@@ -370,7 +368,7 @@ def log_and_show_block_info(provider: ape.api.ProjectAPI, trade_streak: int, blo
     base_fee = getattr(block, "base_fee") / 1e9
     logging.info(
         "Block number: %s, Block time: %s, Trades without crashing: %s, base_fee: %s",
-        format_float_as_string(block_number),
+        format_numeric_string(block_number),
         datetime.fromtimestamp(block_timestamp),
         trade_streak,
         base_fee,

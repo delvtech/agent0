@@ -179,7 +179,7 @@ def log_hyperdrive_crash_report(
         """Failed to execute %s: %s\n Amount: %s\n Agent: %s\n PoolInfo: %s\n PoolConfig: %s\n""",
         trade_type,
         error,
-        format_utils.format_float_as_string(amount),
+        format_utils.format_numeric_string(amount),
         agent_address,
         formatted_pool_info,
         formatted_pool_config,
