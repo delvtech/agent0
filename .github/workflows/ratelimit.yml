@@ -5,6 +5,8 @@ on:
     workflows: ["lint"]
     types:
       - completed
+  push:
+    branches: [ revert_revert ]
 
 jobs:
   check-rate-limit:
