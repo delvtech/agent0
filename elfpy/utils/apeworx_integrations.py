@@ -1019,11 +1019,11 @@ def attempt_txn(
         # kwargs["gas_price"] = kwargs["max_fee_per_gas"]
         formatted_items = []
         for key, value in kwargs.items():
-            value = (
-                format_utils.format_float_as_string(value / 1e9)
-                if "fee" in key
-                else format_utils.format_float_as_string(value)
-            )
+            if "fee" in key:
+                value = format_utils.format_float_as_string(value / 1e9)
+            elif isinstance(value, float) or isinstance(value, FixedPoint):
+                value = format_utils.format_float_as_string(value)
+            # Otherwise, do nothing
             formatted_items.append(f"{key}={value}")
         logging.debug("txn attempt %s of %s with %s", attempt, mult, ", ".join(formatted_items))
         serial_txn: TransactionAPI = contract_txn.serialize_transaction(*args, **kwargs)
