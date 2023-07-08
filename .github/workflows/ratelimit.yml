@@ -1,0 +1,20 @@
+name: Check Rate Limit
+
+on:
+  workflow_run:
+    workflows: ["lint"]
+    types:
+      - completed
+
+jobs:
+  check-rate-limit:
+    runs-on: ubuntu-latest
+    steps:
+      - id: calc
+        uses: wakamex/rate-limit-action@master
+        with:
+          token: ${{ secrets.GH_GITHUB_COM_TOKEN }}
+          sha: ${{ github.event.workflow_run.head_sha }}
+          post_comment: true
+    outputs:
+      remaining: ${{ steps.calc.outputs.remaining }}
