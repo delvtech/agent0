@@ -15,12 +15,24 @@ from eth_account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI, BlockNumber
 from eth_utils import address
-from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.contract.contract import Contract, ContractEvent, ContractFunction
+from web3.contract.contract import (
+    Contract,
+    ContractEvent,
+    ContractFunction,
+)
 from web3.middleware import geth_poa
-from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
+from web3.types import (
+    ABI,
+    ABIEvent,
+    BlockData,
+    EventData,
+    LogReceipt,
+    TxReceipt,
+)
+
+from fixedpointmath import FixedPoint
 
 from elfpy.data.db_schema import PoolConfig, PoolInfo, Transaction, WalletInfo
 from elfpy.markets.hyperdrive import hyperdrive_assets
@@ -56,15 +68,35 @@ class HyperdriveAddressesJson:
     mock_hyperdrive_math: str = attr.ib()
 
 
-def get_account_balance_for_contract(funding_contract: Contract, account_address: str) -> int:
-    """Return the balance of the account"""
-    return funding_contract.functions.balanceOf(account_address).call()
+def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs: dict | None = None) -> Web3:
+    """Initialize a Web3 instance using an HTTP provider and inject a geth Proof of Authority (poa) middleware.
+
+    Arguments
+    ---------
+    ethereum_node: URI | str
+        Address of the http provider
+    request_kwargs: dict
+        The HTTPProvider uses the python requests library for making requests.
+        If you would like to modify how requests are made,
+        you can use the request_kwargs to do so.
+    """
+    if request_kwargs is None:
+        request_kwargs = {}
+    provider = Web3.HTTPProvider(ethereum_node, request_kwargs)
+    web3 = Web3(provider)
+    web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
+    return web3
 
 
 def fund_account(funding_contract: Contract, account_address: str, amount: int) -> HexBytes:
     """Add funds to the account"""
     tx_receipt = funding_contract.functions.mint(account_address, amount).transact()
     return tx_receipt
+
+
+def get_account_balance_for_contract(funding_contract: Contract, account_address: str) -> int:
+    """Return the balance of the account"""
+    return funding_contract.functions.balanceOf(account_address).call()
 
 
 def load_all_abis(abi_folder: str) -> dict:
@@ -146,26 +178,6 @@ def get_smart_contract_read_call(contract: Contract, function_name: str, **funct
     assert len(return_value_keys) == len(return_values)
     function_return_dict = dict((variable_name, info) for variable_name, info in zip(return_value_keys, return_values))
     return function_return_dict
-
-
-def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs: dict | None = None) -> Web3:
-    """Initialize a Web3 instance using an HTTP provider and inject a geth Proof of Authority (poa) middleware.
-
-    Arguments
-    ---------
-    ethereum_node: URI | str
-        Address of the http provider
-    request_kwargs: dict
-        The HTTPProvider uses the python requests library for making requests.
-        If you would like to modify how requests are made,
-        you can use the request_kwargs to do so.
-    """
-    if request_kwargs is None:
-        request_kwargs = {}
-    provider = Web3.HTTPProvider(ethereum_node, request_kwargs)
-    web3 = Web3(provider)
-    web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
-    return web3
 
 
 def fetch_address_from_url(contracts_url: str) -> HyperdriveAddressesJson:
