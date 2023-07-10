@@ -202,13 +202,13 @@ def get_event_object(
 
 def smart_contract_read_call(contract: Contract, function_name: str, **function_args) -> dict[Any, Any]:
     """Get a smart contract read call"""
-    # TODO: Fix this up to actually decode the ABI using web3
-    # decode ABI to get variable names
     abi: ABI = contract.abi
-    abi_function_index = [idx for idx in range(len(abi)) if abi[idx].get("name") == function_name][0]
-    abi_outputs = abi[abi_function_index].get("outputs")
-    if not isinstance(abi_outputs, Sequence):
+    abi_function_index = [idx for idx in range(len(abi)) if abi[idx].get("name") == function_name]
+    if len(abi_function_index) == 0:
         raise AssertionError("could not find outputs in the abi")
+    abi_outputs = abi[abi_function_index[0]].get("outputs")
+    if not isinstance(abi_outputs, Sequence):
+        raise AssertionError(f"abi for {function_name} does not have a sequence of outputs")
     abi_components = abi_outputs[0].get("components")
     if abi_components is None:
         raise AssertionError("could not find output components in the abi")
