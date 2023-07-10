@@ -74,3 +74,20 @@ This will generate `bots_config.default.json`, which you can feed into `evm_bots
 ```bash
 evm_bots.py bots_config.default.json
 ```
+
+## Data pipeline
+The data pipeline queries the running chain and exports data to a postgres database. The `infra` repostitory spins up a local postgres instance via Docker, and the data piepline will point to this by default. Optinally, you can also configure the backend database by specifying the following environmental variables (for example, in a `.env` file in the base of the repo):
+
+```bash
+POSTGRES_USER="admin"
+POSTGRES_PASSWORD="password"
+POSTGRES_DB="postgres_db"
+POSTGRES_HOST="localhost"
+POSTGRES_PORT=5432
+```
+
+The data script can be then ran using the following command:
+
+```bash
+python elfpy/data/acquire_data.py
+```
