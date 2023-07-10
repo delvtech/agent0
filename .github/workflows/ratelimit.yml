@@ -13,7 +13,7 @@ jobs:
       - id: calc
         uses: wakamex/rate-limit-action@master
         with:
-          token: ${{ secrets.GH_GITHUB_COM_TOKEN }}
+          token: ${{ secrets.GH_GITHUB_COM_TOKEN || github.token}}
           sha: ${{ github.event.workflow_run.head_sha }}
           post_comment: true
     outputs:
