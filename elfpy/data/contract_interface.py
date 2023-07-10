@@ -206,7 +206,7 @@ def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddress
 
     Arguments
     ---------
-    web3_container: Web3
+    web3: Web3
         web3 provider object
     abis: dict
         A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
@@ -232,7 +232,7 @@ def get_funding_contract(web3: Web3, abis: dict, addresses: HyperdriveAddressesJ
     """Get the funding contract for a given abi
     Arguments
     ---------
-    web3_container: Web3
+    web3: Web3
         web3 provider object
     abis: dict
         A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
@@ -261,7 +261,7 @@ def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: B
 
     Arguments
     ---------
-    web3_container: Web3
+    web3: Web3
         web3 provider object
     hyperdrive_contract: Contract
         The contract to query the pool info from
@@ -305,13 +305,13 @@ def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: B
     return out_transactions
 
 
-def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:
+def get_block_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:
     """
     Returns the block pool info from the Hyperdrive contract
 
     Arguments
     ---------
-    web3_container: Web3
+    web3: Web3
         web3 provider object
     hyperdrive_contract: Contract
         The contract to query the pool info from
@@ -331,7 +331,7 @@ def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, blo
         key: _convert_scaled_value(value) for (key, value) in pool_info_data_dict.items()
     }
 
-    current_block: BlockData = web3_container.eth.get_block(block_number)
+    current_block: BlockData = web3.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
     if current_block_timestamp is None:
         raise AssertionError("Current block has no timestamp")
