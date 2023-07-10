@@ -98,7 +98,7 @@ def set_account_balance(web3: Web3, account_address: str, amount_wei: int) -> RP
         amount_wei to fund, in wei
     """
     # TODO: Assert that we are using anvil (devnet) to be able to call anvil_setBalance
-    params = [account_address, web3.to_hex(amount_wei)]  # account, amount
+    params = [account_address, hex(amount_wei)]  # web3.to_hex(amount_wei)]  # account, amount
     tx_receipt = web3.provider.make_request(method="anvil_setBalance", params=params)
     return tx_receipt
 
