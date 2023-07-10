@@ -29,6 +29,7 @@ from web3.types import (
     BlockData,
     EventData,
     LogReceipt,
+    RPCResponse,
     TxReceipt,
 )
 
@@ -88,9 +89,42 @@ def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs:
     return web3
 
 
-def fund_account(funding_contract: Contract, account_address: str, amount: int) -> HexBytes:
-    """Add funds to the account"""
-    tx_receipt = funding_contract.functions.mint(account_address, amount).transact()
+def set_account_balance(web3: Web3, account_address: str, amount_wei: int) -> RPCResponse:
+    """Set an the account using the web3 provider
+
+    Arguments
+    ---------
+    amount_wei : int
+        amount_wei to fund, in wei
+    """
+    # TODO: Assert that we are using anvil (devnet) to be able to call anvil_setBalance
+    params = [account_address, web3.to_hex(amount_wei)]  # account, amount
+    tx_receipt = web3.provider.make_request(method="anvil_setBalance", params=params)
+    return tx_receipt
+
+
+def fund_account(
+    web3: Web3, funding_contract: Contract, account_address: str, amount_wei: int, from_address: str
+) -> HexBytes:
+    """Add funds to the account
+
+    Arguments
+    ---------
+    amount_wei : int
+        amount_wei to fund, in wei
+    funding_contract : Contract | None
+        If a Contract, call the `mint` functionfor the amount.
+    """
+    tx_hash = funding_contract.functions.approve(account_address, amount_wei).transact(
+        {
+            "type": "0x2",  # dynamic fee transaction
+            "from": from_address,  # who is prividing the funds
+            "maxPriorityFeePerGas": 0,  # tip; maxFeePerGas = baseFeePerGas + maxPriorityFeePerGas
+        }
+    )
+    # wait for approval to complete
+    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    tx_receipt = funding_contract.functions.mint(account_address, amount_wei).transact()
     return tx_receipt
 
 
