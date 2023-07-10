@@ -128,9 +128,17 @@ def fund_account(
     return tx_receipt
 
 
-def get_account_balance_for_contract(funding_contract: Contract, account_address: str) -> int:
+def get_account_balance_from_contract(funding_contract: Contract, account_address: str) -> int:
     """Return the balance of the account"""
     return funding_contract.functions.balanceOf(account_address).call()
+
+
+def get_account_balance_from_provider(web3: Web3, account_address: str) -> int | None:
+    """Get the balance for an account deployed on the web3 provider"""
+    if account_address in web3.eth.accounts:
+        tx_receipt = web3.provider.make_request(method="eth_getBalance", params=[account_address, "latest"])
+        return int(tx_receipt["result"], 16)
+    return None
 
 
 def load_all_abis(abi_folder: str) -> dict:
