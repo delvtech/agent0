@@ -423,7 +423,7 @@ def get_wallet_from_trade_history(
         if balance != 0 or on_chain_balance != 0:  # check if there's an outstanding balance
             if asset_type == "SHORT":
                 previous_balance = wallet.shorts[mint_time].balance if mint_time in wallet.shorts else 0
-                delta_balance = BigFP(balance)
+                delta_balance = FixedPoint(scaled_value=int(round(balance)))
                 new_balance = previous_balance + delta_balance
                 if new_balance == 0:
                     wallet.shorts.pop(mint_time, None)
@@ -432,14 +432,16 @@ def get_wallet_from_trade_history(
                         previous_share_price = (
                             wallet.shorts[mint_time].open_share_price if mint_time in wallet.shorts else 0
                         )
-                        delta_open_share_price = BigFP(trade_history.share_price.iloc[0].item())
+                        delta_open_share_price = trade_history.share_price.iloc[0].item()
+                        delta_open_share_price = FixedPoint(scaled_value=int(round(delta_open_share_price)))
                         # weighted average update: new_y = ( old_x * old_y + new_x * new_y ) / (old_x + new_x)
                         updated_open_share_price = (
                             previous_balance * previous_share_price + delta_balance * delta_open_share_price
                         ) / new_balance
                     else:  # weighted average across a bunch of trades, assuming trade_history contains EVERY trade
                         value = trades_df["value"] * np.where(trades_df["from"] == address, -1, 1)
-                        updated_open_share_price = BigFP(np.average(trades_df["share_price"], weights=value))
+                        updated_open_share_price = np.average(trades_df["share_price"], weights=value)
+                        updated_open_share_price = FixedPoint(scaled_value=int(round(updated_open_share_price)))
                         if abs(balance - value.sum()) > tolerance:
                             raise ValueError("weighted average open share price calculation is wrong")
                         logging.debug("calculated weighted average open share price of %s", updated_open_share_price)
