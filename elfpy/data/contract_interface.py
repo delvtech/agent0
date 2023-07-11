@@ -117,11 +117,6 @@ def mint_tokens(token_contract: Contract, account_address: str, amount_wei: int)
     return tx_receipt
 
 
-def get_account_balance_from_contract(token_contract: Contract, account_address: str) -> int:
-    """Return the balance of the account"""
-    return token_contract.functions.balanceOf(account_address).call()
-
-
 def get_account_balance_from_provider(web3: Web3, account_address: str) -> int | None:
     """Get the balance for an account deployed on the web3 provider"""
     if not web3.is_checksum_address(account_address):
@@ -213,10 +208,16 @@ def smart_contract_read_call(contract: Contract, function_name: str, **function_
     return function_return_dict
 
 
+def simple_smart_contract_read_call(contract: Contract, function_name: str, *fn_args) -> int:
+    """Execute a named read function on a contract that does not require a signature & gas"""
+    func_handle = contract.get_function_by_name(function_name)(*fn_args)
+    return func_handle.call()
+
+
 def smart_contract_transact(
     web3: Web3, contract: Contract, function_name: str, from_account: TestAccount, *fn_args
 ) -> TxReceipt:
-    """Execute a named function on a contract"""
+    """Execute a named function on a contract that requires a signature & gas"""
     func_handle = contract.get_function_by_name(function_name)(*fn_args)
     unsent_txn = func_handle.build_transaction(
         {
