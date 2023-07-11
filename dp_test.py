@@ -1,5 +1,6 @@
-from web3.contract.contract import Contract
 from fixedpointmath import FixedPoint
+from web3.contract.contract import Contract
+
 from elfpy.data import contract_interface as ci
 
 # define constants
@@ -41,7 +42,7 @@ test_ether_balance = ci.get_account_balance_from_provider(web3, test_account.che
 print(f"ether balance for acccount {test_account.checksum_address=}:\n\t{test_ether_balance=}")
 
 # check token balance
-test_token_balance = ci.simple_smart_contract_read_call(base_token_contract, "balanceOf", test_account.checksum_address)
+test_token_balance = ci.smart_contract_read_call(base_token_contract, "balanceOf", test_account.checksum_address)
 print(f"token balance for acccount {test_account.checksum_address=}:\n\t{test_token_balance=}")
 # fund test account by minting with the ERC20 base account
 tx_receipt = ci.mint_tokens(base_token_contract, test_account.checksum_address, initial_supply)
@@ -49,41 +50,39 @@ tx_receipt = ci.mint_tokens(base_token_contract, test_account.checksum_address, 
 test_token_balance = ci.smart_contract_read_call(base_token_contract, "balanceOf", test_account.checksum_address)
 print(f"token balance AFTER funding for account {test_account.checksum_address=}:\n\t{test_token_balance=}")
 
-# # set up hyperdrive contract
-# hyperdrive_contract: Contract = web3.eth.contract(
-#     abi=hyperdrive_abis[HYPERDRIVE_ABI],
-#     address=addresses.mock_hyperdrive,
-# )
-#
-#
-# # approve hyperdrive_contract to withdraw test_account's tokens from base_contract
+# set up hyperdrive contract
+hyperdrive_contract: Contract = web3.eth.contract(
+    abi=hyperdrive_abis[HYPERDRIVE_ABI],
+    address=addresses.mock_hyperdrive,
+)
+
+# approve hyperdrive_contract to withdraw test_account's tokens from base_contract
+tx_receipt = ci.smart_contract_transact(
+    web3, base_token_contract, "approve", test_account, hyperdrive_contract.address, initial_supply
+)
+
+# initialize hyperdrive
 # tx_receipt = ci.smart_contract_transact(
-#     web3, base_token_contract, "approve", test_account, hyperdrive_contract.address, initial_supply
+#    web3,
+#    hyperdrive_contract,
+#    "initialize",
+#    test_account,
+#    initial_supply,
+#    initial_apr,
+#    test_account.checksum_address,
+#    True,
 # )
-#
-# # initialize hyperdrive
-# # tx_receipt = ci.smart_contract_transact(
-# #    web3,
-# #    hyperdrive_contract,
-# #    "initialize",
-# #    test_account,
-# #    initial_supply,
-# #    initial_apr,
-# #    test_account.checksum_address,
-# #    True,
-# # )
-#
-# # test_account should have lost some money
-# test_token_balance = ci.smart_contract_read_call(base_token_contract, "balanceOf", value=test_account.checksum_address)
-# print(f"token balance initializing hyperdrive for account {test_account.checksum_address=}:\n\t{test_token_balance=}")
-#
-# # amount of share_reserves in the pool should equal the initial_supply * share_price
-# pool_info_data_dict = ci.smart_contract_read_call(hyperdrive_contract, "getPoolInfo")
-# share_reserves = FixedPoint(scaled_value=pool_info_data_dict["shareReserves"])
-# share_price = FixedPoint(scaled_value=pool_info_data_dict["sharePrice"])
-# initial_supply = FixedPoint(scaled_value=initial_supply)
-# print(f"\n{pool_info_data_dict=}")
-# print(f"\n{share_reserves=}")
-# print(f"{initial_supply * share_price=}")
-# print(f"{(share_reserves - (initial_supply * share_price))=}")
-#
+
+# test_account should have lost some money
+test_token_balance = ci.smart_contract_read_call(base_token_contract, "balanceOf", test_account.checksum_address)
+print(f"token balance initializing hyperdrive for account {test_account.checksum_address=}:\n\t{test_token_balance=}")
+
+# amount of share_reserves in the pool should equal the initial_supply * share_price
+pool_info_data_dict = ci.smart_contract_read_call(hyperdrive_contract, "getPoolInfo")
+share_reserves = FixedPoint(scaled_value=pool_info_data_dict["shareReserves"])
+share_price = FixedPoint(scaled_value=pool_info_data_dict["sharePrice"])
+initial_supply = FixedPoint(scaled_value=initial_supply)
+print(f"\n{pool_info_data_dict=}")
+print(f"\n{share_reserves=}")
+print(f"{initial_supply * share_price=}")
+print(f"{(share_reserves - (initial_supply * share_price))=}")

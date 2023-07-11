@@ -15,25 +15,12 @@ from eth_account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI, BlockNumber
 from eth_utils import address
+from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.contract.contract import (
-    Contract,
-    ContractEvent,
-    ContractFunction,
-)
+from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
-from web3.types import (
-    ABI,
-    ABIEvent,
-    BlockData,
-    EventData,
-    LogReceipt,
-    RPCResponse,
-    TxReceipt,
-)
-
-from fixedpointmath import FixedPoint
+from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, RPCResponse, TxReceipt
 
 from elfpy.data.db_schema import PoolConfig, PoolInfo, Transaction, WalletInfo
 from elfpy.markets.hyperdrive import hyperdrive_assets
@@ -187,45 +174,49 @@ def get_event_object(
 
 
 def smart_contract_read_call(contract: Contract, function_name: str, *fn_args, **fn_kwargs) -> Any:
-    """Return from a smart contract read call"""
-    if fn_args and fn_kwargs:
-        raise ValueError("contract function can only receive ordered arguments OR keyword arguments, not both")
+    """Return from a smart contract read call
+
+    .. todo::
+        function to recursively find component names & types
+        function to dynamically assign types to output variables
+            would be cool if this also put stuff into FixedPoint
+    """
     # get the callable contract function from function_name & call it
-    function: ContractFunction = contract.get_function_by_name(function_name)()
-    if fn_args:
-        return_values = function.call(*fn_args)
-    else:
-        return_values = function.call(**fn_kwargs)
-    if not hasattr(contract, "abi"):
+    function: ContractFunction = contract.get_function_by_name(function_name)(*fn_args, **fn_kwargs)
+    return_values = function.call()
+    if not isinstance(return_values, Sequence):
+        print(f"{return_values=}")
+        return_values = [return_values]
+    if not contract.abi:  # not all contracts have an associated ABI
         return return_values
     # if the contract has an abi, then parse the names of the returned values
     abi: ABI = contract.abi
-    abi_function_index = [idx for idx in range(len(abi)) if abi[idx].get("name") == function_name]
-    if not (abi_function_index or abi[abi_function_index[0]].get("outputs")):
+    # get the interface for this function
+    function_abi = None
+    for func_abi in abi:  # loop over each entery in the abi list
+        if func_abi.get("name") == function_name:  # check the name
+            function_abi = func_abi  # pull out the one with the desired name
+            break
+    if not (function_abi or function_abi.get("outputs")):
         logging.warning("could not find function_name=%s in contract abi", function_name)
         return return_values  # return the original  values
-    abi_outputs = abi[abi_function_index[0]].get("outputs")
-    if not isinstance(abi_outputs, Sequence):
-        raise AssertionError(f"abi for {function_name} does not have a sequence of outputs")
-    if len(abi_outputs) > 0:
-        raise AssertionError(f"abi for {function_name} has too many outputs")
-    abi_components = abi_outputs[0].get("components")
-    if abi_components:  # return
-        return_value_keys = [component.get("name") for component in abi_components]
+    # get the return names & types for this function
+    if len(function_abi.get("outputs")) != 1:
+        raise ValueError(f"ABI outputs list should have len==1, not {len(function_abi.get('outputs'))=}")
+    abi_outputs = function_abi.get("outputs")[0]
+    if abi_outputs.get("type") == "tuple":  # multiple outputs
+        abi_components = abi_outputs.get("components")
+        return_value_names_and_types = [(component.get("name"), component.get("type")) for component in abi_components]
     else:
-        return_value_keys = list(
-            abi_outputs[0].get("name") if abi_outputs[0].get("name") else abi_outputs[0].get("internalType")
-        )
-    # associate returned values with the keys
-    assert len(return_value_keys) == len(return_values)
-    function_return_dict = dict((variable_name, info) for variable_name, info in zip(return_value_keys, return_values))
+        return_value_name = abi_outputs.get("name") if abi_outputs.get("name") else "none"
+        return_value_names_and_types = [(return_value_name, abi_outputs.get("type"))]
+    if len(return_value_names_and_types) != len(return_values):
+        raise AssertionError(f"{len(return_value_names_and_types)=} must equal {len(return_values)=}.")
+    function_return_dict = dict(
+        (var_name_and_type[0], var_value)
+        for var_name_and_type, var_value in zip(return_value_names_and_types, return_values)
+    )
     return function_return_dict
-
-
-def simple_smart_contract_read_call(contract: Contract, function_name: str, *fn_args) -> int:
-    """Execute a named read function on a contract that does not require a signature & gas"""
-    func_handle = contract.get_function_by_name(function_name)(*fn_args)
-    return func_handle.call()
 
 
 def smart_contract_transact(
