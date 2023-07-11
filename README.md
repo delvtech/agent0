@@ -6,6 +6,7 @@
 # [DELV](https://delv.tech) market simulation and analysis
 
 This project is a work-in-progress. All code is provided as is and without guarantee.
+The language used in this code and documentation is not intended to, and does not, have any particular financial, legal, or regulatory significance.
 
 Documentation can be found [here](https://elfpy.delv.tech).
 
