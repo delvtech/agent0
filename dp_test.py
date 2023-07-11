@@ -4,6 +4,7 @@ from fixedpointmath import FixedPoint
 
 from elfpy.data import contract_interface as ci
 
+# define constants
 ETHEREUM_NODE = "http://localhost:8545"
 CONTRACTS_URL = "http://localhost:80/addresses.json"
 BUILD_FOLDER = "./hyperdrive_solidity/.build"
@@ -14,7 +15,7 @@ initial_supply = int(10e18)  # wei
 initial_apr = int(0.1e18)
 extra_entropy = "BEEP BOOP"
 
-# Generate the contract object
+# generate the contract object
 web3 = ci.initialize_web3_with_http_provider(ETHEREUM_NODE)
 tx_receipt = web3.provider.make_request(method="anvil_reset", params=[])
 print(f"\n{web3.eth.gas_price=}")
@@ -41,7 +42,7 @@ print(f"ether balance for {meta_account=}:\n\t{meta_ether_balance=}")
 
 # set and check again
 meta_funding_amount = int(web3.to_wei(148, "ether"))
-tx_receipt = ci.set_account_balance(web3, meta_account, meta_funding_amount)
+rpc_response = ci.set_account_balance(web3, meta_account, meta_funding_amount)
 meta_ether_balance = ci.get_account_balance_from_provider(web3, meta_account)
 print(f"ether balance after setting for {meta_account=}:\n\t{meta_ether_balance=}")
 
@@ -52,20 +53,19 @@ test_account = ci.TestAccount(extra_entropy)
 test_ether_balance = ci.get_account_balance_from_provider(web3, test_account.checksum_address)
 print(f"\nether balance for acccount {test_account.checksum_address=}:\n\t{test_ether_balance=}")
 # fund test account with ether
-rpc_response = ci.set_account_balance(web3, test_account.checksum_address, int(web3.to_wei(100, "ether")))
-print(f"{rpc_response=}")
+rpc_response = ci.set_account_balance(web3, test_account.checksum_address, int(web3.to_wei(1000, "ether")))
 test_ether_balance = ci.get_account_balance_from_provider(web3, test_account.checksum_address)
 print(f"ether balance for acccount {test_account.checksum_address=}:\n\t{test_ether_balance=}")
 
 # check token balance
 test_token_balance = ci.get_account_balance_from_contract(base_token_contract, test_account.checksum_address)
-print(f"\ntoken balance for acccount {test_account.checksum_address=}:\n\t{test_token_balance=}")
-# fund test account from the ERC20 mint account
-tx_receipt = ci.mint_tokens(web3, base_token_contract, test_account.checksum_address, initial_supply, meta_account)
+print(f"token balance for acccount {test_account.checksum_address=}:\n\t{test_token_balance=}")
+# fund test account by minting with the ERC20 base account
+tx_receipt = ci.mint_tokens(base_token_contract, test_account.checksum_address, initial_supply)
 test_token_balance = ci.get_account_balance_from_contract(base_token_contract, test_account.checksum_address)
 print(f"token balance AFTER funding for account {test_account.checksum_address=}:\n\t{test_token_balance=}")
 
-# initialize the hyperdrive contract
+# set up hyperdrive contract
 hyperdrive_contract: Contract = web3.eth.contract(
     abi=hyperdrive_abis[HYPERDRIVE_ABI],
     address=addresses.mock_hyperdrive,
@@ -74,26 +74,31 @@ hyperdrive_contract: Contract = web3.eth.contract(
 # function to approve hyperdrive contract to withdraw from the base contract
 func_handle = base_token_contract.functions.approve(hyperdrive_contract.address, initial_supply)
 
-# estimate gas for the function
-gas = func_handle.estimate_gas({"from": meta_account}) * web3.eth.gas_price
-print(f"\nHyperdrive initialize estimated {gas/1e18=}")
-
-
+# approve test_accounts' base tokens to go to the hyperdrive contract
 unsent_txn = func_handle.build_transaction(
     {
         "from": test_account.checksum_address,
         "nonce": web3.eth.get_transaction_count(test_account.checksum_address),
     }
 )
-
 signed_txn = test_account.account.sign_transaction(unsent_txn)
 tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
 
+# initialize hyperdrive
+func_handle = hyperdrive_contract.functions.initialize(initial_supply, initial_apr, test_account.checksum_address, True)
+unsent_txn = func_handle.build_transaction(
+    {
+        "from": test_account.checksum_address,
+        "nonce": web3.eth.get_transaction_count(test_account.checksum_address),
+    }
+)
+signed_txn = test_account.account.sign_transaction(unsent_txn)
+tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
 
 # FIXME: Hyperdrive appears to be initialized, but
 # 1. the account balance does not go down
-print(f"\n{ci.get_account_balance_from_contract(base_token_contract, test_account.checksum_address)=}")
-print(f"{ci.get_account_balance_from_contract(base_token_contract, meta_account)=}")
+test_token_balance = ci.get_account_balance_from_contract(base_token_contract, test_account.checksum_address)
+print(f"token balance initializing hyperdrive for account {test_account.checksum_address=}:\n\t{test_token_balance=}")
 
 # 2. the share reserves does not match the initial supply * the share price
 pool_info_data_dict = ci.smart_contract_read_call(hyperdrive_contract, "getPoolInfo")

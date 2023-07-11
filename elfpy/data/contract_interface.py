@@ -98,32 +98,21 @@ def set_account_balance(web3: Web3, account_address: str, amount_wei: int) -> RP
         amount_wei to fund, in wei
     """
     # TODO: Assert that we are using anvil (devnet) to be able to call anvil_setBalance
+    if not web3.is_checksum_address(account_address):
+        raise ValueError(f"argument {account_address=} must be a checksum address")
     params = [account_address, hex(amount_wei)]  # account, amount
     rpc_response = web3.provider.make_request(method="anvil_setBalance", params=params)
     return rpc_response
 
 
-def mint_tokens(
-    web3: Web3, token_contract: Contract, account_address: str, amount_wei: int, from_address: str
-) -> HexBytes:
+def mint_tokens(token_contract: Contract, account_address: str, amount_wei: int) -> HexBytes:
     """Add funds to the account
 
     Arguments
     ---------
     amount_wei : int
         amount_wei to fund, in wei
-    funding_contract : Contract | None
-        If a Contract, call the `mint` functionfor the amount.
     """
-    # tx_hash = token_contract.functions.approve(account_address, amount_wei).transact(
-    #    {
-    #        "type": "0x2",  # dynamic fee transaction
-    #        "from": from_address,  # who is prividing the funds
-    #        "maxPriorityFeePerGas": 0,  # tip; maxFeePerGas = baseFeePerGas + maxPriorityFeePerGas
-    #    }
-    # )
-    ## wait for approval to complete
-    # tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     tx_receipt = token_contract.functions.mint(account_address, amount_wei).transact()
     return tx_receipt
 
@@ -135,9 +124,11 @@ def get_account_balance_from_contract(token_contract: Contract, account_address:
 
 def get_account_balance_from_provider(web3: Web3, account_address: str) -> int | None:
     """Get the balance for an account deployed on the web3 provider"""
-    if account_address in web3.eth.accounts:
-        tx_receipt = web3.provider.make_request(method="eth_getBalance", params=[account_address, "latest"])
-        return int(tx_receipt["result"], 16)
+    if not web3.is_checksum_address(account_address):
+        raise ValueError(f"argument {account_address=} must be a checksum address")
+    rpc_response = web3.provider.make_request(method="eth_getBalance", params=[account_address, "latest"])
+    if rpc_response["result"] is not None:
+        return int(rpc_response["result"], 16)
     return None
 
 
