@@ -213,6 +213,24 @@ def smart_contract_read_call(contract: Contract, function_name: str, **function_
     return function_return_dict
 
 
+def smart_contract_transact(
+    web3: Web3, contract: Contract, function_name: str, from_account: TestAccount, *fn_args
+) -> TxReceipt:
+    """Execute a named function on a contract"""
+    func_handle = contract.get_function_by_name(function_name)(*fn_args)
+    unsent_txn = func_handle.build_transaction(
+        {
+            "from": from_account.checksum_address,
+            "nonce": web3.eth.get_transaction_count(from_account.checksum_address),
+        }
+    )
+    signed_txn = from_account.account.sign_transaction(unsent_txn)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    # wait for approval to complete
+    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    return tx_receipt
+
+
 def fetch_address_from_url(contracts_url: str) -> HyperdriveAddressesJson:
     """Fetch addresses for deployed contracts in the Hyperdrive system."""
     attempt_num = 0

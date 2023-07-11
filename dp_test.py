@@ -71,36 +71,27 @@ hyperdrive_contract: Contract = web3.eth.contract(
     address=addresses.mock_hyperdrive,
 )
 
-# function to approve hyperdrive contract to withdraw from the base contract
-func_handle = base_token_contract.functions.approve(hyperdrive_contract.address, initial_supply)
 
-# approve test_accounts' base tokens to go to the hyperdrive contract
-unsent_txn = func_handle.build_transaction(
-    {
-        "from": test_account.checksum_address,
-        "nonce": web3.eth.get_transaction_count(test_account.checksum_address),
-    }
+# function to approve hyperdrive contract to withdraw from the base contract
+tx_receipt = ci.smart_contract_transact(
+    web3, base_token_contract, "approve", test_account, hyperdrive_contract.address, initial_supply
 )
-signed_txn = test_account.account.sign_transaction(unsent_txn)
-tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
 
 # initialize hyperdrive
-func_handle = hyperdrive_contract.functions.initialize(initial_supply, initial_apr, test_account.checksum_address, True)
-unsent_txn = func_handle.build_transaction(
-    {
-        "from": test_account.checksum_address,
-        "nonce": web3.eth.get_transaction_count(test_account.checksum_address),
-    }
+tx_receipt = ci.smart_contract_transact(
+    web3,
+    hyperdrive_contract,
+    "initialize",
+    test_account,
+    initial_supply,
+    initial_apr,
+    test_account.checksum_address,
+    True,
 )
-signed_txn = test_account.account.sign_transaction(unsent_txn)
-tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
 
-# FIXME: Hyperdrive appears to be initialized, but
-# 1. the account balance does not go down
 test_token_balance = ci.get_account_balance_from_contract(base_token_contract, test_account.checksum_address)
 print(f"token balance initializing hyperdrive for account {test_account.checksum_address=}:\n\t{test_token_balance=}")
 
-# 2. the share reserves does not match the initial supply * the share price
 pool_info_data_dict = ci.smart_contract_read_call(hyperdrive_contract, "getPoolInfo")
 share_reserves = FixedPoint(scaled_value=pool_info_data_dict["shareReserves"])
 share_price = FixedPoint(scaled_value=pool_info_data_dict["sharePrice"])
@@ -109,14 +100,6 @@ print(f"\n{pool_info_data_dict=}")
 print(f"\n{share_reserves=}")
 print(f"{initial_supply * share_price=}")
 print(f"{(share_reserves - (initial_supply * share_price))=}")
-
-
-# TODO:
-# def smart_contract_transact(contract, function_name: str, from_address, kwargs):
-#    tx_hash = contract.functions.get_attr(function_name)(**kwargs).transact({"from": from_address})
-#    # wait for approval to complete
-#    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-#    return tx_receipt
 
 
 # Helper functions:
