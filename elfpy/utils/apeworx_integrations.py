@@ -324,18 +324,6 @@ def get_trade_history(
     return trades
 
 
-def BigFP(value):
-    """Create FixedPoint from a big number."""
-    if float(value) < 1e18:
-        raise ValueError("Scaled vale < 1e18, likely unintended behavior.")
-    # check if it's a NumPy class
-    if isinstance(value, np.ndarray):
-        # convert it to a Python class
-        value = value.item()
-    if not isinstance(value, int):
-        value = int(round(value))
-    return FixedPoint(scaled_value=value)
-
 def get_wallet_from_trade_history(
     address: str,
     trade_history: pd.DataFrame,
@@ -423,7 +411,7 @@ def get_wallet_from_trade_history(
         if balance != 0 or on_chain_balance != 0:  # check if there's an outstanding balance
             if asset_type == "SHORT":
                 previous_balance = wallet.shorts[mint_time].balance if mint_time in wallet.shorts else 0
-                delta_balance = FixedPoint(scaled_value=int(round(balance)))
+                delta_balance = FixedPoint(scaled_value=int(round(previous_balance)))
                 new_balance = previous_balance + delta_balance
                 if new_balance == 0:
                     wallet.shorts.pop(mint_time, None)
@@ -449,7 +437,8 @@ def get_wallet_from_trade_history(
                     logging.debug("storing in wallet as %s", {mint_time: Short(new_balance, updated_open_share_price)})
             elif asset_type == "LONG":
                 previous_balance = wallet.longs[mint_time].balance if mint_time in wallet.longs else 0
-                new_balance = previous_balance + BigFP(balance)
+                delta_balance = FixedPoint(scaled_value=int(round(previous_balance)))
+                new_balance = previous_balance + delta_balance
                 if new_balance == 0:  # remove empty position from wallet
                     wallet.longs.pop(mint_time, None)
                 else:  # update non-zero position in wallet
