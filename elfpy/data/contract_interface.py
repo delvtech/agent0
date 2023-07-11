@@ -186,22 +186,36 @@ def get_event_object(
     return (None, None)
 
 
-def smart_contract_read_call(contract: Contract, function_name: str, **function_args) -> dict[Any, Any]:
-    """Get a smart contract read call"""
+def smart_contract_read_call(contract: Contract, function_name: str, *fn_args, **fn_kwargs) -> Any:
+    """Return from a smart contract read call"""
+    if fn_args and fn_kwargs:
+        raise ValueError("contract function can only receive ordered arguments OR keyword arguments, not both")
+    # get the callable contract function from function_name & call it
+    function: ContractFunction = contract.get_function_by_name(function_name)()
+    if fn_args:
+        return_values = function.call(*fn_args)
+    else:
+        return_values = function.call(**fn_kwargs)
+    if not hasattr(contract, "abi"):
+        return return_values
+    # if the contract has an abi, then parse the names of the returned values
     abi: ABI = contract.abi
     abi_function_index = [idx for idx in range(len(abi)) if abi[idx].get("name") == function_name]
-    if len(abi_function_index) == 0:
-        raise AssertionError("could not find outputs in the abi")
+    if not (abi_function_index or abi[abi_function_index[0]].get("outputs")):
+        logging.warning("could not find function_name=%s in contract abi", function_name)
+        return return_values  # return the original  values
     abi_outputs = abi[abi_function_index[0]].get("outputs")
     if not isinstance(abi_outputs, Sequence):
         raise AssertionError(f"abi for {function_name} does not have a sequence of outputs")
+    if len(abi_outputs) > 0:
+        raise AssertionError(f"abi for {function_name} has too many outputs")
     abi_components = abi_outputs[0].get("components")
-    if abi_components is None:
-        raise AssertionError("could not find output components in the abi")
-    return_value_keys = [component.get("name") for component in abi_components]
-    # get the callable contract function from function_name & call it
-    function: ContractFunction = contract.get_function_by_name(function_name)()
-    return_values = function.call(**function_args)
+    if abi_components:  # return
+        return_value_keys = [component.get("name") for component in abi_components]
+    else:
+        return_value_keys = list(
+            abi_outputs[0].get("name") if abi_outputs[0].get("name") else abi_outputs[0].get("internalType")
+        )
     # associate returned values with the keys
     assert len(return_value_keys) == len(return_values)
     function_return_dict = dict((variable_name, info) for variable_name, info in zip(return_value_keys, return_values))
