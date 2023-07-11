@@ -53,9 +53,9 @@ class TestAccount:
         self.account: LocalAccount = Account().create(extra_entropy=extra_entropy)
 
     @property
-    def address(self) -> str:
-        """Return the address of the account"""
-        return self.account.address
+    def checksum_address(self) -> str:
+        """Return the checksum address of the account"""
+        return Web3.to_checksum_address(self.account.address)
 
 
 @attr.s
@@ -98,13 +98,13 @@ def set_account_balance(web3: Web3, account_address: str, amount_wei: int) -> RP
         amount_wei to fund, in wei
     """
     # TODO: Assert that we are using anvil (devnet) to be able to call anvil_setBalance
-    params = [account_address, hex(amount_wei)]  # web3.to_hex(amount_wei)]  # account, amount
-    tx_receipt = web3.provider.make_request(method="anvil_setBalance", params=params)
-    return tx_receipt
+    params = [account_address, hex(amount_wei)]  # account, amount
+    rpc_response = web3.provider.make_request(method="anvil_setBalance", params=params)
+    return rpc_response
 
 
-def fund_account(
-    web3: Web3, funding_contract: Contract, account_address: str, amount_wei: int, from_address: str
+def mint_tokens(
+    web3: Web3, token_contract: Contract, account_address: str, amount_wei: int, from_address: str
 ) -> HexBytes:
     """Add funds to the account
 
@@ -115,22 +115,22 @@ def fund_account(
     funding_contract : Contract | None
         If a Contract, call the `mint` functionfor the amount.
     """
-    tx_hash = funding_contract.functions.approve(account_address, amount_wei).transact(
-        {
-            "type": "0x2",  # dynamic fee transaction
-            "from": from_address,  # who is prividing the funds
-            "maxPriorityFeePerGas": 0,  # tip; maxFeePerGas = baseFeePerGas + maxPriorityFeePerGas
-        }
-    )
-    # wait for approval to complete
-    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-    tx_receipt = funding_contract.functions.mint(account_address, amount_wei).transact()
+    # tx_hash = token_contract.functions.approve(account_address, amount_wei).transact(
+    #    {
+    #        "type": "0x2",  # dynamic fee transaction
+    #        "from": from_address,  # who is prividing the funds
+    #        "maxPriorityFeePerGas": 0,  # tip; maxFeePerGas = baseFeePerGas + maxPriorityFeePerGas
+    #    }
+    # )
+    ## wait for approval to complete
+    # tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    tx_receipt = token_contract.functions.mint(account_address, amount_wei).transact()
     return tx_receipt
 
 
-def get_account_balance_from_contract(funding_contract: Contract, account_address: str) -> int:
+def get_account_balance_from_contract(token_contract: Contract, account_address: str) -> int:
     """Return the balance of the account"""
-    return funding_contract.functions.balanceOf(account_address).call()
+    return token_contract.functions.balanceOf(account_address).call()
 
 
 def get_account_balance_from_provider(web3: Web3, account_address: str) -> int | None:
