@@ -22,8 +22,10 @@ from web3.types import (
 )
 
 from elfpy.data.db_schema import Transaction
-from elfpy import eth
 from elfpy.markets.hyperdrive import hyperdrive_assets
+
+from .accounts import AgentAccount
+from .numeric_utils import convert_scaled_value
 
 
 def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
@@ -43,7 +45,9 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
         return_names_and_types = _contract_function_abi_outputs(contract.abi, function_name)
         if return_names_and_types is not None:
             if len(return_names_and_types) != len(return_values):
-                raise AssertionError(f"{len(return_names_and_types)=} must equal {len(return_values)=}.")
+                raise AssertionError(
+                    f"{len(return_names_and_types)=} must equal {len(return_values)=}.\n{return_names_and_types=}\n{return_values=}"
+                )
             function_return_dict = dict(
                 (var_name_and_type[0], var_value)
                 for var_name_and_type, var_value in zip(return_names_and_types, return_values)
@@ -53,7 +57,7 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
 
 
 def smart_contract_transact(
-    web3: Web3, contract: Contract, function_name: str, from_account: eth.accounts.AgentAccount, *fn_args
+    web3: Web3, contract: Contract, function_name: str, from_account: AgentAccount, *fn_args
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas"""
     func_handle = contract.get_function_by_name(function_name)(*fn_args)
@@ -216,18 +220,18 @@ def _build_transaction_object(
     # TODO can the input field ever be empty or not exist?
     out_dict["input_method"] = transaction_dict["input"]["method"]
     input_params = transaction_dict["input"]["params"]
-    out_dict["input_params_contribution"] = eth.convert_scaled_value(input_params.get("_contribution", None))
-    out_dict["input_params_apr"] = eth.convert_scaled_value(input_params.get("_apr", None))
+    out_dict["input_params_contribution"] = convert_scaled_value(input_params.get("_contribution", None))
+    out_dict["input_params_apr"] = convert_scaled_value(input_params.get("_apr", None))
     out_dict["input_params_destination"] = input_params.get("_destination", None)
     out_dict["input_params_asUnderlying"] = input_params.get("_asUnderlying", None)
-    out_dict["input_params_baseAmount"] = eth.convert_scaled_value(input_params.get("_baseAmount", None))
-    out_dict["input_params_minOutput"] = eth.convert_scaled_value(input_params.get("_minOutput", None))
-    out_dict["input_params_bondAmount"] = eth.convert_scaled_value(input_params.get("_bondAmount", None))
-    out_dict["input_params_maxDeposit"] = eth.convert_scaled_value(input_params.get("_maxDeposit", None))
+    out_dict["input_params_baseAmount"] = convert_scaled_value(input_params.get("_baseAmount", None))
+    out_dict["input_params_minOutput"] = convert_scaled_value(input_params.get("_minOutput", None))
+    out_dict["input_params_bondAmount"] = convert_scaled_value(input_params.get("_bondAmount", None))
+    out_dict["input_params_maxDeposit"] = convert_scaled_value(input_params.get("_maxDeposit", None))
     out_dict["input_params_maturityTime"] = input_params.get("_maturityTime", None)
-    out_dict["input_params_minApr"] = eth.convert_scaled_value(input_params.get("_minApr", None))
-    out_dict["input_params_maxApr"] = eth.convert_scaled_value(input_params.get("_maxApr", None))
-    out_dict["input_params_shares"] = eth.convert_scaled_value(input_params.get("_shares", None))
+    out_dict["input_params_minApr"] = convert_scaled_value(input_params.get("_minApr", None))
+    out_dict["input_params_maxApr"] = convert_scaled_value(input_params.get("_maxApr", None))
+    out_dict["input_params_shares"] = convert_scaled_value(input_params.get("_shares", None))
     # Assuming one TransferSingle per transfer
     # TODO Fix this below eventually
     # There can be two transfer singles
@@ -242,7 +246,7 @@ def _build_transaction_object(
     else:
         logging.warning("Tranfer event contains multiple TransferSingle logs, selecting first")
         event_args: dict[str, Any] = event_logs[0]["args"]
-    out_dict["event_value"] = eth.convert_scaled_value(event_args.get("value", None))
+    out_dict["event_value"] = convert_scaled_value(event_args.get("value", None))
     out_dict["event_from"] = event_args.get("from", None)
     out_dict["event_to"] = event_args.get("to", None)
     out_dict["event_operator"] = event_args.get("operator", None)
