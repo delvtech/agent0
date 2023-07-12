@@ -78,18 +78,6 @@ def set_anvil_account_balance(web3: Web3, account_address: str, amount_wei: int)
     return rpc_response
 
 
-def mint_tokens(token_contract: Contract, account_address: str, amount_wei: int) -> HexBytes:
-    """Add funds to the account
-
-    Arguments
-    ---------
-    amount_wei : int
-        amount_wei to fund, in wei
-    """
-    tx_receipt = token_contract.functions.mint(account_address, amount_wei).transact()
-    return tx_receipt
-
-
 def get_account_balance_from_provider(web3: Web3, account_address: str) -> int | None:
     """Get the balance for an account deployed on the web3 provider"""
     if not web3.is_checksum_address(account_address):
