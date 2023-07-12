@@ -17,6 +17,12 @@ if TYPE_CHECKING:
     from .hyperdrive_market import HyperdriveMarketState
 
 
+# Let the variable names be the same as their solidity counterpart so that it is easier to compare
+# the two.  We can make python wrappers that just call these methods that have better variable names
+# that conform to python standards.
+# pylint: disable=invalid-name
+
+
 class HyperdrivePricingModel(YieldspacePricingModel):
     """
     Hyperdrive Pricing Model
@@ -443,11 +449,148 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         # these are both positive values
         return shares_delta, bonds_delta
 
+    def calculate_max_long(
+        self,
+        share_reserves: FixedPoint,
+        bond_reserves: FixedPoint,
+        longs_outstanding: FixedPoint,
+        time_stretch: FixedPoint,
+        share_price: FixedPoint,
+        initial_share_price: FixedPoint,
+        max_iterations: int = 20,
+    ) -> MaxLongResult:
+        """Calculates the maximum amount of bonds that can be bought in the market.  This is necessarily
+        done with an iterative approach as there is no closed form solution.
 
-# Let the variable names be the same as their solidity counterpart so that it is easier to compare
-# the two.  We can make python wrappers that just call these methods that have better variable names
-# that conform to python standards.
-# pylint: disable=invalid-name
+        Arguments
+        ----------
+        share_reserves : FixedPoint
+            The pool's share reserves.
+        bond_reserves : FixedPoint
+            The pool's bond reserves.
+        longs_outstanding : FixedPoint
+            The amount of longs outstanding.
+        time_stretch : FixedPoint
+            The time stretch parameter.
+        share_price : FixedPoint
+            The current share price.
+        initial_share_price : FixedPoint
+            The initial share price.
+        max_iterations : int
+            The maximum number of iterations to perform before returning the result.
+
+        Returns
+        -------
+        MaxLongResult
+            The maximum amount of bonds that can be purchased and the amount of base that must be spent to purchase them.
+
+        """
+        # We first solve for the maximum buy that is possible on the YieldSpace curve. This will give us
+        # an upper bound on our maximum buy by giving us the maximum buy that is possible without going
+        # into negative interest territory. Hyperdrive has solvency requirements since it mints longs on
+        # demand. If the maximum buy satisfies our solvency checks, then we're done. If not, then we
+        # need to solve for the maximum trade size iteratively.
+        dz, dy = calculate_max_buy(
+            share_reserves, bond_reserves, ONE_18 - time_stretch, share_price, initial_share_price
+        )
+        if share_reserves + dz >= (longs_outstanding + dy) / share_price:
+            return MaxLongResult(base_amount=dz * share_price, bond_amount=dy)
+
+        # To make an initial guess for the iterative approximation, we consider
+        # the solvency check to be the error that we want to reduce. The amount
+        # the long buffer exceeds the share reserves is given by
+        # (y_l + dy) / c - (z + dz). Since the error could be large, we'll use
+        # the realized price of the trade instead of the spot price to
+        # approximate the change in trade output. This gives us dy = c * 1/p * dz.
+        # Substituting this into error equation and setting the error equal to
+        # zero allows us to solve for the initial guess as:
+        #
+        # (y_l + c * 1/p * dz) / c - (z + dz) = 0
+        #              =>
+        # (1/p - 1) * dz = z - y_l/c
+        #              =>
+        # dz = (z - y_l/c) * (p / (p - 1))
+        p = share_price * dz / dy
+        dz = (share_reserves - longs_outstanding / share_price) * p / (ONE_18 - p)
+        dy = calculate_bonds_out_given_shares_in(
+            share_reserves, bond_reserves, dz, ONE_18 - time_stretch, share_price, initial_share_price
+        )
+
+        result = MaxLongResult(base_amount=FixedPoint(), bond_amount=FixedPoint())
+
+        # Our maximum long will be the largest trade size that doesn't fail
+        # the solvency check.
+        for _ in range(max_iterations):
+            # Even though YieldSpace isn't linear, we can use a linear approximation
+            # to get closer to the optimal solution. Our guess should bring us close
+            # enough to the optimal point that we can linearly approximate the
+            # change in error using the current spot price.
+            #
+            # We can approximate the change in the trade output with respect to
+            # trade size as dy' = c * (1/p) * dz'. Substituting this into our error
+            # equation and setting the error equation equal to zero allows us to
+            # solve for the trade size update:
+            #
+            # (y_l + dy + c * (1/p) * dz') / c - (z + dz + dz') = 0
+            #                  =>
+            # (1/p - 1) * dz' = (z + dz) - (y_l + dy) / c
+            #                  =>
+            # dz' = ((z + dz) - (y_l + dy) / c) * (p / (p - 1)).
+            p = calculate_spot_price(share_reserves + dz, bond_reserves - dy, initial_share_price, time_stretch)
+            error = int((share_reserves + dz) - (longs_outstanding + dy) / share_price)
+            if error > 0 and dz * share_price > result.base_amount:
+                result = MaxLongResult(base_amount=dz * share_price, bond_amount=dy)
+            if p >= ONE_18:
+                break
+            if error < 0:
+                dz -= -error * p / (ONE_18 - p)
+            else:
+                dz += error * p / (ONE_18 - p)
+            dy = calculate_bonds_out_given_shares_in(
+                share_reserves, bond_reserves, dz, ONE_18 - time_stretch, share_price, initial_share_price
+            )
+
+        return result
+
+    def calculate_max_short(
+        self,
+        share_reserves: FixedPoint,
+        bond_reserves: FixedPoint,
+        longs_outstanding: FixedPoint,
+        time_stretch: FixedPoint,
+        share_price: FixedPoint,
+        initial_share_price: FixedPoint,
+    ) -> FixedPoint:
+        r"""
+        Calculates the maximum amount of shares that can be used to open shorts.
+
+        Parameters
+        ----------
+        share_reserves : FixedPoint
+            The pool's share reserves.
+        bond_reserves : FixedPoint
+            The pool's bonds reserves.
+        longs_outstanding : FixedPoint
+            The amount of longs outstanding.
+        time_stretch : FixedPoint
+            The time stretch parameter.
+        share_price : FixedPoint
+            The share price.
+        initial_share_price : FixedPoint
+            The initial share price.
+
+        Returns
+        -------
+        FixedPoint
+            The maximum amount of shares that can be used to open shorts.
+        """
+        t = ONE_18 - time_stretch
+        price_factor = share_price / initial_share_price
+        k = modified_yield_space_constant(price_factor, initial_share_price, share_reserves, t, bond_reserves)
+        optimal_bond_reserves = (k - price_factor * ((longs_outstanding / share_price) ** t)) ** (ONE_18 / t)
+
+        # The optimal bond reserves imply a maximum short of dy = y - y0.
+        return optimal_bond_reserves - bond_reserves
 
 
 class MaxLongResult(NamedTuple):
@@ -459,107 +602,6 @@ class MaxLongResult(NamedTuple):
 
 # mimic variable from solidity.
 ONE_18 = FixedPoint("1.0")
-
-
-def calculate_max_long(
-    share_reserves: FixedPoint,
-    bond_reserves: FixedPoint,
-    longs_outstanding: FixedPoint,
-    time_stretch: FixedPoint,
-    share_price: FixedPoint,
-    initial_share_price: FixedPoint,
-    max_iterations: int,
-) -> MaxLongResult:
-    """Calculates the maximum amount of bonds that can be bought in the market.  This is necessarily
-    done with an iterative approach as there is no closed form solution.
-
-    Arguments
-    ----------
-    share_reserves : FixedPoint
-        The pool's share reserves.
-    bond_reserves : FixedPoint
-        The pool's bond reserves.
-    longs_outstanding : FixedPoint
-        The amount of longs outstanding.
-    time_stretch : FixedPoint
-        The time stretch parameter.
-    share_price : FixedPoint
-        The current share price.
-    initial_share_price : FixedPoint
-        The initial share price.
-    max_iterations : int
-        The maximum number of iterations to perform before returning the result.
-
-    Returns
-    -------
-    MaxLongResult
-        The maximum amount of bonds that can be purchased and the amount of base that must be spent to purchase them.
-
-    """
-    # We first solve for the maximum buy that is possible on the YieldSpace curve. This will give us
-    # an upper bound on our maximum buy by giving us the maximum buy that is possible without going
-    # into negative interest territory. Hyperdrive has solvency requirements since it mints longs on
-    # demand. If the maximum buy satisfies our solvency checks, then we're done. If not, then we
-    # need to solve for the maximum trade size iteratively.
-    dz, dy = calculate_max_buy(share_reserves, bond_reserves, ONE_18 - time_stretch, share_price, initial_share_price)
-    if share_reserves + dz >= (longs_outstanding + dy) / share_price:
-        return MaxLongResult(base_amount=dz * share_price, bond_amount=dy)
-
-    # To make an initial guess for the iterative approximation, we consider
-    # the solvency check to be the error that we want to reduce. The amount
-    # the long buffer exceeds the share reserves is given by
-    # (y_l + dy) / c - (z + dz). Since the error could be large, we'll use
-    # the realized price of the trade instead of the spot price to
-    # approximate the change in trade output. This gives us dy = c * 1/p * dz.
-    # Substituting this into error equation and setting the error equal to
-    # zero allows us to solve for the initial guess as:
-    #
-    # (y_l + c * 1/p * dz) / c - (z + dz) = 0
-    #              =>
-    # (1/p - 1) * dz = z - y_l/c
-    #              =>
-    # dz = (z - y_l/c) * (p / (p - 1))
-    p = share_price * dz / dy
-    dz = (share_reserves - longs_outstanding / share_price) * p / (ONE_18 - p)
-    dy = calculate_bonds_out_given_shares_in(
-        share_reserves, bond_reserves, dz, ONE_18 - time_stretch, share_price, initial_share_price
-    )
-
-    result = MaxLongResult(base_amount=FixedPoint(), bond_amount=FixedPoint())
-
-    # Our maximum long will be the largest trade size that doesn't fail
-    # the solvency check.
-    for _ in range(max_iterations):
-        # Even though YieldSpace isn't linear, we can use a linear approximation
-        # to get closer to the optimal solution. Our guess should bring us close
-        # enough to the optimal point that we can linearly approximate the
-        # change in error using the current spot price.
-        #
-        # We can approximate the change in the trade output with respect to
-        # trade size as dy' = c * (1/p) * dz'. Substituting this into our error
-        # equation and setting the error equation equal to zero allows us to
-        # solve for the trade size update:
-        #
-        # (y_l + dy + c * (1/p) * dz') / c - (z + dz + dz') = 0
-        #                  =>
-        # (1/p - 1) * dz' = (z + dz) - (y_l + dy) / c
-        #                  =>
-        # dz' = ((z + dz) - (y_l + dy) / c) * (p / (p - 1)).
-        p = calculate_spot_price(share_reserves + dz, bond_reserves - dy, initial_share_price, time_stretch)
-        error = int((share_reserves + dz) - (longs_outstanding + dy) / share_price)
-        if error > 0 and dz * share_price > result.base_amount:
-            result = MaxLongResult(base_amount=dz * share_price, bond_amount=dy)
-        if p >= ONE_18:
-            break
-        if error < 0:
-            dz -= -error * p / (ONE_18 - p)
-        else:
-            dz += error * p / (ONE_18 - p)
-        dy = calculate_bonds_out_given_shares_in(
-            share_reserves, bond_reserves, dz, ONE_18 - time_stretch, share_price, initial_share_price
-        )
-
-    return result
 
 
 def calculate_max_buy(
@@ -683,43 +725,3 @@ def calculate_spot_price(
     """
     spot_price = (initial_share_price * share_reserves / bond_reserves) ** time_stretch
     return spot_price
-
-
-def calculate_max_short(
-    share_reserves: FixedPoint,
-    bond_reserves: FixedPoint,
-    longs_outstanding: FixedPoint,
-    time_stretch: FixedPoint,
-    share_price: FixedPoint,
-    initial_share_price: FixedPoint,
-) -> FixedPoint:
-    r"""
-    Calculates the maximum amount of shares that can be used to open shorts.
-
-    Parameters
-    ----------
-    share_reserves : FixedPoint
-        The pool's share reserves.
-    bond_reserves : FixedPoint
-        The pool's bonds reserves.
-    longs_outstanding : FixedPoint
-        The amount of longs outstanding.
-    time_stretch : FixedPoint
-        The time stretch parameter.
-    share_price : FixedPoint
-        The share price.
-    initial_share_price : FixedPoint
-        The initial share price.
-
-    Returns
-    -------
-    FixedPoint
-        The maximum amount of shares that can be used to open shorts.
-    """
-    t = ONE_18 - time_stretch
-    price_factor = share_price / initial_share_price
-    k = modified_yield_space_constant(price_factor, initial_share_price, share_reserves, t, bond_reserves)
-    optimal_bond_reserves = (k - price_factor * ((longs_outstanding / share_price) ** t)) ** (ONE_18 / t)
-
-    # The optimal bond reserves imply a maximum short of dy = y - y0.
-    return optimal_bond_reserves - bond_reserves

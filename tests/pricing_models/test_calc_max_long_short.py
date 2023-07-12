@@ -1,4 +1,4 @@
-"""Testing for the get_max_long function of the pricing models"""
+"""Testing for the calculate_max_long function of the pricing models"""
 from __future__ import annotations
 
 import copy
@@ -16,8 +16,8 @@ from elfpy.markets.hyperdrive import HyperdriveMarketDeltas, HyperdriveMarketSta
 
 
 @dataclass
-class TestCaseGetMax:
-    """Dataclass for get_max_long test cases"""
+class TestCaseCalcMax:
+    """Dataclass for calculate_max_long test cases"""
 
     market_state: HyperdriveMarketState
     time_remaining: time.StretchedTime
@@ -25,20 +25,20 @@ class TestCaseGetMax:
     __test__ = False  # pytest: don't test this class
 
 
-class TestGetMax(unittest.TestCase):
-    """Tests get_max_short and get_max_long functions within the pricing model"""
+class TestCalculateMax(unittest.TestCase):
+    """Tests calculate_max_short and calculate_max_long functions within the pricing model"""
 
-    def test_get_max(self):
+    def test_calculate_max(self):
         """
-        Tests that get_max_long and get_max_short are safe, by checking
+        Tests that calculate_max_long and calculate_max_short are safe, by checking
             apr >= 0
             share_price * market_state.share_reserves >= base_buffer
             bond_reserves >= bond_buffer
         """
-        log_utils.setup_logging(log_filename="test_get_max")
+        log_utils.setup_logging(log_filename="test_calculate_max")
         pricing_model: HyperdrivePricingModel = HyperdrivePricingModel()
-        test_cases: list[TestCaseGetMax] = [
-            TestCaseGetMax(  # Test 0
+        test_cases: list[TestCaseCalcMax] = [
+            TestCaseCalcMax(  # Test 0
                 market_state=HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -55,7 +55,7 @@ class TestGetMax(unittest.TestCase):
                     normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
-            TestCaseGetMax(  # Test 1
+            TestCaseCalcMax(  # Test 1
                 market_state=HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -72,7 +72,7 @@ class TestGetMax(unittest.TestCase):
                     normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
-            TestCaseGetMax(  # Test 2
+            TestCaseCalcMax(  # Test 2
                 market_state=HyperdriveMarketState(
                     share_reserves=FixedPoint("100_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -89,7 +89,7 @@ class TestGetMax(unittest.TestCase):
                     normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
-            TestCaseGetMax(  # Test 3
+            TestCaseCalcMax(  # Test 3
                 market_state=HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("834_954.0"),
@@ -106,7 +106,7 @@ class TestGetMax(unittest.TestCase):
                     normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
-            TestCaseGetMax(  # Test 4
+            TestCaseCalcMax(  # Test 4
                 market_state=HyperdriveMarketState(
                     share_reserves=FixedPoint("500_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -123,7 +123,7 @@ class TestGetMax(unittest.TestCase):
                     normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
-            TestCaseGetMax(  # Test 5
+            TestCaseCalcMax(  # Test 5
                 market_state=HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -140,7 +140,7 @@ class TestGetMax(unittest.TestCase):
                     normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
-            TestCaseGetMax(  # Test 6
+            TestCaseCalcMax(  # Test 6
                 market_state=HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -157,7 +157,7 @@ class TestGetMax(unittest.TestCase):
                     normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
-            TestCaseGetMax(  # Test 7
+            TestCaseCalcMax(  # Test 7
                 market_state=HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -174,7 +174,7 @@ class TestGetMax(unittest.TestCase):
                     normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
-            TestCaseGetMax(  # Test 8
+            TestCaseCalcMax(  # Test 8
                 market_state=HyperdriveMarketState(
                     share_reserves=FixedPoint("1_000_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -199,30 +199,40 @@ class TestGetMax(unittest.TestCase):
                 test_case.market_state.share_reserves * test_case.market_state.share_price
                 + test_case.market_state.bond_reserves
             )
+
             # Get the max long.
-            (max_long, _) = pricing_model.get_max_long(
-                market_state=test_case.market_state,
-                time_remaining=test_case.time_remaining,
+            max_long_result = pricing_model.calculate_max_long(
+                share_reserves=test_case.market_state.share_reserves,
+                bond_reserves=test_case.market_state.bond_reserves,
+                longs_outstanding=test_case.market_state.longs_outstanding,
+                time_stretch=test_case.time_remaining.time_stretch,
+                share_price=test_case.market_state.share_price,
+                initial_share_price=test_case.market_state.init_share_price,
             )
 
             # Ensure that the max long is valid.
-            self.assertGreaterEqual(max_long, FixedPoint("0.0"))
+            self.assertGreaterEqual(max_long_result.base_amount, FixedPoint("0.0"))
 
             # Simulate the trade and ensure the trade was safe.
             trade_result = pricing_model.calc_out_given_in(
-                in_=types.Quantity(amount=max_long, unit=types.TokenType.BASE),
+                in_=types.Quantity(amount=max_long_result.base_amount, unit=types.TokenType.BASE),
                 market_state=test_case.market_state,
                 time_remaining=test_case.time_remaining,
             )
+
             logging.info("long test")
             self._ensure_market_safety(
                 pricing_model=pricing_model, trade_result=trade_result, test_case=test_case, is_long=True
             )
 
             # Get the max short.
-            (_, max_short) = pricing_model.get_max_short(
-                market_state=test_case.market_state,
-                time_remaining=test_case.time_remaining,
+            max_short = pricing_model.calculate_max_short(
+                share_reserves=test_case.market_state.share_reserves,
+                bond_reserves=test_case.market_state.bond_reserves,
+                longs_outstanding=test_case.market_state.longs_outstanding,
+                time_stretch=test_case.time_remaining.time_stretch,
+                share_price=test_case.market_state.share_price,
+                initial_share_price=test_case.market_state.init_share_price,
             )
 
             # Ensure that the max short is valid.
@@ -247,7 +257,7 @@ class TestGetMax(unittest.TestCase):
         self,
         pricing_model: HyperdrivePricingModel,
         trade_result: trades.TradeResult,
-        test_case: TestCaseGetMax,
+        test_case: TestCaseCalcMax,
         is_long: bool,
     ) -> None:
         market_state = copy.copy(test_case.market_state)
