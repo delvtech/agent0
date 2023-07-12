@@ -16,8 +16,8 @@ from elfpy.data.db_schema import Base, PoolConfig, PoolInfo
 
 def setup_logging(
     log_filename: str | None = None,
-    max_bytes: int = elfpy.DEFAULT_LOG_MAXBYTES,
-    log_level: int = elfpy.DEFAULT_LOG_LEVEL,
+    max_bytes: int | None = None,
+    log_level: int | None = None,
     delete_previous_logs: bool = False,
     log_stdout: bool = True,
     log_format_string: str | None = None,
@@ -52,17 +52,21 @@ def setup_logging(
         - Fix the docstring
         - Test the various optional input combinations
     """
+    # handle defaults
+    if max_bytes is None:
+        max_bytes = elfpy.DEFAULT_LOG_MAXBYTES
+    if log_level is None:
+        log_level = elfpy.DEFAULT_LOG_LEVEL
+    if log_format_string is None:
+        log_formatter = logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME)
+    else:
+        log_formatter = logging.Formatter(log_format_string, elfpy.DEFAULT_LOG_DATETIME)
     # create log handlers
     handlers = logging.getLogger().handlers if keep_previous_handlers else []
-    # create log formatter
-    if log_format_string is None:
-        log_format_string = logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME)
-    else:
-        log_format_string = logging.Formatter(log_format_string, elfpy.DEFAULT_LOG_DATETIME)
     # pipe to stdout if requested
     if log_stdout:
         stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setFormatter(log_format_string)
+        stream_handler.setFormatter(log_formatter)
         handlers.append(stream_handler)
     # log to file
     if log_filename is not None:
@@ -70,7 +74,7 @@ def setup_logging(
         # Delete the log file if requested
         if delete_previous_logs and os.path.exists(os.path.join(log_dir, log_name)):
             os.remove(os.path.join(log_dir, log_name))
-        file_handler = _create_file_handler(log_dir, log_name, log_format_string, max_bytes)
+        file_handler = _create_file_handler(log_dir, log_name, log_formatter, max_bytes)
         handlers.append(file_handler)
     # Configure the root logger
     logger = logging.getLogger()
