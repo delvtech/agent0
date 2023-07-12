@@ -385,7 +385,6 @@ def get_agents(session: Session, start_block: int | None = None, end_block: int 
 
     if query is None:
         return []
-    # TODO test return when empty table
     query = query.distinct()
 
     results = pd.read_sql(query.statement, con=session.connection())
