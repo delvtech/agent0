@@ -233,7 +233,7 @@ def contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list
     return return_names_and_types
 
 
-def smart_contract_read_call(contract: Contract, function_name: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
+def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
     """Return from a smart contract read call
 
     .. todo::
@@ -420,7 +420,7 @@ def get_block_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number:
     PoolInfo
         A PoolInfo object ready to be inserted into Postgres
     """
-    pool_info_data_dict = smart_contract_read_call(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
+    pool_info_data_dict = smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
     pool_info_data_dict: dict[Any, Any] = {
         key: _convert_scaled_value(value) for (key, value) in pool_info_data_dict.items()
     }
@@ -459,7 +459,7 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
         The hyperdrive config.
     """
 
-    hyperdrive_config: dict[str, Any] = smart_contract_read_call(hyperdrive_contract, "getPoolConfig")
+    hyperdrive_config: dict[str, Any] = smart_contract_read(hyperdrive_contract, "getPoolConfig")
 
     out_config = {}
     out_config["contractAddress"] = hyperdrive_contract.address
