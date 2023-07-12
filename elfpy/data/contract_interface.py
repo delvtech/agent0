@@ -4,8 +4,8 @@ from __future__ import annotations
 import json
 import logging
 import os
-import re
 import time
+
 from datetime import datetime
 from typing import Any
 
@@ -116,43 +116,6 @@ def load_all_abis(abi_folder: str) -> dict:
     return abis
 
 
-def fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt) -> list[dict[Any, Any]]:
-    """Decode logs from a transaction receipt"""
-    logs = []
-    if tx_receipt.get("logs"):
-        for log in tx_receipt["logs"]:
-            event_data, event = get_event_object(web3, contract, log, tx_receipt)
-            if event_data and event:
-                formatted_log = dict(event_data)
-                formatted_log["event"] = event.get("name")
-                formatted_log["args"] = dict(event_data["args"])
-                logs.append(formatted_log)
-    return logs
-
-
-def get_event_object(
-    web3: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
-) -> tuple[EventData, ABIEvent] | tuple[None, None]:
-    """Retrieves the event object and anonymous types for a  given contract and log"""
-    abi_events = [abi for abi in contract.abi if abi["type"] == "event"]  # type: ignore
-    for event in abi_events:  # type: ignore
-        # Get event signature components
-        name = event["name"]  # type: ignore
-        inputs = [param["type"] for param in event["inputs"]]  # type: ignore
-        inputs = ",".join(inputs)
-        # Hash event signature
-        event_signature_text = f"{name}({inputs})"
-        event_signature_hex = web3.keccak(text=event_signature_text).hex()
-        # Find match between log's event signature and ABI's event signature
-        receipt_event_signature_hex = log["topics"][0].hex()
-        if event_signature_hex == receipt_event_signature_hex:
-            # Decode matching log
-            contract_event: ContractEvent = contract.events[event["name"]]()  # type: ignore
-            event_data: EventData = contract_event.process_receipt(tx_receipt)[0]
-            return event_data, event  # type: ignore
-    return (None, None)
-
-
 def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
     """Return from a smart contract read call
 
@@ -195,6 +158,43 @@ def smart_contract_transact(
     # wait for approval to complete
     tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     return tx_receipt
+
+
+def get_event_object(
+    web3: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
+) -> tuple[EventData, ABIEvent] | tuple[None, None]:
+    """Retrieves the event object and anonymous types for a  given contract and log"""
+    abi_events = [abi for abi in contract.abi if abi["type"] == "event"]  # type: ignore
+    for event in abi_events:  # type: ignore
+        # Get event signature components
+        name = event["name"]  # type: ignore
+        inputs = [param["type"] for param in event["inputs"]]  # type: ignore
+        inputs = ",".join(inputs)
+        # Hash event signature
+        event_signature_text = f"{name}({inputs})"
+        event_signature_hex = web3.keccak(text=event_signature_text).hex()
+        # Find match between log's event signature and ABI's event signature
+        receipt_event_signature_hex = log["topics"][0].hex()
+        if event_signature_hex == receipt_event_signature_hex:
+            # Decode matching log
+            contract_event: ContractEvent = contract.events[event["name"]]()  # type: ignore
+            event_data: EventData = contract_event.process_receipt(tx_receipt)[0]
+            return event_data, event  # type: ignore
+    return (None, None)
+
+
+def fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt) -> list[dict[Any, Any]]:
+    """Decode logs from a transaction receipt"""
+    logs = []
+    if tx_receipt.get("logs"):
+        for log in tx_receipt["logs"]:
+            event_data, event = get_event_object(web3, contract, log, tx_receipt)
+            if event_data and event:
+                formatted_log = dict(event_data)
+                formatted_log["event"] = event.get("name")
+                formatted_log["args"] = dict(event_data["args"])
+                logs.append(formatted_log)
+    return logs
 
 
 def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[Transaction]:
