@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import logging
 
-from typing import Any
-
+from typing import Any, Sequence
 
 from eth_typing import BlockNumber
 from hexbytes import HexBytes
@@ -39,7 +38,7 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
     # get the callable contract function from function_name & call it
     function: ContractFunction = contract.get_function_by_name(function_name)(*fn_args)  # , **fn_kwargs)
     return_values = function.call(**fn_kwargs)
-    if not isinstance(return_values, list):
+    if not isinstance(return_values, Sequence):  # could be list or tuple
         return_values = [return_values]
     if contract.abi:  # not all contracts have an associated ABI
         return_names_and_types = _contract_function_abi_outputs(contract.abi, function_name)
@@ -149,7 +148,7 @@ def _contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> lis
     if function_outputs is None:
         logging.warning("function abi does not specify outputs")
         return None
-    if not isinstance(function_outputs, list):
+    if not isinstance(function_outputs, Sequence):  # could be list or tuple
         logging.warning("function abi outputs are not a sequence")
         return None
     if len(function_outputs) > 1:  # multiple unnamed vars were returned
