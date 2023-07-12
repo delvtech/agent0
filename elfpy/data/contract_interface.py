@@ -13,14 +13,25 @@ import attr
 import requests
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
-from eth_typing import URI, BlockNumber
+from eth_typing import BlockNumber, ChecksumAddress, URI
 from eth_utils import address
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
-from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, RPCResponse, TxReceipt
+from web3.types import (
+    ABI,
+    ABIFunctionComponents,
+    ABIFunctionParams,
+    ABIEvent,
+    BlockData,
+    EventData,
+    LogReceipt,
+    RPCEndpoint,
+    RPCResponse,
+    TxReceipt,
+)
 
 from elfpy.data.db_schema import PoolConfig, PoolInfo, Transaction, WalletInfo
 from elfpy.markets.hyperdrive import hyperdrive_assets
@@ -40,7 +51,7 @@ class TestAccount:
         self.account: LocalAccount = Account().create(extra_entropy=extra_entropy)
 
     @property
-    def checksum_address(self) -> str:
+    def checksum_address(self) -> ChecksumAddress:
         """Return the checksum address of the account"""
         return Web3.to_checksum_address(self.account.address)
 
@@ -87,7 +98,7 @@ def set_anvil_account_balace(web3: Web3, account_address: str, amount_wei: int) 
     if not web3.is_checksum_address(account_address):
         raise ValueError(f"argument {account_address=} must be a checksum address")
     params = [account_address, hex(amount_wei)]  # account, amount
-    rpc_response = web3.provider.make_request(method="anvil_setBalance", params=params)
+    rpc_response = web3.provider.make_request(method=RPCEndpoint("anvil_setBalance"), params=params)
     return rpc_response
 
 
@@ -107,9 +118,10 @@ def get_account_balance_from_provider(web3: Web3, account_address: str) -> int |
     """Get the balance for an account deployed on the web3 provider"""
     if not web3.is_checksum_address(account_address):
         raise ValueError(f"argument {account_address=} must be a checksum address")
-    rpc_response = web3.provider.make_request(method="eth_getBalance", params=[account_address, "latest"])
-    if rpc_response["result"] is not None:
-        return int(rpc_response["result"], 16)
+    rpc_response = web3.provider.make_request(method=RPCEndpoint("eth_getBalance"), params=[account_address, "latest"])
+    result = rpc_response.get("result")
+    if result is not None:
+        return int(result, 16)
     return None
 
 
@@ -123,15 +135,17 @@ def load_all_abis(abi_folder: str) -> dict:
     """
     abis = {}
     abi_files = _collect_files(abi_folder)
+    loaded = []
     for abi_file in abi_files:
         file_name = os.path.splitext(os.path.basename(abi_file))[0]
         with open(abi_file, mode="r", encoding="UTF-8") as file:
             data = json.load(file)
         if "abi" in data:
-            logging.info("Loaded ABI file %s", abi_file)
             abis[file_name] = data["abi"]
+            loaded.append(abi_file)
         else:
             logging.warning("JSON file %s did not contain an ABI", abi_file)
+    logging.info("Loaded ABI files %s", str(loaded))
     return abis
 
 
@@ -172,26 +186,50 @@ def get_event_object(
     return (None, None)
 
 
-def contract_function_abi_outputs(abi: ABI, function_name: str):
+def get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunctionParams) -> tuple[str, str]:
+    """Retrieve and narrow the types for abi outputs"""
+    return_value_name: str | None = abi_outputs.get("name")
+    if return_value_name is None:
+        return_value_name = "none"
+    return_value_type: str | None = abi_outputs.get("type")
+    if return_value_type is None:
+        return_value_type = "none"
+    return (return_value_name, return_value_type)
+
+
+def contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list[tuple[str, str]] | None:
     """Parse the function abi to get the name and type for each output"""
     function_abi = None
-    for func_abi in abi:  # loop over each entery in the abi list
-        if func_abi.get("name") == function_name:  # check the name
-            function_abi = func_abi  # pull out the one with the desired name
+    for abi in contract_abi:  # loop over each entery in the abi list
+        if abi.get("name") == function_name:  # check the name
+            function_abi = abi  # pull out the one with the desired name
             break
-    if not (function_abi and function_abi.get("outputs")):
+    if function_abi is None:
         logging.warning("could not find function_name=%s in contract abi", function_name)
         return None
-    if len(function_abi.get("outputs")) > 1:  # multiple unnamed vars were returned
-        return_names_and_types = [(output.get("name"), output.get("type")) for output in function_abi.get("outputs")]
-    else:
-        abi_outputs = function_abi.get("outputs")[0]
-        if abi_outputs.get("type") == "tuple":  # multiple named outputs were returned in a struct
-            abi_components = abi_outputs.get("components")
-            return_names_and_types = [(component.get("name"), component.get("type")) for component in abi_components]
-        else:  # single output
-            return_value_name = abi_outputs.get("name") if abi_outputs.get("name") else "none"
-            return_names_and_types = [(return_value_name, abi_outputs.get("type"))]
+    function_outputs = function_abi.get("outputs")
+    if function_outputs is None:
+        logging.warning("function abi does not specify outputs")
+        return None
+    if not isinstance(function_outputs, Sequence):
+        logging.warning("function abi outputs are not a sequence")
+        return None
+    if len(function_outputs) > 1:  # multiple unnamed vars were returned
+        return_names_and_types = []
+        for output in function_outputs:
+            return_names_and_types.append(get_name_and_type_from_abi(output))
+    if (
+        function_outputs[0].get("type") == "tuple" and function_outputs[0].get("components") is not None
+    ):  # multiple named outputs were returned in a struct
+        abi_components = function_outputs[0].get("components")
+        if abi_components is None:
+            logging.warning("function abi output componenets are not a included")
+            return None
+        return_names_and_types = []
+        for component in abi_components:
+            return_names_and_types.append(get_name_and_type_from_abi(component))
+    else:  # final condition is a single output
+        return_names_and_types = [get_name_and_type_from_abi(function_outputs[0])]
     return return_names_and_types
 
 
