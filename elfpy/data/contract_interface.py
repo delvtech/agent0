@@ -13,14 +13,25 @@ import attr
 import requests
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
-from eth_typing import URI, BlockNumber
+from eth_typing import BlockNumber, ChecksumAddress, URI
 from eth_utils import address
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
-from web3.types import ABI, ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
+from web3.types import (
+    ABI,
+    ABIFunctionComponents,
+    ABIFunctionParams,
+    ABIEvent,
+    BlockData,
+    EventData,
+    LogReceipt,
+    RPCEndpoint,
+    RPCResponse,
+    TxReceipt,
+)
 
 from elfpy.data.db_schema import PoolConfig, PoolInfo, Transaction, WalletInfo
 from elfpy.markets.hyperdrive import hyperdrive_assets
@@ -40,9 +51,9 @@ class TestAccount:
         self.account: LocalAccount = Account().create(extra_entropy=extra_entropy)
 
     @property
-    def address(self) -> str:
-        """Return the address of the account"""
-        return self.account.address
+    def checksum_address(self) -> ChecksumAddress:
+        """Return the checksum address of the account"""
+        return Web3.to_checksum_address(self.account.address)
 
 
 @attr.s
@@ -56,15 +67,62 @@ class HyperdriveAddressesJson:
     mock_hyperdrive_math: str = attr.ib()
 
 
-def get_account_balance_for_contract(funding_contract: Contract, account_address: str) -> int:
-    """Return the balance of the account"""
-    return funding_contract.functions.balanceOf(account_address).call()
+def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs: dict | None = None) -> Web3:
+    """Initialize a Web3 instance using an HTTP provider and inject a geth Proof of Authority (poa) middleware.
+
+    Arguments
+    ---------
+    ethereum_node: URI | str
+        Address of the http provider
+    request_kwargs: dict
+        The HTTPProvider uses the python requests library for making requests.
+        If you would like to modify how requests are made,
+        you can use the request_kwargs to do so.
+    """
+    if request_kwargs is None:
+        request_kwargs = {}
+    provider = Web3.HTTPProvider(ethereum_node, request_kwargs)
+    web3 = Web3(provider)
+    web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
+    return web3
 
 
-def fund_account(funding_contract: Contract, account_address: str, amount: int) -> HexBytes:
-    """Add funds to the account"""
-    tx_receipt = funding_contract.functions.mint(account_address, amount).transact()
+def set_anvil_account_balance(web3: Web3, account_address: str, amount_wei: int) -> RPCResponse:
+    """Set an the account using the web3 provider
+
+    Arguments
+    ---------
+    amount_wei : int
+        amount_wei to fund, in wei
+    """
+    if not web3.is_checksum_address(account_address):
+        raise ValueError(f"argument {account_address=} must be a checksum address")
+    params = [account_address, hex(amount_wei)]  # account, amount
+    rpc_response = web3.provider.make_request(method=RPCEndpoint("anvil_setBalance"), params=params)
+    return rpc_response
+
+
+def mint_tokens(token_contract: Contract, account_address: str, amount_wei: int) -> HexBytes:
+    """Add funds to the account
+
+    Arguments
+    ---------
+    amount_wei : int
+        amount_wei to fund, in wei
+    """
+    tx_receipt = token_contract.functions.mint(account_address, amount_wei).transact()
     return tx_receipt
+
+
+def get_account_balance_from_provider(web3: Web3, account_address: str) -> int | None:
+    """Get the balance for an account deployed on the web3 provider"""
+    if not web3.is_checksum_address(account_address):
+        raise ValueError(f"argument {account_address=} must be a checksum address")
+    rpc_response = web3.provider.make_request(method=RPCEndpoint("eth_getBalance"), params=[account_address, "latest"])
+    hex_result = rpc_response.get("result")
+    if hex_result is not None:
+        return int(hex_result, base=16)  # cast hex to int
+    return None
 
 
 def load_all_abis(abi_folder: str) -> dict:
@@ -77,15 +135,17 @@ def load_all_abis(abi_folder: str) -> dict:
     """
     abis = {}
     abi_files = _collect_files(abi_folder)
+    loaded = []
     for abi_file in abi_files:
         file_name = os.path.splitext(os.path.basename(abi_file))[0]
         with open(abi_file, mode="r", encoding="UTF-8") as file:
             data = json.load(file)
         if "abi" in data:
-            logging.info("Loaded ABI file %s", abi_file)
             abis[file_name] = data["abi"]
+            loaded.append(abi_file)
         else:
             logging.warning("JSON file %s did not contain an ABI", abi_file)
+    logging.info("Loaded ABI files %s", str(loaded))
     return abis
 
 
@@ -126,46 +186,84 @@ def get_event_object(
     return (None, None)
 
 
-def get_smart_contract_read_call(contract: Contract, function_name: str, **function_args) -> dict[Any, Any]:
-    """Get a smart contract read call"""
-    # TODO: Fix this up to actually decode the ABI using web3
-    # decode ABI to get variable names
-    abi: ABI = contract.abi
-    abi_function_index = [idx for idx in range(len(abi)) if abi[idx].get("name") == function_name][0]
-    abi_outputs = abi[abi_function_index].get("outputs")
-    if not isinstance(abi_outputs, Sequence):
-        raise AssertionError("could not find outputs in the abi")
-    abi_components = abi_outputs[0].get("components")
-    if abi_components is None:
-        raise AssertionError("could not find output components in the abi")
-    return_value_keys = [component.get("name") for component in abi_components]
-    # get the callable contract function from function_name & call it
-    function: ContractFunction = contract.get_function_by_name(function_name)()
-    return_values = function.call(**function_args)
-    # associate returned values with the keys
-    assert len(return_value_keys) == len(return_values)
-    function_return_dict = dict((variable_name, info) for variable_name, info in zip(return_value_keys, return_values))
-    return function_return_dict
+def contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list[tuple[str, str]] | None:
+    """Parse the function abi to get the name and type for each output"""
+    function_abi = None
+    for abi in contract_abi:  # loop over each entery in the abi list
+        if abi.get("name") == function_name:  # check the name
+            function_abi = abi  # pull out the one with the desired name
+            break
+    if function_abi is None:
+        logging.warning("could not find function_name=%s in contract abi", function_name)
+        return None
+    function_outputs = function_abi.get("outputs")
+    if function_outputs is None:
+        logging.warning("function abi does not specify outputs")
+        return None
+    if not isinstance(function_outputs, Sequence):
+        logging.warning("function abi outputs are not a sequence")
+        return None
+    if len(function_outputs) > 1:  # multiple unnamed vars were returned
+        return_names_and_types = []
+        for output in function_outputs:
+            return_names_and_types.append(_get_name_and_type_from_abi(output))
+    if (
+        function_outputs[0].get("type") == "tuple" and function_outputs[0].get("components") is not None
+    ):  # multiple named outputs were returned in a struct
+        abi_components = function_outputs[0].get("components")
+        if abi_components is None:
+            logging.warning("function abi output componenets are not a included")
+            return None
+        return_names_and_types = []
+        for component in abi_components:
+            return_names_and_types.append(_get_name_and_type_from_abi(component))
+    else:  # final condition is a single output
+        return_names_and_types = [_get_name_and_type_from_abi(function_outputs[0])]
+    return return_names_and_types
 
 
-def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs: dict | None = None) -> Web3:
-    """Initialize a Web3 instance using an HTTP provider and inject a geth Proof of Authority (poa) middleware.
+def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
+    """Return from a smart contract read call
 
-    Arguments
-    ---------
-    ethereum_node: URI | str
-        Address of the http provider
-    request_kwargs: dict
-        The HTTPProvider uses the python requests library for making requests.
-        If you would like to modify how requests are made,
-        you can use the request_kwargs to do so.
+    .. todo::
+        function to recursively find component names & types
+        function to dynamically assign types to output variables
+            would be cool if this also put stuff into FixedPoint
     """
-    if request_kwargs is None:
-        request_kwargs = {}
-    provider = Web3.HTTPProvider(ethereum_node, request_kwargs)
-    web3 = Web3(provider)
-    web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
-    return web3
+    # get the callable contract function from function_name & call it
+    function: ContractFunction = contract.get_function_by_name(function_name)(*fn_args)  # , **fn_kwargs)
+    return_values = function.call(**fn_kwargs)
+    if not isinstance(return_values, Sequence):
+        return_values = [return_values]
+    if contract.abi:  # not all contracts have an associated ABI
+        return_names_and_types = contract_function_abi_outputs(contract.abi, function_name)
+        if return_names_and_types is not None:
+            if len(return_names_and_types) != len(return_values):
+                raise AssertionError(f"{len(return_names_and_types)=} must equal {len(return_values)=}.")
+            function_return_dict = dict(
+                (var_name_and_type[0], var_value)
+                for var_name_and_type, var_value in zip(return_names_and_types, return_values)
+            )
+            return function_return_dict
+    return {f"var_{idx}": value for idx, value in enumerate(return_values)}
+
+
+def smart_contract_transact(
+    web3: Web3, contract: Contract, function_name: str, from_account: TestAccount, *fn_args
+) -> TxReceipt:
+    """Execute a named function on a contract that requires a signature & gas"""
+    func_handle = contract.get_function_by_name(function_name)(*fn_args)
+    unsent_txn = func_handle.build_transaction(
+        {
+            "from": from_account.checksum_address,
+            "nonce": web3.eth.get_transaction_count(from_account.checksum_address),
+        }
+    )
+    signed_txn = from_account.account.sign_transaction(unsent_txn)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    # wait for approval to complete
+    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    return tx_receipt
 
 
 def fetch_address_from_url(contracts_url: str) -> HyperdriveAddressesJson:
@@ -194,7 +292,7 @@ def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddress
 
     Arguments
     ---------
-    web3_container: Web3
+    web3: Web3
         web3 provider object
     abis: dict
         A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
@@ -220,7 +318,7 @@ def get_funding_contract(web3: Web3, abis: dict, addresses: HyperdriveAddressesJ
     """Get the funding contract for a given abi
     Arguments
     ---------
-    web3_container: Web3
+    web3: Web3
         web3 provider object
     abis: dict
         A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
@@ -249,7 +347,7 @@ def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: B
 
     Arguments
     ---------
-    web3_container: Web3
+    web3: Web3
         web3 provider object
     hyperdrive_contract: Contract
         The contract to query the pool info from
@@ -293,13 +391,13 @@ def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: B
     return out_transactions
 
 
-def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:
+def get_block_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:
     """
     Returns the block pool info from the Hyperdrive contract
 
     Arguments
     ---------
-    web3_container: Web3
+    web3: Web3
         web3 provider object
     hyperdrive_contract: Contract
         The contract to query the pool info from
@@ -311,22 +409,16 @@ def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, blo
     PoolInfo
         A PoolInfo object ready to be inserted into Postgres
     """
-    pool_info_data_dict = get_smart_contract_read_call(
-        hyperdrive_contract, "getPoolInfo", block_identifier=block_number
-    )
-
+    pool_info_data_dict = smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
     pool_info_data_dict: dict[Any, Any] = {
         key: _convert_scaled_value(value) for (key, value) in pool_info_data_dict.items()
     }
-
-    current_block: BlockData = web3_container.eth.get_block(block_number)
+    current_block: BlockData = web3.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
     if current_block_timestamp is None:
         raise AssertionError("Current block has no timestamp")
-
     pool_info_data_dict.update({"timestamp": current_block_timestamp})
     pool_info_data_dict.update({"blockNumber": block_number})
-
     pool_info_dict = {}
     for key in PoolInfo.__annotations__.keys():
         # Required keys
@@ -337,10 +429,8 @@ def get_block_pool_info(web3_container: Web3, hyperdrive_contract: Contract, blo
         # Otherwise default to None if not exist
         else:
             pool_info_dict[key] = pool_info_data_dict.get(key, None)
-
     # Populating the dataclass from the dictionary
     pool_info = PoolInfo(**pool_info_dict)
-
     return pool_info
 
 
@@ -358,7 +448,7 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
         The hyperdrive config.
     """
 
-    hyperdrive_config: dict[str, Any] = get_smart_contract_read_call(hyperdrive_contract, "getPoolConfig")
+    hyperdrive_config: dict[str, Any] = smart_contract_read(hyperdrive_contract, "getPoolConfig")
 
     out_config = {}
     out_config["contractAddress"] = hyperdrive_contract.address
@@ -629,3 +719,14 @@ def _collect_files(folder_path: str, extension: str = ".json") -> list[str]:
                 file_path = os.path.join(root, file)
                 collected_files.append(file_path)
     return collected_files
+
+
+def _get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunctionParams) -> tuple[str, str]:
+    """Retrieve and narrow the types for abi outputs"""
+    return_value_name: str | None = abi_outputs.get("name")
+    if return_value_name is None:
+        return_value_name = "none"
+    return_value_type: str | None = abi_outputs.get("type")
+    if return_value_type is None:
+        return_value_type = "none"
+    return (return_value_name, return_value_type)
