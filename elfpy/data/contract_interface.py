@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Any
 
 import requests
+
 from eth_typing import BlockNumber, URI
 from eth_utils import address
 from fixedpointmath import FixedPoint
@@ -378,9 +379,7 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
     hyperdrive_config : PoolConfig
         The hyperdrive config.
     """
-
     hyperdrive_config: dict[str, Any] = smart_contract_read(hyperdrive_contract, "getPoolConfig")
-
     out_config = {}
     out_config["contractAddress"] = hyperdrive_contract.address
     out_config["baseToken"] = hyperdrive_config.get("baseToken", None)
@@ -410,7 +409,6 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
     else:
         term_length = None
     out_config["termLength"] = term_length
-
     return PoolConfig(**out_config)
 
 
@@ -618,12 +616,6 @@ def _recursive_dict_conversion(obj):
     if hasattr(obj, "items"):
         return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
     return obj
-
-
-def _camel_to_snake(camel_string: str) -> str:
-    """Convert camelCase to snake_case"""
-    snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", camel_string)
-    return snake_string.lower()
 
 
 def _collect_files(folder_path: str, extension: str = ".json") -> list[str]:
