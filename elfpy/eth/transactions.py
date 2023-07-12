@@ -45,7 +45,8 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
         if return_names_and_types is not None:
             if len(return_names_and_types) != len(return_values):
                 raise AssertionError(
-                    f"{len(return_names_and_types)=} must equal {len(return_values)=}.\n{return_names_and_types=}\n{return_values=}"
+                    f"{len(return_names_and_types)=} must equal {len(return_values)=}."
+                    f"\n{return_names_and_types=}\n{return_values=}"
                 )
             function_return_dict = dict(
                 (var_name_and_type[0], var_value)
