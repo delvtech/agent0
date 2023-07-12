@@ -360,7 +360,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(
                     days=FixedPoint("500.0"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
-                exception_type=(AssertionError),
+                exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(  # test 11
                 # amount very high, can't make trade
