@@ -173,7 +173,7 @@ def get_event_object(
     return (None, None)
 
 
-def smart_contract_read_call(contract: Contract, function_name: str, *fn_args, **fn_kwargs) -> Any:
+def smart_contract_read_call(contract: Contract, function_name: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
     """Return from a smart contract read call
 
     .. todo::
@@ -185,10 +185,9 @@ def smart_contract_read_call(contract: Contract, function_name: str, *fn_args, *
     function: ContractFunction = contract.get_function_by_name(function_name)(*fn_args, **fn_kwargs)
     return_values = function.call()
     if not isinstance(return_values, Sequence):
-        print(f"{return_values=}")
         return_values = [return_values]
     if not contract.abi:  # not all contracts have an associated ABI
-        return return_values
+        return {f"var_{idx}": value for idx, value in enumerate(return_values)}
     # if the contract has an abi, then parse the names of the returned values
     abi: ABI = contract.abi
     # get the interface for this function
@@ -197,19 +196,24 @@ def smart_contract_read_call(contract: Contract, function_name: str, *fn_args, *
         if func_abi.get("name") == function_name:  # check the name
             function_abi = func_abi  # pull out the one with the desired name
             break
-    if not (function_abi or function_abi.get("outputs")):
+    if not (function_abi and function_abi.get("outputs")):
         logging.warning("could not find function_name=%s in contract abi", function_name)
         return return_values  # return the original  values
     # get the return names & types for this function
-    if len(function_abi.get("outputs")) != 1:
-        raise ValueError(f"ABI outputs list should have len==1, not {len(function_abi.get('outputs'))=}")
-    abi_outputs = function_abi.get("outputs")[0]
-    if abi_outputs.get("type") == "tuple":  # multiple outputs
-        abi_components = abi_outputs.get("components")
-        return_value_names_and_types = [(component.get("name"), component.get("type")) for component in abi_components]
+    if len(function_abi.get("outputs")) > 1:  # multiple unnamed vars were returned
+        return_value_names_and_types = [
+            (output.get("name"), output.get("type")) for output in function_abi.get("outputs")
+        ]
     else:
-        return_value_name = abi_outputs.get("name") if abi_outputs.get("name") else "none"
-        return_value_names_and_types = [(return_value_name, abi_outputs.get("type"))]
+        abi_outputs = function_abi.get("outputs")[0]
+        if abi_outputs.get("type") == "tuple":  # multiple outputs
+            abi_components = abi_outputs.get("components")
+            return_value_names_and_types = [
+                (component.get("name"), component.get("type")) for component in abi_components
+            ]
+        else:
+            return_value_name = abi_outputs.get("name") if abi_outputs.get("name") else "none"
+            return_value_names_and_types = [(return_value_name, abi_outputs.get("type"))]
     if len(return_value_names_and_types) != len(return_values):
         raise AssertionError(f"{len(return_value_names_and_types)=} must equal {len(return_values)=}.")
     function_return_dict = dict(
