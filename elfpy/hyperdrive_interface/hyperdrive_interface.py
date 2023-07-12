@@ -78,32 +78,6 @@ def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddress
     return hyperdrive_contract
 
 
-def get_funding_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses) -> Contract:
-    """Get the funding contract for a given abi
-    Arguments
-    ---------
-    web3: Web3
-        web3 provider object
-    abis: dict
-        A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
-    addresses: HyperdriveAddressesJson
-        The block number to query from the chain
-
-    Returns
-    -------
-    Contract
-        The contract object returned from the query
-    """
-    if "ERC20Mintable" not in abis:
-        raise AssertionError("ERC20 ABI for minting base tokens was not provided")
-    state_abi = abis["ERC20Mintable"]
-    # get contract instance of hyperdrive
-    hyperdrive_contract: Contract = web3.eth.contract(
-        address=address.to_checksum_address(addresses.base_token), abi=state_abi
-    )
-    return hyperdrive_contract
-
-
 def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:
     """
     Returns the block pool info from the Hyperdrive contract
