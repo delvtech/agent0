@@ -173,6 +173,29 @@ def get_event_object(
     return (None, None)
 
 
+def contract_function_abi_outputs(abi: ABI, function_name: str):
+    """Parse the function abi to get the name and type for each output"""
+    function_abi = None
+    for func_abi in abi:  # loop over each entery in the abi list
+        if func_abi.get("name") == function_name:  # check the name
+            function_abi = func_abi  # pull out the one with the desired name
+            break
+    if not (function_abi and function_abi.get("outputs")):
+        logging.warning("could not find function_name=%s in contract abi", function_name)
+        return None
+    if len(function_abi.get("outputs")) > 1:  # multiple unnamed vars were returned
+        return_names_and_types = [(output.get("name"), output.get("type")) for output in function_abi.get("outputs")]
+    else:
+        abi_outputs = function_abi.get("outputs")[0]
+        if abi_outputs.get("type") == "tuple":  # multiple named outputs were returned in a struct
+            abi_components = abi_outputs.get("components")
+            return_names_and_types = [(component.get("name"), component.get("type")) for component in abi_components]
+        else:  # single output
+            return_value_name = abi_outputs.get("name") if abi_outputs.get("name") else "none"
+            return_names_and_types = [(return_value_name, abi_outputs.get("type"))]
+    return return_names_and_types
+
+
 def smart_contract_read_call(contract: Contract, function_name: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
     """Return from a smart contract read call
 
@@ -182,45 +205,21 @@ def smart_contract_read_call(contract: Contract, function_name: str, *fn_args, *
             would be cool if this also put stuff into FixedPoint
     """
     # get the callable contract function from function_name & call it
-    function: ContractFunction = contract.get_function_by_name(function_name)(*fn_args, **fn_kwargs)
-    return_values = function.call()
+    function: ContractFunction = contract.get_function_by_name(function_name)(*fn_args)  # , **fn_kwargs)
+    return_values = function.call(**fn_kwargs)
     if not isinstance(return_values, Sequence):
         return_values = [return_values]
-    if not contract.abi:  # not all contracts have an associated ABI
-        return {f"var_{idx}": value for idx, value in enumerate(return_values)}
-    # if the contract has an abi, then parse the names of the returned values
-    abi: ABI = contract.abi
-    # get the interface for this function
-    function_abi = None
-    for func_abi in abi:  # loop over each entery in the abi list
-        if func_abi.get("name") == function_name:  # check the name
-            function_abi = func_abi  # pull out the one with the desired name
-            break
-    if not (function_abi and function_abi.get("outputs")):
-        logging.warning("could not find function_name=%s in contract abi", function_name)
-        return return_values  # return the original  values
-    # get the return names & types for this function
-    if len(function_abi.get("outputs")) > 1:  # multiple unnamed vars were returned
-        return_value_names_and_types = [
-            (output.get("name"), output.get("type")) for output in function_abi.get("outputs")
-        ]
-    else:
-        abi_outputs = function_abi.get("outputs")[0]
-        if abi_outputs.get("type") == "tuple":  # multiple outputs
-            abi_components = abi_outputs.get("components")
-            return_value_names_and_types = [
-                (component.get("name"), component.get("type")) for component in abi_components
-            ]
-        else:
-            return_value_name = abi_outputs.get("name") if abi_outputs.get("name") else "none"
-            return_value_names_and_types = [(return_value_name, abi_outputs.get("type"))]
-    if len(return_value_names_and_types) != len(return_values):
-        raise AssertionError(f"{len(return_value_names_and_types)=} must equal {len(return_values)=}.")
-    function_return_dict = dict(
-        (var_name_and_type[0], var_value)
-        for var_name_and_type, var_value in zip(return_value_names_and_types, return_values)
-    )
-    return function_return_dict
+    if contract.abi:  # not all contracts have an associated ABI
+        return_names_and_types = contract_function_abi_outputs(contract.abi, function_name)
+        if return_names_and_types is not None:
+            if len(return_names_and_types) != len(return_values):
+                raise AssertionError(f"{len(return_names_and_types)=} must equal {len(return_values)=}.")
+            function_return_dict = dict(
+                (var_name_and_type[0], var_value)
+                for var_name_and_type, var_value in zip(return_names_and_types, return_values)
+            )
+            return function_return_dict
+    return {f"var_{idx}": value for idx, value in enumerate(return_values)}
 
 
 def smart_contract_transact(
@@ -385,19 +384,15 @@ def get_block_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number:
         A PoolInfo object ready to be inserted into Postgres
     """
     pool_info_data_dict = smart_contract_read_call(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
-
     pool_info_data_dict: dict[Any, Any] = {
         key: _convert_scaled_value(value) for (key, value) in pool_info_data_dict.items()
     }
-
     current_block: BlockData = web3.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
     if current_block_timestamp is None:
         raise AssertionError("Current block has no timestamp")
-
     pool_info_data_dict.update({"timestamp": current_block_timestamp})
     pool_info_data_dict.update({"blockNumber": block_number})
-
     pool_info_dict = {}
     for key in PoolInfo.__annotations__.keys():
         # Required keys
@@ -408,10 +403,8 @@ def get_block_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number:
         # Otherwise default to None if not exist
         else:
             pool_info_dict[key] = pool_info_data_dict.get(key, None)
-
     # Populating the dataclass from the dictionary
     pool_info = PoolInfo(**pool_info_dict)
-
     return pool_info
 
 
