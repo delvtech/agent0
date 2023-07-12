@@ -7,7 +7,7 @@ import os
 import re
 import time
 from datetime import datetime
-from typing import Any, Sequence
+from typing import Any
 
 import attr
 import requests
@@ -78,6 +78,12 @@ def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs:
         The HTTPProvider uses the python requests library for making requests.
         If you would like to modify how requests are made,
         you can use the request_kwargs to do so.
+
+    Notes
+    -----
+    The geth_poa_middleware is required to connect to geth --dev or the Goerli public network.
+    It may also be needed for other EVM compatible blockchains like Polygon or BNB Chain (Binance Smart Chain).
+    See more `here <https://web3py.readthedocs.io/en/stable/middleware.html#proof-of-authority>`_.
     """
     if request_kwargs is None:
         request_kwargs = {}
@@ -189,7 +195,8 @@ def get_event_object(
 def contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list[tuple[str, str]] | None:
     """Parse the function abi to get the name and type for each output"""
     function_abi = None
-    for abi in contract_abi:  # loop over each entery in the abi list
+    # find the first function matching the function_name
+    for abi in contract_abi:  # loop over each entry in the abi list
         if abi.get("name") == function_name:  # check the name
             function_abi = abi  # pull out the one with the desired name
             break
@@ -200,7 +207,7 @@ def contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list
     if function_outputs is None:
         logging.warning("function abi does not specify outputs")
         return None
-    if not isinstance(function_outputs, Sequence):
+    if not isinstance(function_outputs, list):
         logging.warning("function abi outputs are not a sequence")
         return None
     if len(function_outputs) > 1:  # multiple unnamed vars were returned
@@ -233,7 +240,7 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
     # get the callable contract function from function_name & call it
     function: ContractFunction = contract.get_function_by_name(function_name)(*fn_args)  # , **fn_kwargs)
     return_values = function.call(**fn_kwargs)
-    if not isinstance(return_values, Sequence):
+    if not isinstance(return_values, list):
         return_values = [return_values]
     if contract.abi:  # not all contracts have an associated ABI
         return_names_and_types = contract_function_abi_outputs(contract.abi, function_name)
