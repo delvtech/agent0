@@ -20,7 +20,7 @@ def setup_logging(
     log_level: int = elfpy.DEFAULT_LOG_LEVEL,
     delete_previous_logs: bool = False,
     log_stdout: bool = True,
-    log_formatter: logging.Formatter | None = None,
+    log_format_string: str | None = None,
     keep_previous_handlers: bool = False,
 ) -> None:
     # pylint: disable=too-many-arguments
@@ -43,38 +43,35 @@ def setup_logging(
             Log level to track. Defaults to elfpy.DEFAULT_LOG_LEVEL.
         delete_previous_logs : (bool, optional)
             Whether to delete previous log file if it exists. Defaults to False.
-        log_file_and_stdout : (bool, optional)
-            Whether to log to both file and standard output. Defaults to False.
-        log_formatter : (logging.Formatter, optional)
+        log_stdout : (bool, optional)
+            Whether to log to standard output. Defaults to True.
+        log_format_string : (str, optional)
             Log formatter object. Defaults to None.
 
-    Raises
-    ------
-        ValueError: If log_filename is None and log_file_and_stdout is True.
-
+    .. todo::
+        - Fix the docstring
+        - Test the various optional input combinations
     """
-
-    # Create log handlers
+    # create log handlers
     handlers = logging.getLogger().handlers if keep_previous_handlers else []
-
-    if log_formatter is None:
-        log_formatter = logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME)
-
+    # create log formatter
+    if log_format_string is None:
+        log_format_string = logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME)
+    else:
+        log_format_string = logging.Formatter(log_format_string, elfpy.DEFAULT_LOG_DATETIME)
+    # pipe to stdout if requested
     if log_stdout:
         stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setFormatter(log_formatter)
+        stream_handler.setFormatter(log_format_string)
         handlers.append(stream_handler)
-
+    # log to file
     if log_filename is not None:
         log_dir, log_name = _prepare_log_path(log_filename)
-
         # Delete the log file if requested
         if delete_previous_logs and os.path.exists(os.path.join(log_dir, log_name)):
             os.remove(os.path.join(log_dir, log_name))
-
-        file_handler = _create_file_handler(log_dir, log_name, log_formatter, max_bytes)
+        file_handler = _create_file_handler(log_dir, log_name, log_format_string, max_bytes)
         handlers.append(file_handler)
-
     # Configure the root logger
     logger = logging.getLogger()
     logger.setLevel(log_level)
