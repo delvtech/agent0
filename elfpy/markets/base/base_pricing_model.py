@@ -221,6 +221,7 @@ class BasePricingModel(ABC):
         time_remaining: time.StretchedTime,
     ):
         """Applies a set of assertions to the input of a trading function."""
+        assert time_remaining.normalized_time <= 1
         assert quantity.amount >= elfpy.WEI, f"expected quantity.amount >= {elfpy.WEI}, not {quantity.amount}!"
         assert market_state.share_reserves >= FixedPoint(
             "0.0"

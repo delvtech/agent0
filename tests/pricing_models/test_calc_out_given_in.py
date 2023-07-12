@@ -1621,7 +1621,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=time.StretchedTime(
                     days=FixedPoint("500.0"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
                 ),
-                exception_type=(AssertionError, fperrors.DivisionByZero),
+                exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 11
                 # amount very high, can't make trade
