@@ -36,7 +36,7 @@ test_account = ci.TestAccount(extra_entropy)
 test_ether_balance = ci.get_account_balance_from_provider(web3, test_account.checksum_address)
 print(f"\nether balance for acccount {test_account.checksum_address=}:\n\t{test_ether_balance=}")
 # fund test account with ether
-rpc_response = ci.set_account_balance(web3, test_account.checksum_address, int(web3.to_wei(1000, "ether")))
+rpc_response = ci.set_anvil_account_balace(web3, test_account.checksum_address, int(web3.to_wei(1000, "ether")))
 # check ether balance again
 test_ether_balance = ci.get_account_balance_from_provider(web3, test_account.checksum_address)
 print(f"ether balance for acccount {test_account.checksum_address=}:\n\t{test_ether_balance=}")

@@ -76,7 +76,7 @@ def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs:
     return web3
 
 
-def set_account_balance(web3: Web3, account_address: str, amount_wei: int) -> RPCResponse:
+def set_anvil_account_balace(web3: Web3, account_address: str, amount_wei: int) -> RPCResponse:
     """Set an the account using the web3 provider
 
     Arguments
@@ -84,7 +84,6 @@ def set_account_balance(web3: Web3, account_address: str, amount_wei: int) -> RP
     amount_wei : int
         amount_wei to fund, in wei
     """
-    # TODO: Assert that we are using anvil (devnet) to be able to call anvil_setBalance
     if not web3.is_checksum_address(account_address):
         raise ValueError(f"argument {account_address=} must be a checksum address")
     params = [account_address, hex(amount_wei)]  # account, amount
