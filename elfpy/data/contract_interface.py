@@ -37,6 +37,7 @@ from elfpy.markets.hyperdrive import hyperdrive_assets
 RETRY_COUNT = 10
 
 
+### WEB3 SETUP
 def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs: dict | None = None) -> Web3:
     """Initialize a Web3 instance using an HTTP provider and inject a geth Proof of Authority (poa) middleware.
 
@@ -89,6 +90,7 @@ def get_account_balance_from_provider(web3: Web3, account_address: str) -> int |
     return None
 
 
+### CONTRACT INTERFACE SETUP
 def load_all_abis(abi_folder: str) -> dict:
     """Load all ABI jsons given an abi_folder
 
@@ -150,43 +152,6 @@ def get_event_object(
     return (None, None)
 
 
-def contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list[tuple[str, str]] | None:
-    """Parse the function abi to get the name and type for each output"""
-    function_abi = None
-    # find the first function matching the function_name
-    for abi in contract_abi:  # loop over each entry in the abi list
-        if abi.get("name") == function_name:  # check the name
-            function_abi = abi  # pull out the one with the desired name
-            break
-    if function_abi is None:
-        logging.warning("could not find function_name=%s in contract abi", function_name)
-        return None
-    function_outputs = function_abi.get("outputs")
-    if function_outputs is None:
-        logging.warning("function abi does not specify outputs")
-        return None
-    if not isinstance(function_outputs, list):
-        logging.warning("function abi outputs are not a sequence")
-        return None
-    if len(function_outputs) > 1:  # multiple unnamed vars were returned
-        return_names_and_types = []
-        for output in function_outputs:
-            return_names_and_types.append(_get_name_and_type_from_abi(output))
-    if (
-        function_outputs[0].get("type") == "tuple" and function_outputs[0].get("components") is not None
-    ):  # multiple named outputs were returned in a struct
-        abi_components = function_outputs[0].get("components")
-        if abi_components is None:
-            logging.warning("function abi output componenets are not a included")
-            return None
-        return_names_and_types = []
-        for component in abi_components:
-            return_names_and_types.append(_get_name_and_type_from_abi(component))
-    else:  # final condition is a single output
-        return_names_and_types = [_get_name_and_type_from_abi(function_outputs[0])]
-    return return_names_and_types
-
-
 def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
     """Return from a smart contract read call
 
@@ -201,7 +166,7 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
     if not isinstance(return_values, list):
         return_values = [return_values]
     if contract.abi:  # not all contracts have an associated ABI
-        return_names_and_types = contract_function_abi_outputs(contract.abi, function_name)
+        return_names_and_types = _contract_function_abi_outputs(contract.abi, function_name)
         if return_names_and_types is not None:
             if len(return_names_and_types) != len(return_values):
                 raise AssertionError(f"{len(return_names_and_types)=} must equal {len(return_values)=}.")
@@ -231,7 +196,59 @@ def smart_contract_transact(
     return tx_receipt
 
 
-def fetch_address_from_url(contracts_url: str) -> HyperdriveAddresses:
+def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[Transaction]:
+    """
+    Fetch transactions related to the contract
+    Returns the block pool info from the Hyperdrive contract
+
+    Arguments
+    ---------
+    web3: Web3
+        web3 provider object
+    hyperdrive_contract: Contract
+        The contract to query the pool info from
+    block_number: BlockNumber
+        The block number to query from the chain
+
+    Returns
+    -------
+    list[Transaction]
+        A list of Transaction objects ready to be inserted into Postgres
+    """
+    block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
+    transactions = block.get("transactions")
+    if not transactions:
+        logging.info("no transactions in block %s", block.get("number"))
+        return []
+    out_transactions = []
+    for transaction in transactions:
+        if isinstance(transaction, HexBytes):
+            logging.warning("transaction HexBytes")
+            continue
+        if transaction.get("to") != contract.address:
+            logging.warning("transaction not from contract")
+            continue
+        transaction_dict: dict[str, Any] = dict(transaction)
+        # Convert the HexBytes fields to their hex representation
+        tx_hash = transaction.get("hash") or HexBytes("")
+        transaction_dict["hash"] = tx_hash.hex()
+        # Decode the transaction input
+        try:
+            method, params = contract.decode_function_input(transaction["input"])
+            transaction_dict["input"] = {"method": method.fn_name, "params": params}
+        except ValueError:  # if the input is not meant for the contract, ignore it
+            continue
+        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
+        logs = fetch_and_decode_logs(web3, contract, tx_receipt)
+        receipt: dict[str, Any] = _recursive_dict_conversion(tx_receipt)  # type: ignore
+        out_transactions.append(_build_transaction_object(transaction_dict, logs, receipt))
+    return out_transactions
+
+
+### HYPERDRIVE
+
+
+def fetch_hyperdrive_address_from_url(contracts_url: str) -> HyperdriveAddresses:
     """Fetch addresses for deployed contracts in the Hyperdrive system."""
     attempt_num = 0
     response = None
@@ -305,58 +322,7 @@ def get_funding_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses)
     return hyperdrive_contract
 
 
-def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[Transaction]:
-    """
-    Fetch transactions related to the contract
-    Returns the block pool info from the Hyperdrive contract
-
-    Arguments
-    ---------
-    web3: Web3
-        web3 provider object
-    hyperdrive_contract: Contract
-        The contract to query the pool info from
-    block_number: BlockNumber
-        The block number to query from the chain
-
-    Returns
-    -------
-    list[Transaction]
-        A list of Transaction objects ready to be inserted into Postgres
-    """
-    block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
-    transactions = block.get("transactions")
-    if not transactions:
-        logging.info("no transactions in block %s", block.get("number"))
-        return []
-    out_transactions = []
-    for transaction in transactions:
-        if isinstance(transaction, HexBytes):
-            logging.warning("transaction HexBytes")
-            continue
-        if transaction.get("to") != contract.address:
-            logging.warning("transaction not from contract")
-            continue
-        transaction_dict: dict[str, Any] = dict(transaction)
-        # Convert the HexBytes fields to their hex representation
-        tx_hash = transaction.get("hash") or HexBytes("")
-        transaction_dict["hash"] = tx_hash.hex()
-        # Decode the transaction input
-        try:
-            method, params = contract.decode_function_input(transaction["input"])
-            transaction_dict["input"] = {"method": method.fn_name, "params": params}
-        except ValueError:  # if the input is not meant for the contract, ignore it
-            continue
-        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
-        logs = fetch_and_decode_logs(web3, contract, tx_receipt)
-        receipt: dict[str, Any] = _recursive_dict_conversion(tx_receipt)  # type: ignore
-
-        out_transactions.append(_build_transaction_object(transaction_dict, logs, receipt))
-
-    return out_transactions
-
-
-def get_block_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:
+def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:
     """
     Returns the block pool info from the Hyperdrive contract
 
@@ -475,19 +441,15 @@ def get_wallet_info(
     list[WalletInfo]
         The list of WalletInfo objects ready to be inserted into postgres
     """
-
     # pylint: disable=too-many-locals
-
     out_wallet_info = []
     for transaction in transactions:
         wallet_addr = transaction.event_operator
         token_id = transaction.event_id
         token_prefix = transaction.event_prefix
         token_maturity_time = transaction.event_maturity_time
-
         if wallet_addr is None:
             continue
-
         num_base_token_scaled = None
         for _ in range(RETRY_COUNT):
             try:
@@ -499,7 +461,6 @@ def get_wallet_info(
                 logging.warning("Error in getting base token balance, retrying")
                 time.sleep(1)
                 continue
-
         num_base_token = _convert_scaled_value(num_base_token_scaled)
         if (num_base_token is not None) and (wallet_addr is not None):
             out_wallet_info.append(
@@ -511,7 +472,6 @@ def get_wallet_info(
                     tokenValue=num_base_token,
                 )
             )
-
         # Handle cases where these fields don't exist
         if (token_id is not None) and (token_prefix is not None):
             base_token_type = hyperdrive_assets.AssetIdPrefix(token_prefix).name
@@ -521,7 +481,6 @@ def get_wallet_info(
             else:
                 token_type = base_token_type
                 maturity_time = None
-
             num_custom_token_scaled = None
             for _ in range(RETRY_COUNT):
                 try:
@@ -533,7 +492,6 @@ def get_wallet_info(
                     time.sleep(1)
                     continue
             num_custom_token = _convert_scaled_value(num_custom_token_scaled)
-
             if num_custom_token is not None:
                 out_wallet_info.append(
                     WalletInfo(
@@ -545,8 +503,10 @@ def get_wallet_info(
                         maturityTime=maturity_time,
                     )
                 )
-
     return out_wallet_info
+
+
+### Utils
 
 
 def _convert_scaled_value(input_val: int | None) -> float | None:
@@ -563,7 +523,6 @@ def _convert_scaled_value(input_val: int | None) -> float | None:
     float | None
         The unscaled floating point value
     """
-
     # We cast to FixedPoint, then to floats to keep noise to a minimum
     # This is assuming there's no loss of precision going from Fixedpoint to float
     # Once this gets fed into postgres, postgres has fixed precision Numeric type
@@ -594,10 +553,8 @@ def _build_transaction_object(
     Transaction
         A transaction object to be inserted into postgres
     """
-
     # Build output obj dict incrementally to be passed into Transaction
     # i.e., Transaction(**out_dict)
-
     # Base transaction fields
     out_dict: dict[str, Any] = {
         "blockNumber": transaction_dict["blockNumber"],
@@ -608,7 +565,6 @@ def _build_transaction_object(
         "txn_from": transaction_dict["from"],
         "gasUsed": receipt["gasUsed"],
     }
-
     # Input solidity methods and parameters
     # TODO can the input field ever be empty or not exist?
     out_dict["input_method"] = transaction_dict["input"]["method"]
@@ -625,7 +581,6 @@ def _build_transaction_object(
     out_dict["input_params_minApr"] = _convert_scaled_value(input_params.get("_minApr", None))
     out_dict["input_params_maxApr"] = _convert_scaled_value(input_params.get("_maxApr", None))
     out_dict["input_params_shares"] = _convert_scaled_value(input_params.get("_shares", None))
-
     # Assuming one TransferSingle per transfer
     # TODO Fix this below eventually
     # There can be two transfer singles
@@ -640,21 +595,17 @@ def _build_transaction_object(
     else:
         logging.warning("Tranfer event contains multiple TransferSingle logs, selecting first")
         event_args: dict[str, Any] = event_logs[0]["args"]
-
     out_dict["event_value"] = _convert_scaled_value(event_args.get("value", None))
     out_dict["event_from"] = event_args.get("from", None)
     out_dict["event_to"] = event_args.get("to", None)
     out_dict["event_operator"] = event_args.get("operator", None)
     out_dict["event_id"] = event_args.get("id", None)
-
     # Decode logs here
     if out_dict["event_id"] is not None:
         event_prefix, event_maturity_time = hyperdrive_assets.decode_asset_id(out_dict["event_id"])
         out_dict["event_prefix"] = event_prefix
         out_dict["event_maturity_time"] = event_maturity_time
-
     transaction = Transaction(**out_dict)
-
     return transaction
 
 
@@ -695,3 +646,40 @@ def _get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunction
     if return_value_type is None:
         return_value_type = "none"
     return (return_value_name, return_value_type)
+
+
+def _contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list[tuple[str, str]] | None:
+    """Parse the function abi to get the name and type for each output"""
+    function_abi = None
+    # find the first function matching the function_name
+    for abi in contract_abi:  # loop over each entry in the abi list
+        if abi.get("name") == function_name:  # check the name
+            function_abi = abi  # pull out the one with the desired name
+            break
+    if function_abi is None:
+        logging.warning("could not find function_name=%s in contract abi", function_name)
+        return None
+    function_outputs = function_abi.get("outputs")
+    if function_outputs is None:
+        logging.warning("function abi does not specify outputs")
+        return None
+    if not isinstance(function_outputs, list):
+        logging.warning("function abi outputs are not a sequence")
+        return None
+    if len(function_outputs) > 1:  # multiple unnamed vars were returned
+        return_names_and_types = []
+        for output in function_outputs:
+            return_names_and_types.append(_get_name_and_type_from_abi(output))
+    if (
+        function_outputs[0].get("type") == "tuple" and function_outputs[0].get("components") is not None
+    ):  # multiple named outputs were returned in a struct
+        abi_components = function_outputs[0].get("components")
+        if abi_components is None:
+            logging.warning("function abi output componenets are not a included")
+            return None
+        return_names_and_types = []
+        for component in abi_components:
+            return_names_and_types.append(_get_name_and_type_from_abi(component))
+    else:  # final condition is a single output
+        return_names_and_types = [_get_name_and_type_from_abi(function_outputs[0])]
+    return return_names_and_types

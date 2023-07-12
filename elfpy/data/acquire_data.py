@@ -36,7 +36,7 @@ def main(
 
     # send a request to the local server to fetch the deployed contract addresses and
     # all Hyperdrive contract addresses from the server response
-    addresses = contract_interface.fetch_address_from_url(contracts_url)
+    addresses = contract_interface.fetch_hyperdrive_address_from_url(contracts_url)
     abis = contract_interface.load_all_abis(abi_dir)
 
     hyperdrive_contract = contract_interface.get_hyperdrive_contract(web3, abis, addresses)
@@ -65,7 +65,7 @@ def main(
     # and if the chain has executed until start_block (based on latest_mined_block check)
     if data_latest_block_number < block_number < latest_mined_block:
         # Query and add block_pool_info
-        block_pool_info = contract_interface.get_block_pool_info(web3, hyperdrive_contract, block_number)
+        block_pool_info = contract_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
         postgres.add_pool_infos([block_pool_info], session)
 
         # Query and add block transactions
@@ -97,7 +97,7 @@ def main(
                 block_pool_info = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        block_pool_info = contract_interface.get_block_pool_info(
+                        block_pool_info = contract_interface.get_hyperdrive_pool_info(
                             web3, hyperdrive_contract, block_number
                         )
                         break
