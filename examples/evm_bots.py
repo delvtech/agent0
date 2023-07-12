@@ -695,7 +695,7 @@ if __name__ == "__main__":
         log_level=config.log_level,
         delete_previous_logs=config.delete_previous_logs,
         log_stdout=config.log_file_and_stdout,
-        log_formatter=config.log_formatter,
+        log_format_string=config.log_formatter,
     )
     # inputs
     NETWORK_CHOICE = "ethereum:local:" + ("alchemy" if config.alchemy else "foundry")
