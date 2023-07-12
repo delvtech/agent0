@@ -11,7 +11,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 from elfpy.data import contract_interface, postgres
-from elfpy import hyperdrive_interface
+from elfpy import eth, hyperdrive_interface
 from elfpy.utils import logs as log_utils
 
 # pylint: disable=too-many-arguments
@@ -35,12 +35,12 @@ def main(
     # initialize the postgres session
     session = postgres.initialize_session()
     # get web3 provider
-    web3: Web3 = contract_interface.initialize_web3_with_http_provider(ethereum_node, request_kwargs={"timeout": 60})
+    web3: Web3 = eth.initialize_web3_with_http_provider(ethereum_node, request_kwargs={"timeout": 60})
 
     # send a request to the local server to fetch the deployed contract addresses and
     # all Hyperdrive contract addresses from the server response
     addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(contracts_url)
-    abis = contract_interface.load_all_abis(abi_dir)
+    abis = eth.abi.load_all_abis(abi_dir)
 
     hyperdrive_contract = hyperdrive_interface.get_hyperdrive_contract(web3, abis, addresses)
     base_contract: Contract = web3.eth.contract(
@@ -74,7 +74,7 @@ def main(
         postgres.add_pool_infos([block_pool_info], session)
 
         # Query and add block transactions
-        block_transactions = contract_interface.fetch_transactions_for_block(web3, hyperdrive_contract, block_number)
+        block_transactions = eth.transactions.fetch_transactions_for_block(web3, hyperdrive_contract, block_number)
         postgres.add_transactions(block_transactions, session)
 
     # monitor for new blocks & add pool info per block
@@ -116,7 +116,7 @@ def main(
                 block_transactions = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        block_transactions = contract_interface.fetch_transactions_for_block(
+                        block_transactions = eth.transactions.fetch_transactions_for_block(
                             web3, hyperdrive_contract, block_number
                         )
                         break

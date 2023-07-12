@@ -17,7 +17,7 @@ from web3.contract.contract import Contract
 from web3 import Web3
 from web3.types import BlockData
 
-from elfpy import evm_interface as evm
+from elfpy import eth as evm
 from elfpy.data.db_schema import PoolConfig, PoolInfo, Transaction, WalletInfo
 from elfpy.markets.hyperdrive import hyperdrive_assets
 
