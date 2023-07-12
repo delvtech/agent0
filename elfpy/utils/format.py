@@ -7,7 +7,7 @@ import numpy as np
 from fixedpointmath import FixedPoint
 
 
-def format_numeric_string(value: float | FixedPoint, precision=3, min_digits=0, debug=False):
+def format_numeric_string(value: float | int | FixedPoint, precision=3, min_digits=0, debug=False):
     """
     Format a float to a string with a given precision.
     This follows the significant figure behavior, irrespective of the number's size.
@@ -17,7 +17,7 @@ def format_numeric_string(value: float | FixedPoint, precision=3, min_digits=0, 
         log_vars = (value, type(value), precision, min_digits)
         logging.error(log_str, *log_vars)
 
-    if isinstance(value, FixedPoint):
+    if isinstance(value, (FixedPoint, int)):
         value = float(value)
 
     if np.isinf(value):
