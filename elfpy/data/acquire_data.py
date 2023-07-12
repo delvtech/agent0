@@ -10,7 +10,7 @@ from eth_utils import address
 from web3 import Web3
 from web3.contract.contract import Contract
 
-from elfpy.data import contract_interface, postgres
+from elfpy.data import postgres
 from elfpy import eth, hyperdrive_interface
 from elfpy.utils import logs as log_utils
 

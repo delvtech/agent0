@@ -1,6 +1,7 @@
 """Interface functions"""
 
+from . import accounts
 from .rpc_interface import *
 from .transactions import *
-from .utils import *
+from .numeric_utils import *
 from .web3_setup import *

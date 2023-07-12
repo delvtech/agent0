@@ -17,7 +17,7 @@ from web3.contract.contract import Contract
 from web3 import Web3
 from web3.types import BlockData
 
-from elfpy import eth as evm
+from elfpy import eth
 from elfpy.data.db_schema import PoolConfig, PoolInfo, Transaction, WalletInfo
 from elfpy.markets.hyperdrive import hyperdrive_assets
 
@@ -96,9 +96,9 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
     PoolInfo
         A PoolInfo object ready to be inserted into Postgres
     """
-    pool_info_data_dict = evm.smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
+    pool_info_data_dict = eth.smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
     pool_info_data_dict: dict[Any, Any] = {
-        key: evm.convert_scaled_value(value) for (key, value) in pool_info_data_dict.items()
+        key: eth.convert_scaled_value(value) for (key, value) in pool_info_data_dict.items()
     }
     current_block: BlockData = web3.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
@@ -134,11 +134,11 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
     hyperdrive_config : PoolConfig
         The hyperdrive config.
     """
-    hyperdrive_config: dict[str, Any] = evm.smart_contract_read(hyperdrive_contract, "getPoolConfig")
+    hyperdrive_config: dict[str, Any] = eth.smart_contract_read(hyperdrive_contract, "getPoolConfig")
     out_config = {}
     out_config["contractAddress"] = hyperdrive_contract.address
     out_config["baseToken"] = hyperdrive_config.get("baseToken", None)
-    out_config["initializeSharePrice"] = evm.convert_scaled_value(hyperdrive_config.get("initializeSharePrice", None))
+    out_config["initializeSharePrice"] = eth.convert_scaled_value(hyperdrive_config.get("initializeSharePrice", None))
     out_config["positionDuration"] = hyperdrive_config.get("positionDuration", None)
     out_config["checkpointDuration"] = hyperdrive_config.get("checkpointDuration", None)
     config_time_stretch = hyperdrive_config.get("timeStretch", None)
@@ -153,9 +153,9 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
     out_config["governance"] = hyperdrive_config.get("governance", None)
     out_config["feeCollector"] = hyperdrive_config.get("feeCollector", None)
     curve_fee, flat_fee, governance_fee = hyperdrive_config.get("fees", (None, None, None))
-    out_config["curveFee"] = evm.convert_scaled_value(curve_fee)
-    out_config["flatFee"] = evm.convert_scaled_value(flat_fee)
-    out_config["governanceFee"] = evm.convert_scaled_value(governance_fee)
+    out_config["curveFee"] = eth.convert_scaled_value(curve_fee)
+    out_config["flatFee"] = eth.convert_scaled_value(flat_fee)
+    out_config["governanceFee"] = eth.convert_scaled_value(governance_fee)
     out_config["oracleSize"] = hyperdrive_config.get("oracleSize", None)
     out_config["updateGap"] = hyperdrive_config.get("updateGap", None)
     out_config["invTimeStretch"] = inv_time_stretch
@@ -214,7 +214,7 @@ def get_wallet_info(
                 logging.warning("Error in getting base token balance, retrying")
                 time.sleep(1)
                 continue
-        num_base_token = evm.convert_scaled_value(num_base_token_scaled)
+        num_base_token = eth.convert_scaled_value(num_base_token_scaled)
         if (num_base_token is not None) and (wallet_addr is not None):
             out_wallet_info.append(
                 WalletInfo(
@@ -244,7 +244,7 @@ def get_wallet_info(
                     logging.warning("Error in getting custom token balance, retrying")
                     time.sleep(1)
                     continue
-            num_custom_token = evm.convert_scaled_value(num_custom_token_scaled)
+            num_custom_token = eth.convert_scaled_value(num_custom_token_scaled)
             if num_custom_token is not None:
                 out_wallet_info.append(
                     WalletInfo(
