@@ -683,3 +683,43 @@ def calculate_spot_price(
     """
     spot_price = (initial_share_price * share_reserves / bond_reserves) ** time_stretch
     return spot_price
+
+
+def calculate_max_short(
+    share_reserves: FixedPoint,
+    bond_reserves: FixedPoint,
+    longs_outstanding: FixedPoint,
+    time_stretch: FixedPoint,
+    share_price: FixedPoint,
+    initial_share_price: FixedPoint,
+) -> FixedPoint:
+    r"""
+    Calculates the maximum amount of shares that can be used to open shorts.
+
+    Parameters
+    ----------
+    share_reserves : FixedPoint
+        The pool's share reserves.
+    bond_reserves : FixedPoint
+        The pool's bonds reserves.
+    longs_outstanding : FixedPoint
+        The amount of longs outstanding.
+    time_stretch : FixedPoint
+        The time stretch parameter.
+    share_price : FixedPoint
+        The share price.
+    initial_share_price : FixedPoint
+        The initial share price.
+
+    Returns
+    -------
+    FixedPoint
+        The maximum amount of shares that can be used to open shorts.
+    """
+    t = ONE_18 - time_stretch
+    price_factor = share_price / initial_share_price
+    k = modified_yield_space_constant(price_factor, initial_share_price, share_reserves, t, bond_reserves)
+    optimal_bond_reserves = (k - price_factor * ((longs_outstanding / share_price) ** t)) ** (ONE_18 / t)
+
+    # The optimal bond reserves imply a maximum short of dy = y - y0.
+    return optimal_bond_reserves - bond_reserves
