@@ -55,6 +55,7 @@ with-dependencies = [
     "flask",
     "psycopg2-binary",
     "sqlalchemy",
+    "ens",
 ]
 
 docs = [
