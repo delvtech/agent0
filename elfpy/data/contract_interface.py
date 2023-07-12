@@ -87,7 +87,7 @@ def initialize_web3_with_http_provider(ethereum_node: URI | str, request_kwargs:
     return web3
 
 
-def set_anvil_account_balace(web3: Web3, account_address: str, amount_wei: int) -> RPCResponse:
+def set_anvil_account_balance(web3: Web3, account_address: str, amount_wei: int) -> RPCResponse:
     """Set an the account using the web3 provider
 
     Arguments
@@ -119,9 +119,9 @@ def get_account_balance_from_provider(web3: Web3, account_address: str) -> int |
     if not web3.is_checksum_address(account_address):
         raise ValueError(f"argument {account_address=} must be a checksum address")
     rpc_response = web3.provider.make_request(method=RPCEndpoint("eth_getBalance"), params=[account_address, "latest"])
-    result = rpc_response.get("result")
-    if result is not None:
-        return int(result, 16)
+    hex_result = rpc_response.get("result")
+    if hex_result is not None:
+        return int(hex_result, base=16)  # cast hex to int
     return None
 
 
@@ -186,17 +186,6 @@ def get_event_object(
     return (None, None)
 
 
-def get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunctionParams) -> tuple[str, str]:
-    """Retrieve and narrow the types for abi outputs"""
-    return_value_name: str | None = abi_outputs.get("name")
-    if return_value_name is None:
-        return_value_name = "none"
-    return_value_type: str | None = abi_outputs.get("type")
-    if return_value_type is None:
-        return_value_type = "none"
-    return (return_value_name, return_value_type)
-
-
 def contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list[tuple[str, str]] | None:
     """Parse the function abi to get the name and type for each output"""
     function_abi = None
@@ -217,7 +206,7 @@ def contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list
     if len(function_outputs) > 1:  # multiple unnamed vars were returned
         return_names_and_types = []
         for output in function_outputs:
-            return_names_and_types.append(get_name_and_type_from_abi(output))
+            return_names_and_types.append(_get_name_and_type_from_abi(output))
     if (
         function_outputs[0].get("type") == "tuple" and function_outputs[0].get("components") is not None
     ):  # multiple named outputs were returned in a struct
@@ -227,9 +216,9 @@ def contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list
             return None
         return_names_and_types = []
         for component in abi_components:
-            return_names_and_types.append(get_name_and_type_from_abi(component))
+            return_names_and_types.append(_get_name_and_type_from_abi(component))
     else:  # final condition is a single output
-        return_names_and_types = [get_name_and_type_from_abi(function_outputs[0])]
+        return_names_and_types = [_get_name_and_type_from_abi(function_outputs[0])]
     return return_names_and_types
 
 
@@ -730,3 +719,14 @@ def _collect_files(folder_path: str, extension: str = ".json") -> list[str]:
                 file_path = os.path.join(root, file)
                 collected_files.append(file_path)
     return collected_files
+
+
+def _get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunctionParams) -> tuple[str, str]:
+    """Retrieve and narrow the types for abi outputs"""
+    return_value_name: str | None = abi_outputs.get("name")
+    if return_value_name is None:
+        return_value_name = "none"
+    return_value_type: str | None = abi_outputs.get("type")
+    if return_value_type is None:
+        return_value_type = "none"
+    return (return_value_name, return_value_type)
