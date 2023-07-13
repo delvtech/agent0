@@ -142,3 +142,15 @@ class TestWalletInfoInterface:
         wallet_info_df = postgres.get_current_wallet_info(session).reset_index()
         assert wallet_info_df["tokenType"].equals(pd.Series(["BASE", "LP"], name="tokenType"))
         assert wallet_info_df["tokenValue"].equals(pd.Series([6.1, 5.1], name="tokenValue"))
+
+    def test_get_agents(self, session):
+        """Testing helper function to get current wallet values"""
+        wallet_info_1 = WalletInfo(blockNumber=0, walletAddress="addr_1")  # add your other columns here...
+        wallet_info_2 = WalletInfo(blockNumber=1, walletAddress="addr_1")  # add your other columns here...
+        wallet_info_3 = WalletInfo(blockNumber=2, walletAddress="addr_2")  # add your other columns here...
+        postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
+
+        agents = postgres.get_agents(session)
+        assert len(agents) == 2
+        assert "addr_1" in agents
+        assert "addr_2" in agents

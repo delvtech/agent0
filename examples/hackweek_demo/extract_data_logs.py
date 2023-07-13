@@ -108,4 +108,6 @@ def get_combined_data(txn_data, pool_info_data):
     trade_data["timestamp"] = trade_data["block_timestamp"]
     trade_data["block_timestamp"] = trade_data["block_timestamp"].astype(int)
 
+    trade_data = trade_data.sort_values("block_timestamp")
+
     return trade_data
