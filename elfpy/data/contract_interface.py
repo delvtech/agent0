@@ -7,13 +7,13 @@ import os
 import re
 import time
 from datetime import datetime
-from typing import Any
+from typing import Any, Sequence
 
 import attr
 import requests
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
-from eth_typing import BlockNumber, ChecksumAddress, URI
+from eth_typing import URI, BlockNumber, ChecksumAddress
 from eth_utils import address
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
@@ -22,9 +22,9 @@ from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.middleware import geth_poa
 from web3.types import (
     ABI,
+    ABIEvent,
     ABIFunctionComponents,
     ABIFunctionParams,
-    ABIEvent,
     BlockData,
     EventData,
     LogReceipt,
@@ -207,7 +207,7 @@ def contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list
     if function_outputs is None:
         logging.warning("function abi does not specify outputs")
         return None
-    if not isinstance(function_outputs, list):
+    if not isinstance(function_outputs, Sequence):
         logging.warning("function abi outputs are not a sequence")
         return None
     if len(function_outputs) > 1:  # multiple unnamed vars were returned
@@ -240,7 +240,7 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
     # get the callable contract function from function_name & call it
     function: ContractFunction = contract.get_function_by_name(function_name)(*fn_args)  # , **fn_kwargs)
     return_values = function.call(**fn_kwargs)
-    if not isinstance(return_values, list):
+    if not isinstance(return_values, Sequence):
         return_values = [return_values]
     if contract.abi:  # not all contracts have an associated ABI
         return_names_and_types = contract_function_abi_outputs(contract.abi, function_name)
