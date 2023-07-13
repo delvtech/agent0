@@ -69,7 +69,7 @@ Complete the steps in [Hyperdrive's Pre-requisites section](https://github.com/d
 
 ### 7. Install ape plugins
 
-Install Ape plugins with `ape plugins install .`
+Install Ape plugins with `python -m pip install --upgrade -e ".[ape]"`
 
 ## Notes
 
