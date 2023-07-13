@@ -4,17 +4,15 @@ from __future__ import annotations
 import logging
 import re
 import time
-
 from datetime import datetime
 from typing import Any
 
 import requests
-
 from eth_typing import BlockNumber
 from eth_utils import address
 from fixedpointmath import FixedPoint
-from web3.contract.contract import Contract
 from web3 import Web3
+from web3.contract.contract import Contract
 from web3.types import BlockData
 
 from elfpy import eth
@@ -156,7 +154,7 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
     out_config["curveFee"] = eth.convert_scaled_value(curve_fee)
     out_config["flatFee"] = eth.convert_scaled_value(flat_fee)
     out_config["governanceFee"] = eth.convert_scaled_value(governance_fee)
-    out_config["oracleSize"] = hyperdrive_config.get("oracleSize", None)
+    out_config["oracleSize"] = eth.convert_scaled_value(hyperdrive_config.get("oracleSize", None))
     out_config["updateGap"] = hyperdrive_config.get("updateGap", None)
     out_config["invTimeStretch"] = inv_time_stretch
     if out_config["positionDuration"] is not None:
