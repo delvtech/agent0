@@ -7,6 +7,7 @@ from typing import Any
 
 from elfpy import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, types
 from elfpy.utils import json as output_utils
+from elfpy.bots import bot_info
 
 DEFAULT_USERNAME = "changeme"
 
@@ -54,6 +55,7 @@ class BotConfig(types.FrozenClass):
     risk_threshold: float = 0.0
     # scratch space for any application-specific & extraneous parameters
     scratch: dict[Any, Any] = field(default_factory=dict)
+    bots: list[BotInfo] | None = None
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)
