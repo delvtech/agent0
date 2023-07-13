@@ -205,3 +205,17 @@ class Transaction(Base):
     # status
     # logsBloom
     # effectiveGasPrice
+
+
+class UserMap(Base):
+    """
+    Table/dataclass schema for pool config
+    """
+
+    __tablename__ = "usermap"
+
+    # Default table primary key
+    # Note that we use postgres in production and sqlite in testing, but sqlite has issues with
+    # autoincrement with BigIntegers. Hence, we use the Integer variant when using sqlite in tests
+    address: Mapped[str] = mapped_column(String, primary_key=True)
+    username: Mapped[str] = mapped_column(String, index=True)
