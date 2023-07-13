@@ -17,6 +17,9 @@ class BotConfig(types.FrozenClass):
     # lots of configs!
     # pylint: disable=too-many-instance-attributes
 
+    # Logical username for who is running bots
+    # TODO add logic in evm bots to fail if this username is default
+    username: str = "change_me"
     # whether to run on alchemy
     alchemy: bool = False
     # url for retrieving the contract artifacts

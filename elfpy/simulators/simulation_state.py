@@ -79,29 +79,6 @@ class SimulationState:
         setattr(self, key, value)
 
 
-def simulation_state_aggreagator(constructor):
-    """Returns a dataclass that aggregates simulation state attributes"""
-    # Wrap the type from the constructor in a list, but keep the name
-    attribs = [(str(key), list[val], field(default_factory=list)) for key, val in constructor.__annotations__.items()]
-
-    # Make a new dataclass that has helper functions for appending to the list
-    def update(obj, dictionary):
-        for key, value in dictionary.items():
-            obj.update_item(key, value)
-
-    # The lambda is used because of the self variable -- TODO: can possibly remove?
-    # pylint: disable=unnecessary-lambda
-    aggregator = make_dataclass(
-        cls_name=constructor.__name__ + "Aggregator",
-        fields=attribs,
-        namespace={
-            "update_item": lambda self, key, value: getattr(self, key).append(value),
-            "update": lambda self, dict_like: update(self, dict_like),
-        },
-    )()
-    return aggregator
-
-
 @dataclass
 class RunSimVariables:
     """Simulation state variables that change by run"""
@@ -188,10 +165,10 @@ class NewSimulationState:
 
     def __post_init__(self) -> None:
         r"""Construct empty dataclasses with appropriate attributes for each state variable type"""
-        self._run_updates = simulation_state_aggreagator(RunSimVariables)
-        self._day_updates = simulation_state_aggreagator(DaySimVariables)
-        self._block_updates = simulation_state_aggreagator(BlockSimVariables)
-        self._trade_updates = simulation_state_aggreagator(TradeSimVariables)
+        self._run_updates = _simulation_state_aggreagator(RunSimVariables)
+        self._day_updates = _simulation_state_aggreagator(DaySimVariables)
+        self._block_updates = _simulation_state_aggreagator(BlockSimVariables)
+        self._trade_updates = _simulation_state_aggreagator(TradeSimVariables)
 
     def update(
         self,
@@ -237,3 +214,26 @@ class NewSimulationState:
         with entries in the smaller dataframes duplicated accordingly
         """
         return self.trade_updates.merge(self.block_updates.merge(self.day_updates.merge(self.run_updates)))
+
+
+def _simulation_state_aggreagator(constructor):
+    """Returns a dataclass that aggregates simulation state attributes"""
+    # Wrap the type from the constructor in a list, but keep the name
+    attribs = [(str(key), list[val], field(default_factory=list)) for key, val in constructor.__annotations__.items()]
+
+    # Make a new dataclass that has helper functions for appending to the list
+    def update(obj, dictionary):
+        for key, value in dictionary.items():
+            obj.update_item(key, value)
+
+    # The lambda is used because of the self variable -- TODO: can possibly remove?
+    # pylint: disable=unnecessary-lambda
+    aggregator = make_dataclass(
+        cls_name=constructor.__name__ + "Aggregator",
+        fields=attribs,
+        namespace={
+            "update_item": lambda self, key, value: getattr(self, key).append(value),
+            "update": lambda self, dict_like: update(self, dict_like),
+        },
+    )()
+    return aggregator

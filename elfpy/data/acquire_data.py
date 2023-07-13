@@ -6,9 +6,12 @@ import time
 
 from dotenv import load_dotenv
 from eth_typing import URI, BlockNumber
+from eth_utils import address
 from web3 import Web3
+from web3.contract.contract import Contract
 
-from elfpy.data import contract_interface, postgres
+from elfpy.data import postgres
+from elfpy import eth, hyperdrive_interface
 from elfpy.utils import logs as log_utils
 
 # pylint: disable=too-many-arguments
@@ -32,18 +35,20 @@ def main(
     # initialize the postgres session
     session = postgres.initialize_session()
     # get web3 provider
-    web3: Web3 = contract_interface.initialize_web3_with_http_provider(ethereum_node, request_kwargs={"timeout": 60})
+    web3: Web3 = eth.initialize_web3_with_http_provider(ethereum_node, request_kwargs={"timeout": 60})
 
     # send a request to the local server to fetch the deployed contract addresses and
     # all Hyperdrive contract addresses from the server response
-    addresses = contract_interface.fetch_address_from_url(contracts_url)
-    abis = contract_interface.load_all_abis(abi_dir)
+    addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(contracts_url)
+    abis = eth.abi.load_all_abis(abi_dir)
 
-    hyperdrive_contract = contract_interface.get_hyperdrive_contract(web3, abis, addresses)
-    base_contract = contract_interface.get_funding_contract(web3, abis, addresses)
+    hyperdrive_contract = hyperdrive_interface.get_hyperdrive_contract(web3, abis, addresses)
+    base_contract: Contract = web3.eth.contract(
+        address=address.to_checksum_address(addresses.base_token), abi=abis["ERC20Mintable"]
+    )
 
     # get pool config from hyperdrive contract
-    pool_config = contract_interface.get_hyperdrive_config(hyperdrive_contract)
+    pool_config = hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract)
     postgres.add_pool_config(pool_config, session)
 
     # Get last entry of pool info in db
@@ -65,11 +70,11 @@ def main(
     # and if the chain has executed until start_block (based on latest_mined_block check)
     if data_latest_block_number < block_number < latest_mined_block:
         # Query and add block_pool_info
-        block_pool_info = contract_interface.get_block_pool_info(web3, hyperdrive_contract, block_number)
+        block_pool_info = hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
         postgres.add_pool_infos([block_pool_info], session)
 
         # Query and add block transactions
-        block_transactions = contract_interface.fetch_transactions_for_block(web3, hyperdrive_contract, block_number)
+        block_transactions = eth.transactions.fetch_transactions_for_block(web3, hyperdrive_contract, block_number)
         postgres.add_transactions(block_transactions, session)
 
     # monitor for new blocks & add pool info per block
@@ -97,7 +102,7 @@ def main(
                 block_pool_info = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        block_pool_info = contract_interface.get_block_pool_info(
+                        block_pool_info = hyperdrive_interface.get_hyperdrive_pool_info(
                             web3, hyperdrive_contract, block_number
                         )
                         break
@@ -111,7 +116,7 @@ def main(
                 block_transactions = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        block_transactions = contract_interface.fetch_transactions_for_block(
+                        block_transactions = eth.transactions.fetch_transactions_for_block(
                             web3, hyperdrive_contract, block_number
                         )
                         break
@@ -122,7 +127,7 @@ def main(
                 if block_transactions:
                     postgres.add_transactions(block_transactions, session)
 
-                    wallet_info_for_transactions = contract_interface.get_wallet_info(
+                    wallet_info_for_transactions = hyperdrive_interface.get_wallet_info(
                         hyperdrive_contract, base_contract, block_number, block_transactions
                     )
                     postgres.add_wallet_infos(wallet_info_for_transactions, session)

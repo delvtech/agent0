@@ -369,6 +369,29 @@ def get_current_wallet_info(
     return current_wallet_info
 
 
+def get_agents(session: Session, start_block: int | None = None, end_block: int | None = None) -> list[str]:
+    """Gets the list of all agents from the WalletInfo table"""
+    query = session.query(WalletInfo.walletAddress)
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = _get_latest_block_number_wallet_info(session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = _get_latest_block_number_wallet_info(session) + end_block + 1
+
+    if start_block is not None:
+        query = query.filter(WalletInfo.blockNumber >= start_block)
+    if end_block is not None:
+        query = query.filter(WalletInfo.blockNumber < end_block)
+
+    if query is None:
+        return []
+    query = query.distinct()
+
+    results = pd.read_sql(query.statement, con=session.connection())
+
+    return results["walletAddress"].to_list()
+
+
 def get_latest_block_number(session: Session) -> int:
     """Gets the latest block number based on the pool info table in the db
     Arguments

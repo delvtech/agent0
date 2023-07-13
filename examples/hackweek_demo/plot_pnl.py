@@ -112,11 +112,17 @@ def get_wallet_from_onchain_trade_info(
     return wallet
 
 
-def calculate_pnl(trade_data):
+def calculate_pnl(trade_data, agent_list):
     # pylint: disable=too-many-locals
     """Calculates the pnl given trade data"""
     # Drop all rows with nan maturity timestamps
     trade_data = trade_data[~trade_data["maturity_time"].isna()]
+
+    # Filter trade_data based on agent_list
+    trade_data = trade_data[trade_data["operator"].isin(agent_list)]
+
+    if len(trade_data) == 0:
+        return (pd.DataFrame([]), pd.DataFrame([]))
 
     # %% estimate position duration and add it in
     position_duration = max(trade_data.maturity_time - trade_data.block_timestamp)
@@ -143,7 +149,7 @@ def calculate_pnl(trade_data):
     for _, row in trade_data.iterrows():
         new_pnl: dict[str, float] = {}
         for agent in agents:
-            agent_index = agents.index(agent)
+            agent_shortname = agent[:6] + "..." + agent[-4:]
 
             marginal_trades = pd.DataFrame(row).T
 
@@ -180,7 +186,7 @@ def calculate_pnl(trade_data):
             for _, short in agent_wallets[agent].shorts.items():
                 pnl += float(short.balance) * (1 - spot_price)
 
-            new_pnl[f"agent_{agent_index}_pnl"] = pnl
+            new_pnl[f"{agent_shortname}"] = pnl
         pnl_data.append(new_pnl)
         time_data.append(row["timestamp"])
 
