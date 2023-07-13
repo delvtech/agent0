@@ -1,6 +1,6 @@
 # Install -- overview
 
-Elf-simulations has been tested with Python 3.9 and 3.10.
+Elf-simulations is currently supported only for Python 3.10.
 
 ### 1. Install Pyenv
 
