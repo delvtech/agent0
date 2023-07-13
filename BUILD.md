@@ -30,7 +30,7 @@ Run the following command to retrieve the image:
 docker image pull ghcr.io/delvtech/elf-simulations/dcdefc6153fc
 ```
 
-If you you get a 401 error, you'll need to make a GH Personal Access Token with write accesss.
+If you get a 401 error, you'll need to make a GH Personal Access Token with write access.
 
 You can optionally provide a tag
 
