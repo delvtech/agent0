@@ -635,7 +635,7 @@ def main(
     # initialize the postgres session
     wallet_addrs = [agent.contract.address for _, agent in sim_agents.items()]
     session = postgres.initialize_session()
-    postgres.add_name_map(bot_config.username, wallet_addrs)
+    postgres.add_user_map(bot_config.username, wallet_addrs, session)
     postgres.close_session(session)
 
     start_timestamp = ape.chain.blocks[-1].timestamp

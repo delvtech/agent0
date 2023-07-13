@@ -113,6 +113,7 @@ def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session):
     try:
         session.commit()
     except sqlalchemy.exc.DataError as err:  # type: ignore
+        session.rollback()
         print(f"{wallet_infos=}")
         raise err
 
@@ -130,6 +131,10 @@ def add_pool_config(pool_config: PoolConfig, session: Session):
         The initialized session object
     """
 
+    # NOTE the logic below is not thread safe, i.e., a race condition can exists
+    # if multiple threads try to add pool config at the same time
+    # This function is being called by acquire_data.py, which should only have one
+    # instance per db, so no need to worry about it here
     existing_pool_config = get_pool_config(session, contract_address=pool_config.contractAddress)
 
     if len(existing_pool_config) == 0:
@@ -137,6 +142,7 @@ def add_pool_config(pool_config: PoolConfig, session: Session):
         try:
             session.commit()
         except sqlalchemy.exc.DataError as err:  # type: ignore
+            session.rollback()
             print(f"{pool_config=}")
             raise err
     elif len(existing_pool_config) == 1:
@@ -168,6 +174,7 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session):
     try:
         session.commit()
     except sqlalchemy.exc.DataError as err:  # type: ignore
+        session.rollback()
         print(f"{pool_infos=}")
         raise err
 
@@ -187,13 +194,49 @@ def add_transactions(transactions: list[Transaction], session: Session):
     try:
         session.commit()
     except sqlalchemy.exc.DataError as err:  # type: ignore
+        session.rollback()
         print(f"{transactions=}")
         raise err
 
 
-def add_name_map(username: str, addresses: list[str]):
-    """Add username mapping to postgres during evm_bots initialization"""
-    pass
+def add_user_map(username: str, addresses: list[str], session: Session):
+    """Add username mapping to postgres during evm_bots initialization
+
+    Arguments
+    ---------
+    username: str
+        The logical username to attach to the wallet address
+    addresses: list[str]
+        A list of wallet addresses to map to the username
+    session: Session
+        The initialized session object
+    """
+
+    for address in addresses:
+        # Below is a best effort check against the database to see if the address is registered to another username
+        # This is best effort because there's a race condition here, e.g.,
+        # I read (address_1, user_1), someone else writes (address_1, user_2), I write (address_1, user_1)
+        # Because the call below is a `merge`, the final entry in the db is (address_1, user_1).
+        existing_user_map = get_user_map(session, address)
+        if len(existing_user_map) == 0:
+            # Address doesn't exist, all good
+            pass
+        elif len(existing_user_map) == 1:
+            existing_username = existing_user_map.iloc[0]["username"]
+            if existing_username != username:
+                raise ValueError(f"Wallet {address=} already registered to {existing_username}")
+        else:
+            # Should never be more than one address in table
+            raise ValueError("Fatal error: postgres returning multiple entries for primary key")
+
+        # This merge adds the row if not exist (keyed by address), otherwise will overwrite with this entry
+        session.merge(UserMap(address=address, username=username))
+
+    try:
+        session.commit()
+    except sqlalchemy.exc.DataError as err:  # type: ignore
+        print(f"{username=}, {addresses=}")
+        raise err
 
 
 def get_pool_config(session: Session, contract_address: str | None = None) -> pd.DataFrame:
@@ -395,6 +438,28 @@ def get_agents(session: Session, start_block: int | None = None, end_block: int 
     results = pd.read_sql(query.statement, con=session.connection())
 
     return results["walletAddress"].to_list()
+
+
+def get_user_map(session: Session, address: str | None = None) -> pd.DataFrame:
+    """
+    Gets all usermapping and returns as a pandas dataframe
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+    address: str | None
+        The wallet address to filter the results on. Return all if None
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried pool config data
+    """
+    query = session.query(UserMap)
+    if address is not None:
+        query = query.filter(UserMap.address == address)
+    return pd.read_sql(query.statement, con=session.connection())
 
 
 def get_latest_block_number(session: Session) -> int:
