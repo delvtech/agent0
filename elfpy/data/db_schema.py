@@ -55,7 +55,8 @@ class PoolConfig(Base):
 
     contractAddress: Mapped[str] = mapped_column(String, primary_key=True)
     baseToken: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    initializeSharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    initialSharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    minimumShareReserves: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     positionDuration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     checkpointDuration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     timeStretch: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)

@@ -133,10 +133,12 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
         The hyperdrive config.
     """
     hyperdrive_config: dict[str, Any] = eth.smart_contract_read(hyperdrive_contract, "getPoolConfig")
+
     out_config = {}
     out_config["contractAddress"] = hyperdrive_contract.address
     out_config["baseToken"] = hyperdrive_config.get("baseToken", None)
-    out_config["initializeSharePrice"] = eth.convert_scaled_value(hyperdrive_config.get("initializeSharePrice", None))
+    out_config["initialSharePrice"] = eth.convert_scaled_value(hyperdrive_config.get("initialSharePrice", None))
+    out_config["minimumShareReserves"] = eth.convert_scaled_value(hyperdrive_config.get("minimumShareReserves", None))
     out_config["positionDuration"] = hyperdrive_config.get("positionDuration", None)
     out_config["checkpointDuration"] = hyperdrive_config.get("checkpointDuration", None)
     config_time_stretch = hyperdrive_config.get("timeStretch", None)
