@@ -10,7 +10,7 @@ import sqlalchemy
 from sqlalchemy import URL, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, Transaction, WalletInfo
+from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, Transaction, UserMap, WalletInfo
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -189,6 +189,11 @@ def add_transactions(transactions: list[Transaction], session: Session):
     except sqlalchemy.exc.DataError as err:  # type: ignore
         print(f"{transactions=}")
         raise err
+
+
+def add_name_map(username: str, addresses: list[str]):
+    """Add username mapping to postgres during evm_bots initialization"""
+    pass
 
 
 def get_pool_config(session: Session, contract_address: str | None = None) -> pd.DataFrame:

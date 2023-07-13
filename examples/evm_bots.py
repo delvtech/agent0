@@ -25,6 +25,7 @@ from ape.contracts import ContractInstance
 from ape.logging import logger as ape_logger
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
+from dotenv import load_dotenv
 from eth_account import Account as EthAccount
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
@@ -37,8 +38,9 @@ from elfpy import types
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import LongLouie, RandomAgent, ShortSally
 from elfpy.agents.policies.base import BasePolicy
-from elfpy.bots import BotConfig
+from elfpy.bots import DEFAULT_USERNAME, BotConfig
 from elfpy.bots.bot_info import BotInfo
+from elfpy.data import postgres
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
 from elfpy.utils.format import format_numeric_string
 
@@ -579,6 +581,11 @@ def main(
     """Run the simulation."""
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     # Custom parameters for this experiment
+
+    # Check for default name and exit if is default
+    if bot_config.username == DEFAULT_USERNAME:
+        raise ValueError("Default username detected, please update 'username' in bot configuration")
+
     bot_config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
     bot_config.scratch["trade_streak"] = (
         bot_config.scratch["project_dir"] / f".logging/trade_streak{'_devnet' if config.devnet else ''}.txt"
@@ -623,6 +630,14 @@ def main(
     logging.info("Constructed %s agents:", len(sim_agents))
     for agent_name in sim_agents:
         logging.info("\t%s", agent_name)
+
+    # Set up postgres to write username to agent wallet addr
+    # initialize the postgres session
+    wallet_addrs = [agent.contract.address for _, agent in sim_agents.items()]
+    session = postgres.initialize_session()
+    postgres.add_name_map(bot_config.username, wallet_addrs)
+    postgres.close_session(session)
+
     start_timestamp = ape.chain.blocks[-1].timestamp
     trade_streak = 0
     last_executed_block = 0
@@ -686,6 +701,9 @@ def get_argparser() -> argparse.ArgumentParser:
 
 
 if __name__ == "__main__":
+    # Get postgres env variables if exists
+    load_dotenv()
+
     config = BotConfig()
     args = get_argparser().parse_args()
     config.load_from_json(args.configuration_json[0])
