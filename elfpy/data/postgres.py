@@ -88,7 +88,7 @@ def initialize_session() -> Session:
     return session
 
 
-def close_session(session: Session):
+def close_session(session: Session) -> None:
     """Close the session
 
     Arguments
@@ -99,7 +99,7 @@ def close_session(session: Session):
     session.close()
 
 
-def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session):
+def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session) -> None:
     """Add wallet info to the walletinfo table
     Arguments
     ---------
@@ -118,7 +118,7 @@ def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session):
         raise err
 
 
-def add_pool_config(pool_config: PoolConfig, session: Session):
+def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
     """
     Add pool config to the pool config table if not exist
     Verify pool config if it does exist
@@ -159,7 +159,7 @@ def add_pool_config(pool_config: PoolConfig, session: Session):
         raise ValueError
 
 
-def add_pool_infos(pool_infos: list[PoolInfo], session: Session):
+def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
     """Add a pool info to the poolinfo table
 
     Arguments
@@ -179,7 +179,7 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session):
         raise err
 
 
-def add_transactions(transactions: list[Transaction], session: Session):
+def add_transactions(transactions: list[Transaction], session: Session) -> None:
     """Add transactions to the poolinfo table
 
     Arguments
@@ -199,7 +199,7 @@ def add_transactions(transactions: list[Transaction], session: Session):
         raise err
 
 
-def add_user_map(username: str, addresses: list[str], session: Session):
+def add_user_map(username: str, addresses: list[str], session: Session) -> None:
     """Add username mapping to postgres during evm_bots initialization
 
     Arguments
