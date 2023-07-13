@@ -72,6 +72,14 @@ docs = [
     "urllib3<2.0",
 ]
 
+ape = [
+    "ape-alchemy",
+    "ape-etherscan",
+    "ape-foundry",
+    "ape-solidity",
+    "eth-ape",
+]
+
 [project.urls]
 "Homepage" = "https://github.com/delvtech/elf-simulations"
 "Bug Tracker" = "https://github.com/delvtech/elf-simulations/issues"

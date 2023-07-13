@@ -64,7 +64,7 @@ class PoolConfig(Base):
     curveFee: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     flatFee: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     governanceFee: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    oracleSize: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
+    oracleSize: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     updateGap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     invTimeStretch: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     termLength: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
@@ -205,3 +205,17 @@ class Transaction(Base):
     # status
     # logsBloom
     # effectiveGasPrice
+
+
+class UserMap(Base):
+    """
+    Table/dataclass schema for pool config
+    """
+
+    __tablename__ = "usermap"
+
+    # Default table primary key
+    # Note that we use postgres in production and sqlite in testing, but sqlite has issues with
+    # autoincrement with BigIntegers. Hence, we use the Integer variant when using sqlite in tests
+    address: Mapped[str] = mapped_column(String, primary_key=True)
+    username: Mapped[str] = mapped_column(String, index=True)

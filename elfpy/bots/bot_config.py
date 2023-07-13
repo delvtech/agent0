@@ -8,6 +8,8 @@ from typing import Any
 from elfpy import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, types
 from elfpy.utils import json as output_utils
 
+DEFAULT_USERNAME = "changeme"
+
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
@@ -18,8 +20,7 @@ class BotConfig(types.FrozenClass):
     # pylint: disable=too-many-instance-attributes
 
     # Logical username for who is running bots
-    # TODO add logic in evm bots to fail if this username is default
-    username: str = "change_me"
+    username: str = DEFAULT_USERNAME
     # whether to run on alchemy
     alchemy: bool = False
     # url for retrieving the contract artifacts

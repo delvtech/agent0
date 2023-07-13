@@ -20,7 +20,7 @@ Please refer to [BUILD.md](https://github.com/delvtech/elf-simulations/blob/main
 
 ## Testing
 
-Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.html). You can run all tests from the repository root directory by runing `python -m pytest`, or you can pick a specific test in the `tests/` folder with `python -m pytest tests/{test_file.py}`.
+Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.html). You can run all tests from the repository root directory by running `python -m pytest`, or you can pick a specific test in the `tests/` folder with `python -m pytest tests/{test_file.py}`.
 
 ## Coverage
 
@@ -77,7 +77,7 @@ evm_bots.py bots_config.default.json
 ```
 
 ## Data pipeline
-The data pipeline queries the running chain and exports data to a postgres database. The `infra` repostitory spins up a local postgres instance via Docker, and the data piepline will point to this by default. Optinally, you can also configure the backend database by specifying the following environmental variables (for example, in a `.env` file in the base of the repo):
+The data pipeline queries the running chain and exports data to a postgres database. The `infra` repository spins up a local postgres instance via Docker, and the data pipeline will point to this by default. Optionally, you can also configure the backend database by specifying the following environmental variables (for example, in a `.env` file in the base of the repo):
 
 ```bash
 POSTGRES_USER="admin"
