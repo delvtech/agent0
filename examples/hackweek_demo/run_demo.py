@@ -64,8 +64,6 @@ agent_list = postgres.get_agents(session, start_block=start_block)
 filter_agents = st.multiselect("PNL Agents", agent_list, key="agent_select")
 
 
-# set up streamlit
-input_placeholder = st.empty()
 # creating a single-element container
 main_placeholder = st.empty()
 # creating a single-element sidebar
