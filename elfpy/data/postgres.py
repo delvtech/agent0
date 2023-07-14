@@ -387,31 +387,34 @@ def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
     dict[str, DataFrame]
         A dictionary keyed by the wallet address, where the values is a DataFrame
         where the index is the block number, and the columns is the number of each
-        token the address has at that block number plus a timestamp of the block number
+        token the address has at that block number, plus a timestamp and the share price of the block
     """
 
+    # Get data
     all_wallet_info = get_all_wallet_info(session)
-    max_block = get_latest_block_number(session)
-    timestamp_lookup = get_pool_info(session)[["blockNumber", "timestamp"]].set_index("blockNumber")
+    pool_info_lookup = get_pool_info(session)[["blockNumber", "timestamp", "sharePrice"]].set_index("blockNumber")
 
-    # Pivot tokenType to columns
+    # Pivot tokenType to columns, keeping walletAddress and blockNumber
     all_wallet_info = all_wallet_info.pivot(
-        values="tokenValue", index=["blockNumber", "walletAddress"], columns=["tokenType"]
-    ).reset_index()
-    # Organize indices
-    all_wallet_info = all_wallet_info.set_index(["walletAddress", "blockNumber"]).sort_index()
-    # Fill NaNs with 0s (nonexistant tokens mean 0 tokens)
-    all_wallet_info = all_wallet_info.fillna(0)
+        values="tokenValue", index=["walletAddress", "blockNumber"], columns=["tokenType"]
+    )
+    # Forward fill nans here, as no data means no change
+    all_wallet_info = all_wallet_info.fillna(method="ffill")
 
     # Convert walletAddress to outer dictionary
     wallet_info_dict = {}
     for addr in all_wallet_info.index.get_level_values(0).unique():
         addr_wallet_info = all_wallet_info.loc[addr]
         # Reindex block number to be continuous, filling values with the last entry
-        addr_wallet_info = addr_wallet_info.reindex(range(max_block), method="ffill")
-        # Drop nans in beginning
-        addr_wallet_info = addr_wallet_info.dropna()
-        addr_wallet_info["timestamp"] = timestamp_lookup.loc[addr_wallet_info.index]
+        addr_wallet_info = addr_wallet_info.reindex(pool_info_lookup.index, method="ffill")
+        addr_wallet_info["timestamp"] = pool_info_lookup.loc[addr_wallet_info.index, "timestamp"]
+        addr_wallet_info["sharePrice"] = pool_info_lookup.loc[addr_wallet_info.index, "sharePrice"]
+        # Drop all rows where BASE tokens are nan
+        addr_wallet_info = addr_wallet_info.dropna(subset="BASE")
+        # Fill the rest with 0 values
+        addr_wallet_info = addr_wallet_info.fillna(0)
+        # Remove name from column index
+        addr_wallet_info.columns.name = None
         wallet_info_dict[addr] = addr_wallet_info
 
     return wallet_info_dict
