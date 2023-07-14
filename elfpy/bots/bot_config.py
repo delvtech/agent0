@@ -22,6 +22,8 @@ class BotConfig(types.FrozenClass):
 
     # Logical username for who is running bots
     username: str = DEFAULT_USERNAME
+    # list of details for the desired agents
+    agents: list[BotInfo] = []
     # whether to run on alchemy
     alchemy: bool = False
     # url for retrieving the contract artifacts
@@ -55,7 +57,6 @@ class BotConfig(types.FrozenClass):
     risk_threshold: float = 0.0
     # scratch space for any application-specific & extraneous parameters
     scratch: dict[Any, Any] = field(default_factory=dict)
-    bots: list[BotInfo] | None = None
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)

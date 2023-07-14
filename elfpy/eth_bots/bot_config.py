@@ -10,7 +10,7 @@ DEFAULT_USERNAME = "changeme"
 bot_config = BotConfig(
     alchemy=False,
     artifacts_url="http://localhost:80",
-    bots=[
+    agents=[
         BotInfo(
             policy="RandomAgent",
             budget=Budget(
