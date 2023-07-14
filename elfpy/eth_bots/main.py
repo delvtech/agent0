@@ -16,7 +16,7 @@ from elfpy.utils import logs
 
 from .bot_config import bot_config
 
-def run_main(): # FIXME: Move this out of main
+def run_main(): # FIXME: Move much of this out of main
 
     # setup config
     config = bot_config
@@ -39,16 +39,9 @@ def run_main(): # FIXME: Move this out of main
     # setup base contract interface
     hyperdrive_abis = eth.abi.load_all_abis(BUILD_FOLDER)
     addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(os.path.join(config.artifacts_url, "addresses.json"))
-    print(f"\nhyperdrive contract {addresses=}")
 
     # set up the ERC20 contract for minting base tokens
     base_token_contract: Contract = web3.eth.contract(abi=hyperdrive_abis[BASE_ABI], address=addresses.base_token)
-
-    # setup hyperdrive contract interface (initialize)
-    hyperdrive_contract: Contract = web3.eth.contract(
-        abi=hyperdrive_abis[HYPERDRIVE_ABI],
-        address=addresses.mock_hyperdrive,
-    )
 
     # setup agents
     # load agent policies
@@ -70,7 +63,7 @@ def run_main(): # FIXME: Move this out of main
             # fund test account with ether
             rpc_response = eth.set_anvil_account_balance(web3, eth_account.checksum_address, int(web3.to_wei(1000, "ether")))
             # fund test account by minting with the ERC20 base account
-            tx_receipt = eth.smart_contract_transact(web3, base_token_contract, "mint", test_account.checksum_address, initial_supply)
+            tx_receipt = eth.smart_contract_transact(web3, base_token_contract, "mint", eth_account.checksum_address, kwargs["budget"].scaled_value)
             agents[f"agent_{eth_account.checksum_address}"] = (eth_account, agent)
         num_agents_so_far.append(agent_info.number_of_bots)
     logging.info("Added %d agents", sum(num_agents_so_far))
@@ -79,7 +72,7 @@ def run_main(): # FIXME: Move this out of main
     run_trade_loop(agents)
  
 
-def run_trade_loop(agents; dict[str, tuple[eth.accounts.EthAccount, Agent]]):
+def run_trade_loop(agents: dict[str, tuple[eth.accounts.EthAccount, Agent]]):
     while True:
         try:
             for agent in agents:

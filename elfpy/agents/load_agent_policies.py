@@ -6,6 +6,8 @@ import inspect
 import os
 import sys
 
+# FIXME: Test these functions
+
 
 def get_invoked_path():
     """
