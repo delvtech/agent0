@@ -204,7 +204,6 @@ def get_wallet_info(
         token_maturity_time = transaction.event_maturity_time
         if wallet_addr is None:
             continue
-
         # Query and add base tokens to walletinfo
         num_base_token_scaled = None
         for _ in range(RETRY_COUNT):
@@ -228,7 +227,6 @@ def get_wallet_info(
                     tokenValue=num_base_token,
                 )
             )
-
         # Query and add hyperdrive tokens to walletinfo
         if (token_id is not None) and (token_prefix is not None):
             base_token_type = hyperdrive_assets.AssetIdPrefix(token_prefix).name
