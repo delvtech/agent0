@@ -5,7 +5,7 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 import elfpy
 import elfpy.time as time

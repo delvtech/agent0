@@ -1,10 +1,6 @@
-"""Checkpoint Class for a Hyperdrive Market."""
 from __future__ import annotations
-
-from dataclasses import dataclass
-
+from dataclasses import dataclass, field
 from elfpy import FixedPoint
-
 
 @dataclass
 class Checkpoint:
@@ -20,11 +16,22 @@ class Checkpoint:
     def __setitem__(self, key, value):
         return setattr(self, key, value)
 
-    share_price: FixedPoint = FixedPoint(0)
-    long_share_price: FixedPoint = FixedPoint(0)
-    long_base_volume: FixedPoint = FixedPoint(0)
-    short_base_volume: FixedPoint = FixedPoint(0)
+    def share_price_default():
+        return FixedPoint(0)
 
+    def long_share_price_default():
+        return FixedPoint(0)
+
+    def long_base_volume_default():
+        return FixedPoint(0)
+
+    def short_base_volume_default():
+        return FixedPoint(0)
+
+    share_price: FixedPoint = field(default_factory=share_price_default)
+    long_share_price: FixedPoint = field(default_factory=long_share_price_default)
+    long_base_volume: FixedPoint = field(default_factory=long_base_volume_default)
+    short_base_volume: FixedPoint = field(default_factory=short_base_volume_default)
 
 # all values zeroed
 DEFAULT_CHECKPOINT = Checkpoint()

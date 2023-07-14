@@ -1,11 +1,11 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
-from fixedpointmath import FixedPoint, FixedPointMath
+from fixedpoint import FixedPoint
 
 import elfpy.markets.trades as trades
 import elfpy.time as time
@@ -56,7 +56,7 @@ class HyperdriveMarketAction(BaseMarketAction):
     # the agent's wallet
     wallet: Wallet
     # min amount to receive for the action
-    min_amount_out: FixedPoint = FixedPoint(0)
+    min_amount_out: FixedPoint = field(default_factory=FixedPoint)
     # mint time is set only for trades that act on existing positions (close long or close short)
     mint_time: FixedPoint | None = None
 
@@ -91,7 +91,7 @@ def calculate_lp_allocation_adjustment(
     """
     # base_adjustment = t * base_volume + (1 - t) * _positions_outstanding
     base_adjustment = (average_time_remaining * base_volume) + (
-        FixedPoint("1.0") - average_time_remaining
+        FixedPoint(1) - average_time_remaining
     ) * positions_outstanding
     # adjustment = base_adjustment / c
     return base_adjustment / share_price
@@ -124,7 +124,7 @@ def calculate_short_adjustment(
         return FixedPoint(0)
     # (year_end - year_start) / (normalizing_constant / 365)
     normalized_time_remaining = (market_state.short_average_maturity_time - market_time) / (
-        position_duration.normalizing_constant / FixedPoint("365.0")
+        position_duration.normalizing_constant / FixedPoint(365)
     )
     return calculate_lp_allocation_adjustment(
         market_state.shorts_outstanding,
@@ -161,7 +161,7 @@ def calculate_long_adjustment(
         return FixedPoint(0)
     # (year_end - year_start) / (normalizing_constant / 365)
     normalized_time_remaining = (market_state.long_average_maturity_time - market_time) / (
-        position_duration.normalizing_constant / FixedPoint("365.0")
+        position_duration.normalizing_constant / FixedPoint(365)
     )
     return calculate_lp_allocation_adjustment(
         market_state.longs_outstanding,
@@ -207,11 +207,11 @@ def calc_lp_out_given_tokens_in(
         used to update the reserves of the pool.
     """
     delta_shares = base_in / market_state.share_price
-    annualized_time = position_duration.days / FixedPoint("365.0")
+    annualized_time = position_duration.days / FixedPoint(365)
     # bonds computed as y = z/2 * (mu * (1 + rt)**(1/tau) - c)
-    delta_bond_reserves = (market_state.share_reserves + delta_shares) / FixedPoint("2.0") * (
+    delta_bond_reserves = (market_state.share_reserves + delta_shares) / FixedPoint(2) * (
         market_state.init_share_price
-        * (FixedPoint("1.0") + rate * annualized_time) ** (FixedPoint("1.0") / position_duration.stretched_time)
+        * (FixedPoint(1) + rate * annualized_time) ** (FixedPoint(1) / position_duration.stretched_time)
         - market_state.share_price
     ) - market_state.bond_reserves
     if market_state.share_reserves > FixedPoint(0):  # normal case where we have some share reserves
@@ -258,7 +258,7 @@ def calculate_base_volume(
     # LP's ability to withdraw. This is a pathological case that should never arise.
     if normalized_time_remaining == FixedPoint(0):
         return FixedPoint(0)
-    return (base_amount - (FixedPoint("1.0") - normalized_time_remaining) * bond_amount) / normalized_time_remaining
+    return (base_amount - (FixedPoint(1) - normalized_time_remaining) * bond_amount) / normalized_time_remaining
 
 
 def calc_checkpoint_deltas(
@@ -359,7 +359,7 @@ def calc_open_short(
         position_duration_years=annualized_position_duration,
     )
     time_remaining = time.StretchedTime(
-        days=years_remaining * FixedPoint("365.0"),
+        days=years_remaining * FixedPoint(365),
         time_stretch=position_duration.time_stretch,
         normalizing_constant=position_duration.normalizing_constant,
     )
@@ -407,7 +407,7 @@ def calc_open_short(
         else d_short_average_maturity_time
     )
     # calculate_base_volume needs a positive base, so we use the value from user_result
-    base_volume = calculate_base_volume(trade_result.user_result.d_base, bond_amount, FixedPoint("1.0"))
+    base_volume = calculate_base_volume(trade_result.user_result.d_base, bond_amount, FixedPoint(1))
     # Calculate what the updated bond reserves would be with constant apr
     _, updated_bond_reserves = calc_update_reserves(
         share_reserves=market_state.share_reserves + share_reserves_delta,
@@ -483,10 +483,10 @@ def calc_close_short(
     years_remaining = time.get_years_remaining(
         market_time=block_time,
         mint_time=mint_time,
-        position_duration_years=position_duration.days / FixedPoint("365.0"),
+        position_duration_years=position_duration.days / FixedPoint(365),
     )  # all args in units of years
     time_remaining = time.StretchedTime(
-        days=years_remaining * FixedPoint("365.0"),  # converting years to days
+        days=years_remaining * FixedPoint(365),  # converting years to days
         time_stretch=position_duration.time_stretch,
         normalizing_constant=position_duration.normalizing_constant,
     )
@@ -510,7 +510,7 @@ def calc_close_short(
     # Make sure the trade is valid
     check_output_assertions(trade_result=trade_result)
     # Update accouting for average maturity time, base volume and longs outstanding
-    annualized_position_duration = position_duration.days / FixedPoint("365.0")
+    annualized_position_duration = position_duration.days / FixedPoint(365)
     short_average_maturity_time = update_weighted_average(
         average=market_state.short_average_maturity_time,
         total_weight=market_state.shorts_outstanding,
@@ -523,7 +523,7 @@ def calc_close_short(
     d_base_volume, d_checkpoints, lp_margin = calc_checkpoint_deltas(market_state, mint_time, bond_amount, "short")
     # TODO: remove this clamp when short withdrawal shares calculated
     # don't let short base volume go negative
-    d_base_volume = FixedPointMath.maximum(d_base_volume, market_state.short_base_volume)
+    d_base_volume = FixedPoint.maximum(d_base_volume, market_state.short_base_volume)
     # The flat component of the trade is added to the pool's liquidity since it represents the fixed
     # interest that the short pays to the pool.
     share_adjustment = share_payment - abs(share_reserves_delta)
@@ -644,7 +644,7 @@ def calc_open_long(
     # Make sure the trade is valid
     check_output_assertions(trade_result=trade_result)
     # Update accouting for average maturity time, base volume and longs outstanding
-    annualized_position_duration = position_duration.days / FixedPoint("365.0")
+    annualized_position_duration = position_duration.days / FixedPoint(365)
     long_average_maturity_time = update_weighted_average(
         average=market_state.long_average_maturity_time,
         total_weight=market_state.longs_outstanding,
@@ -654,7 +654,7 @@ def calc_open_long(
     )
     d_long_average_maturity_time = long_average_maturity_time - market_state.long_average_maturity_time
     # TODO: don't use 1 for time_remaining once we have checkpointing
-    base_volume = calculate_base_volume(trade_result.market_result.d_base, base_amount, FixedPoint("1.0"))
+    base_volume = calculate_base_volume(trade_result.market_result.d_base, base_amount, FixedPoint(1))
     # Get the market and wallet deltas to return.
     market_deltas = HyperdriveMarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
@@ -714,10 +714,10 @@ def calc_close_long(
     years_remaining = time.get_years_remaining(
         market_time=block_time,
         mint_time=mint_time,
-        position_duration_years=position_duration.days / FixedPoint("365.0"),
+        position_duration_years=position_duration.days / FixedPoint(365),
     )  # all args in units of years
     time_remaining = time.StretchedTime(
-        days=years_remaining * FixedPoint("365.0"),  # converting years to days
+        days=years_remaining * FixedPoint(365),  # converting years to days
         time_stretch=position_duration.time_stretch,
         normalizing_constant=position_duration.normalizing_constant,
     )
@@ -749,7 +749,7 @@ def calc_close_long(
     market_state.gov_fees_accrued += gov_fee
     # Make sure the trade is valid
     # Update accouting for average maturity time, base volume and longs outstanding
-    annualized_position_duration = position_duration.days / FixedPoint("365.0")
+    annualized_position_duration = position_duration.days / FixedPoint(365)
     long_average_maturity_time = update_weighted_average(
         average=market_state.long_average_maturity_time,
         total_weight=market_state.longs_outstanding,

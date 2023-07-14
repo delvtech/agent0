@@ -4,7 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 
 import numpy as np
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 
 def format_numeric_string(value: float | int | FixedPoint, precision=3, min_digits=0, debug=False):

@@ -6,7 +6,7 @@ from enum import Enum
 from functools import wraps
 from typing import Any, Type
 
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 
 class FrozenClass:

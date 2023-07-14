@@ -2,7 +2,7 @@
 import json
 
 import numpy as np
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 from hexbytes import HexBytes
 from numpy.random._generator import Generator as NumpyGenerator
 from web3.datastructures import AttributeDict, MutableAttributeDict

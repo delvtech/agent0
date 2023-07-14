@@ -1,7 +1,7 @@
 """Trade related classes and functions"""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 import elfpy.agents.agent_trade_result as agent_trade_result
 import elfpy.markets.hyperdrive.market_action_result as market_action_result
@@ -36,8 +36,10 @@ class TradeBreakdown:
     without_fee: FixedPoint
     curve_fee: FixedPoint
     gov_curve_fee: FixedPoint
-    flat_fee: FixedPoint = FixedPoint(0)
-    gov_flat_fee: FixedPoint = FixedPoint(0)
+    #flat_fee: FixedPoint = FixedPoint(0)
+    #gov_flat_fee: FixedPoint = FixedPoint(0)
+    flat_fee: FixedPoint = field(default_factory=lambda: FixedPoint(0))
+    flat_fee: FixedPoint = field(default_factory=lambda: FixedPoint(0))
 
     @property
     def fee(self) -> FixedPoint:

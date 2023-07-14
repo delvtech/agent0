@@ -1,7 +1,7 @@
 """Utilities for price calculations"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 import elfpy.time as time
 

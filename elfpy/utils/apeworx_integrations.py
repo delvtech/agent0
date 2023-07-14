@@ -22,7 +22,7 @@ from ape.exceptions import TransactionError, TransactionNotFoundError
 from ape.managers.project import ProjectManager
 from ape.types import AddressType, ContractType
 from ape_accounts.accounts import KeyfileAccount
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 # custom libs
 from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, simulators, time, types

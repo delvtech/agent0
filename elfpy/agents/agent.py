@@ -4,7 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 from typing import TYPE_CHECKING
 
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 from elfpy.agents.policies import NoActionPolicy
 from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType

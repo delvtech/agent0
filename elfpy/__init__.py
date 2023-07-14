@@ -6,14 +6,14 @@ from collections import defaultdict
 from typing import Any
 
 import matplotlib as mpl
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 # Setup barebones logging without a handler for users to adapt to their needs.
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 # This is the minimum allowed value to be passed into calculations to avoid
 # problems with sign flips that occur when the floating point range is exceeded.
-WEI = FixedPoint(scaled_value=1)  # smallest denomination of ether
+WEI = FixedPoint(1)  # smallest denomination of ether
 
 # The maximum allowed difference between the base reserves and bond reserves.
 # This value was calculated using trial and error and is close to the maximum

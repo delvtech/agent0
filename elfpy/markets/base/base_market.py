@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 import elfpy.types as types
 

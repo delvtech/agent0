@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 from elfpy import types
 from elfpy.markets.base import BaseMarketActionResult

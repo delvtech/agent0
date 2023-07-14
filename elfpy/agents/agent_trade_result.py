@@ -1,7 +1,7 @@
 """Agent trade results"""
 from dataclasses import dataclass
 
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 import elfpy.types as types
 

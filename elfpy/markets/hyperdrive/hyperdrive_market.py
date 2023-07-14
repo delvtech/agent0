@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 import elfpy
 import elfpy.errors.errors as errors
@@ -117,8 +117,8 @@ class HyperdriveMarketState(BaseMarketState):
     long_base_volume: FixedPoint = FixedPoint(0)
     short_base_volume: FixedPoint = FixedPoint(0)
     checkpoints: dict[FixedPoint, Checkpoint] = field(default_factory=dict)
-    checkpoint_duration: FixedPoint = FixedPoint("1.0").div_up(FixedPoint("365.0"))
-    checkpoint_duration_days: FixedPoint = FixedPoint("1.0")
+    checkpoint_duration: FixedPoint = FixedPoint(1).div_up(FixedPoint(365))
+    checkpoint_duration_days: FixedPoint = FixedPoint(1)
     total_supply_longs: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
     total_supply_shorts: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
     total_supply_withdraw_shares: FixedPoint = FixedPoint(0)

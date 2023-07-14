@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 from elfpy import check_non_zero
 from elfpy.types import Quantity, TokenType, freezable
@@ -105,16 +105,19 @@ class Wallet:
     balance: Quantity = field(default_factory=lambda: Quantity(amount=FixedPoint(0), unit=TokenType.BASE))
     # TODO: Support multiple typed balances:
     #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
-    lp_tokens: FixedPoint = FixedPoint(0)
+    #lp_tokens: FixedPoint = FixedPoint(0)
+    lp_tokens: FixedPoint = field(default_factory=lambda: FixedPoint(0))
 
     # non-fungible (identified by key=mint_time, stored as dict)
     longs: dict[FixedPoint, Long] = field(default_factory=dict)
     shorts: dict[FixedPoint, Short] = field(default_factory=dict)
-    withdraw_shares: FixedPoint = FixedPoint(0)
+    #withdraw_shares: FixedPoint = FixedPoint(0)
+    withdraw_shares: FixedPoint = field(default_factory=lambda: FixedPoint(0))
     # borrow and  collateral have token type, which is not represented here
     # this therefore assumes that only one token type can be used at any given mint time
     borrows: dict[FixedPoint, Borrow] = field(default_factory=dict)
-    fees_paid: FixedPoint = FixedPoint(0)
+    #fees_paid: FixedPoint = FixedPoint(0)
+    fees_paid: FixedPoint = field(default_factory=lambda: FixedPoint(0))
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)

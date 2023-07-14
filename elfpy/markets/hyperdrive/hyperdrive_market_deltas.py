@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 import elfpy.types as types
 from elfpy.markets.base import BaseMarketDeltas
@@ -14,22 +14,22 @@ from elfpy.markets.base import BaseMarketDeltas
 class HyperdriveMarketDeltas(BaseMarketDeltas):
     r"""Specifies changes to values in the market"""
     # pylint: disable=too-many-instance-attributes
-    d_base_asset: FixedPoint = FixedPoint(0)
-    d_bond_asset: FixedPoint = FixedPoint(0)
-    d_base_buffer: FixedPoint = FixedPoint(0)
-    d_bond_buffer: FixedPoint = FixedPoint(0)
-    d_lp_total_supply: FixedPoint = FixedPoint(0)
-    d_share_price: FixedPoint = FixedPoint(0)
-    longs_outstanding: FixedPoint = FixedPoint(0)
-    shorts_outstanding: FixedPoint = FixedPoint(0)
-    long_average_maturity_time: FixedPoint = FixedPoint(0)
-    short_average_maturity_time: FixedPoint = FixedPoint(0)
-    long_base_volume: FixedPoint = FixedPoint(0)
-    short_base_volume: FixedPoint = FixedPoint(0)
-    total_supply_withdraw_shares: FixedPoint = FixedPoint(0)
-    withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
-    withdraw_capital: FixedPoint = FixedPoint(0)
-    withdraw_interest: FixedPoint = FixedPoint(0)
+    d_base_asset: FixedPoint = field(default_factory=FixedPoint)
+    d_bond_asset: FixedPoint =field(default_factory=FixedPoint)
+    d_base_buffer: FixedPoint = field(default_factory=FixedPoint)
+    d_bond_buffer: FixedPoint = field(default_factory=FixedPoint)
+    d_lp_total_supply: FixedPoint = field(default_factory=FixedPoint)
+    d_share_price: FixedPoint = field(default_factory=FixedPoint)
+    longs_outstanding: FixedPoint =field(default_factory=FixedPoint)
+    shorts_outstanding: FixedPoint =field(default_factory=FixedPoint)
+    long_average_maturity_time: FixedPoint =field(default_factory=FixedPoint)
+    short_average_maturity_time: FixedPoint =field(default_factory=FixedPoint)
+    long_base_volume: FixedPoint = field(default_factory=FixedPoint)
+    short_base_volume: FixedPoint =field(default_factory=FixedPoint)
+    total_supply_withdraw_shares: FixedPoint = field(default_factory=FixedPoint)
+    withdraw_shares_ready_to_withdraw: FixedPoint =field(default_factory=FixedPoint)
+    withdraw_capital: FixedPoint =field(default_factory=FixedPoint)
+    withdraw_interest: FixedPoint =field(default_factory=FixedPoint)
     long_checkpoints: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
     short_checkpoints: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
     total_supply_longs: dict[FixedPoint, FixedPoint] = field(default_factory=dict)

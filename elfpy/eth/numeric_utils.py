@@ -1,7 +1,7 @@
 """Utilities to convert solidity numbers to python numbers"""
 from __future__ import annotations
 
-from fixedpointmath import FixedPoint
+from fixedpoint import FixedPoint
 
 
 def convert_scaled_value(input_val: int | None) -> float | None:

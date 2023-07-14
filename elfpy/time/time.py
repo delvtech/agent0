@@ -1,8 +1,8 @@
 """Helper functions for converting time units"""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
-from fixedpointmath import FixedPoint, FixedPointMath
+from fixedpoint import FixedPoint
 
 import elfpy.types as types
 
@@ -30,9 +30,13 @@ class BlockTime:
     Do the stdlib features make it worth the extra overhead?
     """
 
-    _time: FixedPoint = FixedPoint(0)
-    _block_number: FixedPoint = FixedPoint(0)
-    _step_size: FixedPoint = FixedPoint("1.0") / FixedPoint("365.0")  # defaults to 1 day
+    _time: FixedPoint = field(default_factory=lambda: FixedPoint(0))
+    _block_number: FixedPoint = field(default_factory=lambda: FixedPoint(0))
+    _step_size: FixedPoint = field(default_factory=lambda: FixedPoint(1, 32, 16))
+
+    #_time: FixedPoint = FixedPoint(0)
+    #_block_number: FixedPoint = FixedPoint(0)
+    #_step_size: FixedPoint = FixedPoint(1, 32, 16)# / FixedPoint(365, 32, 16)  # defaults to 1 day
     unit: TimeUnit = TimeUnit.YEARS
 
     def __post_init__(self):
@@ -164,14 +168,14 @@ def get_years_remaining(
         raise ValueError(f"{mint_time=} must be less than {market_time=}.")
     years_elapsed = market_time - mint_time
     # if we are closing after the position duration has completed, then just set time_remaining to zero
-    time_remaining = FixedPointMath.maximum(position_duration_years - years_elapsed, FixedPoint(0))
+    time_remaining = FixedPoint.maximum(position_duration_years - years_elapsed, FixedPoint(0))
     return time_remaining
 
 
 def days_to_time_remaining(
     days_remaining: FixedPoint,
-    time_stretch: FixedPoint = FixedPoint("1.0"),
-    normalizing_constant: FixedPoint = FixedPoint("365.0"),
+    time_stretch: FixedPoint = FixedPoint(1, 32, 16),
+    normalizing_constant: FixedPoint = FixedPoint(365, 32, 16),
 ) -> FixedPoint:
     r"""Converts remaining pool length in days to normalized and stretched time
 
