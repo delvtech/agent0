@@ -4,23 +4,24 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fixedpointmath import FixedPoint, FixedPointMath
-
-import numpy as np
-
 from numpy.random._generator import Generator as NumpyGenerator
 
 
 @dataclass
 class Budget:
-    rng: NumpyGenerator
-    mean: float = 1
-    std: float = 1
-    min: float = 0
-    max: float = 2
+    """Specifications for generating a random budget sample"""
 
-    def sample_budget():
-        FixedPointMath.clip(
-            self.rng.normal(loc=self.mean, scale=self.std),
-            self.min,
-            self.max,
+    mean_wei: int = int(1e18)  # 1 ETH
+    std_wei: int = int(1e17)  # 0.1 ETH
+    min_wei: int = 1  # 1 WEI
+    max_wei: int = 1e21  # 1k ETH
+
+    def sample_budget(self, rng: NumpyGenerator) -> FixedPoint:
+        """Returns a sample from a clipped normal distribution"""
+        return FixedPoint(
+            FixedPointMath.clip(
+                rng.normal(loc=self.mean_wei, scale=self.std_wei),
+                self.min_wei,
+                self.max_wei,
+            )
         )

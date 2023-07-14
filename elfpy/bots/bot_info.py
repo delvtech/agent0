@@ -1,41 +1,43 @@
-"""Information for creating a bot."""
+"""Information for creating a bot"""
 from __future__ import annotations
 
-from collections import namedtuple
 from dataclasses import dataclass
-from typing import Type
 
-from elfpy.agents.policies.base import BasePolicy
+from .budget import Budget
 
 
-# TODO: Do we need this or can get combine with the Agent class?  I submit that we can.
 @dataclass
 class BotInfo:
-    """Information about a bot.
+    """Information about a bot
+
     Attributes
     ----------
-    policy : Type[Agent]
-        The agent's policy.
-    trade_chance : float
-        Percent chance that a agent gets to trade on a given block.
-    risk_threshold : float | None
-        The risk threshold for the agent.
-    budget : Budget[mean, std, min, max]
-        The budget for the agent.
-    risk : Risk[mean, std, min, max]
-        The risk for the agent.
-    index : int | None
-        The index of the agent in the list of ALL agents.
     name : str
-        The name of the agent.
+        The name of the agent
+    policy : str
+        The agent's policy; should match the class name
+    number_of_bots : int
+        The number of bots of this type to spin up
+    trade_chance : float
+        Percent chance that a agent gets to trade on a given block
+    budget : Budget
+        The budget for the agent
+    scratch : dict
+        Any parameters for custom bots should go here
     """
 
-    Budget = namedtuple("Budget", ["mean", "std", "min", "max"])
-    Risk = namedtuple("Risk", ["mean", "std", "min", "max"])
-    policy: Type[BasePolicy]
-    trade_chance: float = 0.1
-    risk_threshold: float | None = None
-    budget: Budget = Budget(mean=5_000, std=2_000, min=1_000, max=10_000)
-    risk: Risk = Risk(mean=0.02, std=0.01, min=0.0, max=0.06)
-    index: int | None = None
     name: str = "botty mcbotface"
+    policy: str = "NoActionPolicy"
+    number_of_bots: int = 1
+
+    trade_chance: float
+    budget: Budget
+    scratch: dict
+
+    def __post_init__(self):
+        """After init, set index
+
+        index : int | None
+            The index of the agent in the list of ALL agents
+        """
+        self.index = None

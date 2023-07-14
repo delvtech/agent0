@@ -6,8 +6,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from elfpy import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, types
+from elfpy.bots import BotInfo
 from elfpy.utils import json as output_utils
-from elfpy.bots import bot_info
 
 DEFAULT_USERNAME = "changeme"
 
