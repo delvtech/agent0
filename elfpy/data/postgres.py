@@ -376,21 +376,30 @@ def get_all_wallet_info(session: Session, start_block: int | None = None, end_bl
 
 
 def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
-    """Gets the history of all wallet info over block time"""
+    """Gets the history of all wallet info over block time
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+
+    Returns
+    -------
+    dict[str, DataFrame]
+        A dictionary keyed by the wallet address, where the values is a DataFrame
+        where the index is the block number, and the columns is the number of each token the address has at that block number
+        plus a timestamp of the block number
+    """
+
     all_wallet_info = get_all_wallet_info(session)
     max_block = get_latest_block_number(session)
-
-    # Get the timestamp
     timestamp_lookup = get_pool_info(session)[["blockNumber", "timestamp"]].set_index("blockNumber")
 
     # Pivot tokenType to columns
     all_wallet_info = all_wallet_info.pivot(
         values="tokenValue", index=["blockNumber", "walletAddress"], columns=["tokenType"]
     ).reset_index()
-
     # Organize indices
     all_wallet_info = all_wallet_info.set_index(["walletAddress", "blockNumber"]).sort_index()
-
     # Fill NaNs with 0s (nonexistant tokens mean 0 tokens)
     all_wallet_info = all_wallet_info.fillna(0)
 
