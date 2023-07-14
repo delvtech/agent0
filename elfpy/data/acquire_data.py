@@ -16,6 +16,9 @@ from elfpy.utils import logs as log_utils
 
 # pylint: disable=too-many-arguments
 
+# TODO fix too many branches by splitting out various things into functions
+# pylint: disable=too-many-branches
+
 RETRY_COUNT = 10
 
 
