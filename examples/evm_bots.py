@@ -712,7 +712,7 @@ if __name__ == "__main__":
         max_bytes=config.max_bytes,
         log_level=config.log_level,
         delete_previous_logs=config.delete_previous_logs,
-        log_stdout=config.log_file_and_stdout,
+        log_stdout=config.log_stdout,
         log_format_string=config.log_formatter,
     )
     # inputs
