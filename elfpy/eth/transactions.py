@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-
 from typing import Any, Sequence
 
 from eth_typing import BlockNumber
@@ -11,9 +10,9 @@ from web3 import Web3
 from web3.contract.contract import Contract, ContractEvent, ContractFunction
 from web3.types import (
     ABI,
+    ABIEvent,
     ABIFunctionComponents,
     ABIFunctionParams,
-    ABIEvent,
     BlockData,
     EventData,
     LogReceipt,
@@ -23,7 +22,7 @@ from web3.types import (
 from elfpy.data.db_schema import Transaction
 from elfpy.markets.hyperdrive import hyperdrive_assets
 
-from .accounts import AgentAccount
+from .accounts import EthAccount
 from .numeric_utils import convert_scaled_value
 
 
@@ -57,7 +56,7 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
 
 
 def smart_contract_transact(
-    web3: Web3, contract: Contract, function_name: str, from_account: AgentAccount, *fn_args
+    web3: Web3, contract: Contract, function_name: str, from_account: EthAccount, *fn_args
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas"""
     func_handle = contract.get_function_by_name(function_name)(*fn_args)

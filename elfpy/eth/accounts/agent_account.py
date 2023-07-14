@@ -7,7 +7,7 @@ from eth_typing import ChecksumAddress
 from web3 import Web3
 
 
-class AgentAccount:
+class EthAccount:
     """Web3 account that has helper functions & associated funding source"""
 
     # TODO: We should be adding more methods to this class.

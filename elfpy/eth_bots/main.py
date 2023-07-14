@@ -13,6 +13,9 @@ def run_main():
 
     rng = np.random.default_rng(config.random_seed)
 
+    # get dev accounts
+    #dev_accounts = 
+
     # get agent objects # FIXME: move this out of main
     all_agents = load_builtin_policies()
     custom_policies_path = os.path.join(get_invoked_path(), "custom_policies")
@@ -24,7 +27,8 @@ def run_main():
         kwargs["rng"] = rng
         kwargs["budget"] = agent_info.budget.sample_budget(rng)
         for agent_number in range(agent_info.number_of_bots):
-            agents.append(all_agents[agent_info.name](**kwargs))
+            agent_policy = all_agents[agent_info.name](**kwargs)
+            #agent
 
 
     # setup logging
