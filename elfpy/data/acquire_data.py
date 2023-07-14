@@ -10,11 +10,14 @@ from eth_utils import address
 from web3 import Web3
 from web3.contract.contract import Contract
 
-from elfpy.data import postgres
 from elfpy import eth, hyperdrive_interface
+from elfpy.data import postgres
 from elfpy.utils import logs as log_utils
 
 # pylint: disable=too-many-arguments
+
+# TODO fix too many branches by splitting out various things into functions
+# pylint: disable=too-many-branches
 
 RETRY_COUNT = 10
 
@@ -127,8 +130,9 @@ def main(
                 if block_transactions:
                     postgres.add_transactions(block_transactions, session)
 
+                if block_transactions and block_pool_info:
                     wallet_info_for_transactions = hyperdrive_interface.get_wallet_info(
-                        hyperdrive_contract, base_contract, block_number, block_transactions
+                        hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
                     )
                     postgres.add_wallet_infos(wallet_info_for_transactions, session)
 
