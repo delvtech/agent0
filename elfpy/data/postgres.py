@@ -375,6 +375,39 @@ def get_all_wallet_info(session: Session, start_block: int | None = None, end_bl
     return pd.read_sql(query.statement, con=session.connection())
 
 
+def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
+    """Gets the history of all wallet info over block time"""
+    all_wallet_info = get_all_wallet_info(session)
+    max_block = get_latest_block_number(session)
+
+    # Get the timestamp
+    timestamp_lookup = get_pool_info(session)[["blockNumber", "timestamp"]].set_index("blockNumber")
+
+    # Pivot tokenType to columns
+    all_wallet_info = all_wallet_info.pivot(
+        values="tokenValue", index=["blockNumber", "walletAddress"], columns=["tokenType"]
+    ).reset_index()
+
+    # Organize indices
+    all_wallet_info = all_wallet_info.set_index(["walletAddress", "blockNumber"]).sort_index()
+
+    # Fill NaNs with 0s (nonexistant tokens mean 0 tokens)
+    all_wallet_info = all_wallet_info.fillna(0)
+
+    # Convert walletAddress to outer dictionary
+    wallet_info_dict = {}
+    for addr in all_wallet_info.index.get_level_values(0).unique():
+        addr_wallet_info = all_wallet_info.loc[addr]
+        # Reindex block number to be continuous, filling values with the last entry
+        addr_wallet_info = addr_wallet_info.reindex(range(max_block), method="ffill")
+        # Drop nans in beginning
+        addr_wallet_info = addr_wallet_info.dropna()
+        addr_wallet_info["timestamp"] = timestamp_lookup.loc[addr_wallet_info.index]
+        wallet_info_dict[addr] = addr_wallet_info
+
+    return wallet_info_dict
+
+
 def get_current_wallet_info(
     session: Session, start_block: int | None = None, end_block: int | None = None
 ) -> pd.DataFrame:
