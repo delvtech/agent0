@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Type
+
+from elfpy.agents.policies.base import BasePolicy
 
 from .budget import Budget
 
@@ -26,18 +29,11 @@ class BotInfo:
         Any parameters for custom bots should go here
     """
 
-    name: str = "botty mcbotface"
-    policy: str = "NoActionPolicy"
+    policy: Type[BasePolicy]  # TODO: Delete this when we remove evm_bots
+    index: int | None = None  # TODO: Make this required when we remove evm_bots
+    name: str = "BoringBotty"
+    policy_str: str = "NoActionPolicy"  # TODO: Rename to `policy` when we remove evm_bots
+    budget: Budget = Budget()
     number_of_bots: int = 1
-
-    trade_chance: float
-    budget: Budget
-    scratch: dict
-
-    def __post_init__(self):
-        """After init, set index
-
-        index : int | None
-            The index of the agent in the list of ALL agents
-        """
-        self.index = None
+    trade_chance: float = 0.8
+    init_kwargs: dict = {}

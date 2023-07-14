@@ -22,10 +22,10 @@ class BotConfig(types.FrozenClass):
 
     # Logical username for who is running bots
     username: str = DEFAULT_USERNAME
-    # list of details for the desired agents
-    agents: list[BotInfo] = []
     # whether to run on alchemy
     alchemy: bool = False
+    # list of details for the desired agents
+    agents: list[BotInfo] | None = None
     # url for retrieving the contract artifacts
     artifacts_url: str = "http://localhost:80"
     # whether to run on devnet

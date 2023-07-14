@@ -13,38 +13,36 @@ bot_config = BotConfig(
     agents=[
         BotInfo(
             policy="RandomAgent",
+            number_of_bots=3,
             budget=Budget(
                 mean_wei=int(1e18),  # 1 ETH
                 std_wei=int(1e17),  # 0.1 ETH
                 min_wei=1,  # 1 WEI
                 max_wei=1e21,  # 1k ETH
             ),
-            trade_chance=0.8,
-            number_of_bots=3,
+            init_kwargs={"trade_chance": 0.8},
         ),
         BotInfo(
             policy="LongLouie",
+            number_of_bots=5,
             budget=Budget(
                 mean_wei=int(1e18),  # 1 ETH
                 std_wei=int(1e17),  # 0.1 ETH
                 min_wei=1,  # 1 WEI
                 max_wei=1e21,  # 1k ETH
             ),
-            trade_chance=0.8,
-            number_of_bots=5,
-            scratch={"risk_threshold": 0.8},
+            init_kwargs={"trade_chance": 0.8, "risk_threshold": 0.9},
         ),
         BotInfo(
             policy="ShortSally",
+            number_of_bots=2,
             budget=Budget(
                 mean_wei=int(1e18),  # 1 ETH
                 std_wei=int(1e17),  # 0.1 ETH
                 min_wei=1,  # 1 WEI
                 max_wei=1e21,  # 1k ETH
             ),
-            trade_chance=0.8,
-            number_of_bots=2,
-            scratch={"risk_threshold": 0.8},
+            init_kwargs={"trade_chance": 0.8, "risk_threshold": 0.8},
         ),
     ],
     delete_previous_logs=False,
