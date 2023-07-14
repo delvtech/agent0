@@ -386,8 +386,8 @@ def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
     -------
     dict[str, DataFrame]
         A dictionary keyed by the wallet address, where the values is a DataFrame
-        where the index is the block number, and the columns is the number of each token the address has at that block number
-        plus a timestamp of the block number
+        where the index is the block number, and the columns is the number of each
+        token the address has at that block number plus a timestamp of the block number
     """
 
     all_wallet_info = get_all_wallet_info(session)
