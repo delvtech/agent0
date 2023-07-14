@@ -3,6 +3,7 @@ import os
 import numpy as np
 
 from elfpy.agents.load_agent_policies import load_builtin_policies, parse_folder_for_classes, get_invoked_path
+from elfpy.eth.accounts.eth_account import EthAccount
 
 from .bot_config import bot_config
 
@@ -13,10 +14,10 @@ def run_main():
 
     rng = np.random.default_rng(config.random_seed)
 
-    # get dev accounts
-    #dev_accounts = 
 
     # get agent objects # FIXME: move this out of main
+    # get dev accounts
+    dev_accounts = 
     all_agents = load_builtin_policies()
     custom_policies_path = os.path.join(get_invoked_path(), "custom_policies")
     all_agents.update(parse_folder_for_classes(custom_policies_path))
