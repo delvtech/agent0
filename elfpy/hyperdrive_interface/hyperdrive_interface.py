@@ -172,6 +172,7 @@ def get_wallet_info(
     base_contract: Contract,
     block_number: BlockNumber,
     transactions: list[Transaction],
+    poolinfo: PoolInfo,
 ) -> list[WalletInfo]:
     """Retrieves wallet information at a given block given a transaction
     Transactions are needed here to get
@@ -203,6 +204,8 @@ def get_wallet_info(
         token_maturity_time = transaction.event_maturity_time
         if wallet_addr is None:
             continue
+
+        # Query and add base tokens to walletinfo
         num_base_token_scaled = None
         for _ in range(RETRY_COUNT):
             try:
@@ -225,7 +228,8 @@ def get_wallet_info(
                     tokenValue=num_base_token,
                 )
             )
-        # Handle cases where these fields don't exist
+
+        # Query and add hyperdrive tokens to walletinfo
         if (token_id is not None) and (token_prefix is not None):
             base_token_type = hyperdrive_assets.AssetIdPrefix(token_prefix).name
             if (token_maturity_time is not None) and (token_maturity_time > 0):
@@ -246,6 +250,11 @@ def get_wallet_info(
                     continue
             num_custom_token = eth.convert_scaled_value(num_custom_token_scaled)
             if num_custom_token is not None:
+                # Check here if token is short
+                # If so, add share price from pool info to data
+                share_price = None
+                if (base_token_type) == "SHORT":
+                    share_price = poolinfo.sharePrice
                 out_wallet_info.append(
                     WalletInfo(
                         blockNumber=block_number,
@@ -254,6 +263,7 @@ def get_wallet_info(
                         tokenType=token_type,
                         tokenValue=num_custom_token,
                         maturityTime=maturity_time,
+                        sharePrice=share_price,
                     )
                 )
     return out_wallet_info

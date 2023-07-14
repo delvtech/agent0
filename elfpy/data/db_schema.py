@@ -44,6 +44,7 @@ class WalletInfo(Base):
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
     tokenValue: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     maturityTime: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    sharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
 
 
 class PoolConfig(Base):

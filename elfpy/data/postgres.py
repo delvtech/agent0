@@ -406,7 +406,15 @@ def get_current_wallet_info(
     current_wallet_info: pd.DataFrame = (
         all_wallet_info.sort_values("blockNumber", ascending=False)
         .groupby(["walletAddress", "tokenType"])
-        .agg({"tokenValue": "first", "baseTokenType": "first", "maturityTime": "first", "blockNumber": "first"})
+        .agg(
+            {
+                "tokenValue": "first",
+                "baseTokenType": "first",
+                "maturityTime": "first",
+                "blockNumber": "first",
+                "sharePrice": "first",
+            }
+        )
     )  # type: ignore
 
     # Rename blockNumber column
