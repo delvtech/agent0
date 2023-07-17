@@ -560,6 +560,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         time_stretch: FixedPoint,
         share_price: FixedPoint,
         initial_share_price: FixedPoint,
+        minimum_share_reserves: FixedPoint,
     ) -> FixedPoint:
         r"""
         Calculates the maximum amount of shares that can be used to open shorts.
@@ -587,6 +588,8 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         t = ONE_18 - time_stretch
         price_factor = share_price / initial_share_price
         k = modified_yield_space_constant(price_factor, initial_share_price, share_reserves, t, bond_reserves)
+        inner_factor = initial_share_price * longs_outstanding / share_price + minimum_share_reserves
+        optimal_bond_reserves = k - price_factor * inner_factor
         optimal_bond_reserves = (k - price_factor * ((longs_outstanding / share_price) ** t)) ** (ONE_18 / t)
 
         # The optimal bond reserves imply a maximum short of dy = y - y0.
