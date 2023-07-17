@@ -209,3 +209,6 @@ def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> Hyperdri
             _step_size=FixedPoint(1) / FixedPoint(365),
         ),
     )
+
+
+# TODO: get agent wallet from receipts, similar to acquire_data.get_wallet_info
