@@ -90,9 +90,9 @@ class TestCalculateMax(unittest.TestCase):
                 flat_fee_multiple=FixedPoint(0),
             ),
             time_remaining=time.StretchedTime(
-                days=FixedPoint("90"),
+                days=FixedPoint(90),
                 time_stretch=FixedPoint(scaled_value=44463125629060298),
-                normalizing_constant=FixedPoint("365.0"),
+                normalizing_constant=FixedPoint(365),
             ),
             market_config=HyperdriveConfig(time_stretch=44463125629060298, minimum_share_reserves=FixedPoint(1)),
         )
@@ -107,8 +107,6 @@ class TestCalculateMax(unittest.TestCase):
             test_case.market_config.minimum_share_reserves,
             max_iterations=20,
         )
-
-        print(f"{FixedPoint(1) / test_case.market_config.time_stretch=}")
 
         self.assertEqual(max_long_result.base_amount, FixedPoint(scaled_value=493213221042049515844300901))
         self.assertEqual(max_long_result.bond_amount, FixedPoint(scaled_value=504845795898026194655699099))
@@ -166,9 +164,9 @@ class TestCalculateMax(unittest.TestCase):
                 flat_fee_multiple=FixedPoint(0),
             ),
             time_remaining=time.StretchedTime(
-                days=FixedPoint("90"),
+                days=FixedPoint(90),
                 time_stretch=FixedPoint(scaled_value=44463125629060298),
-                normalizing_constant=FixedPoint("365.0"),
+                normalizing_constant=FixedPoint(365),
             ),
             market_config=HyperdriveConfig(time_stretch=44463125629060298),
         )
@@ -182,8 +180,6 @@ class TestCalculateMax(unittest.TestCase):
             test_case.market_state.share_price,
             test_case.market_config.minimum_share_reserves,
         )
-
-        print(f"{FixedPoint(1) / test_case.market_config.time_stretch=}")
 
         self.assertEqual(max_short, FixedPoint(scaled_value=553481229469973716375181531))
 
