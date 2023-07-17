@@ -17,6 +17,8 @@ from web3.types import BlockData
 
 from elfpy import eth
 from elfpy import time as elftime
+
+# TODO: We should not be importing db_schema in this file
 from elfpy.data.db_schema import PoolInfo, Transaction, WalletInfo
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel, hyperdrive_assets
 

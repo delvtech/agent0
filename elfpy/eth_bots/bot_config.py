@@ -7,6 +7,20 @@ from elfpy.bots import BotConfig, BotInfo, Budget
 
 DEFAULT_USERNAME = "changeme"
 
+# FIXME: Break up into multiple config types.
+# foler structure:
+# |  |- config/
+# |  |  |-main.py # custom bot config settings
+# |  |  |-bots.py # custom bot config settings
+# |  |  |-env.py # general environment & anvil settings
+#
+# in `config/main.py`:
+#
+# my_config = MasterConfig(
+#    bot_config = BotConfig(...),
+#    env_config = EnvironmentConfig(...)
+# )
+
 bot_config = BotConfig(
     alchemy=False,
     artifacts_url="http://localhost:80",

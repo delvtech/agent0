@@ -12,6 +12,7 @@ class TimeUnit(Enum):
 
     FP values are stored as parts in a year as FixedPoint with 18 decimal integers
     """
+    # TODO: Rename these to e.g. SECONDS_PER_YEAR
     SECONDS = FixedPoint(31_556_952)
     MINUTES = FixedPoint(525_600)
     HOURS = FixedPoint(8_760)
