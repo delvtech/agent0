@@ -46,6 +46,11 @@ class EnvironmentConfig(types.FrozenClass):
     rpc_url: str = "http://localhost:8545"
     # int to be used for the random seed
     random_seed: int = 1
+    # abi filenames
+    hyperdrive_abi = "IHyperdrive"
+    base_abi = "ERC20Mintable"
+    # build location
+    build_folder = "./hyperdrive_solidity/.build"
     # scratch space for any application-specific & extraneous parameters
     scratch: dict[Any, Any] = field(default_factory=dict)
 

@@ -14,7 +14,7 @@ from .execute_agent_trades import execute_agent_trades
 from .setup_agents import get_agents
 
 
-def main(hyperdrive_abi, base_abi, build_folder):  # FIXME: Move much of this out of main
+def main():  # FIXME: Move much of this out of main
     """Entrypoint to load all configurations and run agents."""
     # this random number generator should be used everywhere so that the experiment is repeatable
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
@@ -34,17 +34,19 @@ def main(hyperdrive_abi, base_abi, build_folder):  # FIXME: Move much of this ou
     web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
 
     # setup base contract interface
-    hyperdrive_abis = eth.abi.load_all_abis(build_folder)
+    hyperdrive_abis = eth.abi.load_all_abis(environment_config.build_folder)
     addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(
         os.path.join(environment_config.artifacts_url, "addresses.json")
     )
 
     # set up the ERC20 contract for minting base tokens
-    base_token_contract: Contract = web3.eth.contract(abi=hyperdrive_abis[base_abi], address=addresses.base_token)
+    base_token_contract: Contract = web3.eth.contract(
+        abi=hyperdrive_abis[environment_config.base_abi], address=addresses.base_token
+    )
 
     # set up hyperdrive contract
     hyperdrive_contract: Contract = web3.eth.contract(
-        abi=hyperdrive_abis[hyperdrive_abi],
+        abi=hyperdrive_abis[environment_config.hyperdrive_abi],
         address=addresses.mock_hyperdrive,
     )
 
@@ -68,7 +70,4 @@ def main(hyperdrive_abi, base_abi, build_folder):  # FIXME: Move much of this ou
 
 
 if __name__ == "__main__":
-    HYPERDRIVE_ABI = "IHyperdrive"
-    BASE_ABI = "ERC20Mintable"
-    BUILD_FOLDER = "./hyperdrive_solidity/.build"
-    main(HYPERDRIVE_ABI, BASE_ABI, BUILD_FOLDER)
+    main()
