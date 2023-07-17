@@ -5,7 +5,7 @@ import logging
 
 from elfpy.bots import BotInfo, Budget, EnvironmentConfig
 
-agents = [
+agent_config: list[BotInfo] = [
     BotInfo(
         policy="RandomAgent",
         number_of_bots=3,

@@ -10,34 +10,31 @@ from elfpy import eth, hyperdrive_interface
 from elfpy.utils import logs
 
 from . import execute_agent_trades, setup_agents
-from .config.bot import bot_config
+from .config import agent_config, environment_config
 
 
 def run_main(hyperdrive_abi, base_abi, build_folder):  # FIXME: Move much of this out of main
-    # setup config
-    config = bot_config
-
     # this random number generator should be used everywhere so that the experiment is repeatable
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
-    rng = np.random.default_rng(config.random_seed)
+    rng = np.random.default_rng(environment_config.random_seed)
 
     # setup logging
     logs.setup_logging(
-        log_filename=config.log_filename,
-        max_bytes=config.max_bytes,
-        log_level=config.log_level,
-        delete_previous_logs=config.delete_previous_logs,
-        log_stdout=config.log_stdout,
-        log_format_string=config.log_formatter,
+        log_filename=environment_config.log_filename,
+        max_bytes=environment_config.max_bytes,
+        log_level=environment_config.log_level,
+        delete_previous_logs=environment_config.delete_previous_logs,
+        log_stdout=environment_config.log_stdout,
+        log_format_string=environment_config.log_formatter,
     )
 
     # point to chain env
-    web3 = eth.web3_setup.initialize_web3_with_http_provider(config.rpc_url, reset_provider=False)
+    web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
 
     # setup base contract interface
     hyperdrive_abis = eth.abi.load_all_abis(build_folder)
     addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(
-        os.path.join(config.artifacts_url, "addresses.json")
+        os.path.join(environment_config.artifacts_url, "addresses.json")
     )
 
     # set up the ERC20 contract for minting base tokens
@@ -50,7 +47,7 @@ def run_main(hyperdrive_abi, base_abi, build_folder):  # FIXME: Move much of thi
     )
 
     # load agent policies
-    agents = setup_agents.get_agents(config, web3, base_token_contract, rng)
+    agents = setup_agents.get_agents(agent_config, web3, base_token_contract, rng)
 
     # Run trade loop forever
     trade_streak = 0
