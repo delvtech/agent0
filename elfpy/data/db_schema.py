@@ -93,6 +93,7 @@ class PoolInfo(Base):
     shortBaseVolume: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     withdrawalSharesReadyToWithdraw: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     withdrawalSharesProceeds: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    totalSupplyWithdrawalShares: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
 
 
 class Transaction(Base):

@@ -36,4 +36,5 @@ class BotInfo:
     budget: Budget = Budget()
     number_of_bots: int = 1
     trade_chance: float = 0.8
+    risk_threshold: float = 0.8  # TODO: Remove this once we remove evm_bots
     init_kwargs: dict = {}

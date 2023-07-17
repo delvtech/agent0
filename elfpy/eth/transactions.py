@@ -58,7 +58,26 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
 def smart_contract_transact(
     web3: Web3, contract: Contract, function_name: str, from_account: EthAccount, *fn_args
 ) -> TxReceipt:
-    """Execute a named function on a contract that requires a signature & gas"""
+    """Execute a named function on a contract that requires a signature & gas
+
+    Arguments
+    ---------
+    web3 : Web3
+        web3 provider object
+    contract : Contract
+        any compiled web3 contract
+    function_name : str
+        this function must exist in the compiled contract's ABI
+    from_account : EthAccount
+        the EthAccount that will be used to pay for the gas & sign the transaction
+    fn_args : unordered list
+        all remaining arguments will be passed to the contract function in the order received
+
+    Returns
+    -------
+    TxReceipt
+        a TypedDict; success can be checked via tx_receipt["status"]
+    """
     func_handle = contract.get_function_by_name(function_name)(*fn_args)
     unsent_txn = func_handle.build_transaction(
         {
@@ -69,8 +88,7 @@ def smart_contract_transact(
     signed_txn = from_account.account.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
     # wait for approval to complete
-    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-    return tx_receipt
+    return web3.eth.wait_for_transaction_receipt(tx_hash)
 
 
 def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[Transaction]:

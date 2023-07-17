@@ -12,6 +12,11 @@ def set_anvil_account_balance(web3: Web3, account_address: str, amount_wei: int)
     ---------
     amount_wei : int
         amount_wei to fund, in wei
+
+    Returns
+    -------
+    RPCResponse
+        success can be checked by inspecting `rpc_response.error`
     """
     if not web3.is_checksum_address(account_address):
         raise ValueError(f"argument {account_address=} must be a checksum address")

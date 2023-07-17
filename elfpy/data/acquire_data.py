@@ -12,6 +12,7 @@ from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
 from elfpy.data import postgres
+from elfpy.data.db_schema import PoolConfig, PoolInfo
 from elfpy.utils import logs as log_utils
 
 # pylint: disable=too-many-arguments
@@ -51,7 +52,7 @@ def main(
     )
 
     # get pool config from hyperdrive contract
-    pool_config = hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract)
+    pool_config = PoolConfig(**hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract))
     postgres.add_pool_config(pool_config, session)
 
     # Get last entry of pool info in db
@@ -73,7 +74,9 @@ def main(
     # and if the chain has executed until start_block (based on latest_mined_block check)
     if data_latest_block_number < block_number < latest_mined_block:
         # Query and add block_pool_info
-        block_pool_info = hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
+        block_pool_info = PoolInfo(
+            **hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
+        )
         postgres.add_pool_infos([block_pool_info], session)
 
         # Query and add block transactions
@@ -105,8 +108,8 @@ def main(
                 block_pool_info = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        block_pool_info = hyperdrive_interface.get_hyperdrive_pool_info(
-                            web3, hyperdrive_contract, block_number
+                        block_pool_info = PoolInfo(
+                            **hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
                         )
                         break
                     except ValueError:

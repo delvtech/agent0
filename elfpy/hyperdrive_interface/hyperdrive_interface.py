@@ -16,8 +16,9 @@ from web3.contract.contract import Contract
 from web3.types import BlockData
 
 from elfpy import eth
-from elfpy.data.db_schema import PoolConfig, PoolInfo, Transaction, WalletInfo
-from elfpy.markets.hyperdrive import hyperdrive_assets
+from elfpy import time as elftime
+from elfpy.data.db_schema import PoolInfo, Transaction, WalletInfo
+from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel, hyperdrive_assets
 
 from .hyperdrive_addresses import HyperdriveAddresses
 
@@ -76,7 +77,7 @@ def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddress
     return hyperdrive_contract
 
 
-def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:
+def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, Any]:
     """
     Returns the block pool info from the Hyperdrive contract
 
@@ -91,12 +92,12 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
 
     Returns
     -------
-    PoolInfo
-        A PoolInfo object ready to be inserted into Postgres
+    dict
+        A pool_info dict ready to be inserted into the Postgres PoolInfo schema
     """
     pool_info_data_dict = eth.smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
-    pool_info_data_dict: dict[Any, Any] = {
-        key: eth.convert_scaled_value(value) for (key, value) in pool_info_data_dict.items()
+    pool_info_data_dict: dict[str, Any] = {
+        str(key): eth.convert_scaled_value(value) for (key, value) in pool_info_data_dict.items()
     }
     current_block: BlockData = web3.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
@@ -114,12 +115,20 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
         # Otherwise default to None if not exist
         else:
             pool_info_dict[key] = pool_info_data_dict.get(key, None)
-    # Populating the dataclass from the dictionary
-    pool_info = PoolInfo(**pool_info_dict)
-    return pool_info
+    position_duration = eth.smart_contract_read(hyperdrive_contract, "getPoolConfig").get("positionDuration", None)
+    if position_duration is not None:
+        asset_id = hyperdrive_assets.encode_asset_id(
+            hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, position_duration
+        )
+        pool_info_dict["total_supply_withdraw_shares"] = eth.smart_contract_read(
+            hyperdrive_contract, "balanceOf", asset_id, hyperdrive_contract.address
+        )
+    else:
+        pool_info_dict["total_supply_withdraw_shares"] = None
+    return pool_info_dict
 
 
-def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
+def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict[str, Any]:
     """Get the hyperdrive config from a deployed hyperdrive contract.
 
     Arguments
@@ -133,38 +142,83 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> PoolConfig:
         The hyperdrive config.
     """
     hyperdrive_config: dict[str, Any] = eth.smart_contract_read(hyperdrive_contract, "getPoolConfig")
-
-    out_config = {}
-    out_config["contractAddress"] = hyperdrive_contract.address
-    out_config["baseToken"] = hyperdrive_config.get("baseToken", None)
-    out_config["initialSharePrice"] = eth.convert_scaled_value(hyperdrive_config.get("initialSharePrice", None))
-    out_config["minimumShareReserves"] = eth.convert_scaled_value(hyperdrive_config.get("minimumShareReserves", None))
-    out_config["positionDuration"] = hyperdrive_config.get("positionDuration", None)
-    out_config["checkpointDuration"] = hyperdrive_config.get("checkpointDuration", None)
-    config_time_stretch = hyperdrive_config.get("timeStretch", None)
-    if config_time_stretch:
-        fp_time_stretch = FixedPoint(scaled_value=config_time_stretch)
-        time_stretch = float(fp_time_stretch)
-        inv_time_stretch = float(1 / fp_time_stretch)
+    pool_config = {}
+    pool_config["contractAddress"] = hyperdrive_contract.address
+    pool_config["baseToken"] = hyperdrive_config.get("baseToken", None)
+    pool_config["initialSharePrice"] = eth.convert_scaled_value(hyperdrive_config.get("initialSharePrice", None))
+    pool_config["minimumShareReserves"] = eth.convert_scaled_value(hyperdrive_config.get("minimumShareReserves", None))
+    pool_config["positionDuration"] = hyperdrive_config.get("positionDuration", None)
+    pool_config["checkpointDuration"] = hyperdrive_config.get("checkpointDuration", None)
+    pool_config["timeStretch"] = hyperdrive_config.get("timeStretch", None)
+    if pool_config["timeStretch"]:
+        pool_config["invTimeStretch"] = float(FixedPoint(1) / FixedPoint(scaled_value=pool_config["timeStretch"]))
     else:
-        time_stretch = None
-        inv_time_stretch = None
-    out_config["timeStretch"] = time_stretch
-    out_config["governance"] = hyperdrive_config.get("governance", None)
-    out_config["feeCollector"] = hyperdrive_config.get("feeCollector", None)
+        pool_config["invTimeStretch"] = None
+    pool_config["governance"] = hyperdrive_config.get("governance", None)
+    pool_config["feeCollector"] = hyperdrive_config.get("feeCollector", None)
     curve_fee, flat_fee, governance_fee = hyperdrive_config.get("fees", (None, None, None))
-    out_config["curveFee"] = eth.convert_scaled_value(curve_fee)
-    out_config["flatFee"] = eth.convert_scaled_value(flat_fee)
-    out_config["governanceFee"] = eth.convert_scaled_value(governance_fee)
-    out_config["oracleSize"] = eth.convert_scaled_value(hyperdrive_config.get("oracleSize", None))
-    out_config["updateGap"] = hyperdrive_config.get("updateGap", None)
-    out_config["invTimeStretch"] = inv_time_stretch
-    if out_config["positionDuration"] is not None:
-        term_length = out_config["positionDuration"] / 60 / 60 / 24  # in days
+    pool_config["curveFee"] = eth.convert_scaled_value(curve_fee)
+    pool_config["flatFee"] = eth.convert_scaled_value(flat_fee)
+    pool_config["governanceFee"] = eth.convert_scaled_value(governance_fee)
+    pool_config["oracleSize"] = eth.convert_scaled_value(hyperdrive_config.get("oracleSize", None))
+    pool_config["updateGap"] = hyperdrive_config.get("updateGap", None)
+    if pool_config["positionDuration"] is not None:
+        pool_config["termLength"] = pool_config["positionDuration"] / 60 / 60 / 24  # in days
     else:
-        term_length = None
-    out_config["termLength"] = term_length
-    return PoolConfig(**out_config)
+        pool_config["termLength"] = None
+    return pool_config
+
+
+def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> HyperdriveMarket:
+    """Constructs an elfpy HyperdriveMarket from the onchain hyperdrive constract state"""
+    earliest_block = web3.eth.get_block("earliest")
+    current_block = web3.eth.get_block("latest")
+    pool_config = get_hyperdrive_config(hyperdrive_contract)
+    pool_info = get_hyperdrive_pool_info(web3, hyperdrive_contract, current_block.number)
+    market_state = HyperdriveMarketState(
+        base_buffer=FixedPoint(pool_info["longsOutstanding"]),
+        bond_reserves=FixedPoint(pool_info["bondReserves"]),
+        checkpoint_duration=FixedPoint(pool_config["checkpointDuration"]),
+        curve_fee_multiple=FixedPoint(pool_config["curveFee"]),
+        flat_fee_multiple=FixedPoint(pool_config["flatFee"]),
+        governance_fee_multiple=FixedPoint(pool_config["governanceFee"]),
+        init_share_price=FixedPoint(pool_config["initializeSharePrice"]),
+        long_average_maturity_time=FixedPoint(pool_info["longAverageMaturityTime"]),
+        longs_outstanding=FixedPoint(pool_info["longsOutstanding"]),
+        lp_total_supply=FixedPoint(pool_info["lpTotalSupply"]),
+        share_price=FixedPoint(pool_info["sharePrice"]),
+        share_reserves=FixedPoint(pool_info["shareReserves"]),
+        short_average_maturity_time=FixedPoint(pool_info["shortAverageMaturityTime"]),
+        short_base_volume=FixedPoint(pool_info["shortBaseVolume"]),
+        shorts_outstanding=FixedPoint(pool_info["shortsOutstanding"]),
+        # TODO: We don't have checkpoint information, so the next two fields are indexed by 0
+        total_supply_longs={FixedPoint(0): FixedPoint(pool_info["longsOutstanding"])},
+        total_supply_shorts={FixedPoint(0): FixedPoint(pool_info["shortsOutstanding"])},
+        total_supply_withdraw_shares=FixedPoint(pool_info["totalSupplyWithdrawalShares"]),
+        variable_apr=FixedPoint(0.01),  # TODO: insert real value
+        withdraw_shares_ready_to_withdraw=FixedPoint(pool_info["withdrawalSharesReadyToWithdraw"]),
+        withdraw_capital=FixedPoint(0),
+        withdraw_interest=FixedPoint(0),
+    )
+    # FIXME: Would it be safe to assume that earliest_block.timestamp always equals zero?
+    time_elapsed = (
+        datetime.utcfromtimestamp(current_block.timestamp) - datetime.utcfromtimestamp(earliest_block.timestamp)
+    ).total_seconds()
+    years_elapsed = FixedPoint(time_elapsed) / 60 / 60 / 24 / 365
+    return HyperdriveMarket(
+        pricing_model=HyperdrivePricingModel(),
+        market_state=market_state,
+        position_duration=elftime.StretchedTime(
+            days=FixedPoint(pool_config["termLength"]),
+            time_stretch=FixedPoint(scaled_value=pool_config["timeStretch"]),
+            normalizing_constant=FixedPoint(pool_config["termLength"]),
+        ),
+        block_time=elftime.BlockTime(
+            _time=years_elapsed,
+            _block_number=FixedPoint(current_block.number),
+            _step_size=FixedPoint(1) / FixedPoint(365),
+        ),
+    )
 
 
 def get_wallet_info(
