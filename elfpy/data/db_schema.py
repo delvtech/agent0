@@ -24,7 +24,7 @@ class Base(MappedAsDataclass, DeclarativeBase):
 
 class WalletInfo(Base):
     """
-    Table/dataclass schema for pool config
+    Table/dataclass schema for wallet information
     """
 
     __tablename__ = "walletinfo"
