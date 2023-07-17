@@ -12,7 +12,10 @@ import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.logs as log_utils
+from elfpy.markets import hyperdrive
 from elfpy.markets.hyperdrive import HyperdriveMarketDeltas, HyperdriveMarketState, HyperdrivePricingModel
+from elfpy.time.time import BlockTime
+from tests.cross_platform.fixtures.hyperdrive_config import HyperdriveConfig
 
 
 @dataclass
@@ -20,6 +23,7 @@ class TestCaseCalcMax:
     """Dataclass for calculate_max_long test cases"""
 
     market_state: HyperdriveMarketState
+    market_config: HyperdriveConfig
     time_remaining: time.StretchedTime
 
     __test__ = False  # pytest: don't test this class
@@ -28,7 +32,7 @@ class TestCaseCalcMax:
 class TestCalculateMax(unittest.TestCase):
     """Tests calculate_max_short and calculate_max_long functions within the pricing model"""
 
-    def test_calculate_max(self):
+    def test_calculate_max_long(self):
         """
         Tests that calculate_max_long and calculate_max_short are safe, by checking
             apr >= 0
@@ -37,256 +41,168 @@ class TestCalculateMax(unittest.TestCase):
         """
         log_utils.setup_logging(log_filename="test_calculate_max")
         pricing_model: HyperdrivePricingModel = HyperdrivePricingModel()
-        test_cases: list[TestCaseCalcMax] = [
-            TestCaseCalcMax(  # Test 0
-                market_state=HyperdriveMarketState(
-                    share_reserves=FixedPoint("1_000_000.0"),
-                    bond_reserves=FixedPoint("1_000_000.0"),
-                    base_buffer=FixedPoint("0.0"),
-                    bond_buffer=FixedPoint("0.0"),
-                    init_share_price=FixedPoint("1.0"),
-                    share_price=FixedPoint("1.0"),
-                    curve_fee_multiple=FixedPoint("0.1"),
-                    flat_fee_multiple=FixedPoint("0.1"),
-                ),
-                time_remaining=time.StretchedTime(
-                    days=FixedPoint("365.0"),
-                    time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.05")),
-                    normalizing_constant=FixedPoint("365.0"),
-                ),
-            ),
-            TestCaseCalcMax(  # Test 1
-                market_state=HyperdriveMarketState(
-                    share_reserves=FixedPoint("1_000_000.0"),
-                    bond_reserves=FixedPoint("1_000_000.0"),
-                    base_buffer=FixedPoint("100_000.0"),
-                    bond_buffer=FixedPoint("100_000.0"),
-                    init_share_price=FixedPoint("1.0"),
-                    share_price=FixedPoint("1.0"),
-                    curve_fee_multiple=FixedPoint("0.1"),
-                    flat_fee_multiple=FixedPoint("0.1"),
-                ),
-                time_remaining=time.StretchedTime(
-                    days=FixedPoint("365.0"),
-                    time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.05")),
-                    normalizing_constant=FixedPoint("365.0"),
-                ),
-            ),
-            TestCaseCalcMax(  # Test 2
-                market_state=HyperdriveMarketState(
-                    share_reserves=FixedPoint("100_000_000.0"),
-                    bond_reserves=FixedPoint("1_000_000.0"),
-                    base_buffer=FixedPoint("0.0"),
-                    bond_buffer=FixedPoint("0.0"),
-                    init_share_price=FixedPoint("1.0"),
-                    share_price=FixedPoint("1.0"),
-                    curve_fee_multiple=FixedPoint("0.1"),
-                    flat_fee_multiple=FixedPoint("0.1"),
-                ),
-                time_remaining=time.StretchedTime(
-                    days=FixedPoint("365.0"),
-                    time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.05")),
-                    normalizing_constant=FixedPoint("365.0"),
-                ),
-            ),
-            TestCaseCalcMax(  # Test 3
-                market_state=HyperdriveMarketState(
-                    share_reserves=FixedPoint("1_000_000.0"),
-                    bond_reserves=FixedPoint("834_954.0"),
-                    base_buffer=FixedPoint("0.0"),
-                    bond_buffer=FixedPoint("0.0"),
-                    init_share_price=FixedPoint("1.0"),
-                    share_price=FixedPoint("1.0"),
-                    curve_fee_multiple=FixedPoint("0.1"),
-                    flat_fee_multiple=FixedPoint("0.1"),
-                ),
-                time_remaining=time.StretchedTime(
-                    days=FixedPoint("365.0"),
-                    time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.27")),
-                    normalizing_constant=FixedPoint("365.0"),
-                ),
-            ),
-            TestCaseCalcMax(  # Test 4
-                market_state=HyperdriveMarketState(
-                    share_reserves=FixedPoint("500_000.0"),
-                    bond_reserves=FixedPoint("1_000_000.0"),
-                    base_buffer=FixedPoint("0.0"),
-                    bond_buffer=FixedPoint("0.0"),
-                    init_share_price=FixedPoint("1.5"),
-                    share_price=FixedPoint("2.0"),
-                    curve_fee_multiple=FixedPoint("0.1"),
-                    flat_fee_multiple=FixedPoint("0.1"),
-                ),
-                time_remaining=time.StretchedTime(
-                    days=FixedPoint("365.0"),
-                    time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.05")),
-                    normalizing_constant=FixedPoint("365.0"),
-                ),
-            ),
-            TestCaseCalcMax(  # Test 5
-                market_state=HyperdriveMarketState(
-                    share_reserves=FixedPoint("1_000_000.0"),
-                    bond_reserves=FixedPoint("1_000_000.0"),
-                    base_buffer=FixedPoint("0.0"),
-                    bond_buffer=FixedPoint("0.0"),
-                    init_share_price=FixedPoint("1.5"),
-                    share_price=FixedPoint("2.0"),
-                    curve_fee_multiple=FixedPoint("0.1"),
-                    flat_fee_multiple=FixedPoint("0.1"),
-                ),
-                time_remaining=time.StretchedTime(
-                    days=FixedPoint("365.0"),
-                    time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.05")),
-                    normalizing_constant=FixedPoint("365.0"),
-                ),
-            ),
-            TestCaseCalcMax(  # Test 6
-                market_state=HyperdriveMarketState(
-                    share_reserves=FixedPoint("1_000_000.0"),
-                    bond_reserves=FixedPoint("1_000_000.0"),
-                    base_buffer=FixedPoint("0.0"),
-                    bond_buffer=FixedPoint("0.0"),
-                    init_share_price=FixedPoint("1.5"),
-                    share_price=FixedPoint("2.0"),
-                    curve_fee_multiple=FixedPoint("0.5"),
-                    flat_fee_multiple=FixedPoint("0.1"),
-                ),
-                time_remaining=time.StretchedTime(
-                    days=FixedPoint("365.0"),
-                    time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.05")),
-                    normalizing_constant=FixedPoint("365.0"),
-                ),
-            ),
-            TestCaseCalcMax(  # Test 7
-                market_state=HyperdriveMarketState(
-                    share_reserves=FixedPoint("1_000_000.0"),
-                    bond_reserves=FixedPoint("1_000_000.0"),
-                    base_buffer=FixedPoint("0.0"),
-                    bond_buffer=FixedPoint("0.0"),
-                    init_share_price=FixedPoint("1.5"),
-                    share_price=FixedPoint("2.0"),
-                    curve_fee_multiple=FixedPoint("0.1"),
-                    flat_fee_multiple=FixedPoint("0.1"),
-                ),
-                time_remaining=time.StretchedTime(
-                    days=FixedPoint("91.0"),
-                    time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.05")),
-                    normalizing_constant=FixedPoint("365.0"),
-                ),
-            ),
-            TestCaseCalcMax(  # Test 8
-                market_state=HyperdriveMarketState(
-                    share_reserves=FixedPoint("1_000_000.0"),
-                    bond_reserves=FixedPoint("1_000_000.0"),
-                    base_buffer=FixedPoint("0.0"),
-                    bond_buffer=FixedPoint("0.0"),
-                    init_share_price=FixedPoint("1.5"),
-                    share_price=FixedPoint("2.0"),
-                    curve_fee_multiple=FixedPoint("0.1"),
-                    flat_fee_multiple=FixedPoint("0.1"),
-                ),
-                time_remaining=time.StretchedTime(
-                    days=FixedPoint("91.0"),
-                    time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.25")),
-                    normalizing_constant=FixedPoint("365.0"),
-                ),
-            ),
-        ]
-        for test_number, test_case in enumerate(test_cases):
-            logging.info("\ntest=%s with \n %s \n and %s", test_number, test_case, pricing_model)
-            # Initialize lp_total_supply to y + x
-            test_case.market_state.lp_total_supply = (
-                test_case.market_state.share_reserves * test_case.market_state.share_price
-                + test_case.market_state.bond_reserves
-            )
 
-            # Get the max long.
-            max_long_result = pricing_model.calculate_max_long(
-                share_reserves=test_case.market_state.share_reserves,
-                bond_reserves=test_case.market_state.bond_reserves,
-                longs_outstanding=test_case.market_state.longs_outstanding,
-                time_stretch=test_case.time_remaining.time_stretch,
-                share_price=test_case.market_state.share_price,
-                initial_share_price=test_case.market_state.init_share_price,
-            )
+        # Values from Hyperdrive
+        # poolConfig
+        #     initialSharePrice 1000000000000000000
+        #     minimumShareReserves 1000000000000000000
+        #     positionDuration 31536000
+        #     checkpointDuration 86400
+        #     timeStretch 44463125629060298
+        #     governance 0x71554DE85ecD7bDD19e24078e518ead88d691871
+        #     feeCollector 0xd002315CAcB4882e1099EDFb00895Fa8867256B5
+        #     fees.curve 0
+        #     fees.flat 0
+        #     fees.governance 0
+        #     oracleSize 5
+        #     updateGap 1000
 
-            # Ensure that the max long is valid.
-            self.assertGreaterEqual(max_long_result.base_amount, FixedPoint("0.0"))
+        # poolInfo
+        #     shareReserves 500000000000000000000000000
+        #     bondReserves 1498059016940075710500000000
+        #     lpTotalSupply 499999999000000000000000000
+        #     sharePrice 1000000000000000000
+        #     longsOutstanding 0
+        #     longAverageMaturityTime 0
+        #     shortsOutstanding 0
+        #     shortAverageMaturityTime 0
+        #     shortBaseVolume 0
+        #     withdrawalSharesReadyToWithdraw 0
 
-            # Simulate the trade and ensure the trade was safe.
-            trade_result = pricing_model.calc_out_given_in(
-                in_=types.Quantity(amount=max_long_result.base_amount, unit=types.TokenType.BASE),
-                market_state=test_case.market_state,
-                time_remaining=test_case.time_remaining,
-            )
+        # baseAmount 493213221042049515844300901
+        # bondAmount 504845795898026194655699099
 
-            logging.info("long test")
-            self._ensure_market_safety(
-                pricing_model=pricing_model, trade_result=trade_result, test_case=test_case, is_long=True
-            )
+        # poolInfo
+        #     shareReserves 993213221042049515844300901
+        #     bondReserves 993213221042049549613550417
+        #     lpTotalSupply 499999999000000000000000000
+        #     sharePrice 1000000000000000000
+        #     longsOutstanding 504845795898026160886449583
+        #     longAverageMaturityTime 126144000000000000000000000
+        #     shortsOutstanding 0
+        #     shortAverageMaturityTime 0
+        #     shortBaseVolume 0
+        #     withdrawalSharesReadyToWithdraw 0
+        #     withdrawalSharesProceeds 0
 
-            # Get the max short.
-            max_short = pricing_model.calculate_max_short(
-                share_reserves=test_case.market_state.share_reserves,
-                bond_reserves=test_case.market_state.bond_reserves,
-                longs_outstanding=test_case.market_state.longs_outstanding,
-                time_stretch=test_case.time_remaining.time_stretch,
-                share_price=test_case.market_state.share_price,
-                initial_share_price=test_case.market_state.init_share_price,
-            )
+        test_case = TestCaseCalcMax(  # Test 8
+            market_state=HyperdriveMarketState(
+                share_reserves=FixedPoint(scaled_value=500000000000000000000000000),
+                bond_reserves=FixedPoint(scaled_value=1498059016940075710500000000),
+                lp_total_supply=FixedPoint(scaled_value=499999999000000000000000000),
+                init_share_price=FixedPoint(1),
+                share_price=FixedPoint(1),
+                curve_fee_multiple=FixedPoint(0),
+                flat_fee_multiple=FixedPoint(0),
+            ),
+            time_remaining=time.StretchedTime(
+                days=FixedPoint("90"),
+                time_stretch=FixedPoint(scaled_value=44463125629060298),
+                normalizing_constant=FixedPoint("365.0"),
+            ),
+            market_config=HyperdriveConfig(time_stretch=44463125629060298),
+        )
 
-            # Ensure that the max short is valid.
-            self.assertGreaterEqual(max_short, FixedPoint("0.0"))
+        max_long = pricing_model.calculate_max_long(
+            test_case.market_state.share_reserves,
+            test_case.market_state.bond_reserves,
+            test_case.market_state.longs_outstanding,
+            FixedPoint(scaled_value=test_case.market_config.time_stretch),
+            test_case.market_state.share_price,
+            test_case.market_state.share_price,
+            max_iterations=20,
+        )
 
-            # Simulate the trade.
-            trade_result = pricing_model.calc_out_given_in(
-                in_=types.Quantity(amount=max_short, unit=types.TokenType.PT),
-                market_state=test_case.market_state,
-                time_remaining=test_case.time_remaining,
-            )
-            logging.info("short test")
-            self._ensure_market_safety(
-                pricing_model=pricing_model,
-                trade_result=trade_result,
-                test_case=test_case,
-                is_long=False,
-            )
+        print(f"{FixedPoint(1) / test_case.market_config.time_stretch=}")
+
+        self.assertEqual(max_long.base_amount, FixedPoint(scaled_value=493213221042049515844300901))
+        self.assertEqual(max_long.bond_amount, FixedPoint(scaled_value=504845795898026194655699099))
+
         log_utils.close_logging()
 
-    def _ensure_market_safety(
-        self,
-        pricing_model: HyperdrivePricingModel,
-        trade_result: trades.TradeResult,
-        test_case: TestCaseCalcMax,
-        is_long: bool,
-    ) -> None:
-        market_state = copy.copy(test_case.market_state)
+    def test_calculate_max_short(self):
+        """
+        Tests that calculate_max_long and calculate_max_short are safe, by checking
+            apr >= 0
+            share_price * market_state.share_reserves >= base_buffer
+            bond_reserves >= bond_buffer
+        """
+        log_utils.setup_logging(log_filename="test_calculate_max")
+        pricing_model: HyperdrivePricingModel = HyperdrivePricingModel()
 
-        # Simulate the trade.
-        if is_long:
-            delta = HyperdriveMarketDeltas(
-                d_base_asset=trade_result.market_result.d_base,
-                d_bond_asset=trade_result.market_result.d_bonds,
-                d_base_buffer=trade_result.breakdown.with_fee,
-            )
-        else:  # is a short
-            delta = HyperdriveMarketDeltas(
-                d_base_asset=trade_result.market_result.d_base,
-                d_bond_asset=trade_result.market_result.d_bonds,
-                d_bond_buffer=-trade_result.user_result.d_bonds,
-            )
-        market_state.apply_delta(delta=delta)
+        # Values from Hyperdrive
+        # poolConfig
+        #     initialSharePrice 1000000000000000000
+        #     minimumShareReserves 1000000000000000000
+        #     positionDuration 31536000
+        #     checkpointDuration 86400
+        #     timeStretch 44463125629060298
+        #     governance 0x71554DE85ecD7bDD19e24078e518ead88d691871
+        #     feeCollector 0xd002315CAcB4882e1099EDFb00895Fa8867256B5
+        #     fees.curve 0
+        #     fees.flat 0
+        #     fees.governance 0
+        #     oracleSize 5
+        #     updateGap 1000
 
-        # Ensure that the pool is in a valid state after the trade.
-        apr = pricing_model.calc_apr_from_reserves(market_state=market_state, time_remaining=test_case.time_remaining)
-        self.assertGreaterEqual(apr, FixedPoint("0.0"))
+        # poolInfo
+        #     shareReserves 500000000000000000000000000
+        #     bondReserves 1498059016940075710500000000
+        #     lpTotalSupply 499999999000000000000000000
+        #     sharePrice 1000000000000000000
+        #     longsOutstanding 0
+        #     longAverageMaturityTime 0
+        #     shortsOutstanding 0
+        #     shortAverageMaturityTime 0
+        #     shortBaseVolume 0
+        #     withdrawalSharesReadyToWithdraw 0
 
-        self.assertGreaterEqual(
-            market_state.share_price * market_state.share_reserves,
-            market_state.base_buffer,
+        # baseAmount 493213221042049515844300901
+        # bondAmount 504845795898026194655699099
+
+        # poolInfo
+        #     shareReserves 993213221042049515844300901
+        #     bondReserves 993213221042049549613550417
+        #     lpTotalSupply 499999999000000000000000000
+        #     sharePrice 1000000000000000000
+        #     longsOutstanding 504845795898026160886449583
+        #     longAverageMaturityTime 126144000000000000000000000
+        #     shortsOutstanding 0
+        #     shortAverageMaturityTime 0
+        #     shortBaseVolume 0
+        #     withdrawalSharesReadyToWithdraw 0
+        #     withdrawalSharesProceeds 0
+
+        test_case = TestCaseCalcMax(  # Test 8
+            market_state=HyperdriveMarketState(
+                share_reserves=FixedPoint(scaled_value=500000000000000000000000000),
+                bond_reserves=FixedPoint(scaled_value=1498059016940075710500000000),
+                lp_total_supply=FixedPoint(scaled_value=499999999000000000000000000),
+                init_share_price=FixedPoint(1),
+                share_price=FixedPoint(1),
+                curve_fee_multiple=FixedPoint(0),
+                flat_fee_multiple=FixedPoint(0),
+            ),
+            time_remaining=time.StretchedTime(
+                days=FixedPoint("90"),
+                time_stretch=FixedPoint(scaled_value=44463125629060298),
+                normalizing_constant=FixedPoint("365.0"),
+            ),
+            market_config=HyperdriveConfig(time_stretch=44463125629060298),
         )
 
-        self.assertGreaterEqual(
-            market_state.bond_reserves,
-            market_state.bond_buffer,
+        max_short = pricing_model.calculate_max_short(
+            test_case.market_state.share_reserves,
+            test_case.market_state.bond_reserves,
+            test_case.market_state.longs_outstanding,
+            FixedPoint(scaled_value=test_case.market_config.time_stretch),
+            test_case.market_state.share_price,
+            test_case.market_state.share_price,
+            test_case.market_config.minimum_share_reserves,
         )
+
+        print(f"{FixedPoint(1) / test_case.market_config.time_stretch=}")
+
+        self.assertEqual(max_short, FixedPoint(scaled_value=493213221042049515844300901))
+
+        log_utils.close_logging()
