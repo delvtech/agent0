@@ -12,7 +12,6 @@ import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
 from elfpy.markets.base import BasePricingModel
-from elfpy.markets.hyperdrive import yieldspace_pricing_model_sol
 
 if TYPE_CHECKING:
     from .hyperdrive_market import HyperdriveMarketState
@@ -558,7 +557,7 @@ class YieldspacePricingModel(BasePricingModel):
             - (share_price / init_share_price) * (init_share_price * (share_reserves - d_shares)) ** (time_elapsed)
         ) ** (FixedPoint("1.0").div_up(time_elapsed)) - (bond_reserves + lp_total_supply)
 
-    # TODO: update to wrap solidity mirrored function as part of parity effort.
+    # TODO: have this wrap the solidity mirrored version as a part of the parity effort.
     def calc_bonds_out_given_shares_in(
         self,
         share_reserves: FixedPoint,
@@ -697,6 +696,7 @@ class YieldspacePricingModel(BasePricingModel):
             / (share_price / init_share_price)
         ) ** (FixedPoint("1.0").div_up(time_elapsed))
 
+    # TODO: have this wrap the solidity mirrored version as a part of the parity effort.
     def calc_yieldspace_const(
         self,
         share_reserves: FixedPoint,
@@ -733,9 +733,9 @@ class YieldspacePricingModel(BasePricingModel):
                 "k"; The yieldspace constant.
         """
         # k = (c / mu) * (mu * z)^(1 - tau) + (y + s)^(1 - tau)
-        return yieldspace_pricing_model_sol.modified_yield_space_constant(
-            share_price / init_share_price, init_share_price, share_reserves, time_elapsed, bond_reserves
-        )
+        return (share_price / init_share_price) * (init_share_price * share_reserves) ** time_elapsed + (
+            bond_reserves + lp_total_supply
+        ) ** time_elapsed
 
     def calc_tokens_out_given_lp_in(
         self, lp_in: FixedPoint, market_state: HyperdriveMarketState
