@@ -17,10 +17,6 @@ if TYPE_CHECKING:
     from .hyperdrive_market import HyperdriveMarketState
 
 
-# TODO: clean up to avoid this
-# pylint: disable=too-many-arguments
-
-
 class YieldspacePricingModel(BasePricingModel):
     """
     YieldSpace Pricing Model
@@ -33,6 +29,7 @@ class YieldspacePricingModel(BasePricingModel):
     #       functions.
     #
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-arguments
 
     def model_name(self) -> str:
         return "YieldSpace"

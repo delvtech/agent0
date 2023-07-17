@@ -100,11 +100,13 @@ extend-exclude = "\\.ipynb"
 
 [tool.pylance]
 exclude = [
+    "agent_0",
     "hyperdrive_solidity",
 ]
 
 [tool.pyright]
 exclude = [
+    "agent_0",
     ".venv",
     ".vscode",
     "docs",

@@ -1,29 +1,21 @@
 """The Hyperdrive pricing model"""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
-from fixedpointmath.fixed_point_integer_math import FixedPointIntegerMath
 
 import elfpy.agents.agent_trade_result as agent_trade_result
 import elfpy.markets.hyperdrive.market_action_result as market_action_result
 import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
+from elfpy.markets.hyperdrive import hyperdrive_pricing_model_sol
 
 from .yieldspace_pricing_model import YieldspacePricingModel
 
 if TYPE_CHECKING:
     from .hyperdrive_market import HyperdriveMarketState
-
-
-# Let the variable names be the same as their solidity counterpart so that it is easier to compare
-# the two.  We can make python wrappers that just call these methods that have better variable names
-# that conform to python standards.
-# pylint: disable=invalid-name
-
-ONE_18 = FixedPoint("1")
 
 
 class HyperdrivePricingModel(YieldspacePricingModel):
@@ -34,6 +26,8 @@ class HyperdrivePricingModel(YieldspacePricingModel):
     invariants with modifications to the Yield Space invariant that enable the
     base reserves to be deposited into yield bearing vaults
     """
+
+    # pylint: disable=too-many-arguments
 
     def model_name(self) -> str:
         return "Hyperdrive"
@@ -418,40 +412,6 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             ),
         )
 
-    def calc_tokens_out_given_lp_in(
-        self, lp_in: FixedPoint, market_state: HyperdriveMarketState
-    ) -> tuple[FixedPoint, FixedPoint]:
-        """
-        Calculates the amount of base shares and bonds released from burning a specified amount of
-        LP shares from the pool.
-
-        Arguments
-        ----------
-        lp_in: FixedPoint
-            The amount of lp shares that are given back to the pool
-        market_state : MarketState
-            The state of the AMM's reserves and share prices.
-
-        Returns
-        -------
-        FixedPoint
-            The amount of shares taken out of reserves
-        FixedPoint
-            The amount of bonds taken out of reserves
-        """
-        # get the shares out to the user
-        percent_of_lp_shares = lp_in / market_state.lp_total_supply
-        # dz = (z - o_l / c) * (dl / l)
-        shares_delta = (
-            market_state.share_reserves - market_state.longs_outstanding / market_state.share_price
-        ) * percent_of_lp_shares
-        bonds_delta = (
-            market_state.bond_reserves
-            - market_state.bond_reserves * (market_state.share_reserves - shares_delta) / market_state.share_reserves
-        )
-        # these are both positive values
-        return shares_delta, bonds_delta
-
     def calculate_max_long(
         self,
         share_reserves: FixedPoint,
@@ -462,7 +422,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         initial_share_price: FixedPoint,
         minimum_share_reserves: FixedPoint,
         max_iterations: int = 20,
-    ) -> MaxLongResult:
+    ) -> hyperdrive_pricing_model_sol.MaxLongResult:
         """Calculates the maximum amount of bonds that can be bought in the market.  This is necessarily
         done with an iterative approach as there is no closed form solution.
 
@@ -486,78 +446,20 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         Returns
         -------
         MaxLongResult
-            The maximum amount of bonds that can be purchased and the amount of base that must be spent to purchase them.
+            The maximum amount of bonds that can be purchased and the amount of base that must be spent
+            to purchase them.
 
         """
-        # We first solve for the maximum buy that is possible on the YieldSpace curve. This will give us
-        # an upper bound on our maximum buy by giving us the maximum buy that is possible without going
-        # into negative interest territory. Hyperdrive has solvency requirements since it mints longs on
-        # demand. If the maximum buy satisfies our solvency checks, then we're done. If not, then we
-        # need to solve for the maximum trade size iteratively.
-        dz, dy = self.calculate_max_buy(
-            share_reserves, bond_reserves, ONE_18 - time_stretch, share_price, initial_share_price
+        return hyperdrive_pricing_model_sol.calculate_max_long(
+            share_reserves,
+            bond_reserves,
+            longs_outstanding,
+            time_stretch,
+            share_price,
+            initial_share_price,
+            minimum_share_reserves,
+            max_iterations,
         )
-        if share_reserves + dz >= (longs_outstanding + dy) / share_price + minimum_share_reserves:
-            return MaxLongResult(base_amount=dz * share_price, bond_amount=dy)
-
-        # To make an initial guess for the iterative approximation, we consider
-        # the solvency check to be the error that we want to reduce. The amount
-        # the long buffer exceeds the share reserves is given by
-        # (y_l + dy) / c - (z + dz). Since the error could be large, we'll use
-        # the realized price of the trade instead of the spot price to
-        # approximate the change in trade output. This gives us dy = c * 1/p * dz.
-        # Substituting this into error equation and setting the error equal to
-        # zero allows us to solve for the initial guess as:
-        #
-        # (y_l + c * 1/p * dz) / c - (z + dz) = 0
-        #              =>
-        # (1/p - 1) * dz = z - y_l/c
-        #              =>
-        # dz = (z - y_l/c) * (p / (p - 1))
-        p = share_price * dz / dy
-        dz = (share_reserves - longs_outstanding / share_price - minimum_share_reserves) * p / (ONE_18 - p)
-        dy = _calculate_bonds_out_given_shares_in(
-            share_reserves, bond_reserves, dz, ONE_18 - time_stretch, share_price, initial_share_price
-        )
-
-        result = MaxLongResult(base_amount=FixedPoint(), bond_amount=FixedPoint())
-
-        # Our maximum long will be the largest trade size that doesn't fail
-        # the solvency check.
-        for _ in range(max_iterations):
-            # Even though YieldSpace isn't linear, we can use a linear approximation
-            # to get closer to the optimal solution. Our guess should bring us close
-            # enough to the optimal point that we can linearly approximate the
-            # change in error using the current spot price.
-            #
-            # We can approximate the change in the trade output with respect to
-            # trade size as dy' = c * (1/p) * dz'. Substituting this into our error
-            # equation and setting the error equation equal to zero allows us to
-            # solve for the trade size update:
-            #
-            # (y_l + dy + c * (1/p) * dz') / c - (z + dz + dz') = 0
-            #                  =>
-            # (1/p - 1) * dz' = (z + dz) - (y_l + dy) / c
-            #                  =>
-            # dz' = ((z + dz) - (y_l + dy) / c) * (p / (p - 1)).
-            approximation_error = (
-                int((share_reserves + dz) - (longs_outstanding + dy) / share_price) - minimum_share_reserves
-            )
-            if approximation_error > 0 and dz * share_price > result.base_amount:
-                result = MaxLongResult(base_amount=dz * share_price, bond_amount=dy)
-
-            p = _calculate_spot_price(share_reserves + dz, bond_reserves - dy, initial_share_price, time_stretch)
-            if p >= ONE_18:
-                break
-            if approximation_error < 0:
-                dz -= -approximation_error * p / (ONE_18 - p)
-            else:
-                dz += approximation_error * p / (ONE_18 - p)
-            dy = _calculate_bonds_out_given_shares_in(
-                share_reserves, bond_reserves, dz, ONE_18 - time_stretch, share_price, initial_share_price
-            )
-
-        return result
 
     def calculate_max_short(
         self,
@@ -592,143 +494,46 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         FixedPoint
             The maximum amount of shares that can be used to open shorts.
         """
-        t = ONE_18 - time_stretch
-        price_factor = share_price / initial_share_price
-        k = _modified_yield_space_constant(price_factor, initial_share_price, share_reserves, t, bond_reserves)
-        inner_factor = initial_share_price * longs_outstanding / share_price + minimum_share_reserves**t
-        optimal_bond_reserves = (k - price_factor * inner_factor) ** (ONE_18 / t)
+        return hyperdrive_pricing_model_sol.calculate_max_short(
+            share_reserves,
+            bond_reserves,
+            longs_outstanding,
+            time_stretch,
+            share_price,
+            initial_share_price,
+            minimum_share_reserves,
+        )
 
-        # The optimal bond reserves imply a maximum short of dy = y - y0.
-        return optimal_bond_reserves - bond_reserves
-
-    def calculate_max_buy(
-        self, z: FixedPoint, y: FixedPoint, t: FixedPoint, c: FixedPoint, mu: FixedPoint
+    def calc_tokens_out_given_lp_in(
+        self, lp_in: FixedPoint, market_state: HyperdriveMarketState
     ) -> tuple[FixedPoint, FixedPoint]:
-        r"""
-        Calculates the maximum amount of bonds that can be purchased with the specified reserves.
+        """
+        Calculates the amount of base shares and bonds released from burning a specified amount of
+        LP shares from the pool.
 
-        Parameters
+        Arguments
         ----------
-        z : FixedPoint
-            Amount of share reserves in the pool.
-        y : FixedPoint
-            Amount of bond reserves in the pool.
-        t : FixedPoint
-            Amount of time elapsed since term start.
-        c : FixedPoint
-            Conversion rate between base and shares.
-        mu : FixedPoint
-            Interest normalization factor for shares.
+        lp_in: FixedPoint
+            The amount of lp shares that are given back to the pool
+        market_state : MarketState
+            The state of the AMM's reserves and share prices.
 
         Returns
         -------
-        tuple[FixedPoint, FixedPoint]
-            The cost in shares of the maximum bond purchase and the maximum amount of bonds that can be purchased.
+        FixedPoint
+            The amount of shares taken out of reserves
+        FixedPoint
+            The amount of bonds taken out of reserves
         """
-        # calculate c_div_mu by directly using regular division operator
-        c_div_mu = c / mu
-        k = _modified_yield_space_constant(c_div_mu, mu, z, t, y)
-        # calculate optimal_y and optimal_z using regular division and pow operator
-        optimal_y = (k / (c_div_mu + ONE_18)) ** (ONE_18 / t)
-        optimal_z = optimal_y / mu
-
-        # calculate and return the optimal trade sizes by using regular subtraction operator
-        return (optimal_z - z, y - optimal_y)
-
-
-class MaxLongResult(NamedTuple):
-    """Result from calculate_max_long."""
-
-    base_amount: FixedPoint
-    bond_amount: FixedPoint
-
-
-def _modified_yield_space_constant(
-    c_div_mu: FixedPoint, mu: FixedPoint, z: FixedPoint, t: FixedPoint, y: FixedPoint
-) -> FixedPoint:
-    r"""
-    Helper function to derive invariant constant C for the YieldSpace.
-    This is meant to mirror the solidity.
-
-    Parameters
-    ----------
-    c_div_mu : FixedPoint
-        Normalized price of shares in terms of base.
-    mu : FixedPoint
-        Interest normalization factor for shares.
-    z : FixedPoint
-        Amount of share reserves in the pool.
-    t : FixedPoint
-        Amount of time elapsed since term start.
-    y : FixedPoint
-        Amount of bond reserves in the pool.
-
-    Returns
-    -------
-    FixedPoint
-        The modified YieldSpace constant C.
-    """
-    # calculate and return the modified YieldSpace constant using regular arithmetic operators
-    return c_div_mu * (mu * z) ** t + y**t
-
-
-def _calculate_bonds_out_given_shares_in(
-    z: FixedPoint, y: FixedPoint, dz: FixedPoint, t: FixedPoint, c: FixedPoint, mu: FixedPoint
-) -> FixedPoint:
-    r"""
-    Calculates the amount of bonds a user will receive from the pool by providing a specified amount of shares.
-    This is meant to mirror the solidity.
-
-    Parameters
-    ----------
-    z : FixedPoint
-        Amount of share reserves in the pool.
-    y : FixedPoint
-        Amount of bond reserves in the pool.
-    dz : FixedPoint
-        Amount of shares user wants to provide.
-    t : FixedPoint
-        Amount of time elapsed since term start.
-    c : FixedPoint
-        Conversion rate between base and shares.
-    mu : FixedPoint
-        Interest normalization factor for shares.
-
-    Returns
-    -------
-    FixedPoint
-        The amount of bonds the user will receive.
-    """
-    c_div_mu = c / mu
-    k = _modified_yield_space_constant(c_div_mu, mu, z, t, y)
-    z = (mu * (z + dz)) ** t
-    z = c_div_mu * z
-    _y = (k - z) ** (ONE_18.div_up(t))
-    return y - _y
-
-
-def _calculate_spot_price(
-    share_reserves: FixedPoint, bond_reserves: FixedPoint, initial_share_price: FixedPoint, time_stretch: FixedPoint
-) -> FixedPoint:
-    r"""
-    Calculates the spot price without slippage of bonds in terms of base.
-    This is meant to mirror the solidity.
-
-    Parameters
-    ----------
-    share_reserves : FixedPoint
-        The pool's share reserves.
-    bond_reserves : FixedPoint
-        The pool's bond reserves.
-    initial_share_price : FixedPoint
-        The initial share price as an 18 fixed-point value.
-    time_stretch : FixedPoint
-        The time stretch parameter as an 18 fixed-point value.
-
-    Returns
-    -------
-    FixedPoint
-        The spot price of bonds in terms of base as an 18 fixed-point value.
-    """
-    spot_price = (initial_share_price * share_reserves / bond_reserves) ** time_stretch
-    return spot_price
+        # get the shares out to the user
+        percent_of_lp_shares = lp_in / market_state.lp_total_supply
+        # dz = (z - o_l / c) * (dl / l)
+        shares_delta = (
+            market_state.share_reserves - market_state.longs_outstanding / market_state.share_price
+        ) * percent_of_lp_shares
+        bonds_delta = (
+            market_state.bond_reserves
+            - market_state.bond_reserves * (market_state.share_reserves - shares_delta) / market_state.share_reserves
+        )
+        # these are both positive values
+        return shares_delta, bonds_delta

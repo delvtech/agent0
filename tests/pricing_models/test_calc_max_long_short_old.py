@@ -208,6 +208,7 @@ class TestCalculateMax(unittest.TestCase):
                 time_stretch=test_case.time_remaining.time_stretch,
                 share_price=test_case.market_state.share_price,
                 initial_share_price=test_case.market_state.init_share_price,
+                minimum_share_reserves=FixedPoint(1),
             )
 
             # Ensure that the max long is valid.
@@ -233,6 +234,7 @@ class TestCalculateMax(unittest.TestCase):
                 time_stretch=test_case.time_remaining.time_stretch,
                 share_price=test_case.market_state.share_price,
                 initial_share_price=test_case.market_state.init_share_price,
+                minimum_share_reserves=FixedPoint(1),
             )
 
             # Ensure that the max short is valid.
