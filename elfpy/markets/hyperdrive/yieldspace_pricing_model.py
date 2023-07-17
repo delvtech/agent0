@@ -17,10 +17,6 @@ if TYPE_CHECKING:
     from .hyperdrive_market import HyperdriveMarketState
 
 
-# TODO: clean up to avoid this
-# pylint: disable=too-many-arguments
-
-
 class YieldspacePricingModel(BasePricingModel):
     """
     YieldSpace Pricing Model
@@ -33,6 +29,7 @@ class YieldspacePricingModel(BasePricingModel):
     #       functions.
     #
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-arguments
 
     def model_name(self) -> str:
         return "YieldSpace"
@@ -560,6 +557,7 @@ class YieldspacePricingModel(BasePricingModel):
             - (share_price / init_share_price) * (init_share_price * (share_reserves - d_shares)) ** (time_elapsed)
         ) ** (FixedPoint("1.0").div_up(time_elapsed)) - (bond_reserves + lp_total_supply)
 
+    # TODO: have this wrap the solidity mirrored version as a part of the parity effort.
     def calc_bonds_out_given_shares_in(
         self,
         share_reserves: FixedPoint,
@@ -698,6 +696,7 @@ class YieldspacePricingModel(BasePricingModel):
             / (share_price / init_share_price)
         ) ** (FixedPoint("1.0").div_up(time_elapsed))
 
+    # TODO: have this wrap the solidity mirrored version as a part of the parity effort.
     def calc_yieldspace_const(
         self,
         share_reserves: FixedPoint,

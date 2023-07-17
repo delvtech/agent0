@@ -21,6 +21,7 @@ class HyperdriveConfig:
     gov_fee: FixedPoint = FixedPoint(0)
     position_duration_seconds: int = checkpoint_duration_seconds * checkpoints
     target_liquidity = FixedPoint(1 * 10**6)
+    minimum_share_reserves: FixedPoint = FixedPoint(1)
 
 
 @pytest.fixture(scope="function")

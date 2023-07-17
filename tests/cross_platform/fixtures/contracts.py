@@ -2,7 +2,6 @@
 from dataclasses import dataclass
 
 import pytest
-
 from ape.api.accounts import TestAccountAPI
 from ape.contracts import ContractInstance
 from ape.managers.project import ProjectManager
@@ -31,6 +30,7 @@ def hyperdrive_contract(
         base_erc20,
         hyperdrive_config.initial_apr.scaled_value,
         hyperdrive_config.share_price.scaled_value,
+        hyperdrive_config.minimum_share_reserves.scaled_value,
         hyperdrive_config.position_duration_seconds,
         hyperdrive_config.checkpoint_duration_seconds,
         hyperdrive_config.time_stretch,
@@ -47,6 +47,7 @@ def hyperdrive_contract(
         base_erc20,
         hyperdrive_config.initial_apr.scaled_value,
         hyperdrive_config.share_price.scaled_value,
+        hyperdrive_config.minimum_share_reserves.scaled_value,
         hyperdrive_config.position_duration_seconds,
         hyperdrive_config.checkpoint_duration_seconds,
         hyperdrive_config.time_stretch,

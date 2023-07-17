@@ -10,6 +10,7 @@ import elfpy.markets.hyperdrive.market_action_result as market_action_result
 import elfpy.markets.trades as trades
 import elfpy.time as time
 import elfpy.types as types
+from elfpy.markets.hyperdrive import hyperdrive_pricing_model_sol
 
 from .yieldspace_pricing_model import YieldspacePricingModel
 
@@ -25,6 +26,8 @@ class HyperdrivePricingModel(YieldspacePricingModel):
     invariants with modifications to the Yield Space invariant that enable the
     base reserves to be deposited into yield bearing vaults
     """
+
+    # pylint: disable=too-many-arguments
 
     def model_name(self) -> str:
         return "Hyperdrive"
@@ -407,6 +410,98 @@ class HyperdrivePricingModel(YieldspacePricingModel):
                 flat_fee=flat_fee,
                 gov_flat_fee=gov_flat_fee,
             ),
+        )
+
+    def calculate_max_long(
+        self,
+        share_reserves: FixedPoint,
+        bond_reserves: FixedPoint,
+        longs_outstanding: FixedPoint,
+        time_stretch: FixedPoint,
+        share_price: FixedPoint,
+        initial_share_price: FixedPoint,
+        minimum_share_reserves: FixedPoint,
+        max_iterations: int = 20,
+    ) -> hyperdrive_pricing_model_sol.MaxLongResult:
+        """Calculates the maximum amount of bonds that can be bought in the market.  This is necessarily
+        done with an iterative approach as there is no closed form solution.
+
+        Arguments
+        ----------
+        share_reserves : FixedPoint
+            The pool's share reserves.
+        bond_reserves : FixedPoint
+            The pool's bond reserves.
+        longs_outstanding : FixedPoint
+            The amount of longs outstanding.
+        time_stretch : FixedPoint
+            The time stretch parameter.
+        share_price : FixedPoint
+            The current share price.
+        initial_share_price : FixedPoint
+            The initial share price.
+        max_iterations : int
+            The maximum number of iterations to perform before returning the result.
+
+        Returns
+        -------
+        MaxLongResult
+            The maximum amount of bonds that can be purchased and the amount of base that must be spent
+            to purchase them.
+
+        """
+        return hyperdrive_pricing_model_sol.calculate_max_long(
+            share_reserves,
+            bond_reserves,
+            longs_outstanding,
+            time_stretch,
+            share_price,
+            initial_share_price,
+            minimum_share_reserves,
+            max_iterations,
+        )
+
+    def calculate_max_short(
+        self,
+        share_reserves: FixedPoint,
+        bond_reserves: FixedPoint,
+        longs_outstanding: FixedPoint,
+        time_stretch: FixedPoint,
+        share_price: FixedPoint,
+        initial_share_price: FixedPoint,
+        minimum_share_reserves: FixedPoint,
+    ) -> FixedPoint:
+        r"""
+        Calculates the maximum amount of shares that can be used to open shorts.
+
+        Parameters
+        ----------
+        share_reserves : FixedPoint
+            The pool's share reserves.
+        bond_reserves : FixedPoint
+            The pool's bonds reserves.
+        longs_outstanding : FixedPoint
+            The amount of longs outstanding.
+        time_stretch : FixedPoint
+            The time stretch parameter.
+        share_price : FixedPoint
+            The share price.
+        initial_share_price : FixedPoint
+            The initial share price.
+
+        Returns
+        -------
+        FixedPoint
+            The maximum amount of shares that can be used to open shorts.
+        """
+        return hyperdrive_pricing_model_sol.calculate_max_short(
+            share_reserves,
+            bond_reserves,
+            longs_outstanding,
+            time_stretch,
+            share_price,
+            initial_share_price,
+            minimum_share_reserves,
         )
 
     def calc_tokens_out_given_lp_in(
