@@ -11,8 +11,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
-from elfpy.data import postgres
-from elfpy.data.db_schema import PoolConfig, PoolInfo, Transaction, WalletInfo
+from elfpy.data import db_schema, postgres
 from elfpy.markets.hyperdrive import hyperdrive_assets
 from elfpy.utils import logs as log_utils
 
@@ -28,9 +27,9 @@ def get_wallet_info(
     hyperdrive_contract: Contract,
     base_contract: Contract,
     block_number: BlockNumber,
-    transactions: list[Transaction],
-    poolinfo: PoolInfo,
-) -> list[WalletInfo]:
+    transactions: list[db_schema.Transaction],
+    pool_info: db_schema.PoolInfo,
+) -> list[db_schema.WalletInfo]:
     """Retrieves wallet information at a given block given a transaction
     Transactions are needed here to get
     (1) the wallet address of a transaction, and
@@ -44,12 +43,12 @@ def get_wallet_info(
         The deployed base contract instance
     block_number : BlockNumber
         The block number to query
-    transactions : list[Transaction]
+    transactions : list[db_schema.Transaction]
         The list of transactions to get events from
 
     Returns
     -------
-    list[WalletInfo]
+    list[db_schema.WalletInfo]
         The list of WalletInfo objects ready to be inserted into postgres
     """
     # pylint: disable=too-many-locals
@@ -76,7 +75,7 @@ def get_wallet_info(
         num_base_token = eth.convert_scaled_value(num_base_token_scaled)
         if (num_base_token is not None) and (wallet_addr is not None):
             out_wallet_info.append(
-                WalletInfo(
+                db_schema.WalletInfo(
                     blockNumber=block_number,
                     walletAddress=wallet_addr,
                     baseTokenType="BASE",
@@ -109,9 +108,9 @@ def get_wallet_info(
                 # If so, add share price from pool info to data
                 share_price = None
                 if (base_token_type) == "SHORT":
-                    share_price = poolinfo.sharePrice
+                    share_price = pool_info.sharePrice
                 out_wallet_info.append(
-                    WalletInfo(
+                    db_schema.WalletInfo(
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
                         baseTokenType=base_token_type,
@@ -153,7 +152,7 @@ def main(
     )
 
     # get pool config from hyperdrive contract
-    pool_config = PoolConfig(**hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract))
+    pool_config = db_schema.PoolConfig(**hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract))
     postgres.add_pool_config(pool_config, session)
 
     # Get last entry of pool info in db
@@ -177,13 +176,13 @@ def main(
         # Query and add block_pool_info
         pool_info_dict = hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
         # Set defaults
-        for key in PoolInfo.__annotations__.keys():
+        for key in db_schema.PoolInfo.__annotations__.keys():
             if key not in pool_info_dict.keys():
                 pool_info_dict[key] = None
-        block_pool_info = PoolInfo(**pool_info_dict)
+        block_pool_info = db_schema.PoolInfo(**pool_info_dict)
         postgres.add_pool_infos([block_pool_info], session)
         # Query and add block transactions
-        block_transactions = eth.transactions.fetch_transactions_for_block(web3, hyperdrive_contract, block_number)
+        block_transactions = db_schema.fetch_transactions_for_block(web3, hyperdrive_contract, block_number)
         postgres.add_transactions(block_transactions, session)
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
@@ -208,7 +207,7 @@ def main(
                 block_pool_info = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        block_pool_info = PoolInfo(
+                        block_pool_info = db_schema.PoolInfo(
                             **hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
                         )
                         break
@@ -221,7 +220,7 @@ def main(
                 block_transactions = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        block_transactions = eth.transactions.fetch_transactions_for_block(
+                        block_transactions = db_schema.fetch_transactions_for_block(
                             web3, hyperdrive_contract, block_number
                         )
                         break

@@ -7,5 +7,4 @@ from .hyperdrive_interface import (
     get_hyperdrive_contract,
     get_hyperdrive_market,
     get_hyperdrive_pool_info,
-    get_wallet_info,
 )

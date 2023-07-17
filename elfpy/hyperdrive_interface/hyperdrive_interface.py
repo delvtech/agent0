@@ -110,7 +110,7 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
         asset_id = hyperdrive_assets.encode_asset_id(
             hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, position_duration
         )
-        pool_info_dict["total_supply_withdraw_shares"] = eth.smart_contract_read(
+        pool_info_dict["totalSupplyWithdrawalShares"] = eth.smart_contract_read(
             hyperdrive_contract, "balanceOf", asset_id, hyperdrive_contract.address
         )
     else:

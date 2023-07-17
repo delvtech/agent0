@@ -38,7 +38,7 @@ from elfpy import types
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import LongLouie, RandomAgent, ShortSally
 from elfpy.agents.policies.base import BasePolicy
-from elfpy.bots import DEFAULT_USERNAME, BotConfig
+from elfpy.bots import DEFAULT_USERNAME, EnvironmentConfig
 from elfpy.bots.bot_info import BotInfo
 from elfpy.data import postgres
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
@@ -47,7 +47,9 @@ from elfpy.utils.format import format_numeric_string
 ape_logger.set_level(logging.ERROR)
 
 
-def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str] | None = None) -> tuple[dict[str, str], str]:
+def get_devnet_addresses(
+    bot_config: EnvironmentConfig, addresses: dict[str, str] | None = None
+) -> tuple[dict[str, str], str]:
     """Get devnet addresses from address file."""
     if addresses is None:
         addresses = {}
@@ -93,7 +95,7 @@ def get_devnet_addresses(bot_config: BotConfig, addresses: dict[str, str] | None
     return addresses
 
 
-def get_accounts(bot_config: BotConfig) -> list[KeyfileAccount]:
+def get_accounts(bot_config: EnvironmentConfig) -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
     num = sum(bot_config.scratch[f"num_{bot}"] for bot in bot_config.scratch["bot_names"])
     assert (mnemonic := " ".join(["wolf"] * 24)), "You must provide a mnemonic in .env to run this script."
@@ -118,7 +120,7 @@ def create_agent(
     base_instance: ContractInstance,
     trade_history: pd.DataFrame,
     hyperdrive_contract: ContractInstance,
-    bot_config: BotConfig,
+    bot_config: EnvironmentConfig,
     rng: NumpyGenerator,
 ) -> Agent:
     """Create an agent as defined in bot_info, assign its address, give it enough base.
@@ -137,7 +139,7 @@ def create_agent(
         History of previously completed trades.
     hyperdrive_contract : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract for hyperdrive
-    bot_config : BotConfig
+    bot_config : EnvironmentConfig
         Configuration parameters for the experiment
     rng : NumpyGenerator
         The random number generator.
@@ -150,18 +152,7 @@ def create_agent(
     # pylint: disable=too-many-arguments
     assert bot.index is not None, "Bot must have an index."
     assert isinstance(bot.policy, type(Agent)), "Bot must have a policy of type Agent."
-    params = {
-        "trade_chance": FixedPoint(bot_config.trade_chance),
-        "budget": FixedPoint(
-            str(
-                np.clip(
-                    rng.normal(loc=bot.budget.mean, scale=bot.budget.std),
-                    bot.budget.min,
-                    bot.budget.max,
-                )
-            )
-        ),
-    }
+    params = {"trade_chance": FixedPoint(bot_config.trade_chance), "budget": bot.budget.sample_budget(rng)}
     params["rng"] = rng
     if bot.risk_threshold and bot.name != "random":  # random agent doesn't use risk threshold
         params["risk_threshold"] = FixedPoint(bot.risk_threshold)  # if risk threshold is manually set, we use it
@@ -204,7 +195,7 @@ def create_agent(
 
 
 def set_up_agents(
-    bot_config: BotConfig,
+    bot_config: EnvironmentConfig,
     provider: ProviderAPI,
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
@@ -216,7 +207,7 @@ def set_up_agents(
 
     Parameters
     ----------
-    bot_config : BotConfig
+    bot_config : EnvironmentConfig
         Configuration parameters for the experiment
     provider : `ape.api.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
         The Ape object that represents your connection to the Ethereum network.
@@ -381,7 +372,7 @@ def set_up_devnet(
     addresses,
     project: ape_utils.HyperdriveProject,
     provider,
-    bot_config: BotConfig,
+    bot_config: EnvironmentConfig,
     pricing_model: HyperdrivePricingModel,
 ) -> tuple[ContractInstance, ContractInstance, dict[str, str]]:
     """Load deployed devnet addresses or deploy new contracts.
@@ -394,7 +385,7 @@ def set_up_devnet(
         The Ape project that contains a Hyperdrive contract.
     provider : `ape.api.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
         The Ape object that represents your connection to the Ethereum network.
-    bot_config : BotConfig
+    bot_config : EnvironmentConfig
         Configuration parameters for the experiment
     pricing_model : HyperdrivePricingModel
         The elf-simulations pricing model.
@@ -437,7 +428,7 @@ def set_up_devnet(
 
 
 def set_up_experiment(
-    bot_config: BotConfig,
+    bot_config: EnvironmentConfig,
     provider_settings: dict,
     addresses: dict,
     network_choice: str,
@@ -448,7 +439,7 @@ def set_up_experiment(
 
     Parameters
     ----------
-    bot_config : BotConfig
+    bot_config : EnvironmentConfig
         Configuration parameters for the experiment
     provider_settings : dict
         Custom parameters passed to the provider.
@@ -544,7 +535,7 @@ def do_policy(
         The hyperdrive contract instance.
     base_instance : `ape.contracts.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract for base token
-    bot_config : BotConfig
+    bot_config : EnvironmentConfig
         The bot configuration.
     trade_history : pd.DataFrame, Optional
         History of previously completed trades. If not provided, it will be queried.
@@ -573,7 +564,7 @@ def do_policy(
 
 
 def main(
-    bot_config: BotConfig,
+    bot_config: EnvironmentConfig,
     rng: NumpyGenerator,
     network_choice: str,
     provider_settings: str,
@@ -704,7 +695,7 @@ if __name__ == "__main__":
     # Get postgres env variables if exists
     load_dotenv()
 
-    config = BotConfig()
+    config = EnvironmentConfig()
     args = get_argparser().parse_args()
     config.load_from_json(args.configuration_json[0])
     log_utils.setup_logging(

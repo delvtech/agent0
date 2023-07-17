@@ -97,12 +97,12 @@ def execute_agent_trades(
                                 agent.eth_account.checksum_address,
                                 as_underlying,
                             )
-                    # FIXME: TODO: update wallet
+                    # TODO: update wallet
                     trade_streak += 1
         except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
             if config.halt_on_errors:
                 raise exc
             else:
                 trade_streak = 0
-                # FIXME: TODO: deliver crash report
+                # TODO: deliver crash report
     return trade_streak, last_executed_block

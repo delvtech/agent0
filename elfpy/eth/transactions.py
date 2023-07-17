@@ -4,26 +4,12 @@ from __future__ import annotations
 import logging
 from typing import Any, Sequence
 
-from eth_typing import BlockNumber
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.contract.contract import Contract, ContractEvent, ContractFunction
-from web3.types import (
-    ABI,
-    ABIEvent,
-    ABIFunctionComponents,
-    ABIFunctionParams,
-    BlockData,
-    EventData,
-    LogReceipt,
-    TxReceipt,
-)
-
-from elfpy.data.db_schema import Transaction
-from elfpy.markets.hyperdrive import hyperdrive_assets
+from web3.contract.contract import Contract, ContractFunction
+from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, TxReceipt
 
 from .accounts import EthAccount
-from .numeric_utils import convert_scaled_value
 
 
 def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
@@ -91,55 +77,6 @@ def smart_contract_transact(
     return web3.eth.wait_for_transaction_receipt(tx_hash)
 
 
-def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[Transaction]:
-    """
-    Fetch transactions related to the contract
-    Returns the block pool info from the Hyperdrive contract
-
-    Arguments
-    ---------
-    web3: Web3
-        web3 provider object
-    hyperdrive_contract: Contract
-        The contract to query the pool info from
-    block_number: BlockNumber
-        The block number to query from the chain
-
-    Returns
-    -------
-    list[Transaction]
-        A list of Transaction objects ready to be inserted into Postgres
-    """
-    block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
-    transactions = block.get("transactions")
-    if not transactions:
-        logging.info("no transactions in block %s", block.get("number"))
-        return []
-    out_transactions = []
-    for transaction in transactions:
-        if isinstance(transaction, HexBytes):
-            logging.warning("transaction HexBytes")
-            continue
-        if transaction.get("to") != contract.address:
-            logging.warning("transaction not from contract")
-            continue
-        transaction_dict: dict[str, Any] = dict(transaction)
-        # Convert the HexBytes fields to their hex representation
-        tx_hash = transaction.get("hash") or HexBytes("")
-        transaction_dict["hash"] = tx_hash.hex()
-        # Decode the transaction input
-        try:
-            method, params = contract.decode_function_input(transaction["input"])
-            transaction_dict["input"] = {"method": method.fn_name, "params": params}
-        except ValueError:  # if the input is not meant for the contract, ignore it
-            continue
-        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
-        logs = _fetch_and_decode_logs(web3, contract, tx_receipt)
-        receipt: dict[str, Any] = _recursive_dict_conversion(tx_receipt)  # type: ignore
-        out_transactions.append(_build_transaction_object(transaction_dict, logs, receipt))
-    return out_transactions
-
-
 def _get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunctionParams) -> tuple[str, str]:
     """Retrieve and narrow the types for abi outputs"""
     return_value_name: str | None = abi_outputs.get("name")
@@ -186,129 +123,3 @@ def _contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> lis
     else:  # final condition is a single output
         return_names_and_types = [_get_name_and_type_from_abi(function_outputs[0])]
     return return_names_and_types
-
-
-def _recursive_dict_conversion(obj):
-    """Recursively converts a dictionary to convert objects to hex values"""
-    if isinstance(obj, HexBytes):
-        return obj.hex()
-    if isinstance(obj, dict):
-        return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
-    if hasattr(obj, "items"):
-        return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
-    return obj
-
-
-def _build_transaction_object(
-    transaction_dict: dict[str, Any],
-    logs: list[dict[str, Any]],
-    receipt: dict[str, Any],
-) -> Transaction:
-    """
-    Conversion function to translate output of chain queries to the Transaction object
-
-    Arguments
-    ----------
-    transaction_dict : dict[str, Any]
-        A dictionary representing the decoded transactions from the query
-    logs: list[str, Any]
-        A dictionary representing the decoded logs from the query
-    receipt: dict[str, Any]
-        A dictionary representing the transaction receipt from the query
-
-    Returns
-    -------
-    Transaction
-        A transaction object to be inserted into postgres
-    """
-    # Build output obj dict incrementally to be passed into Transaction
-    # i.e., Transaction(**out_dict)
-    # Base transaction fields
-    out_dict: dict[str, Any] = {
-        "blockNumber": transaction_dict["blockNumber"],
-        "transactionIndex": transaction_dict["transactionIndex"],
-        "nonce": transaction_dict["nonce"],
-        "transactionHash": transaction_dict["hash"],
-        "txn_to": transaction_dict["to"],
-        "txn_from": transaction_dict["from"],
-        "gasUsed": receipt["gasUsed"],
-    }
-    # Input solidity methods and parameters
-    # TODO can the input field ever be empty or not exist?
-    out_dict["input_method"] = transaction_dict["input"]["method"]
-    input_params = transaction_dict["input"]["params"]
-    out_dict["input_params_contribution"] = convert_scaled_value(input_params.get("_contribution", None))
-    out_dict["input_params_apr"] = convert_scaled_value(input_params.get("_apr", None))
-    out_dict["input_params_destination"] = input_params.get("_destination", None)
-    out_dict["input_params_asUnderlying"] = input_params.get("_asUnderlying", None)
-    out_dict["input_params_baseAmount"] = convert_scaled_value(input_params.get("_baseAmount", None))
-    out_dict["input_params_minOutput"] = convert_scaled_value(input_params.get("_minOutput", None))
-    out_dict["input_params_bondAmount"] = convert_scaled_value(input_params.get("_bondAmount", None))
-    out_dict["input_params_maxDeposit"] = convert_scaled_value(input_params.get("_maxDeposit", None))
-    out_dict["input_params_maturityTime"] = input_params.get("_maturityTime", None)
-    out_dict["input_params_minApr"] = convert_scaled_value(input_params.get("_minApr", None))
-    out_dict["input_params_maxApr"] = convert_scaled_value(input_params.get("_maxApr", None))
-    out_dict["input_params_shares"] = convert_scaled_value(input_params.get("_shares", None))
-    # Assuming one TransferSingle per transfer
-    # TODO Fix this below eventually
-    # There can be two transfer singles
-    # Currently grab first transfer single (e.g., Minting hyperdrive long, so address 0 to agent)
-    # Eventually need grabbing second transfer single (e.g., DAI from agent to hyperdrive)
-    event_logs = [log for log in logs if log["event"] == "TransferSingle"]
-    if len(event_logs) == 0:
-        event_args: dict[str, Any] = {}
-        # Set args as None
-    elif len(event_logs) == 1:
-        event_args: dict[str, Any] = event_logs[0]["args"]
-    else:
-        logging.warning("Tranfer event contains multiple TransferSingle logs, selecting first")
-        event_args: dict[str, Any] = event_logs[0]["args"]
-    out_dict["event_value"] = convert_scaled_value(event_args.get("value", None))
-    out_dict["event_from"] = event_args.get("from", None)
-    out_dict["event_to"] = event_args.get("to", None)
-    out_dict["event_operator"] = event_args.get("operator", None)
-    out_dict["event_id"] = event_args.get("id", None)
-    # Decode logs here
-    if out_dict["event_id"] is not None:
-        event_prefix, event_maturity_time = hyperdrive_assets.decode_asset_id(out_dict["event_id"])
-        out_dict["event_prefix"] = event_prefix
-        out_dict["event_maturity_time"] = event_maturity_time
-    transaction = Transaction(**out_dict)
-    return transaction
-
-
-def _fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt) -> list[dict[Any, Any]]:
-    """Decode logs from a transaction receipt"""
-    logs = []
-    if tx_receipt.get("logs"):
-        for log in tx_receipt["logs"]:
-            event_data, event = _get_event_object(web3, contract, log, tx_receipt)
-            if event_data and event:
-                formatted_log = dict(event_data)
-                formatted_log["event"] = event.get("name")
-                formatted_log["args"] = dict(event_data["args"])
-                logs.append(formatted_log)
-    return logs
-
-
-def _get_event_object(
-    web3: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
-) -> tuple[EventData, ABIEvent] | tuple[None, None]:
-    """Retrieves the event object and anonymous types for a  given contract and log"""
-    abi_events = [abi for abi in contract.abi if abi["type"] == "event"]  # type: ignore
-    for event in abi_events:  # type: ignore
-        # Get event signature components
-        name = event["name"]  # type: ignore
-        inputs = [param["type"] for param in event["inputs"]]  # type: ignore
-        inputs = ",".join(inputs)
-        # Hash event signature
-        event_signature_text = f"{name}({inputs})"
-        event_signature_hex = web3.keccak(text=event_signature_text).hex()
-        # Find match between log's event signature and ABI's event signature
-        receipt_event_signature_hex = log["topics"][0].hex()
-        if event_signature_hex == receipt_event_signature_hex:
-            # Decode matching log
-            contract_event: ContractEvent = contract.events[event["name"]]()  # type: ignore
-            event_data: EventData = contract_event.process_receipt(tx_receipt)[0]
-            return event_data, event  # type: ignore
-    return (None, None)
