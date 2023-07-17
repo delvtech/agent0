@@ -12,7 +12,8 @@ from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
 from elfpy.data import postgres
-from elfpy.data.db_schema import PoolConfig, PoolInfo
+from elfpy.data.db_schema import PoolConfig, PoolInfo, Transaction, WalletInfo
+from elfpy.markets.hyperdrive import hyperdrive_assets
 from elfpy.utils import logs as log_utils
 
 # pylint: disable=too-many-arguments
@@ -21,6 +22,106 @@ from elfpy.utils import logs as log_utils
 # pylint: disable=too-many-branches
 
 RETRY_COUNT = 10
+
+
+def get_wallet_info(
+    hyperdrive_contract: Contract,
+    base_contract: Contract,
+    block_number: BlockNumber,
+    transactions: list[Transaction],
+    poolinfo: PoolInfo,
+) -> list[WalletInfo]:
+    """Retrieves wallet information at a given block given a transaction
+    Transactions are needed here to get
+    (1) the wallet address of a transaction, and
+    (2) the token id of the transaction
+
+    Arguments
+    ----------
+    hyperdrive_contract : Contract
+        The deployed hyperdrive contract instance.
+    base_contract : Contract
+        The deployed base contract instance
+    block_number : BlockNumber
+        The block number to query
+    transactions : list[Transaction]
+        The list of transactions to get events from
+
+    Returns
+    -------
+    list[WalletInfo]
+        The list of WalletInfo objects ready to be inserted into postgres
+    """
+    # pylint: disable=too-many-locals
+    out_wallet_info = []
+    for transaction in transactions:
+        wallet_addr = transaction.event_operator
+        token_id = transaction.event_id
+        token_prefix = transaction.event_prefix
+        token_maturity_time = transaction.event_maturity_time
+        if wallet_addr is None:
+            continue
+        # Query and add base tokens to walletinfo
+        num_base_token_scaled = None
+        for _ in range(RETRY_COUNT):
+            try:
+                num_base_token_scaled = base_contract.functions.balanceOf(wallet_addr).call(
+                    block_identifier=block_number
+                )
+                break
+            except ValueError:
+                logging.warning("Error in getting base token balance, retrying")
+                time.sleep(1)
+                continue
+        num_base_token = eth.convert_scaled_value(num_base_token_scaled)
+        if (num_base_token is not None) and (wallet_addr is not None):
+            out_wallet_info.append(
+                WalletInfo(
+                    blockNumber=block_number,
+                    walletAddress=wallet_addr,
+                    baseTokenType="BASE",
+                    tokenType="BASE",
+                    tokenValue=num_base_token,
+                )
+            )
+        # Query and add hyperdrive tokens to walletinfo
+        if (token_id is not None) and (token_prefix is not None):
+            base_token_type = hyperdrive_assets.AssetIdPrefix(token_prefix).name
+            if (token_maturity_time is not None) and (token_maturity_time > 0):
+                token_type = base_token_type + "-" + str(token_maturity_time)
+                maturity_time = token_maturity_time
+            else:
+                token_type = base_token_type
+                maturity_time = None
+            num_custom_token_scaled = None
+            for _ in range(RETRY_COUNT):
+                try:
+                    num_custom_token_scaled = hyperdrive_contract.functions.balanceOf(int(token_id), wallet_addr).call(
+                        block_identifier=block_number
+                    )
+                except ValueError:
+                    logging.warning("Error in getting custom token balance, retrying")
+                    time.sleep(1)
+                    continue
+            num_custom_token = eth.convert_scaled_value(num_custom_token_scaled)
+            if num_custom_token is not None:
+                # Check here if token is short
+                # If so, add share price from pool info to data
+                share_price = None
+                if (base_token_type) == "SHORT":
+                    share_price = poolinfo.sharePrice
+                out_wallet_info.append(
+                    WalletInfo(
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType=base_token_type,
+                        tokenType=token_type,
+                        tokenValue=num_custom_token,
+                        maturityTime=maturity_time,
+                        sharePrice=share_price,
+                    )
+                )
+    return out_wallet_info
 
 
 def main(
@@ -74,15 +175,16 @@ def main(
     # and if the chain has executed until start_block (based on latest_mined_block check)
     if data_latest_block_number < block_number < latest_mined_block:
         # Query and add block_pool_info
-        block_pool_info = PoolInfo(
-            **hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
-        )
+        pool_info_dict = hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
+        # Set defaults
+        for key in PoolInfo.__annotations__.keys():
+            if key not in pool_info_dict.keys():
+                pool_info_dict[key] = None
+        block_pool_info = PoolInfo(**pool_info_dict)
         postgres.add_pool_infos([block_pool_info], session)
-
         # Query and add block transactions
         block_transactions = eth.transactions.fetch_transactions_for_block(web3, hyperdrive_contract, block_number)
         postgres.add_transactions(block_transactions, session)
-
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
     while True:
@@ -93,7 +195,6 @@ def main(
             for block_int in range(block_number + 1, latest_mined_block + 1):
                 block_number: BlockNumber = BlockNumber(block_int)
                 logging.info("Block %s", block_number)
-
                 # Explicit check against loopback block limit
                 if (latest_mined_block - block_number) > lookback_block_limit:
                     logging.warning(
@@ -102,7 +203,6 @@ def main(
                         latest_mined_block,
                     )
                     continue
-
                 # get_block_pool_info crashes randomly with ValueError on some intermediate block,
                 # keep trying until it returns
                 block_pool_info = None
@@ -118,7 +218,6 @@ def main(
                         continue
                 if block_pool_info:
                     postgres.add_pool_infos([block_pool_info], session)
-
                 block_transactions = None
                 for _ in range(RETRY_COUNT):
                     try:
@@ -132,13 +231,11 @@ def main(
                         continue
                 if block_transactions:
                     postgres.add_transactions(block_transactions, session)
-
                 if block_transactions and block_pool_info:
-                    wallet_info_for_transactions = hyperdrive_interface.get_wallet_info(
+                    wallet_info_for_transactions = get_wallet_info(
                         hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
                     )
                     postgres.add_wallet_infos(wallet_info_for_transactions, session)
-
         time.sleep(sleep_amount)
 
 
