@@ -9,19 +9,19 @@ from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
 from elfpy import types as elftypes
-from elfpy.agents import Agent
+from elfpy.bots import EnvironmentConfig
 from elfpy.markets.hyperdrive import MarketActionType
 from elfpy.time import time as elftime
 
-from .config.bot import BotConfig
+from .eth_agent import EthAgent
 
 
 def execute_agent_trades(
-    config: BotConfig,
+    config: EnvironmentConfig,
     web3: Web3,
     base_token_contract: Contract,
     hyperdrive_contract: Contract,
-    agents: dict[str, tuple[eth.accounts.EthAccount, Agent]],
+    agents: list[EthAgent],
     last_executed_block: int,
     trade_streak: int,
 ):
@@ -45,7 +45,7 @@ def execute_agent_trades(
         # get latest market
         hyperdrive_market = hyperdrive_interface.get_hyperdrive_market(web3, hyperdrive_contract)
         try:
-            for agent_name, (eth_account, agent) in agents.items():
+            for agent in agents:
                 # do_policy
                 trades: list[elftypes.Trade] = agent.get_trades(market=hyperdrive_market)
                 for trade_object in trades:
@@ -53,14 +53,17 @@ def execute_agent_trades(
                     trade_amount: int = trade_object.trade.trade_amount.scaled_value
                     # check that the hyperdrive contract has enough base approved for the trade
                     hyperdrive_allowance = eth.smart_contract_read(
-                        base_token_contract, "allowance", eth_account.checksum_address, hyperdrive_contract.address
+                        base_token_contract,
+                        "allowance",
+                        agent.eth_account.checksum_address,
+                        hyperdrive_contract.address,
                     )
                     if hyperdrive_allowance < trade_amount:
-                        tx_receipt = eth.smart_contract_transact(
+                        eth.smart_contract_transact(
                             web3,
                             base_token_contract,
                             "approve",
-                            eth_account.checksum_address,
+                            agent.eth_account.checksum_address,
                             hyperdrive_contract.address,
                             int(50e21),  # 50k base
                         )
@@ -79,7 +82,7 @@ def execute_agent_trades(
                                 "openLong",
                                 trade_amount,
                                 min_output,
-                                eth_account.checksum_address,
+                                agent.eth_account.checksum_address,
                                 as_underlying,
                             )
                         case MarketActionType.CLOSE_LONG:
@@ -91,7 +94,7 @@ def execute_agent_trades(
                                 maturity_time,
                                 trade_amount,
                                 min_output,
-                                eth_account.checksum_address,
+                                agent.eth_account.checksum_address,
                                 as_underlying,
                             )
                     # FIXME: TODO: update wallet
@@ -102,4 +105,4 @@ def execute_agent_trades(
             else:
                 trade_streak = 0
                 # FIXME: TODO: deliver crash report
-    return trade_streak
+    return trade_streak, last_executed_block

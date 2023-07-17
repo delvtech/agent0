@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Type
 
 from elfpy.agents.policies.base import BasePolicy
 
@@ -10,7 +9,7 @@ from .budget import Budget
 
 
 @dataclass
-class BotInfo:
+class BotInfo:  # TODO: Rename to `BotConfig` when we remove evm_bots
     """Information about a bot
 
     Attributes
@@ -29,10 +28,9 @@ class BotInfo:
         Any parameters for custom bots should go here
     """
 
-    policy: Type[BasePolicy]  # TODO: Delete this when we remove evm_bots
+    policy: BasePolicy
     index: int | None = None  # TODO: Make this required when we remove evm_bots
     name: str = "BoringBotty"
-    policy_str: str = "NoActionPolicy"  # TODO: Rename to `policy` when we remove evm_bots
     budget: Budget = Budget()
     number_of_bots: int = 1
     trade_chance: float = 0.8

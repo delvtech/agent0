@@ -9,11 +9,13 @@ from web3.contract.contract import Contract
 from elfpy import eth, hyperdrive_interface
 from elfpy.utils import logs
 
-from . import execute_agent_trades, setup_agents
 from .config import agent_config, environment_config
+from .execute_agent_trades import execute_agent_trades
+from .setup_agents import get_agents
 
 
-def run_main(hyperdrive_abi, base_abi, build_folder):  # FIXME: Move much of this out of main
+def main(hyperdrive_abi, base_abi, build_folder):  # FIXME: Move much of this out of main
+    """Entrypoint to load all configurations and run agents."""
     # this random number generator should be used everywhere so that the experiment is repeatable
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
     rng = np.random.default_rng(environment_config.random_seed)
@@ -47,19 +49,26 @@ def run_main(hyperdrive_abi, base_abi, build_folder):  # FIXME: Move much of thi
     )
 
     # load agent policies
-    agents = setup_agents.get_agents(agent_config, web3, base_token_contract, rng)
+    agents = get_agents(agent_config, web3, base_token_contract, rng)
 
     # Run trade loop forever
     trade_streak = 0
     last_executed_block = 0
     while True:
-        trade_streak = execute_agent_trades.execute_agent_trades(
-            config, web3, base_token_contract, hyperdrive_contract, agents, last_executed_block, trade_streak
+        trade_streak, last_executed_block = execute_agent_trades(
+            environment_config,
+            web3,
+            base_token_contract,
+            hyperdrive_contract,
+            agents,
+            last_executed_block,
+            trade_streak,
         )
+        # FIXME: TODO: if provider.auto_mine is set then run the `mine` function
 
 
 if __name__ == "__main__":
     HYPERDRIVE_ABI = "IHyperdrive"
     BASE_ABI = "ERC20Mintable"
     BUILD_FOLDER = "./hyperdrive_solidity/.build"
-    run_main(HYPERDRIVE_ABI, BASE_ABI, BUILD_FOLDER)
+    main(HYPERDRIVE_ABI, BASE_ABI, BUILD_FOLDER)
