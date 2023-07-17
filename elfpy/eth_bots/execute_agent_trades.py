@@ -13,7 +13,7 @@ from elfpy.agents import Agent
 from elfpy.markets.hyperdrive import MarketActionType
 from elfpy.time import time as elftime
 
-from .config.bot_config import BotConfig
+from .config.bot import BotConfig
 
 
 def execute_agent_trades(

@@ -12,7 +12,7 @@ from elfpy import eth
 from elfpy.agents import Agent
 from elfpy.agents.load_agent_policies import get_invoked_path, load_builtin_policies, parse_folder_for_classes
 
-from .config.bot_config import BotConfig
+from .config.bot import BotConfig
 
 
 def get_agents(

@@ -10,7 +10,7 @@ from elfpy import eth, hyperdrive_interface
 from elfpy.utils import logs
 
 from . import execute_agent_trades, setup_agents
-from .config.bot_config import bot_config
+from .config.bot import bot_config
 
 
 def run_main(hyperdrive_abi, base_abi, build_folder):  # FIXME: Move much of this out of main
