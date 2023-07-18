@@ -1,5 +1,5 @@
 """CRUD tests for UserMap"""
-import pandas as pd
+import numpy as np
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -81,8 +81,8 @@ class TestUserMapInterface:
         # This is in order of insertion
         user_map_df = postgres.get_user_map(session)
         assert len(user_map_df) == 5
-        assert user_map_df["username"].equals(pd.Series(["a", "a", "a", "b", "b"], name="username"))
-        assert user_map_df["address"].equals(pd.Series(["1", "2", "3", "4", "5"], name="address"))
+        np.testing.assert_array_equal(user_map_df["username"], ["a", "a", "a", "b", "b"])
+        np.testing.assert_array_equal(user_map_df["address"], ["1", "2", "3", "4", "5"])
 
     def test_get_query_user_map(self, session):
         """Testing querying by block number of user map via interface"""
@@ -94,15 +94,15 @@ class TestUserMapInterface:
         postgres.add_user_map(username=username_2, addresses=addresses_2, session=session)
 
         user_map_df = postgres.get_user_map(session, address="1")
-        assert user_map_df["username"].equals(pd.Series(["a"], name="username"))
+        np.testing.assert_array_equal(user_map_df["username"], ["a"])
         user_map_df = postgres.get_user_map(session, address="2")
-        assert user_map_df["username"].equals(pd.Series(["a"], name="username"))
+        np.testing.assert_array_equal(user_map_df["username"], ["a"])
         user_map_df = postgres.get_user_map(session, address="3")
-        assert user_map_df["username"].equals(pd.Series(["a"], name="username"))
+        np.testing.assert_array_equal(user_map_df["username"], ["a"])
         user_map_df = postgres.get_user_map(session, address="4")
-        assert user_map_df["username"].equals(pd.Series(["b"], name="username"))
+        np.testing.assert_array_equal(user_map_df["username"], ["b"])
         user_map_df = postgres.get_user_map(session, address="5")
-        assert user_map_df["username"].equals(pd.Series(["b"], name="username"))
+        np.testing.assert_array_equal(user_map_df["username"], ["b"])
 
     def test_user_map_insertion_error(self, session):
         """Testing retrevial of usermap via interface"""
@@ -117,8 +117,8 @@ class TestUserMapInterface:
 
         user_map_df = postgres.get_user_map(session)
         assert len(user_map_df) == 4
-        assert user_map_df["username"].equals(pd.Series(["a", "a", "a", "a"], name="username"))
-        assert user_map_df["address"].equals(pd.Series(["1", "2", "3", "5"], name="address"))
+        np.testing.assert_array_equal(user_map_df["username"], ["a", "a", "a", "a"])
+        np.testing.assert_array_equal(user_map_df["address"], ["1", "2", "3", "5"])
 
         # Adding the same addresses with different username should fail
         username_3 = "b"
@@ -130,5 +130,5 @@ class TestUserMapInterface:
         user_map_df = postgres.get_user_map(session)
         user_map_df = postgres.get_user_map(session)
         assert len(user_map_df) == 4
-        assert user_map_df["username"].equals(pd.Series(["a", "a", "a", "a"], name="username"))
-        assert user_map_df["address"].equals(pd.Series(["1", "2", "3", "5"], name="address"))
+        np.testing.assert_array_equal(user_map_df["username"], ["a", "a", "a", "a"])
+        np.testing.assert_array_equal(user_map_df["address"], ["1", "2", "3", "5"])

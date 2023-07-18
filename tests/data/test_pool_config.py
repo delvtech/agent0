@@ -1,5 +1,5 @@
 """CRUD tests for PoolConfig"""
-import pandas as pd
+import numpy as np
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -67,7 +67,7 @@ class TestPoolConfigInterface:
 
         pool_config_df_2 = postgres.get_pool_config(session)
         assert len(pool_config_df_2) == 2
-        assert pool_config_df_2["initialSharePrice"].equals(pd.Series([3.2, 3.4], name="initialSharePrice"))
+        np.testing.assert_array_equal(pool_config_df_2["initialSharePrice"], [3.2, 3.4])
 
     def test_primary_id_query_pool_config(self, session):
         """Testing retrevial of pool config via interface"""
