@@ -257,6 +257,21 @@ def main(
                     postgres.add_pool_infos([block_pool_info], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
+                checkpoint_info = None
+                for _ in range(RETRY_COUNT):
+                    try:
+                        checkpoint_info = hyperdrive_interface.get_hyperdrive_checkpoint_info(
+                            web3, hyperdrive_contract, block_number
+                        )
+                        break
+                    except ValueError:
+                        logging.warning("Error in get_hyperdrive_checkpoint_info, retrying")
+                        time.sleep(1)
+                        continue
+                if checkpoint_info:
+                    postgres.add_checkpoint_infos([checkpoint_info], session)
+
+                # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_transactions = None
                 for _ in range(RETRY_COUNT):
                     try:

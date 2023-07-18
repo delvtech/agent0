@@ -243,7 +243,7 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
 
 
 def add_checkpoint_infos(checkpoint_infos: list[CheckpointInfo], session: Session) -> None:
-    """Add checkpoint info to the checkpointinfo table
+    """Add checkpoint info to the checkpointinfo table.
 
     Arguments
     ---------
