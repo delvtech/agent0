@@ -23,6 +23,7 @@ from elfpy.utils import logs as log_utils
 RETRY_COUNT = 10
 
 
+# TODO: Rename this to something more accurate to what is happening, e.g. decode_hyperdrive_transactions
 def get_wallet_info(
     hyperdrive_contract: Contract,
     base_contract: Contract,

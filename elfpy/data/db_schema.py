@@ -31,6 +31,7 @@ class Base(MappedAsDataclass, DeclarativeBase):
     """Base class to subclass from to define the schema"""
 
 
+# TODO: Rename this to something more accurate to what is happening, e.g. HyperdriveTransactions
 class WalletInfo(Base):
     """
     Table/dataclass schema for wallet information
