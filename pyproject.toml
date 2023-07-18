@@ -46,7 +46,6 @@ with-dependencies = [
     "pytest",
     "python-dotenv",
     "scipy",
-    "tomli",
     "typing_extensions==4.5.0",
     # bot dependencies
     "web3",
@@ -59,15 +58,15 @@ with-dependencies = [
 
 docs = [
     "tomli>=2.0.1",
-    "sphinx>=5.3",
+    "sphinx>=6",
     "sphinx_autodoc_typehints>=1.21.8",
     "sphinx-autoapi>=2.0.1",
-    "myst-parser>=0.18.1",
+    "myst-parser>=2.0.0",
     "numpydoc>=1.5.0",
     "sphinxcontrib-napoleon>=0.7",
-    "autodocsumm>=0.2.10",
+    "autodocsumm>=0.2.11",
     "nbsphinx>=0.8.12",
-    "sphinx-rtd-theme>=1.1.1",
+    "sphinx-rtd-theme>=1.2.2",
     # urllib3 v2 requires OpenSSL v1.1.1+, but Vercel uses v1.0.2
     "urllib3<2.0",
 ]
