@@ -1,6 +1,6 @@
 """CRUD tests for Transaction"""
-import pytest
 import numpy as np
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -75,14 +75,14 @@ class TestTransactionInterface:
         transaction_1 = Transaction(blockNumber=1, event_value=3.0)  # add your other columns here...
         postgres.add_transactions([transaction_1], session)
 
-        latest_block_number = postgres.get_latest_block_number_from_table(Transaction.__tablename__, session)
+        latest_block_number = postgres.get_latest_block_number_from_table(Transaction, session)
         assert latest_block_number == 1
 
         transaction_2 = Transaction(blockNumber=2, event_value=3.2)  # add your other columns here...
         transaction_3 = Transaction(blockNumber=3, event_value=3.4)  # add your other columns here...
         postgres.add_transactions([transaction_2, transaction_3], session)
 
-        latest_block_number = postgres.get_latest_block_number_from_table(Transaction.__tablename__, session)
+        latest_block_number = postgres.get_latest_block_number_from_table(Transaction, session)
         assert latest_block_number == 3
 
     def test_get_transactions(self, session):

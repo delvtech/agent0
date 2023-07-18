@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from typing import Type
 
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import URL, create_engine, text
+from sqlalchemy import URL, create_engine, func
 from sqlalchemy.orm import Session, sessionmaker
 
 from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, Transaction, UserMap, WalletInfo
@@ -326,9 +327,9 @@ def get_transactions(session: Session, start_block: int | None = None, end_block
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(Transaction.__tablename__, session) + start_block + 1
+        start_block = get_latest_block_number_from_table(Transaction, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(Transaction.__tablename__, session) + end_block + 1
+        end_block = get_latest_block_number_from_table(Transaction, session) + end_block + 1
 
     if start_block is not None:
         query = query.filter(Transaction.blockNumber >= start_block)
@@ -363,9 +364,9 @@ def get_all_wallet_info(session: Session, start_block: int | None = None, end_bl
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(WalletInfo.__tablename__, session) + start_block + 1
+        start_block = get_latest_block_number_from_table(WalletInfo, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(WalletInfo.__tablename__, session) + end_block + 1
+        end_block = get_latest_block_number_from_table(WalletInfo, session) + end_block + 1
 
     if start_block is not None:
         query = query.filter(WalletInfo.blockNumber >= start_block)
@@ -475,9 +476,9 @@ def get_agents(session: Session, start_block: int | None = None, end_block: int 
     query = session.query(WalletInfo.walletAddress)
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(WalletInfo.__tablename__, session) + start_block + 1
+        start_block = get_latest_block_number_from_table(WalletInfo, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(WalletInfo.__tablename__, session) + end_block + 1
+        end_block = get_latest_block_number_from_table(WalletInfo, session) + end_block + 1
 
     if start_block is not None:
         query = query.filter(WalletInfo.blockNumber >= start_block)
@@ -528,16 +529,16 @@ def get_latest_block_number(session: Session) -> int:
     int
         The latest block number in the poolinfo table
     """
-    return get_latest_block_number_from_table("poolinfo", session)
+    return get_latest_block_number_from_table(PoolInfo, session)
 
 
-def get_latest_block_number_from_table(table: str, session: Session) -> int:
+def get_latest_block_number_from_table(table_obj: Type[WalletInfo | PoolInfo | Transaction], session: Session) -> int:
     """Gets the latest block number based on the specified table in the db.
 
     Arguments
     ---------
-    table : str
-        The name of the table to get the latest block number from
+    table : Type[WalletInfo | PoolInfo | Transaction]
+        The sqlalchemy class that contains the blockNumber column
     session : Session
         The initialized session object
 
@@ -546,7 +547,13 @@ def get_latest_block_number_from_table(table: str, session: Session) -> int:
     int
         The latest block number from the specified table
     """
-    result = session.execute(text(f"SELECT MAX(blockNumber) FROM {table}")).fetchone()
+
+    # For some reason, pylint doesn't like func.max from sqlalchemy
+    result = session.query(func.max(table_obj.blockNumber)).first()  # pylint: disable=not-callable
+    # If table doesn't exist
     if result is None:
+        return 0
+    # If table exists but no data
+    if result[0] is None:
         return 0
     return int(result[0])
