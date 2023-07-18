@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import URL, create_engine
+from sqlalchemy import URL, create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, Transaction, UserMap, WalletInfo
@@ -298,7 +298,7 @@ def get_pool_info(session: Session, start_block: int | None = None, end_block: i
     # Always sort by time in order
     query = query.order_by(PoolInfo.timestamp)
 
-    return pd.read_sql(query.statement, con=session.connection())
+    return pd.read_sql(query.statement, con=session.connection()).set_index("blockNumber")
 
 
 def get_transactions(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
@@ -326,16 +326,16 @@ def get_transactions(session: Session, start_block: int | None = None, end_block
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = _get_latest_block_number_transactions(session) + start_block + 1
+        start_block = get_latest_block_number_from_table(Transaction.__tablename__, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = _get_latest_block_number_transactions(session) + end_block + 1
+        end_block = get_latest_block_number_from_table(Transaction.__tablename__, session) + end_block + 1
 
     if start_block is not None:
         query = query.filter(Transaction.blockNumber >= start_block)
     if end_block is not None:
         query = query.filter(Transaction.blockNumber < end_block)
 
-    return pd.read_sql(query.statement, con=session.connection())
+    return pd.read_sql(query.statement, con=session.connection()).set_index("blockNumber")
 
 
 def get_all_wallet_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
@@ -363,9 +363,9 @@ def get_all_wallet_info(session: Session, start_block: int | None = None, end_bl
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = _get_latest_block_number_wallet_info(session) + start_block + 1
+        start_block = get_latest_block_number_from_table(WalletInfo.__tablename__, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = _get_latest_block_number_wallet_info(session) + end_block + 1
+        end_block = get_latest_block_number_from_table(WalletInfo.__tablename__, session) + end_block + 1
 
     if start_block is not None:
         query = query.filter(WalletInfo.blockNumber >= start_block)
@@ -475,9 +475,9 @@ def get_agents(session: Session, start_block: int | None = None, end_block: int 
     query = session.query(WalletInfo.walletAddress)
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = _get_latest_block_number_wallet_info(session) + start_block + 1
+        start_block = get_latest_block_number_from_table(WalletInfo.__tablename__, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = _get_latest_block_number_wallet_info(session) + end_block + 1
+        end_block = get_latest_block_number_from_table(WalletInfo.__tablename__, session) + end_block + 1
 
     if start_block is not None:
         query = query.filter(WalletInfo.blockNumber >= start_block)
@@ -516,7 +516,8 @@ def get_user_map(session: Session, address: str | None = None) -> pd.DataFrame:
 
 
 def get_latest_block_number(session: Session) -> int:
-    """Gets the latest block number based on the pool info table in the db
+    """Gets the latest block number based on the pool info table in the db.
+
     Arguments
     ---------
     session: Session
@@ -527,34 +528,25 @@ def get_latest_block_number(session: Session) -> int:
     int
         The latest block number in the poolinfo table
     """
+    return get_latest_block_number_from_table("poolinfo", session)
 
-    # query_results = session.query(PoolInfoTable).order_by(PoolInfoTable.timestamp.desc()).first()
-    query_results = session.query(PoolInfo).order_by(PoolInfo.timestamp.desc()).first()
-    # If the table is empty, query_results will return None
-    if query_results is None:
+
+def get_latest_block_number_from_table(table: str, session: Session) -> int:
+    """Gets the latest block number based on the specified table in the db.
+
+    Arguments
+    ---------
+    table : str
+        The name of the table to get the latest block number from
+    session : Session
+        The initialized session object
+
+    Returns
+    -------
+    int
+        The latest block number from the specified table
+    """
+    result = session.execute(text(f"SELECT MAX(blockNumber) FROM {table}")).fetchone()
+    if result is None:
         return 0
-    return int(query_results.blockNumber)
-
-
-def _get_latest_block_number_wallet_info(session: Session) -> int:
-    """
-    Gets the latest block number based on the walletinfo table in the db
-    This function shouldn't be called externally, as the pool info table should be the main keeper of block numbers
-    """
-    query_results = session.query(WalletInfo).order_by(WalletInfo.id.desc()).first()
-    # If the table is empty, query_results will return None
-    if query_results is None:
-        return 0
-    return int(query_results.blockNumber)
-
-
-def _get_latest_block_number_transactions(session: Session) -> int:
-    """
-    Gets the latest block number based on the transactions table in the db
-    This function shouldn't be called externally, as the pool info table should be the main keeper of block numbers
-    """
-    query_results = session.query(Transaction).order_by(Transaction.id.desc()).first()
-    # If the table is empty, query_results will return None
-    if query_results is None:
-        return 0
-    return int(query_results.blockNumber)
+    return int(result[0])

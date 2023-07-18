@@ -1,6 +1,6 @@
 """CRUD tests for Transaction"""
-import pandas as pd
 import pytest
+import numpy as np
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -12,9 +12,6 @@ Session = sessionmaker(bind=engine)
 
 # fixture arguments in test function have to be the same as the fixture name
 # pylint: disable=redefined-outer-name
-
-# Explicitly testing protected access function, i.e., _get_latest_block_number_transactions(session)
-# pylint: disable=protected-access
 
 
 @pytest.fixture(scope="function")
@@ -78,14 +75,14 @@ class TestTransactionInterface:
         transaction_1 = Transaction(blockNumber=1, event_value=3.0)  # add your other columns here...
         postgres.add_transactions([transaction_1], session)
 
-        latest_block_number = postgres._get_latest_block_number_transactions(session)
+        latest_block_number = postgres.get_latest_block_number_from_table(Transaction.__tablename__, session)
         assert latest_block_number == 1
 
         transaction_2 = Transaction(blockNumber=2, event_value=3.2)  # add your other columns here...
         transaction_3 = Transaction(blockNumber=3, event_value=3.4)  # add your other columns here...
         postgres.add_transactions([transaction_2, transaction_3], session)
 
-        latest_block_number = postgres._get_latest_block_number_transactions(session)
+        latest_block_number = postgres.get_latest_block_number_from_table(Transaction.__tablename__, session)
         assert latest_block_number == 3
 
     def test_get_transactions(self, session):
@@ -96,7 +93,7 @@ class TestTransactionInterface:
         postgres.add_transactions([transaction_1, transaction_2, transaction_3], session)
 
         transactions_df = postgres.get_transactions(session)
-        assert transactions_df["event_value"].equals(pd.Series([3.1, 3.2, 3.3], name="event_value"))
+        np.testing.assert_array_equal(transactions_df["event_value"], [3.1, 3.2, 3.3])
 
     def test_block_query_transactions(self, session):
         """Testing querying by block number of transactions via interface"""
@@ -106,16 +103,16 @@ class TestTransactionInterface:
         postgres.add_transactions([transaction_1, transaction_2, transaction_3], session)
 
         transactions_df = postgres.get_transactions(session, start_block=1)
-        assert transactions_df["event_value"].equals(pd.Series([3.2, 3.3], name="event_value"))
+        np.testing.assert_array_equal(transactions_df["event_value"], [3.2, 3.3])
 
         transactions_df = postgres.get_transactions(session, start_block=-1)
-        assert transactions_df["event_value"].equals(pd.Series([3.3], name="event_value"))
+        np.testing.assert_array_equal(transactions_df["event_value"], [3.3])
 
         transactions_df = postgres.get_transactions(session, end_block=1)
-        assert transactions_df["event_value"].equals(pd.Series([3.1], name="event_value"))
+        np.testing.assert_array_equal(transactions_df["event_value"], [3.1])
 
         transactions_df = postgres.get_transactions(session, end_block=-1)
-        assert transactions_df["event_value"].equals(pd.Series([3.1, 3.2], name="event_value"))
+        np.testing.assert_array_equal(transactions_df["event_value"], [3.1, 3.2])
 
         transactions_df = postgres.get_transactions(session, start_block=1, end_block=-1)
-        assert transactions_df["event_value"].equals(pd.Series([3.2], name="event_value"))
+        np.testing.assert_array_equal(transactions_df["event_value"], [3.2])
