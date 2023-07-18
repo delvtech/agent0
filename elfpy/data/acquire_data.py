@@ -1,4 +1,4 @@
-"""Script to format on-chain hyperdrive pool, config, and transaction data post-processing"""
+"""Script to format on-chain hyperdrive pool, config, and transaction data post-processing."""
 from __future__ import annotations
 
 import logging
@@ -31,13 +31,14 @@ def get_wallet_info(
     transactions: list[db_schema.Transaction],
     pool_info: db_schema.PoolInfo,
 ) -> list[db_schema.WalletInfo]:
-    """Retrieves wallet information at a given block given a transaction
+    """Retrieve wallet information at a given block given a transaction.
+
     Transactions are needed here to get
     (1) the wallet address of a transaction, and
     (2) the token id of the transaction
 
     Arguments
-    ----------
+    ---------
     hyperdrive_contract : Contract
         The deployed hyperdrive contract instance.
     base_contract : Contract
@@ -46,6 +47,8 @@ def get_wallet_info(
         The block number to query
     transactions : list[db_schema.Transaction]
         The list of transactions to get events from
+    pool_info : db_schema.PoolInfo
+        The associated pool info, used to extract share price
 
     Returns
     -------
@@ -132,7 +135,23 @@ def main(
     lookback_block_limit: int,
     sleep_amount: int,
 ):
-    """Main entry point for accessing contract & writing pool info"""
+    """Execute the data acquisition pipeline.
+
+    Arguments
+    ---------
+    contracts_url : str
+        The url of the artifacts server from which we get addresses.
+    ethereum_node : URI | str
+        The url to the ethereum node
+    abi_dir : str
+        The path to the abi directory
+    start_block : int
+        The starting block to filter the query on
+    lookback_block_limit : int
+        The maximum number of blocks to loko back when filling in missing data
+    sleep_amount : int
+        The amount of seconds to sleep between queries
+    """
     # TODO: refactor this function, its waaay to big as indicated by these pylints
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
