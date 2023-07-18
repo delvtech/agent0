@@ -53,7 +53,8 @@ def execute_agent_trades(
             min_output = 0
             as_underlying = True
             maturity_time = (
-                trade_object.trade.mint_time + hyperdrive_market.position_duration.years * elftime.TimeUnit.SECONDS
+                trade_object.trade.mint_time
+                + hyperdrive_market.position_duration.years * elftime.TimeUnit.SECONDS.value
             )
             match trade_object.trade.action_type:
                 case MarketActionType.OPEN_LONG:
