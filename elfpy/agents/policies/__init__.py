@@ -1,5 +1,5 @@
 """Policies for expert system trading bots"""
-from enum import Enum
+from typing import NamedTuple
 
 from .base import BasePolicy
 from .init_lp import InitializeLiquidityAgent
@@ -13,7 +13,7 @@ from .smart_long import LongLouie
 from .smart_short import ShortSally
 
 
-class Policies(Enum):
+class Policies(NamedTuple):
     """All policies in elfpy."""
 
     BASE_POLICY = BasePolicy
