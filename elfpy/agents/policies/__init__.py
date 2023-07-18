@@ -13,7 +13,7 @@ from .smart_long import LongLouie
 from .smart_short import ShortSally
 
 
-class Policies:
+class Policies(Enum):
     """All policies in elfpy."""
 
     BASE_POLICY = BasePolicy
