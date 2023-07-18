@@ -8,7 +8,7 @@ from typing import Type
 
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import URL, create_engine, func, create_engine, inspect, MetaData, Table, exc
+from sqlalchemy import URL, create_engine, func, inspect, MetaData, Table, exc
 from sqlalchemy.orm import Session, sessionmaker
 
 from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, CheckpointInfo, Transaction, UserMap, WalletInfo
@@ -406,9 +406,9 @@ def get_checkpoint_info(session: Session, start_block: int | None = None, end_bl
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(CheckpointInfo.__tablename__, session) + start_block + 1
+        start_block = get_latest_block_number_from_table(CheckpointInfo, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(CheckpointInfo.__tablename__, session) + end_block + 1
+        end_block = get_latest_block_number_from_table(CheckpointInfo, session) + end_block + 1
 
     if start_block is not None:
         query = query.filter(CheckpointInfo.blockNumber >= start_block)
@@ -687,6 +687,8 @@ def get_latest_block_number_from_table(
     """
 
     # For some reason, pylint doesn't like func.max from sqlalchemy
+    if not isinstance(table_obj, (WalletInfo, PoolInfo, Transaction, CheckpointInfo)):
+        assert "table_obj input is not a WalletInfo, PoolInfo, Transaction, or CheckpointInfo"
     result = session.query(func.max(table_obj.blockNumber)).first()  # pylint: disable=not-callable
     # If table doesn't exist
     if result is None:

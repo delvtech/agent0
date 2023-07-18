@@ -1,19 +1,16 @@
 """CRUD tests for CheckpointInfo"""
-from datetime import datetime
-
 import pytest
 import numpy as np
-from sqlalchemy import create_engine, MetaData, String
+from sqlalchemy import create_engine, String
 from sqlalchemy.orm import sessionmaker
-
-from elfpy.data import postgres
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+from elfpy.data import postgres
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)
 
 # fixture arguments in test function have to be the same as the fixture name
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name, too-few-public-methods
 
 
 class Based(MappedAsDataclass, DeclarativeBase):
