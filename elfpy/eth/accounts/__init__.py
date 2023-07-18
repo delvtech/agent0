@@ -1,3 +1,3 @@
 """Helper utilities for creating and managing accounts"""
 
-from .agent_account import AgentAccount
+from .eth_account import EthAccount
