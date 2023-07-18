@@ -20,7 +20,7 @@ def execute_agent_trades(
     base_token_contract: Contract,
     hyperdrive_contract: Contract,
     agent_accounts: list[EthAccount],
-) -> int:
+) -> None:
     """Hyperdrive forever into the sunset"""
     # get latest market
     hyperdrive_market = hyperdrive_interface.get_hyperdrive_market(web3, hyperdrive_contract)
