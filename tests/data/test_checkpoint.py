@@ -41,7 +41,6 @@ class TestCheckpointTable:
 
         retrieved_checkpoint = session.query(CheckpointInfo).filter_by(blockNumber=1).first()
         assert retrieved_checkpoint is not None
-        # event_value retreieved from postgres is in Decimal, cast to float
         assert retrieved_checkpoint.timestamp == timestamp
 
     def test_update_checkpoint(self, session):
@@ -55,7 +54,6 @@ class TestCheckpointTable:
         session.commit()
 
         updated_checkpoint = session.query(CheckpointInfo).filter_by(blockNumber=1).first()
-        # event_value retreieved from postgres is in Decimal, cast to float
         assert updated_checkpoint.sharePrice == 5.0
 
     def test_delete_checkpoint(self, session):
@@ -81,14 +79,14 @@ class TestCheckpointInterface:
         postgres.add_checkpoint_infos([checkpoint_1], session)
         session.commit()
 
-        latest_block_number = postgres.get_latest_block_number_from_table(CheckpointInfo.__tablename__, session)
+        latest_block_number = postgres.get_latest_block_number_from_table(CheckpointInfo, session)
         assert latest_block_number == 1
 
         checkpoint_2 = CheckpointInfo(blockNumber=2, timestamp=datetime.now())
         checkpoint_3 = CheckpointInfo(blockNumber=3, timestamp=datetime.now())
         postgres.add_checkpoint_infos([checkpoint_2, checkpoint_3], session)
 
-        latest_block_number = postgres.get_latest_block_number_from_table(CheckpointInfo.__tablename__, session)
+        latest_block_number = postgres.get_latest_block_number_from_table(CheckpointInfo, session)
         assert latest_block_number == 3
 
     def test_get_checkpoints(self, session):

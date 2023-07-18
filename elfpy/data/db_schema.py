@@ -62,8 +62,6 @@ class PoolConfig(Base):
     Table/dataclass schema for pool config
     """
 
-    # pylint: disable=too-many-instance-attributes
-
     __tablename__ = "poolconfig"
 
     contractAddress: Mapped[str] = mapped_column(String, primary_key=True)
@@ -101,8 +99,6 @@ class PoolInfo(Base):
     Table/dataclass schema for pool info
     Mapped class that is a data class on the python side, and an declarative base on the sql side.
     """
-
-    # pylint: disable=too-many-instance-attributes
 
     __tablename__ = "poolinfo"
 

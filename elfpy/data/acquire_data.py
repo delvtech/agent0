@@ -177,6 +177,7 @@ def main(
         # Query and add block_pool_info
         pool_info_dict = hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
         # Set defaults
+        # TODO: abstract this out: pull the conversion between the interface to the db object into various functions
         for key in db_schema.PoolInfo.__annotations__:
             if key not in pool_info_dict:
                 pool_info_dict[key] = None
@@ -216,8 +217,7 @@ def main(
                         latest_mined_block,
                     )
                     continue
-                # get_block_pool_info crashes randomly with ValueError on some intermediate block,
-                # keep trying until it returns
+                # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_pool_info = None
                 for _ in range(RETRY_COUNT):
                     try:
@@ -225,18 +225,19 @@ def main(
                             web3, hyperdrive_contract, block_number
                         )
                         # Set defaults
-                        for key in db_schema.PoolInfo.__annotations__.keys():
-                            if key not in pool_info_dict.keys():
+                        for key in db_schema.PoolInfo.__annotations__:
+                            if key not in pool_info_dict:
                                 pool_info_dict[key] = None
                         block_pool_info = db_schema.PoolInfo(**pool_info_dict)
                         break
                     except ValueError:
-                        logging.warning("Error in get_block_pool_info, retrying")
+                        logging.warning("Error in get_hyperdrive_pool_info, retrying")
                         time.sleep(1)
                         continue
                 if block_pool_info:
                     postgres.add_pool_infos([block_pool_info], session)
 
+                # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_transactions = None
                 for _ in range(RETRY_COUNT):
                     try:
