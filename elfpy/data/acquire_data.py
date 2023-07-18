@@ -186,6 +186,8 @@ def main(
         postgres.add_transactions(block_transactions, session)
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
+    # TODO: fewer nested blocks!
+    # pylint: disable=too-many-nested-blocks
     while True:
         latest_mined_block = web3.eth.get_block_number() - 1
         # if we are on a new block

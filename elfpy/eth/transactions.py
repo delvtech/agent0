@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 from typing import Any, Sequence
 
-from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract, ContractFunction
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, TxReceipt
@@ -33,7 +32,7 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
                     f"{len(return_names_and_types)=} must equal {len(return_values)=}."
                     f"\n{return_names_and_types=}\n{return_values=}"
                 )
-            function_return_dict = dict()
+            function_return_dict = {}
             for var_name_and_type, var_value in zip(return_names_and_types, return_values):
                 var_name = var_name_and_type[0]
                 if var_name:

@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import logging
 
+from elfpy.agents.policies import Policies
 from elfpy.bots import BotInfo, Budget, EnvironmentConfig
 
 agent_config: list[BotInfo] = [
     BotInfo(
-        policy="RandomAgent",
+        policy=Policies.RANDOM_AGENT,
         number_of_bots=3,
         budget=Budget(
             mean_wei=int(1e18),  # 1 ETH
@@ -18,7 +19,7 @@ agent_config: list[BotInfo] = [
         init_kwargs={"trade_chance": 0.8},
     ),
     BotInfo(
-        policy="LongLouie",
+        policy=Policies.LONG_LOUIE,
         number_of_bots=5,
         budget=Budget(
             mean_wei=int(1e18),  # 1 ETH
@@ -29,7 +30,7 @@ agent_config: list[BotInfo] = [
         init_kwargs={"trade_chance": 0.8, "risk_threshold": 0.9},
     ),
     BotInfo(
-        policy="ShortSally",
+        policy=Policies.SHORT_SALLY,
         number_of_bots=2,
         budget=Budget(
             mean_wei=int(1e18),  # 1 ETH

@@ -14,7 +14,7 @@ from .execute_agent_trades import execute_agent_trades
 from .setup_agents import get_agents
 
 
-def main():  # FIXME: Move much of this out of main
+def main():  # TODO: Move much of this out of main
     """Entrypoint to load all configurations and run agents."""
     # this random number generator should be used everywhere so that the experiment is repeatable
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
@@ -66,7 +66,7 @@ def main():  # FIXME: Move much of this out of main
             last_executed_block,
             trade_streak,
         )
-        # FIXME: TODO: if provider.auto_mine is set then run the `mine` function
+        # TODO: if provider.auto_mine is set then run the `mine` function
 
 
 if __name__ == "__main__":

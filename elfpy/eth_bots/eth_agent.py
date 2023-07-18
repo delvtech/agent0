@@ -1,7 +1,7 @@
 """Agent with an ethereum account."""
 from __future__ import annotations
 
-from elfpy.agents import Agent
+from elfpy.agents.agent import Agent
 from elfpy.agents.policies import BasePolicy
 from elfpy.eth.accounts import EthAccount
 

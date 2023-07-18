@@ -29,6 +29,9 @@ class BotInfo:  # TODO: Rename to `BotConfig` when we remove evm_bots
         Any parameters for custom bots should go here
     """
 
+    # TODO: We should be able to enable this again once we remove evm_bots
+    # pylint: disable=to-many-instance-attributes
+
     policy: BasePolicy
     index: int | None = None  # TODO: Make this required when we remove evm_bots
     name: str = "BoringBotty"
