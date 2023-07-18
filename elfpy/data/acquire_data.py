@@ -177,11 +177,22 @@ def main(
         # Query and add block_pool_info
         pool_info_dict = hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
         # Set defaults
-        for key in db_schema.PoolInfo.__annotations__.keys():
-            if key not in pool_info_dict.keys():
+        for key in db_schema.PoolInfo.__annotations__:
+            if key not in pool_info_dict:
                 pool_info_dict[key] = None
         block_pool_info = db_schema.PoolInfo(**pool_info_dict)
         postgres.add_pool_infos([block_pool_info], session)
+
+        # Query and add block_checkpoint_info
+        checkpoint_info_dict = hyperdrive_interface.get_hyperdrive_checkpoint_info(
+            web3, hyperdrive_contract, block_number
+        )
+        # Set defaults
+        for key in db_schema.CheckpointInfo.__annotations__:
+            if key not in checkpoint_info_dict:
+                checkpoint_info_dict[key] = None
+        block_checkpoint_info = db_schema.CheckpointInfo(**checkpoint_info_dict)
+        postgres.add_checkpoint_infos([block_checkpoint_info], session)
         # Query and add block transactions
         block_transactions = db_schema.fetch_transactions_for_block(web3, hyperdrive_contract, block_number)
         postgres.add_transactions(block_transactions, session)
@@ -225,6 +236,7 @@ def main(
                         continue
                 if block_pool_info:
                     postgres.add_pool_infos([block_pool_info], session)
+
                 block_transactions = None
                 for _ in range(RETRY_COUNT):
                     try:

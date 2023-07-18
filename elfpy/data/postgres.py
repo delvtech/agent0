@@ -11,7 +11,7 @@ import sqlalchemy
 from sqlalchemy import URL, create_engine, func
 from sqlalchemy.orm import Session, sessionmaker
 
-from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, Transaction, UserMap, WalletInfo
+from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, CheckpointInfo, Transaction, UserMap, WalletInfo
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -57,6 +57,24 @@ def build_postgres_config() -> PostgresConfig:
         arg_dict["POSTGRES_PORT"] = int(port)
 
     return PostgresConfig(**arg_dict)
+
+
+def query_tables(session):
+    """Return a list of tables in the database."""
+    stmt = text(
+        "SELECT tablename FROM pg_catalog.pg_tables "
+        "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema'"
+    )
+    result = session.execute(stmt)  # Execute the statement
+    tables = result.fetchall()  # Fetch all the results
+    return tables
+
+
+def drop_table(session, table_name):
+    """Drop a table from the database."""
+    stmt = text(f"DROP TABLE IF EXISTS {table_name}")
+    session.execute(stmt)
+    session.commit()
 
 
 def initialize_session() -> Session:
@@ -180,6 +198,25 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
         raise err
 
 
+def add_checkpoint_infos(checkpoint_infos: list[CheckpointInfo], session: Session) -> None:
+    """Add checkpoint info to the checkpointinfo table
+
+    Arguments
+    ---------
+    checkpoint_infos: list[Checkpoint]
+        A list of Checkpoint objects to insert into postgres
+    session: Session
+        The initialized session object
+    """
+    for checkpoint_info in checkpoint_infos:
+        session.add(checkpoint_info)
+    try:
+        session.commit()
+    except sqlalchemy.exc.DataError as err:  # type: ignore
+        session.rollback()
+        raise err
+
+
 def add_transactions(transactions: list[Transaction], session: Session) -> None:
     """Add transactions to the poolinfo table
 
@@ -298,6 +335,46 @@ def get_pool_info(session: Session, start_block: int | None = None, end_block: i
 
     # Always sort by time in order
     query = query.order_by(PoolInfo.timestamp)
+
+    return pd.read_sql(query.statement, con=session.connection()).set_index("blockNumber")
+
+
+def get_checkpoint_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+    """Gets all info associated with a given checkpoint.
+
+    This includes
+    - `sharePrice` : The share price of the first transaction in the checkpoint.
+    - `longSharePrice` : The weighted average of the share prices that all longs in the checkpoint were opened at.
+    - `shortBaseVolume` : The aggregate amount of base committed by LPs to pay for bonds sold short in the checkpoint.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    block : int | None, optional
+        The block number whose checkpoint to return. If None, returns the most recent checkpoint.
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried checkpoint info
+    """
+
+    query = session.query(CheckpointInfo)
+
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = get_latest_block_number_from_table(CheckpointInfo.__tablename__, session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = get_latest_block_number_from_table(CheckpointInfo.__tablename__, session) + end_block + 1
+
+    if start_block is not None:
+        query = query.filter(CheckpointInfo.blockNumber >= start_block)
+    if end_block is not None:
+        query = query.filter(CheckpointInfo.blockNumber < end_block)
+
+    # Always sort by time in order
+    query = query.order_by(CheckpointInfo.timestamp)
 
     return pd.read_sql(query.statement, con=session.connection()).set_index("blockNumber")
 

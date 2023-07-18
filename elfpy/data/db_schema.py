@@ -84,6 +84,18 @@ class PoolConfig(Base):
     termLength: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
 
 
+class CheckpointInfo(Base):
+    """Table/dataclass schema for checkpoint information"""
+
+    __tablename__ = "checkpointinfo"
+
+    blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
+    sharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    longSharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    shortBaseVolume: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+
+
 class PoolInfo(Base):
     """
     Table/dataclass schema for pool info
