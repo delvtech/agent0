@@ -15,6 +15,10 @@ from elfpy.time import time as elftime
 
 from .eth_agent import EthAgent
 
+# TODO: Fix these up
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
+
 
 def execute_agent_trades(
     config: EnvironmentConfig,
@@ -102,7 +106,6 @@ def execute_agent_trades(
         except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
             if config.halt_on_errors:
                 raise exc
-            else:
-                trade_streak = 0
-                # TODO: deliver crash report
+            trade_streak = 0
+            # TODO: deliver crash report
     return trade_streak, last_executed_block

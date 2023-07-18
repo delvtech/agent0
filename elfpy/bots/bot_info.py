@@ -30,7 +30,7 @@ class BotInfo:  # TODO: Rename to `BotConfig` when we remove evm_bots
     """
 
     # TODO: We should be able to enable this again once we remove evm_bots
-    # pylint: disable=to-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes
 
     policy: BasePolicy
     index: int | None = None  # TODO: Make this required when we remove evm_bots
