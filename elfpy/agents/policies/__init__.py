@@ -16,13 +16,13 @@ from .smart_short import ShortSally
 class Policies(NamedTuple):
     """All policies in elfpy."""
 
-    BASE_POLICY = BasePolicy
-    INITIALIZE_LIQUIDITY_AGENT = InitializeLiquidityAgent
-    LP_AND_WITHDRAW_AGENT = LpAndWithdrawAgent
-    NO_ACTION_POLICY = NoActionPolicy
-    RANDOM_AGENT = RandomAgent
-    SINGLE_LONG_AGENT = SingleLongAgent
-    SINGLE_LP_AGENT = SingleLpAgent
-    SINGLE_SHORT_AGENT = SingleShortAgent
-    LONG_LOUIE = LongLouie
-    SHORT_SALLY = ShortSally
+    base_policy = BasePolicy
+    initialize_liquidity_agent = InitializeLiquidityAgent
+    lp_and_withdraw_agent = LpAndWithdrawAgent
+    no_action_policy = NoActionPolicy
+    random_agent = RandomAgent
+    single_long_agent = SingleLongAgent
+    single_lp_agent = SingleLpAgent
+    single_short_agent = SingleShortAgent
+    long_louie = LongLouie
+    short_sally = ShortSally

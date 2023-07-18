@@ -11,10 +11,9 @@ from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
 from elfpy.utils import logs
-
-from .config import agent_config, environment_config
-from .execute_agent_trades import execute_agent_trades
-from .setup_agents import get_agent_accounts
+from examples.eth_bots.config import agent_config, environment_config
+from examples.eth_bots.execute_agent_trades import execute_agent_trades
+from examples.eth_bots.setup_agents import get_agent_accounts
 
 
 def main():  # TODO: Move much of this out of main
