@@ -56,29 +56,30 @@ def execute_agent_trades(
                 trade_object.trade.mint_time
                 + hyperdrive_market.position_duration.years * elftime.TimeUnit.SECONDS.value
             )
-            match trade_object.trade.action_type:
-                case MarketActionType.OPEN_LONG:
-                    eth.smart_contract_transact(
-                        web3,
-                        hyperdrive_contract,
-                        "openLong",
-                        account,
-                        trade_amount,
-                        min_output,
-                        account.checksum_address,
-                        as_underlying,
-                    )
-                case MarketActionType.CLOSE_LONG:
-                    min_output = 0
-                    eth.smart_contract_transact(
-                        web3,
-                        hyperdrive_contract,
-                        "closeLong",
-                        account,
-                        maturity_time,
-                        trade_amount,
-                        min_output,
-                        account.checksum_address,
-                        as_underlying,
-                    )
+            if trade_object.trade.action_type == MarketActionType.OPEN_LONG:
+                eth.smart_contract_transact(
+                    web3,
+                    hyperdrive_contract,
+                    "openLong",
+                    account,
+                    trade_amount,
+                    min_output,
+                    account.checksum_address,
+                    as_underlying,
+                )
+            elif trade_object.trade.action_type == MarketActionType.CLOSE_LONG:
+                min_output = 0
+                eth.smart_contract_transact(
+                    web3,
+                    hyperdrive_contract,
+                    "closeLong",
+                    account,
+                    maturity_time,
+                    trade_amount,
+                    min_output,
+                    account.checksum_address,
+                    as_underlying,
+                )
+            else:
+                raise NotImplementedError(f"{trade_object.trade.action_type} is not implemented.")
             # TODO: update wallet
