@@ -66,6 +66,7 @@ def smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
+    print(f"{fn_args=}")
     func_handle = contract.get_function_by_name(function_name)(*fn_args)
     unsent_txn = func_handle.build_transaction(
         {

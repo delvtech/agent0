@@ -30,15 +30,18 @@ def get_agent_accounts(
             agent = Agent(wallet_address=agent_count, policy=policy)
             eth_account = eth.accounts.EthAccount(agent=agent, extra_entropy=str(agent_count))
             # fund test account with ether
-            rpc_response = eth.set_anvil_account_balance(
-                web3, eth_account.checksum_address, int(web3.to_wei(1000, "ether"))
-            )
-            print(f"{rpc_response=}")  # TODO: raise issue on failure
+            # TODO: raise issue on failure by looking at `rpc_response` returned from function
+            _ = eth.set_anvil_account_balance(web3, eth_account.checksum_address, int(web3.to_wei(1000, "ether")))
             # fund test account by minting with the ERC20 base account
-            tx_receipt = eth.smart_contract_transact(
-                web3, base_token_contract, "mint", eth_account, kwargs["budget"].scaled_value
+            # TODO: raise issue on failure by looking at `tx_receipt` returned from function
+            _ = eth.smart_contract_transact(
+                web3,
+                base_token_contract,
+                "mint",
+                eth_account,
+                eth_account.checksum_address,
+                kwargs["budget"].scaled_value,
             )
-            print(f"{tx_receipt=}")  # TODO: raise issue on failure
             agents.append(eth_account)
         num_agents_so_far.append(agent_info.number_of_bots)
     logging.info("Added %d agents", sum(num_agents_so_far))

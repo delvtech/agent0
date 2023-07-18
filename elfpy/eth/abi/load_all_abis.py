@@ -26,7 +26,7 @@ def load_all_abis(abi_folder: str) -> dict:
             loaded.append(abi_file)
         else:
             logging.warning("JSON file %s did not contain an ABI", abi_file)
-    logging.info("Loaded ABI files %s", str(loaded))
+    logging.debug("Loaded ABI files %s", str(loaded))
     return abis
 
 
