@@ -17,7 +17,7 @@ authors = [
 ]
 description = "Experiment management and market simulators by Delv"
 readme = "README.md"
-requires-python = "3.10"
+requires-python = ">=3.10, <3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache License 2.0",
