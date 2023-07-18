@@ -13,9 +13,6 @@ Session = sessionmaker(bind=engine)
 # fixture arguments in test function have to be the same as the fixture name
 # pylint: disable=redefined-outer-name
 
-# Explicitly testing protected access function, i.e., WalletInfo.__tablename__
-# pylint: disable=protected-access
-
 
 @pytest.fixture(scope="function")
 def session():
@@ -78,14 +75,14 @@ class TestWalletInfoInterface:
         wallet_info_1 = WalletInfo(blockNumber=1, tokenValue=3.0)  # add your other columns here...
         postgres.add_wallet_infos([wallet_info_1], session)
 
-        latest_block_number = postgres.get_latest_block_number_from_table(WalletInfo.__tablename__,session)
+        latest_block_number = postgres.get_latest_block_number_from_table(WalletInfo.__tablename__, session)
         assert latest_block_number == 1
 
         wallet_info_2 = WalletInfo(blockNumber=2, tokenValue=3.2)  # add your other columns here...
         wallet_info_3 = WalletInfo(blockNumber=3, tokenValue=3.4)  # add your other columns here...
         postgres.add_wallet_infos([wallet_info_2, wallet_info_3], session)
 
-        latest_block_number = postgres.get_latest_block_number_from_table(WalletInfo.__tablename__,session)
+        latest_block_number = postgres.get_latest_block_number_from_table(WalletInfo.__tablename__, session)
         assert latest_block_number == 3
 
     def test_get_wallet_info(self, session):

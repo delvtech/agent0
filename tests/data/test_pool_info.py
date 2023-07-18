@@ -101,7 +101,9 @@ class TestPoolInfoInterface:
         postgres.add_pool_infos([pool_info_1, pool_info_2, pool_info_3], session)
 
         pool_info_df = postgres.get_pool_info(session)
-        np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1, timestamp_2, timestamp_3]))
+        np.testing.assert_array_equal(
+            pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1, timestamp_2, timestamp_3])
+        )
 
     def test_block_query_pool_info(self, session):
         """Testing retrevial of pool info via interface"""
@@ -114,7 +116,9 @@ class TestPoolInfoInterface:
         postgres.add_pool_infos([pool_info_1, pool_info_2, pool_info_3], session)
 
         pool_info_df = postgres.get_pool_info(session, start_block=1)
-        np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_2, timestamp_3]))
+        np.testing.assert_array_equal(
+            pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_2, timestamp_3])
+        )
 
         pool_info_df = postgres.get_pool_info(session, start_block=-1)
         np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_3]))
@@ -123,7 +127,9 @@ class TestPoolInfoInterface:
         np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1]))
 
         pool_info_df = postgres.get_pool_info(session, end_block=-1)
-        np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1, timestamp_2]))
+        np.testing.assert_array_equal(
+            pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1, timestamp_2])
+        )
 
         pool_info_df = postgres.get_pool_info(session, start_block=1, end_block=-1)
         np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_2]))
