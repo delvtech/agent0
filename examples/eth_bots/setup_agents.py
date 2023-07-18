@@ -37,7 +37,7 @@ def get_agent_accounts(
             _ = eth.smart_contract_transact(
                 web3,
                 base_token_contract,
-                "mint",
+                "mint(address,uint256)",
                 eth_account,
                 eth_account.checksum_address,
                 kwargs["budget"].scaled_value,

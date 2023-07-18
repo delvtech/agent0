@@ -66,7 +66,10 @@ def smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    func_handle = contract.get_function_by_name(function_name)(*fn_args)
+    if "(" in function_name:
+        func_handle = contract.get_function_by_signature(function_name)(*fn_args)
+    else:
+        func_handle = contract.get_function_by_name(function_name)(*fn_args)
     unsent_txn = func_handle.build_transaction(
         {
             "from": from_account.checksum_address,
