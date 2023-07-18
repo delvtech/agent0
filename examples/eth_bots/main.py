@@ -73,16 +73,23 @@ def main():  # TODO: Move much of this out of main
                 str(datetime.fromtimestamp(float(latest_block_timestamp))),
                 trade_streak,
             )
-            trade_streak = execute_agent_trades(
-                environment_config,
-                web3,
-                base_token_contract,
-                hyperdrive_contract,
-                agent_accounts,
-                trade_streak,
-            )
-            last_executed_block = latest_block_number
-            # TODO: if provider.auto_mine is set then run the `mine` function
+            try:
+                execute_agent_trades(
+                    web3,
+                    base_token_contract,
+                    hyperdrive_contract,
+                    agent_accounts,
+                )
+                last_executed_block = latest_block_number
+                trade_streak += 1
+                # TODO: if provider.auto_mine is set then run the `mine` function
+            # we want to catch all exceptions
+            # pylint: disable=broad-exception-caught
+            except Exception as exc:
+                if environment_config.halt_on_errors:
+                    raise exc
+                trade_streak = 0
+                # TODO: deliver crash report
 
 
 if __name__ == "__main__":

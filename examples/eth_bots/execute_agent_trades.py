@@ -6,7 +6,6 @@ from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
 from elfpy import types as elftypes
-from elfpy.bots import EnvironmentConfig
 from elfpy.eth.accounts import EthAccount
 from elfpy.markets.hyperdrive import MarketActionType
 from elfpy.time import time as elftime
@@ -17,80 +16,68 @@ from elfpy.time import time as elftime
 
 
 def execute_agent_trades(
-    config: EnvironmentConfig,
     web3: Web3,
     base_token_contract: Contract,
     hyperdrive_contract: Contract,
     agent_accounts: list[EthAccount],
-    trade_streak: int,
 ) -> int:
     """Hyperdrive forever into the sunset"""
     # get latest market
     hyperdrive_market = hyperdrive_interface.get_hyperdrive_market(web3, hyperdrive_contract)
-    try:
-        for account in agent_accounts:
-            if account.agent is None:  # should never happen
-                continue
-            # do_policy
-            trades: list[elftypes.Trade] = account.agent.get_trades(market=hyperdrive_market)
-            for trade_object in trades:
-                # do_trade
-                trade_amount: int = trade_object.trade.trade_amount.scaled_value
-                # check that the hyperdrive contract has enough base approved for the trade
-                hyperdrive_allowance = eth.smart_contract_read(
+    for account in agent_accounts:
+        if account.agent is None:  # should never happen
+            continue
+        # do_policy
+        trades: list[elftypes.Trade] = account.agent.get_trades(market=hyperdrive_market)
+        for trade_object in trades:
+            # do_trade
+            trade_amount: int = trade_object.trade.trade_amount.scaled_value
+            # check that the hyperdrive contract has enough base approved for the trade
+            hyperdrive_allowance = eth.smart_contract_read(
+                base_token_contract,
+                "allowance",
+                account.checksum_address,
+                hyperdrive_contract.address,
+            )["value"]
+            if hyperdrive_allowance < trade_amount:
+                eth.smart_contract_transact(
+                    web3,
                     base_token_contract,
-                    "allowance",
+                    "approve",
+                    account,
                     account.checksum_address,
                     hyperdrive_contract.address,
-                )["value"]
-                if hyperdrive_allowance < trade_amount:
+                    int(50e21),  # 50k base
+                )
+            # TODO: allow for min_output
+            min_output = 0
+            as_underlying = True
+            maturity_time = (
+                trade_object.trade.mint_time + hyperdrive_market.position_duration.years * elftime.TimeUnit.SECONDS
+            )
+            match trade_object.trade.action_type:
+                case MarketActionType.OPEN_LONG:
                     eth.smart_contract_transact(
                         web3,
-                        base_token_contract,
-                        "approve",
+                        hyperdrive_contract,
+                        "openLong",
                         account,
+                        trade_amount,
+                        min_output,
                         account.checksum_address,
-                        hyperdrive_contract.address,
-                        int(50e21),  # 50k base
+                        as_underlying,
                     )
-                # TODO: allow for min_output
-                min_output = 0
-                as_underlying = True
-                maturity_time = (
-                    trade_object.trade.mint_time + hyperdrive_market.position_duration.years * elftime.TimeUnit.SECONDS
-                )
-                match trade_object.trade.action_type:
-                    case MarketActionType.OPEN_LONG:
-                        eth.smart_contract_transact(
-                            web3,
-                            hyperdrive_contract,
-                            "openLong",
-                            account,
-                            trade_amount,
-                            min_output,
-                            account.checksum_address,
-                            as_underlying,
-                        )
-                    case MarketActionType.CLOSE_LONG:
-                        min_output = 0
-                        eth.smart_contract_transact(
-                            web3,
-                            hyperdrive_contract,
-                            "closeLong",
-                            account,
-                            maturity_time,
-                            trade_amount,
-                            min_output,
-                            account.checksum_address,
-                            as_underlying,
-                        )
-                # TODO: update wallet
-                trade_streak += 1
-    # we want to catch all exceptions
-    # pylint: disable=broad-exception-caught
-    except Exception as exc:
-        if config.halt_on_errors:
-            raise exc
-        trade_streak = 0
-        # TODO: deliver crash report
-    return trade_streak
+                case MarketActionType.CLOSE_LONG:
+                    min_output = 0
+                    eth.smart_contract_transact(
+                        web3,
+                        hyperdrive_contract,
+                        "closeLong",
+                        account,
+                        maturity_time,
+                        trade_amount,
+                        min_output,
+                        account.checksum_address,
+                        as_underlying,
+                    )
+            # TODO: update wallet
