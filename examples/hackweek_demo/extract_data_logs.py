@@ -60,7 +60,7 @@ def get_combined_data(txn_data, pool_info_data):
     pool_info_data.index = pool_info_data.index.astype(int)
     # txn_data.index = txn_data["blockNumber"]
     # Combine pool info data and trans data by block number
-    data = txn_data.merge(pool_info_data)
+    data = txn_data.merge(pool_info_data, on="blockNumber")
 
     rename_dict = {
         "event_operator": "operator",
@@ -71,7 +71,6 @@ def get_combined_data(txn_data, pool_info_data):
         "event_maturity_time": "maturity_time",
         "event_value": "value",
         "bondReserves": "bond_reserves",
-        "blockNumber": "block_number",
         "input_method": "trade_type",
         "longsOutstanding": "longs_outstanding",
         "longAverageMaturityTime": "longs_average_maturity_time",
@@ -91,9 +90,6 @@ def get_combined_data(txn_data, pool_info_data):
     trade_data = data[list(rename_dict)]
     # Rename columns
     trade_data = trade_data.rename(columns=rename_dict)
-
-    # TODO: Fix this -- will break if we allow multiple trades per block
-    trade_data.index = trade_data["block_number"]
 
     # Calculate trade type and timetsamp from args.id
     def decode_prefix(row):

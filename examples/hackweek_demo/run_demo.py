@@ -55,8 +55,7 @@ st.session_state.options = []
 def get_ticker(data):
     """Given transaction data, return a subset of the dataframe"""
     # Return reverse of methods to put most recent transactions at the top
-    out = data[["blockNumber", "input_method"]].set_index("blockNumber").iloc[::-1]
-    return out
+    return data[["input_method"]].iloc[::-1]
 
 
 agent_list = postgres.get_agents(session, start_block=start_block)

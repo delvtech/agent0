@@ -470,7 +470,7 @@ def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
 
     # Get data
     all_wallet_info = get_all_wallet_info(session)
-    pool_info_lookup = get_pool_info(session)[["blockNumber", "timestamp", "sharePrice"]].set_index("blockNumber")
+    pool_info_lookup = get_pool_info(session)[["timestamp", "sharePrice"]]
 
     # Pivot tokenType to columns, keeping walletAddress and blockNumber
     all_wallet_info = all_wallet_info.pivot(
