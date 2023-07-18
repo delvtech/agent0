@@ -60,7 +60,7 @@ def get_combined_data(txn_data, pool_info_data):
     pool_info_data.index = pool_info_data.index.astype(int)
     # txn_data.index = txn_data["blockNumber"]
     # Combine pool info data and trans data by block number
-    data = txn_data.merge(pool_info_data)
+    data = txn_data.merge(pool_info_data, left_index=True, right_index=True).reset_index()
 
     rename_dict = {
         "event_operator": "operator",
