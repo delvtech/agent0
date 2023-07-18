@@ -40,7 +40,7 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
                 else:
                     function_return_dict["value"] = var_value
             return function_return_dict
-    return {f"var_{idx}": value for idx, value in enumerate(return_values)}
+    return {f"value{idx}": value for idx, value in enumerate(return_values)}
 
 
 def smart_contract_transact(

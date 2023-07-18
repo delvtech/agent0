@@ -14,7 +14,7 @@ agent_config: list[BotInfo] = [
             mean_wei=int(1e18),  # 1 ETH
             std_wei=int(1e17),  # 0.1 ETH
             min_wei=1,  # 1 WEI
-            max_wei=1e21,  # 1k ETH
+            max_wei=int(1e21),  # 1k ETH
         ),
         init_kwargs={"trade_chance": 0.8},
     ),
@@ -25,7 +25,7 @@ agent_config: list[BotInfo] = [
             mean_wei=int(1e18),  # 1 ETH
             std_wei=int(1e17),  # 0.1 ETH
             min_wei=1,  # 1 WEI
-            max_wei=1e21,  # 1k ETH
+            max_wei=int(1e21),  # 1k ETH
         ),
         init_kwargs={"trade_chance": 0.8, "risk_threshold": 0.9},
     ),
@@ -36,7 +36,7 @@ agent_config: list[BotInfo] = [
             mean_wei=int(1e18),  # 1 ETH
             std_wei=int(1e17),  # 0.1 ETH
             min_wei=1,  # 1 WEI
-            max_wei=1e21,  # 1k ETH
+            max_wei=int(1e21),  # 1k ETH
         ),
         init_kwargs={"trade_chance": 0.8, "risk_threshold": 0.8},
     ),

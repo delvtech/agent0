@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections import namedtuple
 from dataclasses import dataclass, field
+from typing import Type
 
 from elfpy.agents.policies.base import BasePolicy
 
@@ -32,7 +33,7 @@ class BotInfo:  # TODO: Rename to `BotConfig` when we remove evm_bots
     # TODO: We should be able to enable this again once we remove evm_bots
     # pylint: disable=too-many-instance-attributes
 
-    policy: BasePolicy
+    policy: Type[BasePolicy]
     index: int | None = None  # TODO: Make this required when we remove evm_bots
     name: str = "BoringBotty"
     budget: Budget = Budget()

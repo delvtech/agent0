@@ -37,6 +37,8 @@ class Agent:
             self.policy: BasePolicy = NoActionPolicy()
         else:
             self.policy: BasePolicy = policy
+        # TODO: wallet_address is no longer unique with the eth_bots setup and therefore
+        # needs to be deprecated in favor of a real checksum address
         self.wallet: Wallet = Wallet(
             address=wallet_address, balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE)
         )

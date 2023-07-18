@@ -165,7 +165,10 @@ def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> Hyperdri
     earliest_block = web3.eth.get_block("earliest")
     current_block = web3.eth.get_block("latest")
     pool_config = get_hyperdrive_config(hyperdrive_contract)
-    pool_info = get_hyperdrive_pool_info(web3, hyperdrive_contract, current_block.number)
+    current_block_number = current_block.get("number", None)
+    if current_block_number is None:
+        raise AssertionError("Current block number should not be None")
+    pool_info = get_hyperdrive_pool_info(web3, hyperdrive_contract, current_block_number)
     market_state = HyperdriveMarketState(
         base_buffer=FixedPoint(pool_info["longsOutstanding"]),
         bond_reserves=FixedPoint(pool_info["bondReserves"]),
@@ -193,7 +196,8 @@ def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> Hyperdri
     )
     # TODO: Would it be safe to assume that earliest_block.timestamp always equals zero?
     time_elapsed = (
-        datetime.utcfromtimestamp(current_block.timestamp) - datetime.utcfromtimestamp(earliest_block.timestamp)
+        datetime.utcfromtimestamp(current_block.get("timestamp", None))
+        - datetime.utcfromtimestamp(earliest_block.get("timestamp", None))
     ).total_seconds()
     years_elapsed = FixedPoint(time_elapsed) / 60 / 60 / 24 / 365
     return HyperdriveMarket(
@@ -206,7 +210,7 @@ def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> Hyperdri
         ),
         block_time=elftime.BlockTime(
             _time=years_elapsed,
-            _block_number=FixedPoint(current_block.number),
+            _block_number=FixedPoint(current_block.get("number", None)),
             _step_size=FixedPoint(1) / FixedPoint(365),
         ),
     )

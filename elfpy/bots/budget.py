@@ -14,7 +14,7 @@ class Budget:
     mean_wei: int = int(1e18)  # 1 ETH
     std_wei: int = int(1e17)  # 0.1 ETH
     min_wei: int = 1  # 1 WEI
-    max_wei: int = 1e21  # 1k ETH
+    max_wei: int = int(1e21)  # 1k ETH
 
     def sample_budget(self, rng: NumpyGenerator) -> FixedPoint:
         """Returns a sample from a clipped normal distribution"""
