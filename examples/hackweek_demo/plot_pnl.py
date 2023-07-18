@@ -1,7 +1,7 @@
 """Plots the pnl"""
 from __future__ import annotations
 
-from datetime import datetime
+from typing import NamedTuple
 
 import pandas as pd
 from extract_data_logs import calculate_spot_price
@@ -10,6 +10,7 @@ from matplotlib import ticker as mpl_ticker
 
 import elfpy
 from elfpy import types
+from elfpy.data import postgres
 from elfpy.wallet.wallet import Long, Short, Wallet
 
 
@@ -112,93 +113,134 @@ def get_wallet_from_onchain_trade_info(
     return wallet
 
 
-def calculate_pnl(trade_data, agent_list):
-    # pylint: disable=too-many-locals
-    """Calculates the pnl given trade data"""
-    # Drop all rows with nan maturity timestamps
-    trade_data = trade_data[~trade_data["maturity_time"].isna()]
+Info = NamedTuple(
+    "Info", wallet=pd.DataFrame, positions=pd.DataFrame, deltas=pd.DataFrame, open_share_price=pd.DataFrame
+)
 
-    # Filter trade_data based on agent_list
-    trade_data = trade_data[trade_data["operator"].isin(agent_list)]
 
-    if len(trade_data) == 0:
-        return (pd.DataFrame([]), pd.DataFrame([]))
+def get_agent_info(session=None) -> dict[str, Info]:
+    """Arrange agent wallet info for plotting, while calculating open share price."""
+    if session is None:
+        session = postgres.initialize_session()
+    all_agent_wallet_info = postgres.get_wallet_info_history(session)
+    agent_info = {}
+    for agent, wallet in all_agent_wallet_info.items():
+        share_price = wallet["sharePrice"].rename({"sharePrice": "share_price"})
 
-    # %% estimate position duration and add it in
-    position_duration = max(trade_data.maturity_time - trade_data.block_timestamp)
-    # print(f"empirically observed position_duration in seconds: {position_duration}")
-    # print(f"empirically observed position_duration in minutes: {position_duration/60}")
-    # print(f"empirically observed position_duration in hours: {position_duration/60/60}")
-    # print(f"empirically observed position_duration in days: {position_duration/60/60/24}")
-    position_duration_days = round(position_duration / 60 / 60 / 24)
-    # print(f"assuming position_duration is {position_duration_days}")
-    position_duration = position_duration_days * 60 * 60 * 24
+        # Create positions
+        positions = wallet.loc[:, wallet.columns[:-2]].copy()
+        positions = positions.where(positions != 0, pd.NA)
 
-    agents = trade_data["operator"].value_counts().index.tolist()
-    agent_wallets = {
-        a: Wallet(
-            address=agents.index(a),
-            balance=types.Quantity(amount=FixedPoint(0), unit=types.TokenType.BASE),
-        )
-        for a in agents
-    }
+        # Create deltas
+        deltas = positions.diff()
+        deltas.iloc[0] = positions.iloc[0]
 
-    # %%
-    pnl_data: list[dict[str, float]] = []
-    time_data: list[datetime] = []  # TODO: Figure out type of timestamps. datetime?
-    for _, row in trade_data.iterrows():
-        new_pnl: dict[str, float] = {}
-        for agent in agents:
-            agent_shortname = agent[:6] + "..." + agent[-4:]
+        # Create NaNs of the same size as deltas
+        share_price_on_increases = pd.DataFrame(data=pd.NA, index=deltas.index, columns=deltas.columns)
 
-            marginal_trades = pd.DataFrame(row).T
+        # Replace positive deltas with share_price
+        share_price_on_increases = share_price_on_increases.where(deltas <= 0, share_price, axis=0)
 
-            # pass in one trade at a time, and get out the updated wallet
-            agent_wallets[agent] = get_wallet_from_onchain_trade_info(
-                address=agent,
-                trades=marginal_trades,
-                index=agents.index(agent),
-                add_to_existing_wallet=agent_wallets[agent],
+        # Fill forward to replace NaNs, to have updated share prices only on position increases
+        share_price_on_increases.fillna(method="ffill", inplace=True, axis=0)
+
+        # Calculate weighted average share price across all deltas
+        # weighted_average_share_price = (share_price_on_increases * deltas).cumsum(axis=0) / positions
+        weighted_average_share_price = pd.DataFrame(data=pd.NA, index=deltas.index, columns=deltas.columns)
+        weighted_average_share_price.iloc[0] = share_price_on_increases.iloc[0]
+        for row in deltas.index[1:]:
+            # index positive deltas
+            cols = deltas.loc[row, :] > 0
+
+            new_avg = []
+            if len(cols) > 0:
+                # calculate update
+                # new_avg = (old_amount * old_avg + delta_amount * delta_avg) / (old_amount + delta_amount)
+                new_avg = (
+                    share_price_on_increases.loc[row, cols] * deltas.loc[row, cols]
+                    + weighted_average_share_price.loc[row - 1, cols] * positions.loc[row - 1, cols]
+                ) / (deltas.loc[row, cols] + positions.loc[row - 1, cols])
+
+            # keep previous result where delta isn't positive, otherwise replace with new_avg
+            weighted_average_share_price.loc[row, :] = weighted_average_share_price.loc[row - 1, :].where(
+                ~cols, new_avg, axis=0
             )
+
+        agent_info[agent] = Info(
+            wallet=wallet,
+            positions=positions,
+            deltas=deltas,
+            open_share_price=share_price_on_increases,
+        )
+    return agent_info
+
+
+def calculate_pnl(pool_config, pool_info, checkpoint_info):
+    """Calculate pnl for all agents."""
+    #  pylint: disable=too-many-locals
+    session = postgres.initialize_session()
+    all_agent_info = get_agent_info(session)
+    position_duration = pool_config.positionDuration.iloc[0]
+
+    for _, agent_info in all_agent_info.items():
+        wallet, positions, deltas, open_share_price = agent_info
+        for block in agent_info.wallet.index:
+            position = positions.loc[block]
+            current_wallet = wallet.loc[block, :]
+            state = pool_info.loc[block]
+            if block in checkpoint_info.index:  # a checkpoint exists
+                current_checkpoint = checkpoint_info.loc[block]
+                maturity = current_checkpoint["timestamp"] + pd.Timedelta(seconds=position_duration)
+            else:
+                maturity = None
 
             spot_price = calculate_spot_price(
-                row.share_reserves,
-                row.bond_reserves,
-                row.lp_total_supply,
-                row.maturity_time,
-                row.block_timestamp,
+                state.shareReserves,
+                state.bondReserves,
+                state.lpTotalSupply,
+                maturity,
+                current_wallet.timestamp,
                 position_duration,
             )
-            # print(f"{spot_price=}")
 
-            # LP value (TODO: check why certain agents own more than 100% of the pool)
-            total_lp_value = row.share_reserves / 1e18 * row.share_price / 1e18 + row.bond_reserves / 1e18 * spot_price
-            share_of_pool = float(agent_wallets[agent].lp_tokens) / (row.lp_total_supply / 1e18)
-            # print(f"{float(agent_wallets[agent].lp_tokens)=}")
-            # print(f"{row.lp_total_supply/1e18=}")
-            pnl = share_of_pool * total_lp_value
+            pnl = 0
+            for position_name in positions.columns:
+                if position_name.startswith("LP"):
+                    # LP value (TODO: check why certain agents own more than 100% of the pool)
+                    total_lp_value = state.shareReserves * state.sharePrice + state.bondReserves * spot_price
+                    share_of_pool = position.LP / state.lpTotalSupply
+                    assert share_of_pool < 1, "share_of_pool must be less than 1"
+                    pnl += share_of_pool * total_lp_value
+                elif position_name.startswith("LONG"):
+                    # LONG value
+                    pnl += position.loc[position_name] * spot_price
+                elif position_name.startswith("SHORT"):
+                    # SHORT value is calculated as the:
+                    # total amount paid for the position (position * 1)
+                    # minus the closing cost (position * spot_price)
+                    # this equals position * (1 - spot_price)
+                    pnl += position.loc[position_name] * (1 - spot_price)
 
-            # for each LONG
-            for _, long in agent_wallets[agent].longs.items():
-                pnl += float(long.balance) * spot_price
-
-            # for each SHORT
-            for _, short in agent_wallets[agent].shorts.items():
-                pnl += float(short.balance) * (1 - spot_price)
-
-            new_pnl[f"{agent_shortname}"] = pnl
-        pnl_data.append(new_pnl)
-        time_data.append(row["timestamp"])
-
-    # %%
-    y_data = pd.DataFrame(pnl_data)
-    x_data = pd.DataFrame(time_data)
-    return (x_data, y_data)
+            wallet.loc[block, "pnl"] = pnl
+        agent_info = wallet, positions, deltas, open_share_price
+    return all_agent_info
 
 
-def plot_pnl(x_data, y_data, axes):
+def plot_pnl(all_agent_info, axes):
     """Plots the pnl data"""
-    axes.plot(x_data, y_data.ffill())
+    first_agent = list(all_agent_info.keys())[0]
+    first_wallet = all_agent_info[first_agent].wallet
+
+    # pre-allocate plot_data block of maximum size, 1 row for each block, 1 column for each agent
+    plot_data = pd.DataFrame(pd.NA, index=first_wallet.index, columns=all_agent_info.keys())
+    for agent, agent_info in all_agent_info.items():
+        wallet, _, _, _ = agent_info
+        # insert agent's pnl into the plot_data block
+        plot_data.loc[wallet.index, agent] = wallet["pnl"]
+
+    # plot everything in one go
+    axes.plot(plot_data)
+
     # change y-axis unit format to #,###.0f
     axes.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(int(x), ",")))
 
@@ -209,8 +251,6 @@ def plot_pnl(x_data, y_data, axes):
     axes.yaxis.tick_right()
     axes.set_title("pnl over time")
 
-    # make this work: col_names.replace("_pnl","")
-    col_names = y_data.columns
-    axes.legend([col_names.replace("_pnl", "") for col_names in col_names])
+    axes.legend()
 
     # %%

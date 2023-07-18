@@ -172,7 +172,11 @@ def main(
     )
 
     # get pool config from hyperdrive contract
-    pool_config = db_schema.PoolConfig(**hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract))
+    pool_config_dict = hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract)
+    for key in db_schema.PoolConfig.__annotations__:
+        if key not in pool_config_dict:
+            pool_config_dict[key] = None
+    pool_config = db_schema.PoolConfig(**pool_config_dict)
     postgres.add_pool_config(pool_config, session)
 
     # Get last entry of pool info in db
@@ -257,19 +261,24 @@ def main(
                     postgres.add_pool_infos([block_pool_info], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
-                checkpoint_info = None
+                block_checkpoint_info = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        checkpoint_info = hyperdrive_interface.get_hyperdrive_checkpoint_info(
+                        checkpoint_info_dict = hyperdrive_interface.get_hyperdrive_checkpoint_info(
                             web3, hyperdrive_contract, block_number
                         )
+                        # Set defaults
+                        for key in db_schema.CheckpointInfo.__annotations__:
+                            if key not in checkpoint_info_dict:
+                                checkpoint_info_dict[key] = None
+                        block_checkpoint_info = db_schema.CheckpointInfo(**checkpoint_info_dict)
                         break
                     except ValueError:
                         logging.warning("Error in get_hyperdrive_checkpoint_info, retrying")
                         time.sleep(1)
                         continue
-                if checkpoint_info:
-                    postgres.add_checkpoint_infos([checkpoint_info], session)
+                if block_checkpoint_info:
+                    postgres.add_checkpoint_infos([block_checkpoint_info], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_transactions = None

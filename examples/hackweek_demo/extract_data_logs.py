@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import time
+import logging
 
 import numpy as np
 import pandas as pd
@@ -33,9 +34,9 @@ def calculate_spot_price(
     share_reserves,
     bond_reserves,
     lp_total_supply,
-    maturity_timestamp=1.0,
-    block_timestamp=0.0,
-    position_duration=1.0,
+    maturity_timestamp=None,
+    block_timestamp=None,
+    position_duration=None,
 ):
     """Calculates the spot price given the pool info data"""
     # pylint: disable=too-many-arguments
@@ -44,10 +45,21 @@ def calculate_spot_price(
     initial_share_price = 1
     time_remaining_stretched = 0.045071688063194093
     full_term_spot_price = (
-        (initial_share_price * (share_reserves / 1e18)) / ((bond_reserves / 1e18) + (lp_total_supply / 1e18))
+        (initial_share_price * share_reserves) / (bond_reserves + lp_total_supply)
     ) ** time_remaining_stretched
 
-    time_left_in_years = (maturity_timestamp - block_timestamp) / position_duration
+    if maturity_timestamp is None or block_timestamp is None or position_duration is None:
+        return full_term_spot_price
+    time_left_seconds = maturity_timestamp - block_timestamp
+    if isinstance(time_left_seconds, pd.Timedelta):
+        time_left_seconds = time_left_seconds.total_seconds()
+    time_left_in_years = time_left_seconds / position_duration
+    logging.info(
+        " spot price is weighted average of %s(%s) and 1 (%s)",
+        full_term_spot_price,
+        time_left_in_years,
+        1 - time_left_in_years,
+    )
 
     return full_term_spot_price * time_left_in_years + 1 * (1 - time_left_in_years)
 
