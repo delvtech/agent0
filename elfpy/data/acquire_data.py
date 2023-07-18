@@ -207,9 +207,14 @@ def main(
                 block_pool_info = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        block_pool_info = db_schema.PoolInfo(
-                            **hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
+                        pool_info_dict = hyperdrive_interface.get_hyperdrive_pool_info(
+                            web3, hyperdrive_contract, block_number
                         )
+                        # Set defaults
+                        for key in db_schema.PoolInfo.__annotations__.keys():
+                            if key not in pool_info_dict.keys():
+                                pool_info_dict[key] = None
+                        block_pool_info = db_schema.PoolInfo(**pool_info_dict)
                         break
                     except ValueError:
                         logging.warning("Error in get_block_pool_info, retrying")

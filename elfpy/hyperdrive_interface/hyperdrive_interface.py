@@ -94,28 +94,29 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
     dict
         A pool_info dict ready to be inserted into the Postgres PoolInfo schema
     """
-    pool_info_data_dict = eth.smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
-    pool_info_data_dict: dict[str, Any] = {
-        str(key): eth.convert_scaled_value(value) for (key, value) in pool_info_data_dict.items()
-    }
+    # get pool info from smart contract
+    pool_info = eth.smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
+    # convert values to float
+    pool_info: dict[str, Any] = {str(key): eth.convert_scaled_value(value) for (key, value) in pool_info.items()}
+    # get current block information & add to pool info
     current_block: BlockData = web3.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
     if current_block_timestamp is None:
         raise AssertionError("Current block has no timestamp")
-    pool_info_data_dict.update({"timestamp": datetime.fromtimestamp(current_block_timestamp)})
-    pool_info_data_dict.update({"blockNumber": block_number})
-    pool_info_dict = {}
+    pool_info.update({"timestamp": datetime.fromtimestamp(current_block_timestamp)})
+    pool_info.update({"blockNumber": block_number})
+    # add position duration to the data dict
     position_duration = eth.smart_contract_read(hyperdrive_contract, "getPoolConfig").get("positionDuration", None)
     if position_duration is not None:
         asset_id = hyperdrive_assets.encode_asset_id(
             hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, position_duration
         )
-        pool_info_dict["totalSupplyWithdrawalShares"] = eth.smart_contract_read(
+        pool_info["totalSupplyWithdrawalShares"] = eth.smart_contract_read(
             hyperdrive_contract, "balanceOf", asset_id, hyperdrive_contract.address
-        )
+        )["value"]
     else:
-        pool_info_dict["total_supply_withdraw_shares"] = None
-    return pool_info_dict
+        pool_info["totalSupplyWithdrawalShares"] = None
+    return pool_info
 
 
 def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict[str, Any]:
@@ -190,7 +191,7 @@ def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> Hyperdri
         withdraw_capital=FixedPoint(0),
         withdraw_interest=FixedPoint(0),
     )
-    # FIXME: Would it be safe to assume that earliest_block.timestamp always equals zero?
+    # TODO: Would it be safe to assume that earliest_block.timestamp always equals zero?
     time_elapsed = (
         datetime.utcfromtimestamp(current_block.timestamp) - datetime.utcfromtimestamp(earliest_block.timestamp)
     ).total_seconds()
