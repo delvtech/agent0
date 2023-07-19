@@ -209,7 +209,7 @@ def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> Hyperdri
         curve_fee_multiple=FixedPoint(pool_config["curveFee"]),
         flat_fee_multiple=FixedPoint(pool_config["flatFee"]),
         governance_fee_multiple=FixedPoint(pool_config["governanceFee"]),
-        init_share_price=FixedPoint(pool_config["initializeSharePrice"]),
+        init_share_price=FixedPoint(pool_config["initialSharePrice"]),
         long_average_maturity_time=FixedPoint(pool_info["longAverageMaturityTime"]),
         longs_outstanding=FixedPoint(pool_info["longsOutstanding"]),
         lp_total_supply=FixedPoint(pool_info["lpTotalSupply"]),
