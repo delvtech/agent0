@@ -1031,6 +1031,7 @@ def attempt_txn(
         prepped_txn: TransactionAPI = agent.prepare_transaction(serial_txn)
         signed_txn: TransactionAPI | None = agent.sign_transaction(prepped_txn)
         logging.debug(" => sending signed_txn %s", signed_txn)
+        logging.debug(" => required_confirmations=%s",agent.provider.network.required_confirmations)
         if signed_txn is None:
             raise ValueError("Failed to sign transaction")
         try:
