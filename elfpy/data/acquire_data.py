@@ -1,4 +1,4 @@
-"""Script to format on-chain hyperdrive pool, config, and transaction data post-processing"""
+"""Script to format on-chain hyperdrive pool, config, and transaction data post-processing."""
 from __future__ import annotations
 
 import logging
@@ -31,13 +31,14 @@ def get_wallet_info(
     transactions: list[db_schema.Transaction],
     pool_info: db_schema.PoolInfo,
 ) -> list[db_schema.WalletInfo]:
-    """Retrieves wallet information at a given block given a transaction
+    """Retrieve wallet information at a given block given a transaction.
+
     Transactions are needed here to get
     (1) the wallet address of a transaction, and
     (2) the token id of the transaction
 
     Arguments
-    ----------
+    ---------
     hyperdrive_contract : Contract
         The deployed hyperdrive contract instance.
     base_contract : Contract
@@ -46,6 +47,8 @@ def get_wallet_info(
         The block number to query
     transactions : list[db_schema.Transaction]
         The list of transactions to get events from
+    pool_info : db_schema.PoolInfo
+        The associated pool info, used to extract share price
 
     Returns
     -------
@@ -132,7 +135,23 @@ def main(
     lookback_block_limit: int,
     sleep_amount: int,
 ):
-    """Main entry point for accessing contract & writing pool info"""
+    """Execute the data acquisition pipeline.
+
+    Arguments
+    ---------
+    contracts_url : str
+        The url of the artifacts server from which we get addresses.
+    ethereum_node : URI | str
+        The url to the ethereum node
+    abi_dir : str
+        The path to the abi directory
+    start_block : int
+        The starting block to filter the query on
+    lookback_block_limit : int
+        The maximum number of blocks to loko back when filling in missing data
+    sleep_amount : int
+        The amount of seconds to sleep between queries
+    """
     # TODO: refactor this function, its waaay to big as indicated by these pylints
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
@@ -177,11 +196,23 @@ def main(
         # Query and add block_pool_info
         pool_info_dict = hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
         # Set defaults
-        for key in db_schema.PoolInfo.__annotations__.keys():
-            if key not in pool_info_dict.keys():
+        # TODO: abstract this out: pull the conversion between the interface to the db object into various functions
+        for key in db_schema.PoolInfo.__annotations__:
+            if key not in pool_info_dict:
                 pool_info_dict[key] = None
         block_pool_info = db_schema.PoolInfo(**pool_info_dict)
         postgres.add_pool_infos([block_pool_info], session)
+
+        # Query and add block_checkpoint_info
+        checkpoint_info_dict = hyperdrive_interface.get_hyperdrive_checkpoint_info(
+            web3, hyperdrive_contract, block_number
+        )
+        # Set defaults
+        for key in db_schema.CheckpointInfo.__annotations__:
+            if key not in checkpoint_info_dict:
+                checkpoint_info_dict[key] = None
+        block_checkpoint_info = db_schema.CheckpointInfo(**checkpoint_info_dict)
+        postgres.add_checkpoint_infos([block_checkpoint_info], session)
         # Query and add block transactions
         block_transactions = db_schema.fetch_transactions_for_block(web3, hyperdrive_contract, block_number)
         postgres.add_transactions(block_transactions, session)
@@ -205,8 +236,7 @@ def main(
                         latest_mined_block,
                     )
                     continue
-                # get_block_pool_info crashes randomly with ValueError on some intermediate block,
-                # keep trying until it returns
+                # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_pool_info = None
                 for _ in range(RETRY_COUNT):
                     try:
@@ -214,17 +244,19 @@ def main(
                             web3, hyperdrive_contract, block_number
                         )
                         # Set defaults
-                        for key in db_schema.PoolInfo.__annotations__.keys():
-                            if key not in pool_info_dict.keys():
+                        for key in db_schema.PoolInfo.__annotations__:
+                            if key not in pool_info_dict:
                                 pool_info_dict[key] = None
                         block_pool_info = db_schema.PoolInfo(**pool_info_dict)
                         break
                     except ValueError:
-                        logging.warning("Error in get_block_pool_info, retrying")
+                        logging.warning("Error in get_hyperdrive_pool_info, retrying")
                         time.sleep(1)
                         continue
                 if block_pool_info:
                     postgres.add_pool_infos([block_pool_info], session)
+
+                # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_transactions = None
                 for _ in range(RETRY_COUNT):
                     try:

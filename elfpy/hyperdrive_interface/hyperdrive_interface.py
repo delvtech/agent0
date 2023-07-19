@@ -119,6 +119,39 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
     return pool_info
 
 
+def get_hyperdrive_checkpoint_info(
+    web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber
+) -> dict[str, Any]:
+    """Returns the checkpoitn info of Hyperdrive contract for the given block.
+
+    Arguments
+    ---------
+    web3: Web3
+        web3 provider object
+    hyperdrive_contract: Contract
+        The contract to query the pool info from
+    block_number: BlockNumber
+        The block number to query from the chain
+
+    Returns
+    -------
+    Checkpoint
+        A Checkpoint object ready to be inserted into Postgres
+    """
+    current_block: BlockData = web3.eth.get_block(block_number)
+    current_block_timestamp = current_block.get("timestamp")
+    if current_block_timestamp is None:
+        raise AssertionError("Current block has no timestamp")
+    checkpoint_data: dict[str, int] = eth.smart_contract_read(hyperdrive_contract, "getCheckpoint", block_number)
+    return {
+        "blockNumber": int(block_number),
+        "timestamp": datetime.fromtimestamp(current_block_timestamp),
+        "sharePrice": eth.convert_scaled_value(checkpoint_data["sharePrice"]),
+        "longSharePrice": eth.convert_scaled_value(checkpoint_data["longSharePrice"]),
+        "shortBaseVolume": eth.convert_scaled_value(checkpoint_data["shortBaseVolume"]),
+    }
+
+
 def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict[str, Any]:
     """Get the hyperdrive config from a deployed hyperdrive contract.
 

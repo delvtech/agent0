@@ -8,21 +8,34 @@ from typing import Type
 
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import URL, create_engine, func
+from sqlalchemy import URL, create_engine, func, inspect, MetaData, Table, exc
 from sqlalchemy.orm import Session, sessionmaker
 
-from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, Transaction, UserMap, WalletInfo
+from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, CheckpointInfo, Transaction, UserMap, WalletInfo
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
 
-# replace the user, password, and db_name with credentials
-# TODO remove engine as global
-
 
 @dataclass
 class PostgresConfig:
-    """The configuration dataclass for postgress connections"""
+    """The configuration dataclass for postgress connections.
+
+    Replace the user, password, and db_name with the credentials of your setup.
+
+    Attributes
+    ----------
+    POSTGRES_USER : str
+        The username to authentiate with
+    POSTGRES_PASSWORD : str
+        The password to authentiate with
+    POSTGRES_DB : str
+        The name of the database
+    POSTGRES_HOST : str
+        The hostname to connect to
+    POSTGRES_PORT : int
+        The port to connect to
+    """
 
     # default values for local postgres
     # Matching environemnt variables to search for
@@ -35,8 +48,14 @@ class PostgresConfig:
 
 
 def build_postgres_config() -> PostgresConfig:
-    """Build a PostgresConfig that looks for environmental variables
+    """Build a PostgresConfig that looks for environmental variables.
+
     If env var exists, use that, otherwise, default
+
+    Returns
+    -------
+    config : PostgresConfig
+        Config settings required to connect to and use the database
     """
     user = os.getenv("POSTGRES_USER")
     password = os.getenv("POSTGRES_PASSWORD")
@@ -59,8 +78,50 @@ def build_postgres_config() -> PostgresConfig:
     return PostgresConfig(**arg_dict)
 
 
+def query_tables(session: Session) -> list[str]:
+    """Return a list of tables in the database.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+
+    Returns
+    -------
+    table_names : list[str]
+        A list of table names in the database
+    """
+    inspector = inspect(session.bind)  # nice gadget
+    assert inspector is not None, "inspector is None"
+    return inspector.get_table_names()
+
+
+def drop_table(session: Session, table_name: str) -> None:
+    """Drop a table from the database.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    table_names : str
+        The name of the table to be dropped
+    """
+    metadata = MetaData()
+    table = Table(table_name, metadata)
+    bind = session.bind
+    assert isinstance(bind, sqlalchemy.engine.base.Engine), "bind is not an engine"
+    # checkfirst=true automatically adds an "IF EXISTS" clause
+    table.drop(checkfirst=True, bind=bind)
+
+
 def initialize_session() -> Session:
-    """Initialize the database if not already initialized"""
+    """Initialize the database if not already initialized.
+
+    Returns
+    -------
+    session : Session
+        The initialized session object
+    """
 
     postgres_config = build_postgres_config()
 
@@ -90,7 +151,7 @@ def initialize_session() -> Session:
 
 
 def close_session(session: Session) -> None:
-    """Close the session
+    """Close the session.
 
     Arguments
     ---------
@@ -101,7 +162,8 @@ def close_session(session: Session) -> None:
 
 
 def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session) -> None:
-    """Add wallet info to the walletinfo table
+    """Add wallet info to the walletinfo table.
+
     Arguments
     ---------
     wallet_infos: list[WalletInfo]
@@ -113,22 +175,22 @@ def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session) -> None:
         session.add(wallet_info)
     try:
         session.commit()
-    except sqlalchemy.exc.DataError as err:  # type: ignore
+    except exc.DataError as err:
         session.rollback()
         print(f"{wallet_infos=}")
         raise err
 
 
 def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
-    """
-    Add pool config to the pool config table if not exist
-    Verify pool config if it does exist
+    """Add pool config to the pool config table if not exist.
+
+    Verify pool config if it does exist.
 
     Arguments
     ---------
-    pool_config: PoolConfig
+    pool_config : PoolConfig
         A PoolConfig object to insert into postgres
-    session: Session
+    session : Session
         The initialized session object
     """
 
@@ -142,7 +204,7 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
         session.add(pool_config)
         try:
             session.commit()
-        except sqlalchemy.exc.DataError as err:  # type: ignore
+        except exc.DataError as err:
             session.rollback()
             print(f"{pool_config=}")
             raise err
@@ -161,55 +223,74 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
 
 
 def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
-    """Add a pool info to the poolinfo table
+    """Add a pool info to the poolinfo table.
 
     Arguments
     ---------
-    pool_infos: list[PoolInfo]
+    pool_infos : list[PoolInfo]
         A list of PoolInfo objects to insert into postgres
-    session: Session
+    session : Session
         The initialized session object
     """
     for pool_info in pool_infos:
         session.add(pool_info)
     try:
         session.commit()
-    except sqlalchemy.exc.DataError as err:  # type: ignore
+    except exc.DataError as err:
         session.rollback()
         print(f"{pool_infos=}")
         raise err
 
 
-def add_transactions(transactions: list[Transaction], session: Session) -> None:
-    """Add transactions to the poolinfo table
+def add_checkpoint_infos(checkpoint_infos: list[CheckpointInfo], session: Session) -> None:
+    """Add checkpoint info to the checkpointinfo table
 
     Arguments
     ---------
-    transactions: list[Transaction]
+    checkpoint_infos : list[Checkpoint]
+        A list of Checkpoint objects to insert into postgres
+    session : Session
+        The initialized session object
+    """
+    for checkpoint_info in checkpoint_infos:
+        session.add(checkpoint_info)
+    try:
+        session.commit()
+    except exc.DataError as err:
+        session.rollback()
+        raise err
+
+
+def add_transactions(transactions: list[Transaction], session: Session) -> None:
+    """Add transactions to the poolinfo table.
+
+    Arguments
+    ---------
+    transactions : list[Transaction]
         A list of Transaction objects to insert into postgres
-    session: Session
+    session : Session
         The initialized session object
     """
     for transaction in transactions:
         session.add(transaction)
     try:
         session.commit()
-    except sqlalchemy.exc.DataError as err:  # type: ignore
+    except exc.DataError as err:
         session.rollback()
         print(f"{transactions=}")
         raise err
 
 
 def add_user_map(username: str, addresses: list[str], session: Session) -> None:
-    """Add username mapping to postgres during evm_bots initialization
+    """Add username mapping to postgres during evm_bots initialization.
 
     Arguments
     ---------
-    username: str
+    username : str
         The logical username to attach to the wallet address
-    addresses: list[str]
+    addresses : list[str]
         A list of wallet addresses to map to the username
-    session: Session
+    session : Session
         The initialized session object
     """
 
@@ -235,20 +316,19 @@ def add_user_map(username: str, addresses: list[str], session: Session) -> None:
 
     try:
         session.commit()
-    except sqlalchemy.exc.DataError as err:  # type: ignore
+    except exc.DataError as err:
         print(f"{username=}, {addresses=}")
         raise err
 
 
 def get_pool_config(session: Session, contract_address: str | None = None) -> pd.DataFrame:
-    """
-    Gets all pool config and returns as a pandas dataframe
+    """Gets all pool config and returns as a pandas dataframe.
 
     Arguments
     ---------
-    session: Session
+    session : Session
         The initialized session object
-    contract_address: str | None
+    contract_address : str | None, optional
         The contract_address to filter the results on. Return all if None
 
     Returns
@@ -263,17 +343,16 @@ def get_pool_config(session: Session, contract_address: str | None = None) -> pd
 
 
 def get_pool_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
-    """
-    Gets all pool info and returns as a pandas dataframe
+    """Gets all pool info and returns as a pandas dataframe.
 
     Arguments
     ---------
-    session: Session
+    session : Session
         The initialized session object
-    start_block: int | None
+    start_block : int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block: int | None
+    end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
 
@@ -302,18 +381,57 @@ def get_pool_info(session: Session, start_block: int | None = None, end_block: i
     return pd.read_sql(query.statement, con=session.connection()).set_index("blockNumber")
 
 
-def get_transactions(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
-    """
-    Gets all transactions and returns as a pandas dataframe
+def get_checkpoint_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+    """Gets all info associated with a given checkpoint.
+
+    This includes
+    - `sharePrice` : The share price of the first transaction in the checkpoint.
+    - `longSharePrice` : The weighted average of the share prices that all longs in the checkpoint were opened at.
+    - `shortBaseVolume` : The aggregate amount of base committed by LPs to pay for bonds sold short in the checkpoint.
 
     Arguments
     ---------
-    session: Session
+    session : Session
         The initialized session object
-    start_block: int | None
+    block : int | None, optional
+        The block number whose checkpoint to return. If None, returns the most recent checkpoint.
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried checkpoint info
+    """
+
+    query = session.query(CheckpointInfo)
+
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = get_latest_block_number_from_table(CheckpointInfo, session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = get_latest_block_number_from_table(CheckpointInfo, session) + end_block + 1
+
+    if start_block is not None:
+        query = query.filter(CheckpointInfo.blockNumber >= start_block)
+    if end_block is not None:
+        query = query.filter(CheckpointInfo.blockNumber < end_block)
+
+    # Always sort by time in order
+    query = query.order_by(CheckpointInfo.timestamp)
+
+    return pd.read_sql(query.statement, con=session.connection()).set_index("blockNumber")
+
+
+def get_transactions(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+    """Gets all transactions and returns as a pandas dataframe.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    start_block : int | None
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block: int | None
+    end_block : int | None
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
 
@@ -340,17 +458,16 @@ def get_transactions(session: Session, start_block: int | None = None, end_block
 
 
 def get_all_wallet_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
-    """
-    Gets all of the wallet_info data in history and returns as a pandas dataframe
+    """Gets all of the wallet_info data in history and returns as a pandas dataframe.
 
     Arguments
     ---------
-    session: Session
+    session : Session
         The initialized session object
-    start_block: int | None
+    start_block : int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block: int | None
+    end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
 
@@ -377,10 +494,11 @@ def get_all_wallet_info(session: Session, start_block: int | None = None, end_bl
 
 
 def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
-    """Gets the history of all wallet info over block time
+    """Gets the history of all wallet info over block time.
+
     Arguments
     ---------
-    session: Session
+    session : Session
         The initialized session object
 
     Returns
@@ -393,7 +511,7 @@ def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
 
     # Get data
     all_wallet_info = get_all_wallet_info(session)
-    pool_info_lookup = get_pool_info(session)[["blockNumber", "timestamp", "sharePrice"]].set_index("blockNumber")
+    pool_info_lookup = get_pool_info(session)[["timestamp", "sharePrice"]]
 
     # Pivot tokenType to columns, keeping walletAddress and blockNumber
     all_wallet_info = all_wallet_info.pivot(
@@ -430,12 +548,12 @@ def get_current_wallet_info(
 
     Arguments
     ---------
-    session: Session
+    session : Session
         The initialized session object
-    start_block: int | None
+    start_block : int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block: int | None
+    end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
 
@@ -449,7 +567,7 @@ def get_current_wallet_info(
     # Get last entry in the table of each wallet address and token type
     # This should always return a dataframe
     # Pandas doesn't play nice with types
-    current_wallet_info: pd.DataFrame = (
+    result = (
         all_wallet_info.sort_values("blockNumber", ascending=False)
         .groupby(["walletAddress", "tokenType"])
         .agg(
@@ -461,7 +579,9 @@ def get_current_wallet_info(
                 "sharePrice": "first",
             }
         )
-    )  # type: ignore
+    )
+    assert isinstance(result, pd.DataFrame), "result is not a dataframe"
+    current_wallet_info: pd.DataFrame = result
 
     # Rename blockNumber column
     current_wallet_info = current_wallet_info.rename({"blockNumber": "latestUpdateBlock"}, axis=1)
@@ -472,7 +592,24 @@ def get_current_wallet_info(
 
 
 def get_agents(session: Session, start_block: int | None = None, end_block: int | None = None) -> list[str]:
-    """Gets the list of all agents from the WalletInfo table"""
+    """Gets the list of all agents from the WalletInfo table.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    start_block : int | None, optional
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block : int | None, optional
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+
+    Returns
+    -------
+    list[str]
+        A list of agent addresses
+    """
     query = session.query(WalletInfo.walletAddress)
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
@@ -495,14 +632,13 @@ def get_agents(session: Session, start_block: int | None = None, end_block: int 
 
 
 def get_user_map(session: Session, address: str | None = None) -> pd.DataFrame:
-    """
-    Gets all usermapping and returns as a pandas dataframe
+    """Gets all usermapping and returns as a pandas dataframe.
 
     Arguments
     ---------
-    session: Session
+    session : Session
         The initialized session object
-    address: str | None
+    address : str | None, optional
         The wallet address to filter the results on. Return all if None
 
     Returns
@@ -521,7 +657,7 @@ def get_latest_block_number(session: Session) -> int:
 
     Arguments
     ---------
-    session: Session
+    session : Session
         The initialized session object
 
     Returns
@@ -532,12 +668,14 @@ def get_latest_block_number(session: Session) -> int:
     return get_latest_block_number_from_table(PoolInfo, session)
 
 
-def get_latest_block_number_from_table(table_obj: Type[WalletInfo | PoolInfo | Transaction], session: Session) -> int:
+def get_latest_block_number_from_table(
+    table_obj: Type[WalletInfo | PoolInfo | Transaction | CheckpointInfo], session: Session
+) -> int:
     """Gets the latest block number based on the specified table in the db.
 
     Arguments
     ---------
-    table : Type[WalletInfo | PoolInfo | Transaction]
+    table_obj : Type[WalletInfo | PoolInfo | Transaction | CheckpointInfo]
         The sqlalchemy class that contains the blockNumber column
     session : Session
         The initialized session object
@@ -547,7 +685,6 @@ def get_latest_block_number_from_table(table_obj: Type[WalletInfo | PoolInfo | T
     int
         The latest block number from the specified table
     """
-
     # For some reason, pylint doesn't like func.max from sqlalchemy
     result = session.query(func.max(table_obj.blockNumber)).first()  # pylint: disable=not-callable
     # If table doesn't exist
