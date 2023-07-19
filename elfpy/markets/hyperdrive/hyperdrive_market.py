@@ -299,8 +299,6 @@ class HyperdriveMarket(
             initial_share_price=self.market_state.init_share_price,
             minimum_share_reserves=self.market_state.minimum_share_reserves,
         )
-        print(f"{max_short_bonds=}")
-        print(f"{self.market_state.bond_reserves=}")
         _, wallet_deltas = hyperdrive_actions.calc_open_short(
             bond_amount=max_short_bonds,
             market_state=self.market_state,

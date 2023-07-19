@@ -386,9 +386,6 @@ def calc_open_short(
         open_share_price = market_state.init_share_price
     else:
         open_share_price = checkpoint.share_price
-    print(f"{latest_checkpoint_time=}")
-    print(f"{open_share_price=}")
-    print(f"{market_state.share_price=}")
     trader_deposit = calc_short_proceeds(
         bond_amount=bond_amount,
         share_amount=share_proceeds,

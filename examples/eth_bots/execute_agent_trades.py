@@ -53,10 +53,6 @@ def execute_agent_trades(
             # sort through the trades
             # TODO: raise issue on failure by looking at `tx_receipt` returned from function
             if trade_object.trade.action_type == MarketActionType.OPEN_LONG:
-                print(f"{trade_amount=}")
-                print(f"{min_output=}")
-                print(f"{account.checksum_address=}")
-                print(f"{hyperdrive_market.market_state=}")
                 _ = eth.smart_contract_transact(
                     web3,
                     hyperdrive_contract,
