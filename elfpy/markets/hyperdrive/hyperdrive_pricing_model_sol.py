@@ -92,10 +92,12 @@ def calculate_max_long(
     # into negative interest territory. Hyperdrive has solvency requirements since it mints longs on
     # demand. If the maximum buy satisfies our solvency checks, then we're done. If not, then we
     # need to solve for the maximum trade size iteratively.
-    time_remaining = FixedPoint(1)
-    time_elapsed = ONE_18 - time_remaining * time_stretch
     dz, dy = yieldspace_pricing_model_sol.calculate_max_buy(
-        share_reserves, bond_reserves, time_elapsed, share_price, initial_share_price
+        share_reserves,
+        bond_reserves,
+        ONE_18 - FixedPoint(1) * time_stretch,  # time_elapsed = 1 - time_remaining * time_stretch,
+        share_price,
+        initial_share_price,
     )
     if share_reserves + dz >= (longs_outstanding + dy) / share_price + minimum_share_reserves:
         return MaxLongResult(base_amount=dz * share_price, bond_amount=dy)
