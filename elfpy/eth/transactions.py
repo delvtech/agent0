@@ -9,7 +9,7 @@ from web3.contract.contract import Contract, ContractFunction
 from web3.exceptions import ContractCustomError, ContractLogicError
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, TxReceipt
 
-from elfpy.hyperdrive_interface.errors import decode_hyperdrive_errors
+from elfpy.hyperdrive_interface.errors import lookup_hyperdrive_error_selector
 
 from .accounts import EthAccount
 
@@ -87,7 +87,7 @@ def smart_contract_transact(
     except ContractCustomError as err:
         logging.error(
             "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",
-            decode_hyperdrive_errors(err.args[0]),
+            lookup_hyperdrive_error_selector(err.args[0]),
             function_name_or_signature,
             fn_args,
         )
