@@ -15,7 +15,6 @@ import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
 from elfpy.markets.base import BaseMarket, BaseMarketState
-from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet_deltas import WalletDeltas
 
 from .checkpoint import Checkpoint
@@ -136,7 +135,6 @@ class HyperdriveMarketState(BaseMarketState):
         self.bond_buffer += delta.d_bond_buffer
         self.lp_total_supply += delta.d_lp_total_supply
         self.share_price += delta.d_share_price
-        self.minimum_share_price: FixedPoint = FixedPoint(0)
         # tracking open positions
         self.longs_outstanding += delta.longs_outstanding
         self.shorts_outstanding += delta.shorts_outstanding
