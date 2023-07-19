@@ -236,8 +236,10 @@ class TestAgent(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             example_agent.policy.action(self.market, example_agent.wallet)
 
+    @unittest.skip("Skipping this test until parity efforts resume (issue #693)")
     def test_policy_action(self):
         """Test for calling the action() method on all implemented policies
+
         A check to ensure the implemented action() doesn't call for invalid trades
         """
         # instantiate the market

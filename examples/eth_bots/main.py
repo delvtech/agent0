@@ -90,13 +90,13 @@ def main():  # TODO: Move much of this out of main
                 trade_streak,
             )
             try:
-                execute_agent_trades(
+                trade_streak = execute_agent_trades(
                     web3,
                     hyperdrive_contract,
                     agent_accounts,
+                    trade_streak,
                 )
                 last_executed_block = latest_block_number
-                trade_streak += 1
                 # TODO: if provider.auto_mine is set then run the `mine` function
             # we want to catch all exceptions
             # pylint: disable=broad-exception-caught

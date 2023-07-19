@@ -50,7 +50,7 @@ class Config(types.FrozenClass):
     # fee multiple applied to the curve and flat fees, paid to the governance contract
     governance_fee_multiple: float = 0.0
     # desired fixed apr for as a decimal
-    target_fixed_apr: float = 0.1
+    target_fixed_apr: float = 0.01
 
     # Simulation
     # durations

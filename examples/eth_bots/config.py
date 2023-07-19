@@ -14,7 +14,7 @@ from elfpy.bots import BotInfo, Budget, EnvironmentConfig
 agent_config: list[BotInfo] = [
     BotInfo(
         policy=Policies.random_agent,
-        number_of_bots=3,
+        number_of_bots=6,
         budget=Budget(
             mean_wei=int(1e18),  # 1 ETH
             std_wei=int(1e17),  # 0.1 ETH
@@ -25,7 +25,7 @@ agent_config: list[BotInfo] = [
     ),
     BotInfo(
         policy=Policies.long_louie,
-        number_of_bots=5,
+        number_of_bots=2,
         budget=Budget(
             mean_wei=int(1e18),  # 1 ETH
             std_wei=int(1e17),  # 0.1 ETH

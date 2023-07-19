@@ -209,6 +209,13 @@ class BasePricingModel(ABC):
 
     def calc_time_stretch(self, apr: FixedPoint) -> FixedPoint:
         """Returns fixed time-stretch value based on current apr (as a FixedPoint)"""
+        # TODO: Move to this when we restart the solidity parity effort
+        # issue #692
+        # apr_percent = apr * FixedPoint("100.0")  # bounded between 0 and 100
+        # time_stretch = FixedPoint("5.24592") / (
+        #     FixedPoint("0.04665") * apr_percent
+        # )  # bounded between ~1.109 (apr=1) and inf (apr=0)
+        # return FixedPoint(1) / time_stretch
         apr_percent = apr * FixedPoint("100.0")  # bounded between 0 and 100
         return FixedPoint("3.09396") / (
             FixedPoint("0.02789") * apr_percent
@@ -239,9 +246,10 @@ class BasePricingModel(ABC):
             "1.0"
         ), f"expected init_share_price >= 1, not share_price={market_state.init_share_price}"
         reserves_difference = abs(market_state.share_reserves * market_state.share_price - market_state.bond_reserves)
-        assert (
-            reserves_difference < elfpy.MAX_RESERVES_DIFFERENCE
-        ), f"expected reserves_difference < {elfpy.MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
+        assert reserves_difference < elfpy.MAX_RESERVES_DIFFERENCE, (
+            f"expected reserves_difference = abs(share_reserves * share_price - bond_reserves) "
+            f"to be < {elfpy.MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
+        )
         assert (
             FixedPoint("1.0") >= market_state.curve_fee_multiple >= FixedPoint("0.0")
         ), f"expected 1 >= curve_fee_multiple >= 0, not {market_state.curve_fee_multiple}!"

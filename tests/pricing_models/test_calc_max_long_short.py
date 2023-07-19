@@ -27,57 +27,56 @@ class TestCalculateMax(unittest.TestCase):
     """Tests calculate_max_short and calculate_max_long functions within the pricing model"""
 
     def test_calculate_max_long(self):
-        """
-        Tests that calculate_max_long and calculate_max_short are safe, by checking
-            apr >= 0
-            share_price * market_state.share_reserves >= base_buffer
-            bond_reserves >= bond_buffer
+        """Tests that calculate_max_long and calculate_max_short are safe
+
+        Values from Hyperdrive
+
+        # Market information pre-trade
+        poolConfig
+            initialSharePrice 1000000000000000000
+            minimumShareReserves 1000000000000000000
+            positionDuration 31536000
+            checkpointDuration 86400
+            timeStretch 44463125629060298
+            governance 0x71554DE85ecD7bDD19e24078e518ead88d691871
+            feeCollector 0xd002315CAcB4882e1099EDFb00895Fa8867256B5
+            fees.curve 0
+            fees.flat 0
+            fees.governance 0
+            oracleSize 5
+            updateGap 1000
+        poolInfo
+            shareReserves 500000000000000000000000000
+            bondReserves 1498059016940075710500000000
+            lpTotalSupply 499999999000000000000000000
+            sharePrice 1000000000000000000
+            longsOutstanding 0
+            longAverageMaturityTime 0
+            shortsOutstanding 0
+            shortAverageMaturityTime 0
+            shortBaseVolume 0
+            withdrawalSharesReadyToWithdraw 0
+
+        # Expected result
+        baseAmount 493213221042049515844300901
+        bondAmount 504845795898026194655699099
+
+        # Market information post-trade
+        poolInfo
+            shareReserves 993213221042049515844300901
+            bondReserves 993213221042049549613550417
+            lpTotalSupply 499999999000000000000000000
+            sharePrice 1000000000000000000
+            longsOutstanding 504845795898026160886449583
+            longAverageMaturityTime 126144000000000000000000000
+            shortsOutstanding 0
+            shortAverageMaturityTime 0
+            shortBaseVolume 0
+            withdrawalSharesReadyToWithdraw 0
+            withdrawalSharesProceeds 0
         """
         log_utils.setup_logging(log_filename="test_calculate_max")
         pricing_model: HyperdrivePricingModel = HyperdrivePricingModel()
-
-        # Values from Hyperdrive
-        # poolConfig
-        #     initialSharePrice 1000000000000000000
-        #     minimumShareReserves 1000000000000000000
-        #     positionDuration 31536000
-        #     checkpointDuration 86400
-        #     timeStretch 44463125629060298
-        #     governance 0x71554DE85ecD7bDD19e24078e518ead88d691871
-        #     feeCollector 0xd002315CAcB4882e1099EDFb00895Fa8867256B5
-        #     fees.curve 0
-        #     fees.flat 0
-        #     fees.governance 0
-        #     oracleSize 5
-        #     updateGap 1000
-
-        # poolInfo
-        #     shareReserves 500000000000000000000000000
-        #     bondReserves 1498059016940075710500000000
-        #     lpTotalSupply 499999999000000000000000000
-        #     sharePrice 1000000000000000000
-        #     longsOutstanding 0
-        #     longAverageMaturityTime 0
-        #     shortsOutstanding 0
-        #     shortAverageMaturityTime 0
-        #     shortBaseVolume 0
-        #     withdrawalSharesReadyToWithdraw 0
-
-        # baseAmount 493213221042049515844300901
-        # bondAmount 504845795898026194655699099
-
-        # poolInfo
-        #     shareReserves 993213221042049515844300901
-        #     bondReserves 993213221042049549613550417
-        #     lpTotalSupply 499999999000000000000000000
-        #     sharePrice 1000000000000000000
-        #     longsOutstanding 504845795898026160886449583
-        #     longAverageMaturityTime 126144000000000000000000000
-        #     shortsOutstanding 0
-        #     shortAverageMaturityTime 0
-        #     shortBaseVolume 0
-        #     withdrawalSharesReadyToWithdraw 0
-        #     withdrawalSharesProceeds 0
 
         test_case = TestCaseCalcMax(
             market_state=HyperdriveMarketState(
@@ -101,7 +100,9 @@ class TestCalculateMax(unittest.TestCase):
             test_case.market_state.share_reserves,
             test_case.market_state.bond_reserves,
             test_case.market_state.longs_outstanding,
-            FixedPoint(scaled_value=test_case.market_config.time_stretch),
+            # TODO: remove inversion once we switch base_pricing_model.calc_time_stretch to return 1/t
+            # issue #692
+            FixedPoint(1) / FixedPoint(scaled_value=test_case.market_config.time_stretch),
             test_case.market_state.share_price,
             test_case.market_state.share_price,
             test_case.market_config.minimum_share_reserves,
@@ -175,7 +176,9 @@ class TestCalculateMax(unittest.TestCase):
             test_case.market_state.share_reserves,
             test_case.market_state.bond_reserves,
             test_case.market_state.longs_outstanding,
-            FixedPoint(scaled_value=test_case.market_config.time_stretch),
+            # TODO: remove inversion once we switch base_pricing_model.calc_time_stretch to return 1/t
+            # issue #692
+            FixedPoint(1) / FixedPoint(scaled_value=test_case.market_config.time_stretch),
             test_case.market_state.share_price,
             test_case.market_state.share_price,
             test_case.market_config.minimum_share_reserves,

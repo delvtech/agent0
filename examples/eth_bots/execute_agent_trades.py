@@ -21,7 +21,8 @@ def execute_agent_trades(
     web3: Web3,
     hyperdrive_contract: Contract,
     agent_accounts: list[EthAccount],
-) -> None:
+    trade_streak: int,
+) -> int:
     """Hyperdrive forever into the sunset"""
     # get latest market
     hyperdrive_market = hyperdrive_interface.get_hyperdrive_market(web3, hyperdrive_contract)
@@ -32,7 +33,7 @@ def execute_agent_trades(
         trades: list[elftypes.Trade] = account.agent.get_trades(market=hyperdrive_market)
         for trade_object in trades:
             logging.info(
-                "AGENT %s performing %s for %g",
+                "AGENT %s to perform %s for %g",
                 str(account.checksum_address),
                 trade_object.trade.action_type,
                 float(trade_object.trade.trade_amount),
@@ -45,7 +46,7 @@ def execute_agent_trades(
             )
             # TODO: The following variables are hard coded for now, but should be specified in the trade spec
             max_deposit = trade_amount
-            min_output = 0
+            min_output = trade_amount + 1
             min_apr = int(1)
             max_apr = int(1e18)
             as_underlying = True
@@ -122,4 +123,6 @@ def execute_agent_trades(
                 )
             else:
                 raise NotImplementedError(f"{trade_object.trade.action_type} is not implemented.")
-            # TODO: update wallet
+            trade_streak += 1
+        # TODO: aggregate agent deltas from trade receipts; update agent wallet before leaving loop
+    return trade_streak

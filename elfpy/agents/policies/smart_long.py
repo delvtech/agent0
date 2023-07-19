@@ -94,15 +94,19 @@ class LongLouie(BasePolicy):
             new_bonds_to_match_variable_apr = (
                 market.market_state.bond_reserves - total_bonds_to_match_variable_apr
             ) * market.spot_price
-            # divide by 2 to adjust for changes in share reserves when the trade is executed
-            adjusted_bonds = new_bonds_to_match_variable_apr / FixedPoint(2.0)
+            new_base_to_match_variable_apr = market.pricing_model.calc_shares_out_given_bonds_in(
+                share_reserves=market.market_state.share_reserves,
+                bond_reserves=market.market_state.bond_reserves,
+                lp_total_supply=market.market_state.lp_total_supply,
+                d_bonds=new_bonds_to_match_variable_apr,
+                time_elapsed=FixedPoint(1),  # opening a short, so no time has elapsed
+                share_price=market.market_state.share_price,
+                init_share_price=market.market_state.init_share_price,
+            )
             # get the maximum amount the agent can long given the market and the agent's wallet
             max_base = market.get_max_long_for_account(wallet.balance.amount)
             # don't want to trade more than the agent has or more than the market can handle
-            trade_amount = FixedPointMath.minimum(max_base, adjusted_bonds)
-            # TODO: This is a hack until we fix get_max
-            # issue #440
-            trade_amount = trade_amount / FixedPoint("100.0")
+            trade_amount = FixedPointMath.minimum(max_base, new_base_to_match_variable_apr)
             if trade_amount > WEI:
                 action_list += [
                     Trade(

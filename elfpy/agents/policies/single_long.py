@@ -44,8 +44,7 @@ class SingleLongAgent(BasePolicy):
                     )
                 )
         else:
-            max_base = market.get_max_long_for_account(wallet.balance.amount)
-            trade_amount = max_base / FixedPoint("2.0")
+            trade_amount = market.get_max_long_for_account(wallet.balance.amount)
             action_list.append(
                 Trade(
                     market=MarketType.HYPERDRIVE,

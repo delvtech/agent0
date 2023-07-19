@@ -381,8 +381,11 @@ def calc_open_short(
     share_proceeds += abs(share_reserves_delta)  # delta is negative from p.o.v of market, positive for shorter
 
     # get default zero value if no checkpoint exists.
-    checkpoint = market_state.checkpoints.get(latest_checkpoint_time, Checkpoint())
-    open_share_price = checkpoint.share_price
+    checkpoint = market_state.checkpoints.get(latest_checkpoint_time, None)
+    if checkpoint is None:
+        open_share_price = market_state.init_share_price
+    else:
+        open_share_price = checkpoint.share_price
     trader_deposit = calc_short_proceeds(
         bond_amount=bond_amount,
         share_amount=share_proceeds,
