@@ -685,10 +685,7 @@ def get_latest_block_number_from_table(
     int
         The latest block number from the specified table
     """
-
     # For some reason, pylint doesn't like func.max from sqlalchemy
-    if not isinstance(table_obj, (WalletInfo, PoolInfo, Transaction, CheckpointInfo)):
-        raise ValueError("table_obj input is not a WalletInfo, PoolInfo, Transaction, or CheckpointInfo")
     result = session.query(func.max(table_obj.blockNumber)).first()  # pylint: disable=not-callable
     # If table doesn't exist
     if result is None:
