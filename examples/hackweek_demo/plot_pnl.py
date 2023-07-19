@@ -91,7 +91,8 @@ def plot_pnl(agent_positions: dict[str, pg.AgentPosition], axes):
     axes.plot(plot_data.sort_index(), label=agents)
 
     # change y-axis unit format to #,###.0f
-    axes.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(int(x), ",")))
+    # TODO this is making the y axis text very large, fix
+    # axes.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(float(x), ",")))
 
     # TODO fix these top use axes
     axes.set_xlabel("block timestamp")
