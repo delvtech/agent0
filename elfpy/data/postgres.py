@@ -822,11 +822,9 @@ def get_agent_positions(session: Session, filter_addr: list[str] | None = None) 
         Returns a dictionary keyed by wallet address, value of an agent's position
     """
     if filter_addr is None:
-        out = {agent: AgentPosition(wallet) for agent, wallet in get_wallet_info_history(session).items()}
-    else:
-        out = {
-            agent: AgentPosition(wallet)
-            for agent, wallet in get_wallet_info_history(session).items()
-            if agent in filter_addr
-        }
-    return out
+        return {agent: AgentPosition(wallet) for agent, wallet in get_wallet_info_history(session).items()}
+    return {
+        agent: AgentPosition(wallet)
+        for agent, wallet in get_wallet_info_history(session).items()
+        if agent in filter_addr
+    }
