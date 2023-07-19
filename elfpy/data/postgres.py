@@ -806,6 +806,27 @@ class AgentPosition:
             )
 
 
-def get_agent_positions(session: Session) -> dict[str, AgentPosition]:
-    """Create an AgentPosition for each agent in the wallet history."""
-    return {agent: AgentPosition(wallet) for agent, wallet in get_wallet_info_history(session).items()}
+def get_agent_positions(session: Session, filter_addr: list[str] | None = None) -> dict[str, AgentPosition]:
+    """Create an AgentPosition for each agent in the wallet history.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    filter_addr : list[str] | None
+        Only return these addresses. Returns all if None
+
+    Returns
+    -------
+    dict[str, AgentPosition]
+        Returns a dictionary keyed by wallet address, value of an agent's position
+    """
+    if filter_addr is None:
+        out = {agent: AgentPosition(wallet) for agent, wallet in get_wallet_info_history(session).items()}
+    else:
+        out = {
+            agent: AgentPosition(wallet)
+            for agent, wallet in get_wallet_info_history(session).items()
+            if agent in filter_addr
+        }
+    return out
