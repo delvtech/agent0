@@ -46,7 +46,7 @@ def execute_agent_trades(
             )
             # TODO: The following variables are hard coded for now, but should be specified in the trade spec
             max_deposit = trade_amount
-            min_output = 0
+            min_output = trade_amount + 1
             min_apr = int(1)
             max_apr = int(1e18)
             as_underlying = True
@@ -124,5 +124,5 @@ def execute_agent_trades(
             else:
                 raise NotImplementedError(f"{trade_object.trade.action_type} is not implemented.")
             trade_streak += 1
+        # TODO: aggregate agent deltas from trade receipts; update agent wallet before leaving loop
     return trade_streak
-    # TODO: update wallet

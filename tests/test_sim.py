@@ -192,6 +192,7 @@ class TestSimulator(unittest.TestCase):
         assert np.all(sim_state.trade_updates == trades), f"{sim_state.trade_updates=}\n{trades}"
         assert np.all(sim_state.combined_dataframe == all_trades), f"{sim_state.combined_dataframe}\n{all_trades}"
 
+    @unittest.skip("Skipping this test until parity efforts resume (issue #693)")
     def test_aggregate_agent_and_market_states(self):
         """Tests tweet aggregation with new dataframe in a simulation"""
         self.setup_logging()

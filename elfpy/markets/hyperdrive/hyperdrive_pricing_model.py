@@ -454,7 +454,9 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             share_reserves,
             bond_reserves,
             longs_outstanding,
-            time_stretch,
+            # TODO: remove inversion once we switch base_pricing_model.calc_time_stretch to return 1/t
+            # issue #692
+            FixedPoint(1) / time_stretch,
             share_price,
             initial_share_price,
             minimum_share_reserves,
@@ -498,7 +500,9 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             share_reserves,
             bond_reserves,
             longs_outstanding,
-            time_stretch,
+            # TODO: remove inversion once we switch base_pricing_model.calc_time_stretch to return 1/t
+            # issue #692
+            FixedPoint(1) / time_stretch,
             share_price,
             initial_share_price,
             minimum_share_reserves,

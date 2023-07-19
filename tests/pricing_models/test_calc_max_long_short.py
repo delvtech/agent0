@@ -100,7 +100,9 @@ class TestCalculateMax(unittest.TestCase):
             test_case.market_state.share_reserves,
             test_case.market_state.bond_reserves,
             test_case.market_state.longs_outstanding,
-            FixedPoint(scaled_value=test_case.market_config.time_stretch),
+            # TODO: remove inversion once we switch base_pricing_model.calc_time_stretch to return 1/t
+            # issue #692
+            FixedPoint(1) / FixedPoint(scaled_value=test_case.market_config.time_stretch),
             test_case.market_state.share_price,
             test_case.market_state.share_price,
             test_case.market_config.minimum_share_reserves,
@@ -174,7 +176,9 @@ class TestCalculateMax(unittest.TestCase):
             test_case.market_state.share_reserves,
             test_case.market_state.bond_reserves,
             test_case.market_state.longs_outstanding,
-            FixedPoint(scaled_value=test_case.market_config.time_stretch),
+            # TODO: remove inversion once we switch base_pricing_model.calc_time_stretch to return 1/t
+            # issue #692
+            FixedPoint(1) / FixedPoint(scaled_value=test_case.market_config.time_stretch),
             test_case.market_state.share_price,
             test_case.market_state.share_price,
             test_case.market_config.minimum_share_reserves,

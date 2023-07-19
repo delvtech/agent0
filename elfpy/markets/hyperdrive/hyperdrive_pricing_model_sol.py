@@ -92,8 +92,10 @@ def calculate_max_long(
     # into negative interest territory. Hyperdrive has solvency requirements since it mints longs on
     # demand. If the maximum buy satisfies our solvency checks, then we're done. If not, then we
     # need to solve for the maximum trade size iteratively.
+    time_remaining = FixedPoint(1)
+    time_elapsed = ONE_18 - time_remaining * time_stretch
     dz, dy = yieldspace_pricing_model_sol.calculate_max_buy(
-        share_reserves, bond_reserves, ONE_18 - time_stretch, share_price, initial_share_price
+        share_reserves, bond_reserves, time_elapsed, share_price, initial_share_price
     )
     if share_reserves + dz >= (longs_outstanding + dy) / share_price + minimum_share_reserves:
         return MaxLongResult(base_amount=dz * share_price, bond_amount=dy)
@@ -117,9 +119,7 @@ def calculate_max_long(
     dy = yieldspace_pricing_model_sol.calculate_bonds_out_given_shares_in(
         share_reserves, bond_reserves, dz, ONE_18 - time_stretch, share_price, initial_share_price
     )
-
     result = MaxLongResult(base_amount=FixedPoint(), bond_amount=FixedPoint())
-
     # Our maximum long will be the largest trade size that doesn't fail
     # the solvency check.
     for _ in range(max_iterations):
@@ -154,9 +154,12 @@ def calculate_max_long(
                 dz = FixedPoint(0)
         else:
             dz += approximation_error * p / (ONE_18 - p)
-        dy = yieldspace_pricing_model_sol.calculate_bonds_out_given_shares_in(
+        new_dy = yieldspace_pricing_model_sol.calculate_bonds_out_given_shares_in(
             share_reserves, bond_reserves, dz, ONE_18 - time_stretch, share_price, initial_share_price
         )
+        if bond_reserves - new_dy <= FixedPoint(0):
+            break
+        dy = new_dy
 
     return result
 
