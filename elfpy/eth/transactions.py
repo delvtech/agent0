@@ -6,7 +6,10 @@ from typing import Any, Sequence
 
 from web3 import Web3
 from web3.contract.contract import Contract, ContractFunction
+from web3.exceptions import ContractCustomError, ContractLogicError
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, TxReceipt
+
+from elfpy.hyperdrive_interface.errors import decode_hyperdrive_errors
 
 from .accounts import EthAccount
 
@@ -53,8 +56,8 @@ def smart_contract_transact(
     web3 : Web3
         web3 provider object
     contract : Contract
-        any compiled web3 contract
     function_name : str
+        any compiled web3 contract
         this function must exist in the compiled contract's ABI
     from_account : EthAccount
         the EthAccount that will be used to pay for the gas & sign the transaction
@@ -81,13 +84,22 @@ def smart_contract_transact(
         tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
         # wait for approval to complete
         return web3.eth.wait_for_transaction_receipt(tx_hash)
-    except Exception as err:
-        print(f"{err=}")
-        print(f"{function_name_or_signature=}")
-        print(f"{fn_args=}")
+    except ContractCustomError as err:
+        logging.error(
+            "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",
+            decode_hyperdrive_errors(err.args[0]),
+            function_name_or_signature,
+            fn_args,
+        )
         raise err
-
-        # logging.error()
+    except ContractLogicError as err:
+        logging.error(
+            "ContractLogicError:\n%s\nfunction name:%s\nfunction args: %s",
+            err.message,
+            function_name_or_signature,
+            fn_args,
+        )
+        raise err
 
 
 def _get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunctionParams) -> tuple[str, str]:
@@ -136,75 +148,3 @@ def _contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> lis
     else:  # final condition is a single output
         return_names_and_types = [_get_name_and_type_from_abi(function_outputs[0])]
     return return_names_and_types
-
-
-# TODO: either make a lookup table for these or decode automatically when we see a CustomContractError
-# ##################
-# ### Hyperdrive ###
-# ##################
-# BaseBufferExceedsShareReserves: 0x18846de9
-# InvalidApr: 0x76c22a22
-# InvalidBaseToken: 0x0e442a4a
-# InvalidCheckpointTime: 0xecd29e81
-# InvalidInitialSharePrice: 0x55f2a42f
-# InvalidMaturityTime: 0x987dadd3
-# InvalidPositionDuration: 0x4a7fff9e
-# InvalidFeeAmounts: 0x45ee5986
-# NegativeInterest: 0x512095c7
-# OutputLimit: 0xc9726517
-# Paused: 0x9e87fac8
-# PoolAlreadyInitialized: 0x7983c051
-# TransferFailed: 0x90b8ec18
-# UnexpectedAssetId: 0xe9bf5433
-# UnsupportedToken: 0x6a172882
-# ZeroAmount: 0x1f2a2005
-# ZeroLpTotalSupply: 0x252c3a3e
-# ZeroLpTotalSupply: 0x252c3a3e
-
-# ############
-# ### TWAP ###
-# ############
-# QueryOutOfRange: 0xa89817b0
-
-# ####################
-# ### DataProvider ###
-# ####################
-# UnexpectedSuccess: 0x8bb0a34b
-
-# ###############
-# ### Factory ###
-# ###############
-# Unauthorized: 0x82b42900
-# InvalidContribution: 0x652122d9
-# InvalidToken: 0xc1ab6dc1
-
-# ######################
-# ### ERC20Forwarder ###
-# ######################
-# BatchInputLengthMismatch: 0xba430d38
-# ExpiredDeadline: 0xf87d9271
-# InvalidSignature: 0x8baa579f
-# InvalidERC20Bridge: 0x2aab8bd3
-# RestrictedZeroAddress: 0xf0dd15fd
-
-# ###################
-# ### BondWrapper ###
-# ###################
-# AlreadyClosed: 0x9acb7e52
-# BondMatured: 0x3f8e46bc
-# BondNotMatured: 0x915eceb1
-# InsufficientPrice: 0xd5481703
-
-# ###############
-# ### AssetId ###
-# ###############
-# InvalidTimestamp: 0xb7d09497
-
-# ######################
-# ### FixedPointMath ###
-# ######################
-# FixedPointMath_AddOverflow: 0x2d59cfbd
-# FixedPointMath_SubOverflow: 0x35ba1440
-# FixedPointMath_InvalidExponent: 0xdf92cc9d
-# FixedPointMath_NegativeOrZeroInput: 0xac5f1b8e
-# FixedPointMath_NegativeInput: 0x2c7949f5
