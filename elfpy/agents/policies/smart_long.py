@@ -41,6 +41,10 @@ class LongLouie(BasePolicy):
         risk_threshold: FixedPoint,
     ) -> None:
         """Add custom stuff then call basic policy init"""
+        if not isinstance(trade_chance, FixedPoint):
+            raise TypeError(f"{trade_chance=} must be of type `FixedPoint`")
+        if not isinstance(risk_threshold, FixedPoint):
+            raise TypeError(f"{risk_threshold=} must be of type `FixedPoint`")
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
         super().__init__(budget, rng)

@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import logging
 
+from fixedpointmath import FixedPoint
+
 from elfpy.agents.policies import Policies
 from elfpy.bots import BotInfo, Budget, EnvironmentConfig
 
@@ -19,7 +21,7 @@ agent_config: list[BotInfo] = [
             min_wei=1,  # 1 WEI
             max_wei=int(1e21),  # 1k ETH
         ),
-        init_kwargs={"trade_chance": 0.8},
+        init_kwargs={"trade_chance": FixedPoint(0.8)},
     ),
     BotInfo(
         policy=Policies.long_louie,
@@ -30,7 +32,7 @@ agent_config: list[BotInfo] = [
             min_wei=1,  # 1 WEI
             max_wei=int(1e21),  # 1k ETH
         ),
-        init_kwargs={"trade_chance": 0.8, "risk_threshold": 0.9},
+        init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.9)},
     ),
     BotInfo(
         policy=Policies.short_sally,
@@ -41,7 +43,7 @@ agent_config: list[BotInfo] = [
             min_wei=1,  # 1 WEI
             max_wei=int(1e21),  # 1k ETH
         ),
-        init_kwargs={"trade_chance": 0.8, "risk_threshold": 0.8},
+        init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.8)},
     ),
 ]
 
@@ -50,7 +52,7 @@ environment_config = EnvironmentConfig(
     artifacts_url="http://localhost:80",
     delete_previous_logs=False,
     devnet=True,
-    halt_on_errors=False,
+    halt_on_errors=True,
     log_filename="agent0-bots",
     log_level=logging.INFO,
     log_stdout=True,
