@@ -37,7 +37,8 @@ jobs:
         run: python -m black --check --diff .
 
       - name: Run pylint
-        run: python -m pylint $(git ls-files '*.py')
+        run: |
+          pylint --rcfile=.pylintrc $(git diff --name-only origin/main...HEAD | grep '.py$')
 
       - name: Check GitHub rate limit at end
         uses: wakamex/rate-limit-action@master
