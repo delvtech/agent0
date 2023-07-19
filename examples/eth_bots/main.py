@@ -18,6 +18,7 @@ from examples.eth_bots.setup_agents import get_agent_accounts
 
 def main():  # TODO: Move much of this out of main
     """Entrypoint to load all configurations and run agents."""
+
     # this random number generator should be used everywhere so that the experiment is repeatable
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
     rng = np.random.default_rng(environment_config.random_seed)
@@ -65,6 +66,7 @@ def main():  # TODO: Move much of this out of main
         latest_block_timestamp = latest_block.get("timestamp", None)
         if latest_block_number is None or latest_block_timestamp is None:
             raise AssertionError("latest_block_number and latest_block_timestamp can not be None")
+
         if latest_block_number > last_executed_block:
             # log and show block info
             logging.info(

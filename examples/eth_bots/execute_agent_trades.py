@@ -31,7 +31,12 @@ def execute_agent_trades(
         # do_policy
         trades: list[elftypes.Trade] = account.agent.get_trades(market=hyperdrive_market)
         for trade_object in trades:
-            logging.info("AGENT %s TRADE: %s", str(account.checksum_address), trade_object.trade.action_type)
+            logging.info(
+                "AGENT %s performing %s for %g",
+                str(account.checksum_address),
+                trade_object.trade.action_type,
+                float(trade_object.trade.trade_amount),
+            )
             # do_trade
             trade_amount: int = trade_object.trade.trade_amount.scaled_value
             maturity_time = (
@@ -80,7 +85,7 @@ def execute_agent_trades(
                     account.checksum_address,
                     as_underlying,
                 )
-            elif trade_object.trade.action_type == MarketActionType.OPEN_SHORT:
+            elif trade_object.trade.action_type == MarketActionType.CLOSE_SHORT:
                 _ = eth.smart_contract_transact(
                     web3,
                     hyperdrive_contract,
@@ -104,7 +109,7 @@ def execute_agent_trades(
                     account.checksum_address,
                     as_underlying,
                 )
-            elif trade_object.trade.action_type == MarketActionType.ADD_LIQUIDITY:
+            elif trade_object.trade.action_type == MarketActionType.REMOVE_LIQUIDITY:
                 _ = eth.smart_contract_transact(
                     web3,
                     hyperdrive_contract,
