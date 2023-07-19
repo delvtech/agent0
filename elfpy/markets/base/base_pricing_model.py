@@ -241,7 +241,7 @@ class BasePricingModel(ABC):
         reserves_difference = abs(market_state.share_reserves * market_state.share_price - market_state.bond_reserves)
         assert (
             reserves_difference < elfpy.MAX_RESERVES_DIFFERENCE
-        ), f"expected reserves_difference < {elfpy.MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
+        ), f"expected reserves_difference = abs(share_reserves * share_price - bond_reserves) to be < {elfpy.MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
         assert (
             FixedPoint("1.0") >= market_state.curve_fee_multiple >= FixedPoint("0.0")
         ), f"expected 1 >= curve_fee_multiple >= 0, not {market_state.curve_fee_multiple}!"
