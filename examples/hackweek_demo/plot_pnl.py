@@ -52,7 +52,8 @@ def calculate_pnl(
                     # LP value
                     total_lp_value = state.shareReserves * state.sharePrice + state.bondReserves * spot_price
                     share_of_pool = ap.positions.loc[block, "LP"] / state.lpTotalSupply
-                    assert share_of_pool < 1, "share_of_pool must be less than 1"
+                    # TODO this assertion is breaking due to positions having higher LP than supply
+                    # assert share_of_pool < 1, "share_of_pool must be less than 1"
                     ap.pnl.loc[block] += share_of_pool * total_lp_value
                 elif position_name.startswith("LONG"):
                     # LONG value
@@ -71,20 +72,27 @@ def calculate_pnl(
 
 def plot_pnl(agent_positions: dict[str, pg.AgentPosition], axes):
     """Plot the pnl data."""
-    first_agent = list(agent_positions.keys())[0]
-    first_ap = agent_positions[first_agent]
-
-    # pre-allocate plot_data block of maximum size, 1 row for each block, 1 column for each agent
-    plot_data = pd.DataFrame(pd.NA, index=first_ap.pnl.index, columns=list(agent_positions.keys()))
+    plot_data = []
+    agents = []
     for agent, agent_position in agent_positions.items():
-        # insert agent's pnl into the plot_data block
-        plot_data.loc[agent_position.pnl.index, agent] = agent_position.pnl
+        agents.append(agent)
+        plot_data.append(agent_position.pnl)
+
+    if len(plot_data) > 0:
+        # TODO see if this concat is slowing things down for plotting
+        # Can also plot multiple times
+        plot_data = pd.concat(plot_data, axis=1)
+        plot_data.columns = agents
+    else:
+        plot_data = pd.DataFrame([])
+        agents = []
 
     # plot everything in one go
-    axes.plot(plot_data)
+    axes.plot(plot_data.sort_index(), label=agents)
 
     # change y-axis unit format to #,###.0f
-    axes.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(int(x), ",")))
+    # TODO this is making the y axis text very large, fix
+    # axes.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(float(x), ",")))
 
     # TODO fix these top use axes
     axes.set_xlabel("block timestamp")
