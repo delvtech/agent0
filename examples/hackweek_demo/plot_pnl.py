@@ -1,242 +1,202 @@
-"""Plots the pnl"""
+"""Plots the pnl."""
 from __future__ import annotations
 
-from typing import NamedTuple
+from dataclasses import dataclass, field
 
 import pandas as pd
-from extract_data_logs import calculate_spot_price
-from fixedpointmath import FixedPoint
+from extract_data_logs import calculate_spot_price_from_state
 from matplotlib import ticker as mpl_ticker
+from sqlalchemy.orm import Session
 
-import elfpy
-from elfpy import types
-from elfpy.data import postgres
-from elfpy.wallet.wallet import Long, Short, Wallet
+from elfpy.data import postgres as pg
 
 
-def get_wallet_from_onchain_trade_info(
-    address: str,
-    trades: pd.DataFrame,
-    index: int = 0,
-    add_to_existing_wallet: Wallet | None = None,
-) -> Wallet:
-    # pylint: disable=too-many-arguments, too-many-branches, too-many-locals
-    r"""Construct wallet balances from on-chain trade info.
+@dataclass
+class AgentPosition:
+    """Details what the agent holds, how it's changed over time, and how much it's worth.
 
-    Arguments
-     ---------
-     address : str
-         Address of the wallet.
-     info : OnChainTradeInfo
-         On-chain trade info.
-     index : int
-         Index of the wallet among ALL agents.
+    Notes
+    -----
+    At a high level "position" refers to the entire portfolio of holdings.
+    The portfolio is comprised of multiple positions, built up through multiple trades over time.
+    - At most, the agent can have positions equal to the number of checkpoints (trades within a checkpoint are fungible)
+    - DataFrames are [blocks, positions] in shape, for convenience and vectorization
+    - Series are [blocks] in shape
 
-     Returns
-     -------
-     Wallet
-         Wallet with Short, Long, and LP positions.
+    Examples
+    --------
+    To create an agent position you only need to pass in the wallet, from `pg.get_wallet_info_history(session)`:
+
+    >>> agent_position = AgentPosition(pg.get_wallet_info_history(session))
+
+    Use the same index across multiple tables:
+    >>> block = 69
+    >>> position = 3
+    >>> position_name = agent_position.positions.columns[position]
+    >>> holding = agent_position.positions.loc[block, position]
+    >>> open_share_price = agent_position.open_share_price.loc[block, position]
+    >>> pnl = agent_position.pnl.loc[block, position]
+    >>> print(f"agent holds {holding} bonds in {position_name} at block {block} worth {pnl}"})
+    agent holds  55.55555556 bonds in LONG-20240715 at block 69 worth 50
+
+    Attributes
+    ----------
+    positions : pd.DataFrame
+        The agent's holding of a single position, in bonds (# of longs or shorts).
+    deltas : pd.DataFrame
+        Change in each position, from the previous block.
+    open_share_price : pd.DataFrame
+        Weighted average open share price of each position
+    pnl : pd.Series
+        Value of the agent's positions.
+    share_price : pd.Series
+        Share price at the time of the current block.
+    timestamp : pd.Series
+        Timestamp of the current block.
     """
-    share_price = trades.share_price
 
-    # TODO: remove restriction forcing Wallet index to be an int (issue #415)
-    if add_to_existing_wallet is None:
-        wallet = Wallet(
-            address=index,
-            balance=types.Quantity(amount=FixedPoint(scaled_value=0), unit=types.TokenType.BASE),
-        )
-    else:
-        wallet = add_to_existing_wallet
+    positions: pd.DataFrame
+    deltas: pd.DataFrame
+    open_share_price: pd.DataFrame
+    share_price: pd.Series
+    timestamp: pd.Series
+    pnl: pd.Series = field(default_factory=pd.Series)
+    share_price: pd.Series = field(default_factory=pd.Series)
+    timestamp: pd.Series = field(default_factory=pd.Series)
 
-    position_id = trades["id"]
-    trades_in_position = ((trades["from"] == address) | (trades["to"] == address)) & (trades["id"] == position_id)
+    def __init__(self, wallet_history: pd.DataFrame):
+        """Calculate multiple relevant historical breakdowns of an agent's position."""
+        # Prepare PNL Series filled with NaNs, in the shape of [blocks]
+        self.pnl = pd.Series(data=pd.NA, index=wallet_history.index)
 
-    positive_balance = int(trades.loc[(trades_in_position) & (trades["to"] == address), "value"].sum())
-    negative_balance = int(trades.loc[(trades_in_position) & (trades["from"] == address), "value"].sum())
-    balance = positive_balance - negative_balance
+        # Scrap the wallet history for parts. First we extract the share price and timestamp.
+        self.share_price = wallet_history["sharePrice"]
+        self.timestamp = wallet_history["timestamp"]
+        # Then we keep track of every other column, to extract them into other tables.
+        other_columns = [col for col in wallet_history.columns if col not in ["sharePrice", "timestamp"]]
 
-    asset_type = trades["trade_enum"].iloc[0]
-    maturity = trades["maturity_time"].iloc[0]
-    mint_time = int(maturity) - elfpy.SECONDS_IN_YEAR
+        # Create positions dataframe which tracks aggregate holdings.
+        self.positions = wallet_history.loc[:, other_columns].copy()
+        # keep positions where they are not 0, otherwise replace 0 with NaN
+        self.positions = self.positions.where(self.positions != 0, pd.NA)
 
-    # check if there's an outstanding balance
-    if balance != 0:
-        if asset_type == "SHORT":
-            # loop across all the positions owned by this wallet
-            sum_product_of_open_share_price_and_value, sum_value = 0, 0
+        # Create deltas dataframe which tracks change in holdings.
+        self.deltas = self.positions.diff()
+        # After the diff() call above, the first row of the deltas table will be NaN.
+        # Replace them with the first row of the positions table, effectively capturing a delta from 0.
+        self.deltas.iloc[0] = self.positions.iloc[0]
 
-            # WEIGHTED AVERAGE ACROSS A BUNCH OF TRADES
-            for specific_trade in trades_in_position.index[trades_in_position]:
-                value = trades.loc[specific_trade, "value"]
-                value *= -1 if trades.loc[specific_trade, "from"] == address else 1  # type: ignore
-                sum_value += value
-                sum_product_of_open_share_price_and_value += (
-                    value * share_price.loc[trades.loc[specific_trade, "block_number"]]
-                )
+        # Prepare tables filled with NaNs, in the shape of [blocks, positions]
+        share_price_on_increases = pd.DataFrame(data=pd.NA, index=self.deltas.index, columns=self.deltas.columns)
+        self.open_share_price = pd.DataFrame(data=pd.NA, index=self.deltas.index, columns=self.deltas.columns)
 
-            # WEIGHTED AVERAGR FROM A MARGINAL UPDATE
-            previous_balance = wallet.shorts[mint_time].balance if mint_time in wallet.shorts else 0
-            previous_share_price = wallet.shorts[mint_time].open_share_price if mint_time in wallet.shorts else 0
+        # When we have an increase in position, we use the current block's share_price
+        share_price_on_increases = share_price_on_increases.where(self.deltas <= 0, self.share_price, axis=0)
 
-            marginal_position_change = FixedPoint(scaled_value=balance)
-            marginal_open_share_price = FixedPoint(scaled_value=int(trades.share_price))  # type: ignore
-
-            new_balance = previous_balance + marginal_position_change
-
-            if new_balance == 0:
-                # remove key of "mint_time" from the "wallet.shorts" dict
-                wallet.shorts.pop(mint_time, None)
-            else:
-                new_open_share_price = (
-                    previous_balance * previous_share_price
-                    + marginal_position_change
-                    * marginal_open_share_price
-                    / (previous_balance + marginal_position_change)
-                )
-                wallet.shorts.update(
-                    {
-                        mint_time: Short(
-                            balance=new_balance,
-                            open_share_price=new_open_share_price,
-                        )
-                    }
-                )
-        elif asset_type == "LONG":
-            previous_balance = wallet.longs[mint_time].balance if mint_time in wallet.longs else 0
-            new_balance = previous_balance + FixedPoint(scaled_value=balance)
-            if new_balance == 0:
-                # remove key of "mint_time" from the "wallet.longs" dict
-                wallet.longs.pop(mint_time, None)
-            wallet.longs.update({mint_time: Long(balance=new_balance)})
-        elif asset_type == "LP":
-            wallet.lp_tokens += FixedPoint(scaled_value=balance)
-    return wallet
-
-
-Info = NamedTuple(
-    "Info", wallet=pd.DataFrame, positions=pd.DataFrame, deltas=pd.DataFrame, open_share_price=pd.DataFrame
-)
-
-
-def get_agent_info(session=None) -> dict[str, Info]:
-    """Arrange agent wallet info for plotting, while calculating open share price."""
-    if session is None:
-        session = postgres.initialize_session()
-    all_agent_wallet_info = postgres.get_wallet_info_history(session)
-    agent_info = {}
-    for agent, wallet in all_agent_wallet_info.items():
-        share_price = wallet["sharePrice"].rename({"sharePrice": "share_price"})
-
-        # Create positions
-        positions = wallet.loc[:, wallet.columns[:-2]].copy()
-        positions = positions.where(positions != 0, pd.NA)
-
-        # Create deltas
-        deltas = positions.diff()
-        deltas.iloc[0] = positions.iloc[0]
-
-        # Create NaNs of the same size as deltas
-        share_price_on_increases = pd.DataFrame(data=pd.NA, index=deltas.index, columns=deltas.columns)
-
-        # Replace positive deltas with share_price
-        share_price_on_increases = share_price_on_increases.where(deltas <= 0, share_price, axis=0)
-
-        # Fill forward to replace NaNs, to have updated share prices only on position increases
+        # Fill forward to replace NaNs. Table is now full of share prices, sourced only from increases in position.
         share_price_on_increases.fillna(method="ffill", inplace=True, axis=0)
 
-        # Calculate weighted average share price across all deltas
-        # weighted_average_share_price = (share_price_on_increases * deltas).cumsum(axis=0) / positions
-        weighted_average_share_price = pd.DataFrame(data=pd.NA, index=deltas.index, columns=deltas.columns)
-        weighted_average_share_price.iloc[0] = share_price_on_increases.iloc[0]
-        for row in deltas.index[1:]:
-            # index positive deltas
-            cols = deltas.loc[row, :] > 0
+        # Calculate weighted average share price across all deltas (couldn't figure out how to do this vector-wise).
+        # vectorised attempt: ap.open_share_price = (share_price_on_increases * deltas).cumsum(axis=0) / positions
+        # First row of weighted average open share price is equal to the share
+        # price on increases since there's nothing to weight.
+        self.open_share_price.iloc[0] = share_price_on_increases.iloc[0]
 
-            new_avg = []
-            if len(cols) > 0:
-                # calculate update
-                # new_avg = (old_amount * old_avg + delta_amount * delta_avg) / (old_amount + delta_amount)
-                new_avg = (
-                    share_price_on_increases.loc[row, cols] * deltas.loc[row, cols]
-                    + weighted_average_share_price.loc[row - 1, cols] * positions.loc[row - 1, cols]
-                ) / (deltas.loc[row, cols] + positions.loc[row - 1, cols])
+        # Now we loop across the remaining rows, updated the weighted averages for positions that change.
+        for row in self.deltas.index[1:]:
+            # An update is required for columns which increase in size this row, identified by a positive delta.
+            update_required = self.deltas.loc[row, :] > 0
 
-            # keep previous result where delta isn't positive, otherwise replace with new_avg
-            weighted_average_share_price.loc[row, :] = weighted_average_share_price.loc[row - 1, :].where(
-                ~cols, new_avg, axis=0
+            new_price = []
+            if len(update_required) > 0:
+                # calculate update, per this general formula:
+                # new_price = (delta_amount * current_price + old_amount * old_price) / (old_amount + delta_amount)
+                new_price = (
+                    share_price_on_increases.loc[row, update_required] * self.deltas.loc[row, update_required]
+                    + self.open_share_price.loc[row - 1, update_required] * self.positions.loc[row - 1, update_required]
+                ) / (self.deltas.loc[row, update_required] + self.positions.loc[row - 1, update_required])
+
+            # Keep previous result where an update isn't required, otherwise replace with new_price
+            self.open_share_price.loc[row, :] = self.open_share_price.loc[row - 1, :].where(
+                ~update_required, new_price, axis=0
             )
 
-        agent_info[agent] = Info(
-            wallet=wallet,
-            positions=positions,
-            deltas=deltas,
-            open_share_price=share_price_on_increases,
-        )
-    return agent_info
+
+def get_agent_positions(session: Session) -> dict[str, AgentPosition]:
+    """Create an AgentPosition for each agent in the wallet history."""
+    return {agent: AgentPosition(wallet) for agent, wallet in pg.get_wallet_info_history(session).items()}
 
 
-def calculate_pnl(pool_config, pool_info, checkpoint_info):
-    """Calculate pnl for all agents."""
-    #  pylint: disable=too-many-locals
-    session = postgres.initialize_session()
-    all_agent_info = get_agent_info(session)
+def calculate_pnl(
+    pool_config: pd.DataFrame, pool_info: pd.DataFrame, checkpoint_info: pd.DataFrame
+) -> dict[str, AgentPosition]:
+    """Calculate pnl for all agents.
+
+    Arguments
+    ---------
+    pool_config : PoolConfig
+        Configuration with which the pool was initialized.
+    pool_info : pd.DataFrame
+        Reserves of the pool at each block.
+    checkpoint_info : pd.DataFrame
+    Checkpoint information at each block.
+    """
+    session = pg.initialize_session()
+    agent_positions = get_agent_positions(session)
     position_duration = pool_config.positionDuration.iloc[0]
 
-    for _, agent_info in all_agent_info.items():
-        wallet, positions, deltas, open_share_price = agent_info
-        for block in agent_info.wallet.index:
-            position = positions.loc[block]
-            current_wallet = wallet.loc[block, :]
-            state = pool_info.loc[block]
-            if block in checkpoint_info.index:  # a checkpoint exists
+    for ap in agent_positions.values():  # pylint: disable=invalid-name
+        for block in ap.positions.index:
+            state = pool_info.loc[block]  # current state of the pool
+
+            # get maturity from current checkpoint
+            if block in checkpoint_info.index:
                 current_checkpoint = checkpoint_info.loc[block]
                 maturity = current_checkpoint["timestamp"] + pd.Timedelta(seconds=position_duration)
             else:
+                # it's unclear to me if not finding a current checkpoint is expected behavior that we should handle.
+                # if we assume this is the first trade of a new checkpoint,
+                # we know the maturity is equal to the current block timestamp plus the position duration.
                 maturity = None
 
-            spot_price = calculate_spot_price(
-                state.shareReserves,
-                state.bondReserves,
-                state.lpTotalSupply,
-                maturity,
-                current_wallet.timestamp,
-                position_duration,
-            )
+            # calculate spot price of the bond, specific to the current maturity
+            spot_price = calculate_spot_price_from_state(state, maturity, ap.timestamp[block], position_duration)
 
-            pnl = 0
-            for position_name in positions.columns:
+            # add up the pnl for the agent based on all of their positions.
+            # TODO: vectorize this. also store the vector of pnl per position. in postgres?
+            ap.pnl.loc[block] = 0
+            for position_name in ap.positions.columns:
                 if position_name.startswith("LP"):
-                    # LP value (TODO: check why certain agents own more than 100% of the pool)
+                    # LP value
                     total_lp_value = state.shareReserves * state.sharePrice + state.bondReserves * spot_price
-                    share_of_pool = position.LP / state.lpTotalSupply
+                    share_of_pool = ap.positions.loc[block, "LP"] / state.lpTotalSupply
                     assert share_of_pool < 1, "share_of_pool must be less than 1"
-                    pnl += share_of_pool * total_lp_value
+                    ap.pnl.loc[block] += share_of_pool * total_lp_value
                 elif position_name.startswith("LONG"):
                     # LONG value
-                    pnl += position.loc[position_name] * spot_price
+                    ap.pnl.loc[block] += ap.positions.loc[block, position_name] * spot_price
                 elif position_name.startswith("SHORT"):
                     # SHORT value is calculated as the:
                     # total amount paid for the position (position * 1)
+                    # remember this payment is comprised of the spot price (p) and the max loss (1-p) set as margin
                     # minus the closing cost (position * spot_price)
-                    # this equals position * (1 - spot_price)
-                    pnl += position.loc[position_name] * (1 - spot_price)
+                    # this means the current position value equals position * (1 - spot_price)
+                    ap.pnl.loc[block] += ap.positions.loc[block, position_name] * (1 - spot_price)
+                elif position_name.startswith("BASE"):
+                    ap.pnl.loc[block] += ap.positions.loc[block, position_name]
+    return agent_positions
 
-            wallet.loc[block, "pnl"] = pnl
-        agent_info = wallet, positions, deltas, open_share_price
-    return all_agent_info
 
-
-def plot_pnl(all_agent_info, axes):
-    """Plots the pnl data"""
-    first_agent = list(all_agent_info.keys())[0]
-    first_wallet = all_agent_info[first_agent].wallet
+def plot_pnl(agent_positions: dict[str, AgentPosition], axes):
+    """Plot the pnl data."""
+    first_agent = list(agent_positions.keys())[0]
+    first_ap = agent_positions[first_agent]
 
     # pre-allocate plot_data block of maximum size, 1 row for each block, 1 column for each agent
-    plot_data = pd.DataFrame(pd.NA, index=first_wallet.index, columns=all_agent_info.keys())
-    for agent, agent_info in all_agent_info.items():
-        wallet, _, _, _ = agent_info
+    plot_data = pd.DataFrame(pd.NA, index=first_ap.pnl.index, columns=list(agent_positions.keys()))
+    for agent, agent_position in agent_positions.items():
         # insert agent's pnl into the plot_data block
-        plot_data.loc[wallet.index, agent] = wallet["pnl"]
+        plot_data.loc[agent_position.pnl.index, agent] = agent_position.pnl
 
     # plot everything in one go
     axes.plot(plot_data)

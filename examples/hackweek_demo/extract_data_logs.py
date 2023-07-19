@@ -1,12 +1,10 @@
-"""
-Utilities for extracting data from logs
-"""
+"""Utilities for extracting data from logs."""
 
 from __future__ import annotations
 
 import json
-import time
 import logging
+import time
 
 import numpy as np
 import pandas as pd
@@ -15,9 +13,7 @@ from elfpy.markets.hyperdrive import AssetIdPrefix
 
 
 def read_json_to_pd(json_file):
-    """
-    Generic function to read json file path to pandas dataframe
-    """
+    """Read json file path to pandas dataframe."""
     # Avoids race condition if background process is writing, keep trying until it passes
     while True:
         try:
@@ -30,6 +26,18 @@ def read_json_to_pd(json_file):
     return pd.DataFrame(json_data)
 
 
+def calculate_spot_price_from_state(state, maturity_timestamp, block_timestamp, position_duration):
+    """Calculate spot price from reserves stored in a state variable."""
+    return calculate_spot_price(
+        state.shareReserves,
+        state.bondReserves,
+        state.lpTotalSupply,
+        maturity_timestamp,
+        block_timestamp,
+        position_duration,
+    )
+
+
 def calculate_spot_price(
     share_reserves,
     bond_reserves,
@@ -38,7 +46,7 @@ def calculate_spot_price(
     block_timestamp=None,
     position_duration=None,
 ):
-    """Calculates the spot price given the pool info data"""
+    """Calculate the spot price given the pool info data."""
     # pylint: disable=too-many-arguments
 
     # Hard coding variables to calculate spot price
@@ -65,10 +73,7 @@ def calculate_spot_price(
 
 
 def get_combined_data(txn_data, pool_info_data):
-    """
-    Takes the transaction data nad pool info data and
-    combines the two dataframes into a single dataframe
-    """
+    """Combine multiple datasets into one containing transaction data, and pool info."""
     pool_info_data.index = pool_info_data.index.astype(int)
     # txn_data.index = txn_data["blockNumber"]
     # Combine pool info data and trans data by block number

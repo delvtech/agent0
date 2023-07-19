@@ -1,4 +1,4 @@
-"""Initialize Postgres Server"""
+"""Initialize Postgres Server."""
 
 from __future__ import annotations
 
@@ -8,10 +8,10 @@ from typing import Type
 
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import URL, create_engine, func, inspect, MetaData, Table, exc
+from sqlalchemy import URL, MetaData, Table, create_engine, exc, func, inspect
 from sqlalchemy.orm import Session, sessionmaker
 
-from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, CheckpointInfo, Transaction, UserMap, WalletInfo
+from elfpy.data.db_schema import Base, CheckpointInfo, PoolConfig, PoolInfo, Transaction, UserMap, WalletInfo
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -88,7 +88,7 @@ def query_tables(session: Session) -> list[str]:
 
     Returns
     -------
-    table_names : list[str]
+    list[str]
         A list of table names in the database
     """
     inspector = inspect(session.bind)  # nice gadget
@@ -103,7 +103,7 @@ def drop_table(session: Session, table_name: str) -> None:
     ---------
     session : Session
         The initialized session object
-    table_names : str
+    table_name : str
         The name of the table to be dropped
     """
     metadata = MetaData()
@@ -122,7 +122,6 @@ def initialize_session() -> Session:
     session : Session
         The initialized session object
     """
-
     postgres_config = build_postgres_config()
 
     url_object = URL.create(
@@ -193,7 +192,6 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
     session : Session
         The initialized session object
     """
-
     # NOTE the logic below is not thread safe, i.e., a race condition can exists
     # if multiple threads try to add pool config at the same time
     # This function is being called by acquire_data.py, which should only have one
@@ -247,8 +245,8 @@ def add_checkpoint_infos(checkpoint_infos: list[CheckpointInfo], session: Sessio
 
     Arguments
     ---------
-    checkpoint_infos : list[Checkpoint]
-        A list of Checkpoint objects to insert into postgres
+    checkpoint_infos : list[CheckpointInfo]
+        A list of CheckpointInfo objects to insert into postgres
     session : Session
         The initialized session object
     """
@@ -293,7 +291,6 @@ def add_user_map(username: str, addresses: list[str], session: Session) -> None:
     session : Session
         The initialized session object
     """
-
     for address in addresses:
         # Below is a best effort check against the database to see if the address is registered to another username
         # This is best effort because there's a race condition here, e.g.,
@@ -322,7 +319,7 @@ def add_user_map(username: str, addresses: list[str], session: Session) -> None:
 
 
 def get_pool_config(session: Session, contract_address: str | None = None) -> pd.DataFrame:
-    """Gets all pool config and returns as a pandas dataframe.
+    """Get all pool config and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -343,7 +340,7 @@ def get_pool_config(session: Session, contract_address: str | None = None) -> pd
 
 
 def get_pool_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
-    """Gets all pool info and returns as a pandas dataframe.
+    """Get all pool info and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -361,7 +358,6 @@ def get_pool_info(session: Session, start_block: int | None = None, end_block: i
     DataFrame
         A DataFrame that consists of the queried pool info data
     """
-
     query = session.query(PoolInfo)
 
     # Support for negative indices
@@ -382,7 +378,7 @@ def get_pool_info(session: Session, start_block: int | None = None, end_block: i
 
 
 def get_checkpoint_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
-    """Gets all info associated with a given checkpoint.
+    """Get all info associated with a given checkpoint.
 
     This includes
     - `sharePrice` : The share price of the first transaction in the checkpoint.
@@ -393,15 +389,18 @@ def get_checkpoint_info(session: Session, start_block: int | None = None, end_bl
     ---------
     session : Session
         The initialized session object
-    block : int | None, optional
-        The block number whose checkpoint to return. If None, returns the most recent checkpoint.
+    start_block : int | None, optional
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block : int | None, optional
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
 
     Returns
     -------
     DataFrame
         A DataFrame that consists of the queried checkpoint info
     """
-
     query = session.query(CheckpointInfo)
 
     # Support for negative indices
@@ -422,7 +421,7 @@ def get_checkpoint_info(session: Session, start_block: int | None = None, end_bl
 
 
 def get_transactions(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
-    """Gets all transactions and returns as a pandas dataframe.
+    """Get all transactions and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -440,7 +439,6 @@ def get_transactions(session: Session, start_block: int | None = None, end_block
     DataFrame
         A DataFrame that consists of the queried transactions data
     """
-
     query = session.query(Transaction)
 
     # Support for negative indices
@@ -458,7 +456,7 @@ def get_transactions(session: Session, start_block: int | None = None, end_block
 
 
 def get_all_wallet_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
-    """Gets all of the wallet_info data in history and returns as a pandas dataframe.
+    """Get all of the wallet_info data in history and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -476,7 +474,6 @@ def get_all_wallet_info(session: Session, start_block: int | None = None, end_bl
     DataFrame
         A DataFrame that consists of the queried wallet info data
     """
-
     query = session.query(WalletInfo)
 
     # Support for negative indices
@@ -494,7 +491,7 @@ def get_all_wallet_info(session: Session, start_block: int | None = None, end_bl
 
 
 def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
-    """Gets the history of all wallet info over block time.
+    """Get the history of all wallet info over block time.
 
     Arguments
     ---------
@@ -508,7 +505,6 @@ def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
         where the index is the block number, and the columns is the number of each
         token the address has at that block number, plus a timestamp and the share price of the block
     """
-
     # Get data
     all_wallet_info = get_all_wallet_info(session)
     pool_info_lookup = get_pool_info(session)[["timestamp", "sharePrice"]]
@@ -542,8 +538,12 @@ def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
 def get_current_wallet_info(
     session: Session, start_block: int | None = None, end_block: int | None = None
 ) -> pd.DataFrame:
-    """Gets the balance of a wallet and a given end_block
-    Here, you can specify a start_block for performance reasons, but if a trade happens before the start_block,
+    """Get the balance of a wallet and a given end_block.
+
+    Note
+    ----
+    Here, you can specify a start_block for performance reasons,
+    but if a trade happens before the start_block,
     that token won't show up in the result.
 
     Arguments
@@ -562,7 +562,6 @@ def get_current_wallet_info(
     DataFrame
         A DataFrame that consists of the queried wallet info data
     """
-
     all_wallet_info = get_all_wallet_info(session, start_block=start_block, end_block=end_block)
     # Get last entry in the table of each wallet address and token type
     # This should always return a dataframe
@@ -592,7 +591,7 @@ def get_current_wallet_info(
 
 
 def get_agents(session: Session, start_block: int | None = None, end_block: int | None = None) -> list[str]:
-    """Gets the list of all agents from the WalletInfo table.
+    """Get the list of all agents from the WalletInfo table.
 
     Arguments
     ---------
@@ -632,7 +631,7 @@ def get_agents(session: Session, start_block: int | None = None, end_block: int 
 
 
 def get_user_map(session: Session, address: str | None = None) -> pd.DataFrame:
-    """Gets all usermapping and returns as a pandas dataframe.
+    """Get all usermapping and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -653,7 +652,7 @@ def get_user_map(session: Session, address: str | None = None) -> pd.DataFrame:
 
 
 def get_latest_block_number(session: Session) -> int:
-    """Gets the latest block number based on the pool info table in the db.
+    """Get the latest block number based on the pool info table in the db.
 
     Arguments
     ---------
@@ -671,7 +670,7 @@ def get_latest_block_number(session: Session) -> int:
 def get_latest_block_number_from_table(
     table_obj: Type[WalletInfo | PoolInfo | Transaction | CheckpointInfo], session: Session
 ) -> int:
-    """Gets the latest block number based on the specified table in the db.
+    """Get the latest block number based on the specified table in the db.
 
     Arguments
     ---------

@@ -172,6 +172,7 @@ def main(
     )
 
     # get pool config from hyperdrive contract
+    # TODO: figure out best way to represent this. options are PoolInfo object in db_schema, TypeDict, etc.
     pool_config_dict = hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract)
     for key in db_schema.PoolConfig.__annotations__:
         if key not in pool_config_dict:
