@@ -6,10 +6,13 @@ import os
 from datetime import datetime
 
 import numpy as np
+from dotenv import load_dotenv
 from eth_typing import BlockNumber
 from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
+from elfpy.bots import DEFAULT_USERNAME
+from elfpy.data import postgres
 from elfpy.utils import logs
 from examples.eth_bots.config import agent_config, environment_config
 from examples.eth_bots.execute_agent_trades import execute_agent_trades
@@ -33,6 +36,10 @@ def main():  # TODO: Move much of this out of main
         log_format_string=environment_config.log_formatter,
     )
 
+    # Check for default name and exit if is default
+    if environment_config.username == DEFAULT_USERNAME:
+        raise ValueError("Default username detected, please update 'username' in config.py")
+
     # point to chain env
     web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
 
@@ -55,6 +62,13 @@ def main():  # TODO: Move much of this out of main
 
     # load agent policies
     agent_accounts = get_agent_accounts(agent_config, web3, base_token_contract, hyperdrive_contract.address, rng)
+
+    # Set up postgres to write username to agent wallet addr
+    # initialize the postgres session
+    wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
+    session = postgres.initialize_session()
+    postgres.add_user_map(environment_config.username, wallet_addrs, session)
+    postgres.close_session(session)
 
     # Run trade loop forever
     trade_streak = 0
@@ -94,4 +108,7 @@ def main():  # TODO: Move much of this out of main
 
 
 if __name__ == "__main__":
+    # Get postgres env variables if exists
+    load_dotenv()
+
     main()
