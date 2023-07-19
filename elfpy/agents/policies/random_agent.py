@@ -28,6 +28,8 @@ class RandomAgent(BasePolicy):
         trade_chance: FixedPoint = FixedPoint("1.0"),
     ) -> None:
         """Adds custom attributes"""
+        if not isinstance(trade_chance, FixedPoint):
+            raise TypeError(f"{trade_chance=} must be of type `FixedPoint`")
         self.trade_chance = trade_chance
         super().__init__(budget, rng)
 
