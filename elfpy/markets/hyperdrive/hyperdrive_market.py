@@ -266,10 +266,6 @@ class HyperdriveMarket(
             minimum_share_reserves=self.market_state.minimum_share_reserves,
             max_iterations=20,
         )
-        # (max_long, _) = self.pricing_model.get_max_long(
-        #    market_state=self.market_state,
-        #    time_remaining=self.position_duration,
-        # )
         return min(account_balance, max_long.base_amount)
 
     # TODO: this function should optionally accept a target apr.  the short should not slip the
@@ -307,55 +303,6 @@ class HyperdriveMarket(
         )
         max_short_base = abs(wallet_deltas.balance.amount)
         return min(account_balance, max_short_base)
-        # # Get the market level max short.
-        # if hasattr(self.pricing_model, "get_max_short"):
-        #     (max_short_max_loss, max_short) = self.pricing_model.get_max_short(
-        #         market_state=self.market_state,
-        #         time_remaining=self.position_duration,
-        #     )
-        # else:  # no maximum
-        #     max_short_max_loss, max_short = FixedPoint("inf"), FixedPoint("inf")
-        # # If the Agent's base balance can cover the max loss of the maximum
-        # # short, we can simply return the maximum short.
-        # if account_balance >= max_short_max_loss:
-        #     return max_short
-        # last_maybe_max_short = FixedPoint(0)
-        # bond_percent = FixedPoint("1.0")
-        # num_iters = 25
-        # for step_size in [FixedPoint(1 / (2 ** (x + 1))) for x in range(num_iters)]:
-        #     # Compute the amount of base returned by selling the specified
-        #     # amount of bonds.
-        #     maybe_max_short = max_short * bond_percent
-        #     trade_result = self.pricing_model.calc_out_given_in(
-        #         in_=Quantity(amount=maybe_max_short, unit=TokenType.PT),
-        #         market_state=self.market_state,
-        #         time_remaining=self.position_duration,
-        #     )
-        #     # If the max loss is greater than the wallet's base, we need to
-        #     # decrease the bond percentage. Otherwise, we may have found the
-        #     # max short, and we should increase the bond percentage.
-        #     max_loss = maybe_max_short - trade_result.user_result.d_base
-        #     if max_loss > account_balance:
-        #         bond_percent -= step_size
-        #     else:
-        #         last_maybe_max_short = maybe_max_short
-        #         if bond_percent == FixedPoint("1.0"):
-        #             return last_maybe_max_short
-        #         bond_percent += step_size
-        # # do one more iteration at the last step size in case the bisection method was stuck
-        # # approaching a max_short value with slightly more base than an agent has.
-        # trade_result = self.pricing_model.calc_out_given_in(
-        #     in_=Quantity(amount=last_maybe_max_short, unit=TokenType.PT),
-        #     market_state=self.market_state,
-        #     time_remaining=self.position_duration,
-        # )
-        # max_loss = last_maybe_max_short - trade_result.user_result.d_base
-        # last_step_size = FixedPoint("1.0") / (FixedPoint("2.0") ** FixedPoint(num_iters) + FixedPoint("1.0"))
-        # if max_loss > account_balance:
-        #     bond_percent -= last_step_size
-        #     last_maybe_max_short = max_short * bond_percent
-        # max_short = min(account_balance, last_maybe_max_short)
-        # return max_short
 
     def perform_action(
         self, action_details: tuple[int, HyperdriveMarketAction]

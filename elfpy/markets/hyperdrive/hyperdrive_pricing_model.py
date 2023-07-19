@@ -475,7 +475,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         Calculates the maximum amount of shares that can be used to open shorts.
 
         Parameters
-        ---------
+        ----------
         share_reserves : FixedPoint
             The pool's share reserves.
         bond_reserves : FixedPoint
