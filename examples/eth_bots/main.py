@@ -53,11 +53,12 @@ def main():  # TODO: Move much of this out of main
     )
 
     # load agent policies
-    agent_accounts = get_agent_accounts(agent_config, web3, base_token_contract, rng)
+    agent_accounts = get_agent_accounts(agent_config, web3, base_token_contract, hyperdrive_contract.address, rng)
 
     # Run trade loop forever
     trade_streak = 0
     last_executed_block = BlockNumber(0)
+
     while True:
         latest_block = web3.eth.get_block("latest")
         latest_block_number = latest_block.get("number", None)
@@ -75,7 +76,6 @@ def main():  # TODO: Move much of this out of main
             try:
                 execute_agent_trades(
                     web3,
-                    base_token_contract,
                     hyperdrive_contract,
                     agent_accounts,
                 )

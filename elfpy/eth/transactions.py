@@ -44,7 +44,7 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
 
 
 def smart_contract_transact(
-    web3: Web3, contract: Contract, function_name: str, from_account: EthAccount, *fn_args
+    web3: Web3, contract: Contract, signer: EthAccount, function_name_or_signature: str, *fn_args
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
 
@@ -66,17 +66,28 @@ def smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    func_handle = contract.get_function_by_name(function_name)(*fn_args)
-    unsent_txn = func_handle.build_transaction(
-        {
-            "from": from_account.checksum_address,
-            "nonce": web3.eth.get_transaction_count(from_account.checksum_address),
-        }
-    )
-    signed_txn = from_account.account.sign_transaction(unsent_txn)
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-    # wait for approval to complete
-    return web3.eth.wait_for_transaction_receipt(tx_hash)
+    try:
+        if "(" in function_name_or_signature:
+            func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
+        else:
+            func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
+        unsent_txn = func_handle.build_transaction(
+            {
+                "from": signer.checksum_address,
+                "nonce": web3.eth.get_transaction_count(signer.checksum_address),
+            }
+        )
+        signed_txn = signer.account.sign_transaction(unsent_txn)
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        # wait for approval to complete
+        return web3.eth.wait_for_transaction_receipt(tx_hash)
+    except Exception as err:
+        print(f"{err=}")
+        print(f"{function_name_or_signature=}")
+        print(f"{fn_args=}")
+        raise err
+
+        # logging.error()
 
 
 def _get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunctionParams) -> tuple[str, str]:
@@ -125,3 +136,75 @@ def _contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> lis
     else:  # final condition is a single output
         return_names_and_types = [_get_name_and_type_from_abi(function_outputs[0])]
     return return_names_and_types
+
+
+# TODO: either make a lookup table for these or decode automatically when we see a CustomContractError
+# ##################
+# ### Hyperdrive ###
+# ##################
+# BaseBufferExceedsShareReserves: 0x18846de9
+# InvalidApr: 0x76c22a22
+# InvalidBaseToken: 0x0e442a4a
+# InvalidCheckpointTime: 0xecd29e81
+# InvalidInitialSharePrice: 0x55f2a42f
+# InvalidMaturityTime: 0x987dadd3
+# InvalidPositionDuration: 0x4a7fff9e
+# InvalidFeeAmounts: 0x45ee5986
+# NegativeInterest: 0x512095c7
+# OutputLimit: 0xc9726517
+# Paused: 0x9e87fac8
+# PoolAlreadyInitialized: 0x7983c051
+# TransferFailed: 0x90b8ec18
+# UnexpectedAssetId: 0xe9bf5433
+# UnsupportedToken: 0x6a172882
+# ZeroAmount: 0x1f2a2005
+# ZeroLpTotalSupply: 0x252c3a3e
+# ZeroLpTotalSupply: 0x252c3a3e
+
+# ############
+# ### TWAP ###
+# ############
+# QueryOutOfRange: 0xa89817b0
+
+# ####################
+# ### DataProvider ###
+# ####################
+# UnexpectedSuccess: 0x8bb0a34b
+
+# ###############
+# ### Factory ###
+# ###############
+# Unauthorized: 0x82b42900
+# InvalidContribution: 0x652122d9
+# InvalidToken: 0xc1ab6dc1
+
+# ######################
+# ### ERC20Forwarder ###
+# ######################
+# BatchInputLengthMismatch: 0xba430d38
+# ExpiredDeadline: 0xf87d9271
+# InvalidSignature: 0x8baa579f
+# InvalidERC20Bridge: 0x2aab8bd3
+# RestrictedZeroAddress: 0xf0dd15fd
+
+# ###################
+# ### BondWrapper ###
+# ###################
+# AlreadyClosed: 0x9acb7e52
+# BondMatured: 0x3f8e46bc
+# BondNotMatured: 0x915eceb1
+# InsufficientPrice: 0xd5481703
+
+# ###############
+# ### AssetId ###
+# ###############
+# InvalidTimestamp: 0xb7d09497
+
+# ######################
+# ### FixedPointMath ###
+# ######################
+# FixedPointMath_AddOverflow: 0x2d59cfbd
+# FixedPointMath_SubOverflow: 0x35ba1440
+# FixedPointMath_InvalidExponent: 0xdf92cc9d
+# FixedPointMath_NegativeOrZeroInput: 0xac5f1b8e
+# FixedPointMath_NegativeInput: 0x2c7949f5

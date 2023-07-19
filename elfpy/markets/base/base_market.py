@@ -25,15 +25,9 @@ class MarketActionType(Enum):
 
 
 # all subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
-Action = TypeVar("Action", bound="BaseMarketAction")
-Deltas = TypeVar("Deltas", bound="BaseMarketDeltas")
-State = TypeVar("State", bound="BaseMarketState")
-PricingModel = TypeVar("PricingModel", bound="BasePricingModel")
-
-
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class BaseMarketAction(Generic[Action]):
+class BaseMarketAction:
     r"""Market action specification"""
 
     action_type: Enum  # these two variables are required to be set by the strategy
@@ -72,6 +66,11 @@ class BaseMarketState:
     def check_valid_market_state(self, dictionary: dict | None = None) -> BaseMarketState:
         """Returns a new copy of self"""
         raise NotImplementedError
+
+
+Deltas = TypeVar("Deltas", bound="BaseMarketDeltas")
+State = TypeVar("State", bound="BaseMarketState")
+PricingModel = TypeVar("PricingModel", bound="BasePricingModel")
 
 
 class BaseMarket(Generic[State, Deltas, PricingModel]):
