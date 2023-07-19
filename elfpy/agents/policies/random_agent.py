@@ -62,22 +62,16 @@ class RandomAgent(BasePolicy):
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
-        # TODO: This is a hack until we fix get_max
-        # issue # 440
-        # max_short = self.get_max_short(market)
-        # if max_short < WEI:  # no short is possible
-        #     return []
-        maximum_trade_amount_in_bonds = (
-            market.market_state.share_reserves * market.market_state.share_price / FixedPoint("2.0")
-        )
+        maximum_trade_amount = market.get_max_short_for_account(wallet.balance.amount)
         # WEI <= trade_amount <= max_short
-        trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount_in_bonds / FixedPoint("100.0")))
+        trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
+        # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             Trade(
                 market=MarketType.HYPERDRIVE,
                 trade=HyperdriveMarketAction(
                     action_type=MarketActionType.OPEN_SHORT,
-                    trade_amount=FixedPoint(trade_amount),
+                    trade_amount=trade_amount,
                     wallet=wallet,
                 ),
             )
@@ -89,22 +83,16 @@ class RandomAgent(BasePolicy):
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
-        # TODO: This is a hack until we fix get_max
-        # issue # 440
-        # # get the maximum amount that can be traded, based on the budget & market reserve levels
-        # max_long = self.get_max_long(market)
-        # if max_long < WEI:  # no trade is possible
-        #     return []
-        maximum_trade_amount_in_base = market.market_state.bond_reserves * market.spot_price / FixedPoint("2.0")
+        maximum_trade_amount = market.get_max_long_for_account(wallet.balance.amount)
         # # WEI <= trade_amount <= max_short
-        trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount_in_base / FixedPoint("100.0")))
+        trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             Trade(
                 market=MarketType.HYPERDRIVE,
                 trade=HyperdriveMarketAction(
                     action_type=MarketActionType.OPEN_LONG,
-                    trade_amount=FixedPoint(trade_amount),
+                    trade_amount=trade_amount,
                     wallet=wallet,
                 ),
             )

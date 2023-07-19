@@ -90,9 +90,6 @@ class ShortSally(BasePolicy):
         if market.fixed_apr - market.market_state.variable_apr < self.risk_threshold and not has_opened_short:
             # maximum amount the agent can short given the market and the agent's wallet
             trade_amount = market.get_max_short_for_account(wallet.balance.amount)
-            # TODO: This is a hack until we fix get_max
-            # issue # 440
-            trade_amount = trade_amount / FixedPoint("100.0")
             if trade_amount > WEI:
                 action_list += [
                     Trade(

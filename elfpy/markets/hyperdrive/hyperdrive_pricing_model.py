@@ -475,7 +475,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         Calculates the maximum amount of shares that can be used to open shorts.
 
         Parameters
-        ----------
+        ---------
         share_reserves : FixedPoint
             The pool's share reserves.
         bond_reserves : FixedPoint
@@ -492,7 +492,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         Returns
         -------
         FixedPoint
-            The maximum amount of shares that can be used to open shorts.
+            The maximum amount of bonds that can be provided when opening a short.
         """
         return hyperdrive_pricing_model_sol.calculate_max_short(
             share_reserves,

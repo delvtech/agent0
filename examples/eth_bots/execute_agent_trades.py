@@ -21,7 +21,8 @@ def execute_agent_trades(
     web3: Web3,
     hyperdrive_contract: Contract,
     agent_accounts: list[EthAccount],
-) -> None:
+    trade_streak: int,
+) -> int:
     """Hyperdrive forever into the sunset"""
     # get latest market
     hyperdrive_market = hyperdrive_interface.get_hyperdrive_market(web3, hyperdrive_contract)
@@ -32,7 +33,7 @@ def execute_agent_trades(
         trades: list[elftypes.Trade] = account.agent.get_trades(market=hyperdrive_market)
         for trade_object in trades:
             logging.info(
-                "AGENT %s performing %s for %g",
+                "AGENT %s to perform %s for %g",
                 str(account.checksum_address),
                 trade_object.trade.action_type,
                 float(trade_object.trade.trade_amount),
@@ -52,6 +53,10 @@ def execute_agent_trades(
             # sort through the trades
             # TODO: raise issue on failure by looking at `tx_receipt` returned from function
             if trade_object.trade.action_type == MarketActionType.OPEN_LONG:
+                print(f"{trade_amount=}")
+                print(f"{min_output=}")
+                print(f"{account.checksum_address=}")
+                print(f"{hyperdrive_market.market_state=}")
                 _ = eth.smart_contract_transact(
                     web3,
                     hyperdrive_contract,
@@ -122,4 +127,6 @@ def execute_agent_trades(
                 )
             else:
                 raise NotImplementedError(f"{trade_object.trade.action_type} is not implemented.")
-            # TODO: update wallet
+            trade_streak += 1
+    return trade_streak
+    # TODO: update wallet
