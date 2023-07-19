@@ -44,7 +44,7 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
 
 
 def smart_contract_transact(
-    web3: Web3, contract: Contract, function_name: str, from_account: EthAccount, *fn_args
+    web3: Web3, contract: Contract, signer: EthAccount, function_name_or_signature: str, *fn_args
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
 
@@ -66,17 +66,17 @@ def smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    if "(" in function_name:
-        func_handle = contract.get_function_by_signature(function_name)(*fn_args)
+    if "(" in function_name_or_signature:
+        func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
     else:
-        func_handle = contract.get_function_by_name(function_name)(*fn_args)
+        func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
     unsent_txn = func_handle.build_transaction(
         {
-            "from": from_account.checksum_address,
-            "nonce": web3.eth.get_transaction_count(from_account.checksum_address),
+            "from": signer.checksum_address,
+            "nonce": web3.eth.get_transaction_count(signer.checksum_address),
         }
     )
-    signed_txn = from_account.account.sign_transaction(unsent_txn)
+    signed_txn = signer.account.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
     # wait for approval to complete
     return web3.eth.wait_for_transaction_receipt(tx_hash)
