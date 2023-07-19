@@ -77,7 +77,7 @@ limit-inference-results=100
 
 # List of plugins (as comma separated values of python module names) to load,
 # usually to register additional checkers.
-load-plugins=
+load-plugins=pylint.extensions.docparams, pylint.extensions.docstyle
 
 # Pickle collected data for later comparisons.
 persistent=yes
@@ -617,3 +617,23 @@ variable-naming-style=snake_case
 # naming-style. If left empty, variable names will be checked with the set
 # naming style.
 #variable-rgx=
+[tool.pylint.parameter_documentation]
+# Whether to accept totally missing parameter documentation
+# in the docstring of a function that has parameters.
+accept-no-param-doc = false
+
+# Whether to accept totally missing raises documentation
+# in the docstring of a function that raises an exception.
+accept-no-raise-doc = true
+
+# Whether to accept totally missing return documentation in
+# the docstring of a function that returns a statement.
+accept-no-return-doc = false
+
+# Whether to accept totally missing yields documentation
+# in the docstring of a generator.
+accept-no-yields-doc = false
+
+# If the docstring type cannot be guessed the
+# specified docstring type will be used.
+default-docstring-type = numpy
