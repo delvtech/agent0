@@ -71,6 +71,7 @@ while True:
     txn_data = postgres.get_transactions(session, start_block=start_block)
     pool_info_data = postgres.get_pool_info(session, start_block=start_block)
     checkpoint_info = postgres.get_checkpoint_info(session, start_block=start_block)
+    agent_positions = postgres.get_agent_positions(session)
 
     # truncate the length of pool_info_data and checkpoint_info to the shorter of their two indexes.
     latest_block = min(max(pool_info_data.index), max(checkpoint_info.index))
@@ -89,7 +90,7 @@ while True:
 
     fixed_rate_x, fixed_rate_y = calc_fixed_rate(combined_data)
 
-    all_agent_info = calculate_pnl(pool_config_data, pool_info_data, checkpoint_info)
+    all_agent_info = calculate_pnl(pool_config_data, pool_info_data, checkpoint_info, agent_positions)
 
     # Plot reserve levels (share and bond reserves, in poolinfo)
 
