@@ -1,6 +1,8 @@
 """Main script for running bots on Hyperdrive"""
 from __future__ import annotations
 
+import logging
+
 from web3 import Web3
 from web3.contract.contract import Contract
 
@@ -17,7 +19,6 @@ from elfpy.time import time as elftime
 
 def execute_agent_trades(
     web3: Web3,
-    base_token_contract: Contract,
     hyperdrive_contract: Contract,
     agent_accounts: list[EthAccount],
 ) -> None:
@@ -30,35 +31,86 @@ def execute_agent_trades(
         # do_policy
         trades: list[elftypes.Trade] = account.agent.get_trades(market=hyperdrive_market)
         for trade_object in trades:
+            logging.info("AGENT %s TRADE: %s", str(account.checksum_address), trade_object.trade.action_type)
             # do_trade
             trade_amount: int = trade_object.trade.trade_amount.scaled_value
-            # TODO: allow for min_output
-            min_output = 0
-            as_underlying = True
             maturity_time = (
                 trade_object.trade.mint_time
                 + hyperdrive_market.position_duration.years * elftime.TimeUnit.SECONDS.value
             )
+            # TODO: The following variables are hard coded for now, but should be specified in the trade spec
+            max_deposit = trade_amount
+            min_output = 0
+            min_apr = int(1)
+            max_apr = int(1e18)
+            as_underlying = True
+            # sort through the trades
+            # TODO: raise issue on failure by looking at `tx_receipt` returned from function
             if trade_object.trade.action_type == MarketActionType.OPEN_LONG:
-                eth.smart_contract_transact(
+                _ = eth.smart_contract_transact(
                     web3,
                     hyperdrive_contract,
-                    "openLong",
                     account,
-                    trade_amount,
+                    "openLong",
+                    trade_amount,  # base amount
                     min_output,
                     account.checksum_address,
                     as_underlying,
                 )
             elif trade_object.trade.action_type == MarketActionType.CLOSE_LONG:
-                min_output = 0
-                eth.smart_contract_transact(
+                _ = eth.smart_contract_transact(
                     web3,
                     hyperdrive_contract,
-                    "closeLong",
                     account,
+                    "closeLong",
                     maturity_time,
-                    trade_amount,
+                    trade_amount,  # base amount
+                    min_output,
+                    account.checksum_address,
+                    as_underlying,
+                )
+            elif trade_object.trade.action_type == MarketActionType.OPEN_SHORT:
+                _ = eth.smart_contract_transact(
+                    web3,
+                    hyperdrive_contract,
+                    account,
+                    "openShort",
+                    trade_amount,  # bond amount
+                    max_deposit,
+                    account.checksum_address,
+                    as_underlying,
+                )
+            elif trade_object.trade.action_type == MarketActionType.OPEN_SHORT:
+                _ = eth.smart_contract_transact(
+                    web3,
+                    hyperdrive_contract,
+                    account,
+                    "closeShort",
+                    maturity_time,
+                    trade_amount,  # bond amount
+                    min_output,
+                    account.checksum_address,
+                    as_underlying,
+                )
+            elif trade_object.trade.action_type == MarketActionType.ADD_LIQUIDITY:
+                _ = eth.smart_contract_transact(
+                    web3,
+                    hyperdrive_contract,
+                    account,
+                    "addLiquidity",
+                    trade_amount,  # contribution amount
+                    min_apr,
+                    max_apr,
+                    account.checksum_address,
+                    as_underlying,
+                )
+            elif trade_object.trade.action_type == MarketActionType.ADD_LIQUIDITY:
+                _ = eth.smart_contract_transact(
+                    web3,
+                    hyperdrive_contract,
+                    account,
+                    "removeLiquidity",
+                    trade_amount,  # shares they want returned
                     min_output,
                     account.checksum_address,
                     as_underlying,
