@@ -32,23 +32,6 @@ def execute_agent_trades(
         for trade_object in trades:
             # do_trade
             trade_amount: int = trade_object.trade.trade_amount.scaled_value
-            # check that the hyperdrive contract has enough base approved for the trade
-            hyperdrive_allowance = eth.smart_contract_read(
-                base_token_contract,
-                "allowance",
-                account.checksum_address,
-                hyperdrive_contract.address,
-            )["value"]
-            if hyperdrive_allowance < trade_amount:
-                eth.smart_contract_transact(
-                    web3,
-                    base_token_contract,
-                    "approve",
-                    account,
-                    account.checksum_address,
-                    hyperdrive_contract.address,
-                    int(50e21),  # 50k base
-                )
             # TODO: allow for min_output
             min_output = 0
             as_underlying = True
