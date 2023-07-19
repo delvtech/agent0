@@ -1,17 +1,17 @@
-"""Initialize Postgres Server"""
+"""Initialize Postgres Server."""
 
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Type
 
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import URL, create_engine, func, inspect, MetaData, Table, exc
+from sqlalchemy import URL, MetaData, Table, create_engine, exc, func, inspect
 from sqlalchemy.orm import Session, sessionmaker
 
-from elfpy.data.db_schema import Base, PoolConfig, PoolInfo, CheckpointInfo, Transaction, UserMap, WalletInfo
+from elfpy.data.db_schema import Base, CheckpointInfo, PoolConfig, PoolInfo, Transaction, UserMap, WalletInfo
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -88,7 +88,7 @@ def query_tables(session: Session) -> list[str]:
 
     Returns
     -------
-    table_names : list[str]
+    list[str]
         A list of table names in the database
     """
     inspector = inspect(session.bind)  # nice gadget
@@ -103,7 +103,7 @@ def drop_table(session: Session, table_name: str) -> None:
     ---------
     session : Session
         The initialized session object
-    table_names : str
+    table_name : str
         The name of the table to be dropped
     """
     metadata = MetaData()
@@ -122,7 +122,6 @@ def initialize_session() -> Session:
     session : Session
         The initialized session object
     """
-
     postgres_config = build_postgres_config()
 
     url_object = URL.create(
@@ -193,7 +192,6 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
     session : Session
         The initialized session object
     """
-
     # NOTE the logic below is not thread safe, i.e., a race condition can exists
     # if multiple threads try to add pool config at the same time
     # This function is being called by acquire_data.py, which should only have one
@@ -243,12 +241,12 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
 
 
 def add_checkpoint_infos(checkpoint_infos: list[CheckpointInfo], session: Session) -> None:
-    """Add checkpoint info to the checkpointinfo table
+    """Add checkpoint info to the checkpointinfo table.
 
     Arguments
     ---------
-    checkpoint_infos : list[Checkpoint]
-        A list of Checkpoint objects to insert into postgres
+    checkpoint_infos : list[CheckpointInfo]
+        A list of CheckpointInfo objects to insert into postgres
     session : Session
         The initialized session object
     """
@@ -293,7 +291,6 @@ def add_user_map(username: str, addresses: list[str], session: Session) -> None:
     session : Session
         The initialized session object
     """
-
     for address in addresses:
         # Below is a best effort check against the database to see if the address is registered to another username
         # This is best effort because there's a race condition here, e.g.,
@@ -322,7 +319,7 @@ def add_user_map(username: str, addresses: list[str], session: Session) -> None:
 
 
 def get_pool_config(session: Session, contract_address: str | None = None) -> pd.DataFrame:
-    """Gets all pool config and returns as a pandas dataframe.
+    """Get all pool config and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -343,7 +340,7 @@ def get_pool_config(session: Session, contract_address: str | None = None) -> pd
 
 
 def get_pool_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
-    """Gets all pool info and returns as a pandas dataframe.
+    """Get all pool info and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -361,7 +358,6 @@ def get_pool_info(session: Session, start_block: int | None = None, end_block: i
     DataFrame
         A DataFrame that consists of the queried pool info data
     """
-
     query = session.query(PoolInfo)
 
     # Support for negative indices
@@ -382,7 +378,7 @@ def get_pool_info(session: Session, start_block: int | None = None, end_block: i
 
 
 def get_checkpoint_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
-    """Gets all info associated with a given checkpoint.
+    """Get all info associated with a given checkpoint.
 
     This includes
     - `sharePrice` : The share price of the first transaction in the checkpoint.
@@ -393,15 +389,18 @@ def get_checkpoint_info(session: Session, start_block: int | None = None, end_bl
     ---------
     session : Session
         The initialized session object
-    block : int | None, optional
-        The block number whose checkpoint to return. If None, returns the most recent checkpoint.
+    start_block : int | None, optional
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block : int | None, optional
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
 
     Returns
     -------
     DataFrame
         A DataFrame that consists of the queried checkpoint info
     """
-
     query = session.query(CheckpointInfo)
 
     # Support for negative indices
@@ -422,7 +421,7 @@ def get_checkpoint_info(session: Session, start_block: int | None = None, end_bl
 
 
 def get_transactions(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
-    """Gets all transactions and returns as a pandas dataframe.
+    """Get all transactions and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -440,7 +439,6 @@ def get_transactions(session: Session, start_block: int | None = None, end_block
     DataFrame
         A DataFrame that consists of the queried transactions data
     """
-
     query = session.query(Transaction)
 
     # Support for negative indices
@@ -458,7 +456,7 @@ def get_transactions(session: Session, start_block: int | None = None, end_block
 
 
 def get_all_wallet_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
-    """Gets all of the wallet_info data in history and returns as a pandas dataframe.
+    """Get all of the wallet_info data in history and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -476,7 +474,6 @@ def get_all_wallet_info(session: Session, start_block: int | None = None, end_bl
     DataFrame
         A DataFrame that consists of the queried wallet info data
     """
-
     query = session.query(WalletInfo)
 
     # Support for negative indices
@@ -494,7 +491,7 @@ def get_all_wallet_info(session: Session, start_block: int | None = None, end_bl
 
 
 def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
-    """Gets the history of all wallet info over block time.
+    """Get the history of all wallet info over block time.
 
     Arguments
     ---------
@@ -508,7 +505,6 @@ def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
         where the index is the block number, and the columns is the number of each
         token the address has at that block number, plus a timestamp and the share price of the block
     """
-
     # Get data
     all_wallet_info = get_all_wallet_info(session)
     pool_info_lookup = get_pool_info(session)[["timestamp", "sharePrice"]]
@@ -542,8 +538,12 @@ def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
 def get_current_wallet_info(
     session: Session, start_block: int | None = None, end_block: int | None = None
 ) -> pd.DataFrame:
-    """Gets the balance of a wallet and a given end_block
-    Here, you can specify a start_block for performance reasons, but if a trade happens before the start_block,
+    """Get the balance of a wallet and a given end_block.
+
+    Note
+    ----
+    Here, you can specify a start_block for performance reasons,
+    but if a trade happens before the start_block,
     that token won't show up in the result.
 
     Arguments
@@ -562,7 +562,6 @@ def get_current_wallet_info(
     DataFrame
         A DataFrame that consists of the queried wallet info data
     """
-
     all_wallet_info = get_all_wallet_info(session, start_block=start_block, end_block=end_block)
     # Get last entry in the table of each wallet address and token type
     # This should always return a dataframe
@@ -592,7 +591,7 @@ def get_current_wallet_info(
 
 
 def get_agents(session: Session, start_block: int | None = None, end_block: int | None = None) -> list[str]:
-    """Gets the list of all agents from the WalletInfo table.
+    """Get the list of all agents from the WalletInfo table.
 
     Arguments
     ---------
@@ -632,7 +631,7 @@ def get_agents(session: Session, start_block: int | None = None, end_block: int 
 
 
 def get_user_map(session: Session, address: str | None = None) -> pd.DataFrame:
-    """Gets all usermapping and returns as a pandas dataframe.
+    """Get all usermapping and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -653,7 +652,7 @@ def get_user_map(session: Session, address: str | None = None) -> pd.DataFrame:
 
 
 def get_latest_block_number(session: Session) -> int:
-    """Gets the latest block number based on the pool info table in the db.
+    """Get the latest block number based on the pool info table in the db.
 
     Arguments
     ---------
@@ -671,7 +670,7 @@ def get_latest_block_number(session: Session) -> int:
 def get_latest_block_number_from_table(
     table_obj: Type[WalletInfo | PoolInfo | Transaction | CheckpointInfo], session: Session
 ) -> int:
-    """Gets the latest block number based on the specified table in the db.
+    """Get the latest block number based on the specified table in the db.
 
     Arguments
     ---------
@@ -694,3 +693,119 @@ def get_latest_block_number_from_table(
     if result[0] is None:
         return 0
     return int(result[0])
+
+
+@dataclass
+class AgentPosition:
+    """Details what the agent holds, how it's changed over time, and how much it's worth.
+
+    Notes
+    -----
+    At a high level "position" refers to the entire portfolio of holdings.
+    The portfolio is comprised of multiple positions, built up through multiple trades over time.
+    - At most, the agent can have positions equal to the number of checkpoints (trades within a checkpoint are fungible)
+    - DataFrames are [blocks, positions] in shape, for convenience and vectorization
+    - Series are [blocks] in shape
+
+    Examples
+    --------
+    To create an agent position you only need to pass in the wallet, from `pg.get_wallet_info_history(session)`:
+
+    >>> agent_position = AgentPosition(pg.get_wallet_info_history(session))
+
+    Use the same index across multiple tables:
+    >>> block = 69
+    >>> position = 3
+    >>> position_name = agent_position.positions.columns[position]
+    >>> holding = agent_position.positions.loc[block, position]
+    >>> open_share_price = agent_position.open_share_price.loc[block, position]
+    >>> pnl = agent_position.pnl.loc[block, position]
+    >>> print(f"agent holds {holding} bonds in {position_name} at block {block} worth {pnl}"})
+    agent holds  55.55555556 bonds in LONG-20240715 at block 69 worth 50
+
+    Attributes
+    ----------
+    positions : pd.DataFrame
+        The agent's holding of a single position, in bonds (# of longs or shorts).
+    deltas : pd.DataFrame
+        Change in each position, from the previous block.
+    open_share_price : pd.DataFrame
+        Weighted average open share price of each position
+    pnl : pd.Series
+        Value of the agent's positions.
+    share_price : pd.Series
+        Share price at the time of the current block.
+    timestamp : pd.Series
+        Timestamp of the current block.
+    """
+
+    positions: pd.DataFrame
+    deltas: pd.DataFrame
+    open_share_price: pd.DataFrame
+    share_price: pd.Series
+    timestamp: pd.Series
+    pnl: pd.Series = field(default_factory=pd.Series)
+    share_price: pd.Series = field(default_factory=pd.Series)
+    timestamp: pd.Series = field(default_factory=pd.Series)
+
+    def __init__(self, wallet_history: pd.DataFrame):
+        """Calculate multiple relevant historical breakdowns of an agent's position."""
+        # Prepare PNL Series filled with NaNs, in the shape of [blocks]
+        self.pnl = pd.Series(data=pd.NA, index=wallet_history.index)
+
+        # Scrap the wallet history for parts. First we extract the share price and timestamp.
+        self.share_price = wallet_history["sharePrice"]
+        self.timestamp = wallet_history["timestamp"]
+        # Then we keep track of every other column, to extract them into other tables.
+        other_columns = [col for col in wallet_history.columns if col not in ["sharePrice", "timestamp"]]
+
+        # Create positions dataframe which tracks aggregate holdings.
+        self.positions = wallet_history.loc[:, other_columns].copy()
+        # keep positions where they are not 0, otherwise replace 0 with NaN
+        self.positions = self.positions.where(self.positions != 0, pd.NA)
+
+        # Create deltas dataframe which tracks change in holdings.
+        self.deltas = self.positions.diff()
+        # After the diff() call above, the first row of the deltas table will be NaN.
+        # Replace them with the first row of the positions table, effectively capturing a delta from 0.
+        self.deltas.iloc[0] = self.positions.iloc[0]
+
+        # Prepare tables filled with NaNs, in the shape of [blocks, positions]
+        share_price_on_increases = pd.DataFrame(data=pd.NA, index=self.deltas.index, columns=self.deltas.columns)
+        self.open_share_price = pd.DataFrame(data=pd.NA, index=self.deltas.index, columns=self.deltas.columns)
+
+        # When we have an increase in position, we use the current block's share_price
+        share_price_on_increases = share_price_on_increases.where(self.deltas <= 0, self.share_price, axis=0)
+
+        # Fill forward to replace NaNs. Table is now full of share prices, sourced only from increases in position.
+        share_price_on_increases.fillna(method="ffill", inplace=True, axis=0)
+
+        # Calculate weighted average share price across all deltas (couldn't figure out how to do this vector-wise).
+        # vectorised attempt: ap.open_share_price = (share_price_on_increases * deltas).cumsum(axis=0) / positions
+        # First row of weighted average open share price is equal to the share
+        # price on increases since there's nothing to weight.
+        self.open_share_price.iloc[0] = share_price_on_increases.iloc[0]
+
+        # Now we loop across the remaining rows, updated the weighted averages for positions that change.
+        for row in self.deltas.index[1:]:
+            # An update is required for columns which increase in size this row, identified by a positive delta.
+            update_required = self.deltas.loc[row, :] > 0
+
+            new_price = []
+            if len(update_required) > 0:
+                # calculate update, per this general formula:
+                # new_price = (delta_amount * current_price + old_amount * old_price) / (old_amount + delta_amount)
+                new_price = (
+                    share_price_on_increases.loc[row, update_required] * self.deltas.loc[row, update_required]
+                    + self.open_share_price.loc[row - 1, update_required] * self.positions.loc[row - 1, update_required]
+                ) / (self.deltas.loc[row, update_required] + self.positions.loc[row - 1, update_required])
+
+            # Keep previous result where an update isn't required, otherwise replace with new_price
+            self.open_share_price.loc[row, :] = self.open_share_price.loc[row - 1, :].where(
+                ~update_required, new_price, axis=0
+            )
+
+
+def get_agent_positions(session: Session) -> dict[str, AgentPosition]:
+    """Create an AgentPosition for each agent in the wallet history."""
+    return {agent: AgentPosition(wallet) for agent, wallet in get_wallet_info_history(session).items()}

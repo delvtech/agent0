@@ -20,8 +20,6 @@ from elfpy.data import postgres
 # None to view all
 view_window = None
 
-
-# %%
 # near real-time / live feed simulation
 
 ## Get transactions from data
@@ -53,8 +51,7 @@ st.session_state.options = []
 
 
 def get_ticker(data):
-    """Given transaction data, return a subset of the dataframe"""
-    # Return reverse of methods to put most recent transactions at the top
+    """Return reverse of methods to put most recent transactions at the top."""
     return data[["input_method"]].iloc[::-1]
 
 
@@ -70,8 +67,16 @@ sidebar_placeholder = st.sidebar.empty()
 
 
 while True:
+    pool_config_data = postgres.get_pool_config(session)
     txn_data = postgres.get_transactions(session, start_block=start_block)
     pool_info_data = postgres.get_pool_info(session, start_block=start_block)
+    checkpoint_info = postgres.get_checkpoint_info(session, start_block=start_block)
+    agent_positions = postgres.get_agent_positions(session)
+
+    # truncate the length of pool_info_data and checkpoint_info to the shorter of their two indexes.
+    latest_block = min(max(pool_info_data.index), max(checkpoint_info.index))
+    pool_info_data = pool_info_data.loc[:latest_block, :]
+    checkpoint_info = checkpoint_info.loc[:latest_block, :]
 
     combined_data = get_combined_data(txn_data, pool_info_data)
 
@@ -83,9 +88,9 @@ while True:
 
     ticker = get_ticker(txn_data)
 
-    (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data)
+    fixed_rate_x, fixed_rate_y = calc_fixed_rate(combined_data)
 
-    pnl_x, pnl_y = calculate_pnl(combined_data, filter_agents)
+    all_agent_info = calculate_pnl(pool_config_data, pool_info_data, checkpoint_info, agent_positions)
 
     # Plot reserve levels (share and bond reserves, in poolinfo)
 
@@ -108,7 +113,7 @@ while True:
 
         plot_ohlcv(ohlcv, ax_ohlcv, ax_vol)
         plot_fixed_rate(fixed_rate_x, fixed_rate_y, ax_fixed_rate)
-        plot_pnl(pnl_x, pnl_y, ax_pnl)
+        plot_pnl(all_agent_info, ax_pnl)
 
         fig.autofmt_xdate()  # type: ignore
         st.pyplot(fig=fig)  # type: ignore

@@ -1,10 +1,9 @@
-"""
-Utilities for extracting data from logs
-"""
+"""Utilities for extracting data from logs."""
 
 from __future__ import annotations
 
 import json
+import logging
 import time
 
 import numpy as np
@@ -14,9 +13,7 @@ from elfpy.markets.hyperdrive import AssetIdPrefix
 
 
 def read_json_to_pd(json_file):
-    """
-    Generic function to read json file path to pandas dataframe
-    """
+    """Read json file path to pandas dataframe."""
     # Avoids race condition if background process is writing, keep trying until it passes
     while True:
         try:
@@ -29,34 +26,54 @@ def read_json_to_pd(json_file):
     return pd.DataFrame(json_data)
 
 
+def calculate_spot_price_from_state(state, maturity_timestamp, block_timestamp, position_duration):
+    """Calculate spot price from reserves stored in a state variable."""
+    return calculate_spot_price(
+        state.shareReserves,
+        state.bondReserves,
+        state.lpTotalSupply,
+        maturity_timestamp,
+        block_timestamp,
+        position_duration,
+    )
+
+
 def calculate_spot_price(
     share_reserves,
     bond_reserves,
     lp_total_supply,
-    maturity_timestamp=1.0,
-    block_timestamp=0.0,
-    position_duration=1.0,
+    maturity_timestamp=None,
+    block_timestamp=None,
+    position_duration=None,
 ):
-    """Calculates the spot price given the pool info data"""
+    """Calculate the spot price given the pool info data."""
     # pylint: disable=too-many-arguments
 
     # Hard coding variables to calculate spot price
     initial_share_price = 1
     time_remaining_stretched = 0.045071688063194093
     full_term_spot_price = (
-        (initial_share_price * (share_reserves / 1e18)) / ((bond_reserves / 1e18) + (lp_total_supply / 1e18))
+        (initial_share_price * share_reserves) / (bond_reserves + lp_total_supply)
     ) ** time_remaining_stretched
 
-    time_left_in_years = (maturity_timestamp - block_timestamp) / position_duration
+    if maturity_timestamp is None or block_timestamp is None or position_duration is None:
+        return full_term_spot_price
+    time_left_seconds = maturity_timestamp - block_timestamp
+    if isinstance(time_left_seconds, pd.Timedelta):
+        time_left_seconds = time_left_seconds.total_seconds()
+    time_left_in_years = time_left_seconds / position_duration
+    logging.info(
+        " spot price is weighted average of %s(%s) and 1 (%s)",
+        full_term_spot_price,
+        time_left_in_years,
+        1 - time_left_in_years,
+    )
 
     return full_term_spot_price * time_left_in_years + 1 * (1 - time_left_in_years)
 
 
 def get_combined_data(txn_data, pool_info_data):
-    """
-    Takes the transaction data nad pool info data and
-    combines the two dataframes into a single dataframe
-    """
+    """Combine multiple datasets into one containing transaction data, and pool info."""
     pool_info_data.index = pool_info_data.index.astype(int)
     # txn_data.index = txn_data["blockNumber"]
     # Combine pool info data and trans data by block number

@@ -172,7 +172,12 @@ def main(
     )
 
     # get pool config from hyperdrive contract
-    pool_config = db_schema.PoolConfig(**hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract))
+    # TODO: figure out best way to represent this. options are PoolInfo object in db_schema, TypeDict, etc.
+    pool_config_dict = hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract)
+    for key in db_schema.PoolConfig.__annotations__:
+        if key not in pool_config_dict:
+            pool_config_dict[key] = None
+    pool_config = db_schema.PoolConfig(**pool_config_dict)
     postgres.add_pool_config(pool_config, session)
 
     # Get last entry of pool info in db
@@ -238,23 +243,47 @@ def main(
                     continue
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_pool_info = None
+                pool_info_dict = None
                 for _ in range(RETRY_COUNT):
                     try:
                         pool_info_dict = hyperdrive_interface.get_hyperdrive_pool_info(
                             web3, hyperdrive_contract, block_number
                         )
-                        # Set defaults
-                        for key in db_schema.PoolInfo.__annotations__:
-                            if key not in pool_info_dict:
-                                pool_info_dict[key] = None
-                        block_pool_info = db_schema.PoolInfo(**pool_info_dict)
                         break
                     except ValueError:
                         logging.warning("Error in get_hyperdrive_pool_info, retrying")
                         time.sleep(1)
                         continue
-                if block_pool_info:
-                    postgres.add_pool_infos([block_pool_info], session)
+                if pool_info_dict:  # Proceed only if we have data, otherwise do nothing
+                    # Set defaults
+                    assert pool_info_dict is not None
+                    for key in db_schema.PoolInfo.__annotations__:
+                        if key not in pool_info_dict:
+                            pool_info_dict[key] = None
+                    # Add to db
+                    block_pool_info = db_schema.PoolInfo(**pool_info_dict)
+                    if block_pool_info:
+                        postgres.add_pool_infos([block_pool_info], session)
+
+                # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
+                checkpoint_info_dict = None
+                for _ in range(RETRY_COUNT):
+                    try:
+                        checkpoint_info_dict = hyperdrive_interface.get_hyperdrive_checkpoint_info(
+                            web3, hyperdrive_contract, block_number
+                        )
+                        break
+                    except ValueError:
+                        logging.warning("Error in get_hyperdrive_checkpoint_info, retrying")
+                        time.sleep(1)
+                        continue
+                if checkpoint_info_dict:  # Proceed only if we have data, otherwise do nothing
+                    # Set defaults
+                    for key in db_schema.CheckpointInfo.__annotations__:
+                        if key not in checkpoint_info_dict:
+                            checkpoint_info_dict[key] = None
+                    # Add to db
+                    postgres.add_checkpoint_infos([db_schema.CheckpointInfo(**checkpoint_info_dict)], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_transactions = None
@@ -268,7 +297,7 @@ def main(
                         logging.warning("Error in fetch_transactions_for_block, retrying")
                         time.sleep(1)
                         continue
-                if block_transactions:
+                if block_transactions:  # Proceed only if we have data, otherwise do nothing
                     postgres.add_transactions(block_transactions, session)
                 if block_transactions and block_pool_info:
                     wallet_info_for_transactions = get_wallet_info(
