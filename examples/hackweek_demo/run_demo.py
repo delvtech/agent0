@@ -72,10 +72,10 @@ while True:
     pool_info_data = postgres.get_pool_info(session, start_block=start_block)
     checkpoint_info = postgres.get_checkpoint_info(session, start_block=start_block)
 
-    assert max(pool_info_data.index) == max(checkpoint_info.index), (
-        f"Block numbers don't match: pool info: {max(pool_info_data.index)}, "
-        f", checkpoint info: {max(checkpoint_info.index)}"
-    )
+    # truncate the length of pool_info_data and checkpoint_info to the shorter of their two indexes.
+    latest_block = min(max(pool_info_data.index), max(checkpoint_info.index))
+    pool_info_data = pool_info_data.loc[:latest_block, :]
+    checkpoint_info = checkpoint_info.loc[:latest_block, :]
 
     combined_data = get_combined_data(txn_data, pool_info_data)
 
