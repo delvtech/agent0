@@ -10,7 +10,11 @@ from numpy.random._generator import Generator as NumpyGenerator
 
 @dataclass
 class Budget:
-    """Specifications for generating a random budget sample."""
+    """Specifications for generating a random budget sample.
+
+    This is used for assigning the agent's budget in base tokens.
+    Wei in the variables below refers to the smallest unit of base, not to ETH.
+    """
 
     mean_wei: int = int(5_000 * 1e18)
     std_wei: int = int(2_000 * 1e18)
