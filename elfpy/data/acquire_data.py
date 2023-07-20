@@ -311,7 +311,7 @@ if __name__ == "__main__":
     # setup constants
     CONTRACTS_URL = "http://localhost:80/addresses.json"
     ETHEREUM_NODE = "http://localhost:8545"
-    ABI_DIR = "./hyperdrive_solidity/.build/"
+    ABI_DIR = "./hyperdrive_solidity/out/"
     START_BLOCK = 0
     # Look back limit for backfilling
     LOOKBACK_BLOCK_LIMIT = 1000
