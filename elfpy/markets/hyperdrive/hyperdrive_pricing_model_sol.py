@@ -1,4 +1,4 @@
-"""The Hyperdrive pricing model"""
+"""The Hyperdrive pricing model."""
 from __future__ import annotations
 
 from typing import NamedTuple
@@ -26,8 +26,7 @@ class MaxLongResult(NamedTuple):
 def calculate_spot_price(
     share_reserves: FixedPoint, bond_reserves: FixedPoint, initial_share_price: FixedPoint, time_stretch: FixedPoint
 ) -> FixedPoint:
-    r"""
-    Calculates the spot price without slippage of bonds in terms of base.
+    r"""Calculates the spot price without slippage of bonds in terms of base.
     This is meant to mirror the solidity.
 
     Parameters
@@ -46,6 +45,8 @@ def calculate_spot_price(
     FixedPoint
         The spot price of bonds in terms of base as an 18 fixed-point value.
     """
+    if share_reserves <= FixedPoint(0):
+        return FixedPoint("nan")
     spot_price = (initial_share_price * share_reserves / bond_reserves) ** time_stretch
     return spot_price
 
@@ -64,7 +65,7 @@ def calculate_max_long(
     done with an iterative approach as there is no closed form solution.
 
     Arguments
-    ----------
+    ---------
     share_reserves : FixedPoint
         The pool's share reserves.
     bond_reserves : FixedPoint
@@ -175,8 +176,7 @@ def calculate_max_short(
     initial_share_price: FixedPoint,
     minimum_share_reserves: FixedPoint,
 ) -> FixedPoint:
-    r"""
-    Calculates the maximum amount of shares that can be used to open shorts.
+    r"""Calculates the maximum amount of shares that can be used to open shorts.
 
     Parameters
     ----------
