@@ -233,9 +233,7 @@ class Transaction(Base):
 
 
 class UserMap(Base):
-    """
-    Table/dataclass schema for pool config
-    """
+    """Table/dataclass schema for pool config."""
 
     __tablename__ = "usermap"
 
@@ -247,8 +245,8 @@ class UserMap(Base):
 
 
 def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[Transaction]:
-    """
-    Fetch transactions related to the contract
+    """Fetch transactions related to the contract.
+
     Returns the block pool info from the Hyperdrive contract
 
     Arguments
@@ -289,7 +287,7 @@ def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: B
         except ValueError:  # if the input is not meant for the contract, ignore it
             continue
         tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
-        logs = _fetch_and_decode_logs(web3, contract, tx_receipt)
+        logs = eth.get_transaction_logs(web3, contract, tx_receipt)
         receipt: dict[str, Any] = _recursive_dict_conversion(tx_receipt)  # type: ignore
         out_transactions.append(_build_transaction_object(transaction_dict, logs, receipt))
     return out_transactions
@@ -300,8 +298,7 @@ def _build_transaction_object(
     logs: list[dict[str, Any]],
     receipt: dict[str, Any],
 ) -> Transaction:
-    """
-    Conversion function to translate output of chain queries to the Transaction object
+    """Conversion function to translate output of chain queries to the Transaction object
 
     Arguments
     ----------
@@ -373,45 +370,23 @@ def _build_transaction_object(
     return transaction
 
 
-def _fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt) -> list[dict[Any, Any]]:
-    """Decode logs from a transaction receipt"""
-    logs = []
-    if tx_receipt.get("logs"):
-        for log in tx_receipt["logs"]:
-            event_data, event = _get_event_object(web3, contract, log, tx_receipt)
-            if event_data and event:
-                formatted_log = dict(event_data)
-                formatted_log["event"] = event.get("name")
-                formatted_log["args"] = dict(event_data["args"])
-                logs.append(formatted_log)
-    return logs
+def _recursive_dict_conversion(obj: Any) -> Any:
+    """Recursively converts a dictionary to convert objects to hex values.
+
+    Arguments
+    ---------
+    obj : Any
+        Could be a HexBytes, dict, or any object with the `items` attribute
+
+    Returns
+    -------
+    Any
+        A nested dictionary containing the decoded object values
 
 
-def _get_event_object(
-    web3: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
-) -> tuple[EventData, ABIEvent] | tuple[None, None]:
-    """Retrieves the event object and anonymous types for a  given contract and log"""
-    abi_events = [abi for abi in contract.abi if abi["type"] == "event"]  # type: ignore
-    for event in abi_events:  # type: ignore
-        # Get event signature components
-        name = event["name"]  # type: ignore
-        inputs = [param["type"] for param in event["inputs"]]  # type: ignore
-        inputs = ",".join(inputs)
-        # Hash event signature
-        event_signature_text = f"{name}({inputs})"
-        event_signature_hex = web3.keccak(text=event_signature_text).hex()
-        # Find match between log's event signature and ABI's event signature
-        receipt_event_signature_hex = log["topics"][0].hex()
-        if event_signature_hex == receipt_event_signature_hex:
-            # Decode matching log
-            contract_event: ContractEvent = contract.events[event["name"]]()  # type: ignore
-            event_data: EventData = contract_event.process_receipt(tx_receipt)[0]
-            return event_data, event  # type: ignore
-    return (None, None)
-
-
-def _recursive_dict_conversion(obj):
-    """Recursively converts a dictionary to convert objects to hex values"""
+    .. todo::
+        This function needs to be better constrained & typed
+    """
     if isinstance(obj, HexBytes):
         return obj.hex()
     if isinstance(obj, dict):

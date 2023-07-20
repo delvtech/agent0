@@ -81,29 +81,3 @@ def get_event_object(
             event_data: EventData = contract_event.process_receipt(tx_receipt)[0]
             return event_data, event  # type: ignore
     return (None, None)
-
-
-def _recursive_dict_conversion(obj: Any) -> Any:
-    """Recursively converts a dictionary to convert objects to hex values.
-
-    Arguments
-    ---------
-    obj : Any
-        Could be a HexBytes, dict, or any object with the `items` attribute
-
-    Returns
-    -------
-    Any
-        A nested dictionary containing the decoded object values
-
-
-    .. todo::
-        This function needs to be better constrained & typed
-    """
-    if isinstance(obj, HexBytes):
-        return obj.hex()
-    if isinstance(obj, dict):
-        return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
-    if hasattr(obj, "items"):
-        return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
-    return obj
