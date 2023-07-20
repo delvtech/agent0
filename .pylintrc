@@ -637,3 +637,6 @@ accept-no-yields-doc = false
 # If the docstring type cannot be guessed the
 # specified docstring type will be used.
 default-docstring-type = numpy
+
+[pylint.'test_*.py']
+disable = missing-param-doc, missing-return-doc, missing-return-type-doc, too-few-public-methods, missing-type-doc
