@@ -16,10 +16,10 @@ agent_config: list[BotInfo] = [
         policy=Policies.random_agent,
         number_of_bots=0,
         budget=Budget(
-            mean_wei=int(1e18),  # 1 ETH
-            std_wei=int(1e17),  # 0.1 ETH
-            min_wei=1,  # 1 WEI
-            max_wei=int(1e21),  # 1k ETH
+            mean_wei=int(5_000e18),  # 5k base
+            std_wei=int(1_000e18),  # 1k base
+            min_wei=1,  # 1 WEI base
+            max_wei=int(100_000e18),  # 100k base
         ),
         init_kwargs={"trade_chance": FixedPoint(0.8)},
     ),
@@ -27,10 +27,10 @@ agent_config: list[BotInfo] = [
         policy=Policies.long_louie,
         number_of_bots=0,
         budget=Budget(
-            mean_wei=int(1e18),  # 1 ETH
-            std_wei=int(1e17),  # 0.1 ETH
-            min_wei=1,  # 1 WEI
-            max_wei=int(1e21),  # 1k ETH
+            mean_wei=int(5_000e18),  # 5k base
+            std_wei=int(1_000e18),  # 1k base
+            min_wei=1,  # 1 WEI base
+            max_wei=int(100_000e18),  # 100k base
         ),
         init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.9)},
     ),
@@ -38,10 +38,10 @@ agent_config: list[BotInfo] = [
         policy=Policies.short_sally,
         number_of_bots=0,
         budget=Budget(
-            mean_wei=int(1e18),  # 1 ETH
-            std_wei=int(1e17),  # 0.1 ETH
-            min_wei=1,  # 1 WEI
-            max_wei=int(1e21),  # 1k ETH
+            mean_wei=int(5_000e18),  # 5k base
+            std_wei=int(1_000e18),  # 1k base
+            min_wei=1,  # 1 WEI base
+            max_wei=int(100_000e18),  # 100k base
         ),
         init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.8)},
     ),
