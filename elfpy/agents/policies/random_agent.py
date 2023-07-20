@@ -83,9 +83,15 @@ class RandomAgent(BasePolicy):
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
+
         maximum_trade_amount = market.get_max_long_for_account(wallet.balance.amount)
         # # WEI <= trade_amount <= max_short
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
+
+        # don't open a trade that does nothing.  reverts anyway.
+        if trade_amount == 0:
+            return []
+
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             Trade(

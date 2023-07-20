@@ -94,30 +94,30 @@ def main():  # TODO: Move much of this out of main
         if latest_block_number is None or latest_block_timestamp is None:
             raise AssertionError("latest_block_number and latest_block_timestamp can not be None")
 
-        if latest_block_number > last_executed_block:
-            # log and show block info
-            logging.info(
-                "Block number: %d, Block time: %s, Trades without crashing: %s",
-                latest_block_number,
-                str(datetime.fromtimestamp(float(latest_block_timestamp))),
+        # if latest_block_number > last_executed_block:
+        # log and show block info
+        logging.info(
+            "Block number: %d, Block time: %s, Trades without crashing: %s",
+            latest_block_number,
+            str(datetime.fromtimestamp(float(latest_block_timestamp))),
+            trade_streak,
+        )
+        try:
+            trade_streak = execute_agent_trades(
+                web3,
+                hyperdrive_contract,
+                agent_accounts,
                 trade_streak,
             )
-            try:
-                trade_streak = execute_agent_trades(
-                    web3,
-                    hyperdrive_contract,
-                    agent_accounts,
-                    trade_streak,
-                )
-                last_executed_block = latest_block_number
-                # TODO: if provider.auto_mine is set then run the `mine` function
-            # we want to catch all exceptions
-            # pylint: disable=broad-exception-caught
-            except Exception as exc:
-                if environment_config.halt_on_errors:
-                    raise exc
-                trade_streak = 0
-                # TODO: deliver crash report
+            last_executed_block = latest_block_number
+            # TODO: if provider.auto_mine is set then run the `mine` function
+        # we want to catch all exceptions
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            if environment_config.halt_on_errors:
+                raise exc
+            trade_streak = 0
+            # TODO: deliver crash report
 
 
 if __name__ == "__main__":

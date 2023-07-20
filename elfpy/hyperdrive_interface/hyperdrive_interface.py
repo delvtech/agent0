@@ -174,11 +174,13 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict[str, Any]:
     pool_config["minimumShareReserves"] = eth.convert_scaled_value(hyperdrive_config.get("minimumShareReserves", None))
     pool_config["positionDuration"] = hyperdrive_config.get("positionDuration", None)
     pool_config["checkpointDuration"] = hyperdrive_config.get("checkpointDuration", None)
-    pool_config["timeStretch"] = hyperdrive_config.get("timeStretch", None)
-    if pool_config["timeStretch"]:
-        pool_config["invTimeStretch"] = float(FixedPoint(1) / FixedPoint(scaled_value=pool_config["timeStretch"]))
-    else:
-        pool_config["invTimeStretch"] = None
+    # Ok so, the contracts store the time stretch constant in an inverted manner from the python.
+    # In order to not break the world, we save the contract version as 'invTimeStretch' and invert
+    # that to get the python version 'timeStretch'
+    pool_config["invTimeStretch"] = hyperdrive_config.get("timeStretch", None)
+    pool_config["timeStretch"] = (
+        FixedPoint(1) / FixedPoint(scaled_value=hyperdrive_config.get("timeStretch", FixedPoint(1)))
+    ).scaled_value
     pool_config["governance"] = hyperdrive_config.get("governance", None)
     pool_config["feeCollector"] = hyperdrive_config.get("feeCollector", None)
     curve_fee, flat_fee, governance_fee = hyperdrive_config.get("fees", (None, None, None))
