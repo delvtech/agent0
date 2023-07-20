@@ -30,12 +30,12 @@ class Budget:
         Arguments
         ---------
         rng : NumpyGenerator
-            Random number generator
+            The NumpyGenerator provides access to a wide range of distributions, and stores the random state.
 
         Returns
         -------
         FixedPoint
-            The resulting sample
+            A sample from a clipped random normal distribution according to the parameters defined at construction
         """
         return FixedPoint(
             scaled_value=FixedPointMath.clip(
