@@ -44,6 +44,12 @@ class EnvironmentConfig(types.FrozenClass):
     max_bytes: int = DEFAULT_LOG_MAXBYTES  # int(2e6) or 2MB
     # location of RPC
     rpc_url: str = "http://localhost:8545"
+    # chance for a bot to execute a trade (used if unspecified at the bot level).
+    default_trade_chance: float = 0.1
+    # risk_threshold has different interpretations for different bots (used if unspecified at the bot level).
+    # In general the bot will be more risk averse as it grows to infinity.
+    # A value of 0 will usually disable it.
+    default_risk_threshold: float = 0.0
     # int to be used for the random seed
     random_seed: int = 1
     # abi filenames

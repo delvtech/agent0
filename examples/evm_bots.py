@@ -152,7 +152,7 @@ def create_agent(
     # pylint: disable=too-many-arguments
     assert bot.index is not None, "Bot must have an index."
     assert isinstance(bot.policy, type(Agent)), "Bot must have a policy of type Agent."
-    params = {"trade_chance": FixedPoint(bot_config.trade_chance), "budget": bot.budget.sample_budget(rng)}
+    params = {"trade_chance": FixedPoint(bot.trade_chance), "budget": bot.budget.sample_budget(rng)}
     params["rng"] = rng
     if bot.risk_threshold and bot.name != "random":  # random agent doesn't use risk threshold
         params["risk_threshold"] = FixedPoint(bot.risk_threshold)  # if risk threshold is manually set, we use it
@@ -588,13 +588,19 @@ def main(
     if "num_random" not in bot_config.scratch:
         bot_config.scratch["num_random"]: int = 1
     bot_config.scratch["louie"] = BotInfo(
-        policy=LongLouie, trade_chance=bot_config.trade_chance, risk_threshold=bot_config.risk_threshold
+        policy=LongLouie,
+        trade_chance=bot_config.default_trade_chance,
+        risk_threshold=bot_config.default_risk_threshold,
     )
     bot_config.scratch["sally"] = BotInfo(
-        policy=ShortSally, trade_chance=bot_config.trade_chance, risk_threshold=bot_config.risk_threshold
+        policy=ShortSally,
+        trade_chance=bot_config.default_trade_chance,
+        risk_threshold=bot_config.default_risk_threshold,
     )
     bot_config.scratch["random"] = BotInfo(
-        policy=RandomAgent, trade_chance=bot_config.trade_chance, risk_threshold=bot_config.risk_threshold
+        policy=RandomAgent,
+        trade_chance=bot_config.default_trade_chance,
+        risk_threshold=bot_config.default_risk_threshold,
     )
     bot_config.scratch["bot_names"] = {"louie", "sally", "random"}
     # hard-code goerli addresses
