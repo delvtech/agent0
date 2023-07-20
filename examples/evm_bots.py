@@ -311,15 +311,13 @@ def do_trade(
     allowance_shortfall = amount / 1e18 - initial_allowance
     if allowance_shortfall > 0:
         try:
-            allowance_increase = max(50_000, allowance_shortfall) * 2
-            txn_args = hyperdrive_instance.address, int((initial_allowance + allowance_increase) * 1e18)
+            txn_args = hyperdrive_instance.address, 2**256 - 1
             ape_utils.attempt_txn(agent_contract, base_instance.approve, *txn_args)
             logging.info(
-                "Allowance too low by %s, at %s for a trade of %s, approving an additional %s.",
+                "Allowance too low by %s, at %s for a trade of %s.",
                 allowance_shortfall,
                 initial_allowance,
                 amount / 1e18,
-                allowance_increase,
             )
             updated_allowance = base_instance.allowance(agent_contract.address, hyperdrive_instance.address) / 1e18
             change_in_allowance = updated_allowance - initial_allowance
