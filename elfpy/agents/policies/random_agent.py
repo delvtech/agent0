@@ -1,4 +1,4 @@
-"""User strategy that opens or closes a random position with a random allowed amount"""
+"""User strategy that opens or closes a random position with a random allowed amount."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 class RandomAgent(BasePolicy):
-    """Random agent"""
+    """Random agent."""
 
     def __init__(
         self,
@@ -27,7 +27,7 @@ class RandomAgent(BasePolicy):
         rng: NumpyGenerator | None = None,
         trade_chance: FixedPoint = FixedPoint("1.0"),
     ) -> None:
-        """Adds custom attributes"""
+        """Adds custom attributes."""
         if not isinstance(trade_chance, FixedPoint):
             raise TypeError(f"{trade_chance=} must be of type `FixedPoint`")
         self.trade_chance = trade_chance
@@ -38,7 +38,7 @@ class RandomAgent(BasePolicy):
         wallet: Wallet,
         disallowed_actions: list[MarketActionType] | None = None,
     ) -> list[MarketActionType]:
-        """Get all available actions, excluding those listed in disallowed_actions"""
+        """Get all available actions, excluding those listed in disallowed_actions."""
         # prevent accidental override
         if disallowed_actions is None:
             disallowed_actions = []
@@ -58,7 +58,7 @@ class RandomAgent(BasePolicy):
         return [action for action in all_available_actions if action not in disallowed_actions]
 
     def open_short_with_random_amount(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
-        """Open a short with a random allowable amount"""
+        """Open a short with a random allowable amount."""
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
@@ -78,7 +78,7 @@ class RandomAgent(BasePolicy):
         ]
 
     def open_long_with_random_amount(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
-        """Open a long with a random allowable amount"""
+        """Open a long with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
@@ -99,13 +99,13 @@ class RandomAgent(BasePolicy):
         ]
 
     def add_liquidity_with_random_amount(self, wallet: Wallet) -> list[Trade]:
-        """Add liquidity with a random allowable amount"""
+        """Add liquidity with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
         # WEI <= trade_amount
-        trade_amount: FixedPoint = max(WEI, initial_trade_amount)
+        trade_amount: FixedPoint = max(WEI, min(wallet.balance.amount, initial_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             Trade(
@@ -119,7 +119,7 @@ class RandomAgent(BasePolicy):
         ]
 
     def remove_liquidity_with_random_amount(self, wallet: Wallet) -> list[Trade]:
-        """Remove liquidity with a random allowable amount"""
+        """Remove liquidity with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
@@ -139,7 +139,7 @@ class RandomAgent(BasePolicy):
         ]
 
     def close_random_short(self, wallet: Wallet) -> list[Trade]:
-        """Fully close the short balance for a random mint time"""
+        """Fully close the short balance for a random mint time."""
         # choose a random short time to close
         short_time: FixedPoint = list(wallet.shorts)[self.rng.integers(len(wallet.shorts))]
         trade_amount = wallet.shorts[short_time].balance  # close the full trade
@@ -156,7 +156,7 @@ class RandomAgent(BasePolicy):
         ]
 
     def close_random_long(self, wallet: Wallet) -> list[Trade]:
-        """Fully close the long balance for a random mint time"""
+        """Fully close the long balance for a random mint time."""
         # choose a random long time to close
         long_time: FixedPoint = list(wallet.longs)[self.rng.integers(len(wallet.longs))]
         trade_amount = wallet.longs[long_time].balance  # close the full trade
@@ -173,7 +173,7 @@ class RandomAgent(BasePolicy):
         ]
 
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
-        """Implement a random user strategy
+        """Implement a random user strategy.
 
         The agent performs one of four possible trades:
             [OPEN_LONG, OPEN_SHORT, CLOSE_LONG, CLOSE_SHORT]
