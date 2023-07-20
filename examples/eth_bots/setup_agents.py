@@ -17,7 +17,7 @@ from elfpy.eth.accounts import EthAccount
 def get_agent_accounts(
     config: list[BotInfo], web3: Web3, base_token_contract: Contract, hyperdrive_address: str, rng: NumpyGenerator
 ) -> list[EthAccount]:
-    """Get agents according to provided config"""
+    """Get agents according to provided config, provide eth, base token and approve hyperdrive."""
     agents: list[EthAccount] = []
     num_agents_so_far: list[int] = []
     for agent_info in config:
