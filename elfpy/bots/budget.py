@@ -17,10 +17,26 @@ class Budget:
     max_wei: int = int(1e21)  # 1k ETH
 
     def sample_budget(self, rng: NumpyGenerator) -> FixedPoint:
-        """Returns a sample from a clipped normal distribution"""
+        """Returns a sample from a clipped normal distribution.
+
+        Parameters
+        ----------
+        rng : NumpyGenerator
+            Random number generator
+
+        Note
+        ----
+        Sample from normal distribution with mean of mean_wei and standard deviation of std_wei.
+        Then clip to between a minimum of min_wei and a maximum of max_wei.
+
+        Returns
+        -------
+        FixedPoint
+            The resulting sample
+        """
         return FixedPoint(
-            FixedPointMath.clip(
-                rng.normal(loc=self.mean_wei, scale=self.std_wei),
+            scaled_value=FixedPointMath.clip(
+                int(rng.normal(loc=self.mean_wei, scale=self.std_wei)),
                 self.min_wei,
                 self.max_wei,
             )
