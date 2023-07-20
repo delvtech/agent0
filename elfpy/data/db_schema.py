@@ -298,7 +298,7 @@ def _build_transaction_object(
     logs: list[dict[str, Any]],
     receipt: dict[str, Any],
 ) -> Transaction:
-    """Conversion function to translate output of chain queries to the Transaction object
+    """Conversion function to translate output of chain queries to the Transaction object.
 
     Arguments
     ----------

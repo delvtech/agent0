@@ -28,7 +28,9 @@ def get_transaction_logs(
 
     Returns
     -------
-
+    dict[str, Any]
+        A dictionary containing the decoded logs from the transaction
+        If event_names is not None, then the returned dict will only include logs that have a corresponding "event" entry
     """
     logs: list[dict[Any, Any]] = []
     if tx_receipt.get("logs"):

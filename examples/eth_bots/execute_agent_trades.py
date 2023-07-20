@@ -57,17 +57,6 @@ def execute_agent_trades(
             # sort through the trades
             # TODO: raise issue on failure by looking at `tx_receipt` returned from function
             # TODO: figure out fees paid
-
-            ## fungible
-            # balance: Quantity = field(default_factory=lambda: Quantity(amount=FixedPoint(0), unit=TokenType.BASE))
-            # lp_tokens: FixedPoint = FixedPoint(0)
-            ## non-fungible (identified by key=mint_time, stored as dict)
-            # longs: dict[FixedPoint, Long] = field(default_factory=dict)
-            # shorts: dict[FixedPoint, Short] = field(default_factory=dict)
-            # withdraw_shares: FixedPoint = FixedPoint(0)
-            # borrows: dict[FixedPoint, Borrow] = field(default_factory=dict)
-            # fees_paid: FixedPoint = FixedPoint(0)
-
             if trade_object.trade.action_type == MarketActionType.OPEN_LONG:
                 fn_name = "openLong"
                 tx_receipt = eth.smart_contract_transact(
@@ -256,6 +245,6 @@ def execute_agent_trades(
                 )
             else:
                 raise NotImplementedError(f"{trade_object.trade.action_type} is not implemented.")
-            trade_streak += 1
             account.agent.wallet.update(wallet_deltas)
+            trade_streak += 1
     return trade_streak
