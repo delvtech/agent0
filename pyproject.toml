@@ -122,29 +122,24 @@ select = ["A", "D", "I", "N", "PL"]
 
 # We ignore the following rules:
 # D203 : 1 blank line required before class docstring (incompatible with D211: no blank lines before class docstring)
-# D213: multi-line-summary-second-line (incompatible with D212: multi-line summary should start at the first line)
-# D416: section-name-ends-in-colon (numpy style guide doesn't use colons after sections, i.e. Parameters)
-ignore = ["D203", "D213", "D416"]
+# D213 : multi-line-summary-second-line (incompatible with D212: multi-line summary should start at the first line)
+# D416 : section-name-ends-in-colon (numpy style guide doesn't use colons after sections, i.e. Parameters)
+# PLR0913 : Too many arguments to function call (X > 5)
+# PLR0915 : Too many statements (X > 50)
+# PLR0912 : Too many branches (X > 12)
+ignore = ["D203", "D213", "D416", "PLR0913", "PLR0915", "PLR0912"]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 fixable = ["A", "D", "I", "N", "PL"]
 unfixable = []
 
-# override pow in fixed_point, and allow literal comparison in tests
-# per-file-ignores = { "elfpy/utils/math/fixed_point.py" = [
-#     "A003",
-# ], "tests/*" = [
-#     "PLR2004",
-# ] }
-
-# Ignore builtins in elfpy/utils/math/fixed_point.py
 line-length = 120
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 # Assume Python 3.9.
-target-version = "py39"
+target-version = "py310"
 
 exclude = [
     ".venv",
