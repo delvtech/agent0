@@ -21,6 +21,8 @@ class EnvironmentConfig(types.FrozenClass):
 
     # Logical username for who is running bots
     username: str = DEFAULT_USERNAME
+    # Logical username for who is running bots
+    username_register_url: str = "http://localhost:5001"
     # whether to run on alchemy
     alchemy: bool = False
     # url for retrieving the contract artifacts
