@@ -49,10 +49,10 @@ agent_config: list[BotInfo] = [
         policy=ExampleCustomPolicy,
         number_of_bots=2,
         budget=Budget(
-            mean_wei=int(1_000e18),  # 1k ETH
-            std_wei=int(100e18),  # 100 ETH
-            min_wei=1,  # 1 WEI
-            max_wei=int(100_000e18),  # 100k ETH
+            mean_wei=int(1_000e18),  # 1k base
+            std_wei=int(100e18),  # 100 base
+            min_wei=1,  # 1 WEI base
+            max_wei=int(100_000e18),  # 100k base
         ),
         init_kwargs={"trade_amount": FixedPoint(100)},
     ),
