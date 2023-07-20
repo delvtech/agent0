@@ -43,6 +43,8 @@ def main():  # TODO: Move much of this out of main
     # point to chain env
     web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
 
+    # TODO: all contract initialization should get encapsulated into something like 'setup_contracts()'
+    ###################################
     # setup base contract interface
     hyperdrive_abis = eth.abi.load_all_abis(environment_config.build_folder)
     addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(
@@ -59,10 +61,12 @@ def main():  # TODO: Move much of this out of main
         abi=hyperdrive_abis[environment_config.hyperdrive_abi],
         address=web3.to_checksum_address(addresses.mock_hyperdrive),
     )
+    ###################################
 
     # load agent policies
     agent_accounts = get_agent_accounts(agent_config, web3, base_token_contract, hyperdrive_contract.address, rng)
 
+    # TODO: remove postgres from main.py, too low level.
     # Set up postgres to write username to agent wallet addr
     # initialize the postgres session
     wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
@@ -70,6 +74,9 @@ def main():  # TODO: Move much of this out of main
     postgres.add_user_map(environment_config.username, wallet_addrs, session)
     postgres.close_session(session)
 
+    # TODO: encapulate trade loop to another function.  At most should be:
+    # while: True:
+    #    run_trades_forever(...)
     # Run trade loop forever
     trade_streak = 0
     last_executed_block = BlockNumber(0)

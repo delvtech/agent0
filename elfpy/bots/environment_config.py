@@ -56,7 +56,7 @@ class EnvironmentConfig(types.FrozenClass):
     hyperdrive_abi = "IHyperdrive"
     base_abi = "ERC20Mintable"
     # build location
-    build_folder = "./hyperdrive_solidity/.build"
+    build_folder = "./hyperdrive_solidity/out"
     # scratch space for any application-specific & extraneous parameters
     scratch: dict[Any, Any] = field(default_factory=dict)
 
