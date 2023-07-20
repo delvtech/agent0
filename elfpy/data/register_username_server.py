@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 @app.route("/register_bots", methods=["POST"])
 def register_bots():
-    """Run a python script and return the script id."""
+    """Registers a list of wallet addresses to a username via post request"""
     # TODO: validate the json
     data = request.json
 
