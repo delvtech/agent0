@@ -6,17 +6,25 @@ import os
 from datetime import datetime
 
 import numpy as np
-from dotenv import load_dotenv
+import requests
 from eth_typing import BlockNumber
 from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
 from elfpy.bots import DEFAULT_USERNAME
-from elfpy.data import postgres
 from elfpy.utils import logs
 from examples.eth_bots.config import agent_config, environment_config
 from examples.eth_bots.execute_agent_trades import execute_agent_trades
 from examples.eth_bots.setup_agents import get_agent_accounts
+
+
+# TODO move this out of this file
+def register_username(register_url: str, wallet_addrs: list[str], username):
+    """Connects to the register user flask server via post request and registeres the username"""
+    json_data = {"wallet_addrs": wallet_addrs, "username": username}
+    result = requests.post(register_url + "/register_bots", json=json_data, timeout=3)
+    if result.status_code != 200:
+        raise ConnectionError(result)
 
 
 def main():  # TODO: Move much of this out of main
@@ -70,9 +78,7 @@ def main():  # TODO: Move much of this out of main
     # Set up postgres to write username to agent wallet addr
     # initialize the postgres session
     wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
-    session = postgres.initialize_session()
-    postgres.add_user_map(environment_config.username, wallet_addrs, session)
-    postgres.close_session(session)
+    register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
 
     # TODO: encapulate trade loop to another function.  At most should be:
     # while: True:
@@ -116,6 +122,5 @@ def main():  # TODO: Move much of this out of main
 
 if __name__ == "__main__":
     # Get postgres env variables if exists
-    load_dotenv()
 
     main()
