@@ -304,21 +304,24 @@ def do_trade(
     agent_contract = sim_agents[f"agent_{trade.wallet.address}"].contract
     amount = trade.trade_amount.scaled_value  # ape works with ints
 
-    # If agent does not have enough base approved for this trade, then approve another 50k
-    # allowance(address owner, address spender) → uint256
-    initial_allowance = base_instance.allowance(agent_contract.address, hyperdrive_instance.address)
+    # If agent does not have enough base approved for this trade, then approve
+    # an additional amount equal to double of the shortfall, or 50k, whichever is greater.
+    # the ABI for allowance is: allowance(address_owner, address_spender) → uint256
+    initial_allowance = base_instance.allowance(agent_contract.address, hyperdrive_instance.address)/1e9
     allowance_shortfall = amount / 1e18 - initial_allowance
     if allowance_shortfall > 0:
         try:
-            txn_args = hyperdrive_instance.address, int(50_000 * 1e8)
+            allowance_increase = max(50_000, allowance_shortfall)*2
+            txn_args = hyperdrive_instance.address, int((initial_allowance + allowance_increase) * 1e9)
             ape_utils.attempt_txn(agent_contract, base_instance.approve, *txn_args)
             logging.info(
-                "Allowance too low by %s, at %s for a trade of %s, approving an additional 50k base.",
+                "Allowance too low by %s, at %s for a trade of %s, approving an additional %s.",
                 allowance_shortfall,
                 initial_allowance,
                 amount / 1e18,
+                allowance_increase,
             )
-            updated_allowance = base_instance.allowance(agent_contract.address, hyperdrive_instance.address)
+            updated_allowance = base_instance.allowance(agent_contract.address, hyperdrive_instance.address)/1e9
             change_in_allowance = updated_allowance - initial_allowance
             logging.info(
                 "Allowance increased by %s from %s to %s", change_in_allowance, initial_allowance, updated_allowance
