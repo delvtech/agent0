@@ -4,8 +4,21 @@ from typing import NamedTuple
 
 # TODO: get error names from the ABI, encode to get the selector, match selector with name.  For now
 # this is hard coded list of errors in all the contracts we use.
-def decode_hyperdrive_errors(error_selector: str) -> str:
-    """Get the error name for a given error selector."""
+def lookup_hyperdrive_error_selector(error_selector: str) -> str:
+    """Get the error name for a given error selector.
+
+    Arguments
+    ---------
+
+    error_selector : str
+        A 3 byte hex string obtained from a keccak256 has of the error signature, i.e.
+        'InvalidToken()' would yield '0xc1ab6dc1'.
+
+    Returns
+    -------
+    str
+       The name of the error.
+    """
     return getattr(_hyperdrive_errors, error_selector)
 
 

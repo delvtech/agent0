@@ -9,7 +9,7 @@ from web3.contract.contract import Contract, ContractFunction
 from web3.exceptions import ContractCustomError, ContractLogicError
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, TxReceipt
 
-from elfpy.hyperdrive_interface.errors import decode_hyperdrive_errors
+from elfpy.hyperdrive_interface.errors import lookup_hyperdrive_error_selector
 
 from .accounts import EthAccount
 
@@ -17,7 +17,23 @@ from .accounts import EthAccount
 def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
     """Return from a smart contract read call
 
+    Arguments
+    ---------
+    contract : web3.contract.contract.Contract
+        The contract that we are reading from.
+    function_name : str
+        The name of the function
+    *fn_args : Unknown
+        The arguments passed to the contract method.
+    **fn_kwargs : Unknown
+        The keyword arguments passed to the contract method.
+
+    Returns
+    -------
+    dict[str, Any]
+        A dictionary of value names
     .. todo::
+        Add better typing to the return value
         function to recursively find component names & types
         function to dynamically assign types to output variables
             would be cool if this also put stuff into FixedPoint
@@ -56,11 +72,11 @@ def smart_contract_transact(
     web3 : Web3
         web3 provider object
     contract : Contract
-    function_name : str
+    signer : EthAccount
+        the EthAccount that will be used to pay for the gas & sign the transaction
+    function_name_or_signature : str
         any compiled web3 contract
         this function must exist in the compiled contract's ABI
-    from_account : EthAccount
-        the EthAccount that will be used to pay for the gas & sign the transaction
     fn_args : unordered list
         all remaining arguments will be passed to the contract function in the order received
 
@@ -87,7 +103,7 @@ def smart_contract_transact(
     except ContractCustomError as err:
         logging.error(
             "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",
-            decode_hyperdrive_errors(err.args[0]),
+            lookup_hyperdrive_error_selector(err.args[0]),
             function_name_or_signature,
             fn_args,
         )
