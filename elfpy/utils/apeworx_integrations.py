@@ -96,7 +96,7 @@ class HyperdriveProject(ProjectManager):
         super().__init__(path)
 
     def __post_init__(self):
-        """Set up contracts after init"""
+        """Set up contracts after init."""
         try:
             self.hyperdrive_container: ContractContainer = self.get_contract("Hyperdrive")
         except AttributeError as err:
@@ -632,7 +632,7 @@ def get_pool_state(txn_receipt: ReceiptAPI, hyperdrive_contract: ContractInstanc
 
 
 def snake_to_camel(_snake):
-    """Convert snake_case to camelCase"""
+    """Convert snake_case to camelCase."""
     return "".join(word.capitalize() for word in _snake.split("_"))
 
 
@@ -1031,7 +1031,7 @@ def attempt_txn(
         prepped_txn: TransactionAPI = agent.prepare_transaction(serial_txn)
         signed_txn: TransactionAPI | None = agent.sign_transaction(prepped_txn)
         logging.debug(" => sending signed_txn %s", signed_txn)
-        logging.debug(" => required_confirmations=%s",agent.provider.network.required_confirmations)
+        logging.debug(" => required_confirmations=%s", agent.provider.network.required_confirmations)
         if signed_txn is None:
             raise ValueError("Failed to sign transaction")
         try:
