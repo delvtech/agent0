@@ -45,63 +45,89 @@ class ExampleCustomPolicy(BasePolicy):
         list[MarketAction]
             list of actions
         """
-        # OPEN A LONG IF YOU HAVE NONE, CLOSE IT IF MATURED
-        longs = list(wallet.longs.values())
-        has_opened_long = len(longs) > 0
+        trade_chance = 0.5
+        gonna_lp = self.rng.choice([True, False], p=[trade_chance, 1 - trade_chance])
         action_list = []
-        if has_opened_long:
-            mint_time = list(wallet.longs)[-1]  # get the mint time of the open long
-            if market.block_time.time - mint_time >= market.position_duration.years:
+        if gonna_lp:
+            # ADD LIQUIDITY IF YOU HAVEN'T, OTHERWISE REMOVE IT
+            if wallet.lp_tokens > 0:  # have liquidity
                 action_list.append(
                     Trade(
                         market=MarketType.HYPERDRIVE,
                         trade=HyperdriveMarketAction(
-                            action_type=MarketActionType.CLOSE_LONG,
-                            trade_amount=longs[-1].balance,
+                            action_type=MarketActionType.REMOVE_LIQUIDITY,
+                            trade_amount=wallet.lp_tokens,
                             wallet=wallet,
-                            mint_time=mint_time,
+                        ),
+                    )
+                )
+            else:
+                action_list.append(
+                    Trade(
+                        market=MarketType.HYPERDRIVE,
+                        trade=HyperdriveMarketAction(
+                            action_type=MarketActionType.ADD_LIQUIDITY,
+                            trade_amount=self.trade_amount,
+                            wallet=wallet,
                         ),
                     )
                 )
         else:
-            action_list.append(
-                Trade(
-                    market=MarketType.HYPERDRIVE,
-                    trade=HyperdriveMarketAction(
-                        action_type=MarketActionType.OPEN_LONG,
-                        trade_amount=self.trade_amount,
-                        wallet=wallet,
-                    ),
+            # OPEN A LONG IF YOU HAVE NONE, CLOSE IT IF MATURED
+            longs = list(wallet.longs.values())
+            has_opened_long = len(longs) > 0
+            if has_opened_long:
+                mint_time = list(wallet.longs)[-1]  # get the mint time of the open long
+                if market.block_time.time - mint_time >= market.position_duration.years:
+                    action_list.append(
+                        Trade(
+                            market=MarketType.HYPERDRIVE,
+                            trade=HyperdriveMarketAction(
+                                action_type=MarketActionType.CLOSE_LONG,
+                                trade_amount=longs[-1].balance,
+                                wallet=wallet,
+                                mint_time=mint_time,
+                            ),
+                        )
+                    )
+            else:
+                action_list.append(
+                    Trade(
+                        market=MarketType.HYPERDRIVE,
+                        trade=HyperdriveMarketAction(
+                            action_type=MarketActionType.OPEN_LONG,
+                            trade_amount=self.trade_amount,
+                            wallet=wallet,
+                        ),
+                    )
                 )
-            )
 
-        # OPEN A SHORT IF YOU HAVE NONE, CLOSE IT IF MATURED
-        shorts = list(wallet.shorts.values())
-        has_opened_short = len(shorts) > 0
-        action_list = []
-        if has_opened_short:
-            mint_time = list(wallet.shorts)[-1]  # get the mint time of the open long
-            if market.block_time.time - mint_time >= market.position_duration.years:
+            # OPEN A SHORT IF YOU HAVE NONE, CLOSE IT IF MATURED
+            shorts = list(wallet.shorts.values())
+            has_opened_short = len(shorts) > 0
+            if has_opened_short:
+                mint_time = list(wallet.shorts)[-1]  # get the mint time of the open long
+                if market.block_time.time - mint_time >= market.position_duration.years:
+                    action_list.append(
+                        Trade(
+                            market=MarketType.HYPERDRIVE,
+                            trade=HyperdriveMarketAction(
+                                action_type=MarketActionType.CLOSE_SHORT,
+                                trade_amount=shorts[-1].balance,
+                                wallet=wallet,
+                                mint_time=mint_time,
+                            ),
+                        )
+                    )
+            else:
                 action_list.append(
                     Trade(
                         market=MarketType.HYPERDRIVE,
                         trade=HyperdriveMarketAction(
-                            action_type=MarketActionType.CLOSE_SHORT,
-                            trade_amount=shorts[-1].balance,
+                            action_type=MarketActionType.OPEN_SHORT,
+                            trade_amount=self.trade_amount,
                             wallet=wallet,
-                            mint_time=mint_time,
                         ),
                     )
                 )
-        else:
-            action_list.append(
-                Trade(
-                    market=MarketType.HYPERDRIVE,
-                    trade=HyperdriveMarketAction(
-                        action_type=MarketActionType.OPEN_SHORT,
-                        trade_amount=self.trade_amount,
-                        wallet=wallet,
-                    ),
-                )
-            )
         return action_list
