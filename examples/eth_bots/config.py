@@ -9,12 +9,12 @@ from elfpy.agents.policies import Policies
 from elfpy.bots import BotInfo, Budget, EnvironmentConfig
 
 # You can import custom policies here. For example:
-# from custom_policies.example_custom_policy import ExampleCustomPolicy
+from .custom_policies.example_custom_policy import ExampleCustomPolicy
 
 agent_config: list[BotInfo] = [
     BotInfo(
         policy=Policies.random_agent,
-        number_of_bots=6,
+        number_of_bots=0,
         budget=Budget(
             mean_wei=int(1e18),  # 1 ETH
             std_wei=int(1e17),  # 0.1 ETH
@@ -25,7 +25,7 @@ agent_config: list[BotInfo] = [
     ),
     BotInfo(
         policy=Policies.long_louie,
-        number_of_bots=2,
+        number_of_bots=0,
         budget=Budget(
             mean_wei=int(1e18),  # 1 ETH
             std_wei=int(1e17),  # 0.1 ETH
@@ -36,7 +36,7 @@ agent_config: list[BotInfo] = [
     ),
     BotInfo(
         policy=Policies.short_sally,
-        number_of_bots=2,
+        number_of_bots=0,
         budget=Budget(
             mean_wei=int(1e18),  # 1 ETH
             std_wei=int(1e17),  # 0.1 ETH
@@ -44,6 +44,17 @@ agent_config: list[BotInfo] = [
             max_wei=int(1e21),  # 1k ETH
         ),
         init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.8)},
+    ),
+    BotInfo(
+        policy=ExampleCustomPolicy,
+        number_of_bots=2,
+        budget=Budget(
+            mean_wei=int(1_000e18),  # 1k ETH
+            std_wei=int(100e18),  # 100 ETH
+            min_wei=1,  # 1 WEI
+            max_wei=int(100_000e18),  # 100k ETH
+        ),
+        init_kwargs={"trade_amount": FixedPoint(100)},
     ),
 ]
 

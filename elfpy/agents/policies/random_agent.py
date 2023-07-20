@@ -181,14 +181,17 @@ class RandomAgent(BasePolicy):
 
         The amount opened and closed is random, within constraints given by agent budget & market reserve levels
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         market : Market
             the trading market
+        wallet : Wallet
+            agent's wallet
 
         Returns
         -------
-        action_list : list[MarketAction]
+        list[MarketAction]
+            list of actions
         """
         # pylint: disable=too-many-return-statements
         # check if the agent will trade this block or not
