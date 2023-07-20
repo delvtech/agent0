@@ -1,24 +1,36 @@
 """A simple Flask server to run python scripts."""
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
+from flask_expects_json import expects_json
 
 from elfpy.data import postgres
 
 app = Flask(__name__)
 
 
+json_schema = {
+    "type": "object",
+    "properties": {"wallet_addrs": {"type": "array", "items": {"type": "string"}}, "username": {"type": "string"}},
+    "required": ["wallet_addrs", "username"],
+}
+
+
 @app.route("/register_bots", methods=["POST"])
+@expects_json(json_schema)
 def register_bots():
     """Registers a list of wallet addresses to a username via post request"""
     # TODO: validate the json
     data = request.json
+    if data is not None:
+        # Typing doesn't work with request objects
+        wallet_addrs: list[str] = data["wallet_addrs"]
+        username: str = data["username"]
+    else:
+        return jsonify({"data": data, "error": "request.json is None"}), 500
 
     # initialize the postgres session
     session = postgres.initialize_session()
     try:
-        # Typing doesn't work with request objects
-        wallet_addrs: list[str] = data["wallet_addrs"]  # type:ignore
-        username: str = data["username"]  # type:ignore
         postgres.add_user_map(username, wallet_addrs, session)
         # TODO move this to logging
         print(f"Registered {wallet_addrs=} to {username=}")

@@ -52,6 +52,7 @@ with-dependencies = [
     "streamlit",
     "mplfinance",
     "flask",
+    "flask-expects-json",
     "psycopg2-binary",
     "sqlalchemy",
 ]
