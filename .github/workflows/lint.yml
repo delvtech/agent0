@@ -39,7 +39,7 @@ jobs:
       - name: Get changed Python files
         id: changed_files
         run: |
-          echo "::set-output name=files::$(git diff --name-only origin/main...HEAD | grep '.py$')"
+          echo "files=$(git diff --name-only HEAD^ HEAD | grep '.py$' | xargs)" >> $GITHUB_OUTPUT
 
       - name: Run Pylint on changed files
         run: |
