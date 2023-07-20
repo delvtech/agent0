@@ -70,9 +70,5 @@ environment_config = EnvironmentConfig(
     rpc_url="http://localhost:8545",
     random_seed=1234,
     username="changeme",
-<<<<<<< HEAD
     username_register_url="http://localhost:5002",
-=======
-    username_register_url="http://localhost:5001",
->>>>>>> b77d3f10 (puts back change I accidentally deleted)
 )
