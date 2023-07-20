@@ -1,15 +1,16 @@
-"""Budget class for bots"""
+"""Budget class for bots."""
 from __future__ import annotations
 
 from dataclasses import dataclass
 
+import numpy as np
 from fixedpointmath import FixedPoint, FixedPointMath
 from numpy.random._generator import Generator as NumpyGenerator
 
 
 @dataclass
 class Budget:
-    """Specifications for generating a random budget sample"""
+    """Specifications for generating a random budget sample."""
 
     mean_wei: int = int(1e18)  # 1 ETH
     std_wei: int = int(1e17)  # 0.1 ETH
@@ -17,17 +18,15 @@ class Budget:
     max_wei: int = int(1e21)  # 1k ETH
 
     def sample_budget(self, rng: NumpyGenerator) -> FixedPoint:
-        """Returns a sample from a clipped normal distribution.
+        """Return a sample from a clipped normal distribution.
 
-        Parameters
-        ----------
-        rng : NumpyGenerator
-            Random number generator
-
-        Note
-        ----
         Sample from normal distribution with mean of mean_wei and standard deviation of std_wei.
         Then clip to between a minimum of min_wei and a maximum of max_wei.
+
+        Arguments
+        ---------
+        rng : NumpyGenerator
+            Random number generator
 
         Returns
         -------
@@ -36,7 +35,7 @@ class Budget:
         """
         return FixedPoint(
             scaled_value=FixedPointMath.clip(
-                int(rng.normal(loc=self.mean_wei, scale=self.std_wei)),
+                int(np.round(rng.normal(loc=self.mean_wei, scale=self.std_wei))),
                 self.min_wei,
                 self.max_wei,
             )
