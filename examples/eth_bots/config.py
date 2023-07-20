@@ -70,5 +70,5 @@ environment_config = EnvironmentConfig(
     rpc_url="http://localhost:8545",
     random_seed=1234,
     username="changeme",
-    username_register_url="http://localhost:5001",
+    username_register_url="http://localhost:5002",
 )
