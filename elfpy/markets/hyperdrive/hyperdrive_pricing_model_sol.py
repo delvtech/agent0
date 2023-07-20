@@ -121,9 +121,9 @@ def calculate_max_long(
     dy = yieldspace_pricing_model_sol.calculate_bonds_out_given_shares_in(
         share_reserves, bond_reserves, dz, ONE_18 - time_stretch, share_price, initial_share_price
     )
-    result = MaxLongResult(base_amount=FixedPoint(), bond_amount=FixedPoint())
     # Our maximum long will be the largest trade size that doesn't fail
     # the solvency check.
+    result = MaxLongResult(base_amount=FixedPoint(), bond_amount=FixedPoint())
     for _ in range(max_iterations):
         # Even though YieldSpace isn't linear, we can use a linear approximation
         # to get closer to the optimal solution. Our guess should bring us close
