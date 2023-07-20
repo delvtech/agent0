@@ -22,7 +22,6 @@ def register_bots():
     # TODO: validate the json
     data = request.json
     if data is not None:
-        # Typing doesn't work with request objects
         wallet_addrs: list[str] = data["wallet_addrs"]
         username: str = data["username"]
     else:
