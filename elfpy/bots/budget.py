@@ -12,10 +12,10 @@ from numpy.random._generator import Generator as NumpyGenerator
 class Budget:
     """Specifications for generating a random budget sample."""
 
-    mean_wei: int = int(1e18)  # 1 ETH
-    std_wei: int = int(1e17)  # 0.1 ETH
-    min_wei: int = 1  # 1 WEI
-    max_wei: int = int(1e21)  # 1k ETH
+    mean_wei: int = int(5_000 * 1e18)
+    std_wei: int = int(2_000 * 1e18)
+    min_wei: int = int(1_000 * 1e18)
+    max_wei: int = int(10_000 * 1e18)
 
     def sample_budget(self, rng: NumpyGenerator) -> FixedPoint:
         """Return a sample from a clipped normal distribution.
