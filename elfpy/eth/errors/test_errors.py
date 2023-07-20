@@ -9,7 +9,7 @@ class TestDecodeErrorSelector:
 
     @pytest.fixture
     def mock_contract(self):
-        "Fixture that returns a MockContract."
+        """Fixture that returns a MockContract."""
 
         class MockContract:
             """Mock contract for testing."""
@@ -41,7 +41,7 @@ class TestDecodeErrorSelector:
         assert result == "UnknownError"
 
     def test_decode_error_selector_for_contract_no_abi(self, mock_contract):
-        "Test bad abi."
+        """Test bad abi."""
         mock_contract.abi = []
         error_selector = "0xdeadbeef"
         with pytest.raises(ValueError):

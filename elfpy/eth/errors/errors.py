@@ -1,10 +1,10 @@
 """Error handling for the hyperdrive ecosystem"""
-from typing import Literal, Sequence, TypedDict
 
 from eth_utils.conversions import to_hex
 from eth_utils.crypto import keccak
 from web3.contract.contract import Contract
-from web3.types import ABIFunctionParams
+
+from .types import ABIError
 
 
 def decode_error_selector_for_contract(error_selector: str, contract: Contract) -> str:
@@ -49,12 +49,3 @@ def decode_error_selector_for_contract(error_selector: str, contract: Contract) 
             break
 
     return error_name
-
-
-# TODO: add this to web3.py
-class ABIError(TypedDict, total=True):
-    """ABI error definition."""
-
-    name: str
-    inputs: Sequence[ABIFunctionParams]
-    type: Literal["error"]
