@@ -4,6 +4,8 @@ import pytest
 from ape.api.accounts import TestAccountAPI
 from fixedpointmath import FixedPoint
 
+# TODO: convert to not use ape
+__test__ = False
 
 @pytest.fixture(scope="function")
 def deployer() -> TestAccountAPI:

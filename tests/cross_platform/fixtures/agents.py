@@ -3,6 +3,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+# TODO: convert to not use ape
+__test__ = False
+
 import ape
 import pytest
 from ape.api.accounts import TestAccountAPI

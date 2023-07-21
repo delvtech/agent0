@@ -7,8 +7,6 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler
 
-from ape.exceptions import TransactionError
-
 import elfpy
 import elfpy.utils.format as format_utils
 from elfpy.data.db_schema import Base, PoolConfig, PoolInfo

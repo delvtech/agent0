@@ -8,8 +8,6 @@ import sys
 import unittest
 from datetime import datetime
 
-from ape.exceptions import TransactionError
-
 import elfpy.utils.logs as log_utils
 from elfpy.data.db_schema import PoolConfig, PoolInfo
 from elfpy.simulators.config import Config
@@ -97,7 +95,7 @@ class TestLogging(unittest.TestCase):
         self.assertLogs(level=logging.CRITICAL)
         log_utils.log_hyperdrive_crash_report(
             "CLOSE_LONG",
-            TransactionError("Message"),
+            ValueError("Message"),
             1.23,
             "0x0000000000000000000000000000000000000000",
             PoolInfo(blockNumber=1234, timestamp=datetime.fromtimestamp(12345678)),

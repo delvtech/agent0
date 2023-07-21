@@ -8,6 +8,9 @@ from ape.managers.project import ProjectManager
 
 from .hyperdrive_config import HyperdriveConfig
 
+# TODO: convert to not use ape
+__test__ = False
+
 # pylint: disable=redefined-outer-name
 
 

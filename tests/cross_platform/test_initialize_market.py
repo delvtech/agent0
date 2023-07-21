@@ -7,13 +7,15 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
+# TODO: convert to not use ape
+__test__ = False
+
 # elfpy core repo
 from conftest import HyperdriveFixture, TestCaseWithHyperdriveFixture
 from tests.cross_platform import utils
 
 if TYPE_CHECKING:
     from ape.contracts.base import ContractInstance
-
 
 #########################
 # Example with class test

@@ -6,9 +6,10 @@ As such, we are relaxing some of the lint rules.
 """
 from __future__ import annotations
 
+# TODO: convert to not use ape
+__test__ = False
+
 # external lib
-import ape
-from ape.contracts import ContractInstance
 from eth_typing import HexAddress
 from fixedpointmath import FixedPoint
 

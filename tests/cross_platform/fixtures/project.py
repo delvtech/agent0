@@ -5,6 +5,8 @@ import ape
 from ape.managers.project import ProjectManager
 import pytest
 
+# TODO: convert to not use ape
+__test__ = False
 
 @pytest.fixture(scope="function")
 def project() -> ProjectManager:

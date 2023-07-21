@@ -4,6 +4,8 @@ from ape.contracts import ContractInstance
 from ape.managers.project import ProjectManager
 import pytest
 
+# TODO: convert to not use ape
+__test__ = False
 
 @pytest.fixture(scope="function")
 def fixed_math_contract(project: ProjectManager, deployer: TestAccountAPI) -> ContractInstance:

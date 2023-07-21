@@ -4,6 +4,8 @@ from ape.api.providers import ProviderAPI
 
 import pytest
 
+# TODO: convert to not use ape
+__test__ = False
 
 @pytest.fixture(scope="function")
 def provider() -> ProviderAPI:
