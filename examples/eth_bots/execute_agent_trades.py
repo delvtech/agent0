@@ -101,8 +101,7 @@ def execute_agent_trades(
     web3: Web3,
     hyperdrive_contract: Contract,
     agent_accounts: list[EthAccount],
-    trade_streak: int,
-) -> int:
+) -> None:
     """Hyperdrive forever into the sunset.
 
     Arguments
@@ -113,13 +112,6 @@ def execute_agent_trades(
         Any deployed web3 contract
     agent_accounts : list[EthAccount]
         A list of EthAccount that are conducting the trades
-    trade_streak : int
-        A counter for the number of successful trades so far
-
-    Returns
-    -------
-    trade_streak : int
-        A counter for the number of successful trades so far (that includes the new trades)
     """
     # get latest market
     hyperdrive_market = hyperdrive_interface.get_hyperdrive_market(web3, hyperdrive_contract)
@@ -266,5 +258,3 @@ def execute_agent_trades(
             else:
                 raise NotImplementedError(f"{trade_object.trade.action_type} is not implemented.")
             account.agent.wallet.update(wallet_deltas)
-            trade_streak += 1
-    return trade_streak
