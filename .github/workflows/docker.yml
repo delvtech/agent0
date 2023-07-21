@@ -45,6 +45,8 @@ jobs:
             type=semver,pattern={{version}}
             # Add the edge tag to every image to represent the latest commit to main
             type=edge,branch=main
+            # Add "testing"" tag only if we're not on main
+            type=raw,value=testing,enable=${{ !contains(github.ref, 'refs/heads/main') }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4.1.0
