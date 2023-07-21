@@ -2,69 +2,22 @@
 from __future__ import annotations
 
 import logging
-import os
 from datetime import datetime
 
-import numpy as np
 from eth_typing import BlockNumber
 from web3 import Web3
-from web3.contract.contract import Contract
 from web3.types import RPCEndpoint
-
-from elfpy import eth, hyperdrive_interface
-from elfpy.bots import DEFAULT_USERNAME
-from elfpy.utils import logs
 
 # FIXME: Move configs into a dedicated config folder
 from examples.eth_bots.config import agent_config, environment_config
 from examples.eth_bots.execute_agent_trades import execute_agent_trades
 from examples.eth_bots.setup_agents import get_agent_accounts
+from examples.eth_bots.setup_experiment import setup_experiment
 
 
 def main():  # FIXME: Move much of this out of main
     """Entrypoint to load all configurations and run agents."""
-
-    # TODO: all contract initialization should get encapsulated into something like 'setup_experiment()'
-    ###################################
-    # this random number generator should be used everywhere so that the experiment is repeatable
-    # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
-    rng = np.random.default_rng(environment_config.random_seed)
-
-    # setup logging
-    logs.setup_logging(
-        log_filename=environment_config.log_filename,
-        max_bytes=environment_config.max_bytes,
-        log_level=environment_config.log_level,
-        delete_previous_logs=environment_config.delete_previous_logs,
-        log_stdout=environment_config.log_stdout,
-        log_format_string=environment_config.log_formatter,
-    )
-
-    # Check for default name and exit if is default
-    if environment_config.username == DEFAULT_USERNAME:
-        raise ValueError("Default username detected, please update 'username' in config.py")
-
-    # point to chain env
-    web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
-
-    # setup base contract interface
-    hyperdrive_abis = eth.abi.load_all_abis(environment_config.build_folder)
-    addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(
-        os.path.join(environment_config.artifacts_url, "addresses.json")
-    )
-
-    # set up the ERC20 contract for minting base tokens
-    base_token_contract: Contract = web3.eth.contract(
-        abi=hyperdrive_abis[environment_config.base_abi], address=web3.to_checksum_address(addresses.base_token)
-    )
-
-    # set up hyperdrive contract
-    hyperdrive_contract: Contract = web3.eth.contract(
-        abi=hyperdrive_abis[environment_config.hyperdrive_abi],
-        address=web3.to_checksum_address(addresses.mock_hyperdrive),
-    )
-    ###################################
-
+    rng, web3, base_token_contract, hyperdrive_contract = setup_experiment(environment_config)
     # load agent policies
     agent_accounts = get_agent_accounts(
         agent_config, environment_config, web3, base_token_contract, hyperdrive_contract.address, rng
