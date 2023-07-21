@@ -16,7 +16,7 @@ class EthAccount:
     # If not, we can delete it at the end of the refactor.
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, agent: Agent | None = None, extra_entropy: str = "TEST ACCOUNT"):
+    def __init__(self, agent: Agent, extra_entropy: str = "TEST ACCOUNT"):
         """Initialize an account"""
         self.account: LocalAccount = Account().create(extra_entropy=extra_entropy)
         self.agent = agent
