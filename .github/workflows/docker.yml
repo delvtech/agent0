@@ -43,10 +43,8 @@ jobs:
           tags: |
             # Add a version tag when a valid semver tag is pushed.
             type=semver,pattern={{version}}
-            # Add the main tag to every image on main to represent the latest commit to main
-            type=raw,value=main,enable=${{ contains(github.ref, 'refs/heads/main') }}
-            # Add "testing"" tag only if we're not on main
-            type=raw,value=testing,enable=${{ !contains(github.ref, 'refs/heads/main') }}
+            # Add the edge tag to every image to represent the latest commit to main
+            type=edge,branch=main
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4.1.0
