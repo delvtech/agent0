@@ -761,8 +761,6 @@ class AgentPosition:
 
         # Create positions dataframe which tracks aggregate holdings.
         self.positions = wallet_history.loc[:, other_columns].copy()
-        # keep positions where they are not 0, otherwise replace 0 with NaN
-        # self.positions = self.positions.mask(self.positions == 0, pd.NA)
 
         # Create deltas dataframe which tracks change in holdings.
         self.deltas = self.positions.diff()
