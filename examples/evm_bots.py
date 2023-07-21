@@ -551,7 +551,7 @@ def do_policy(
     bot_config : EnvironmentConfig
         The bot configuration.
     trade_history : pd.DataFrame, Optional
-        History of previously completed trades. If not provided, it will be queried.
+        History of previously completed trades If not provided, it will be queried.
 
     Returns
     -------
