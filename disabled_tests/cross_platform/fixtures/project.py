@@ -6,7 +6,7 @@ from ape.managers.project import ProjectManager
 import pytest
 
 # TODO: convert to not use ape
-__test__ = False
+pytestmark = pytest.mark.skip("disabled until converted to not use ape")
 
 @pytest.fixture(scope="function")
 def project() -> ProjectManager:

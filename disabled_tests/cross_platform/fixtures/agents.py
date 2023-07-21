@@ -3,15 +3,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-# TODO: convert to not use ape
-__test__ = False
-
 import ape
 import pytest
 from ape.api.accounts import TestAccountAPI
 from fixedpointmath import FixedPoint
 
 from elfpy.agents.agent import Agent
+
+# TODO: convert to not use ape
+pytestmark = pytest.mark.skip("disabled until converted to not use ape")
 
 # pylint: disable=redefined-outer-name
 

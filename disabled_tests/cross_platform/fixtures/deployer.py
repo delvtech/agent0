@@ -5,7 +5,7 @@ from ape.api.accounts import TestAccountAPI
 from fixedpointmath import FixedPoint
 
 # TODO: convert to not use ape
-__test__ = False
+pytestmark = pytest.mark.skip("disabled until converted to not use ape")
 
 @pytest.fixture(scope="function")
 def deployer() -> TestAccountAPI:

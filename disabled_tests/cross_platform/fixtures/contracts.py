@@ -9,7 +9,7 @@ from ape.managers.project import ProjectManager
 from .hyperdrive_config import HyperdriveConfig
 
 # TODO: convert to not use ape
-__test__ = False
+pytestmark = pytest.mark.skip("disabled until converted to not use ape")
 
 # pylint: disable=redefined-outer-name
 

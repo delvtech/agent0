@@ -133,7 +133,7 @@ def setup_hyperdrive_crash_report_logging():
 def log_hyperdrive_crash_report(
     # TODO: better typing for this, an enum?
     trade_type: str,
-    error: TransactionError,
+    error: ValueError,
     amount: float,
     agent_address: str,
     pool_info: PoolInfo,

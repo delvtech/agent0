@@ -7,15 +7,17 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-# TODO: convert to not use ape
-__test__ = False
-
 # elfpy core repo
 from conftest import HyperdriveFixture, TestCaseWithHyperdriveFixture
 from tests.cross_platform import utils
 
 if TYPE_CHECKING:
     from ape.contracts.base import ContractInstance
+
+import pytest
+
+# TODO: convert to not use ape
+pytestmark = pytest.mark.skip("disabled until converted to not use ape")
 
 #########################
 # Example with class test
