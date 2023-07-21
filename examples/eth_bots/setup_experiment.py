@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from http import HTTPStatus
 
 import numpy as np
 import requests
@@ -19,7 +20,7 @@ def register_username(register_url: str, wallet_addrs: list[str], username: str)
     """Connects to the register user flask server via post request and registeres the username"""
     json_data = {"wallet_addrs": wallet_addrs, "username": username}
     result = requests.post(register_url + "/register_bots", json=json_data, timeout=3)
-    if result.status_code != 200:
+    if result.status_code != HTTPStatus.OK:
         raise ConnectionError(result)
 
 
