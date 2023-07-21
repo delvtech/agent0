@@ -9,12 +9,12 @@ WORKDIR /app
 FROM base as compile-image
 COPY . ./
 
-RUN python -m pip install --no-cache-dir --upgrade pip && \
-  apt-get update && \
+RUN apt-get update && \
   apt-get install -y --no-install-recommends gcc python3-dev libssl-dev git lsb-release && \
   python -m venv /opt/venv && \
   . /opt/venv/bin/activate && \
-  pip install --no-cache-dir -e ."[with-dependencies,postgres,ape]" coverage
+  python -m pip install --no-cache-dir --upgrade pip && \
+  python -m pip install --no-cache-dir -e ."[with-dependencies]" coverage
 
 # Final Image
 FROM base as final
