@@ -77,14 +77,14 @@ class ExampleCustomPolicy(BasePolicy):
             longs = list(wallet.longs.values())
             has_opened_long = len(longs) > 0
             if has_opened_long:
-                mint_time = list(wallet.longs)[-1]  # get the mint time of the open long
+                mint_time = list(wallet.longs)[0]  # get the mint time of the open long
                 if market.block_time.time - mint_time >= market.position_duration.years:
                     action_list.append(
                         Trade(
                             market=MarketType.HYPERDRIVE,
                             trade=HyperdriveMarketAction(
                                 action_type=MarketActionType.CLOSE_LONG,
-                                trade_amount=longs[-1].balance,
+                                trade_amount=longs[0].balance,
                                 wallet=wallet,
                                 mint_time=mint_time,
                             ),
@@ -106,14 +106,14 @@ class ExampleCustomPolicy(BasePolicy):
             shorts = list(wallet.shorts.values())
             has_opened_short = len(shorts) > 0
             if has_opened_short:
-                mint_time = list(wallet.shorts)[-1]  # get the mint time of the open long
+                mint_time = list(wallet.shorts)[0]  # get the mint time of the open long
                 if market.block_time.time - mint_time >= market.position_duration.years:
                     action_list.append(
                         Trade(
                             market=MarketType.HYPERDRIVE,
                             trade=HyperdriveMarketAction(
                                 action_type=MarketActionType.CLOSE_SHORT,
-                                trade_amount=shorts[-1].balance,
+                                trade_amount=shorts[0].balance,
                                 wallet=wallet,
                                 mint_time=mint_time,
                             ),
