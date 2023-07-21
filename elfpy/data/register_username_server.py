@@ -45,4 +45,4 @@ def register_bots():
 if __name__ == "__main__":
     # Get postgres env variables if exists
     load_dotenv()
-    app.run(host="localhost", port=5002)
+    app.run(host="0.0.0.0", port=5002)
