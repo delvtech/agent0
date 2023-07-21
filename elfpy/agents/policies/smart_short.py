@@ -66,7 +66,7 @@ class ShortSally(BasePolicy):
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
         gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
-        if not gonna_trade:
+        if not gonna_trade or wallet.balance.amount <= WEI:
             return []
         action_list = []
         for short_time in wallet.shorts:  # loop over shorts # pylint: disable=consider-using-dict-items

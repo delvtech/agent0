@@ -10,8 +10,8 @@ from hexbytes import HexBytes
 from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 from web3 import Web3
-from web3.contract.contract import Contract, ContractEvent
-from web3.types import ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
+from web3.contract.contract import Contract
+from web3.types import BlockData
 
 from elfpy import eth
 from elfpy.markets.hyperdrive import hyperdrive_assets
@@ -33,9 +33,7 @@ class Base(MappedAsDataclass, DeclarativeBase):
 
 # TODO: Rename this to something more accurate to what is happening, e.g. HyperdriveTransactions
 class WalletInfo(Base):
-    """
-    Table/dataclass schema for wallet information
-    """
+    """Table/dataclass schema for wallet information."""
 
     __tablename__ = "walletinfo"
 
@@ -58,9 +56,7 @@ class WalletInfo(Base):
 
 
 class PoolConfig(Base):
-    """
-    Table/dataclass schema for pool config
-    """
+    """Table/dataclass schema for pool config."""
 
     __tablename__ = "poolconfig"
 
@@ -95,8 +91,8 @@ class CheckpointInfo(Base):
 
 
 class PoolInfo(Base):
-    """
-    Table/dataclass schema for pool info
+    """Table/dataclass schema for pool info.
+
     Mapped class that is a data class on the python side, and an declarative base on the sql side.
     """
 
@@ -119,8 +115,8 @@ class PoolInfo(Base):
 
 
 class Transaction(Base):
-    """
-    Table/dataclass schema for Transactions
+    """Table/dataclass schema for Transactions.
+
     Mapped class that is a data class on the python side, and an declarative base on the sql side.
     """
 
@@ -233,9 +229,7 @@ class Transaction(Base):
 
 
 class UserMap(Base):
-    """
-    Table/dataclass schema for pool config
-    """
+    """Table/dataclass schema for pool config."""
 
     __tablename__ = "usermap"
 
@@ -247,15 +241,15 @@ class UserMap(Base):
 
 
 def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[Transaction]:
-    """
-    Fetch transactions related to the contract
+    """Fetch transactions related to the contract.
+
     Returns the block pool info from the Hyperdrive contract
 
     Arguments
     ---------
     web3: Web3
         web3 provider object
-    hyperdrive_contract: Contract
+    contract: Contract
         The contract to query the pool info from
     block_number: BlockNumber
         The block number to query from the chain
@@ -289,7 +283,7 @@ def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: B
         except ValueError:  # if the input is not meant for the contract, ignore it
             continue
         tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
-        logs = _fetch_and_decode_logs(web3, contract, tx_receipt)
+        logs = eth.get_transaction_logs(web3, contract, tx_receipt)
         receipt: dict[str, Any] = _recursive_dict_conversion(tx_receipt)  # type: ignore
         out_transactions.append(_build_transaction_object(transaction_dict, logs, receipt))
     return out_transactions
@@ -300,8 +294,7 @@ def _build_transaction_object(
     logs: list[dict[str, Any]],
     receipt: dict[str, Any],
 ) -> Transaction:
-    """
-    Conversion function to translate output of chain queries to the Transaction object
+    """Conversion function to translate output of chain queries to the Transaction object.
 
     Arguments
     ----------
@@ -373,49 +366,27 @@ def _build_transaction_object(
     return transaction
 
 
-def _fetch_and_decode_logs(web3: Web3, contract: Contract, tx_receipt: TxReceipt) -> list[dict[Any, Any]]:
-    """Decode logs from a transaction receipt"""
-    logs = []
-    if tx_receipt.get("logs"):
-        for log in tx_receipt["logs"]:
-            event_data, event = _get_event_object(web3, contract, log, tx_receipt)
-            if event_data and event:
-                formatted_log = dict(event_data)
-                formatted_log["event"] = event.get("name")
-                formatted_log["args"] = dict(event_data["args"])
-                logs.append(formatted_log)
-    return logs
+def _recursive_dict_conversion(obj: Any) -> Any:
+    """Recursively converts a dictionary to convert objects to hex values.
+
+    Arguments
+    ---------
+    obj : Any
+        Could be a HexBytes, dict, or any object with the `items` attribute
+
+    Returns
+    -------
+    Any
+        A nested dictionary containing the decoded object values
 
 
-def _get_event_object(
-    web3: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
-) -> tuple[EventData, ABIEvent] | tuple[None, None]:
-    """Retrieves the event object and anonymous types for a  given contract and log"""
-    abi_events = [abi for abi in contract.abi if abi["type"] == "event"]  # type: ignore
-    for event in abi_events:  # type: ignore
-        # Get event signature components
-        name = event["name"]  # type: ignore
-        inputs = [param["type"] for param in event["inputs"]]  # type: ignore
-        inputs = ",".join(inputs)
-        # Hash event signature
-        event_signature_text = f"{name}({inputs})"
-        event_signature_hex = web3.keccak(text=event_signature_text).hex()
-        # Find match between log's event signature and ABI's event signature
-        receipt_event_signature_hex = log["topics"][0].hex()
-        if event_signature_hex == receipt_event_signature_hex:
-            # Decode matching log
-            contract_event: ContractEvent = contract.events[event["name"]]()  # type: ignore
-            event_data: EventData = contract_event.process_receipt(tx_receipt)[0]
-            return event_data, event  # type: ignore
-    return (None, None)
-
-
-def _recursive_dict_conversion(obj):
-    """Recursively converts a dictionary to convert objects to hex values"""
+    .. todo::
+        This function needs to be better constrained & typed, or avoided all together?
+    """
     if isinstance(obj, HexBytes):
         return obj.hex()
     if isinstance(obj, dict):
         return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
-    if hasattr(obj, "items"):
+    if hasattr(obj, "items"):  # any other type with "items" attr, e.g. TypedDict and OrderedDict
         return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
     return obj
