@@ -67,10 +67,6 @@ ln -s ../hyperdrive hyperdrive_solidity
 
 Complete the steps in [Hyperdrive's Pre-requisites section](https://github.com/delvtech/hyperdrive#pre-requisites).
 
-### 7. Install ape plugins
-
-Install Ape plugins with `python -m pip install --upgrade -e ".[ape]"`
-
 ## Notes
 
 You can test that everything is working by calling: `python -m pytest .`
@@ -79,4 +75,3 @@ You can test against a local testnet node using [Anvil](<[url](https://book.getf
 
 We use [Docker](docs.docker.com/get-docker) for building images.
 
-NOTE: `pip` might complain about dependency incompatibility between eth-ape and some plugins. This discrepancy comes from apeworx, although our examples should run without dealing with the incompatibility.

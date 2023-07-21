@@ -511,7 +511,7 @@ def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
 
     # Pivot tokenType to columns, keeping walletAddress and blockNumber
     all_wallet_info = all_wallet_info.pivot(
-        values="tokenValue", index=["walletAddress", "blockNumber"], columns=["tokenType"]
+        values="tokenValue", index=["walletAddress", "blockNumber"], columns=["tokenType"]  # type: ignore
     )
     # Forward fill nans here, as no data means no change
     all_wallet_info = all_wallet_info.fillna(method="ffill")
