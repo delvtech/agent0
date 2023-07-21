@@ -3,7 +3,7 @@ name: "Docker: Build and push elf-simulations image"
 on:
   workflow_dispatch:
   push:
-    branches: ["main","add_safety_check_for_calc_spot_price_in_hyperdrive_pricing_model"]
+    branches: ["main"]
     tags: ["*"]
 
 env:
