@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 
 import numpy as np
-from numpy.random._generator import Generator as NumpyGenerator
+import requests
 from web3 import Web3
 from web3.contract.contract import Contract
 
@@ -13,6 +13,14 @@ from elfpy.bots import DEFAULT_USERNAME, BotInfo, EnvironmentConfig
 from elfpy.eth.accounts import EthAccount
 from elfpy.utils import logs
 from examples.eth_bots.setup_agents import get_agent_accounts
+
+
+def register_username(register_url: str, wallet_addrs: list[str], username: str) -> None:
+    """Connects to the register user flask server via post request and registeres the username"""
+    json_data = {"wallet_addrs": wallet_addrs, "username": username}
+    result = requests.post(register_url + "/register_bots", json=json_data, timeout=3)
+    if result.status_code != 200:
+        raise ConnectionError(result)
 
 
 def setup_experiment(
@@ -70,7 +78,9 @@ def setup_experiment(
     )
     # load agent policies
     # rng is shared by the agents and can be accessed via `agent_accounts[idx].agent.policy.rng`
-    agent_accounts = get_agent_accounts(
-        environment_config, agent_config, web3, base_token_contract, hyperdrive_contract.address, rng
-    )
+    agent_accounts = get_agent_accounts(agent_config, web3, base_token_contract, hyperdrive_contract.address, rng)
+    # Set up postgres to write username to agent wallet addr
+    # initialize the postgres session
+    wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
+    register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
     return web3, hyperdrive_contract, agent_accounts

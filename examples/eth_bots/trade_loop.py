@@ -20,6 +20,7 @@ def trade_if_new_block(
     last_executed_block: int,
 ) -> int:
     """Execute trades if there is a new block.
+
     Arguments
     ---------
     web3 : Web3
@@ -37,7 +38,6 @@ def trade_if_new_block(
     -------
     int
         The block number when a trade last happened
-
     """
     latest_block = web3.eth.get_block("latest")
     latest_block_number = latest_block.get("number", None)
@@ -60,10 +60,10 @@ def trade_if_new_block(
                 agent_accounts,
             )
             last_executed_block = latest_block_number
-            # we want to catch all exceptions
-            # pylint: disable=broad-exception-caught
+        # we want to catch all exceptions
+        # pylint: disable=broad-exception-caught
         except Exception as exc:
+            # FIXME: deliver crash report
             if halt_on_errors:
                 raise exc
-            # FIXME: deliver crash report
     return last_executed_block
