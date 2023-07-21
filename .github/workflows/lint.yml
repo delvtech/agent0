@@ -10,6 +10,8 @@ jobs:
   build:
     name: lint
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/delvtech/elf-simulations/elf-simulations:edge
     steps:
       - name: Check GitHub rate limit at start
         uses: wakamex/rate-limit-action@master
@@ -19,16 +21,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           token: ${{ secrets.GH_GITHUB_COM_TOKEN || github.token }}
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-          cache: "pip"
-          token: ${{ secrets.GH_GITHUB_COM_TOKEN || github.token }}
-      - run: |
-          python -m pip install --upgrade pip
-          python -m pip install .[with-dependencies,ape]
 
       - name: Ensure clear Jupyter Notebooks
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
