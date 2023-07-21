@@ -10,7 +10,7 @@ import requests
 from eth_typing import BlockNumber
 from web3 import Web3
 from web3.contract.contract import Contract
-from web3.types import RPCEndpoint, RPCResponse
+from web3.types import RPCEndpoint
 
 from elfpy import eth, hyperdrive_interface
 from elfpy.bots import DEFAULT_USERNAME
@@ -84,7 +84,7 @@ def main():  # TODO: Move much of this out of main
 
     # TODO: encapulate trade loop to another function.  At most should be:
     # while: True:
-    #    run_trades_forever(...)
+    #    run_trades(...)
     # Run trade loop forever
     trade_streak = 0
     last_executed_block = BlockNumber(0)
@@ -144,10 +144,9 @@ def get_wait_for_new_block(web3: Web3) -> bool:
     try:
         response = web3.provider.make_request(method=RPCEndpoint("anvil_getAutomine"), params=[])
         automine = bool(response.get("result", False))
-    except Exception:
+    except Exception:  # pylint: disable=broad-exception-caught
         # do nothing, this will fail for non anvil nodes and we don't care.
         automine = False
-
     return not automine
 
 
