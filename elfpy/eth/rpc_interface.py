@@ -34,3 +34,28 @@ def get_account_balance(web3: Web3, account_address: str) -> int | None:
     if hex_result is not None:
         return int(hex_result, base=16)  # cast hex to int
     return None
+
+
+def get_wait_for_new_block(web3: Web3) -> bool:
+    """Returns if we should wait for a new block before attempting trades again.  For anvil nodes,
+       if auto-mining is enabled then every transaction sent to the block is automatically mined so
+       we don't need to wait for a new block before submitting trades again.
+
+    Arguments
+    ---------
+    web3 : Web3
+        web3.py instantiation.
+
+    Returns
+    -------
+    bool
+        Whether or not to wait for a new block before attempting trades again.
+    """
+    automine = False
+    try:
+        response = web3.provider.make_request(method=RPCEndpoint("anvil_getAutomine"), params=[])
+        automine = bool(response.get("result", False))
+    except Exception:  # pylint: disable=broad-exception-caught
+        # do nothing, this will fail for non anvil nodes and we don't care.
+        automine = False
+    return not automine
