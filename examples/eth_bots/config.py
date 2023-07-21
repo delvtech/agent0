@@ -76,8 +76,5 @@ environment_config = EnvironmentConfig(
     artifacts_url="http://localhost:80",
     rpc_url="http://localhost:8545",
     username_register_url="http://localhost:5002",
-    # artifacts_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:80",
-    # rpc_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:8545",
-    # username_register_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:5002",
     username="changeme",
 )
