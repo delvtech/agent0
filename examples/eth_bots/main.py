@@ -15,12 +15,14 @@ from web3.types import RPCEndpoint
 from elfpy import eth, hyperdrive_interface
 from elfpy.bots import DEFAULT_USERNAME
 from elfpy.utils import logs
+
+# FIXME: Move configs into a dedicated config folder
 from examples.eth_bots.config import agent_config, environment_config
 from examples.eth_bots.execute_agent_trades import execute_agent_trades
 from examples.eth_bots.setup_agents import get_agent_accounts
 
 
-# TODO move this out of this file
+# FIXME: move this out of this file (into `elfpy/bots/register_username_server.py`?
 def register_username(register_url: str, wallet_addrs: list[str], username):
     """Connects to the register user flask server via post request and registeres the username"""
     json_data = {"wallet_addrs": wallet_addrs, "username": username}
@@ -29,9 +31,11 @@ def register_username(register_url: str, wallet_addrs: list[str], username):
         raise ConnectionError(result)
 
 
-def main():  # TODO: Move much of this out of main
+def main():  # FIXME: Move much of this out of main
     """Entrypoint to load all configurations and run agents."""
 
+    # TODO: all contract initialization should get encapsulated into something like 'setup_experiment()'
+    ###################################
     # this random number generator should be used everywhere so that the experiment is repeatable
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
     rng = np.random.default_rng(environment_config.random_seed)
@@ -53,8 +57,6 @@ def main():  # TODO: Move much of this out of main
     # point to chain env
     web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
 
-    # TODO: all contract initialization should get encapsulated into something like 'setup_contracts()'
-    ###################################
     # setup base contract interface
     hyperdrive_abis = eth.abi.load_all_abis(environment_config.build_folder)
     addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(
@@ -76,13 +78,13 @@ def main():  # TODO: Move much of this out of main
     # load agent policies
     agent_accounts = get_agent_accounts(agent_config, web3, base_token_contract, hyperdrive_contract.address, rng)
 
-    # TODO: remove postgres from main.py, too low level.
+    # FIXME: move into get_agent_accounts
     # Set up postgres to write username to agent wallet addr
     # initialize the postgres session
     wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
     register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
 
-    # TODO: encapulate trade loop to another function.  At most should be:
+    # FIXME: encapulate trade loop to another function.  At most should be:
     # while: True:
     #    run_trades(...)
     # Run trade loop forever
@@ -122,9 +124,10 @@ def main():  # TODO: Move much of this out of main
                 if environment_config.halt_on_errors:
                     raise exc
                 trade_streak = 0
-                # TODO: deliver crash report
+                # FIXME: deliver crash report
 
 
+# FIXME: improve this function name; move into eth/rpc_interface
 def get_wait_for_new_block(web3: Web3) -> bool:
     """Returns if we should wait for a new block before attempting trades again.  For anvil nodes,
        if auto-mining is enabled then every transaction sent to the block is automatically mined so

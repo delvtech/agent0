@@ -18,6 +18,8 @@ def get_agent_accounts(
     config: list[BotInfo], web3: Web3, base_token_contract: Contract, hyperdrive_address: str, rng: NumpyGenerator
 ) -> list[EthAccount]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive."""
+    # TODO: raise issue on failure by looking at `rpc_response`, `tx_receipt` returned from function
+    # Do this for `set_anvil_account_balance`, `smart_contract_transact(mint)`, `smart_contract_transact(approve)`
     agents: list[EthAccount] = []
     num_agents_so_far: list[int] = []
     for agent_info in config:
@@ -27,14 +29,13 @@ def get_agent_accounts(
             kwargs["budget"] = agent_info.budget.sample_budget(rng)
             agent_count = policy_instance_index + sum(num_agents_so_far)
             # create agents
+            # FIXME: add better comments explaining this process
             policy = agent_info.policy(**kwargs)
             agent = Agent(wallet_address=agent_count, policy=policy)
             eth_account = eth.accounts.EthAccount(agent=agent, extra_entropy=str(agent_count))
-            # fund test account with ether
-            # TODO: raise issue on failure by looking at `rpc_response` returned from function
+            # fund test account with ethereum
             _ = eth.set_anvil_account_balance(web3, eth_account.checksum_address, int(web3.to_wei(1000, "ether")))
             # fund test account by minting with the ERC20 base account
-            # TODO: raise issue on failure by looking at `tx_receipt` returned from function
             _ = eth.smart_contract_transact(
                 web3,
                 base_token_contract,
@@ -43,8 +44,7 @@ def get_agent_accounts(
                 eth_account.checksum_address,
                 kwargs["budget"].scaled_value,
             )
-            # max approval for the hyperdrive contract
-            # TODO: raise issue on failure by looking at `tx_receipt` returned from function
+            # Establish max approval for the hyperdrive contract
             _ = eth.smart_contract_transact(
                 web3,
                 base_token_contract,

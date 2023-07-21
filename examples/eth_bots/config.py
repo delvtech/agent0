@@ -58,17 +58,25 @@ agent_config: list[BotInfo] = [
     ),
 ]
 
-environment_config = EnvironmentConfig(
+environment_config = EnvironmentConfig(  # FIXME: Clean up variables that are only used by evm_bots & apeworx
     alchemy=False,
-    artifacts_url="http://localhost:80",
     delete_previous_logs=False,
     devnet=True,
     halt_on_errors=True,
     log_filename="agent0-bots",
     log_level=logging.INFO,
     log_stdout=True,
-    rpc_url="http://localhost:8545",
     random_seed=1234,
-    username="changeme",
-    username_register_url="http://localhost:5002",
+    # FIXME: should just use
+    # hostname = http://localhost
+    # artifacts_port = 80
+    # rpc_port = 8545
+    # user_registry_port = 5002
+    # artifacts_url="http://localhost:80",
+    # rpc_url="http://localhost:8545",
+    # username_register_url="http://localhost:5002",
+    artifacts_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:80",
+    rpc_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:8545",
+    username_register_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:5002",
+    username="Dylan",
 )

@@ -68,14 +68,16 @@ def transact_and_parse_logs(
     ReceiptBreakdown
         A dataclass containing the maturity time and the absolute values for token quantities changed
     """
-    tx_receipt = eth.smart_contract_transact(web3, hyperdrive_contract, signer, fn_name, *fn_args)
     # TODO: raise issue on failure by looking at `tx_receipt` returned from function
+    tx_receipt = eth.smart_contract_transact(web3, hyperdrive_contract, signer, fn_name, *fn_args)
     hyperdrive_event_logs = eth.get_transaction_logs(
         web3,
         hyperdrive_contract,
         tx_receipt,
         event_names=[fn_name[0].capitalize() + fn_name[1:]],
     )
+    if len(hyperdrive_event_logs) == 0:
+        raise AssertionError("Transaction receipt had no logs")
     if len(hyperdrive_event_logs) > 1:
         raise AssertionError("Too many logs found")
     log_args = hyperdrive_event_logs[0]["args"]
@@ -122,7 +124,9 @@ def execute_agent_trades(
     # get latest market
     hyperdrive_market = hyperdrive_interface.get_hyperdrive_market(web3, hyperdrive_contract)
     for account in agent_accounts:
-        if account.agent is None:  # should never happen
+        # This condition is unlikely;
+        # it would happen if they created an eth address but didn't associate it with an elfpy Agent
+        if account.agent is None:
             continue
         trades: list[elftypes.Trade] = account.agent.get_trades(market=hyperdrive_market)
         for trade_object in trades:
@@ -141,6 +145,7 @@ def execute_agent_trades(
             max_apr = int(1e18)
             as_underlying = True
             # TODO: figure out fees paid
+            # FIXME: Switch this to a match statement
             if trade_object.trade.action_type == MarketActionType.OPEN_LONG:
                 fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
                 trade_result = transact_and_parse_logs(
