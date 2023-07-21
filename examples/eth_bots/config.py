@@ -14,7 +14,7 @@ from .custom_policies.example_custom_policy import ExampleCustomPolicy
 agent_config: list[BotInfo] = [
     BotInfo(
         policy=Policies.random_agent,
-        number_of_bots=3,
+        number_of_bots=0,
         budget=Budget(
             mean_wei=int(5_000e18),  # 5k base
             std_wei=int(1_000e18),  # 1k base
@@ -25,7 +25,7 @@ agent_config: list[BotInfo] = [
     ),
     BotInfo(
         policy=Policies.long_louie,
-        number_of_bots=3,
+        number_of_bots=0,
         budget=Budget(
             mean_wei=int(5_000e18),  # 5k base
             std_wei=int(1_000e18),  # 1k base
@@ -36,7 +36,7 @@ agent_config: list[BotInfo] = [
     ),
     BotInfo(
         policy=Policies.short_sally,
-        number_of_bots=3,
+        number_of_bots=0,
         budget=Budget(
             mean_wei=int(5_000e18),  # 5k base
             std_wei=int(1_000e18),  # 1k base
@@ -62,7 +62,7 @@ environment_config = EnvironmentConfig(  # FIXME: Clean up variables that are on
     alchemy=False,
     delete_previous_logs=False,
     devnet=True,
-    halt_on_errors=True,
+    halt_on_errors=False,
     log_filename="agent0-bots",
     log_level=logging.INFO,
     log_stdout=True,
@@ -72,11 +72,11 @@ environment_config = EnvironmentConfig(  # FIXME: Clean up variables that are on
     # artifacts_port = 80
     # rpc_port = 8545
     # user_registry_port = 5002
-    # artifacts_url="http://localhost:80",
-    # rpc_url="http://localhost:8545",
-    # username_register_url="http://localhost:5002",
-    artifacts_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:80",
-    rpc_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:8545",
-    username_register_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:5002",
+    artifacts_url="http://localhost:80",
+    rpc_url="http://localhost:8545",
+    username_register_url="http://localhost:5002",
+    # artifacts_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:80",
+    # rpc_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:8545",
+    # username_register_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:5002",
     username="Dylan",
 )
