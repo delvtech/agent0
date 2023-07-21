@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import pandas as pd
 from extract_data_logs import calculate_spot_price_from_state
-from matplotlib import ticker as mpl_ticker
 
 from elfpy.data import postgres as pg
 
@@ -71,7 +70,13 @@ def calculate_pnl(
 
 
 def plot_pnl(agent_positions: dict[str, pg.AgentPosition], axes):
-    """Plot the pnl data."""
+    """Plot the pnl data.
+
+    Arguments
+    ---------
+    agent_positions : dict[str, pg.AgentPosition]
+    Dict containing each agent's AgentPosition object.
+    """
     plot_data = []
     agents = []
     for agent, agent_position in agent_positions.items():
