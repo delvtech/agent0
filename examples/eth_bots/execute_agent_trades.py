@@ -11,7 +11,7 @@ from web3.contract.contract import Contract
 from elfpy import eth, hyperdrive_interface
 from elfpy import types as elftypes
 from elfpy.eth.accounts import EthAccount
-from elfpy.markets.hyperdrive import MarketActionType
+from elfpy.markets.hyperdrive import MarketActionType, hyperdrive_assets
 from elfpy.time import time as elftime
 from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet import Long, Short
@@ -24,9 +24,10 @@ from elfpy.wallet.wallet_deltas import WalletDeltas
 @dataclass
 class ReceiptBreakdown:
     r"""A granular breakdown of important values in a trade receipt."""
+    asset_id: int = 0
+    maturity_time: int = 0
     base_amount: FixedPoint = FixedPoint(0)
     bond_amount: FixedPoint = FixedPoint(0)
-    maturity_time: FixedPoint = FixedPoint(0)
     lp_amount: FixedPoint = FixedPoint(0)
     withdrawal_share_amount: FixedPoint = FixedPoint(0)
 
@@ -79,12 +80,14 @@ def transact_and_parse_logs(
         raise AssertionError("Too many logs found")
     log_args = hyperdrive_event_logs[0]["args"]
     trade_result = ReceiptBreakdown()
+    if "assetId" in log_args:
+        trade_result.asset_id = log_args["assetId"]
+    if "maturityTime" in log_args:
+        trade_result.maturity_time = log_args["maturityTime"]
     if "baseAmount" in log_args:
         trade_result.base_amount = FixedPoint(scaled_value=log_args["baseAmount"])
     if "bondAmount" in log_args:
         trade_result.bond_amount = FixedPoint(scaled_value=log_args["bondAmount"])
-    if "maturityTime" in log_args:
-        trade_result.maturity_time = FixedPoint(scaled_value=log_args["maturityTime"])
     if "lpAmount" in log_args:
         trade_result.lp_amount = FixedPoint(scaled_value=log_args["lpAmount"])
     if "withdrawalShareAmount" in log_args:
@@ -132,13 +135,11 @@ def execute_agent_trades(
             )
             # do_trade
             trade_amount: int = trade_object.trade.trade_amount.scaled_value
-            position_duration_seconds = hyperdrive_market.position_duration.years * elftime.TimeUnit.SECONDS.value
-            mint_time_seconds: FixedPoint = trade_object.trade.mint_time * elftime.TimeUnit.SECONDS.value
-            maturity_time_seconds: int = (mint_time_seconds + position_duration_seconds).scaled_value
+            # position_duration_seconds = hyperdrive_market.position_duration.years * elftime.TimeUnit.SECONDS.value
             # TODO: The following variables are hard coded for now, but should be specified in the trade spec
             # HyperdriveMarketAction does have min_amount_out
             max_deposit = trade_amount
-            min_output = trade_amount + 1
+            min_output = 0  # trade_amount - 1
             min_apr = int(1)
             max_apr = int(1e18)
             as_underlying = True
@@ -153,18 +154,43 @@ def execute_agent_trades(
                     "openLong",
                     *fn_args,
                 )
-                mint_time_years = (
-                    trade_result.maturity_time - position_duration_seconds
-                ) / elftime.TimeUnit.SECONDS.value
                 wallet_deltas = WalletDeltas(
                     balance=Quantity(
                         amount=-trade_result.base_amount,
                         unit=TokenType.BASE,
                     ),
-                    longs={mint_time_years: Long(trade_result.bond_amount)},
+                    longs={FixedPoint(trade_result.maturity_time): Long(trade_result.bond_amount)},
                 )
+                asset_id = hyperdrive_assets.encode_asset_id(
+                    hyperdrive_assets.AssetIdPrefix.LONG, trade_result.maturity_time
+                )
+                agent_balance = eth.smart_contract_read(
+                    hyperdrive_contract,
+                    "balanceOf",
+                    asset_id,
+                    account.checksum_address,
+                )
+                print(f"OPEN: {agent_balance=}")
             elif trade_object.trade.action_type == MarketActionType.CLOSE_LONG:
-                fn_args = (maturity_time_seconds, trade_amount, min_output, account.checksum_address, as_underlying)
+                # We are swapping mint & maturity times for bots to avoid conversion
+                maturity_time: int = int(trade_object.trade.mint_time)
+                # print(f"CLOSE: {mint_time_years=}")
+                # mint_time_seconds = mint_time_years * elftime.TimeUnit.SECONDS.value
+                # print(f"{mint_time_seconds=}")
+                # maturity_time_seconds: int = (mint_time_seconds + position_duration_seconds).scaled_value
+                # print(f"{maturity_time_seconds=}")
+                asset_id = hyperdrive_assets.encode_asset_id(hyperdrive_assets.AssetIdPrefix.LONG, maturity_time)
+                from eth_utils import to_hex
+
+                print(f"{to_hex(asset_id)=}")
+                agent_balance = eth.smart_contract_read(
+                    hyperdrive_contract,
+                    "balanceOf",
+                    asset_id,
+                    account.checksum_address,
+                )
+                print(f"CLOSE: {agent_balance=}")
+                fn_args = (maturity_time, trade_amount, min_output, account.checksum_address, as_underlying)
                 trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
@@ -172,15 +198,15 @@ def execute_agent_trades(
                     "closeLong",
                     *fn_args,
                 )
-                mint_time_years = (
-                    trade_result.maturity_time - position_duration_seconds
-                ) / elftime.TimeUnit.SECONDS.value
+                # mint_time_years = (
+                #    FixedPoint(trade_result.maturity_time) - position_duration_seconds
+                # ) / elftime.TimeUnit.SECONDS.value
                 wallet_deltas = WalletDeltas(
                     balance=Quantity(
                         amount=trade_result.base_amount,
                         unit=TokenType.BASE,
                     ),
-                    longs={mint_time_years: Long(-trade_result.bond_amount)},
+                    longs={FixedPoint(maturity_time): Long(-trade_result.bond_amount)},
                 )
             elif trade_object.trade.action_type == MarketActionType.OPEN_SHORT:
                 fn_args = (trade_amount, max_deposit, account.checksum_address, as_underlying)
@@ -191,23 +217,23 @@ def execute_agent_trades(
                     "openShort",
                     *fn_args,
                 )
-                mint_time_years = (
-                    trade_result.maturity_time - position_duration_seconds
-                ) / elftime.TimeUnit.SECONDS.value
                 wallet_deltas = WalletDeltas(
                     balance=Quantity(
                         amount=-trade_result.base_amount,
                         unit=TokenType.BASE,
                     ),
                     shorts={
-                        mint_time_years: Short(
+                        FixedPoint(trade_result.maturity_time): Short(
                             balance=trade_result.bond_amount,
                             open_share_price=hyperdrive_market.market_state.share_price,
                         )
                     },
                 )
             elif trade_object.trade.action_type == MarketActionType.CLOSE_SHORT:
-                fn_args = (maturity_time_seconds, trade_amount, min_output, account.checksum_address, as_underlying)
+                # We are swapping mint & maturity times for bots to avoid conversion
+                maturity_time: int = int(trade_object.trade.mint_time)
+                # uint256, uint256, uint256, address, bool
+                fn_args = (maturity_time, trade_amount, min_output, account.checksum_address, as_underlying)
                 trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
@@ -215,18 +241,15 @@ def execute_agent_trades(
                     "closeShort",
                     *fn_args,
                 )
-                mint_time_years = (
-                    trade_result.maturity_time - position_duration_seconds
-                ) / elftime.TimeUnit.SECONDS.value
                 wallet_deltas = WalletDeltas(
                     balance=Quantity(
                         amount=trade_result.base_amount,
                         unit=TokenType.BASE,
                     ),
                     shorts={
-                        mint_time_years: Short(
+                        FixedPoint(maturity_time): Short(
                             balance=-trade_result.bond_amount,
-                            open_share_price=account.agent.wallet.shorts[mint_time_seconds].open_share_price,
+                            open_share_price=account.agent.wallet.shorts[FixedPoint(maturity_time)].open_share_price,
                         )
                     },
                 )

@@ -209,6 +209,8 @@ class RandomAgent(BasePolicy):
         # check if the agent will trade this block or not
         if not self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)]):
             return []
+        if wallet.balance.amount <= WEI:
+            return []
         # user can always open a trade, and can close a trade if one is open
         available_actions = self.get_available_actions(wallet)
         # randomly choose one of the possible actions

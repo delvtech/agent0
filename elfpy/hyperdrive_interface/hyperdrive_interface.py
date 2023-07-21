@@ -188,10 +188,6 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict[str, Any]:
     pool_config["governanceFee"] = eth.convert_scaled_value(governance_fee)
     pool_config["oracleSize"] = eth.convert_scaled_value(hyperdrive_config.get("oracleSize", None))
     pool_config["updateGap"] = hyperdrive_config.get("updateGap", None)
-    if pool_config["positionDuration"] is not None:
-        pool_config["termLength"] = pool_config["positionDuration"] / 60 / 60 / 24  # in days
-    else:
-        pool_config["termLength"] = None
     return pool_config
 
 
@@ -240,9 +236,9 @@ def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> Hyperdri
         pricing_model=HyperdrivePricingModel(),
         market_state=market_state,
         position_duration=elftime.StretchedTime(
-            days=FixedPoint(pool_config["termLength"]),
+            days=FixedPoint(pool_config["positionDuration"]) / FixedPoint(86_400),
             time_stretch=FixedPoint(scaled_value=pool_config["timeStretch"]),
-            normalizing_constant=FixedPoint(pool_config["termLength"]),
+            normalizing_constant=FixedPoint(pool_config["positionDuration"]) / FixedPoint(86_400),
         ),
         block_time=elftime.BlockTime(
             _time=years_elapsed,
