@@ -21,7 +21,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           token: ${{ secrets.GH_GITHUB_COM_TOKEN || github.token }}
-          fetch-depth: 2
 
       - name: Ensure clear Jupyter Notebooks
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
@@ -29,16 +28,10 @@ jobs:
       - name: Run black
         run: python -m black --check --diff .
 
-      - name: Debug git state
-        run: |
-          git config --global --add safe.directory /__w/elf-simulations/elf-simulations
-          git log --oneline -n 2
-          git status
-
       - name: Get changed Python files
         id: changed_files
         run: |
-          echo "files=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep '.py$' | xargs)" >> $GITHUB_OUTPUT
+          echo "files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '.py$' | xargs)" >> $GITHUB_OUTPUT
 
       - name: Run Pylint on changed files
         run: |
