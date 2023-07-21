@@ -55,7 +55,7 @@ jobs:
           push: true
           file: ./Dockerfile
           tags: ${{ steps.meta_main.outputs.tags }}
-          labels: ${{ steps.meta_main.outputs.tags }}
+          labels: ${{ steps.meta_main.outputs.labels }}
 
       - name: Check GitHub rate limit at end
         uses: wakamex/rate-limit-action@master
