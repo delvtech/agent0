@@ -1,7 +1,7 @@
 """Utilities for handling transaction receipts"""
 from __future__ import annotations
 
-from typing import Any, Sequence
+from typing import Any, Sequence, cast
 
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -67,9 +67,7 @@ def get_event_object(
         If the event is not found, return (None, None).
         Otherwise, return the decoded event information as (data, abi).
     """
-    abi_events: list[ABIEvent] = [
-        abi for abi in contract.abi if isinstance(abi, ABIEvent) and hasattr(abi, "type") and abi.get("type") == "event"
-    ]
+    abi_events: list[ABIEvent] = [cast(ABIEvent, abi) for abi in contract.abi if abi.get("type", "") == "event"]
     for event in abi_events:
         # Get event signature components
         name = event.get("name")
