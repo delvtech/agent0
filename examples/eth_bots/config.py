@@ -14,7 +14,7 @@ from .custom_policies.example_custom_policy import ExampleCustomPolicy
 agent_config: list[BotInfo] = [
     BotInfo(
         policy=Policies.random_agent,
-        number_of_bots=0,
+        number_of_bots=1,
         budget=Budget(
             mean_wei=int(5_000e18),  # 5k base
             std_wei=int(1_000e18),  # 1k base
@@ -47,7 +47,7 @@ agent_config: list[BotInfo] = [
     ),
     BotInfo(
         policy=ExampleCustomPolicy,
-        number_of_bots=2,
+        number_of_bots=0,
         budget=Budget(
             mean_wei=int(1_000e18),  # 1k base
             std_wei=int(100e18),  # 100 base

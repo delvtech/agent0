@@ -8,7 +8,9 @@ from datetime import datetime
 import numpy as np
 import requests
 from eth_typing import BlockNumber
+from web3 import Web3
 from web3.contract.contract import Contract
+from web3.types import RPCEndpoint, RPCResponse
 
 from elfpy import eth, hyperdrive_interface
 from elfpy.bots import DEFAULT_USERNAME
@@ -94,7 +96,11 @@ def main():  # TODO: Move much of this out of main
         if latest_block_number is None or latest_block_timestamp is None:
             raise AssertionError("latest_block_number and latest_block_timestamp can not be None")
 
-        if latest_block_number > last_executed_block:
+        wait_for_new_block = get_wait_for_new_block(web3)
+        print(f"{wait_for_new_block=}")
+
+        # do trades if we don't need to wait for new block.  otherwise, wait and check for a new block
+        if not wait_for_new_block or latest_block_number > last_executed_block:
             # log and show block info
             logging.info(
                 "Block number: %d, Block time: %s, Trades without crashing: %s",
@@ -110,7 +116,6 @@ def main():  # TODO: Move much of this out of main
                     trade_streak,
                 )
                 last_executed_block = latest_block_number
-                # TODO: if provider.auto_mine is set then run the `mine` function
             # we want to catch all exceptions
             # pylint: disable=broad-exception-caught
             except Exception as exc:
@@ -118,6 +123,32 @@ def main():  # TODO: Move much of this out of main
                     raise exc
                 trade_streak = 0
                 # TODO: deliver crash report
+
+
+def get_wait_for_new_block(web3: Web3) -> bool:
+    """Returns if we should wait for a new block before attempting trades again.  For anvil nodes,
+       if auto-mining is enabled then every transaction sent to the block is automatically mined so
+       we don't need to wait for a new block before submitting trades again.
+
+    Arguments
+    ---------
+    web3 : Web3
+        web3.py instantiation.
+
+    Returns
+    -------
+    bool
+        Whether or not to wait for a new block before attempting trades again.
+    """
+    automine = False
+    try:
+        response = web3.provider.make_request(method=RPCEndpoint("anvil_getAutomine"), params=[])
+        automine = bool(response.get("result", False))
+    except Exception:
+        # do nothing, this will fail for non anvil nodes and we don't care.
+        automine = False
+
+    return not automine
 
 
 if __name__ == "__main__":

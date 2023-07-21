@@ -256,7 +256,16 @@ class HyperdriveMarket(
         FixedPoint
             Maximum amount of base the agent can use to open a long
         """
-        max_long = self.pricing_model.calculate_max_long(
+
+        # if the market isn't initialized yet, return 0
+        if self.market_state.bond_reserves == 0:
+            return FixedPoint(0)
+
+        # don't open longs when there is negative interest
+        if self.market_state.bond_reserves < self.market_state.share_reserves:
+            return FixedPoint(0)
+
+        max_long_result = self.pricing_model.calculate_max_long(
             share_reserves=self.market_state.share_reserves,
             bond_reserves=self.market_state.bond_reserves,
             longs_outstanding=self.market_state.longs_outstanding,
@@ -266,7 +275,16 @@ class HyperdriveMarket(
             minimum_share_reserves=self.market_state.minimum_share_reserves,
             max_iterations=20,
         )
-        return min(account_balance, max_long.base_amount)
+
+        # don't let the user spend more than their account balance.  do let them try to take the max
+        # long the contract can handle if they are able to.  don't let them open a negative interest
+        # position.
+        max_long = (
+            FixedPoint(0)
+            if max_long_result.base_amount < FixedPoint(0)
+            else min(max_long_result.base_amount, account_balance)
+        )
+        return max_long
 
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate above the APR when opening the short
@@ -284,6 +302,7 @@ class HyperdriveMarket(
         FixedPoint
             Amount of base that the agent can short in the current market
         """
+
         max_short_bonds = self.pricing_model.calculate_max_short(
             share_reserves=self.market_state.share_reserves,
             bond_reserves=self.market_state.bond_reserves,
@@ -293,6 +312,12 @@ class HyperdriveMarket(
             initial_share_price=self.market_state.init_share_price,
             minimum_share_reserves=self.market_state.minimum_share_reserves,
         )
+
+        # don't let the user spend more than their account balance.  do let them try to take the max
+        # long the contract can handle if they are able to.  don't let them open a negative interest
+        # position.
+        max_short_bonds = FixedPoint(0) if max_short_bonds < FixedPoint(0) else min(max_short_bonds, account_balance)
+
         _, wallet_deltas = hyperdrive_actions.calc_open_short(
             bond_amount=max_short_bonds,
             market_state=self.market_state,

@@ -59,12 +59,18 @@ class RandomAgent(BasePolicy):
 
     def open_short_with_random_amount(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Open a short with a random allowable amount."""
+        maximum_trade_amount = market.get_max_short_for_account(wallet.balance.amount)
+
+        if maximum_trade_amount <= WEI:
+            return []
+
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
-        maximum_trade_amount = market.get_max_short_for_account(wallet.balance.amount)
+
         # WEI <= trade_amount <= max_short
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
+
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             Trade(
@@ -79,13 +85,19 @@ class RandomAgent(BasePolicy):
 
     def open_long_with_random_amount(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Open a long with a random allowable amount."""
+        maximum_trade_amount = market.get_max_long_for_account(wallet.balance.amount)
+
+        if maximum_trade_amount <= WEI:
+            return []
+
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
-        maximum_trade_amount = market.get_max_long_for_account(wallet.balance.amount)
-        # # WEI <= trade_amount <= max_short
+
+        # WEI <= trade_amount <= max long
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
+
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             Trade(
