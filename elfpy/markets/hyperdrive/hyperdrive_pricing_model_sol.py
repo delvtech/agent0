@@ -44,10 +44,9 @@ def calculate_spot_price(
     FixedPoint
         The spot price of bonds in terms of base as an 18 fixed-point value.
     """
-    if share_reserves <= FixedPoint(0):
-        return FixedPoint("nan")
-    spot_price = (initial_share_price * share_reserves / bond_reserves) ** time_stretch
-    return spot_price
+    if bond_reserves <= FixedPoint(0):
+        raise ValueError("bond_reserves must be positive")
+    return (initial_share_price * share_reserves / bond_reserves) ** time_stretch
 
 
 def calculate_max_long(
