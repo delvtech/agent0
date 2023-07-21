@@ -66,7 +66,7 @@ class ShortSally(BasePolicy):
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
         gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
-        if not gonna_trade or wallet.balance.amount <= WEI:
+        if not gonna_trade:
             return []
         action_list = []
         for short_time in wallet.shorts:  # loop over shorts # pylint: disable=consider-using-dict-items
@@ -90,7 +90,7 @@ class ShortSally(BasePolicy):
         if market.fixed_apr - market.market_state.variable_apr < self.risk_threshold and not has_opened_short:
             # maximum amount the agent can short given the market and the agent's wallet
             trade_amount = market.get_max_short_for_account(wallet.balance.amount)
-            if trade_amount > WEI:
+            if trade_amount > WEI and wallet.balance.amount > WEI:
                 action_list += [
                     Trade(
                         market=MarketType.HYPERDRIVE,

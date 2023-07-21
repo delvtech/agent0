@@ -43,11 +43,14 @@ class RandomAgent(BasePolicy):
         if disallowed_actions is None:
             disallowed_actions = []
         # compile a list of all actions
-        all_available_actions = [
-            MarketActionType.OPEN_LONG,
-            MarketActionType.OPEN_SHORT,
-            MarketActionType.ADD_LIQUIDITY,
-        ]
+        if wallet.balance.amount <= WEI:
+            all_available_actions = []
+        else:
+            all_available_actions = [
+                MarketActionType.OPEN_LONG,
+                MarketActionType.OPEN_SHORT,
+                MarketActionType.ADD_LIQUIDITY,
+            ]
         if wallet.longs:  # if the agent has open longs
             all_available_actions.append(MarketActionType.CLOSE_LONG)
         if wallet.shorts:  # if the agent has open shorts
@@ -200,8 +203,8 @@ class RandomAgent(BasePolicy):
         # pylint: disable=too-many-return-statements
         # check if the agent will trade this block or not
         gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
-        if not gonna_trade or wallet.balance.amount <= WEI:
-            return []  # FIXME: Close policies if some are open
+        if not gonna_trade:
+            return []
         # user can always open a trade, and can close a trade if one is open
         available_actions = self.get_available_actions(wallet)
         # randomly choose one of the possible actions
