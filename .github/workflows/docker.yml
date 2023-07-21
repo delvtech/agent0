@@ -52,7 +52,8 @@ jobs:
           context: .
           push: true
           file: ./Dockerfile
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Check GitHub rate limit at end
