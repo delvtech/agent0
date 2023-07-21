@@ -6,7 +6,6 @@ import os
 from datetime import datetime
 
 import numpy as np
-import requests
 from eth_typing import BlockNumber
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -20,15 +19,6 @@ from elfpy.utils import logs
 from examples.eth_bots.config import agent_config, environment_config
 from examples.eth_bots.execute_agent_trades import execute_agent_trades
 from examples.eth_bots.setup_agents import get_agent_accounts
-
-
-# FIXME: move this out of this file (into `elfpy/bots/register_username_server.py`?
-def register_username(register_url: str, wallet_addrs: list[str], username):
-    """Connects to the register user flask server via post request and registeres the username"""
-    json_data = {"wallet_addrs": wallet_addrs, "username": username}
-    result = requests.post(register_url + "/register_bots", json=json_data, timeout=3)
-    if result.status_code != 200:
-        raise ConnectionError(result)
 
 
 def main():  # FIXME: Move much of this out of main
@@ -76,13 +66,9 @@ def main():  # FIXME: Move much of this out of main
     ###################################
 
     # load agent policies
-    agent_accounts = get_agent_accounts(agent_config, web3, base_token_contract, hyperdrive_contract.address, rng)
-
-    # FIXME: move into get_agent_accounts
-    # Set up postgres to write username to agent wallet addr
-    # initialize the postgres session
-    wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
-    register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
+    agent_accounts = get_agent_accounts(
+        agent_config, environment_config, web3, base_token_contract, hyperdrive_contract.address, rng
+    )
 
     # FIXME: encapulate trade loop to another function.  At most should be:
     # while: True:
