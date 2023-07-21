@@ -31,6 +31,7 @@ jobs:
 
       - name: Debug git state
         run: |
+          git config --global --add safe.directory /__w/elf-simulations/elf-simulations
           git log --oneline -n 2
           git status
 
