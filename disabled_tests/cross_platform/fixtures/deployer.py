@@ -7,6 +7,7 @@ from fixedpointmath import FixedPoint
 # TODO: convert to not use ape
 pytestmark = pytest.mark.skip("disabled until converted to not use ape")
 
+
 @pytest.fixture(scope="function")
 def deployer() -> TestAccountAPI:
     """Returns solidity agents initialized with some ETH"""

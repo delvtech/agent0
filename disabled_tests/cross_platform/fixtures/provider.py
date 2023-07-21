@@ -8,6 +8,7 @@ from ape.api.providers import ProviderAPI
 # TODO: convert to not use ape
 pytestmark = pytest.mark.skip("disabled until converted to not use ape")
 
+
 @pytest.fixture(scope="function")
 def provider() -> ProviderAPI:
     """Creates the provider for the local blockchain."""
