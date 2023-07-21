@@ -22,6 +22,10 @@ jobs:
         with:
           token: ${{ secrets.GH_GITHUB_COM_TOKEN || github.token }}
 
+      - name: Mark safe directory
+        run: |
+          git config --global --add safe.directory /__w/elf-simulations/elf-simulations
+
       - name: Pyright
         run: |
           files=$(git ls-files '*.py' | grep -v 'disabled_tests/')
