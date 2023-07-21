@@ -18,6 +18,7 @@ RUN apt-get update && \
 
 # Final Image
 FROM base as final
+RUN apt-get update && apt-get install -y git lsb-release jq curl
 COPY --from=compile-image /opt/venv /opt/venv
 COPY --from=migrations /src/ ./hyperdrive_solidity/
 COPY --from=migrations /usr/local/bin/ /usr/local/bin
