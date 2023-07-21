@@ -23,20 +23,10 @@ jobs:
           token: ${{ secrets.GH_GITHUB_COM_TOKEN || github.token }}
           fetch-depth: 0  # Fetches all history for all branches and tags.
 
-      - name: Debug git state
+      - name: Fetch base commit
         run: |
           git config --global --add safe.directory /__w/elf-simulations/elf-simulations
-          echo "Base commit: ${{ github.event.pull_request.base.sha }}"
-          echo "Current commit: ${{ github.sha }}"
-          echo "Current branch:"
-          git branch
-          echo "All branches:"
-          git branch -a
-          echo "Commit log:"
-          git log --oneline
-
-      - name: Fetch base commit
-        run: git fetch origin ${{ github.event.pull_request.base.sha }}
+          git fetch origin ${{ github.event.pull_request.base.sha }}
 
       - name: Get changed Python files
         id: changed_files
