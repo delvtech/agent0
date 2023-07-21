@@ -52,7 +52,8 @@ def get_agent_accounts(
         for policy_instance_index in range(agent_info.number_of_agents):  # instantiate one agent per policy
             kwargs["budget"] = agent_info.budget.sample_budget(rng)
             agent_count = policy_instance_index + sum(num_agents_so_far)
-            # the Agent object holds the policy, which makes decisions based on the market and can produce a list of trades
+            # the Agent object holds the policy, which makes decisions based
+            # on the market and can produce a list of trades
             # NOTE: the wallet_address argument is a throwaway right now; the eth_account will have the actual address
             agent = Agent(wallet_address=agent_count, policy=agent_info.policy(**kwargs))
             # the eth_account holds an agent (where the smarts lies) as well as a wallet (an address used by contracts)

@@ -58,7 +58,7 @@ agent_config: list[BotInfo] = [
     ),
 ]
 
-environment_config = EnvironmentConfig(  # FIXME: Clean up variables that are only used by evm_bots & apeworx
+environment_config = EnvironmentConfig(  # TODO: Clean up variables that are only used by evm_bots & apeworx
     alchemy=False,
     delete_previous_logs=False,
     devnet=True,
@@ -67,7 +67,7 @@ environment_config = EnvironmentConfig(  # FIXME: Clean up variables that are on
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
-    # FIXME: should just use
+    # TODO: should just use
     # hostname = http://localhost
     # artifacts_port = 80
     # rpc_port = 8545
