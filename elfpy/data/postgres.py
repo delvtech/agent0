@@ -761,8 +761,6 @@ class AgentPosition:
 
         # Create positions dataframe which tracks aggregate holdings.
         self.positions = wallet_history.loc[:, other_columns].copy()
-        # keep positions where they are not 0, otherwise replace 0 with NaN
-        self.positions = self.positions.where(self.positions != 0, pd.NA)
 
         # Create deltas dataframe which tracks change in holdings.
         self.deltas = self.positions.diff()
@@ -775,7 +773,7 @@ class AgentPosition:
         self.open_share_price = pd.DataFrame(data=pd.NA, index=self.deltas.index, columns=self.deltas.columns)
 
         # When we have an increase in position, we use the current block's share_price
-        share_price_on_increases = share_price_on_increases.where(self.deltas <= 0, self.share_price, axis=0)
+        share_price_on_increases = share_price_on_increases.mask(self.deltas > 0, self.share_price, axis=0)
 
         # Fill forward to replace NaNs. Table is now full of share prices, sourced only from increases in position.
         share_price_on_increases.fillna(method="ffill", inplace=True, axis=0)
