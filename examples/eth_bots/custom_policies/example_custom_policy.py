@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
+from elfpy import WEI
 from elfpy.agents.policies import BasePolicy
 from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Trade
@@ -45,12 +46,14 @@ class ExampleCustomPolicy(BasePolicy):
         list[MarketAction]
             list of actions
         """
-        trade_chance = 0.5
-        gonna_lp = self.rng.choice([True, False], p=[trade_chance, 1 - trade_chance])
+        if wallet.balance.amount <= WEI:
+            return []
+        lp_chance = 0.5
+        gonna_lp = self.rng.choice([True, False], p=[lp_chance, 1 - lp_chance])
         action_list = []
         if gonna_lp:
             # ADD LIQUIDITY IF YOU HAVEN'T, OTHERWISE REMOVE IT
-            if wallet.lp_tokens > 0:  # have liquidity
+            if wallet.lp_tokens > 0:  # agent has liquidity
                 action_list.append(
                     Trade(
                         market=MarketType.HYPERDRIVE,
@@ -61,7 +64,7 @@ class ExampleCustomPolicy(BasePolicy):
                         ),
                     )
                 )
-            else:
+            else:  # remove all of the agent's liquidity
                 action_list.append(
                     Trade(
                         market=MarketType.HYPERDRIVE,

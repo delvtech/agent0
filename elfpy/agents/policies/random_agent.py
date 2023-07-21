@@ -60,17 +60,13 @@ class RandomAgent(BasePolicy):
     def open_short_with_random_amount(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Open a short with a random allowable amount."""
         maximum_trade_amount = market.get_max_short_for_account(wallet.balance.amount)
-
         if maximum_trade_amount <= WEI:
             return []
-
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
-
         # WEI <= trade_amount <= max_short
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
-
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             Trade(
@@ -83,21 +79,34 @@ class RandomAgent(BasePolicy):
             )
         ]
 
+    def close_random_short(self, wallet: Wallet) -> list[Trade]:
+        """Fully close the short balance for a random mint time."""
+        # choose a random short time to close
+        short_time: FixedPoint = list(wallet.shorts)[self.rng.integers(len(wallet.shorts))]
+        trade_amount = wallet.shorts[short_time].balance  # close the full trade
+        return [
+            Trade(
+                market=MarketType.HYPERDRIVE,
+                trade=HyperdriveMarketAction(
+                    action_type=MarketActionType.CLOSE_SHORT,
+                    trade_amount=trade_amount,
+                    wallet=wallet,
+                    mint_time=short_time,
+                ),
+            )
+        ]
+
     def open_long_with_random_amount(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Open a long with a random allowable amount."""
         maximum_trade_amount = market.get_max_long_for_account(wallet.balance.amount)
-
         if maximum_trade_amount <= WEI:
             return []
-
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
-
         # WEI <= trade_amount <= max long
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
-
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             Trade(
@@ -106,6 +115,23 @@ class RandomAgent(BasePolicy):
                     action_type=MarketActionType.OPEN_LONG,
                     trade_amount=trade_amount,
                     wallet=wallet,
+                ),
+            )
+        ]
+
+    def close_random_long(self, wallet: Wallet) -> list[Trade]:
+        """Fully close the long balance for a random mint time."""
+        # choose a random long time to close
+        long_time: FixedPoint = list(wallet.longs)[self.rng.integers(len(wallet.longs))]
+        trade_amount = wallet.longs[long_time].balance  # close the full trade
+        return [
+            Trade(
+                market=MarketType.HYPERDRIVE,
+                trade=HyperdriveMarketAction(
+                    action_type=MarketActionType.CLOSE_LONG,
+                    trade_amount=trade_amount,
+                    wallet=wallet,
+                    mint_time=long_time,
                 ),
             )
         ]
@@ -150,40 +176,6 @@ class RandomAgent(BasePolicy):
             )
         ]
 
-    def close_random_short(self, wallet: Wallet) -> list[Trade]:
-        """Fully close the short balance for a random mint time."""
-        # choose a random short time to close
-        short_time: FixedPoint = list(wallet.shorts)[self.rng.integers(len(wallet.shorts))]
-        trade_amount = wallet.shorts[short_time].balance  # close the full trade
-        return [
-            Trade(
-                market=MarketType.HYPERDRIVE,
-                trade=HyperdriveMarketAction(
-                    action_type=MarketActionType.CLOSE_SHORT,
-                    trade_amount=trade_amount,
-                    wallet=wallet,
-                    mint_time=short_time,
-                ),
-            )
-        ]
-
-    def close_random_long(self, wallet: Wallet) -> list[Trade]:
-        """Fully close the long balance for a random mint time."""
-        # choose a random long time to close
-        long_time: FixedPoint = list(wallet.longs)[self.rng.integers(len(wallet.longs))]
-        trade_amount = wallet.longs[long_time].balance  # close the full trade
-        return [
-            Trade(
-                market=MarketType.HYPERDRIVE,
-                trade=HyperdriveMarketAction(
-                    action_type=MarketActionType.CLOSE_LONG,
-                    trade_amount=trade_amount,
-                    wallet=wallet,
-                    mint_time=long_time,
-                ),
-            )
-        ]
-
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Implement a random user strategy.
 
@@ -207,9 +199,8 @@ class RandomAgent(BasePolicy):
         """
         # pylint: disable=too-many-return-statements
         # check if the agent will trade this block or not
-        if not self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)]):
-            return []
-        if wallet.balance.amount <= WEI:
+        gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
+        if not gonna_trade or wallet.balance.amount <= WEI:
             return []
         # user can always open a trade, and can close a trade if one is open
         available_actions = self.get_available_actions(wallet)

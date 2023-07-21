@@ -63,7 +63,7 @@ class LongLouie(BasePolicy):
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
         gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
-        if not gonna_trade:
+        if not gonna_trade or wallet.balance.amount <= WEI:
             return []
         action_list = []
         for long_time in wallet.longs:  # loop over longs # pylint: disable=consider-using-dict-items

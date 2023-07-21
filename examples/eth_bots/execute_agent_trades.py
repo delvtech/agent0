@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from eth_utils import to_hex
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -12,7 +11,7 @@ from web3.contract.contract import Contract
 from elfpy import eth, hyperdrive_interface
 from elfpy import types as elftypes
 from elfpy.eth.accounts import EthAccount
-from elfpy.markets.hyperdrive import MarketActionType, hyperdrive_assets
+from elfpy.markets.hyperdrive import MarketActionType
 from elfpy.time import time as elftime
 from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet import Long, Short
