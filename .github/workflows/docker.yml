@@ -36,7 +36,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Docker
-        id: meta
+        id: meta_main
         uses: docker/metadata-action@v4.5.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
@@ -45,6 +45,16 @@ jobs:
             type=semver,pattern={{version}}
             # Add the edge tag to every image to represent the latest commit to main
             type=edge,branch=main
+        if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Extract metadata (tags, labels) for Docker for non-main branches
+        id: meta_non_main
+        uses: docker/metadata-action@v4.5.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=test
+        if: ${{ github.ref != 'refs/heads/main' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4.1.0
@@ -52,9 +62,8 @@ jobs:
           context: .
           push: true
           file: ./Dockerfile
-          tags: |
-            ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ (github.ref == 'refs/heads/main' && steps.meta_main.outputs.tags) || (github.ref != 'refs/heads/main' && steps.meta_non_main.outputs.tags) }}
+          labels: ${{ (github.ref == 'refs/heads/main' && steps.meta_main.outputs.labels) || (github.ref != 'refs/heads/main' && steps.meta_non_main.outputs.labels) }}
 
       - name: Check GitHub rate limit at end
         uses: wakamex/rate-limit-action@master
