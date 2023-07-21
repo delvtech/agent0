@@ -15,7 +15,7 @@ COPY . ./
 RUN python -m pip install --no-cache-dir --upgrade pip && \
   apt-get update && \
   apt-get install -y --no-install-recommends gcc python3-dev libssl-dev git && \
-  python -m pip install --no-cache-dir -e ."[with-dependencies,ape]" && \
+  python -m pip install --no-cache-dir -e ."[with-dependencies,postgres,ape]" coverage && \
   apt-get remove -y gcc python3-dev libssl-dev && \
   apt-get autoremove -y && \
   pip uninstall pipenv -y
