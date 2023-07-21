@@ -57,6 +57,7 @@ def setup_experiment(
         log_stdout=environment_config.log_stdout,
         log_format_string=environment_config.log_formatter,
     )
+    logs.setup_hyperdrive_crash_report_logging()
     # Check for default name and exit if is default
     if environment_config.username == DEFAULT_USERNAME:
         raise ValueError("Default username detected, please update 'username' in config.py")

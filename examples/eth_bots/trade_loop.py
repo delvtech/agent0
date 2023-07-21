@@ -63,7 +63,17 @@ def trade_if_new_block(
         # we want to catch all exceptions
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            # FIXME: deliver crash report
+            logging.info("Trade crashed with error: %s", exc)
+            # TODO: Crash reporting
+            # We don't have all of the variables we need here -- this report needs to be generated at a lower level
+            # logs.log_hyperdrive_crash_report(
+            #     amount=trade_object.trade.trade_amount.scaled_value,
+            #     trade_type=trade_object.trade.action_type,
+            #     error=err,
+            #     agent_address=agent.address,
+            #     pool_info=pool_info,
+            #     pool_config=pool_config,
+            # )
             if halt_on_errors:
                 raise exc
     return last_executed_block
