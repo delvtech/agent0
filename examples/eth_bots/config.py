@@ -14,7 +14,7 @@ from .custom_policies.example_custom_policy import ExampleCustomPolicy
 agent_config: list[BotInfo] = [
     BotInfo(
         policy=Policies.random_agent,
-        number_of_agents=0,
+        number_of_agents=3,
         budget=Budget(
             mean_wei=int(5_000e18),  # 5k base
             std_wei=int(1_000e18),  # 1k base
@@ -25,7 +25,7 @@ agent_config: list[BotInfo] = [
     ),
     BotInfo(
         policy=Policies.long_louie,
-        number_of_agents=0,
+        number_of_agents=3,
         budget=Budget(
             mean_wei=int(5_000e18),  # 5k base
             std_wei=int(1_000e18),  # 1k base
@@ -36,7 +36,7 @@ agent_config: list[BotInfo] = [
     ),
     BotInfo(
         policy=Policies.short_sally,
-        number_of_agents=0,
+        number_of_agents=3,
         budget=Budget(
             mean_wei=int(5_000e18),  # 5k base
             std_wei=int(1_000e18),  # 1k base
@@ -58,7 +58,8 @@ agent_config: list[BotInfo] = [
     ),
 ]
 
-environment_config = EnvironmentConfig(  # TODO: Clean up variables that are only used by evm_bots & apeworx
+# TODO: Clean up variables that are only used by evm_bots & apeworx
+environment_config = EnvironmentConfig(
     alchemy=False,
     delete_previous_logs=False,
     devnet=True,
@@ -78,5 +79,5 @@ environment_config = EnvironmentConfig(  # TODO: Clean up variables that are onl
     # artifacts_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:80",
     # rpc_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:8545",
     # username_register_url="http://ec2-3-13-94-236.us-east-2.compute.amazonaws.com:5002",
-    username="Dylan",
+    username="changeme",
 )
