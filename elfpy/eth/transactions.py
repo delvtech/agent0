@@ -72,13 +72,13 @@ def smart_contract_transact(
     web3 : Web3
         web3 provider object
     contract : Contract
+        Any deployed web3 contract
     signer : EthAccount
-        the EthAccount that will be used to pay for the gas & sign the transaction
+        The EthAccount that will be used to pay for the gas & sign the transaction
     function_name_or_signature : str
-        any compiled web3 contract
-        this function must exist in the compiled contract's ABI
-    fn_args : unordered list
-        all remaining arguments will be passed to the contract function in the order received
+        This function must exist in the compiled contract's ABI
+    fn_args : ordered list
+        All remaining arguments will be passed to the contract function in the order received
 
     Returns
     -------

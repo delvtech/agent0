@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 
 from fixedpointmath import FixedPoint
 from web3 import Web3
@@ -17,10 +18,62 @@ from elfpy.wallet.wallet import Long, Short
 from elfpy.wallet.wallet_deltas import WalletDeltas
 
 # TODO: Fix these up when we refactor this file
-# pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
-# pylint: disable=too-many-branches
-# pylint: disable=too-many-statements
+
+
+@dataclass
+class ReceiptBreakdown:
+    r"""A granular breakdown of important values in a trade receipt."""
+    maturity_time: FixedPoint
+    base_amount: FixedPoint
+    bond_amount: FixedPoint
+    lp_amount: FixedPoint = FixedPoint(0)
+    withdrawal_share_amount: FixedPoint = FixedPoint(0)
+
+
+def transact_and_parse_logs(
+    web3: Web3, hyperdrive_contract: Contract, signer: EthAccount, fn_name: str, *fn_args
+) -> ReceiptBreakdown:
+    """Execute the hyperdrive smart contract transaction and decode the receipt to get the changes to the agent's funds.
+
+    Arguments
+    ---------
+    web3 : Web3
+        web3 provider object
+    hyperdrive_contract : Contract
+        Any deployed web3 contract
+    signer : EthAccount
+        The EthAccount that will be used to pay for the gas & sign the transaction
+    fn_name : str
+        This function must exist in the compiled contract's ABI
+    fn_args : ordered list
+        All remaining arguments will be passed to the contract function in the order received
+
+    Returns
+    -------
+    ReceiptBreakdown
+        A dataclass containing the maturity time and the absolute values for token quantities changed
+    """
+    tx_receipt = eth.smart_contract_transact(web3, hyperdrive_contract, signer, fn_name, *fn_args)
+    hyperdrive_event_logs = eth.get_transaction_logs(
+        web3,
+        hyperdrive_contract,
+        tx_receipt,
+        event_names=[fn_name[0].capitalize() + fn_name[1:]],
+    )
+    if len(hyperdrive_event_logs) > 1:
+        raise AssertionError("Too many logs found")
+    log_args = hyperdrive_event_logs[0]["args"]
+    trade_result = ReceiptBreakdown(
+        maturity_time=FixedPoint(scaled_value=log_args["maturityTime"]),
+        base_amount=FixedPoint(scaled_value=log_args["baseAmount"]),
+        bond_amount=FixedPoint(scaled_value=log_args["bondAmount"]),
+    )
+    if "lpAmount" in log_args:
+        trade_result.lp_amount = FixedPoint(scaled_value=log_args["lpAmount"])
+    if "withdrawalShareAmount" in log_args:
+        trade_result.withdrawal_share_amount = FixedPoint(scaled_value=log_args["withdrawalShareAmount"])
+    return trade_result
 
 
 def execute_agent_trades(
@@ -29,7 +82,24 @@ def execute_agent_trades(
     agent_accounts: list[EthAccount],
     trade_streak: int,
 ) -> int:
-    """Hyperdrive forever into the sunset."""
+    """Hyperdrive forever into the sunset.
+
+    Arguments
+    ---------
+    web3 : Web3
+        web3 provider object
+    hyperdrive_contract : Contract
+        Any deployed web3 contract
+    agent_accounts : list[EthAccount]
+        A list of EthAccount that are conducting the trades
+    trade_streak : int
+        A counter for the number of successful trades so far
+
+    Returns
+    -------
+    trade_streak : int
+        A counter for the number of successful trades so far (that includes the new trades)
+    """
     # get latest market
     hyperdrive_market = hyperdrive_interface.get_hyperdrive_market(web3, hyperdrive_contract)
     for account in agent_accounts:
@@ -60,190 +130,110 @@ def execute_agent_trades(
             # TODO: raise issue on failure by looking at `tx_receipt` returned from function
             # TODO: figure out fees paid
             if trade_object.trade.action_type == MarketActionType.OPEN_LONG:
-                fn_name = "openLong"
-                tx_receipt = eth.smart_contract_transact(
+                trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
                     account,
-                    fn_name,
-                    trade_amount,  # base amount
-                    min_output,
-                    account.checksum_address,
-                    as_underlying,
+                    "openLong",
+                    *(trade_amount, min_output, account.checksum_address, as_underlying),
                 )
-                hyperdrive_event_logs = eth.get_transaction_logs(
-                    web3,
-                    hyperdrive_contract,
-                    tx_receipt,
-                    event_names=[fn_name[0].capitalize() + fn_name[1:]],
-                )
-                if len(hyperdrive_event_logs) > 1:
-                    raise AssertionError("Too many logs found")
-                mint_time = (
-                    FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["maturityTime"]) - position_duration_years
-                )
+                mint_time = trade_result.maturity_time - position_duration_years
                 wallet_deltas = WalletDeltas(
                     balance=Quantity(
-                        amount=-FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["baseAmount"]),
+                        amount=-trade_result.base_amount,
                         unit=TokenType.BASE,
                     ),
-                    longs={mint_time: Long(FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["bondAmount"]))},
+                    longs={mint_time: Long(trade_result.bond_amount)},
                 )
             elif trade_object.trade.action_type == MarketActionType.CLOSE_LONG:
-                fn_name = "closeLong"
-                tx_receipt = eth.smart_contract_transact(
+                trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
                     account,
-                    fn_name,
-                    maturity_time,
-                    trade_amount,  # base amount
-                    min_output,
-                    account.checksum_address,
-                    as_underlying,
+                    "closeLong",
+                    *(maturity_time, trade_amount, min_output, account.checksum_address, as_underlying),
                 )
-                hyperdrive_event_logs = eth.get_transaction_logs(
-                    web3,
-                    hyperdrive_contract,
-                    tx_receipt,
-                    event_names=[fn_name[0].capitalize() + fn_name[1:]],
-                )
-                if len(hyperdrive_event_logs) > 1:
-                    raise AssertionError("Too many logs found")
-                mint_time = (
-                    FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["maturityTime"]) - position_duration_years
-                )
+                mint_time = trade_result.maturity_time - position_duration_years
                 wallet_deltas = WalletDeltas(
                     balance=Quantity(
-                        amount=FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["baseAmount"]),
+                        amount=trade_result.base_amount,
                         unit=TokenType.BASE,
                     ),
-                    longs={mint_time: Long(-FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["bondAmount"]))},
+                    longs={mint_time: Long(-trade_result.bond_amount)},
                 )
             elif trade_object.trade.action_type == MarketActionType.OPEN_SHORT:
-                fn_name = "openShort"
-                tx_receipt = eth.smart_contract_transact(
+                trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
                     account,
-                    fn_name,
-                    trade_amount,  # bond amount
-                    max_deposit,
-                    account.checksum_address,
-                    as_underlying,
+                    "openShort",
+                    *(trade_amount, max_deposit, account.checksum_address, as_underlying),
                 )
-                hyperdrive_event_logs = eth.get_transaction_logs(
-                    web3,
-                    hyperdrive_contract,
-                    tx_receipt,
-                    event_names=[fn_name[0].capitalize() + fn_name[1:]],
-                )
-                if len(hyperdrive_event_logs) > 1:
-                    raise AssertionError("Too many logs found")
-                mint_time = (
-                    FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["maturityTime"]) - position_duration_years
-                )
+                mint_time = trade_result.maturity_time - position_duration_years
                 wallet_deltas = WalletDeltas(
                     balance=Quantity(
-                        amount=-FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["baseAmount"]),
+                        amount=-trade_result.base_amount,
                         unit=TokenType.BASE,
                     ),
                     shorts={
                         mint_time: Short(
-                            balance=FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["bondAmount"]),
+                            balance=trade_result.bond_amount,
                             open_share_price=hyperdrive_market.market_state.share_price,
                         )
                     },
                 )
             elif trade_object.trade.action_type == MarketActionType.CLOSE_SHORT:
-                fn_name = "closeShort"
-                tx_receipt = eth.smart_contract_transact(
+                trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
                     account,
-                    fn_name,
-                    maturity_time,
-                    trade_amount,  # bond amount
-                    min_output,
-                    account.checksum_address,
-                    as_underlying,
+                    "closeShort",
+                    *(maturity_time, trade_amount, min_output, account.checksum_address, as_underlying),
                 )
-                hyperdrive_event_logs = eth.get_transaction_logs(
-                    web3,
-                    hyperdrive_contract,
-                    tx_receipt,
-                    event_names=[fn_name[0].capitalize() + fn_name[1:]],
-                )
-                if len(hyperdrive_event_logs) > 1:
-                    raise AssertionError("Too many logs found")
-                mint_time = (
-                    FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["maturityTime"]) - position_duration_years
-                )
+                mint_time = trade_result.maturity_time - position_duration_years
                 wallet_deltas = WalletDeltas(
                     balance=Quantity(
-                        amount=FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["baseAmount"]),
+                        amount=trade_result.base_amount,
                         unit=TokenType.BASE,
                     ),
                     shorts={
                         mint_time: Short(
-                            balance=-FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["bondAmount"]),
+                            balance=-trade_result.bond_amount,
                             open_share_price=account.agent.wallet.shorts[mint_time].open_share_price,
                         )
                     },
                 )
             elif trade_object.trade.action_type == MarketActionType.ADD_LIQUIDITY:
-                fn_name = "addLiquidity"
-                tx_receipt = eth.smart_contract_transact(
+                trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
                     account,
-                    fn_name,
-                    trade_amount,  # contribution amount
-                    min_apr,
-                    max_apr,
-                    account.checksum_address,
-                    as_underlying,
+                    "addLiquidity",
+                    *(trade_amount, min_apr, max_apr, account.checksum_address, as_underlying),
                 )
-                hyperdrive_event_logs = eth.get_transaction_logs(
-                    web3,
-                    hyperdrive_contract,
-                    tx_receipt,
-                    event_names=[fn_name[0].capitalize() + fn_name[1:]],
-                )
-                if len(hyperdrive_event_logs) > 1:
-                    raise AssertionError("Too many logs found")
+                mint_time = trade_result.maturity_time - position_duration_years
                 wallet_deltas = WalletDeltas(
                     balance=Quantity(
-                        amount=-FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["baseAmount"]),
+                        amount=-trade_result.base_amount,
                         unit=TokenType.BASE,
                     ),
-                    lp_tokens=FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["lpAmount"]),
+                    lp_tokens=trade_result.lp_amount,
                 )
             elif trade_object.trade.action_type == MarketActionType.REMOVE_LIQUIDITY:
-                fn_name = "removeLiquidity"
-                tx_receipt = eth.smart_contract_transact(
+                trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
                     account,
-                    fn_name,
-                    trade_amount,  # shares they want returned
-                    min_output,
-                    account.checksum_address,
-                    as_underlying,
-                )
-                hyperdrive_event_logs = eth.get_transaction_logs(
-                    web3,
-                    hyperdrive_contract,
-                    tx_receipt,
-                    event_names=[fn_name[0].capitalize() + fn_name[1:]],
+                    "removeLiquidity",
+                    *(trade_amount, min_output, account.checksum_address, as_underlying),
                 )
                 wallet_deltas = WalletDeltas(
                     balance=Quantity(
-                        amount=FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["baseAmount"]),
+                        amount=trade_result.base_amount,
                         unit=TokenType.BASE,
                     ),
-                    lp_tokens=-FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["lpAmount"]),
-                    withdraw_shares=FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["withdrawalShareAmount"]),
+                    lp_tokens=-trade_result.lp_amount,
+                    withdraw_shares=trade_result.withdrawal_share_amount,
                 )
             else:
                 raise NotImplementedError(f"{trade_object.trade.action_type} is not implemented.")
