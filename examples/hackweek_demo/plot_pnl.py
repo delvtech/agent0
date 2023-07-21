@@ -22,7 +22,8 @@ def calculate_pnl(
     pool_info : pd.DataFrame
         Reserves of the pool at each block.
     checkpoint_info : pd.DataFrame
-    Checkpoint information at each block.
+    agent_positions :
+        Dict containing each agent's AgentPosition object.
     """
     position_duration = pool_config.positionDuration.iloc[0]
 
@@ -69,13 +70,15 @@ def calculate_pnl(
     return agent_positions
 
 
-def plot_pnl(agent_positions: dict[str, pg.AgentPosition], axes):
+def plot_pnl(agent_positions: dict[str, pg.AgentPosition], axes) -> None:
     """Plot the pnl data.
 
     Arguments
     ---------
     agent_positions : dict[str, pg.AgentPosition]
-    Dict containing each agent's AgentPosition object.
+        Dict containing each agent's AgentPosition object.
+    axes : Axes
+    Axes object to plot on.
     """
     plot_data = []
     agents = []
