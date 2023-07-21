@@ -68,7 +68,8 @@ class LongLouie(BasePolicy):
         action_list = []
         for long_time in wallet.longs:  # loop over longs # pylint: disable=consider-using-dict-items
             # if any long is mature
-            # FIXME: should we make this less time? they never close
+            # TODO: should we make this less time? they dont close before the bot runs out of money
+            # how to intelligently pick the length? using PNL I guess.
             if (market.block_time.time - FixedPoint(long_time)) >= market.annualized_position_duration:
                 trade_amount = wallet.longs[long_time].balance  # close the whole thing
                 action_list += [
