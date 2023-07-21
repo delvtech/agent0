@@ -14,7 +14,7 @@ COPY . ./
 # https://stackoverflow.com/questions/58300046/how-to-make-lightweight-docker-image-for-python-app-with-pipenv
 RUN python -m pip install --no-cache-dir --upgrade pip && \
   apt-get update && \
-  apt-get install -y --no-install-recommends gcc python3-dev libssl-dev git && \
+  apt-get install -y --no-install-recommends gcc python3-dev libssl-dev git lsb-release && \
   python -m pip install --no-cache-dir -e ."[with-dependencies,postgres,ape]" coverage && \
   apt-get remove -y gcc python3-dev libssl-dev && \
   apt-get autoremove -y && \
