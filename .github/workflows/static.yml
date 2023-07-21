@@ -11,7 +11,7 @@ jobs:
     name: static
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/delvtech/elf-simulations/elf-simulations:testing
+      image: ghcr.io/delvtech/elf-simulations/elf-simulations:edge
     steps:
       - name: Check GitHub rate limit at start
         uses: wakamex/rate-limit-action@master

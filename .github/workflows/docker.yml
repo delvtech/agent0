@@ -36,7 +36,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Docker
-        id: meta_main
+        id: meta
         uses: docker/metadata-action@v4.5.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
@@ -52,8 +52,8 @@ jobs:
           context: .
           push: true
           file: ./Dockerfile
-          tags: ${{ steps.meta_main.outputs.tags }}
-          labels: ${{ steps.meta_main.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Check GitHub rate limit at end
         uses: wakamex/rate-limit-action@master
