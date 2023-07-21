@@ -116,7 +116,6 @@ def main():  # TODO: Move much of this out of main
                     trade_streak,
                 )
                 last_executed_block = latest_block_number
-                # TODO: if provider.auto_mine is set then run the `mine` function
             # we want to catch all exceptions
             # pylint: disable=broad-exception-caught
             except Exception as exc:
