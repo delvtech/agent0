@@ -1,4 +1,4 @@
-"""Hyperdrive market config fixture"""
+"""Hyperdrive market config fixture."""
 from dataclasses import dataclass
 
 import pytest
@@ -27,5 +27,6 @@ class HyperdriveConfig:
 @pytest.fixture(scope="function")
 def hyperdrive_config() -> HyperdriveConfig:
     """Returns a hyperdrive configuration dataclass with default values.  This fixture should be
-    overridden as needed in test classes."""
+    overridden as needed in test classes.
+    """
     return HyperdriveConfig()
