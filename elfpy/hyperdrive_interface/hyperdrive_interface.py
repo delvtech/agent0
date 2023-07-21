@@ -243,6 +243,6 @@ def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> Hyperdri
         block_time=elftime.BlockTime(
             _time=years_elapsed,
             _block_number=FixedPoint(current_block.get("number", None)),
-            _step_size=FixedPoint(1) / FixedPoint(365),
+            _step_size=FixedPoint(1) / FixedPoint(365),  # FIXME: Should get the anvil increment time
         ),
     )
