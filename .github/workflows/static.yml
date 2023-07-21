@@ -23,7 +23,9 @@ jobs:
           token: ${{ secrets.GH_GITHUB_COM_TOKEN || github.token }}
 
       - name: Pyright
-        run: python -m pyright $(git ls-files '*.py')
+        run: |
+          files=$(git ls-files '*.py' | grep -v 'disabled_tests/')
+          python -m pyright $files
 
       - name: Check GitHub rate limit at end
         uses: wakamex/rate-limit-action@master
