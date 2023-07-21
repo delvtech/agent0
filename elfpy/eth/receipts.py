@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
-from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract, ContractEvent
 from web3.types import ABIEvent, EventData, LogReceipt, TxReceipt
@@ -11,7 +10,7 @@ from web3.types import ABIEvent, EventData, LogReceipt, TxReceipt
 
 def get_transaction_logs(
     web3: Web3, contract: Contract, tx_receipt: TxReceipt, event_names: Sequence[str] | None = None
-) -> dict[str, Any]:
+) -> list[dict[str, Any]]:
     """Decode a transaction receipt.
 
     Arguments
@@ -29,8 +28,9 @@ def get_transaction_logs(
     Returns
     -------
     dict[str, Any]
-        A dictionary containing the decoded logs from the transaction
-        If event_names is not None, then the returned dict will only include logs that have a corresponding "event" entry
+        A dictionary containing the decoded logs from the transaction.
+        If event_names is not None, then the returned dict will only
+        include logs that have a corresponding "event" entry.
     """
     logs: list[dict[Any, Any]] = []
     if tx_receipt.get("logs"):

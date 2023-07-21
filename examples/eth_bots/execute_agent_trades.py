@@ -16,9 +16,11 @@ from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet import Long, Short
 from elfpy.wallet.wallet_deltas import WalletDeltas
 
-# TODO: Fix these up
+# TODO: Fix these up when we refactor this file
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
+# pylint: disable=too-many-branches
+# pylint: disable=too-many-statements
 
 
 def execute_agent_trades(
@@ -185,7 +187,7 @@ def execute_agent_trades(
                     shorts={
                         mint_time: Short(
                             balance=-FixedPoint(scaled_value=hyperdrive_event_logs[0]["args"]["bondAmount"]),
-                            open_share_price=account.agent.shorts[mint_time].open_share_price,
+                            open_share_price=account.agent.wallet.shorts[mint_time].open_share_price,
                         )
                     },
                 )

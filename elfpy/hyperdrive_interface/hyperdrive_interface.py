@@ -78,8 +78,7 @@ def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddress
 
 
 def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, Any]:
-    """
-    Returns the block pool info from the Hyperdrive contract
+    """Return the block pool info from the Hyperdrive contract.
 
     Arguments
     ---------

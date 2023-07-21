@@ -10,8 +10,8 @@ from hexbytes import HexBytes
 from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 from web3 import Web3
-from web3.contract.contract import Contract, ContractEvent
-from web3.types import ABIEvent, BlockData, EventData, LogReceipt, TxReceipt
+from web3.contract.contract import Contract
+from web3.types import BlockData
 
 from elfpy import eth
 from elfpy.markets.hyperdrive import hyperdrive_assets
@@ -33,9 +33,7 @@ class Base(MappedAsDataclass, DeclarativeBase):
 
 # TODO: Rename this to something more accurate to what is happening, e.g. HyperdriveTransactions
 class WalletInfo(Base):
-    """
-    Table/dataclass schema for wallet information
-    """
+    """Table/dataclass schema for wallet information."""
 
     __tablename__ = "walletinfo"
 
@@ -58,9 +56,7 @@ class WalletInfo(Base):
 
 
 class PoolConfig(Base):
-    """
-    Table/dataclass schema for pool config
-    """
+    """Table/dataclass schema for pool config."""
 
     __tablename__ = "poolconfig"
 
@@ -95,8 +91,8 @@ class CheckpointInfo(Base):
 
 
 class PoolInfo(Base):
-    """
-    Table/dataclass schema for pool info
+    """Table/dataclass schema for pool info.
+
     Mapped class that is a data class on the python side, and an declarative base on the sql side.
     """
 
@@ -119,8 +115,8 @@ class PoolInfo(Base):
 
 
 class Transaction(Base):
-    """
-    Table/dataclass schema for Transactions
+    """Table/dataclass schema for Transactions.
+
     Mapped class that is a data class on the python side, and an declarative base on the sql side.
     """
 
@@ -253,7 +249,7 @@ def fetch_transactions_for_block(web3: Web3, contract: Contract, block_number: B
     ---------
     web3: Web3
         web3 provider object
-    hyperdrive_contract: Contract
+    contract: Contract
         The contract to query the pool info from
     block_number: BlockNumber
         The block number to query from the chain
