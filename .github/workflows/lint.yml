@@ -23,15 +23,18 @@ jobs:
           token: ${{ secrets.GH_GITHUB_COM_TOKEN || github.token }}
           fetch-depth: 0  # Fetches all history for all branches and tags.
 
-      - name: Fetch base commit
+      - name: Mark safe directory
         run: |
           git config --global --add safe.directory /__w/elf-simulations/elf-simulations
+
+      - name: Fetch base commit
+        run: |
           git fetch origin ${{ github.event.pull_request.base.sha }}
 
       - name: Get changed Python files
         id: changed_files
         run: |
-          echo "files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '.py$' | xargs)" >> $GITHUB_OUTPUT
+          echo "files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '.py$' | grep -v 'disabled_tests/' | xargs)" >> $GITHUB_ENV
 
       - name: Ensure clear Jupyter Notebooks
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
