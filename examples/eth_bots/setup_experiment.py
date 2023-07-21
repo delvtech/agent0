@@ -9,22 +9,33 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
-from elfpy.bots import DEFAULT_USERNAME, EnvironmentConfig
+from elfpy.bots import DEFAULT_USERNAME, BotInfo, EnvironmentConfig
+from elfpy.eth.accounts import EthAccount
 from elfpy.utils import logs
+from examples.eth_bots.setup_agents import get_agent_accounts
 
 
-def setup_experiment(environment_config: EnvironmentConfig) -> tuple[NumpyGenerator, Web3, Contract, Contract]:
+def setup_experiment(
+    environment_config: EnvironmentConfig,
+    agent_config: list[BotInfo],
+) -> tuple[Web3, Contract, list[EthAccount]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
     Arguments
     ---------
     environment_config : EnvironmentConfig
         Dataclass containing all of the user environment settings
+    agent_config : list[BotInfo]
+        List containing all of the agent specifications
 
     Returns
     -------
-    tuple[NumpyGenerator, Web3, Contract, Contract]
-        A tuple containing the stateful random generator, the web3 container, the base ERC20 contract, and the hyperdrive contract
+    tuple[Web3, Contract, list[EthAccount]]
+        A tuple containing:
+            - The web3 container
+            - The hyperdrive contract
+            - A list of EthAccount objects that contain a wallet address and Elfpy Agent for determining trades
+
     """
     # this random number generator should be used everywhere so that the experiment is repeatable
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
@@ -57,4 +68,9 @@ def setup_experiment(environment_config: EnvironmentConfig) -> tuple[NumpyGenera
         abi=hyperdrive_abis[environment_config.hyperdrive_abi],
         address=web3.to_checksum_address(addresses.mock_hyperdrive),
     )
-    return rng, web3, base_token_contract, hyperdrive_contract
+    # load agent policies
+    # rng is shared by the agents and can be accessed via `agent_accounts[idx].agent.policy.rng`
+    agent_accounts = get_agent_accounts(
+        environment_config, agent_config, web3, base_token_contract, hyperdrive_contract.address, rng
+    )
+    return web3, hyperdrive_contract, agent_accounts

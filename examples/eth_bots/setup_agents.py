@@ -24,8 +24,8 @@ def register_username(register_url: str, wallet_addrs: list[str], username: str)
 
 
 def get_agent_accounts(
-    agent_config: list[BotInfo],
     environment_config: EnvironmentConfig,
+    agent_config: list[BotInfo],
     web3: Web3,
     base_token_contract: Contract,
     hyperdrive_address: str,
@@ -35,10 +35,10 @@ def get_agent_accounts(
 
     Arguments
     ---------
-    agent_config : list[BotInfo]
-        List containing all of the agent specifications
     environment_config : EnvironmentConfig
         Dataclass containing all of the user environment settings
+    agent_config : list[BotInfo]
+        List containing all of the agent specifications
     web3 : Web3
         web3 provider object
     base_token_contract : Contract
@@ -51,7 +51,7 @@ def get_agent_accounts(
     Returns
     -------
     list[EthAccount]
-        A list of EthAccount objects that contain a wallet address and a Elfpy Agent for determining trades
+        A list of EthAccount objects that contain a wallet address and Elfpy Agent for determining trades
     """
     # TODO: raise issue on failure by looking at `rpc_response`, `tx_receipt` returned from function
     #   Do this for `set_anvil_account_balance`, `smart_contract_transact(mint)`, `smart_contract_transact(approve)`

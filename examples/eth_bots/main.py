@@ -11,17 +11,12 @@ from web3.types import RPCEndpoint
 # FIXME: Move configs into a dedicated config folder
 from examples.eth_bots.config import agent_config, environment_config
 from examples.eth_bots.execute_agent_trades import execute_agent_trades
-from examples.eth_bots.setup_agents import get_agent_accounts
 from examples.eth_bots.setup_experiment import setup_experiment
 
 
 def main():  # FIXME: Move much of this out of main
     """Entrypoint to load all configurations and run agents."""
-    rng, web3, base_token_contract, hyperdrive_contract = setup_experiment(environment_config)
-    # load agent policies
-    agent_accounts = get_agent_accounts(
-        agent_config, environment_config, web3, base_token_contract, hyperdrive_contract.address, rng
-    )
+    web3, hyperdrive_contract, agent_accounts = setup_experiment(environment_config, agent_config)
 
     # FIXME: encapulate trade loop to another function.  At most should be:
     # while: True:
