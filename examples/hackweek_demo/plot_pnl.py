@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import pandas as pd
 from extract_data_logs import calculate_spot_price_from_state
-from matplotlib import ticker as mpl_ticker
 
 from elfpy.data import postgres as pg
 
@@ -23,7 +22,8 @@ def calculate_pnl(
     pool_info : pd.DataFrame
         Reserves of the pool at each block.
     checkpoint_info : pd.DataFrame
-    Checkpoint information at each block.
+    agent_positions :
+        Dict containing each agent's AgentPosition object.
     """
     position_duration = pool_config.positionDuration.iloc[0]
 
@@ -70,8 +70,16 @@ def calculate_pnl(
     return agent_positions
 
 
-def plot_pnl(agent_positions: dict[str, pg.AgentPosition], axes):
-    """Plot the pnl data."""
+def plot_pnl(agent_positions: dict[str, pg.AgentPosition], axes) -> None:
+    """Plot the pnl data.
+
+    Arguments
+    ---------
+    agent_positions : dict[str, pg.AgentPosition]
+        Dict containing each agent's AgentPosition object.
+    axes : Axes
+    Axes object to plot on.
+    """
     plot_data = []
     agents = []
     for agent, agent_position in agent_positions.items():
@@ -100,7 +108,5 @@ def plot_pnl(agent_positions: dict[str, pg.AgentPosition], axes):
     axes.yaxis.set_label_position("right")
     axes.yaxis.tick_right()
     axes.set_title("pnl over time")
-
-    axes.legend()
 
     # %%
