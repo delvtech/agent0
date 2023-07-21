@@ -2,8 +2,6 @@
 from enum import IntEnum
 from typing import Tuple
 
-# FIXME: Move these into hyperdrive_interface/
-
 
 class AssetIdPrefix(IntEnum):
     r"""The asset ID is used to encode the trade type in a transaction receipt"""

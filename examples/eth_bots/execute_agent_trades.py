@@ -14,7 +14,6 @@ from elfpy.eth.accounts import EthAccount
 from elfpy.markets.hyperdrive import HyperdriveMarket, MarketActionType
 from elfpy.time import time as elftime
 from elfpy.types import Quantity, TokenType
-from elfpy.utils import logs
 from elfpy.wallet.wallet import Long, Short
 from elfpy.wallet.wallet_deltas import WalletDeltas
 

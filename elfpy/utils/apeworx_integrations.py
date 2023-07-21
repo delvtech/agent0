@@ -25,8 +25,8 @@ from ape_accounts.accounts import KeyfileAccount
 from fixedpointmath import FixedPoint
 
 # custom libs
-from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, simulators, time, types
-from elfpy.markets.hyperdrive import AssetIdPrefix, HyperdriveMarketState, HyperdrivePricingModel, hyperdrive_assets
+from elfpy import MAXIMUM_BALANCE_MISMATCH_IN_WEI, SECONDS_IN_YEAR, WEI, hyperdrive_interface, simulators, time, types
+from elfpy.markets.hyperdrive import HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarket
 from elfpy.simulators.config import Config
 from elfpy.utils import format as format_utils
@@ -246,7 +246,9 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
     hyper_config = hyperdrive_contract.getPoolConfig(**kwargs).__dict__
     hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)  # convert to elf-sims format
     hyper_config["term_length"] = hyper_config["positionDuration"] / (60 * 60 * 24)  # in days
-    asset_id = hyperdrive_assets.encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"])
+    asset_id = hyperdrive_interface.encode_asset_id(
+        hyperdrive_interface.AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"]
+    )
     total_supply_withdraw_shares = hyperdrive_contract.balanceOf(asset_id, hyperdrive_contract.address)
 
     return HyperdriveMarketState(
@@ -309,9 +311,9 @@ def get_trade_history(
         ],
         axis=1,
     )
-    tuple_series = trades.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)  # type: ignore
+    tuple_series = trades.apply(func=lambda x: hyperdrive_interface.decode_asset_id(int(x["id"])), axis=1)  # type: ignore
     trades["prefix"], trades["maturity_timestamp"] = zip(*tuple_series)  # split into two columns
-    trades["trade_type"] = trades["prefix"].apply(lambda x: AssetIdPrefix(x).name)
+    trades["trade_type"] = trades["prefix"].apply(lambda x: hyperdrive_interface.AssetIdPrefix(x).name)
     share_price_ = {
         block_number_: hyperdrive_contract.getPoolInfo(block_identifier=int(block_number_))["sharePrice"]
         for block_number_ in trades["block_number"].unique()
@@ -392,9 +394,9 @@ def get_wallet_from_trade_history(
             asset_prefix = trade_history.loc[relevant_trades, "prefix"].iloc[0]
             maturity = trade_history.loc[relevant_trades, "maturity_timestamp"].iloc[0]
         else:
-            asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
+            asset_prefix, maturity = hyperdrive_interface.decode_asset_id(position_id)
         mint_time = maturity - SECONDS_IN_YEAR
-        asset_type = AssetIdPrefix(asset_prefix).name
+        asset_type = hyperdrive_interface.AssetIdPrefix(asset_prefix).name
         logging.debug(" => %s(%s) maturity=%s mint_time=%s", asset_type, asset_prefix, maturity, mint_time)
 
         on_chain_balance = 0
@@ -621,7 +623,7 @@ def get_pool_state(txn_receipt: ReceiptAPI, hyperdrive_contract: ContractInstanc
     transfer_single_event = get_transfer_single_event(txn_receipt)
     # The ID is a concatenation of the current share price and the maturity time of the trade
     token_id = int(transfer_single_event["id"])
-    prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(token_id)
+    prefix, maturity_timestamp = hyperdrive_interface.decode_asset_id(token_id)
     hyper_dict = hyperdrive_contract.getPoolInfo().__dict__
     hyper_dict["block_number"] = txn_receipt.block_number
     hyper_dict["token_id"] = token_id
@@ -646,7 +648,7 @@ def get_agent_deltas(txn_receipt: ReceiptAPI, trade, addresses, trade_type, pool
     event_args.update({key: value for key, value in txn_receipt.items() if key in ["block_number", "event_name"]})
     dai_events = [e.dict() for e in txn_receipt.events if agent in [e.get("src"), e.get("dst")]]
     dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
-    _, maturity_timestamp = hyperdrive_assets.decode_asset_id(int(trade["id"]))
+    _, maturity_timestamp = hyperdrive_interface.decode_asset_id(int(trade["id"]))
     mint_time = ((maturity_timestamp - int(SECONDS_IN_YEAR) * pool_info.term_length) - pool_info.start_time) / int(
         SECONDS_IN_YEAR
     )
@@ -846,16 +848,18 @@ def create_trade(
     """
     # predefine which methods to call based on the trade type, and the corresponding asset ID prefix
     info = {
-        "OPEN_LONG": Info(method=hyperdrive_contract.openLong, prefix=AssetIdPrefix.LONG),
-        "CLOSE_LONG": Info(method=hyperdrive_contract.closeLong, prefix=AssetIdPrefix.LONG),
-        "OPEN_SHORT": Info(method=hyperdrive_contract.openShort, prefix=AssetIdPrefix.SHORT),
-        "CLOSE_SHORT": Info(method=hyperdrive_contract.closeShort, prefix=AssetIdPrefix.SHORT),
-        "ADD_LIQUIDITY": Info(method=hyperdrive_contract.addLiquidity, prefix=AssetIdPrefix.LP),
-        "REMOVE_LIQUIDITY": Info(method=hyperdrive_contract.removeLiquidity, prefix=AssetIdPrefix.LP),
+        "OPEN_LONG": Info(method=hyperdrive_contract.openLong, prefix=hyperdrive_interface.AssetIdPrefix.LONG),
+        "CLOSE_LONG": Info(method=hyperdrive_contract.closeLong, prefix=hyperdrive_interface.AssetIdPrefix.LONG),
+        "OPEN_SHORT": Info(method=hyperdrive_contract.openShort, prefix=hyperdrive_interface.AssetIdPrefix.SHORT),
+        "CLOSE_SHORT": Info(method=hyperdrive_contract.closeShort, prefix=hyperdrive_interface.AssetIdPrefix.SHORT),
+        "ADD_LIQUIDITY": Info(method=hyperdrive_contract.addLiquidity, prefix=hyperdrive_interface.AssetIdPrefix.LP),
+        "REMOVE_LIQUIDITY": Info(
+            method=hyperdrive_contract.removeLiquidity, prefix=hyperdrive_interface.AssetIdPrefix.LP
+        ),
     }
     if trade_type in {"CLOSE_LONG", "CLOSE_SHORT"}:  # get the specific asset we're closing
         assert maturity_time is not None, "Maturity time must be provided to close a long or short trade"
-        trade_asset_id = hyperdrive_assets.encode_asset_id(info[trade_type].prefix, maturity_time)
+        trade_asset_id = hyperdrive_interface.encode_asset_id(info[trade_type].prefix, maturity_time)
         assert amount != 0, "trade amount is zero, this is not allowed"
         amount = max(WEI, min(amount, hyperdrive_contract.balanceOf(trade_asset_id, agent)))
     # specify one big dict that holds the parameters for all six methods

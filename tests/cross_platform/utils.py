@@ -13,8 +13,8 @@ from eth_typing import HexAddress
 from fixedpointmath import FixedPoint
 
 # elfpy core repo
-import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+from elfpy import hyperdrive_interface
 from tests.cross_platform.fixtures.hyperdrive_config import HyperdriveConfig
 
 
@@ -49,8 +49,8 @@ def get_simulation_market_state_from_contract(
     # pylint: disable=too-many-arguments
     pool_info = hyperdrive_data_contract.getPoolInfo()
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
-        asset_id = hyperdrive_assets.encode_asset_id(
-            hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE,
+        asset_id = hyperdrive_interface.encode_asset_id(
+            hyperdrive_interface.AssetIdPrefix.WITHDRAWAL_SHARE,
             int(position_duration_seconds),
         )
         total_supply_withdraw_shares = hyperdrive_data_contract.balanceOf(asset_id, agent_address)

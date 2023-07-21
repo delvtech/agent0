@@ -9,7 +9,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from elfpy.markets.hyperdrive import AssetIdPrefix
+from elfpy.hyperdrive_interface import AssetIdPrefix
 
 
 def read_json_to_pd(json_file):
