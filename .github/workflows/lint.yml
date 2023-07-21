@@ -29,10 +29,15 @@ jobs:
       - name: Run black
         run: python -m black --check --diff .
 
+      - name: Debug git state
+        run: |
+          git log --oneline -n 2
+          git status
+
       - name: Get changed Python files
         id: changed_files
         run: |
-          echo "files=$(git diff --name-only HEAD^ HEAD | grep '.py$' | xargs)" >> $GITHUB_OUTPUT
+          echo "files=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep '.py$' | xargs)" >> $GITHUB_OUTPUT
 
       - name: Run Pylint on changed files
         run: |
