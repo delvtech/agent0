@@ -24,9 +24,9 @@ from elfpy.wallet.wallet_deltas import WalletDeltas
 @dataclass
 class ReceiptBreakdown:
     r"""A granular breakdown of important values in a trade receipt."""
-    maturity_time: FixedPoint
-    base_amount: FixedPoint
-    bond_amount: FixedPoint
+    base_amount: FixedPoint = FixedPoint(0)
+    bond_amount: FixedPoint = FixedPoint(0)
+    maturity_time: FixedPoint = FixedPoint(0)
     lp_amount: FixedPoint = FixedPoint(0)
     withdrawal_share_amount: FixedPoint = FixedPoint(0)
 
@@ -55,6 +55,7 @@ def transact_and_parse_logs(
         A dataclass containing the maturity time and the absolute values for token quantities changed
     """
     tx_receipt = eth.smart_contract_transact(web3, hyperdrive_contract, signer, fn_name, *fn_args)
+    # TODO: raise issue on failure by looking at `tx_receipt` returned from function
     hyperdrive_event_logs = eth.get_transaction_logs(
         web3,
         hyperdrive_contract,
@@ -64,11 +65,13 @@ def transact_and_parse_logs(
     if len(hyperdrive_event_logs) > 1:
         raise AssertionError("Too many logs found")
     log_args = hyperdrive_event_logs[0]["args"]
-    trade_result = ReceiptBreakdown(
-        maturity_time=FixedPoint(scaled_value=log_args["maturityTime"]),
-        base_amount=FixedPoint(scaled_value=log_args["baseAmount"]),
-        bond_amount=FixedPoint(scaled_value=log_args["bondAmount"]),
-    )
+    trade_result = ReceiptBreakdown()
+    if "baseAmount" in log_args:
+        trade_result.base_amount = FixedPoint(scaled_value=log_args["baseAmount"])
+    if "bondAmount" in log_args:
+        trade_result.bond_amount = FixedPoint(scaled_value=log_args["bondAmount"])
+    if "maturityTime" in log_args:
+        trade_result.maturity_time = FixedPoint(scaled_value=log_args["maturityTime"])
     if "lpAmount" in log_args:
         trade_result.lp_amount = FixedPoint(scaled_value=log_args["lpAmount"])
     if "withdrawalShareAmount" in log_args:
@@ -127,7 +130,6 @@ def execute_agent_trades(
             max_apr = int(1e18)
             as_underlying = True
             # sort through the trades
-            # TODO: raise issue on failure by looking at `tx_receipt` returned from function
             # TODO: figure out fees paid
             if trade_object.trade.action_type == MarketActionType.OPEN_LONG:
                 trade_result = transact_and_parse_logs(
