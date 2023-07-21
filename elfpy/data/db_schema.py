@@ -381,12 +381,12 @@ def _recursive_dict_conversion(obj: Any) -> Any:
 
 
     .. todo::
-        This function needs to be better constrained & typed
+        This function needs to be better constrained & typed, or avoided all together?
     """
     if isinstance(obj, HexBytes):
         return obj.hex()
     if isinstance(obj, dict):
         return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
-    if hasattr(obj, "items"):
+    if hasattr(obj, "items"):  # any other type with "items" attr, e.g. TypedDict and OrderedDict
         return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
     return obj
