@@ -30,6 +30,19 @@ class ReceiptBreakdown:
     lp_amount: FixedPoint = FixedPoint(0)
     withdrawal_share_amount: FixedPoint = FixedPoint(0)
 
+    def __post_init__(self):
+        if (
+            self.base_amount < 0
+            or self.bond_amount < 0
+            or self.maturity_time < 0
+            or self.lp_amount < 0
+            or self.withdrawal_share_amount < 0
+        ):
+            raise ValueError(
+                "All ReceiptBreakdown arguments must be positive,"
+                " since they are expected to be unsigned integer values from smart contracts."
+            )
+
 
 def transact_and_parse_logs(
     web3: Web3, hyperdrive_contract: Contract, signer: EthAccount, fn_name: str, *fn_args
@@ -132,12 +145,13 @@ def execute_agent_trades(
             # sort through the trades
             # TODO: figure out fees paid
             if trade_object.trade.action_type == MarketActionType.OPEN_LONG:
+                fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
                 trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
                     account,
                     "openLong",
-                    *(trade_amount, min_output, account.checksum_address, as_underlying),
+                    *fn_args,
                 )
                 mint_time = trade_result.maturity_time - position_duration_years
                 wallet_deltas = WalletDeltas(
@@ -148,12 +162,13 @@ def execute_agent_trades(
                     longs={mint_time: Long(trade_result.bond_amount)},
                 )
             elif trade_object.trade.action_type == MarketActionType.CLOSE_LONG:
+                fn_args = (maturity_time, trade_amount, min_output, account.checksum_address, as_underlying)
                 trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
                     account,
                     "closeLong",
-                    *(maturity_time, trade_amount, min_output, account.checksum_address, as_underlying),
+                    *fn_args,
                 )
                 mint_time = trade_result.maturity_time - position_duration_years
                 wallet_deltas = WalletDeltas(
@@ -164,12 +179,13 @@ def execute_agent_trades(
                     longs={mint_time: Long(-trade_result.bond_amount)},
                 )
             elif trade_object.trade.action_type == MarketActionType.OPEN_SHORT:
+                fn_args = (trade_amount, max_deposit, account.checksum_address, as_underlying)
                 trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
                     account,
                     "openShort",
-                    *(trade_amount, max_deposit, account.checksum_address, as_underlying),
+                    *fn_args,
                 )
                 mint_time = trade_result.maturity_time - position_duration_years
                 wallet_deltas = WalletDeltas(
@@ -185,12 +201,13 @@ def execute_agent_trades(
                     },
                 )
             elif trade_object.trade.action_type == MarketActionType.CLOSE_SHORT:
+                fn_args = (maturity_time, trade_amount, min_output, account.checksum_address, as_underlying)
                 trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
                     account,
                     "closeShort",
-                    *(maturity_time, trade_amount, min_output, account.checksum_address, as_underlying),
+                    *fn_args,
                 )
                 mint_time = trade_result.maturity_time - position_duration_years
                 wallet_deltas = WalletDeltas(
@@ -206,12 +223,13 @@ def execute_agent_trades(
                     },
                 )
             elif trade_object.trade.action_type == MarketActionType.ADD_LIQUIDITY:
+                fn_args = (trade_amount, min_apr, max_apr, account.checksum_address, as_underlying)
                 trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
                     account,
                     "addLiquidity",
-                    *(trade_amount, min_apr, max_apr, account.checksum_address, as_underlying),
+                    *fn_args,
                 )
                 mint_time = trade_result.maturity_time - position_duration_years
                 wallet_deltas = WalletDeltas(
@@ -222,12 +240,13 @@ def execute_agent_trades(
                     lp_tokens=trade_result.lp_amount,
                 )
             elif trade_object.trade.action_type == MarketActionType.REMOVE_LIQUIDITY:
+                fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
                 trade_result = transact_and_parse_logs(
                     web3,
                     hyperdrive_contract,
                     account,
                     "removeLiquidity",
-                    *(trade_amount, min_output, account.checksum_address, as_underlying),
+                    *fn_args,
                 )
                 wallet_deltas = WalletDeltas(
                     balance=Quantity(
