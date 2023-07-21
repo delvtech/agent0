@@ -86,7 +86,6 @@ class LongLouie(BasePolicy):
         long_balances = [long.balance for long in wallet.longs.values()]
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
-        # FIXME: should we make this less time? they never close
         if (market.fixed_apr - market.market_state.variable_apr) > self.risk_threshold and not has_opened_long:
             total_bonds_to_match_variable_apr = market.pricing_model.calc_bond_reserves(
                 target_apr=market.market_state.variable_apr,  # fixed rate targets the variable rate
