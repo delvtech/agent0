@@ -2,8 +2,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 from elfpy import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, types
 from elfpy.utils import json as output_utils
@@ -21,14 +20,12 @@ class EnvironmentConfig(types.FrozenClass):
 
     # Logical username for who is running bots
     username: str = DEFAULT_USERNAME
-    # Logical username for who is running bots
-    username_register_url: str = "http://localhost:5001"
-    # whether to run on alchemy
-    alchemy: bool = False
-    # url for retrieving the contract artifacts
-    artifacts_url: str = "http://localhost:80"
-    # whether to run on devnet
-    devnet: bool = True
+    # hostname for container URLs
+    hostname: str = "http://localhost"
+    # ports for container URLs
+    artifacts_port: str = "80"
+    rpc_port: str = "8545"
+    user_registry_port: str = "5002"
     # if true, stop executing when trade errors occur
     halt_on_errors: bool = False
     # optional output filename for logging
@@ -44,14 +41,6 @@ class EnvironmentConfig(types.FrozenClass):
     log_formatter: str = "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s"
     # maximum log file output size, in bytes
     max_bytes: int = DEFAULT_LOG_MAXBYTES  # int(2e6) or 2MB
-    # location of RPC
-    rpc_url: str = "http://localhost:8545"
-    # chance for a bot to execute a trade (used if unspecified at the bot level).
-    default_trade_chance: float = 0.1
-    # risk_threshold has different interpretations for different bots (used if unspecified at the bot level).
-    # In general the bot will be more risk averse as it grows to infinity.
-    # A value of 0 will usually disable it.
-    default_risk_threshold: float = 0.0
     # int to be used for the random seed
     random_seed: int = 1
     # abi filenames
@@ -59,8 +48,14 @@ class EnvironmentConfig(types.FrozenClass):
     base_abi = "ERC20Mintable"
     # build location
     build_folder = "./hyperdrive_solidity/out"
-    # scratch space for any application-specific & extraneous parameters
-    scratch: dict[Any, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        # Logical username for who is running bots
+        self.username_register_url: str = self.hostname + ":" + self.user_registry_port
+        # url for retrieving the contract artifacts
+        self.artifacts_url: str = self.hostname + ":" + self.artifacts_port
+        # location of RPC
+        self.rpc_url: str = self.hostname + ":" + self.rpc_port
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)

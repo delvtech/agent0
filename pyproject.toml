@@ -30,7 +30,6 @@ with-dependencies = [
     # Specify requirements
     "astunparse",
     "black",
-    "eth-ape",
     "ipython",
     "jupytext",
     # Install fixedpointmath from github

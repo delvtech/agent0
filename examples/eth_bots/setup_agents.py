@@ -10,12 +10,12 @@ from web3.contract.contract import Contract
 
 from elfpy import eth
 from elfpy.agents.agent import Agent
-from elfpy.bots import BotInfo
+from elfpy.bots import AgentConfig
 from elfpy.eth.accounts import EthAccount
 
 
 def get_agent_accounts(
-    agent_config: list[BotInfo],
+    agent_config: list[AgentConfig],
     web3: Web3,
     base_token_contract: Contract,
     hyperdrive_address: str,

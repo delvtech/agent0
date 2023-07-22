@@ -10,7 +10,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
-from elfpy.bots import DEFAULT_USERNAME, BotInfo, EnvironmentConfig
+from elfpy.bots import DEFAULT_USERNAME, AgentConfig, EnvironmentConfig
 from elfpy.eth.accounts import EthAccount
 from elfpy.utils import logs
 from examples.eth_bots.setup_agents import get_agent_accounts
@@ -27,7 +27,7 @@ def register_username(register_url: str, wallet_addrs: list[str], username: str)
 
 def setup_experiment(
     environment_config: EnvironmentConfig,
-    agent_config: list[BotInfo],
+    agent_config: list[AgentConfig],
 ) -> tuple[Web3, Contract, list[EthAccount]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 

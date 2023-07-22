@@ -6,13 +6,13 @@ import logging
 from fixedpointmath import FixedPoint
 
 from elfpy.agents.policies import Policies
-from elfpy.bots import BotInfo, Budget, EnvironmentConfig
+from elfpy.bots import AgentConfig, Budget, EnvironmentConfig
 
 # You can import custom policies here. For example:
 from .custom_policies.example_custom_policy import ExampleCustomPolicy
 
-agent_config: list[BotInfo] = [
-    BotInfo(
+agent_config: list[AgentConfig] = [
+    AgentConfig(
         policy=Policies.random_agent,
         number_of_agents=3,
         budget=Budget(
@@ -23,7 +23,7 @@ agent_config: list[BotInfo] = [
         ),
         init_kwargs={"trade_chance": FixedPoint(0.8)},
     ),
-    BotInfo(
+    AgentConfig(
         policy=Policies.long_louie,
         number_of_agents=3,
         budget=Budget(
@@ -34,7 +34,7 @@ agent_config: list[BotInfo] = [
         ),
         init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.9)},
     ),
-    BotInfo(
+    AgentConfig(
         policy=Policies.short_sally,
         number_of_agents=3,
         budget=Budget(
@@ -45,7 +45,7 @@ agent_config: list[BotInfo] = [
         ),
         init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.8)},
     ),
-    BotInfo(
+    AgentConfig(
         policy=ExampleCustomPolicy,
         number_of_agents=0,
         budget=Budget(
@@ -58,23 +58,16 @@ agent_config: list[BotInfo] = [
     ),
 ]
 
-# TODO: Clean up variables that are only used by evm_bots & apeworx
 environment_config = EnvironmentConfig(
-    alchemy=False,
     delete_previous_logs=False,
-    devnet=True,
     halt_on_errors=True,
     log_filename="agent0-bots",
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
-    # TODO: should just use
-    # hostname = http://localhost
-    # artifacts_port = 80
-    # rpc_port = 8545
-    # user_registry_port = 5002
-    artifacts_url="http://localhost:80",
-    rpc_url="http://localhost:8545",
-    username_register_url="http://localhost:5002",
+    hostname="http://localhost",
+    artifacts_port="80",
+    rpc_port="8545",
+    user_registry_port="5002",
     username="changeme",
 )
