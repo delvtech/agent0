@@ -11,7 +11,7 @@ from .budget import Budget
 
 
 @dataclass
-class BotInfo:  # TODO: Rename to `AgentConfig` when we remove evm_bots
+class AgentConfig:
     """Information about a bot
 
     Attributes

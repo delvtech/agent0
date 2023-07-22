@@ -39,7 +39,7 @@ from elfpy.agents.agent import Agent
 from elfpy.agents.policies import LongLouie, RandomAgent, ShortSally
 from elfpy.agents.policies.base import BasePolicy
 from elfpy.bots import DEFAULT_USERNAME, EnvironmentConfig
-from elfpy.bots.bot_info import BotInfo
+from elfpy.bots.bot_info import AgentConfig
 from elfpy.data import postgres
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdrivePricingModel
 from elfpy.utils.format import format_numeric_string
@@ -114,7 +114,7 @@ def get_accounts(bot_config: EnvironmentConfig) -> list[KeyfileAccount]:
 
 
 def create_agent(
-    bot: BotInfo,
+    bot: AgentConfig,
     dev_accounts: list[KeyfileAccount],
     faucet: ContractInstance | None,
     base_instance: ContractInstance,
@@ -600,17 +600,17 @@ def main(
         bot_config.scratch["num_sally"]: int = 1
     if "num_random" not in bot_config.scratch:
         bot_config.scratch["num_random"]: int = 1
-    bot_config.scratch["louie"] = BotInfo(
+    bot_config.scratch["louie"] = AgentConfig(
         policy=LongLouie,
         trade_chance=bot_config.default_trade_chance,
         risk_threshold=bot_config.default_risk_threshold,
     )
-    bot_config.scratch["sally"] = BotInfo(
+    bot_config.scratch["sally"] = AgentConfig(
         policy=ShortSally,
         trade_chance=bot_config.default_trade_chance,
         risk_threshold=bot_config.default_risk_threshold,
     )
-    bot_config.scratch["random"] = BotInfo(
+    bot_config.scratch["random"] = AgentConfig(
         policy=RandomAgent,
         trade_chance=bot_config.default_trade_chance,
         risk_threshold=bot_config.default_risk_threshold,

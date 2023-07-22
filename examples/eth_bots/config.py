@@ -6,13 +6,13 @@ import logging
 from fixedpointmath import FixedPoint
 
 from elfpy.agents.policies import Policies
-from elfpy.bots import BotInfo, Budget, EnvironmentConfig
+from elfpy.bots import AgentConfig, Budget, EnvironmentConfig
 
 # You can import custom policies here. For example:
 from .custom_policies.example_custom_policy import ExampleCustomPolicy
 
-agent_config: list[BotInfo] = [
-    BotInfo(
+agent_config: list[AgentConfig] = [
+    AgentConfig(
         policy=Policies.random_agent,
         number_of_agents=3,
         budget=Budget(
@@ -23,7 +23,7 @@ agent_config: list[BotInfo] = [
         ),
         init_kwargs={"trade_chance": FixedPoint(0.8)},
     ),
-    BotInfo(
+    AgentConfig(
         policy=Policies.long_louie,
         number_of_agents=3,
         budget=Budget(
@@ -34,7 +34,7 @@ agent_config: list[BotInfo] = [
         ),
         init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.9)},
     ),
-    BotInfo(
+    AgentConfig(
         policy=Policies.short_sally,
         number_of_agents=3,
         budget=Budget(
@@ -45,7 +45,7 @@ agent_config: list[BotInfo] = [
         ),
         init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.8)},
     ),
-    BotInfo(
+    AgentConfig(
         policy=ExampleCustomPolicy,
         number_of_agents=0,
         budget=Budget(
