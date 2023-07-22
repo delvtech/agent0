@@ -8,7 +8,7 @@ import sys
 import unittest
 from datetime import datetime
 
-from ape.exceptions import TransactionError
+from web3.exceptions import InvalidTransaction
 
 import elfpy.utils.logs as log_utils
 from elfpy.data.db_schema import PoolConfig, PoolInfo
@@ -97,7 +97,7 @@ class TestLogging(unittest.TestCase):
         self.assertLogs(level=logging.CRITICAL)
         log_utils.log_hyperdrive_crash_report(
             "CLOSE_LONG",
-            TransactionError("Message"),
+            InvalidTransaction("Message"),
             1.23,
             "0x0000000000000000000000000000000000000000",
             PoolInfo(blockNumber=1234, timestamp=datetime.fromtimestamp(12345678)),

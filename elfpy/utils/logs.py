@@ -7,7 +7,7 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler
 
-from ape.exceptions import TransactionError
+from web3.exceptions import InvalidTransaction
 
 import elfpy
 import elfpy.utils.format as format_utils
@@ -131,11 +131,10 @@ def setup_hyperdrive_crash_report_logging():
 
 
 # TODO: move this to somewhere like elfpy/contracts/hyperdrive/logging.py
-# TODO: don't use ape's TransactionError, use web3's InvalidTransaction when we switch
 def log_hyperdrive_crash_report(
     # TODO: better typing for this, an enum?
     trade_type: str,
-    error: TransactionError,
+    error: InvalidTransaction,
     amount: float,
     agent_address: str,
     pool_info: PoolInfo,
