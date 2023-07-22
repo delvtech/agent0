@@ -153,7 +153,8 @@ def main(
                         continue
                 if checkpoint_info_dict is None:
                     raise ValueError("Error in getting checkpoint info")
-                postgres.add_checkpoint_infos([convert_data.convert_checkpoint_info(checkpoint_info_dict)], session)
+                block_checkpoint_info = convert_data.convert_checkpoint_info(checkpoint_info_dict)
+                postgres.add_checkpoint_infos([block_checkpoint_info], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_transactions = None
