@@ -186,10 +186,11 @@ while True:
     with lp_plot_placeholder.container():
         ax_lp_token.clear()
         # TODO extract this out
-        num_lp_tokens = [ap.positions.loc[:, "LP"] for ap in agent_positions.values()]
+        num_lp_tokens = [ap.positions.loc[:, "LP"] for ap in agent_positions.values() if "LP" in ap.positions.columns]
+        addrs = [addr for addr, ap in agent_positions.items() if "LP" in ap.positions.columns]
         if len(num_lp_tokens) > 0:
             lp_data = pd.concat(num_lp_tokens, axis=1)
-            lp_data.columns = [addr for addr in agent_positions.keys()]
+            lp_data.columns = addrs
             lp_data["lpTotalSupply"] = pool_info_data["lpTotalSupply"]
         else:
             lp_data = pool_info_data["lpTotalSupply"].to_frame()

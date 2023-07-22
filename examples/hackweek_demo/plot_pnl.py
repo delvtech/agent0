@@ -29,6 +29,9 @@ def calculate_pnl(
 
     for ap in agent_positions.values():  # pylint: disable=invalid-name
         for block in ap.positions.index:
+            # We only calculate pnl up to pool_info
+            if block > pool_info.index.max():
+                continue
             state = pool_info.loc[block]  # current state of the pool
 
             # get maturity from current checkpoint
