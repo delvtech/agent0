@@ -11,7 +11,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
-from elfpy.data import db_schema, postgres
+from elfpy.data import convert_data, postgres
 from elfpy.utils import logs as log_utils
 
 # pylint: disable=too-many-arguments
@@ -20,110 +20,6 @@ from elfpy.utils import logs as log_utils
 # pylint: disable=too-many-branches
 
 RETRY_COUNT = 10
-
-
-# TODO: Rename this to something more accurate to what is happening, e.g. decode_hyperdrive_transactions
-def get_wallet_info(
-    hyperdrive_contract: Contract,
-    base_contract: Contract,
-    block_number: BlockNumber,
-    transactions: list[db_schema.Transaction],
-    pool_info: db_schema.PoolInfo,
-) -> list[db_schema.WalletInfo]:
-    """Retrieve wallet information at a given block given a transaction.
-
-    Transactions are needed here to get
-    (1) the wallet address of a transaction, and
-    (2) the token id of the transaction
-
-    Arguments
-    ---------
-    hyperdrive_contract : Contract
-        The deployed hyperdrive contract instance.
-    base_contract : Contract
-        The deployed base contract instance
-    block_number : BlockNumber
-        The block number to query
-    transactions : list[db_schema.Transaction]
-        The list of transactions to get events from
-    pool_info : db_schema.PoolInfo
-        The associated pool info, used to extract share price
-
-    Returns
-    -------
-    list[db_schema.WalletInfo]
-        The list of WalletInfo objects ready to be inserted into postgres
-    """
-    # pylint: disable=too-many-locals
-    out_wallet_info = []
-    for transaction in transactions:
-        wallet_addr = transaction.event_operator
-        token_id = transaction.event_id
-        token_prefix = transaction.event_prefix
-        token_maturity_time = transaction.event_maturity_time
-        if wallet_addr is None:
-            continue
-        # Query and add base tokens to walletinfo
-        num_base_token_scaled = None
-        for _ in range(RETRY_COUNT):
-            try:
-                num_base_token_scaled = base_contract.functions.balanceOf(wallet_addr).call(
-                    block_identifier=block_number
-                )
-                break
-            except ValueError:
-                logging.warning("Error in getting base token balance, retrying")
-                time.sleep(1)
-                continue
-        num_base_token = eth.convert_scaled_value(num_base_token_scaled)
-        if (num_base_token is not None) and (wallet_addr is not None):
-            out_wallet_info.append(
-                db_schema.WalletInfo(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="BASE",
-                    tokenType="BASE",
-                    tokenValue=num_base_token,
-                )
-            )
-        # Query and add hyperdrive tokens to walletinfo
-        if (token_id is not None) and (token_prefix is not None):
-            base_token_type = hyperdrive_interface.AssetIdPrefix(token_prefix).name
-            if (token_maturity_time is not None) and (token_maturity_time > 0):
-                token_type = base_token_type + "-" + str(token_maturity_time)
-                maturity_time = token_maturity_time
-            else:
-                token_type = base_token_type
-                maturity_time = None
-            num_custom_token_scaled = None
-            for _ in range(RETRY_COUNT):
-                try:
-                    num_custom_token_scaled = hyperdrive_contract.functions.balanceOf(int(token_id), wallet_addr).call(
-                        block_identifier=block_number
-                    )
-                except ValueError:
-                    logging.warning("Error in getting custom token balance, retrying")
-                    time.sleep(1)
-                    continue
-            num_custom_token = eth.convert_scaled_value(num_custom_token_scaled)
-            if num_custom_token is not None:
-                # Check here if token is short
-                # If so, add share price from pool info to data
-                share_price = None
-                if (base_token_type) == "SHORT":
-                    share_price = pool_info.sharePrice
-                out_wallet_info.append(
-                    db_schema.WalletInfo(
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType=base_token_type,
-                        tokenType=token_type,
-                        tokenValue=num_custom_token,
-                        maturityTime=maturity_time,
-                        sharePrice=share_price,
-                    )
-                )
-    return out_wallet_info
 
 
 def main(
@@ -175,11 +71,7 @@ def main(
     # TODO pull this out of this function and write conversion to postgres
     # FIXME
     pool_config_dict = hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract)
-    for key in db_schema.PoolConfig.__annotations__:
-        if key not in pool_config_dict:
-            pool_config_dict[key] = None
-    pool_config = db_schema.PoolConfig(**pool_config_dict)
-    postgres.add_pool_config(pool_config, session)
+    postgres.add_pool_config(convert_data.convert_pool_config(pool_config_dict), session)
 
     # Get last entry of pool info in db
     data_latest_block_number = postgres.get_latest_block_number(session)
@@ -201,28 +93,18 @@ def main(
     if data_latest_block_number < block_number < latest_mined_block:
         # Query and add block_pool_info
         pool_info_dict = hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
-        # Set defaults
-        # TODO: abstract this out: pull the conversion between the interface to the db object into various functions
-        for key in db_schema.PoolInfo.__annotations__:
-            if key not in pool_info_dict:
-                pool_info_dict[key] = None
-        block_pool_info = db_schema.PoolInfo(**pool_info_dict)
-        postgres.add_pool_infos([block_pool_info], session)
+        postgres.add_pool_infos([convert_data.convert_pool_info(pool_info_dict)], session)
 
         # Query and add block_checkpoint_info
-        # TODO FIXME pull below chunk out into function
         checkpoint_info_dict = hyperdrive_interface.get_hyperdrive_checkpoint_info(
             web3, hyperdrive_contract, block_number
         )
-        # Set defaults
-        for key in db_schema.CheckpointInfo.__annotations__:
-            if key not in checkpoint_info_dict:
-                checkpoint_info_dict[key] = None
-        block_checkpoint_info = db_schema.CheckpointInfo(**checkpoint_info_dict)
-        postgres.add_checkpoint_infos([block_checkpoint_info], session)
+        postgres.add_checkpoint_infos([convert_data.convert_checkpoint_info(checkpoint_info_dict)], session)
+
         # Query and add block transactions
-        block_transactions = db_schema.fetch_transactions_for_block(web3, hyperdrive_contract, block_number)
+        block_transactions = convert_data.fetch_transactions_for_block(web3, hyperdrive_contract, block_number)
         postgres.add_transactions(block_transactions, session)
+
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
     # TODO: fewer nested blocks!
@@ -257,15 +139,7 @@ def main(
                         time.sleep(1)
                         continue
                 if pool_info_dict:  # Proceed only if we have data, otherwise do nothing
-                    # Set defaults
-                    assert pool_info_dict is not None
-                    for key in db_schema.PoolInfo.__annotations__:
-                        if key not in pool_info_dict:
-                            pool_info_dict[key] = None
-                    # Add to db
-                    block_pool_info = db_schema.PoolInfo(**pool_info_dict)
-                    if block_pool_info:
-                        postgres.add_pool_infos([block_pool_info], session)
+                    postgres.add_pool_infos([convert_data.convert_pool_info(pool_info_dict)], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 checkpoint_info_dict = None
@@ -280,18 +154,13 @@ def main(
                         time.sleep(1)
                         continue
                 if checkpoint_info_dict:  # Proceed only if we have data, otherwise do nothing
-                    # Set defaults
-                    for key in db_schema.CheckpointInfo.__annotations__:
-                        if key not in checkpoint_info_dict:
-                            checkpoint_info_dict[key] = None
-                    # Add to db
-                    postgres.add_checkpoint_infos([db_schema.CheckpointInfo(**checkpoint_info_dict)], session)
+                    postgres.add_checkpoint_infos([convert_data.convert_checkpoint_info(checkpoint_info_dict)], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_transactions = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        block_transactions = db_schema.fetch_transactions_for_block(
+                        block_transactions = convert_data.fetch_transactions_for_block(
                             web3, hyperdrive_contract, block_number
                         )
                         break
@@ -301,8 +170,9 @@ def main(
                         continue
                 if block_transactions:  # Proceed only if we have data, otherwise do nothing
                     postgres.add_transactions(block_transactions, session)
+
                 if block_transactions and block_pool_info:
-                    wallet_info_for_transactions = get_wallet_info(
+                    wallet_info_for_transactions = convert_data.get_wallet_info(
                         hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
                     )
                     postgres.add_wallet_infos(wallet_info_for_transactions, session)
