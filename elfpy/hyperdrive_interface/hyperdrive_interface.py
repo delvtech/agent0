@@ -1,22 +1,22 @@
 """Helper functions for interfacing with hyperdrive"""
 from __future__ import annotations
-
+from datetime import datetime
 import logging
 import re
 import time
-from datetime import datetime
 from typing import Any
 
-import requests
 from eth_typing import BlockNumber
 from eth_utils import address
 from fixedpointmath import FixedPoint
+import requests
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
-from elfpy import eth, hyperdrive_interface
+from elfpy import eth
 from elfpy import time as elftime
+from elfpy.hyperdrive_interface.hyperdrive_assets import AssetIdPrefix, encode_asset_id
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 
 from .hyperdrive_addresses import HyperdriveAddresses
@@ -108,9 +108,7 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
     # add position duration to the data dict
     position_duration = eth.smart_contract_read(hyperdrive_contract, "getPoolConfig").get("positionDuration", None)
     if position_duration is not None:
-        asset_id = hyperdrive_interface.encode_asset_id(
-            hyperdrive_interface.AssetIdPrefix.WITHDRAWAL_SHARE, position_duration
-        )
+        asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, position_duration)
         pool_info["totalSupplyWithdrawalShares"] = eth.smart_contract_read(
             hyperdrive_contract, "balanceOf", asset_id, hyperdrive_contract.address
         )["value"]

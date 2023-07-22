@@ -75,10 +75,8 @@ class Agent:
 
         Arguments
         ----------
-        market : Market
+        market : BaseMarket
             The market on which this agent will be executing trades (MarketActions)
-        pricing_model : PricingModel
-            The pricing model in use for this simulated market
 
         Returns
         -------

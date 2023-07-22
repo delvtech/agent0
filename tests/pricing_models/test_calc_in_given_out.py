@@ -105,12 +105,10 @@ class TestCalcInGivenOut(unittest.TestCase):
         log_utils.close_logging()
 
     def test_calc_in_given_out_precision(self):
-        """
-        This test ensures that the pricing model can handle very extreme inputs
+        """This test ensures that the pricing model can handle very extreme inputs
         such as extremely small inputs with extremely large reserves.
-
-        .. todo:: This should be multiple tests for base & pt trade type
         """
+        # TODO: This should be multiple tests for base & pt trade type
         log_utils.setup_logging("test_calc_in_given_out")
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),

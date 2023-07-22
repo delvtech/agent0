@@ -18,8 +18,7 @@ if TYPE_CHECKING:
 
 
 class YieldspacePricingModel(BasePricingModel):
-    """
-    YieldSpace Pricing Model
+    """YieldSpace Pricing Model.
 
     This pricing model uses the YieldSpace invariant with modifications to
     enable the base reserves to be deposited into yield bearing vaults
@@ -119,8 +118,7 @@ class YieldspacePricingModel(BasePricingModel):
         market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
-        r"""
-        Calculates the amount of an asset that must be provided to receive a
+        r"""Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
 
         The input is calculated as:
@@ -322,8 +320,7 @@ class YieldspacePricingModel(BasePricingModel):
         market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
-        r"""
-        Calculates the amount of an asset that must be provided to receive a
+        r"""Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
 
         The output is calculated as:
@@ -740,9 +737,8 @@ class YieldspacePricingModel(BasePricingModel):
     def calc_tokens_out_given_lp_in(
         self, lp_in: FixedPoint, market_state: HyperdriveMarketState
     ) -> tuple[FixedPoint, FixedPoint]:
-        """
-        Calculates the amount of base shares and bonds released from burning a a specified amount of
-        LP shares from the pool.
+        """Calculates the amount of base shares and bonds released from burning
+        a a specified amount of LP shares from the pool.
 
         Arguments
         ----------

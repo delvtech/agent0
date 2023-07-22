@@ -8,8 +8,7 @@ from elfpy import FixedPoint
 
 @dataclass
 class Checkpoint:
-    """
-    Hyperdrive positions are bucketed into checkpoints, which allows us to avoid poking in any
+    """Hyperdrive positions are bucketed into checkpoints, which allows us to avoid poking in any
     period that has LP or trading activity. The checkpoints contain the starting share price from
     the checkpoint as well as aggregate volume values.
     """

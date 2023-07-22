@@ -8,8 +8,7 @@ import elfpy.time as time
 
 ### Spot Price and APR ###
 def calc_apr_from_spot_price(price: FixedPoint, time_remaining: time.StretchedTime):
-    r"""
-    Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration
+    """Return the APR (decimal) given the current (positive) base asset price and the remaining pool duration.
 
     Arguments
     ----------

@@ -10,9 +10,7 @@ from matplotlib import ticker as mpl_ticker
 
 
 def calc_fixed_rate(trade_data):
-    """
-    Calculates the fixed rate given trade data
-    """
+    """Calculate the fixed rate given trade data."""
     trade_data["rate"] = np.nan
     for idx, row in trade_data.iterrows():
         spot_price = calculate_spot_price(
@@ -29,7 +27,7 @@ def calc_fixed_rate(trade_data):
 
 
 def plot_fixed_rate(x_data, y_data, axes):
-    """Plots the fixed rate plot"""
+    """Plot the fixed rate plot."""
     axes.plot(x_data, y_data)
     # change y-axis unit format to 0.1%
     axes.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(x, "0.3%")))

@@ -139,9 +139,9 @@ def execute_agent_trades(
             account.agent.wallet.update(wallet_deltas)
 
 
-def assert_never(x: NoReturn) -> NoReturn:
-    """Helper function for exhaustive matching on ENUMS"""
-    assert False, "Unhandled type: {}".format(type(x).__name__)
+def assert_never(val: NoReturn) -> NoReturn:
+    """Match exhaustively on ENUMS."""
+    assert False, f"Unhandled type: {type(val).__name__}"
 
 
 def match_contract_call_to_trade(

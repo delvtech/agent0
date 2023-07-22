@@ -33,10 +33,7 @@ class SingleLpAgent(BasePolicy):
         super().__init__(budget, rng)
 
     def action(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
-        """
-        implement user strategy
-        LP if you can, but only do it once
-        """
+        """implement user strategy: LP if you can, but only do it once."""
         action_list = []
         has_lp = wallet.lp_tokens > FixedPoint(0)
         can_lp = wallet.balance.amount >= self.amount_to_lp

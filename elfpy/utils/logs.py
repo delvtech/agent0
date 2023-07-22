@@ -24,8 +24,7 @@ def setup_logging(
     keep_previous_handlers: bool = False,
 ) -> None:
     # pylint: disable=too-many-arguments
-    """
-    Setup logging and handlers with default settings.
+    """Setup logging and handlers with default settings.
 
     Note:
         The log_filename can be a path to the log file. If log_filename is not provided,
@@ -35,18 +34,20 @@ def setup_logging(
 
     Arguments
     ----------
-        log_filename : (str, optional)
+        log_filename : str, optional
             Path and name of the log file.
-        max_bytes : (int, optional)
+        max_bytes : int, optional
             Maximum size of the log file in bytes. Defaults to elfpy.DEFAULT_LOG_MAXBYTES.
-        log_level : (int, optional)
+        log_level : int, optional
             Log level to track. Defaults to elfpy.DEFAULT_LOG_LEVEL.
-        delete_previous_logs : (bool, optional)
+        delete_previous_logs : bool, optional
             Whether to delete previous log file if it exists. Defaults to False.
-        log_stdout : (bool, optional)
+        log_stdout : bool, optional
             Whether to log to standard output. Defaults to True.
-        log_format_string : (str, optional)
+        log_format_string : str, optional
             Log formatter object. Defaults to None.
+        keep_previous_handlers : bool, optional
+            Whether to keep previous handlers. Defaults to False.
 
     .. todo::
         - Fix the docstring
@@ -162,11 +163,6 @@ def log_hyperdrive_crash_report(
 
     pool_config : PoolConfig
         Configuration of the pool involved in the transaction.
-
-    Returns
-    -------
-    None
-        This function does not return any value.
     """
 
     pool_info_dict = _get_dict_from_schema(pool_info)

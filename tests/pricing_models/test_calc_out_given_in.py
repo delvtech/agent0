@@ -1371,8 +1371,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     raise AssertionError(f'Expected model_name to be "YieldSpace", not {model_name}')
 
     def test_calc_out_given_in_precision(self):
-        """
-        This test ensures that the pricing model can handle very extreme inputs
+        """This test ensures that the pricing model can handle very extreme inputs
         such as extremely small inputs with extremely large reserves.
         """
         pricing_models: list[BasePricingModel] = [

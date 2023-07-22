@@ -55,8 +55,7 @@ class TestFreezability(unittest.TestCase):
     """
 
     def test_freezable_when_not_set(self):
-        """
-        freezable object when frozen is NOT set, and no_new_attribs is NOT set
+        """freezable object when frozen is NOT set, and no_new_attribs is NOT set
         desired behavior is: CAN change attributes, and CAN add attributes
         """
         freezable_object = FreezableClass()
@@ -64,8 +63,7 @@ class TestFreezability(unittest.TestCase):
         freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
 
     def test_freezable_when_frozen_is_set(self):
-        """
-        freezable object when frozen IS set, but no_new_attribs is NOT set, manually
+        """freezable object when frozen IS set, but no_new_attribs is NOT set, manually
         desired behavior is: can NOT change attributes, and CAN add attributes
         """
         freezable_object = FreezableClass()
@@ -75,8 +73,7 @@ class TestFreezability(unittest.TestCase):
         freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
 
     def test_freezable_when_frozen_is_set_by_default(self):
-        """
-        freezable object when frozen IS set, but no_new_attribs is NOT set, by default
+        """freezable object when frozen IS set, but no_new_attribs is NOT set, by default
         desired behavior is: can NOT change attributes, and CAN add attributes
         """
         freezable_object = FreezableClassFrozenByDefault()
@@ -85,8 +82,7 @@ class TestFreezability(unittest.TestCase):
         freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
 
     def test_freezable_when_no_new_attribs_is_set(self):
-        """
-        freezable object when frozen is NOT set, but no_new_attribs IS set, manually
+        """freezable object when frozen is NOT set, but no_new_attribs IS set, manually
         desired behavior is: CAN change attributes, and can NOT add attributes
         """
         freezable_object = FreezableClass()
@@ -96,8 +92,7 @@ class TestFreezability(unittest.TestCase):
             freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
 
     def test_freezable_when_no_new_attribs_is_set_by_default(self):
-        """
-        freezable object when frozen is NOT set, but no_new_attribs IS set, by default
+        """freezable object when frozen is NOT set, but no_new_attribs IS set, by default
         desired behavior is: CAN change attributes, and can NOT add attributes
         """
         freezable_object = FreezableClassNoNewAttribsByDefault()
@@ -106,8 +101,7 @@ class TestFreezability(unittest.TestCase):
             freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
 
     def test_freezable_when_frozen_is_set_and_no_new_attribs_is_set(self):
-        """
-        freezable object when frozen IS set, and no_new_attribs IS set, manually
+        """freezable object when frozen IS set, and no_new_attribs IS set, manually
         desired behavior is: can NOT change attributes, and can NOT add attributes
         """
         freezable_object = FreezableClass()
@@ -119,8 +113,7 @@ class TestFreezability(unittest.TestCase):
             freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
 
     def test_freezable_when_frozen_is_set_and_no_new_attribs_is_set_by_default(self):
-        """
-        freezable object when frozen IS set, and no_new_attribs IS set, by default
+        """freezable object when frozen IS set, and no_new_attribs IS set, by default
         desired behavior is: can NOT change attributes, and can NOT add attributes
         """
         freezable_object = FreezableClassFrozenNoNewAttribsByDefault()
@@ -130,7 +123,7 @@ class TestFreezability(unittest.TestCase):
             freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
 
     def test_dtypes(self):
-        """Test dtype casting & checking capability of classes that have the freezable decorator"""
+        """Test dtype casting & checking capability of classes that have the freezable decorator."""
         freezable_object = FreezableClass(existing_attrib=4)
         # cast to int, check that it is an int
         assert isinstance(

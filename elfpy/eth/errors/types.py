@@ -1,3 +1,4 @@
+"""Types used for error handling by interface functions."""
 from typing import Literal, Sequence, TypedDict
 
 from web3.types import ABIFunctionParams

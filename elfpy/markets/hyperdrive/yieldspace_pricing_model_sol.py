@@ -15,8 +15,7 @@ ONE_18 = FixedPoint("1")
 def modified_yield_space_constant(
     c_div_mu: FixedPoint, mu: FixedPoint, z: FixedPoint, t: FixedPoint, y: FixedPoint
 ) -> FixedPoint:
-    r"""
-    Helper function to derive invariant constant C for the YieldSpace.
+    r"""Helper function to derive invariant constant C for the YieldSpace.
     This is meant to mirror the solidity.
 
     Parameters
@@ -44,8 +43,7 @@ def modified_yield_space_constant(
 def calculate_bonds_out_given_shares_in(
     z: FixedPoint, y: FixedPoint, dz: FixedPoint, t: FixedPoint, c: FixedPoint, mu: FixedPoint
 ) -> FixedPoint:
-    r"""
-    Calculates the amount of bonds a user will receive from the pool by providing a specified amount of shares.
+    r"""Calculates the amount of bonds a user will receive from the pool by providing a specified amount of shares.
     This is meant to mirror the solidity.
 
     Parameters
@@ -79,8 +77,7 @@ def calculate_bonds_out_given_shares_in(
 def calculate_max_buy(
     z: FixedPoint, y: FixedPoint, t: FixedPoint, c: FixedPoint, mu: FixedPoint
 ) -> tuple[FixedPoint, FixedPoint]:
-    r"""
-    Calculates the maximum amount of bonds that can be purchased with the specified reserves.
+    r"""Calculates the maximum amount of bonds that can be purchased with the specified reserves.
 
     Parameters
     ----------

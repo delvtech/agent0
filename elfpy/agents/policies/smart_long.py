@@ -50,12 +50,14 @@ class LongLouie(BasePolicy):
         super().__init__(budget, rng)
 
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
-        """Implement a Long Louie user strategy
+        """Implement a Long Louie user strategy.
 
         Parameters
         ----------
         market : Market
             the trading market
+        wallet : Wallet
+            the wallet
 
         Returns
         -------

@@ -447,7 +447,8 @@ def calc_close_short(
     mint_time: FixedPoint,
     open_share_price: FixedPoint,
 ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
-    """
+    """Calculate the outcome of closing a short position.
+
     When closing a short, the number of bonds being closed out, at face value, give us the total margin returned.
     The worst case scenario of the short is reduced by that amount, so they no longer need margin for it.
     At the same time, margin in their account is drained to pay for the bonds being bought back,
@@ -598,7 +599,8 @@ def calc_open_long(
     latest_checkpoint_time: FixedPoint,
     spot_price: FixedPoint,
 ) -> tuple[HyperdriveMarketDeltas, WalletDeltas]:
-    """
+    """Calculate the outcome of opening a long.
+
     When a trader opens a long, they put up base and are given long tokens. As time passes, an amount of the longs
     proportional to the time that has passed are considered to be “mature” and can be redeemed one-to-one.
     The remaining amount of longs are sold on the internal AMM. The trader doesn’t receive any variable interest

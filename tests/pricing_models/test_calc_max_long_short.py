@@ -115,11 +115,12 @@ class TestCalculateMax(unittest.TestCase):
         log_utils.close_logging()
 
     def test_calculate_max_short(self):
-        """
-        Tests that calculate_max_long and calculate_max_short are safe, by checking
-            apr >= 0
-            share_price * market_state.share_reserves >= base_buffer
-            bond_reserves >= bond_buffer
+        """Tests that calculate_max_long and calculate_max_short are safe.
+
+        Checks:
+        - `apr >= 0`
+        - `share_price * market_state.share_reserves >= base_buffer`
+        - `bond_reserves >= bond_buffer`
         """
         log_utils.setup_logging(log_filename="test_calculate_max")
         pricing_model: HyperdrivePricingModel = HyperdrivePricingModel()

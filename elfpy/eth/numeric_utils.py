@@ -5,8 +5,7 @@ from fixedpointmath import FixedPoint
 
 
 def convert_scaled_value(input_val: int | None) -> float | None:
-    """
-    Given a scaled value int, converts it to an unscaled value in float, while dealing with Nones
+    """Given a scaled value int, converts it to an unscaled value in float, while dealing with Nones.
 
     Arguments
     ----------

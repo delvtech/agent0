@@ -26,9 +26,7 @@ class MaxLongResult(NamedTuple):
 def calculate_spot_price(
     share_reserves: FixedPoint, bond_reserves: FixedPoint, initial_share_price: FixedPoint, time_stretch: FixedPoint
 ) -> FixedPoint:
-    r"""
-    Calculates the spot price without slippage of bonds in terms of base.
-    This is meant to mirror the solidity.
+    r"""Calculates the spot price without slippage of bonds in terms of base. This is meant to mirror the solidity.
 
     Parameters
     ----------
@@ -60,8 +58,9 @@ def calculate_max_long(
     minimum_share_reserves: FixedPoint,
     max_iterations: int = 20,
 ) -> MaxLongResult:
-    """Calculates the maximum amount of bonds that can be bought in the market.  This is necessarily
-    done with an iterative approach as there is no closed form solution.
+    """Calculates the maximum amount of bonds that can be bought in the market.
+
+    This is necessarily done with an iterative approach as there is no closed form solution.
 
     Arguments
     ----------
@@ -77,6 +76,8 @@ def calculate_max_long(
         The current share price.
     initial_share_price : FixedPoint
         The initial share price.
+    minimum_share_reserves
+        The minimum share reserves.
     max_iterations : int
         The maximum number of iterations to perform before returning the result.
 
@@ -175,8 +176,7 @@ def calculate_max_short(
     initial_share_price: FixedPoint,
     minimum_share_reserves: FixedPoint,
 ) -> FixedPoint:
-    r"""
-    Calculates the maximum amount of shares that can be used to open shorts.
+    r"""Calculates the maximum amount of shares that can be used to open shorts.
 
     Parameters
     ----------
@@ -192,6 +192,8 @@ def calculate_max_short(
         The share price.
     initial_share_price : FixedPoint
         The initial share price.
+    minimum_share_reserves : FixedPoint
+        The minimum share reserves.
 
     Returns
     -------

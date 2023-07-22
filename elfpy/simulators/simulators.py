@@ -191,7 +191,7 @@ class Simulator:
 
         Arguments
         ----------
-        trades : list[tuple[int, list[Trade]]]
+        agent_actions : list[tuple[int, types.Trade]]
             A list of agent trades. These will be executed in order.
             for trade in trades:
                 trade[0] is the agent wallet address;

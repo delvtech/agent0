@@ -20,8 +20,8 @@ from elfpy.time.time import StretchedTime
 
 
 class TestCloseShort(unittest.TestCase):
-    """
-    Test opening and closing a short in hyperdrive
+    """Test opening and closing a short in hyperdrive.
+
     3 failure cases: zero amount, invalid amount, invalid timestamp
     6 success cases:
         - close immediately, with regular, and small amounts

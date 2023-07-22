@@ -36,9 +36,7 @@ class TestInitialize(unittest.TestCase):
         position_duration: int = 180,
         **kwargs,
     ):
-        """
-        Set up agent, pricing model, & market for the subsequent tests.
-        """
+        """Set up agent, pricing model, & market for the subsequent tests."""
         self.contribution = contribution
         self.target_apr = target_apr
         self.position_duration = FixedPoint(position_duration)

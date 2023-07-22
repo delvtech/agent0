@@ -18,10 +18,7 @@ if TYPE_CHECKING:
 
 
 class SingleLongAgent(BasePolicy):
-    """
-    simple long
-    only has one long open at a time
-    """
+    """simple long: only has one long open at a time."""
 
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Specify action"""

@@ -20,6 +20,8 @@ def initialize_web3_with_http_provider(
         The HTTPProvider uses the python requests library for making requests.
         If you would like to modify how requests are made,
         you can use the request_kwargs to do so.
+    reset_provider: bool
+        If True, reset the provider
 
     Notes
     -----

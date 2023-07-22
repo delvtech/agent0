@@ -31,9 +31,7 @@ st.set_option("deprecation.showPyplotGlobalUse", False)
 
 
 def calc_ohlcv(trade_data, freq="D"):
-    """
-    freq var: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
-    """
+    """freq var: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases"""
     spot_prices = (
         calculate_spot_price(
             share_reserves=trade_data["share_reserves"],

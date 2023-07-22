@@ -8,9 +8,9 @@ from fixedpointmath import FixedPoint
 
 
 def format_numeric_string(value: float | int | FixedPoint, precision=3, min_digits=0, debug=False):
-    """
-    Format a float to a string with a given precision.
-    This follows the significant figure behavior, irrespective of the number's size.
+    """Format a float to a string with a given precision.
+
+    This maintains the number significant digits, irrespecting of the number's size. Default is 3.
     """
     if debug:
         log_str = "value: %s, type: %s, precision: %s, min_digits: %s"

@@ -52,13 +52,14 @@ class ShortSally(BasePolicy):
         super().__init__(budget, rng)
 
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
-        """Implement a Short Sally user strategy
-
+        """Implement a Short Sally user strategy.
 
         Parameters
         ----------
         market : HyperdriveMarket
             the trading market
+        wallet : Wallet
+            the wallet
 
         Returns
         -------

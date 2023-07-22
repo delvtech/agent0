@@ -3,6 +3,8 @@ import pytest
 
 from elfpy.eth.errors.errors import decode_error_selector_for_contract
 
+# pylint: disable=too-few-public-methods
+
 
 class TestDecodeErrorSelector:
     """Tests for decode_error_selector_for_contract."""

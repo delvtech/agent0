@@ -11,14 +11,15 @@ from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, Hy
 
 
 class TestOpenShort(unittest.TestCase):
-    """
-    Test opening a short in hyperdrive, with the following cases:
-        success cases:
-            open a short of of 10 bonds
-            open a short of of 0.01 bonds
-        failure cases:
-            open a short of 0 size
-            open a short of extreme size
+    """Test opening a short in hyperdrive.
+
+    Tests the following cases:
+        - success cases:
+            - open a short of of 10 bonds
+            - open a short of of 0.01 bonds
+        - failure cases:
+            - open a short of 0 size
+            - open a short of extreme size
     """
 
     contribution: FixedPoint = FixedPoint("500_000_000.0")
@@ -61,8 +62,8 @@ class TestOpenShort(unittest.TestCase):
         maturity_time: FixedPoint,  # maturity of the opened short
         apr_before: FixedPoint,
     ):
-        """
-        Verify that the market state is updated correctly after opening a short.
+        """Verify that the market state is updated correctly after opening a short.
+
         Contains the following checks:
         - Hyperdrive received the max loss and that Bob received the short tokens
         - initializing the pool to the target APR worked

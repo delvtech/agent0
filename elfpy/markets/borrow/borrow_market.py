@@ -56,8 +56,8 @@ class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPrici
 
     @property
     def total_profit(self) -> FixedPoint:
-        """
-        From the market's perspective, the profit is the difference between the borrowed and deposited assets
+        """From the market's perspective, the profit is the difference between the borrowed and deposited assets.
+
         This is composed of two parts:
             uncollected profit = borrow_shares * share_price - borrow_outstanding
             collected profit = borrow_closed_interest
@@ -99,10 +99,6 @@ class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPrici
         ----------
         agent_action : MarketAction
             Checks if the agent_action.action_type is in the list of all available actions for this market
-
-        Returns
-        -------
-        None
         """
         if agent_action.action_type not in self.available_actions:
             raise ValueError(f"ERROR: agent_action.action_type must be in {self.available_actions=}")
@@ -110,17 +106,24 @@ class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPrici
     def perform_action(
         self, action_details: tuple[int, BorrowMarketAction]
     ) -> tuple[int, WalletDeltas, BorrowMarketDeltas]:
-        r"""
-        Execute a trade in the Borrow Market
+        r"""Execute a trade in the Borrow Market.
 
-        open_borrow
-            value the collateral being offered and return a borrow amount of the maximum amount that can be borrowed
+        open_borrow : value the collateral being offered and return a borrow
+        amount of the maximum amount that can be borrowed
+        close_borrow : value the collateral being asked to be withdrawn and
+        offer it back in exchange for the value owed
 
-        close_borrow
-            value the collateral being asked to be withdrawn and offer it back in exchange for the value owed
+        Arguments
+        ---------
+        action_details : tuple[int, MarketAction]
+            Tuple containing the agent ID and the action
 
-        .. todo: change agent deltas from Wallet type to its own type
+        Returns
+        -------
+        tuple[int, WalletDeltas, BorrowMarketDeltas]
+            Tuple containing the agent ID and the deltas, for the agent and the market
         """
+        # TODO: change agent deltas from Wallet type to its own type
         agent_id, agent_action = action_details
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
         # issue 216
@@ -154,9 +157,9 @@ class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPrici
         collateral: Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
     ) -> tuple[BorrowMarketDeltas, WalletDeltas]:
-        """
-        execute a borrow as requested by the agent, return the market and agent deltas
-        agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them
+        """Execute a borrow as requested by the agent, then return the market and agent deltas.
+
+        The agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them.
         """
         _, borrow_amount_in_base = self.pricing_model.value_collateral(
             loan_to_value_ratio=self.market_state.loan_to_value_ratio,
@@ -206,9 +209,9 @@ class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPrici
         collateral: Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
     ) -> tuple[BorrowMarketDeltas, WalletDeltas]:
-        """
-        close a borrow as requested by the agent, return the market and agent deltas
-        agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it)
+        """Close a borrow as requested by the agent, return the market and agent deltas.
+
+        Agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it).
         """
         _, borrow_amount_in_base = self.pricing_model.value_collateral(
             loan_to_value_ratio=self.market_state.loan_to_value_ratio,

@@ -20,10 +20,7 @@ if TYPE_CHECKING:
 
 
 class LpAndWithdrawAgent(BasePolicy):
-    """
-    simple LP
-    only has one LP open at a time
-    """
+    """simple LP: only has one LP open at a time."""
 
     def __init__(
         self,
@@ -38,10 +35,7 @@ class LpAndWithdrawAgent(BasePolicy):
         super().__init__(budget, rng)
 
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
-        """
-        implement user strategy
-        LP if you can, but only do it once
-        """
+        """implement user strategy: LP if you can, but only do it once."""
         # pylint disable=unused-argument
         action_list: list[Trade] = []
         has_lp = wallet.lp_tokens > FixedPoint(0)

@@ -8,7 +8,6 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import RPCEndpoint
 
-from elfpy import eth
 from elfpy.eth.accounts import EthAccount
 from examples.eth_bots.execute_agent_trades import execute_agent_trades
 

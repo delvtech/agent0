@@ -21,20 +21,21 @@ if TYPE_CHECKING:
 def plot_market_lp_reserves(
     state_df: pd.DataFrame, exclude_first_day: bool = True, exclude_last_day: bool = True
 ) -> Figure:
-    r"""Plot the simulator market LP reserves per day
+    r"""Plot the simulator market LP reserves per day.
 
     Arguments
     ----------
-    simulator : Simulator
-        An instantiated simulator that has run trades with agents
-    exclude_first_trade : bool
+    state_df : pd.DataFrame
+        Dataframe containing the simulation_state
+    exclude_first_day : bool
         If true, excludes the first day from the plot
-    exclude_last_trade : bool
+    exclude_last_day : bool
         If true, excludes the last day from the plot
 
     Returns
     -------
     Figure
+        Reference to the plot
     """
     fig, axes, _ = get_gridspec_subplots()
     start_idx = 1 if exclude_first_day else 0
@@ -51,20 +52,21 @@ def plot_market_lp_reserves(
 def plot_market_spot_price(
     state_df: pd.DataFrame, exclude_first_day: bool = True, exclude_last_day: bool = True
 ) -> Figure:
-    r"""Plot the simulator market APR per day
+    """Plot the simulator market APR per day.
 
     Arguments
     ----------
     state_df : DataFrame
-        Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
-    exclude_first_trade : bool
+        Pandas dataframe containing the simulation_state
+    exclude_first_day : bool, optional
         If true, excludes the first day from the plot
-    exclude_last_trade : bool
+    exclude_last_day : bool, optional
         If true, excludes the last day from the plot
 
     Returns
     -------
     Figure
+        Reference to the plot
     """
     fig, axes, _ = get_gridspec_subplots()
     start_idx = 1 if exclude_first_day else 0
@@ -79,12 +81,12 @@ def plot_market_spot_price(
 
 
 def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True, exclude_first_day=True) -> Figure:
-    r"""Plot the agent pnl
+    """Plot the agent pnl.
 
     Arguments
     ----------
-    simulator : Simulator
-        An instantiated simulator that has run trades with agents
+    state_df : DataFrame
+        Pandas dataframe containing the simulation_state
     exclude_first_agent : bool
         If true, excludes the first agent from the plot
     exclude_first_day : bool
@@ -93,6 +95,7 @@ def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True, exc
     Returns
     -------
     Figure
+        Reference to the plot
     """
     num_agents = len([col for col in state_df if str(col).startswith("agent") and str(col).endswith("pnl")])
     agent_start_idx = 1 if exclude_first_agent else 0
@@ -109,7 +112,7 @@ def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True, exc
 
 
 def plot_lp_pnl(trades_agg: pd.DataFrame, exclude_last_day=True) -> Figure:
-    r"""Plot the lp pnl
+    """Plot the lp pnl.
 
     Arguments
     ----------
@@ -121,6 +124,7 @@ def plot_lp_pnl(trades_agg: pd.DataFrame, exclude_last_day=True) -> Figure:
     Returns
     -------
     Figure
+        Reference to the plot
     """
     num_agents = 1
     start_idx = 0
@@ -137,20 +141,21 @@ def plot_lp_pnl(trades_agg: pd.DataFrame, exclude_last_day=True) -> Figure:
 
 
 def plot_fixed_apr(state_df: pd.DataFrame, exclude_first_day: bool = True, exclude_last_day: bool = True) -> Figure:
-    r"""Plot the simulator market APR per day
+    """Plot the simulator market APR per day.
 
     Arguments
     ----------
     state_df : DataFrame
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
-    exclude_first_trade : bool
+    exclude_first_day : bool, optional
         If true, excludes the first day from the plot
-    exclude_last_trade : bool
+    exclude_last_day : bool, optional
         If true, excludes the last day from the plot
 
     Returns
     -------
     Figure
+        Reference to the plot
     """
     fig, axes, _ = get_gridspec_subplots()
     start_idx = 1 if exclude_first_day else 0
@@ -167,7 +172,7 @@ def plot_fixed_apr(state_df: pd.DataFrame, exclude_first_day: bool = True, exclu
 def plot_fixed_volume(
     trades_agg: pd.DataFrame, exclude_first_trade: bool = True, exclude_last_trade: bool = True
 ) -> Figure:
-    r"""Plot the simulator market APR per day
+    """Plot the simulator market APR per day.
 
     Arguments
     ----------
@@ -181,6 +186,7 @@ def plot_fixed_volume(
     Returns
     -------
     Figure
+        Reference to the plot
     """
     fig, axes, _ = get_gridspec_subplots()
     start_idx = 1 if exclude_first_trade else 0
@@ -199,7 +205,7 @@ def plot_longs_and_shorts(
     exclude_first_trade: bool = True,
     xtick_step: int = 10,
 ) -> Figure:
-    r"""Plot the total market longs & shorts over time
+    """Plot the total market longs & shorts over time.
 
     Arguments
     ----------
@@ -209,10 +215,13 @@ def plot_longs_and_shorts(
         If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)
     exclude_first_trade : bool
         If true, excludes the first day from the plot
+    xtick_step
+        Number of steps between ticks on the x-axis
 
     Returns
     -------
     Figure
+        Reference to the plot
     """
     fig, axes, _ = get_gridspec_subplots(nrows=1, ncols=2, wspace=0.5)
     start_idx = 1 if exclude_first_trade else 0
@@ -252,7 +261,7 @@ def plot_wallet_reserves(
     exclude_first_trade: bool = True,
     xtick_step: int = 10,
 ) -> Figure:
-    r"""Plot the wallet base asset and LP token quantities over time
+    """Plot the wallet base asset and LP token quantities over time.
 
     Arguments
     ----------
@@ -262,10 +271,13 @@ def plot_wallet_reserves(
         If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)
     exclude_first_trade : bool
         If true, excludes the first day from the plot
+    xtick_step : int
+        Number of steps between ticks on the x-axis
 
     Returns
     -------
     Figure
+        Reference to the plot
     """
     fig, axes, _ = get_gridspec_subplots(nrows=1, ncols=2, wspace=0.5)
     start_idx = 1 if exclude_first_trade else 0
@@ -300,7 +312,7 @@ def plot_wallet_reserves(
 
 
 def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tuple[Figure, list[Axes], GridSpec]:
-    r"""Setup a figure with axes that have reasonable spacing
+    """Setup a figure with axes that have reasonable spacing.
 
     Arguments
     ----------
@@ -325,7 +337,7 @@ def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tupl
 
 
 def clear_axis(axis: Axes, spines: str = "none") -> Axes:
-    r"""Clear spines & tick labels from proplot axis object
+    """Clear spines & tick labels from proplot axis object.
 
     Arguments
     ----------
@@ -349,7 +361,7 @@ def clear_axis(axis: Axes, spines: str = "none") -> Axes:
 
 
 def clear_axes(axes: list[Axes], spines: str = "none") -> list:
-    r"""Calls clear_axis iteratively for each axis in axes
+    """Calls clear_axis iteratively for each axis in axes.
 
     Arguments
     ----------
@@ -370,7 +382,7 @@ def clear_axes(axes: list[Axes], spines: str = "none") -> list:
 def format_axis(
     axis_handle, xlabel="", fontsize=18, linestyle="--", linewidth="1", color="grey", which="both", axis="y"
 ):
-    r"""Formats the axis"""
+    """Format the axis."""
     # pylint: disable=too-many-arguments
     axis_handle.set_xlabel(xlabel)
     axis_handle.tick_params(axis="both", labelsize=fontsize)
@@ -380,8 +392,21 @@ def format_axis(
     axis_handle.legend(fontsize=fontsize)
 
 
-def annotate(axis_handle, text, major_offset, minor_offset, val):
-    r"""Adds legend-like labels"""
+def annotate(axis_handle: Axes, text: str, major_offset: float, minor_offset: float, val: dict) -> None:
+    """Add legend-like labels.
+
+    Arguments
+    ---------
+    axis_handle
+        Handle of the axis to annotate.
+    text
+        Text to be annotated.
+    major_offset
+        Major offset of the label.
+    minor_offset
+        Minor offset of the label.
+    val
+        Dict containing the x and y position of the label."""
     annotation_handle = axis_handle.annotate(
         text,
         xy=(

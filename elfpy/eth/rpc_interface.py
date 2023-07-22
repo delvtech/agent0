@@ -6,12 +6,16 @@ from web3.types import RPCEndpoint, RPCResponse
 
 
 def set_anvil_account_balance(web3: Web3, account_address: str, amount_wei: int) -> RPCResponse:
-    """Set an the account using the web3 provider
+    """Set an the account using the web3 provider.
 
     Arguments
     ---------
+    web3 : Web3
+        web3 provider object
     amount_wei : int
-        amount_wei to fund, in wei
+        Amount to fund the account with, in wei
+    account_address : str
+        Address of the account to fund
 
     Returns
     -------

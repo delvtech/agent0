@@ -18,9 +18,8 @@ if TYPE_CHECKING:
 
 
 class MarketActionType(Enum):
-    r"""
-    The descriptor of an action in a market
-    """
+    """The descriptor of an action in a market."""
+
     NULL_ACTION = "null action"
 
 
@@ -28,7 +27,7 @@ class MarketActionType(Enum):
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class BaseMarketAction:
-    r"""Market action specification"""
+    """Market action specification."""
 
     action_type: Enum  # these two variables are required to be set by the strategy
     wallet: Wallet  # the agent's wallet
@@ -37,19 +36,19 @@ class BaseMarketAction:
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class BaseMarketDeltas:
-    r"""Specifies changes to values in the market"""
+    """Specifies changes to values in the market."""
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class BaseMarketActionResult:
-    r"""The result to a market of performing a trade"""
+    """The result to a market of performing a trade."""
 
 
 @types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
 class BaseMarketState:
-    r"""The state of an AMM
+    """The state of an AMM.
 
     Implements a class for all that an AMM smart contract would hold or would have access to.
     For example, reserve numbers are local state variables of the AMM.
@@ -74,7 +73,7 @@ PricingModel = TypeVar("PricingModel", bound="BasePricingModel")
 
 
 class BaseMarket(Generic[State, Deltas, PricingModel]):
-    r"""Market state simulator
+    """Market state simulator.
 
     Holds state variables for market simulation and executes trades.
     The Market class executes trades by updating market variables according to the given pricing model.
