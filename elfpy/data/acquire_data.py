@@ -172,6 +172,8 @@ def main(
 
     # get pool config from hyperdrive contract
     # TODO: figure out best way to represent this. options are PoolInfo object in db_schema, TypeDict, etc.
+    # TODO pull this out of this function and write conversion to postgres
+    # FIXME
     pool_config_dict = hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract)
     for key in db_schema.PoolConfig.__annotations__:
         if key not in pool_config_dict:
@@ -208,6 +210,7 @@ def main(
         postgres.add_pool_infos([block_pool_info], session)
 
         # Query and add block_checkpoint_info
+        # TODO FIXME pull below chunk out into function
         checkpoint_info_dict = hyperdrive_interface.get_hyperdrive_checkpoint_info(
             web3, hyperdrive_contract, block_number
         )

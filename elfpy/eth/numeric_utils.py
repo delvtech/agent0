@@ -4,9 +4,10 @@ from __future__ import annotations
 from fixedpointmath import FixedPoint
 
 
-def convert_scaled_value(input_val: int | None) -> float | None:
+# TODO remove this function
+def convert_scaled_value(input_val: int | None) -> FixedPoint | None:
     """
-    Given a scaled value int, converts it to an unscaled value in float, while dealing with Nones
+    Given a scaled value int, converts it to a fixedpoint, while supporting Nones
 
     Arguments
     ----------
@@ -25,5 +26,5 @@ def convert_scaled_value(input_val: int | None) -> float | None:
     Once this is fed into postgres, postgres will use the fixed-precision Numeric type.
     """
     if input_val is not None:
-        return float(FixedPoint(scaled_value=input_val))
+        return FixedPoint(scaled_value=input_val)
     return None
