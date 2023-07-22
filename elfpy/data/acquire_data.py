@@ -123,7 +123,6 @@ def main(
                     )
                     continue
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
-                block_pool_info = None
                 pool_info_dict = None
                 for _ in range(RETRY_COUNT):
                     try:
@@ -135,8 +134,10 @@ def main(
                         logging.warning("Error in get_hyperdrive_pool_info, retrying")
                         time.sleep(1)
                         continue
-                if pool_info_dict:  # Proceed only if we have data, otherwise do nothing
-                    postgres.add_pool_infos([convert_data.convert_pool_info(pool_info_dict)], session)
+                if pool_info_dict is None:
+                    raise ValueError("Error in getting pool info")
+                block_pool_info = convert_data.convert_pool_info(pool_info_dict)
+                postgres.add_pool_infos([block_pool_info], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 checkpoint_info_dict = None
@@ -150,8 +151,9 @@ def main(
                         logging.warning("Error in get_hyperdrive_checkpoint_info, retrying")
                         time.sleep(1)
                         continue
-                if checkpoint_info_dict:  # Proceed only if we have data, otherwise do nothing
-                    postgres.add_checkpoint_infos([convert_data.convert_checkpoint_info(checkpoint_info_dict)], session)
+                if checkpoint_info_dict is None:
+                    raise ValueError("Error in getting checkpoint info")
+                postgres.add_checkpoint_infos([convert_data.convert_checkpoint_info(checkpoint_info_dict)], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_transactions = None
@@ -165,14 +167,15 @@ def main(
                         logging.warning("Error in fetch_transactions_for_block, retrying")
                         time.sleep(1)
                         continue
-                if block_transactions:  # Proceed only if we have data, otherwise do nothing
-                    postgres.add_transactions(block_transactions, session)
 
-                if block_transactions and block_pool_info:
-                    wallet_info_for_transactions = convert_data.get_wallet_info(
-                        hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
-                    )
-                    postgres.add_wallet_infos(wallet_info_for_transactions, session)
+                if block_transactions is None:  # Proceed only if we have data, otherwise do nothing
+                    raise ValueError("Error in getting transactions")
+                postgres.add_transactions(block_transactions, session)
+
+                wallet_info_for_transactions = convert_data.get_wallet_info(
+                    hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
+                )
+                postgres.add_wallet_infos(wallet_info_for_transactions, session)
         time.sleep(sleep_amount)
 
 
