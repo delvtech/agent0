@@ -300,7 +300,7 @@ def match_contract_call_to_trade(
                 withdraw_shares=trade_result.withdrawal_share_amount,
             )
         case MarketActionType.INITIALIZE_MARKET:
-            pass  # no action here
+            raise ValueError(f"{trade_object.trade.action_type} not supported!")
         case _:
             assert_never(trade_object.trade.action_type)
     return wallet_deltas
