@@ -77,7 +77,7 @@ limit-inference-results=100
 
 # List of plugins (as comma separated values of python module names) to load,
 # usually to register additional checkers.
-load-plugins=
+load-plugins=pylint.extensions.docparams, pylint.extensions.docstyle
 # TODO: Turn this back on after trading competition
 #load-plugins=pylint.extensions.docparams, pylint.extensions.docstyle
 
@@ -620,29 +620,23 @@ variable-naming-style=snake_case
 # naming style.
 #variable-rgx=
 
-# TODO: Turn these back on after trading competition
-# [tool.pylint.parameter_documentation]
+[tool.pylint.parameter_documentation]
 # Whether to accept totally missing parameter documentation
 # in the docstring of a function that has parameters.
-# accept-no-param-doc = false
+accept-no-param-doc = true
 
 # Whether to accept totally missing raises documentation
 # in the docstring of a function that raises an exception.
-# accept-no-raise-doc = true
+accept-no-raise-doc = true
 
 # Whether to accept totally missing return documentation in
 # the docstring of a function that returns a statement.
-# accept-no-return-doc = false
+accept-no-return-doc = true
 
 # Whether to accept totally missing yields documentation
 # in the docstring of a generator.
-# accept-no-yields-doc = false
+accept-no-yields-doc = true
 
 # If the docstring type cannot be guessed the
 # specified docstring type will be used.
-# default-docstring-type = numpy
-
-# TODO: Turn these back on after trading competition
-[pylint.'test_*.py']
-#disable = missing-param-doc, missing-return-doc, missing-return-type-doc, too-few-public-methods, missing-type-doc
-disable = too-few-public-methods
+default-docstring-type = numpy

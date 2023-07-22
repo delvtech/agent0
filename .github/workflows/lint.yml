@@ -39,16 +39,17 @@ jobs:
       - name: Get all Python files
         id: list_files
         run: |
-          echo "files=$(git ls-files '*.py' '*.pyi' | xargs)" >> $GITHUB_OUTPUT
+          echo "files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '.py$' | xargs)" >> $GITHUB_ENV
 
-      - name: Run Pylint on files
+      - name: Pylint on everything
         run: |
-          files="${{ steps.list_files.outputs.files }}"
-          if [ -n "$files" ]; then
-            pylint --rcfile=.pylintrc $files
-          else
-            echo "No Python files found."
-          fi
+          python -m pylint $(git ls-files '*.py')
+
+      - name: Pylint docstrings on changes
+        if: steps.list_files.outputs.files != ''
+        run: |
+          cat .pylintrc .pylintdocstring > .pylintrc-strict
+          python -m pylint --rcfile=.pylintrc-strict ${{ steps.list_files.outputs.files }}
 
       - name: Check GitHub rate limit at end
         uses: wakamex/rate-limit-action@master
