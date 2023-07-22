@@ -107,18 +107,6 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
     pool_info.update({"timestamp": datetime.fromtimestamp(current_block_timestamp)})
     pool_info.update({"blockNumber": int(block_number)})
 
-    # add position duration to the data dict
-    # position_duration = eth.smart_contract_read(hyperdrive_contract, "getPoolConfig").get("positionDuration", None)
-    # if position_duration is not None:
-    #    asset_id = hyperdrive_interface.encode_asset_id(
-    #        hyperdrive_interface.AssetIdPrefix.WITHDRAWAL_SHARE, position_duration
-    #    )
-    #    pool_info["totalSupplyWithdrawalShares"] = eth.smart_contract_read(
-    #        hyperdrive_contract, "balanceOf", asset_id, hyperdrive_contract.address
-    #    )["value"]
-    # else:
-    #    pool_info["totalSupplyWithdrawalShares"] = None
-
     # TODO get position duration from existing config passed in instead of from the chain
     position_duration = eth.smart_contract_read(hyperdrive_contract, "getPoolConfig")["positionDuration"]
     asset_id = hyperdrive_interface.encode_asset_id(
