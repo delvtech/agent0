@@ -67,9 +67,6 @@ def main(
     )
 
     # get pool config from hyperdrive contract
-    # TODO: figure out best way to represent this. options are PoolInfo object in db_schema, TypeDict, etc.
-    # TODO pull this out of this function and write conversion to postgres
-    # FIXME
     pool_config_dict = hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract)
     postgres.add_pool_config(convert_data.convert_pool_config(pool_config_dict), session)
 
