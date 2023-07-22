@@ -20,12 +20,12 @@ class EnvironmentConfig(types.FrozenClass):
 
     # Logical username for who is running bots
     username: str = DEFAULT_USERNAME
-    # hostname for container URLs
-    hostname: str = "http://localhost"
-    # ports for container URLs
-    artifacts_port: str = "80"
-    rpc_port: str = "8545"
-    user_registry_port: str = "5002"
+    # Logical username for who is running bots
+    username_register_url: str = "http://localhost:5002"
+    # url for retrieving the contract artifacts
+    artifacts_url: str = "http://localhost:80"
+    # location of RPC
+    rpc_url: str = "http://localhost:8545"
     # if true, stop executing when trade errors occur
     halt_on_errors: bool = False
     # optional output filename for logging
@@ -48,14 +48,6 @@ class EnvironmentConfig(types.FrozenClass):
     base_abi = "ERC20Mintable"
     # build location
     build_folder = "./hyperdrive_solidity/out"
-
-    def __post_init__(self) -> None:
-        # Logical username for who is running bots
-        self.username_register_url: str = self.hostname + ":" + self.user_registry_port
-        # url for retrieving the contract artifacts
-        self.artifacts_url: str = self.hostname + ":" + self.artifacts_port
-        # location of RPC
-        self.rpc_url: str = self.hostname + ":" + self.rpc_port
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)

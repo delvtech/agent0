@@ -65,9 +65,8 @@ environment_config = EnvironmentConfig(
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
-    hostname="http://localhost",
-    artifacts_port="80",
-    rpc_port="8545",
-    user_registry_port="5002",
+    username_register_url="http://localhost:5002",
+    artifacts_url="http://localhost:80",
+    rpc_url="http://localhost:8545",
     username="changeme",
 )
