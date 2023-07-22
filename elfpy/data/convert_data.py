@@ -323,7 +323,7 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> db_schema.PoolConfi
     args_dict = {}
     for key in db_schema.PoolConfig.__annotations__:
         if key not in pool_config_dict:
-            logging.warning(f"Missing {key=} from pool config")
+            logging.warning("Missing %s from pool config", key)
             value = None
         else:
             value = pool_config_dict[key]
@@ -350,7 +350,7 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> db_schema.PoolInfo:
     args_dict = {}
     for key in db_schema.PoolInfo.__annotations__:
         if key not in pool_info_dict:
-            logging.warning(f"Missing {key=} from pool info")
+            logging.warning("Missing %s from pool info", key)
             value = None
         else:
             value = pool_info_dict[key]
@@ -378,7 +378,7 @@ def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> db_schema.C
     for key in db_schema.CheckpointInfo.__annotations__:
         # Keys must match
         if key not in checkpoint_info_dict:
-            logging.warning(f"Missing {key=} from checkpoint info")
+            logging.warning("Missing %s from checkpoint info", key)
             value = None
         else:
             value = checkpoint_info_dict[key]
