@@ -98,6 +98,8 @@ def smart_contract_transact(
         )
         signed_txn = signer.account.sign_transaction(unsent_txn)
         tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        # TODO: Should not wait for approval since the block might take a bit to tick up.
+        # This alos means we need to parse the tx_hash, not the tx_receipt.
         # wait for approval to complete
         return web3.eth.wait_for_transaction_receipt(tx_hash)
     except ContractCustomError as err:

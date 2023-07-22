@@ -13,8 +13,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
-from elfpy import eth
-from elfpy.markets.hyperdrive import hyperdrive_assets
+from elfpy import eth, hyperdrive_interface
 
 # Schema file doesn't need any methods in these dataclasses
 # pylint: disable=too-few-public-methods
@@ -359,7 +358,7 @@ def _build_transaction_object(
     out_dict["event_id"] = event_args.get("id", None)
     # Decode logs here
     if out_dict["event_id"] is not None:
-        event_prefix, event_maturity_time = hyperdrive_assets.decode_asset_id(out_dict["event_id"])
+        event_prefix, event_maturity_time = hyperdrive_interface.decode_asset_id(out_dict["event_id"])
         out_dict["event_prefix"] = event_prefix
         out_dict["event_maturity_time"] = event_maturity_time
     transaction = Transaction(**out_dict)

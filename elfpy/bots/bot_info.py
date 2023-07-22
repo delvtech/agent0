@@ -11,7 +11,7 @@ from .budget import Budget
 
 
 @dataclass
-class BotInfo:  # TODO: Rename to `BotConfig` when we remove evm_bots
+class BotInfo:  # TODO: Rename to `AgentConfig` when we remove evm_bots
     """Information about a bot
 
     Attributes
@@ -37,7 +37,7 @@ class BotInfo:  # TODO: Rename to `BotConfig` when we remove evm_bots
     index: int | None = None  # TODO: Make this required when we remove evm_bots
     name: str = "BoringBotty"
     budget: Budget = Budget()
-    number_of_bots: int = 1
+    number_of_agents: int = 1
     init_kwargs: dict = field(default_factory=dict)
     # TODO: Remove below once we remove evm_bots
     trade_chance: float = 0.8

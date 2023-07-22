@@ -12,7 +12,6 @@ from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
 from elfpy.data import db_schema, postgres
-from elfpy.markets.hyperdrive import hyperdrive_assets
 from elfpy.utils import logs as log_utils
 
 # pylint: disable=too-many-arguments
@@ -89,7 +88,7 @@ def get_wallet_info(
             )
         # Query and add hyperdrive tokens to walletinfo
         if (token_id is not None) and (token_prefix is not None):
-            base_token_type = hyperdrive_assets.AssetIdPrefix(token_prefix).name
+            base_token_type = hyperdrive_interface.AssetIdPrefix(token_prefix).name
             if (token_maturity_time is not None) and (token_maturity_time > 0):
                 token_type = base_token_type + "-" + str(token_maturity_time)
                 maturity_time = token_maturity_time

@@ -1,6 +1,7 @@
 """Interfaces for elfpy bots and hyperdrive smart contracts"""
 
 from .hyperdrive_addresses import HyperdriveAddresses
+from .hyperdrive_assets import AssetIdPrefix, decode_asset_id, encode_asset_id
 from .hyperdrive_interface import (
     fetch_hyperdrive_address_from_url,
     get_hyperdrive_checkpoint_info,

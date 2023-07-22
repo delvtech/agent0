@@ -63,11 +63,13 @@ class LongLouie(BasePolicy):
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
         gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
-        if not gonna_trade or wallet.balance.amount <= WEI:
+        if not gonna_trade:
             return []
         action_list = []
         for long_time in wallet.longs:  # loop over longs # pylint: disable=consider-using-dict-items
             # if any long is mature
+            # TODO: should we make this less time? they dont close before the bot runs out of money
+            # how to intelligently pick the length? using PNL I guess.
             if (market.block_time.time - FixedPoint(long_time)) >= market.annualized_position_duration:
                 trade_amount = wallet.longs[long_time].balance  # close the whole thing
                 action_list += [
@@ -107,7 +109,7 @@ class LongLouie(BasePolicy):
             max_base = market.get_max_long_for_account(wallet.balance.amount)
             # don't want to trade more than the agent has or more than the market can handle
             trade_amount = FixedPointMath.minimum(max_base, new_base_to_match_variable_apr)
-            if trade_amount > WEI:
+            if trade_amount > WEI and wallet.balance.amount > WEI:
                 action_list += [
                     Trade(
                         market=MarketType.HYPERDRIVE,

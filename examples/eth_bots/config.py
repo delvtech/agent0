@@ -14,7 +14,7 @@ from .custom_policies.example_custom_policy import ExampleCustomPolicy
 agent_config: list[BotInfo] = [
     BotInfo(
         policy=Policies.random_agent,
-        number_of_bots=3,
+        number_of_agents=3,
         budget=Budget(
             mean_wei=int(5_000e18),  # 5k base
             std_wei=int(1_000e18),  # 1k base
@@ -25,7 +25,7 @@ agent_config: list[BotInfo] = [
     ),
     BotInfo(
         policy=Policies.long_louie,
-        number_of_bots=3,
+        number_of_agents=3,
         budget=Budget(
             mean_wei=int(5_000e18),  # 5k base
             std_wei=int(1_000e18),  # 1k base
@@ -36,7 +36,7 @@ agent_config: list[BotInfo] = [
     ),
     BotInfo(
         policy=Policies.short_sally,
-        number_of_bots=3,
+        number_of_agents=3,
         budget=Budget(
             mean_wei=int(5_000e18),  # 5k base
             std_wei=int(1_000e18),  # 1k base
@@ -47,7 +47,7 @@ agent_config: list[BotInfo] = [
     ),
     BotInfo(
         policy=ExampleCustomPolicy,
-        number_of_bots=0,
+        number_of_agents=0,
         budget=Budget(
             mean_wei=int(1_000e18),  # 1k base
             std_wei=int(100e18),  # 100 base
@@ -58,17 +58,23 @@ agent_config: list[BotInfo] = [
     ),
 ]
 
+# TODO: Clean up variables that are only used by evm_bots & apeworx
 environment_config = EnvironmentConfig(
     alchemy=False,
-    artifacts_url="http://localhost:80",
     delete_previous_logs=False,
     devnet=True,
     halt_on_errors=True,
     log_filename="agent0-bots",
     log_level=logging.INFO,
     log_stdout=True,
-    rpc_url="http://localhost:8545",
     random_seed=1234,
-    username="changeme",
+    # TODO: should just use
+    # hostname = http://localhost
+    # artifacts_port = 80
+    # rpc_port = 8545
+    # user_registry_port = 5002
+    artifacts_url="http://localhost:80",
+    rpc_url="http://localhost:8545",
     username_register_url="http://localhost:5002",
+    username="changeme",
 )

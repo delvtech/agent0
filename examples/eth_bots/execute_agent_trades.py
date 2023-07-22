@@ -1,8 +1,9 @@
-"""Main script for running bots on Hyperdrive"""
+"""Main script for running bots on Hyperdrive."""
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import NoReturn
 
 from fixedpointmath import FixedPoint
 from web3 import Web3
@@ -11,7 +12,7 @@ from web3.contract.contract import Contract
 from elfpy import eth, hyperdrive_interface
 from elfpy import types as elftypes
 from elfpy.eth.accounts import EthAccount
-from elfpy.markets.hyperdrive import MarketActionType
+from elfpy.markets.hyperdrive import HyperdriveMarket, MarketActionType
 from elfpy.time import time as elftime
 from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet import Long, Short
@@ -68,14 +69,16 @@ def transact_and_parse_logs(
     ReceiptBreakdown
         A dataclass containing the maturity time and the absolute values for token quantities changed
     """
-    tx_receipt = eth.smart_contract_transact(web3, hyperdrive_contract, signer, fn_name, *fn_args)
     # TODO: raise issue on failure by looking at `tx_receipt` returned from function
+    tx_receipt = eth.smart_contract_transact(web3, hyperdrive_contract, signer, fn_name, *fn_args)
     hyperdrive_event_logs = eth.get_transaction_logs(
         web3,
         hyperdrive_contract,
         tx_receipt,
         event_names=[fn_name[0].capitalize() + fn_name[1:]],
     )
+    if len(hyperdrive_event_logs) == 0:
+        raise AssertionError("Transaction receipt had no logs")
     if len(hyperdrive_event_logs) > 1:
         raise AssertionError("Too many logs found")
     log_args = hyperdrive_event_logs[0]["args"]
@@ -99,8 +102,7 @@ def execute_agent_trades(
     web3: Web3,
     hyperdrive_contract: Contract,
     agent_accounts: list[EthAccount],
-    trade_streak: int,
-) -> int:
+) -> None:
     """Hyperdrive forever into the sunset.
 
     Arguments
@@ -111,18 +113,13 @@ def execute_agent_trades(
         Any deployed web3 contract
     agent_accounts : list[EthAccount]
         A list of EthAccount that are conducting the trades
-    trade_streak : int
-        A counter for the number of successful trades so far
-
-    Returns
-    -------
-    trade_streak : int
-        A counter for the number of successful trades so far (that includes the new trades)
     """
     # get latest market
     hyperdrive_market = hyperdrive_interface.get_hyperdrive_market(web3, hyperdrive_contract)
     for account in agent_accounts:
-        if account.agent is None:  # should never happen
+        # This condition is unlikely;
+        # it would happen if they created an eth address but didn't associate it with an elfpy Agent
+        if account.agent is None:
             continue
         trades: list[elftypes.Trade] = account.agent.get_trades(market=hyperdrive_market)
         for trade_object in trades:
@@ -132,134 +129,178 @@ def execute_agent_trades(
                 trade_object.trade.action_type,
                 float(trade_object.trade.trade_amount),
             )
-            trade_amount: int = trade_object.trade.trade_amount.scaled_value
-            # TODO: The following variables are hard coded for now, but should be specified in the trade spec
-            # HyperdriveMarketAction does have min_amount_out
-            max_deposit = trade_amount
-            min_output = 0
-            min_apr = int(1)
-            max_apr = int(1e18)
-            as_underlying = True
-            # TODO: figure out fees paid
-            if trade_object.trade.action_type == MarketActionType.OPEN_LONG:
-                fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
-                trade_result = transact_and_parse_logs(
-                    web3,
-                    hyperdrive_contract,
-                    account,
-                    "openLong",
-                    *fn_args,
-                )
-                maturity_time_years = FixedPoint(trade_result.maturity_time) / elftime.TimeUnit.YEARS.value
-                mint_time_years = maturity_time_years - hyperdrive_market.position_duration.years
-                wallet_deltas = WalletDeltas(
-                    balance=Quantity(
-                        amount=-trade_result.base_amount,
-                        unit=TokenType.BASE,
-                    ),
-                    longs={FixedPoint(mint_time_years): Long(trade_result.bond_amount)},
-                )
-            elif trade_object.trade.action_type == MarketActionType.CLOSE_LONG:
-                mint_time_years: FixedPoint = trade_object.trade.mint_time
-                decoded_maturity_time_years = mint_time_years + hyperdrive_market.position_duration.years
-                decoded_maturity_time = int(decoded_maturity_time_years * elftime.TimeUnit.YEARS.value)
-                fn_args = (decoded_maturity_time, trade_amount, min_output, account.checksum_address, as_underlying)
-                trade_result = transact_and_parse_logs(
-                    web3,
-                    hyperdrive_contract,
-                    account,
-                    "closeLong",
-                    *fn_args,
-                )
-                wallet_deltas = WalletDeltas(
-                    balance=Quantity(
-                        amount=trade_result.base_amount,
-                        unit=TokenType.BASE,
-                    ),
-                    longs={mint_time_years: Long(-trade_result.bond_amount)},
-                )
-            elif trade_object.trade.action_type == MarketActionType.OPEN_SHORT:
-                fn_args = (trade_amount, max_deposit, account.checksum_address, as_underlying)
-                trade_result = transact_and_parse_logs(
-                    web3,
-                    hyperdrive_contract,
-                    account,
-                    "openShort",
-                    *fn_args,
-                )
-                maturity_time_years = FixedPoint(trade_result.maturity_time) / elftime.TimeUnit.YEARS.value
-                mint_time_years = maturity_time_years - hyperdrive_market.position_duration.years
-                wallet_deltas = WalletDeltas(
-                    balance=Quantity(
-                        amount=-trade_result.base_amount,
-                        unit=TokenType.BASE,
-                    ),
-                    shorts={
-                        mint_time_years: Short(
-                            balance=trade_result.bond_amount,
-                            open_share_price=hyperdrive_market.market_state.share_price,
-                        )
-                    },
-                )
-            elif trade_object.trade.action_type == MarketActionType.CLOSE_SHORT:
-                mint_time_years: FixedPoint = trade_object.trade.mint_time
-                decoded_maturity_time_years = mint_time_years + hyperdrive_market.position_duration.years
-                decoded_maturity_time = int(decoded_maturity_time_years * elftime.TimeUnit.YEARS.value)
-                fn_args = (decoded_maturity_time, trade_amount, min_output, account.checksum_address, as_underlying)
-                trade_result = transact_and_parse_logs(
-                    web3,
-                    hyperdrive_contract,
-                    account,
-                    "closeShort",
-                    *fn_args,
-                )
-                wallet_deltas = WalletDeltas(
-                    balance=Quantity(
-                        amount=trade_result.base_amount,
-                        unit=TokenType.BASE,
-                    ),
-                    shorts={
-                        mint_time_years: Short(
-                            balance=-trade_result.bond_amount,
-                            open_share_price=account.agent.wallet.shorts[mint_time_years].open_share_price,
-                        )
-                    },
-                )
-            elif trade_object.trade.action_type == MarketActionType.ADD_LIQUIDITY:
-                fn_args = (trade_amount, min_apr, max_apr, account.checksum_address, as_underlying)
-                trade_result = transact_and_parse_logs(
-                    web3,
-                    hyperdrive_contract,
-                    account,
-                    "addLiquidity",
-                    *fn_args,
-                )
-                wallet_deltas = WalletDeltas(
-                    balance=Quantity(
-                        amount=-trade_result.base_amount,
-                        unit=TokenType.BASE,
-                    ),
-                    lp_tokens=trade_result.lp_amount,
-                )
-            elif trade_object.trade.action_type == MarketActionType.REMOVE_LIQUIDITY:
-                fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
-                trade_result = transact_and_parse_logs(
-                    web3,
-                    hyperdrive_contract,
-                    account,
-                    "removeLiquidity",
-                    *fn_args,
-                )
-                wallet_deltas = WalletDeltas(
-                    balance=Quantity(
-                        amount=trade_result.base_amount,
-                        unit=TokenType.BASE,
-                    ),
-                    lp_tokens=-trade_result.lp_amount,
-                    withdraw_shares=trade_result.withdrawal_share_amount,
-                )
-            else:
-                raise NotImplementedError(f"{trade_object.trade.action_type} is not implemented.")
+            wallet_deltas = match_contract_call_to_trade(
+                web3,
+                hyperdrive_contract,
+                hyperdrive_market,
+                account,
+                trade_object,
+            )
             account.agent.wallet.update(wallet_deltas)
-            trade_streak += 1
-    return trade_streak
+
+
+def assert_never(x: NoReturn) -> NoReturn:
+    """Helper function for exhaustive matching on ENUMS"""
+    assert False, "Unhandled type: {}".format(type(x).__name__)
+
+
+def match_contract_call_to_trade(
+    web3: Web3,
+    hyperdrive_contract: Contract,
+    hyperdrive_market: HyperdriveMarket,
+    account: EthAccount,
+    trade_object: elftypes.Trade,
+) -> WalletDeltas:
+    """Match statement that executes the smart contract trade based on the provided type.
+
+    Arguments
+    ---------
+    web3 : Web3
+        web3 provider object
+    hyperdrive_contract : Contract
+        Any deployed web3 contract
+    hyperdrive_market : HyperdriveMarket
+        The elfpy trading market
+    account : EthAccount
+        Object containing a wallet address and Elfpy Agent for determining trades
+    trade_object : Trade
+        A specific trade requested by the given account
+
+    Returns
+    -------
+    WalletDeltas
+        Deltas to be applied to the agent's wallet
+
+    """
+    # TODO: figure out fees paid
+    # TODO: The following variables are hard coded for now, but should be specified in the trade spec
+    # HyperdriveMarketAction does have min_amount_out
+    trade_amount: int = trade_object.trade.trade_amount.scaled_value
+    max_deposit = trade_amount
+    min_output = 0
+    min_apr = int(1)
+    max_apr = int(1e18)
+    as_underlying = True
+    match trade_object.trade.action_type:
+        case MarketActionType.OPEN_LONG:
+            fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
+            trade_result = transact_and_parse_logs(
+                web3,
+                hyperdrive_contract,
+                account,
+                "openLong",
+                *fn_args,
+            )
+            maturity_time_years = FixedPoint(trade_result.maturity_time) / elftime.TimeUnit.YEARS.value
+            mint_time_years = maturity_time_years - hyperdrive_market.position_duration.years
+            wallet_deltas = WalletDeltas(
+                balance=Quantity(
+                    amount=-trade_result.base_amount,
+                    unit=TokenType.BASE,
+                ),
+                longs={FixedPoint(mint_time_years): Long(trade_result.bond_amount)},
+            )
+        case MarketActionType.CLOSE_LONG:
+            mint_time_years: FixedPoint = trade_object.trade.mint_time
+            decoded_maturity_time_years = mint_time_years + hyperdrive_market.position_duration.years
+            decoded_maturity_time = int(decoded_maturity_time_years * elftime.TimeUnit.YEARS.value)
+            fn_args = (decoded_maturity_time, trade_amount, min_output, account.checksum_address, as_underlying)
+            trade_result = transact_and_parse_logs(
+                web3,
+                hyperdrive_contract,
+                account,
+                "closeLong",
+                *fn_args,
+            )
+            wallet_deltas = WalletDeltas(
+                balance=Quantity(
+                    amount=trade_result.base_amount,
+                    unit=TokenType.BASE,
+                ),
+                longs={mint_time_years: Long(-trade_result.bond_amount)},
+            )
+        case MarketActionType.OPEN_SHORT:
+            fn_args = (trade_amount, max_deposit, account.checksum_address, as_underlying)
+            trade_result = transact_and_parse_logs(
+                web3,
+                hyperdrive_contract,
+                account,
+                "openShort",
+                *fn_args,
+            )
+            maturity_time_years = FixedPoint(trade_result.maturity_time) / elftime.TimeUnit.YEARS.value
+            mint_time_years = maturity_time_years - hyperdrive_market.position_duration.years
+            wallet_deltas = WalletDeltas(
+                balance=Quantity(
+                    amount=-trade_result.base_amount,
+                    unit=TokenType.BASE,
+                ),
+                shorts={
+                    mint_time_years: Short(
+                        balance=trade_result.bond_amount,
+                        open_share_price=hyperdrive_market.market_state.share_price,
+                    )
+                },
+            )
+        case MarketActionType.CLOSE_SHORT:
+            mint_time_years: FixedPoint = trade_object.trade.mint_time
+            decoded_maturity_time_years = mint_time_years + hyperdrive_market.position_duration.years
+            decoded_maturity_time = int(decoded_maturity_time_years * elftime.TimeUnit.YEARS.value)
+            fn_args = (decoded_maturity_time, trade_amount, min_output, account.checksum_address, as_underlying)
+            trade_result = transact_and_parse_logs(
+                web3,
+                hyperdrive_contract,
+                account,
+                "closeShort",
+                *fn_args,
+            )
+            wallet_deltas = WalletDeltas(
+                balance=Quantity(
+                    amount=trade_result.base_amount,
+                    unit=TokenType.BASE,
+                ),
+                shorts={
+                    mint_time_years: Short(
+                        balance=-trade_result.bond_amount,
+                        open_share_price=account.agent.wallet.shorts[mint_time_years].open_share_price,
+                    )
+                },
+            )
+        case MarketActionType.ADD_LIQUIDITY:
+            fn_args = (trade_amount, min_apr, max_apr, account.checksum_address, as_underlying)
+            trade_result = transact_and_parse_logs(
+                web3,
+                hyperdrive_contract,
+                account,
+                "addLiquidity",
+                *fn_args,
+            )
+            wallet_deltas = WalletDeltas(
+                balance=Quantity(
+                    amount=-trade_result.base_amount,
+                    unit=TokenType.BASE,
+                ),
+                lp_tokens=trade_result.lp_amount,
+            )
+        case MarketActionType.REMOVE_LIQUIDITY:
+            fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
+            trade_result = transact_and_parse_logs(
+                web3,
+                hyperdrive_contract,
+                account,
+                "removeLiquidity",
+                *fn_args,
+            )
+            wallet_deltas = WalletDeltas(
+                balance=Quantity(
+                    amount=trade_result.base_amount,
+                    unit=TokenType.BASE,
+                ),
+                lp_tokens=-trade_result.lp_amount,
+                withdraw_shares=trade_result.withdrawal_share_amount,
+            )
+        case MarketActionType.INITIALIZE_MARKET:
+            raise ValueError(f"{trade_object.trade.action_type} not supported!")
+        case _:
+            assert_never(trade_object.trade.action_type)
+    return wallet_deltas
