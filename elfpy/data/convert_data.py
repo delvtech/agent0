@@ -6,6 +6,7 @@ import time
 from typing import Any
 
 from eth_typing import BlockNumber
+from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -14,8 +15,6 @@ from web3.types import BlockData
 from elfpy import eth, hyperdrive_interface
 from elfpy.data import db_schema
 
-from fixedpointmath import FixedPoint
-
 # pylint: disable=too-many-arguments
 
 # TODO fix too many branches by splitting out various things into functions
@@ -23,7 +22,8 @@ from fixedpointmath import FixedPoint
 
 RETRY_COUNT = 10
 
-def _convert_scaled_value(input_val: int | None) -> float | None
+
+def _convert_scaled_value(input_val: int | None) -> float | None:
     """
     Given a scaled value int, converts it to a float, while supporting Nones
 
@@ -46,6 +46,7 @@ def _convert_scaled_value(input_val: int | None) -> float | None
     if input_val is not None:
         return float(FixedPoint(scaled_value=input_val))
     return None
+
 
 # TODO move this function to hyperdrive_interface and return a dictionary
 def fetch_transactions_for_block(
@@ -306,28 +307,83 @@ def get_wallet_info(
     return out_wallet_info
 
 
-def convert_pool_config(pool_config_dict: dict[str, Any]):
+def convert_pool_config(pool_config_dict: dict[str, Any]) -> db_schema.PoolConfig:
+    """Converts a pool_config_dict from a call in hyperdrive_interface to the postgres data type
+
+    Arguments
+    ---------
+    pool_config_dict: dict[str, Any]
+        The dictionary returned from hyperdrive_instance.get_hyperdrive_config
+
+    Returns
+    -------
+    db_schema.PoolConfig
+        The db object for pool config
+    """
+    args_dict = {}
     for key in db_schema.PoolConfig.__annotations__:
         if key not in pool_config_dict:
-            pool_config_dict[key] = None
-    pool_config = db_schema.PoolConfig(**pool_config_dict)
+            logging.warning(f"Missing {key=} from pool config")
+            value = None
+        else:
+            value = pool_config_dict[key]
+            if isinstance(value, FixedPoint):
+                value = float(value)
+        args_dict[key] = value
+    pool_config = db_schema.PoolConfig(**args_dict)
     return pool_config
 
 
-def convert_pool_info(pool_info_dict: dict[str, Any]):
-    # Set defaults
-    # TODO: abstract this out: pull the conversion between the interface to the db object into various functions
+def convert_pool_info(pool_info_dict: dict[str, Any]) -> db_schema.PoolInfo:
+    """Converts a pool_info_dict from a call in hyperdrive_interface to the postgres data type
+
+    Arguments
+    ---------
+    pool_info_dict: dict[str, Any]
+        The dictionary returned from hyperdrive_instance.get_hyperdrive_pool_info
+
+    Returns
+    -------
+    db_schema.PoolInfo
+        The db object for pool info
+    """
+    args_dict = {}
     for key in db_schema.PoolInfo.__annotations__:
         if key not in pool_info_dict:
-            pool_info_dict[key] = None
-    block_pool_info = db_schema.PoolInfo(**pool_info_dict)
+            logging.warning(f"Missing {key=} from pool info")
+            value = None
+        else:
+            value = pool_info_dict[key]
+            if isinstance(value, FixedPoint):
+                value = float(value)
+        args_dict[key] = value
+    block_pool_info = db_schema.PoolInfo(**args_dict)
     return block_pool_info
 
 
-def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]):
-    # Set defaults
+def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> db_schema.CheckpointInfo:
+    """Converts a checkpoint_info_dict from a call in hyperdrive_interface to the postgres data type
+
+    Arguments
+    ---------
+    checkpoint_info_dict: dict[str, Any]
+        The dictionary returned from hyperdrive_instance.get_hyperdrive_checkpoint_info
+
+    Returns
+    -------
+    db_schema.CheckpointInfo
+        The db object for checkpoints
+    """
+    args_dict = {}
     for key in db_schema.CheckpointInfo.__annotations__:
+        # Keys must match
         if key not in checkpoint_info_dict:
-            checkpoint_info_dict[key] = None
-    block_checkpoint_info = db_schema.CheckpointInfo(**checkpoint_info_dict)
+            logging.warning(f"Missing {key=} from checkpoint info")
+            value = None
+        else:
+            value = checkpoint_info_dict[key]
+            if isinstance(value, FixedPoint):
+                value = float(value)
+        args_dict[key] = value
+    block_checkpoint_info = db_schema.CheckpointInfo(**args_dict)
     return block_checkpoint_info
