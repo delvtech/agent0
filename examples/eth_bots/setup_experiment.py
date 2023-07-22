@@ -1,4 +1,4 @@
-"""Setup helper function for running eth bot experiments"""
+"""Setup helper function for running eth bot experiments."""
 from __future__ import annotations
 
 import os
@@ -17,7 +17,7 @@ from examples.eth_bots.setup_agents import get_agent_accounts
 
 
 def register_username(register_url: str, wallet_addrs: list[str], username: str) -> None:
-    """Connects to the register user flask server via post request and registeres the username"""
+    """Registers the username with the flask server."""
     # TODO: use the json schema from the server.
     json_data = {"wallet_addrs": wallet_addrs, "username": username}
     result = requests.post(register_url + "/register_bots", json=json_data, timeout=3)
