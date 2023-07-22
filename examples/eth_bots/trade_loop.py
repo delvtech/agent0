@@ -6,6 +6,7 @@ from datetime import datetime
 
 from web3 import Web3
 from web3.contract.contract import Contract
+from web3.types import RPCEndpoint
 
 from elfpy import eth
 from elfpy.eth.accounts import EthAccount
@@ -44,7 +45,7 @@ def trade_if_new_block(
     latest_block_timestamp = latest_block.get("timestamp", None)
     if latest_block_number is None or latest_block_timestamp is None:
         raise AssertionError("latest_block_number and latest_block_timestamp can not be None")
-    wait_for_new_block = eth.get_wait_for_new_block(web3)
+    wait_for_new_block = get_wait_for_new_block(web3)
     # do trades if we don't need to wait for new block.  otherwise, wait and check for a new block
     if not wait_for_new_block or latest_block_number > last_executed_block:
         # log and show block info
@@ -77,3 +78,28 @@ def trade_if_new_block(
             if halt_on_errors:
                 raise exc
     return last_executed_block
+
+
+def get_wait_for_new_block(web3: Web3) -> bool:
+    """Returns if we should wait for a new block before attempting trades again.  For anvil nodes,
+       if auto-mining is enabled then every transaction sent to the block is automatically mined so
+       we don't need to wait for a new block before submitting trades again.
+
+    Arguments
+    ---------
+    web3 : Web3
+        web3.py instantiation.
+
+    Returns
+    -------
+    bool
+        Whether or not to wait for a new block before attempting trades again.
+    """
+    automine = False
+    try:
+        response = web3.provider.make_request(method=RPCEndpoint("anvil_getAutomine"), params=[])
+        automine = bool(response.get("result", False))
+    except Exception:  # pylint: disable=broad-exception-caught
+        # do nothing, this will fail for non anvil nodes and we don't care.
+        automine = False
+    return not automine

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import NoReturn
 
 from fixedpointmath import FixedPoint
 from web3 import Web3
@@ -138,6 +139,11 @@ def execute_agent_trades(
             account.agent.wallet.update(wallet_deltas)
 
 
+def assert_never(x: NoReturn) -> NoReturn:
+    """Helper function for exhaustive matching on ENUMS"""
+    assert False, "Unhandled type: {}".format(type(x).__name__)
+
+
 def match_contract_call_to_trade(
     web3: Web3,
     hyperdrive_contract: Contract,
@@ -145,7 +151,7 @@ def match_contract_call_to_trade(
     account: EthAccount,
     trade_object: elftypes.Trade,
 ) -> WalletDeltas:
-    """Switch statement that executes the smart contract trade based on the provided type.
+    """Match statement that executes the smart contract trade based on the provided type.
 
     Arguments
     ---------
@@ -293,6 +299,8 @@ def match_contract_call_to_trade(
                 lp_tokens=-trade_result.lp_amount,
                 withdraw_shares=trade_result.withdrawal_share_amount,
             )
-        case action_type:
-            raise NotImplementedError(f"{action_type} is not implemented.")
+        case MarketActionType.INITIALIZE_MARKET:
+            pass  # no action here
+        case _:
+            assert_never(trade_object.trade.action_type)
     return wallet_deltas
