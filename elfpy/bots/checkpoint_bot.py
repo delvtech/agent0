@@ -1,6 +1,7 @@
 """A checkpoint bot for Hyperdrive"""
 from __future__ import annotations
 
+import datetime
 from dotenv import load_dotenv
 import logging
 import os
@@ -67,9 +68,8 @@ def main() -> None:
     # Fund the checkpoint sender with some ETH.
     balance = int(100e18)
     sender = EthAccount(agent=Agent(wallet_address=0))
-    logging.info(f"Funding the checkpoint sender ({sender.account.address}) with {balance} wei ...")
     set_anvil_account_balance(provider, sender.account.address, balance)
-    logging.info(f"Successfully funded the checkpoint sender ({sender.account.address}).")
+    logging.info(f"Successfully funded the sender={sender.account.address}.")
 
     # Get the Hyperdrive contract.
     hyperdrive_abis = eth.abi.load_all_abis(config.build_folder)
@@ -94,10 +94,10 @@ def main() -> None:
         timestamp = provider.eth.get_block("latest").timestamp  # type: ignore
         checkpoint_portion_elapsed = timestamp % checkpoint_duration
         checkpointTime = timestamp - timestamp % checkpoint_duration
-        if checkpoint_portion_elapsed / checkpoint_duration > CHECKPOINT_WAITING_PERIOD and not does_checkpoint_exist(
+        if checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration and not does_checkpoint_exist(
             hyperdrive, checkpointTime
         ):
-            logging.info(f"Submitting a checkpoint for {checkpointTime} ...")
+            logging.info(f"Submitting a checkpoint for checkpointTime={checkpointTime}...")
             # TODO: We will run into issues with the gas price being too low
             # with testnets and mainnet. When we get closer to production, we
             # will need to make this more robust so that we retry this
@@ -109,12 +109,15 @@ def main() -> None:
                 "checkpoint",
                 (checkpointTime),
             )
-            logging.info(f"Checkpoint successfully mined with receipt {receipt['transactionHash'].hex()}")
+            logging.info(f"Checkpoint successfully mined with receipt={receipt['transactionHash'].hex()}")
 
         # Sleep for enough time that the block timestamp would have advanced
         # far enough to consider minting a new checkpoint.
-        sleep_duration = checkpoint_duration * CHECKPOINT_WAITING_PERIOD - checkpoint_portion_elapsed
-        logging.info(f"Current time is {timestamp}. Sleeping for {sleep_duration} seconds ...")
+        if checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration:
+            sleep_duration = checkpoint_duration * (1 + CHECKPOINT_WAITING_PERIOD) - checkpoint_portion_elapsed
+        else:
+            sleep_duration = checkpoint_duration * CHECKPOINT_WAITING_PERIOD - checkpoint_portion_elapsed
+        logging.info(f"Current time is {datetime.datetime.fromtimestamp(timestamp)}. Sleeping for {sleep_duration} seconds ...")
         time.sleep(sleep_duration)
 
 
