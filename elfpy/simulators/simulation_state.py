@@ -1,19 +1,19 @@
 """Dataclass for storing the current and past simulation state"""
 from __future__ import annotations
+
 from dataclasses import dataclass, field, make_dataclass
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import pandas as pd
 
 import elfpy.time as time
 import elfpy.types as types
-
 from elfpy.markets.hyperdrive import HyperdriveMarketDeltas, HyperdriveMarketState
-from elfpy.simulators.config import Config
+from elfpy.simulators.config import SimulationConfig
 
 if TYPE_CHECKING:
-    from elfpy.wallet.wallet_deltas import WalletDeltas
     from elfpy.wallet.wallet import Wallet
+    from elfpy.wallet.wallet_deltas import WalletDeltas
 
 
 @dataclass
@@ -86,7 +86,7 @@ class RunSimVariables:
     # incremented each time run_simulation is called
     run_number: int
     # the simulation config
-    config: Config
+    config: SimulationConfig
     # initial wallets for the agents
     agent_init: list[Wallet]
     # initial market state for this simulation run

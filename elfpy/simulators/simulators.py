@@ -12,7 +12,7 @@ import elfpy.time as time
 import elfpy.types as types
 from elfpy.agents.get_wallet_state import get_wallet_state
 from elfpy.markets.hyperdrive import HyperdriveMarketDeltas
-from elfpy.simulators.config import Config
+from elfpy.simulators.config import SimulationConfig
 from elfpy.simulators.simulation_state import (
     BlockSimVariables,
     DaySimVariables,
@@ -39,7 +39,7 @@ class Simulator:
 
     def __init__(
         self,
-        config: Config,
+        config: SimulationConfig,
         market: HyperdriveMarket,
         block_time: time.BlockTime,
     ):
