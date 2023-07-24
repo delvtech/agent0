@@ -9,7 +9,7 @@ import pandas as pd
 import elfpy.time as time
 import elfpy.types as types
 from elfpy.markets.hyperdrive import HyperdriveMarketDeltas, HyperdriveMarketState
-from elfpy.simulators.config import SimulationConfig
+from elfpy.simulators.smulation_config import SimulationConfig
 
 if TYPE_CHECKING:
     from elfpy.wallet.wallet import Wallet

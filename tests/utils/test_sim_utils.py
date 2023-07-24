@@ -15,7 +15,7 @@ from elfpy.markets.hyperdrive import (
     HyperdriveMarketState,
     HyperdrivePricingModel,
 )
-from elfpy.simulators.config import SimulationConfig
+from elfpy.simulators.smulation_config import SimulationConfig
 
 # pylint: disable=too-many-locals
 

@@ -17,7 +17,6 @@ import elfpy.utils.logs as log_utils
 import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import SingleLongAgent
-from elfpy.simulators.config import SimulationConfig
 from elfpy.simulators.simulation_state import (
     BlockSimVariables,
     DaySimVariables,
@@ -25,6 +24,7 @@ from elfpy.simulators.simulation_state import (
     RunSimVariables,
     TradeSimVariables,
 )
+from elfpy.simulators.smulation_config import SimulationConfig
 from elfpy.wallet.wallet import Wallet
 
 

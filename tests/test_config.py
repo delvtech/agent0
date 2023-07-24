@@ -3,7 +3,7 @@ from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 
-from elfpy.simulators.config import SimulationConfig
+from elfpy.simulators.smulation_config import SimulationConfig
 
 
 class TestConfig(unittest.TestCase):

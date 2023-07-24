@@ -12,7 +12,7 @@ from web3.exceptions import InvalidTransaction
 
 import elfpy.utils.logs as log_utils
 from elfpy.data.db_schema import PoolConfig, PoolInfo
-from elfpy.simulators.config import SimulationConfig
+from elfpy.simulators.smulation_config import SimulationConfig
 from elfpy.utils import sim_utils
 
 
