@@ -1,13 +1,16 @@
 """User strategy that opens or closes a random position with a random allowed amount."""
 from __future__ import annotations
 
+from math import exp
 from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
 from elfpy import WEI
+from elfpy.eth.transactions import smart_contract_read
 from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
-from elfpy.types import MarketType, Trade
+from elfpy.markets.hyperdrive.yieldspace_pricing_model_sol import calculate_bonds_out_given_shares_in
+from elfpy.types import MarketType, Quantity, TokenType, Trade
 
 from .base import BasePolicy
 
@@ -65,12 +68,14 @@ class RandomAgent(BasePolicy):
         maximum_trade_amount = market.get_max_short_for_account(wallet.balance.amount)
         if maximum_trade_amount <= WEI:
             return []
+
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
         # WEI <= trade_amount <= max_short
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
+
         return [
             Trade(
                 market=MarketType.HYPERDRIVE,
@@ -111,12 +116,36 @@ class RandomAgent(BasePolicy):
         # WEI <= trade_amount <= max long
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
+
+        state = market.market_state
+        expected_bonds_out_ys = market.pricing_model.calc_bonds_out_given_shares_in(
+            state.share_reserves,
+            state.bond_reserves,
+            state.lp_total_supply,
+            trade_amount,
+            FixedPoint(0),
+            state.share_price,
+            state.init_share_price,
+        )
+        print(f"{expected_bonds_out_ys=}")
+
+        # TODO: we need to consider checkpointing here for time_remaining.
+        result = market.pricing_model.calc_out_given_in(
+            Quantity(trade_amount, TokenType.BASE), state, market.position_duration
+        )
+        expected_bonds_out_hd = result.user_result.d_bonds
+        print(f"{expected_bonds_out_hd=}")
+
+        min_amount_out = expected_bonds_out_hd * FixedPoint("0.9999")
+        print(f"{min_amount_out=}")
+
         return [
             Trade(
                 market=MarketType.HYPERDRIVE,
                 trade=HyperdriveMarketAction(
                     action_type=MarketActionType.OPEN_LONG,
                     trade_amount=trade_amount,
+                    min_amount_out=min_amount_out,
                     wallet=wallet,
                 ),
             )
