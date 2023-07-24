@@ -3,15 +3,13 @@ from __future__ import annotations
 
 from eth_typing import BlockNumber
 
-# TODO: Move configs into a dedicated config folder with the other elfpy configs
-from examples.eth_bots.agent_config import agent_config, environment_config
 from examples.eth_bots.setup_experiment import setup_experiment
 from examples.eth_bots.trade_loop import trade_if_new_block
 
 
 def main():
     """Entrypoint to load all configurations and run agents."""
-    web3, hyperdrive_contract, agent_accounts = setup_experiment(environment_config, agent_config)
+    web3, hyperdrive_contract, environment_config, agent_accounts = setup_experiment()
     last_executed_block = BlockNumber(0)
     while True:
         last_executed_block = trade_if_new_block(
