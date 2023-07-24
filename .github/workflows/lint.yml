@@ -36,18 +36,18 @@ jobs:
       - name: Run black
         run: python -m black --check --diff .
 
-      - name: Get changed Python files
-        id: changed_files
+      - name: Get all Python files
+        id: list_files
         run: |
-          echo "files=$(git diff --name-only HEAD^ HEAD | grep '.py$' | xargs)" >> $GITHUB_OUTPUT
+          echo "files=$(git ls-files '*.py' '*.pyi' | xargs)" >> $GITHUB_OUTPUT
 
-      - name: Run Pylint on changed files
+      - name: Run Pylint on files
         run: |
-          files="${{ steps.changed_files.outputs.files }}"
+          files="${{ steps.list_files.outputs.files }}"
           if [ -n "$files" ]; then
             pylint --rcfile=.pylintrc $files
           else
-            echo "No Python files have changed."
+            echo "No Python files found."
           fi
 
       - name: Check GitHub rate limit at end
