@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
+from dataclasses import dataclass
 
 from dotenv import load_dotenv
 from eth_typing import URI, BlockNumber
@@ -180,11 +182,58 @@ def main(
         time.sleep(sleep_amount)
 
 
+@dataclass
+class EthConfig:
+    """The configuration dataclass for postgress connections.
+
+    Replace the user, password, and db_name with the credentials of your setup.
+
+    Attributes
+    ----------
+    CONTRACTS_URL: str
+        The url of the artifacts server from which we get addresses.
+    ETHEREUM_NODE: URI | str
+        The url to the ethereum node
+    ABI_DIR: str
+        The path to the abi directory
+    """
+
+    # default values for local contracts
+    # TODO use port env varibles here
+    # Matching environemnt variables to search for
+    # pylint: disable=invalid-name
+    CONTRACTS_URL: str = "http://localhost:80/addresses.json"
+    ETHEREUM_NODE: str = "http://localhost:8545"
+    ABI_DIR: str = "./hyperdrive_solidity/out/"
+
+
+def build_eth_config() -> EthConfig:
+    """Build an eth that looks for environmental variables.
+    If env var exists, use that, otherwise, default
+
+    Returns
+    -------
+    EthConfig
+        Config settings required to connect to the eth node
+    """
+
+    contracts_url = os.getenv("CONTRACTS_URL")
+    ethereum_node = os.getenv("ETHEREUM_NODE")
+    abi_dir = os.getenv("ABI_DIR")
+
+    arg_dict = {}
+    if contracts_url is not None:
+        arg_dict["CONTRACTS_URL"] = contracts_url
+    if ethereum_node is not None:
+        arg_dict["ETHEREUM_NODE"] = ethereum_node
+    if abi_dir is not None:
+        arg_dict["ABI_DIR"] = abi_dir
+
+    return EthConfig(**arg_dict)
+
+
 if __name__ == "__main__":
     # setup constants
-    CONTRACTS_URL = "http://localhost:80/addresses.json"
-    ETHEREUM_NODE = "http://localhost:8545"
-    ABI_DIR = "./hyperdrive_solidity/out/"
     START_BLOCK = 0
     # Look back limit for backfilling
     LOOKBACK_BLOCK_LIMIT = 1000
@@ -193,11 +242,14 @@ if __name__ == "__main__":
     # Get postgres env variables if exists
     load_dotenv()
 
+    # Load parameters from env vars if they exist
+    config = build_eth_config()
+
     log_utils.setup_logging(".logging/acquire_data.log", log_stdout=True)
     main(
-        CONTRACTS_URL,
-        ETHEREUM_NODE,
-        ABI_DIR,
+        config.CONTRACTS_URL,
+        config.ETHEREUM_NODE,
+        config.ABI_DIR,
         START_BLOCK,
         LOOKBACK_BLOCK_LIMIT,
         SLEEP_AMOUNT,
