@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import datetime
-from dotenv import load_dotenv
 import logging
 import os
 import time
+from dotenv import load_dotenv
 from fixedpointmath import FixedPoint
 
 from web3.contract.contract import Contract
@@ -25,6 +25,8 @@ CHECKPOINT_WAITING_PERIOD = FixedPoint(0.5)
 
 
 def get_config() -> EnvironmentConfig:
+    """Gets the Hyperdrive configuration."""
+
     # Load some configuration variables from the environment.
     load_dotenv()
     artifacts_url = os.environ.get("ARTIFACTS_URL")
@@ -47,11 +49,15 @@ def get_config() -> EnvironmentConfig:
     )
 
 
-def does_checkpoint_exist(hyperdrive: Contract, checkpointTime: FixedPoint) -> bool:
-    return smart_contract_read(hyperdrive, "getCheckpoint", int(checkpointTime))["sharePrice"] > 0
+def does_checkpoint_exist(hyperdrive: Contract, checkpoint_time: FixedPoint) -> bool:
+    """Checks whether or not a given checkpoint exists."""
+
+    return smart_contract_read(hyperdrive, "getCheckpoint", int(checkpoint_time))["sharePrice"] > 0
 
 
 def main() -> None:
+    """Runs the checkpoint bot."""
+
     # Get the configuration and initialize the web3 provider.
     config = get_config()
     web3 = eth.web3_setup.initialize_web3_with_http_provider(config.rpc_url, reset_provider=False)
@@ -70,7 +76,7 @@ def main() -> None:
     balance = int(100e18)
     sender = EthAccount(agent=Agent(wallet_address=0))
     set_anvil_account_balance(web3, sender.account.address, balance)
-    logging.info(f"Successfully funded the sender={sender.account.address}.")
+    logging.info("Successfully funded the sender=%s.", sender.account.address)
 
     # Get the Hyperdrive contract.
     hyperdrive_abis = eth.abi.load_all_abis(config.build_folder)
@@ -98,11 +104,11 @@ def main() -> None:
             raise AssertionError(f"{latest_block=} has no timestamp")
         timestamp = FixedPoint(timestamp)
         checkpoint_portion_elapsed = timestamp % checkpoint_duration
-        checkpointTime = timestamp - timestamp % checkpoint_duration
+        checkpoint_time = timestamp - timestamp % checkpoint_duration
         if checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration and not does_checkpoint_exist(
-            hyperdrive, checkpointTime
+            hyperdrive, checkpoint_time
         ):
-            logging.info(f"Submitting a checkpoint for checkpointTime={checkpointTime}...")
+            logging.info("Submitting a checkpoint for checkpointTime=%s...", checkpoint_time)
             # TODO: We will run into issues with the gas price being too low
             # with testnets and mainnet. When we get closer to production, we
             # will need to make this more robust so that we retry this
@@ -112,9 +118,12 @@ def main() -> None:
                 hyperdrive,
                 sender,
                 "checkpoint",
-                (checkpointTime),
+                (checkpoint_time),
             )
-            logging.info(f"Checkpoint successfully mined with receipt={receipt['transactionHash'].hex()}")
+            logging.info(
+                "Checkpoint successfully mined with receipt=%s",
+                receipt["transactionHash"].hex(),
+            )
 
         # Sleep for enough time that the block timestamp would have advanced
         # far enough to consider minting a new checkpoint.
@@ -123,7 +132,9 @@ def main() -> None:
         else:
             sleep_duration = checkpoint_duration * CHECKPOINT_WAITING_PERIOD - checkpoint_portion_elapsed
         logging.info(
-            f"Current time is {datetime.datetime.fromtimestamp(float(timestamp))}. Sleeping for {sleep_duration} seconds ..."
+            "Current time is %s. Sleeping for %s seconds ...",
+            datetime.datetime.fromtimestamp(float(timestamp)),
+            sleep_duration,
         )
         time.sleep(int(sleep_duration))
 
