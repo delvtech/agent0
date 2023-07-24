@@ -1,5 +1,5 @@
 """Utilities and classes for Agent.0 bots"""
 
-from .bot_info import AgentConfig
+from .agent_config import AgentConfig
 from .budget import Budget
 from .environment_config import DEFAULT_USERNAME, EnvironmentConfig
