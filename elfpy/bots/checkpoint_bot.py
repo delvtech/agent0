@@ -92,7 +92,7 @@ def main() -> None:
     # every checkpoint after a waiting period. It will poll very infrequently
     # to reduce the probability of needing to mint a checkpoint.
     config = get_hyperdrive_config(hyperdrive)
-    checkpoint_duration = config["checkpointDuration"]
+    checkpoint_duration = FixedPoint(config["checkpointDuration"])
     while True:
         # Get the latest block time and check to see if a new checkpoint should
         # be minted. This bot waits for a portion of the checkpoint to reduce
