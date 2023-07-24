@@ -643,5 +643,6 @@ variable-naming-style=snake_case
 # default-docstring-type = numpy
 
 # TODO: Turn these back on after trading competition
-#[pylint.'test_*.py']
+[pylint.'test_*.py']
 #disable = missing-param-doc, missing-return-doc, missing-return-type-doc, too-few-public-methods, missing-type-doc
+disable = too-few-public-methods
