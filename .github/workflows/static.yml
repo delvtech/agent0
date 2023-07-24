@@ -31,7 +31,7 @@ jobs:
           python -m pip install .[with-dependencies,ape]
 
       - name: Analysing code with pyright
-        run: python -m pyright $(git ls-files '*.py')
+        run: python -m pyright $(git ls-files '*.py' '*.pyi')
 
       - name: Check GitHub rate limit at end
         uses: wakamex/rate-limit-action@master
