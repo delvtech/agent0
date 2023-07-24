@@ -96,11 +96,11 @@ def fetch_contract_transactions_for_block(
         tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
         logs = eth.get_transaction_logs(web3, contract, tx_receipt)
         receipt: dict[str, Any] = _recursive_dict_conversion(tx_receipt)  # type: ignore
-        out_transactions.append(_build_transaction_object(transaction_dict, logs, receipt))
+        out_transactions.append(_build_hyperdrive_transaction_object(transaction_dict, logs, receipt))
     return out_transactions
 
 
-def _build_transaction_object(
+def _build_hyperdrive_transaction_object(
     transaction_dict: dict[str, Any],
     logs: list[dict[str, Any]],
     receipt: dict[str, Any],
