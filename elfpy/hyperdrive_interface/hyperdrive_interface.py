@@ -120,7 +120,7 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
 def get_hyperdrive_checkpoint_info(
     web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber
 ) -> dict[str, Any]:
-    """Returns the checkpoitn info of Hyperdrive contract for the given block.
+    """Returns the checkpoint info of Hyperdrive contract for the given block.
 
     Arguments
     ---------
