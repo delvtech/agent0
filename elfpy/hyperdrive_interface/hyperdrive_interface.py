@@ -97,24 +97,23 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
     """
     # get pool info from smart contract
     pool_info = eth.smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
-    # convert values to float
-    pool_info: dict[str, Any] = {str(key): eth.convert_scaled_value(value) for (key, value) in pool_info.items()}
+    # convert values to fixedpoint
+    pool_info: dict[str, Any] = {str(key): FixedPoint(scaled_value=value) for (key, value) in pool_info.items()}
+
     # get current block information & add to pool info
     current_block: BlockData = web3.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
     if current_block_timestamp is None:
         raise AssertionError("Current block has no timestamp")
     pool_info.update({"timestamp": datetime.fromtimestamp(current_block_timestamp)})
-    pool_info.update({"blockNumber": block_number})
+    pool_info.update({"blockNumber": int(block_number)})
     # add position duration to the data dict
-    position_duration = eth.smart_contract_read(hyperdrive_contract, "getPoolConfig").get("positionDuration", None)
-    if position_duration is not None:
-        asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, position_duration)
-        pool_info["totalSupplyWithdrawalShares"] = eth.smart_contract_read(
-            hyperdrive_contract, "balanceOf", asset_id, hyperdrive_contract.address
-        )["value"]
-    else:
-        pool_info["totalSupplyWithdrawalShares"] = None
+    # TODO get position duration from existing config passed in instead of from the chain
+    position_duration = eth.smart_contract_read(hyperdrive_contract, "getPoolConfig")["positionDuration"]
+    asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, position_duration)
+    pool_info["totalSupplyWithdrawalShares"] = eth.smart_contract_read(
+        hyperdrive_contract, "balanceOf", asset_id, hyperdrive_contract.address
+    )["value"]
     return pool_info
 
 
@@ -145,14 +144,16 @@ def get_hyperdrive_checkpoint_info(
     return {
         "blockNumber": int(block_number),
         "timestamp": datetime.fromtimestamp(current_block_timestamp),
-        "sharePrice": eth.convert_scaled_value(checkpoint_data["sharePrice"]),
-        "longSharePrice": eth.convert_scaled_value(checkpoint_data["longSharePrice"]),
-        "shortBaseVolume": eth.convert_scaled_value(checkpoint_data["shortBaseVolume"]),
+        "sharePrice": FixedPoint(scaled_value=checkpoint_data["sharePrice"]),
+        "longSharePrice": FixedPoint(scaled_value=checkpoint_data["longSharePrice"]),
+        "shortBaseVolume": FixedPoint(scaled_value=checkpoint_data["shortBaseVolume"]),
     }
 
 
 def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict[str, Any]:
-    """Get the hyperdrive config from a deployed hyperdrive contract.
+    """Get the hyperdrive config from a deployed hyperdrive contract. This function converts all contract returns as
+    FixedPoints (i.e., contract call returned a scaled value), integer (i.e., contract call returned an unscaled value),
+    or a string (i.e., contract call returned a string)
 
     Arguments
     ----------
@@ -165,28 +166,26 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict[str, Any]:
         The hyperdrive config.
     """
     hyperdrive_config: dict[str, Any] = eth.smart_contract_read(hyperdrive_contract, "getPoolConfig")
-    pool_config = {}
+    pool_config: dict[str, Any] = {}
     pool_config["contractAddress"] = hyperdrive_contract.address
-    pool_config["baseToken"] = hyperdrive_config.get("baseToken", None)
-    pool_config["initialSharePrice"] = eth.convert_scaled_value(hyperdrive_config.get("initialSharePrice", None))
-    pool_config["minimumShareReserves"] = eth.convert_scaled_value(hyperdrive_config.get("minimumShareReserves", None))
-    pool_config["positionDuration"] = hyperdrive_config.get("positionDuration", None)
-    pool_config["checkpointDuration"] = hyperdrive_config.get("checkpointDuration", None)
+    pool_config["baseToken"] = hyperdrive_config["baseToken"]
+    pool_config["initialSharePrice"] = FixedPoint(scaled_value=hyperdrive_config["initialSharePrice"])
+    pool_config["minimumShareReserves"] = FixedPoint(scaled_value=hyperdrive_config["minimumShareReserves"])
+    pool_config["positionDuration"] = hyperdrive_config["positionDuration"]
+    pool_config["checkpointDuration"] = hyperdrive_config["checkpointDuration"]
     # Ok so, the contracts store the time stretch constant in an inverted manner from the python.
     # In order to not break the world, we save the contract version as 'invTimeStretch' and invert
     # that to get the python version 'timeStretch'
-    pool_config["invTimeStretch"] = hyperdrive_config.get("timeStretch", None)
-    pool_config["timeStretch"] = (
-        FixedPoint(1) / FixedPoint(scaled_value=hyperdrive_config.get("timeStretch", FixedPoint(1)))
-    ).scaled_value
-    pool_config["governance"] = hyperdrive_config.get("governance", None)
-    pool_config["feeCollector"] = hyperdrive_config.get("feeCollector", None)
-    curve_fee, flat_fee, governance_fee = hyperdrive_config.get("fees", (None, None, None))
-    pool_config["curveFee"] = eth.convert_scaled_value(curve_fee)
-    pool_config["flatFee"] = eth.convert_scaled_value(flat_fee)
-    pool_config["governanceFee"] = eth.convert_scaled_value(governance_fee)
-    pool_config["oracleSize"] = eth.convert_scaled_value(hyperdrive_config.get("oracleSize", None))
-    pool_config["updateGap"] = hyperdrive_config.get("updateGap", None)
+    pool_config["invTimeStretch"] = hyperdrive_config["timeStretch"]
+    pool_config["timeStretch"] = FixedPoint(1) / FixedPoint(scaled_value=hyperdrive_config["timeStretch"])
+    pool_config["governance"] = hyperdrive_config["governance"]
+    pool_config["feeCollector"] = hyperdrive_config["feeCollector"]
+    curve_fee, flat_fee, governance_fee = hyperdrive_config["fees"]
+    pool_config["curveFee"] = FixedPoint(scaled_value=curve_fee)
+    pool_config["flatFee"] = FixedPoint(scaled_value=flat_fee)
+    pool_config["governanceFee"] = FixedPoint(scaled_value=governance_fee)
+    pool_config["oracleSize"] = FixedPoint(scaled_value=hyperdrive_config["oracleSize"])
+    pool_config["updateGap"] = hyperdrive_config["updateGap"]
     return pool_config
 
 
@@ -236,7 +235,7 @@ def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> Hyperdri
         market_state=market_state,
         position_duration=elftime.StretchedTime(
             days=FixedPoint(pool_config["positionDuration"]) / FixedPoint(86_400),
-            time_stretch=FixedPoint(scaled_value=pool_config["timeStretch"]),
+            time_stretch=FixedPoint(pool_config["timeStretch"]),
             normalizing_constant=FixedPoint(pool_config["positionDuration"]) / FixedPoint(86_400),
         ),
         block_time=elftime.BlockTime(
