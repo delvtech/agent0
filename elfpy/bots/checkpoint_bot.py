@@ -118,7 +118,7 @@ def main() -> None:
                 hyperdrive,
                 sender,
                 "checkpoint",
-                (checkpoint_time),
+                (int(checkpoint_time)),
             )
             logging.info(
                 "Checkpoint successfully mined with receipt=%s",
