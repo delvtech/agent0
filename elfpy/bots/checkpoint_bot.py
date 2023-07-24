@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import logging
 import os
 import time
+from fixedpointmath import FixedPoint
 
 from web3.contract.contract import Contract
 
@@ -20,7 +21,7 @@ from elfpy.hyperdrive_interface.hyperdrive_interface import get_hyperdrive_confi
 
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.
-CHECKPOINT_WAITING_PERIOD = 0.5
+CHECKPOINT_WAITING_PERIOD = FixedPoint(0.5)
 
 
 def get_config() -> EnvironmentConfig:
@@ -46,14 +47,14 @@ def get_config() -> EnvironmentConfig:
     )
 
 
-def does_checkpoint_exist(hyperdrive: Contract, checkpointTime: int) -> bool:
-    return smart_contract_read(hyperdrive, "getCheckpoint", checkpointTime)["sharePrice"] > 0
+def does_checkpoint_exist(hyperdrive: Contract, checkpointTime: FixedPoint) -> bool:
+    return smart_contract_read(hyperdrive, "getCheckpoint", int(checkpointTime))["sharePrice"] > 0
 
 
 def main() -> None:
     # Get the configuration and initialize the web3 provider.
     config = get_config()
-    provider = eth.web3_setup.initialize_web3_with_http_provider(config.rpc_url, reset_provider=False)
+    web3 = eth.web3_setup.initialize_web3_with_http_provider(config.rpc_url, reset_provider=False)
 
     # Setup logging
     logs.setup_logging(
@@ -68,7 +69,7 @@ def main() -> None:
     # Fund the checkpoint sender with some ETH.
     balance = int(100e18)
     sender = EthAccount(agent=Agent(wallet_address=0))
-    set_anvil_account_balance(provider, sender.account.address, balance)
+    set_anvil_account_balance(web3, sender.account.address, balance)
     logging.info(f"Successfully funded the sender={sender.account.address}.")
 
     # Get the Hyperdrive contract.
@@ -76,9 +77,9 @@ def main() -> None:
     addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(
         os.path.join(config.artifacts_url, "addresses.json")
     )
-    hyperdrive: Contract = provider.eth.contract(
+    hyperdrive: Contract = web3.eth.contract(
         abi=hyperdrive_abis[config.hyperdrive_abi],
-        address=provider.to_checksum_address(addresses.mock_hyperdrive),
+        address=web3.to_checksum_address(addresses.mock_hyperdrive),
     )
 
     # Run the checkpoint bot. This bot will attempt to mint a new checkpoint
@@ -91,7 +92,11 @@ def main() -> None:
         # be minted. This bot waits for a portion of the checkpoint to reduce
         # the probability of needing a checkpoint. After the waiting period,
         # the bot will attempt to mint a checkpoint.
-        timestamp = provider.eth.get_block("latest").timestamp  # type: ignore
+        latest_block = web3.eth.get_block("latest")
+        timestamp = latest_block.get("timestamp", None)
+        if timestamp is None:
+            raise AssertionError(f"{latest_block=} has no timestamp")
+        timestamp = FixedPoint(timestamp)
         checkpoint_portion_elapsed = timestamp % checkpoint_duration
         checkpointTime = timestamp - timestamp % checkpoint_duration
         if checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration and not does_checkpoint_exist(
@@ -103,7 +108,7 @@ def main() -> None:
             # will need to make this more robust so that we retry this
             # transaction if the transaction gets stuck.
             receipt = smart_contract_transact(
-                provider,
+                web3,
                 hyperdrive,
                 sender,
                 "checkpoint",
@@ -117,8 +122,8 @@ def main() -> None:
             sleep_duration = checkpoint_duration * (1 + CHECKPOINT_WAITING_PERIOD) - checkpoint_portion_elapsed
         else:
             sleep_duration = checkpoint_duration * CHECKPOINT_WAITING_PERIOD - checkpoint_portion_elapsed
-        logging.info(f"Current time is {datetime.datetime.fromtimestamp(timestamp)}. Sleeping for {sleep_duration} seconds ...")
-        time.sleep(sleep_duration)
+        logging.info(f"Current time is {datetime.datetime.fromtimestamp(float(timestamp))}. Sleeping for {sleep_duration} seconds ...")
+        time.sleep(int(sleep_duration))
 
 
 # Run the checkpoint bot.
