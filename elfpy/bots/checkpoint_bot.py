@@ -6,7 +6,6 @@ import logging
 import os
 import time
 from dotenv import load_dotenv
-from fixedpointmath import FixedPoint
 
 from web3.contract.contract import Contract
 
@@ -21,7 +20,7 @@ from elfpy.hyperdrive_interface.hyperdrive_interface import get_hyperdrive_confi
 
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.
-CHECKPOINT_WAITING_PERIOD = FixedPoint(0.5)
+CHECKPOINT_WAITING_PERIOD = 0.5
 
 
 def get_config() -> EnvironmentConfig:
@@ -49,7 +48,7 @@ def get_config() -> EnvironmentConfig:
     )
 
 
-def does_checkpoint_exist(hyperdrive: Contract, checkpoint_time: FixedPoint) -> bool:
+def does_checkpoint_exist(hyperdrive: Contract, checkpoint_time: int) -> bool:
     """Checks whether or not a given checkpoint exists."""
 
     return smart_contract_read(hyperdrive, "getCheckpoint", int(checkpoint_time))["sharePrice"] > 0
@@ -92,7 +91,7 @@ def main() -> None:
     # every checkpoint after a waiting period. It will poll very infrequently
     # to reduce the probability of needing to mint a checkpoint.
     config = get_hyperdrive_config(hyperdrive)
-    checkpoint_duration = FixedPoint(config["checkpointDuration"])
+    checkpoint_duration = config["checkpointDuration"]
     while True:
         # Get the latest block time and check to see if a new checkpoint should
         # be minted. This bot waits for a portion of the checkpoint to reduce
@@ -102,7 +101,6 @@ def main() -> None:
         timestamp = latest_block.get("timestamp", None)
         if timestamp is None:
             raise AssertionError(f"{latest_block=} has no timestamp")
-        timestamp = FixedPoint(timestamp)
         checkpoint_portion_elapsed = timestamp % checkpoint_duration
         checkpoint_time = timestamp - timestamp % checkpoint_duration
         if checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration and not does_checkpoint_exist(
@@ -118,7 +116,7 @@ def main() -> None:
                 hyperdrive,
                 sender,
                 "checkpoint",
-                (int(checkpoint_time)),
+                (checkpoint_time),
             )
             logging.info(
                 "Checkpoint successfully mined with receipt=%s",
@@ -133,10 +131,10 @@ def main() -> None:
             sleep_duration = checkpoint_duration * CHECKPOINT_WAITING_PERIOD - checkpoint_portion_elapsed
         logging.info(
             "Current time is %s. Sleeping for %s seconds ...",
-            datetime.datetime.fromtimestamp(float(timestamp)),
+            datetime.datetime.fromtimestamp(timestamp),
             sleep_duration,
         )
-        time.sleep(int(sleep_duration))
+        time.sleep(sleep_duration)
 
 
 # Run the checkpoint bot.
