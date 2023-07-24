@@ -2,10 +2,8 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Union
+from typing import Union
 
-from eth_typing import BlockNumber
-from hexbytes import HexBytes
 from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
