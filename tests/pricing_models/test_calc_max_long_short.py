@@ -9,7 +9,7 @@ from fixedpointmath import FixedPoint
 import elfpy.time as time
 import elfpy.utils.logs as log_utils
 from elfpy.markets.hyperdrive import HyperdriveMarketState, HyperdrivePricingModel
-from tests.cross_platform.fixtures.hyperdrive_config import HyperdriveConfig
+from tests.fixtures.hyperdrive_config import HyperdriveConfig
 
 
 @dataclass
