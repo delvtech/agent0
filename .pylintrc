@@ -77,7 +77,9 @@ limit-inference-results=100
 
 # List of plugins (as comma separated values of python module names) to load,
 # usually to register additional checkers.
-load-plugins=pylint.extensions.docparams, pylint.extensions.docstyle
+load-plugins=
+# TODO: Turn this back on after trading competition
+#load-plugins=pylint.extensions.docparams, pylint.extensions.docstyle
 
 # Pickle collected data for later comparisons.
 persistent=yes
@@ -619,7 +621,7 @@ variable-naming-style=snake_case
 #variable-rgx=
 
 # TODO: Turn these back on after trading competition
-[tool.pylint.parameter_documentation]
+# [tool.pylint.parameter_documentation]
 # Whether to accept totally missing parameter documentation
 # in the docstring of a function that has parameters.
 # accept-no-param-doc = false
