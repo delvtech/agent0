@@ -122,7 +122,9 @@ def main() -> None:
             sleep_duration = checkpoint_duration * (1 + CHECKPOINT_WAITING_PERIOD) - checkpoint_portion_elapsed
         else:
             sleep_duration = checkpoint_duration * CHECKPOINT_WAITING_PERIOD - checkpoint_portion_elapsed
-        logging.info(f"Current time is {datetime.datetime.fromtimestamp(float(timestamp))}. Sleeping for {sleep_duration} seconds ...")
+        logging.info(
+            f"Current time is {datetime.datetime.fromtimestamp(float(timestamp))}. Sleeping for {sleep_duration} seconds ..."
+        )
         time.sleep(int(sleep_duration))
 
 
