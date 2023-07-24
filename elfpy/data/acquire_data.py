@@ -99,7 +99,7 @@ def main(
         postgres.add_checkpoint_infos([convert_data.convert_checkpoint_info(checkpoint_info_dict)], session)
 
         # Query and add block transactions
-        block_transactions = convert_data.fetch_transactions_for_block(web3, hyperdrive_contract, block_number)
+        block_transactions = convert_data.fetch_contract_transactions_for_block(web3, hyperdrive_contract, block_number)
         postgres.add_transactions(block_transactions, session)
 
     # monitor for new blocks & add pool info per block
@@ -160,12 +160,12 @@ def main(
                 block_transactions = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        block_transactions = convert_data.fetch_transactions_for_block(
+                        block_transactions = convert_data.fetch_contract_transactions_for_block(
                             web3, hyperdrive_contract, block_number
                         )
                         break
                     except ValueError:
-                        logging.warning("Error in fetch_transactions_for_block, retrying")
+                        logging.warning("Error in fetch_contract_transactions_for_block, retrying")
                         time.sleep(1)
                         continue
 

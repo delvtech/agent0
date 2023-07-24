@@ -48,8 +48,8 @@ def _convert_scaled_value(input_val: int | None) -> float | None:
     return None
 
 
-# TODO move this function to hyperdrive_interface and return a dictionary
-def fetch_transactions_for_block(
+# TODO move this function to hyperdrive_interface and return a list of dictionaries
+def fetch_contract_transactions_for_block(
     web3: Web3, contract: Contract, block_number: BlockNumber
 ) -> list[db_schema.Transaction]:
     """Fetch transactions related to the contract.
