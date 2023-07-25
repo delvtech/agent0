@@ -106,7 +106,7 @@ async def async_execute_single_agent_trade(
     hyperdrive_market: HyperdriveMarket,
 ) -> None:
     """Executes a single agent's trade. This function is async as
-    `match_contract_call_to_trade` waits for
+    `match_contract_call_to_trade` waits for a transaction receipt
 
     Arguments
     ---------

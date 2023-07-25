@@ -127,8 +127,8 @@ async def async_smart_contract_transact(
         )
         signed_txn = signer.account.sign_transaction(unsent_txn)
         tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-        # TODO slow down querying of this to once a second
-        return await async_wait_for_transaction_receipt(web3, tx_hash)
+        # TODO set poll time as a parameter
+        return await async_wait_for_transaction_receipt(web3, tx_hash, poll_latency=1)
     except ContractCustomError as err:
         logging.error(
             "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",
@@ -183,8 +183,8 @@ def smart_contract_transact(
         )
         signed_txn = signer.account.sign_transaction(unsent_txn)
         tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-        # TODO slow down querying of this to once a second
-        return web3.eth.wait_for_transaction_receipt(tx_hash)
+        # TODO set poll time as parameter
+        return web3.eth.wait_for_transaction_receipt(tx_hash, poll_latency=1)
     except ContractCustomError as err:
         logging.error(
             "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",
