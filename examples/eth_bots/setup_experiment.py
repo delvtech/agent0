@@ -17,15 +17,6 @@ from examples.eth_bots.eth_bots_config import get_eth_bots_config
 from examples.eth_bots.setup_agents import get_agent_accounts
 
 
-def register_username(register_url: str, wallet_addrs: list[str], username: str) -> None:
-    """Registers the username with the flask server."""
-    # TODO: use the json schema from the server.
-    json_data = {"wallet_addrs": wallet_addrs, "username": username}
-    result = requests.post(register_url + "/register_bots", json=json_data, timeout=3)
-    if result.status_code != HTTPStatus.OK:
-        raise ConnectionError(result)
-
-
 def setup_experiment() -> tuple[Web3, Contract, EnvironmentConfig, list[EthAccount]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
@@ -87,3 +78,12 @@ def setup_experiment() -> tuple[Web3, Contract, EnvironmentConfig, list[EthAccou
     wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
     register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
     return web3, hyperdrive_contract, environment_config, agent_accounts
+
+
+def register_username(register_url: str, wallet_addrs: list[str], username: str) -> None:
+    """Registers the username with the flask server."""
+    # TODO: use the json schema from the server.
+    json_data = {"wallet_addrs": wallet_addrs, "username": username}
+    result = requests.post(register_url + "/register_bots", json=json_data, timeout=3)
+    if result.status_code != HTTPStatus.OK:
+        raise ConnectionError(result)

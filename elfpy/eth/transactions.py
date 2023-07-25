@@ -4,12 +4,13 @@ from __future__ import annotations
 import logging
 from typing import Any, Sequence
 
+from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.contract.contract import Contract, ContractFunction
 from web3.exceptions import ContractCustomError, ContractLogicError, TimeExhausted, TransactionNotFound
-from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, TxReceipt
+from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, TxParams, TxReceipt, Wei
 
 from elfpy.eth.errors.errors import decode_error_selector_for_contract
 
@@ -34,6 +35,7 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
     -------
     dict[str, Any]
         A dictionary of value names
+
     .. todo::
         Add better typing to the return value
         function to recursively find component names & types
@@ -172,7 +174,7 @@ def smart_contract_transact(
     Arguments
     ---------
     web3 : Web3
-        web3 provider object
+        web3 container object
     contract : Contract
         Any deployed web3 contract
     signer : EthAccount
@@ -218,6 +220,55 @@ def smart_contract_transact(
             fn_args,
         )
         raise err
+
+
+def eth_transfer(
+    web3: Web3,
+    signer: EthAccount,
+    to_address: ChecksumAddress,
+    amount_wei: int,
+    max_priority_fee: int | None = None,
+) -> TxReceipt:
+    """Execute a generic Ethereum transaction to move ETH from one account to another.
+
+    Arguments
+    ---------
+    web3 : Web3
+        web3 container object
+    signer : EthAccount
+        The EthAccount that will be used to pay for the gas & sign the transaction
+    to_address : ChecksumAddress
+        Address for where the Ethereum is going to
+    amount_wei : int
+        Amount to transfer, in WEI
+    max_priority_fee : int
+        Amount of tip to provide to the miner when a block is mined
+
+    Returns
+    -------
+    TxReceipt
+        a TypedDict; success can be checked via tx_receipt["status"]
+    """
+    unsent_txn: TxParams = {
+        "from": signer.checksum_address,
+        "to": to_address,
+        "value": Wei(amount_wei),
+        "nonce": web3.eth.get_transaction_count(signer.checksum_address),
+        "chainId": web3.eth.chain_id,
+    }
+    if max_priority_fee is None:
+        max_priority_fee = web3.eth.max_priority_fee
+    pending_block = web3.eth.get_block("pending")
+    base_fee = pending_block.get("baseFeePerGas", None)
+    if base_fee is None:
+        raise AssertionError("The latest block does not have a baseFeePerGas")
+    max_fee_per_gas = max_priority_fee + base_fee
+    unsent_txn["gas"] = web3.eth.estimate_gas(unsent_txn)
+    unsent_txn["maxFeePerGas"] = Wei(max_fee_per_gas)
+    unsent_txn["maxPriorityFeePerGas"] = Wei(max_priority_fee)
+    signed_txn = signer.account.sign_transaction(unsent_txn)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    return web3.eth.wait_for_transaction_receipt(tx_hash)
 
 
 def _get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunctionParams) -> tuple[str, str]:
