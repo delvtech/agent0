@@ -1,16 +1,13 @@
 """User strategy that opens or closes a random position with a random allowed amount."""
 from __future__ import annotations
 
-from math import exp
 from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
 from elfpy import WEI
-from elfpy.eth.transactions import smart_contract_read
 from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
-from elfpy.markets.hyperdrive.yieldspace_pricing_model_sol import calculate_bonds_out_given_shares_in
-from elfpy.types import MarketType, Quantity, TokenType, Trade
+from elfpy.types import MarketType, Trade
 
 from .base import BasePolicy
 
@@ -87,7 +84,7 @@ class RandomAgent(BasePolicy):
             )
         ]
 
-    def close_random_short(self, wallet: Wallet) -> list[Trade]:
+    def close_random_short(self, wallet: Wallet) -> list[Trade[HyperdriveMarketAction]]:
         """Fully close the short balance for a random mint time."""
         # choose a random short time to close
         short_time: FixedPoint = list(wallet.shorts)[self.rng.integers(len(wallet.shorts))]
@@ -104,7 +101,9 @@ class RandomAgent(BasePolicy):
             )
         ]
 
-    def open_long_with_random_amount(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
+    def open_long_with_random_amount(
+        self, market: HyperdriveMarket, wallet: Wallet
+    ) -> list[Trade[HyperdriveMarketAction]]:
         """Open a long with a random allowable amount."""
         maximum_trade_amount = market.get_max_long_for_account(wallet.balance.amount)
         if maximum_trade_amount <= WEI:
@@ -116,42 +115,18 @@ class RandomAgent(BasePolicy):
         # WEI <= trade_amount <= max long
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
-
-        state = market.market_state
-        expected_bonds_out_ys = market.pricing_model.calc_bonds_out_given_shares_in(
-            state.share_reserves,
-            state.bond_reserves,
-            state.lp_total_supply,
-            trade_amount,
-            FixedPoint(0),
-            state.share_price,
-            state.init_share_price,
-        )
-        print(f"{expected_bonds_out_ys=}")
-
-        # TODO: we need to consider checkpointing here for time_remaining.
-        result = market.pricing_model.calc_out_given_in(
-            Quantity(trade_amount, TokenType.BASE), state, market.position_duration
-        )
-        expected_bonds_out_hd = result.user_result.d_bonds
-        print(f"{expected_bonds_out_hd=}")
-
-        min_amount_out = expected_bonds_out_hd * FixedPoint("0.9999")
-        print(f"{min_amount_out=}")
-
         return [
             Trade(
                 market=MarketType.HYPERDRIVE,
                 trade=HyperdriveMarketAction(
                     action_type=MarketActionType.OPEN_LONG,
                     trade_amount=trade_amount,
-                    min_amount_out=min_amount_out,
                     wallet=wallet,
                 ),
             )
         ]
 
-    def close_random_long(self, wallet: Wallet) -> list[Trade]:
+    def close_random_long(self, wallet: Wallet) -> list[Trade[HyperdriveMarketAction]]:
         """Fully close the long balance for a random mint time."""
         # choose a random long time to close
         long_time: FixedPoint = list(wallet.longs)[self.rng.integers(len(wallet.longs))]
@@ -168,7 +143,7 @@ class RandomAgent(BasePolicy):
             )
         ]
 
-    def add_liquidity_with_random_amount(self, wallet: Wallet) -> list[Trade]:
+    def add_liquidity_with_random_amount(self, wallet: Wallet) -> list[Trade[HyperdriveMarketAction]]:
         """Add liquidity with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
@@ -188,7 +163,7 @@ class RandomAgent(BasePolicy):
             )
         ]
 
-    def remove_liquidity_with_random_amount(self, wallet: Wallet) -> list[Trade]:
+    def remove_liquidity_with_random_amount(self, wallet: Wallet) -> list[Trade[HyperdriveMarketAction]]:
         """Remove liquidity with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
@@ -208,7 +183,7 @@ class RandomAgent(BasePolicy):
             )
         ]
 
-    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
+    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade[HyperdriveMarketAction]]:
         """Implement a random user strategy.
 
         The agent performs one of four possible trades:
