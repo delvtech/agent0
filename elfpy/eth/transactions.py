@@ -90,6 +90,7 @@ async def async_wait_for_transaction_receipt(
     try:
         with Timeout(timeout) as _timeout:
             while True:
+                await _timeout.async_sleep(poll_latency)
                 try:
                     tx_receipt = web3.eth.get_transaction_receipt(transaction_hash)
                 except TransactionNotFound:
@@ -143,7 +144,8 @@ async def async_smart_contract_transact(
         signed_txn = signer.account.sign_transaction(unsent_txn)
         tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
         # TODO set poll time as a parameter
-        return await async_wait_for_transaction_receipt(web3, tx_hash, poll_latency=1)
+        tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash)
+        return tx_receipt
     except ContractCustomError as err:
         logging.error(
             "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",
@@ -199,7 +201,7 @@ def smart_contract_transact(
         signed_txn = signer.account.sign_transaction(unsent_txn)
         tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
         # TODO set poll time as parameter
-        return web3.eth.wait_for_transaction_receipt(tx_hash, poll_latency=1)
+        return web3.eth.wait_for_transaction_receipt(tx_hash)
     except ContractCustomError as err:
         logging.error(
             "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",

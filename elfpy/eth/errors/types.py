@@ -11,3 +11,7 @@ class ABIError(TypedDict, total=True):
     name: str
     inputs: Sequence[ABIFunctionParams]
     type: Literal["error"]
+
+
+class UnknownBlockError(Exception):
+    """UnknownBlockError throws when contract trasaction receipts with status == 0."""

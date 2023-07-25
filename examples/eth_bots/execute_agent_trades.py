@@ -13,6 +13,7 @@ from web3.contract.contract import Contract
 from elfpy import eth, hyperdrive_interface
 from elfpy import types as elftypes
 from elfpy.eth.accounts import EthAccount
+from elfpy.eth.errors.types import UnknownBlockError
 from elfpy.markets.hyperdrive import HyperdriveMarket, MarketActionType
 from elfpy.time import time as elftime
 from elfpy.types import Quantity, TokenType
@@ -70,14 +71,23 @@ async def async_transact_and_parse_logs(
     ReceiptBreakdown
         A dataclass containing the maturity time and the absolute values for token quantities changed
     """
-    # TODO: raise issue on failure by looking at `tx_receipt` returned from function
     tx_receipt = await eth.async_smart_contract_transact(web3, hyperdrive_contract, signer, fn_name, *fn_args)
+    # Sometimes, smart contract transact fails with status 0 with no error message
+    # We throw custom error to catch in trades loop, ignore, and move on
+    # TODO need to track down why this call fails and handle better
+    status = tx_receipt.get("status", None)
+    if status is None:
+        raise AssertionError("Receipt did not return status")
+    if status == 0:
+        raise UnknownBlockError(f"Receipt has no status or status is 0 \n {tx_receipt=}")
+
     hyperdrive_event_logs = eth.get_transaction_logs(
         web3,
         hyperdrive_contract,
         tx_receipt,
         event_names=[fn_name[0].capitalize() + fn_name[1:]],
     )
+    # if len(hyperdrive_event_logs)
     if len(hyperdrive_event_logs) == 0:
         raise AssertionError("Transaction receipt had no logs")
     if len(hyperdrive_event_logs) > 1:
@@ -131,15 +141,18 @@ async def async_execute_single_agent_trade(
             trade_object.trade.action_type,
             float(trade_object.trade.trade_amount),
         )
-        wallet_deltas = await async_match_contract_call_to_trade(
-            web3,
-            hyperdrive_contract,
-            hyperdrive_market,
-            account,
-            trade_object,
-        )
-        # NOTE this is assuming account.agent.wallet is unique to each agent!
-        account.agent.wallet.update(wallet_deltas)
+        try:
+            wallet_deltas = await async_match_contract_call_to_trade(
+                web3,
+                hyperdrive_contract,
+                hyperdrive_market,
+                account,
+                trade_object,
+            )
+            # NOTE this is assuming account.agent.wallet is unique to each agent!
+            account.agent.wallet.update(wallet_deltas)
+        except UnknownBlockError as exc:
+            logging.error(exc)
 
 
 async def async_execute_agent_trades(
