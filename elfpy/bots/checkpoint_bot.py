@@ -5,18 +5,18 @@ import datetime
 import logging
 import os
 import time
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
 from elfpy.agents.agent import Agent
+from elfpy.bots.environment_config import EnvironmentConfig
 from elfpy.eth.accounts.eth_account import EthAccount
 from elfpy.eth.rpc_interface import set_anvil_account_balance
 from elfpy.eth.transactions import smart_contract_read, smart_contract_transact
-from elfpy.utils import logs
-from elfpy.bots.environment_config import EnvironmentConfig
 from elfpy.hyperdrive_interface.hyperdrive_interface import get_hyperdrive_config
+from elfpy.utils import logs
 
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.
