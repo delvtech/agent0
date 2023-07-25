@@ -14,19 +14,19 @@ def calc_fixed_rate(trade_data, config_data):
     Calculates the fixed rate given trade data
     """
     trade_data["rate"] = np.nan
-    for idx, row in trade_data.iterrows():
-        spot_price = calculate_spot_price(
-            row.share_reserves,
-            row.bond_reserves,
-            row.lp_total_supply,
-            stretch_time=config_data["invTimeStretch"],
-            initial_share_price=config_data["initialSharePrice"],
-        )
-        trade_data.loc[idx, "rate"] = (1 - spot_price) / spot_price
+    annualized_time = config_data["positionDuration"] / (60 * 60 * 24 * 365)
 
-    x_data = trade_data.loc[:, "timestamp"]
-    col_names = ["rate"]
-    y_data = trade_data.loc[:, col_names]
+    spot_price = calculate_spot_price(
+        trade_data["share_reserves"],
+        trade_data["bond_reserves"],
+        config_data["initialSharePrice"],
+        config_data["invTimeStretch"],
+    )
+
+    fixed_rate = (1 - spot_price) / (spot_price * annualized_time)
+
+    x_data = trade_data["timestamp"]
+    y_data = fixed_rate
     return (x_data, y_data)
 
 

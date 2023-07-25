@@ -170,8 +170,8 @@ while True:
     combined_data = get_combined_data(txn_data, pool_info_data)
     ticker = get_ticker(combined_data, user_lookup)
 
-    ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)
+    ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
 
     with ticker_placeholder.container():
         st.dataframe(ticker, height=200, use_container_width=True)
