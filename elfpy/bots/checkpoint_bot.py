@@ -78,7 +78,7 @@ def main() -> None:
     logging.info("Successfully funded the sender=%s.", sender.account.address)
 
     # Get the Hyperdrive contract.
-    hyperdrive_abis = eth.abi.load_abis(config.build_folder)
+    hyperdrive_abis = eth.abi.load_all_abis(config.build_folder)
     addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(
         os.path.join(config.artifacts_url, "addresses.json")
     )

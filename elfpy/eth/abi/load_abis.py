@@ -26,10 +26,10 @@ def load_all_abis(abi_folder: str) -> dict:
         file_name = os.path.splitext(os.path.basename(abi_file))[0]
         try:
             abi_data = load_abi_from_file(abi_file)
+            abis[file_name] = abi_data
+            loaded.append(abi_file)
         except AssertionError as err:
             logging.debug("JSON file %s did not contain an ABI.\nError: %s", abi_file, err)
-        abis[file_name] = abi_data
-        loaded.append(abi_file)
     logging.debug("Loaded ABI files %s", str(loaded))
     return abis
 
