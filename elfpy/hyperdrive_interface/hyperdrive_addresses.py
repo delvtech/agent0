@@ -13,3 +13,4 @@ class HyperdriveAddresses:
     base_token: str = attr.ib()
     mock_hyperdrive: str = attr.ib()
     mock_hyperdrive_math: str = attr.ib()
+    hyperdrive_factory: str = attr.ib()
