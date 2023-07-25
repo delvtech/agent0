@@ -66,6 +66,56 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
     return {f"value{idx}": value for idx, value in enumerate(return_values)}
 
 
+def smart_contract_preview_transaction(
+    contract: Contract, signer: EthAccount, function_name: str, *fn_args
+) -> dict[str, Any]:
+    """Return from a smart contract read call
+
+    Arguments
+    ---------
+    contract : web3.contract.contract.Contract
+        The contract that we are reading from.
+    function_name : str
+        The name of the function
+    *fn_args : Unknown
+        The arguments passed to the contract method.
+    **fn_kwargs : Unknown
+        The keyword arguments passed to the contract method.
+
+    Returns
+    -------
+    dict[str, Any]
+        A dictionary of value names
+    .. todo::
+        Add better typing to the return value
+        function to recursively find component names & types
+        function to dynamically assign types to output variables
+            would be cool if this also put stuff into FixedPoint
+    """
+    # get the callable contract function from function_name & call it
+    function: ContractFunction = contract.get_function_by_name(function_name)(*fn_args)  # , **fn_kwargs)
+    return_values = function.call({"from": signer.checksum_address})
+    if not isinstance(return_values, Sequence):  # could be list or tuple
+        return_values = [return_values]
+    if contract.abi:  # not all contracts have an associated ABI
+        return_names_and_types = _contract_function_abi_outputs(contract.abi, function_name)
+        if return_names_and_types is not None:
+            if len(return_names_and_types) != len(return_values):
+                raise AssertionError(
+                    f"{len(return_names_and_types)=} must equal {len(return_values)=}."
+                    f"\n{return_names_and_types=}\n{return_values=}"
+                )
+            function_return_dict = {}
+            for var_name_and_type, var_value in zip(return_names_and_types, return_values):
+                var_name = var_name_and_type[0]
+                if var_name:
+                    function_return_dict[var_name] = var_value
+                else:
+                    function_return_dict["value"] = var_value
+            return function_return_dict
+    return {f"value{idx}": value for idx, value in enumerate(return_values)}
+
+
 async def async_wait_for_transaction_receipt(
     web3: Web3, transaction_hash: HexBytes, timeout: float = 120, poll_latency: float = 0.1
 ) -> TxReceipt:
@@ -205,9 +255,10 @@ def smart_contract_transact(
         # TODO set poll time as parameter
         return web3.eth.wait_for_transaction_receipt(tx_hash)
     except ContractCustomError as err:
+        error_selector = decode_error_selector_for_contract(err.args[0], contract)
         logging.error(
             "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",
-            decode_error_selector_for_contract(err.args[0], contract),
+            error_selector,
             function_name_or_signature,
             fn_args,
         )
@@ -304,6 +355,7 @@ def _contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> lis
         return_names_and_types = []
         for output in function_outputs:
             return_names_and_types.append(_get_name_and_type_from_abi(output))
+        return return_names_and_types
     if (
         function_outputs[0].get("type") == "tuple" and function_outputs[0].get("components") is not None
     ):  # multiple named outputs were returned in a struct

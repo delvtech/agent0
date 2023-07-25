@@ -468,8 +468,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         initial_share_price: FixedPoint,
         minimum_share_reserves: FixedPoint,
     ) -> FixedPoint:
-        r"""
-        Calculates the maximum amount of shares that can be used to open shorts.
+        r"""Calculates the maximum amount of shares that can be used to open shorts.
 
         Parameters
         ----------
@@ -506,8 +505,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
     def calc_tokens_out_given_lp_in(
         self, lp_in: FixedPoint, market_state: HyperdriveMarketState
     ) -> tuple[FixedPoint, FixedPoint]:
-        """
-        Calculates the amount of base shares and bonds released from burning a specified amount of
+        """Calculates the amount of base shares and bonds released from burning a specified amount of
         LP shares from the pool.
 
         Arguments
