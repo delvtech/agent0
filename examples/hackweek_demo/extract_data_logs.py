@@ -26,7 +26,7 @@ def read_json_to_pd(json_file):
     return pd.DataFrame(json_data)
 
 
-def calculate_spot_price_from_state(state, maturity_timestamp, block_timestamp, position_duration):
+def calculate_spot_price_from_state(state, maturity_timestamp, block_timestamp, pool_config):
     """Calculate spot price from reserves stored in a state variable."""
     return calculate_spot_price(
         state.shareReserves,
@@ -34,7 +34,9 @@ def calculate_spot_price_from_state(state, maturity_timestamp, block_timestamp, 
         state.lpTotalSupply,
         maturity_timestamp,
         block_timestamp,
-        position_duration,
+        pool_config.positionDuration.iloc[0],
+        pool_config.timeStretch.iloc[0],
+        pool_config.initialSharePrice.iloc[0]
     )
 
 
@@ -45,16 +47,20 @@ def calculate_spot_price(
     maturity_timestamp=None,
     block_timestamp=None,
     position_duration=None,
+    time_stretch=None,
+    initial_share_price=None
 ):
     """Calculate the spot price given the pool info data."""
     # pylint: disable=too-many-arguments
 
     # Hard coding variables to calculate spot price
-    initial_share_price = 1
-    time_remaining_stretched = 0.045071688063194093
+    if initial_share_price is None:
+        initial_share_price = 1
+    if time_stretch is None:
+        time_stretch = 0.045071688063194093
     full_term_spot_price = (
         (initial_share_price * share_reserves) / (bond_reserves + lp_total_supply)
-    ) ** time_remaining_stretched
+    ) ** time_stretch
 
     if maturity_timestamp is None or block_timestamp is None or position_duration is None:
         return full_term_spot_price
