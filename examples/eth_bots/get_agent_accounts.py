@@ -1,9 +1,12 @@
 """Script for loading ETH & Elfpy agents with trading policies"""
 from __future__ import annotations
 
+import json
 import logging
+import os
 
 import eth_utils
+from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -45,31 +48,44 @@ def get_agent_accounts(
     #   Do this for `set_anvil_account_balance`, `smart_contract_transact(mint)`, `smart_contract_transact(approve)`
     agents: list[EthAccount] = []
     num_agents_so_far: list[int] = []  # maintains the total number of agents for each agent type
+    key_string = os.environ.get("AGENT_KEYS")
+    if key_string is None:
+        raise ValueError("AGENT_KEYS environment variable must be set")
+    agent_private_keys = json.loads(key_string)
+    #  get agent budgets
+    base_budget_string = os.environ.get("AGENT_BASE_BUDGETS")
+    if base_budget_string is None:
+        raise ValueError("AGENT_BASE_BUDGETS environment variable must be set")
+    agent_base_budgets = [int(budget) for budget in json.loads(base_budget_string)]
     # each agent_info object specifies one agent type and a variable number of agents of that type
     for agent_info in agent_config:
         kwargs = agent_info.init_kwargs
         kwargs["rng"] = rng
         for policy_instance_index in range(agent_info.number_of_agents):  # instantiate one agent per policy
-            kwargs["budget"] = agent_info.budget.sample_budget(rng)
             agent_count = policy_instance_index + sum(num_agents_so_far)
+            if len(agent_base_budgets) >= agent_count:
+                kwargs["budget"] = FixedPoint(agent_base_budgets[agent_count])
+            else:
+                kwargs["budget"] = agent_info.base_budget.sample_budget(rng)
             # the Agent object holds the policy, which makes decisions based
             # on the market and can produce a list of trades
             # NOTE: the wallet_address argument is a throwaway right now; the eth_account will have the actual address
             agent = Agent(wallet_address=agent_count, policy=agent_info.policy(**kwargs))
             # the eth_account holds an agent (where the smarts lies) as well as a wallet (an address used by contracts)
-            eth_account = eth.accounts.EthAccount(agent=agent, extra_entropy=str(agent_count))
-            # TODO: Change the funding source to come from a user account
-            # fund test account with ethereum
-            _ = eth.set_anvil_account_balance(web3, eth_account.checksum_address, int(web3.to_wei(1000, "ether")))
-            # fund test account by minting with the ERC20 base account
-            _ = eth.smart_contract_transact(
-                web3,
-                base_token_contract,
-                eth_account,
-                "mint(address,uint256)",
-                eth_account.checksum_address,
-                kwargs["budget"].scaled_value,
-            )
+            if len(agent_private_keys) < agent_count:
+                raise AssertionError(
+                    "Private keys must be specified for the eth_bots demo. Did you list enough in your .env?"
+                )
+            eth_account = eth.accounts.EthAccount(agent=agent, private_key=agent_private_keys[agent_count])
+            agent_eth_funds = eth.rpc_interface.get_account_balance(web3, eth_account.checksum_address)
+            if agent_eth_funds == 0:
+                raise AssertionError(
+                    f"Agent needs Ethereum to operate! The agent {eth_account.checksum_address=} has a balance of {agent_eth_funds=}."
+                    "\nDid you fund their accounts?"
+                )
+            agent_base_funds = eth.smart_contract_read(base_token_contract, "balanceOf", eth_account.checksum_address)
+            if agent_base_funds["value"] == 0:
+                raise AssertionError("Agent needs Base tokens to operate! Did you fund their accounts?")
             # establish max approval for the hyperdrive contract
             _ = eth.smart_contract_transact(
                 web3,
