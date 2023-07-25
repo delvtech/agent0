@@ -70,6 +70,22 @@ async def async_wait_for_transaction_receipt(
     """Async version of wait_for_transaction_receipt
     This function is copied from `web3.eth.wait_for_transaction_receipt`, but using a non-blocking wait
     instead of a blocking wait
+
+    Arguments
+    ---------
+    web3: Web3
+        web3 provider object
+    transaction_hash: HexBytes
+        The hash of the transaction
+    timeout: float
+        The amount of time in seconds to time out the connection
+    poll_latency: float
+        The amount of time in seconds to wait between polls
+
+    Returns
+    -------
+    TxReceipt
+        The transaction receipt
     """
     try:
         with Timeout(timeout) as _timeout:
@@ -83,11 +99,10 @@ async def async_wait_for_transaction_receipt(
                 await _timeout.async_sleep(poll_latency)
         return tx_receipt
 
-    except Timeout:
-        # pylint: disable=raise-missing-from
+    except Timeout as exc:
         raise TimeExhausted(
             f"Transaction {HexBytes(transaction_hash) !r} is not in the chain " f"after {timeout} seconds"
-        )
+        ) from exc
 
 
 async def async_smart_contract_transact(
