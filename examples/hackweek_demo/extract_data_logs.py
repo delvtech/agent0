@@ -26,7 +26,7 @@ def read_json_to_pd(json_file):
     return pd.DataFrame(json_data)
 
 
-def calculate_spot_price_from_state(state, maturity_timestamp, block_timestamp, position_duration):
+def calculate_spot_price_from_state(state, maturity_timestamp, block_timestamp, config_data):
     """Calculate spot price from reserves stored in a state variable."""
     return calculate_spot_price(
         state.shareReserves,
@@ -34,7 +34,9 @@ def calculate_spot_price_from_state(state, maturity_timestamp, block_timestamp, 
         state.lpTotalSupply,
         maturity_timestamp,
         block_timestamp,
-        position_duration,
+        position_duration=config_data["positionDuration"],
+        stretch_time=config_data["invTimeStretch"],
+        initial_share_price=config_data["initialSharePrice"],
     )
 
 
