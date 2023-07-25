@@ -30,11 +30,10 @@ def calc_ohlcv(trade_data, config_data, freq="D"):
     """
     spot_prices = (
         calculate_spot_price(
-            share_reserves=trade_data["share_reserves"],
-            bond_reserves=trade_data["bond_reserves"],
-            lp_total_supply=trade_data["lp_total_supply"],
-            stretch_time=config_data["invTimeStretch"],
-            initial_share_price=config_data["initialSharePrice"],
+            trade_data["share_reserves"],
+            trade_data["bond_reserves"],
+            config_data["initialSharePrice"],
+            config_data["invTimeStretch"],
         )
         .to_frame()
         .astype(float)

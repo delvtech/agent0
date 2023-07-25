@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import time
 
 import numpy as np
@@ -26,49 +25,9 @@ def read_json_to_pd(json_file):
     return pd.DataFrame(json_data)
 
 
-def calculate_spot_price_from_state(state, maturity_timestamp, block_timestamp, config_data):
-    """Calculate spot price from reserves stored in a state variable."""
-    return calculate_spot_price(
-        state.shareReserves,
-        state.bondReserves,
-        state.lpTotalSupply,
-        config_data["invTimeStretch"],
-        config_data["initialSharePrice"],
-        config_data["positionDuration"],
-        maturity_timestamp,
-        block_timestamp,
-    )
-
-
-def calculate_spot_price(
-    share_reserves,
-    bond_reserves,
-    lp_total_supply,
-    stretch_time,
-    initial_share_price,
-    position_duration=None,
-    maturity_timestamp=None,
-    block_timestamp=None,
-):
-    """Calculate the spot price given the pool info data."""
-    # pylint: disable=too-many-arguments
-
-    full_term_spot_price = ((initial_share_price * share_reserves) / (bond_reserves + lp_total_supply)) ** stretch_time
-
-    if maturity_timestamp is None or block_timestamp is None or position_duration is None:
-        return full_term_spot_price
-    time_left_seconds = maturity_timestamp - block_timestamp
-    if isinstance(time_left_seconds, pd.Timedelta):
-        time_left_seconds = time_left_seconds.total_seconds()
-    time_left_in_years = time_left_seconds / position_duration
-    logging.info(
-        " spot price is weighted average of %s(%s) and 1 (%s)",
-        full_term_spot_price,
-        time_left_in_years,
-        1 - time_left_in_years,
-    )
-
-    return full_term_spot_price * time_left_in_years + 1 * (1 - time_left_in_years)
+def calculate_spot_price(share_reserves, bond_reserves, initial_share_price, time_stretch):
+    """Calculate the spot price."""
+    return ((initial_share_price * share_reserves) / bond_reserves) ** time_stretch
 
 
 def get_combined_data(txn_data, pool_info_data):
