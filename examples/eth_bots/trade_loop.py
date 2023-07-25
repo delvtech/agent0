@@ -1,6 +1,7 @@
 """Helper function for executing a set of trades"""
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime
 
@@ -9,7 +10,7 @@ from web3.contract.contract import Contract
 from web3.types import RPCEndpoint
 
 from elfpy.eth.accounts import EthAccount
-from examples.eth_bots.execute_agent_trades import execute_agent_trades
+from examples.eth_bots.execute_agent_trades import async_execute_agent_trades
 
 
 def trade_if_new_block(
@@ -54,10 +55,12 @@ def trade_if_new_block(
             str(datetime.fromtimestamp(float(latest_block_timestamp))),
         )
         try:
-            execute_agent_trades(
-                web3,
-                hyperdrive_contract,
-                agent_accounts,
+            asyncio.run(
+                async_execute_agent_trades(
+                    web3,
+                    hyperdrive_contract,
+                    agent_accounts,
+                )
             )
             last_executed_block = latest_block_number
         # we want to catch all exceptions

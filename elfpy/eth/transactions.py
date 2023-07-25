@@ -4,9 +4,11 @@ from __future__ import annotations
 import logging
 from typing import Any, Sequence
 
+from hexbytes import HexBytes
 from web3 import Web3
+from web3._utils.threads import Timeout
 from web3.contract.contract import Contract, ContractFunction
-from web3.exceptions import ContractCustomError, ContractLogicError
+from web3.exceptions import ContractCustomError, ContractLogicError, TimeExhausted, TransactionNotFound
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, TxReceipt
 
 from elfpy.eth.errors.errors import decode_error_selector_for_contract
@@ -62,6 +64,89 @@ def smart_contract_read(contract: Contract, function_name: str, *fn_args, **fn_k
     return {f"value{idx}": value for idx, value in enumerate(return_values)}
 
 
+async def async_wait_for_transaction_receipt(
+    web3: Web3, transaction_hash: HexBytes, timeout: float = 120, poll_latency: float = 0.1
+) -> TxReceipt:
+    """Async version of wait_for_transaction_receipt
+    This function is copied from `web3.eth.wait_for_transaction_receipt`, but using a non-blocking wait
+    instead of a blocking wait
+    """
+    try:
+        with Timeout(timeout) as _timeout:
+            while True:
+                try:
+                    tx_receipt = web3.eth.get_transaction_receipt(transaction_hash)
+                except TransactionNotFound:
+                    tx_receipt = None
+                if tx_receipt is not None:
+                    break
+                await _timeout.async_sleep(poll_latency)
+        return tx_receipt
+
+    except Timeout:
+        # pylint: disable=raise-missing-from
+        raise TimeExhausted(
+            f"Transaction {HexBytes(transaction_hash) !r} is not in the chain " f"after {timeout} seconds"
+        )
+
+
+async def async_smart_contract_transact(
+    web3: Web3, contract: Contract, signer: EthAccount, function_name_or_signature: str, *fn_args
+) -> TxReceipt:
+    """Execute a named function on a contract that requires a signature & gas
+    Copy of `smart_contract_transact`, but using async wait for `wait_for_transaction_receipt`
+
+    Arguments
+    ---------
+    web3 : Web3
+        web3 provider object
+    contract : Contract
+        Any deployed web3 contract
+    signer : EthAccount
+        The EthAccount that will be used to pay for the gas & sign the transaction
+    function_name_or_signature : str
+        This function must exist in the compiled contract's ABI
+    fn_args : ordered list
+        All remaining arguments will be passed to the contract function in the order received
+
+    Returns
+    -------
+    TxReceipt
+        a TypedDict; success can be checked via tx_receipt["status"]
+    """
+    try:
+        if "(" in function_name_or_signature:
+            func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
+        else:
+            func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
+        unsent_txn = func_handle.build_transaction(
+            {
+                "from": signer.checksum_address,
+                "nonce": web3.eth.get_transaction_count(signer.checksum_address),
+            }
+        )
+        signed_txn = signer.account.sign_transaction(unsent_txn)
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        # TODO slow down querying of this to once a second
+        return await async_wait_for_transaction_receipt(web3, tx_hash)
+    except ContractCustomError as err:
+        logging.error(
+            "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",
+            decode_error_selector_for_contract(err.args[0], contract),
+            function_name_or_signature,
+            fn_args,
+        )
+        raise err
+    except ContractLogicError as err:
+        logging.error(
+            "ContractLogicError:\n%s\nfunction name:%s\nfunction args: %s",
+            err.message,
+            function_name_or_signature,
+            fn_args,
+        )
+        raise err
+
+
 def smart_contract_transact(
     web3: Web3, contract: Contract, signer: EthAccount, function_name_or_signature: str, *fn_args
 ) -> TxReceipt:
@@ -98,9 +183,7 @@ def smart_contract_transact(
         )
         signed_txn = signer.account.sign_transaction(unsent_txn)
         tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-        # TODO: Should not wait for approval since the block might take a bit to tick up.
-        # This alos means we need to parse the tx_hash, not the tx_receipt.
-        # wait for approval to complete
+        # TODO slow down querying of this to once a second
         return web3.eth.wait_for_transaction_receipt(tx_hash)
     except ContractCustomError as err:
         logging.error(
