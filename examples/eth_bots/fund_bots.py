@@ -1,4 +1,4 @@
-"""Fund private keys from a user key"""
+"""Fund agent private keys from a user key."""
 from __future__ import annotations
 
 import json
