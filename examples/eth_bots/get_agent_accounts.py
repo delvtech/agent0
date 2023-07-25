@@ -72,6 +72,7 @@ def get_agent_accounts(
                 kwargs["budget"] = FixedPoint(scaled_value=agent_base_budgets[agent_count])
             else:
                 kwargs["budget"] = agent_info.base_budget.sample_budget(rng)
+                # TODO: This is where we would fund the bots if we wanted to mint money from nothing
             # the Agent object holds the policy, which makes decisions based
             # on the market and can produce a list of trades
             # NOTE: the wallet_address argument is a throwaway right now; the eth_account will have the actual address
