@@ -15,7 +15,7 @@ import elfpy.utils.json as output_utils
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class Config(types.FrozenClass):
+class SimulationConfig(types.FrozenClass):
     """Data object for storing user simulation config parameters"""
 
     # lots of configs!
@@ -123,9 +123,9 @@ class Config(types.FrozenClass):
         # cls arg tells json how to handle numpy objects and nested dataclasses
         return json.dumps(self.__dict__, sort_keys=True, indent=2, cls=output_utils.ExtendedJSONEncoder)
 
-    def copy(self) -> Config:
+    def copy(self) -> SimulationConfig:
         """Returns a new copy of self"""
-        return Config(**{key: value for key, value in self.__dict__.items() if key not in ["rng"]})
+        return SimulationConfig(**{key: value for key, value in self.__dict__.items() if key not in ["rng"]})
 
     def check_variable_apr(self) -> None:
         r"""Verify that the variable_apr is the right length"""

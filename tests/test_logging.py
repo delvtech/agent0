@@ -12,7 +12,7 @@ from web3.exceptions import InvalidTransaction
 
 import elfpy.utils.logs as log_utils
 from elfpy.data.db_schema import PoolConfig, PoolInfo
-from elfpy.simulators.config import Config
+from elfpy.simulators.smulation_config import SimulationConfig
 from elfpy.utils import sim_utils
 
 
@@ -47,7 +47,7 @@ class TestLogging(unittest.TestCase):
             logging.getLogger().handlers = [
                 handler,
             ]
-            config = Config()
+            config = SimulationConfig()
             config.pricing_model_name = "Yieldspace"
             config.num_trading_days = 3
             config.num_blocks_per_day = 3
@@ -62,7 +62,7 @@ class TestLogging(unittest.TestCase):
         """Verfies that the config variables are successfully logged"""
         log_filename = ".logging/test_logging.log"
         log_utils.setup_logging(log_filename, log_level=logging.INFO)
-        config = Config()
+        config = SimulationConfig()
         logging.info("%s", config)
         self.assertLogs(level=logging.INFO)
         log_utils.close_logging()
@@ -86,7 +86,7 @@ class TestLogging(unittest.TestCase):
     def test_hyperdrive_crash_report_logging(self):
         """Tests logging"""
         log_utils.setup_hyperdrive_crash_report_logging()
-        config = Config()
+        config = SimulationConfig()
         config.pricing_model_name = "Yieldspace"
         config.num_trading_days = 3
         config.num_blocks_per_day = 3

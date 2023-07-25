@@ -15,14 +15,14 @@ from elfpy.markets.hyperdrive import (
     HyperdriveMarketState,
     HyperdrivePricingModel,
 )
-from elfpy.simulators import Config
+from elfpy.simulators import SimulationConfig
 from elfpy.simulators.simulation_state import BlockSimVariables, DaySimVariables, RunSimVariables, TradeSimVariables
 
 if TYPE_CHECKING:
     from elfpy.wallet.wallet_deltas import WalletDeltas
 
 
-def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulators.Simulator:
+def get_simulator(config: SimulationConfig, agents: list[Agent] | None = None) -> simulators.Simulator:
     r"""Construct and initialize a simulator with sane defaults
 
     The simulated market is initialized with an initial LP.
@@ -108,7 +108,7 @@ def get_simulator(config: Config, agents: list[Agent] | None = None) -> simulato
 def get_initialized_hyperdrive_market(
     pricing_model: HyperdrivePricingModel,
     block_time: time.BlockTime,
-    config: Config,
+    config: SimulationConfig,
 ) -> tuple[HyperdriveMarket, WalletDeltas, HyperdriveMarketDeltas]:
     r"""Setup market
 

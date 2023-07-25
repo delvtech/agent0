@@ -3,7 +3,7 @@ from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 
-from elfpy.simulators.config import Config
+from elfpy.simulators.smulation_config import SimulationConfig
 
 
 class TestConfig(unittest.TestCase):
@@ -11,13 +11,13 @@ class TestConfig(unittest.TestCase):
 
     def test_config_cant_add_new_attribs(self):
         """config object can't add new attributes after it's initialized"""
-        config = Config()
+        config = SimulationConfig()
         with self.assertRaises(AttributeError):
             config.new_attrib = 1
 
     def test_config_cant_change_existing_attribs(self):
         """config object can change existing attributes, only if not frozen"""
-        config = Config()
+        config = SimulationConfig()
         # change an existing attribute
         config.num_blocks_per_day = 2
         # freeze config

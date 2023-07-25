@@ -10,9 +10,10 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
-from elfpy.bots import DEFAULT_USERNAME, AgentConfig, EnvironmentConfig
+from elfpy.bots import DEFAULT_USERNAME, EnvironmentConfig
 from elfpy.eth.accounts import EthAccount
 from elfpy.utils import logs
+from examples.eth_bots.eth_bots_config import get_eth_bots_config
 from examples.eth_bots.setup_agents import get_agent_accounts
 
 
@@ -25,10 +26,7 @@ def register_username(register_url: str, wallet_addrs: list[str], username: str)
         raise ConnectionError(result)
 
 
-def setup_experiment(
-    environment_config: EnvironmentConfig,
-    agent_config: list[AgentConfig],
-) -> tuple[Web3, Contract, list[EthAccount]]:
+def setup_experiment() -> tuple[Web3, Contract, EnvironmentConfig, list[EthAccount]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
     Arguments
@@ -47,6 +45,8 @@ def setup_experiment(
             - A list of EthAccount objects that contain a wallet address and Elfpy Agent for determining trades
 
     """
+    # get the user defined config variables
+    environment_config, agent_config = get_eth_bots_config()
     # this random number generator should be used everywhere so that the experiment is repeatable
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
     rng = np.random.default_rng(environment_config.random_seed)
@@ -86,4 +86,4 @@ def setup_experiment(
     # initialize the postgres session
     wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
     register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
-    return web3, hyperdrive_contract, agent_accounts
+    return web3, hyperdrive_contract, environment_config, agent_accounts
