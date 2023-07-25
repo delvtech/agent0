@@ -6,6 +6,7 @@ import logging
 import os
 
 import eth_utils
+from dotenv import load_dotenv
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import Web3
@@ -46,6 +47,8 @@ def get_agent_accounts(
     list[EthAccount]
         A list of EthAccount objects that contain a wallet address and Elfpy Agent for determining trades
     """
+    # load user dotenv variables
+    load_dotenv()
     # TODO: raise issue on failure by looking at `rpc_response`, `tx_receipt` returned from function
     #   Do this for `set_anvil_account_balance`, `smart_contract_transact(mint)`, `smart_contract_transact(approve)`
     agents: list[EthAccount] = []
