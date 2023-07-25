@@ -56,13 +56,9 @@ def calculate_spot_price(
         initial_share_price = 1
 
     if stretch_time is None:
-        time_remaining_stretched = 0.045071688063194093
-    else:
-        time_remaining_stretched = stretch_time
+        stretch_time = 0.045071688063194093
 
-    full_term_spot_price = (
-        (initial_share_price * share_reserves) / (bond_reserves + lp_total_supply)
-    ) ** time_remaining_stretched
+    full_term_spot_price = ((initial_share_price * share_reserves) / (bond_reserves + lp_total_supply)) ** stretch_time
 
     if maturity_timestamp is None or block_timestamp is None or position_duration is None:
         return full_term_spot_price
