@@ -18,16 +18,10 @@ from __future__ import annotations
 
 import mplfinance as mpf
 import pandas as pd
-import streamlit as st
 from extract_data_logs import calculate_spot_price
 
 # %%
 # Get data here
-st.set_page_config(
-    page_title="Bots dashboard",
-    layout="wide",
-)
-st.set_option("deprecation.showPyplotGlobalUse", False)
 
 
 def calc_ohlcv(trade_data, freq="D"):
