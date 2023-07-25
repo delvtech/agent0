@@ -4,7 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from dataclasses import asdict, dataclass, is_dataclass, replace
 from enum import Enum
 from functools import wraps
-from typing import Any, Type
+from typing import Any, Generic, Type, TypeVar
 
 from fixedpointmath import FixedPoint
 
@@ -126,9 +126,12 @@ class Quantity:
         return Quantity(amount=-self.amount, unit=self.unit)
 
 
+T = TypeVar("T")
+
+
 @dataclass
-class Trade:
+class Trade(Generic[T]):
     r"""A trade for a market"""
 
     market: MarketType
-    trade: Any  # TODO: How to specify the type as a generic market action?
+    trade: T  # TODO: How to specify the type as a generic market action?
