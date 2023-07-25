@@ -10,9 +10,11 @@ from dotenv import load_dotenv
 from extract_data_logs import get_combined_data
 from plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
 from plot_ohlcv import calc_ohlcv, plot_ohlcv
-from plot_pnl import calculate_pnl, plot_pnl
 
 from elfpy.data import postgres
+
+# from plot_pnl import calculate_pnl, plot_pnl
+
 
 # pylint: disable=invalid-name
 
@@ -26,7 +28,7 @@ st.set_option("deprecation.showPyplotGlobalUse", False)
 
 # Helper functions
 # TODO should likely move these functions to another file
-def get_ticker(data: pd.DataFrame, user_lookup: pd.DataFrame) -> pd.DataFrame:
+def get_ticker(data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
     """Given transaction data, return a ticker dataframe showing recent trades
 
     Arguments
@@ -41,7 +43,7 @@ def get_ticker(data: pd.DataFrame, user_lookup: pd.DataFrame) -> pd.DataFrame:
     """
     # Return reverse of methods to put most recent transactions at the top
 
-    usernames = username_to_address(user_lookup, data[["operator"]])
+    usernames = username_to_address(lookup, data[["operator"]])
     ticker_data = data.reset_index()[["timestamp", "blockNumber", "operator", "trade_type", "value"]].copy()
     ticker_data.insert(2, "username", usernames.values)
     ticker_data.columns = ["Timestamp", "Block", "User", "Wallet", "Method", "Amount"]
@@ -52,6 +54,7 @@ def get_ticker(data: pd.DataFrame, user_lookup: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_click_addresses() -> pd.DataFrame:
+    """Returns a dataframe of hard coded click addresses"""
     addresses = {
         "0x004dfC2dBA6573fa4dFb1E86e3723e1070C0CfdE": "Charles St. Louis (click)",
         "0x005182C62DA59Ff202D53d6E42Cef6585eBF9617": "Alim Khamisa (click)",
