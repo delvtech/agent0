@@ -69,7 +69,7 @@ def get_agent_accounts(
         for policy_instance_index in range(agent_info.number_of_agents):  # instantiate one agent per policy
             agent_count = policy_instance_index + sum(num_agents_so_far)
             if len(agent_base_budgets) >= agent_count:
-                kwargs["budget"] = FixedPoint(agent_base_budgets[agent_count])
+                kwargs["budget"] = FixedPoint(scaled_value=agent_base_budgets[agent_count])
             else:
                 kwargs["budget"] = agent_info.base_budget.sample_budget(rng)
             # the Agent object holds the policy, which makes decisions based
