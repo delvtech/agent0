@@ -26,6 +26,7 @@ def read_json_to_pd(json_file):
 
 
 def calculate_spot_price(share_reserves, bond_reserves, initial_share_price, time_stretch):
+    """Calculate the spot price."""
     return ((initial_share_price * share_reserves) / bond_reserves) ** time_stretch
 
 
