@@ -227,6 +227,7 @@ def eth_transact(
     signer: EthAccount,
     to_address: ChecksumAddress,
     amount_wei: int,
+    max_priority_fee: int | None = None,
 ) -> TxReceipt:
     """Execute a generic Ethereum transaction to move ETH from one account to another.
 
@@ -240,6 +241,8 @@ def eth_transact(
         Address for where the Ethereum is going to
     amount_wei : int
         Amount to transfer, in WEI
+    max_priority_fee : int
+        Amount of tip to provide to the miner when a block is mined
 
     Returns
     -------
@@ -253,11 +256,16 @@ def eth_transact(
         "nonce": web3.eth.get_transaction_count(signer.checksum_address),
         "chainId": web3.eth.chain_id,
     }
-    gas_estimate = web3.eth.estimate_gas(unsent_txn)  # simple Ethereum transfer should be 2100
-    gas_price = web3.eth.gas_price
+    if max_priority_fee is None:
+        max_priority_fee = web3.eth.max_priority_fee
+    pending_block = web3.eth.get_block("pending")
+    base_fee = pending_block.get("baseFeePerGas", None)
+    if base_fee is None:
+        raise AssertionError("The latest block does not have a baseFeePerGas")
+    max_fee_per_gas = max_priority_fee + base_fee
     unsent_txn["gas"] = web3.eth.estimate_gas(unsent_txn)
-    unsent_txn["maxFeePerGas"] = Wei(gas_estimate * gas_price)
-    unsent_txn["maxPriorityFeePerGas"] = Wei(gas_estimate * gas_price)
+    unsent_txn["maxFeePerGas"] = Wei(max_fee_per_gas)
+    unsent_txn["maxPriorityFeePerGas"] = Wei(max_priority_fee)
     signed_txn = signer.account.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
     return web3.eth.wait_for_transaction_receipt(tx_hash)
