@@ -14,7 +14,7 @@ from elfpy.bots import DEFAULT_USERNAME, EnvironmentConfig
 from elfpy.eth.accounts import EthAccount
 from elfpy.utils import logs
 from examples.eth_bots.eth_bots_config import get_eth_bots_config
-from examples.eth_bots.setup_agents import get_agent_accounts
+from examples.eth_bots.get_agent_accounts import get_agent_accounts
 
 
 def setup_experiment() -> tuple[Web3, Contract, EnvironmentConfig, list[EthAccount]]:
