@@ -145,6 +145,11 @@ else:
 # pool config data is static, so just read once
 config_data = postgres.get_pool_config(session)
 
+# TODO fix input invTimeStretch to be unscaled in ingestion into postgres
+config_data["invTimeStretch"] = config_data["invTimeStretch"] / 10**18
+
+config_data = config_data.iloc[0]
+
 
 max_live_blocks = 14400
 # Live ticker
@@ -165,8 +170,8 @@ while True:
     combined_data = get_combined_data(txn_data, pool_info_data)
     ticker = get_ticker(combined_data, user_lookup)
 
-    ohlcv = calc_ohlcv(combined_data, freq="5T")
-    (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data)
+    ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
+    (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)
 
     with ticker_placeholder.container():
         st.dataframe(ticker, height=200, use_container_width=True)
@@ -188,7 +193,6 @@ while True:
         st.pyplot(fig=main_fig)  # type: ignore
 
     time.sleep(1)
-
 
 ## Set up agent selection state list outside of live updates
 # st.session_state.options = []
