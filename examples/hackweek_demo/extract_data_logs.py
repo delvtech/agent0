@@ -32,11 +32,11 @@ def calculate_spot_price_from_state(state, maturity_timestamp, block_timestamp, 
         state.shareReserves,
         state.bondReserves,
         state.lpTotalSupply,
+        config_data["invTimeStretch"],
+        config_data["initialSharePrice"],
+        config_data["positionDuration"],
         maturity_timestamp,
         block_timestamp,
-        position_duration=config_data["positionDuration"],
-        stretch_time=config_data["invTimeStretch"],
-        initial_share_price=config_data["initialSharePrice"],
     )
 
 
@@ -44,21 +44,14 @@ def calculate_spot_price(
     share_reserves,
     bond_reserves,
     lp_total_supply,
+    stretch_time,
+    initial_share_price,
+    position_duration=None,
     maturity_timestamp=None,
     block_timestamp=None,
-    position_duration=None,
-    stretch_time=None,
-    initial_share_price=None,
 ):
     """Calculate the spot price given the pool info data."""
     # pylint: disable=too-many-arguments
-
-    # Hard coding variables to calculate spot price
-    if initial_share_price is None:
-        initial_share_price = 1
-
-    if stretch_time is None:
-        stretch_time = 0.045071688063194093
 
     full_term_spot_price = ((initial_share_price * share_reserves) / (bond_reserves + lp_total_supply)) ** stretch_time
 
