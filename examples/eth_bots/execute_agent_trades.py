@@ -1,6 +1,7 @@
 """Main script for running bots on Hyperdrive."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from typing import NoReturn
@@ -12,6 +13,7 @@ from web3.contract.contract import Contract
 from elfpy import eth, hyperdrive_interface
 from elfpy import types as elftypes
 from elfpy.eth.accounts import EthAccount
+from elfpy.eth.errors.types import UnknownBlockError
 from elfpy.markets.hyperdrive import HyperdriveMarket, MarketActionType
 from elfpy.time import time as elftime
 from elfpy.types import Quantity, TokenType
@@ -46,7 +48,7 @@ class ReceiptBreakdown:
             )
 
 
-def transact_and_parse_logs(
+async def async_transact_and_parse_logs(
     web3: Web3, hyperdrive_contract: Contract, signer: EthAccount, fn_name: str, *fn_args
 ) -> ReceiptBreakdown:
     """Execute the hyperdrive smart contract transaction and decode the receipt to get the changes to the agent's funds.
@@ -69,8 +71,16 @@ def transact_and_parse_logs(
     ReceiptBreakdown
         A dataclass containing the maturity time and the absolute values for token quantities changed
     """
-    # TODO: raise issue on failure by looking at `tx_receipt` returned from function
-    tx_receipt = eth.smart_contract_transact(web3, hyperdrive_contract, signer, fn_name, *fn_args)
+    tx_receipt = await eth.async_smart_contract_transact(web3, hyperdrive_contract, signer, fn_name, *fn_args)
+    # Sometimes, smart contract transact fails with status 0 with no error message
+    # We throw custom error to catch in trades loop, ignore, and move on
+    # TODO need to track down why this call fails and handle better
+    status = tx_receipt.get("status", None)
+    if status is None:
+        raise AssertionError("Receipt did not return status")
+    if status == 0:
+        raise UnknownBlockError(f"Receipt has no status or status is 0 \n {tx_receipt=}")
+
     hyperdrive_event_logs = eth.get_transaction_logs(
         web3,
         hyperdrive_contract,
@@ -98,7 +108,55 @@ def transact_and_parse_logs(
     return trade_result
 
 
-def execute_agent_trades(
+async def async_execute_single_agent_trade(
+    account: EthAccount,
+    web3: Web3,
+    hyperdrive_contract: Contract,
+    hyperdrive_market: HyperdriveMarket,
+) -> None:
+    """Executes a single agent's trade. This function is async as
+    `match_contract_call_to_trade` waits for a transaction receipt
+
+    Arguments
+    ---------
+    web3 : Web3
+        web3 provider object
+    hyperdrive_contract : Contract
+        Any deployed web3 contract
+    account: EthAccount
+        The EthAccount that is conducting the trade
+    hyperdrive_market: HyperdriveMarket:
+        The hyperdrive market state
+    """
+
+    # This condition is unlikely;
+    # it would happen if they created an eth address but didn't associate it with an elfpy Agent
+    if account.agent is None:
+        return
+
+    trades: list[elftypes.Trade] = account.agent.get_trades(market=hyperdrive_market)
+    for trade_object in trades:
+        logging.info(
+            "AGENT %s to perform %s for %g",
+            str(account.checksum_address),
+            trade_object.trade.action_type,
+            float(trade_object.trade.trade_amount),
+        )
+        try:
+            wallet_deltas = await async_match_contract_call_to_trade(
+                web3,
+                hyperdrive_contract,
+                hyperdrive_market,
+                account,
+                trade_object,
+            )
+            # NOTE this is assuming account.agent.wallet is unique to each agent!
+            account.agent.wallet.update(wallet_deltas)
+        except UnknownBlockError as exc:
+            logging.error(exc)
+
+
+async def async_execute_agent_trades(
     web3: Web3,
     hyperdrive_contract: Contract,
     agent_accounts: list[EthAccount],
@@ -114,29 +172,17 @@ def execute_agent_trades(
     agent_accounts : list[EthAccount]
         A list of EthAccount that are conducting the trades
     """
+    # TODO: This might _not_ be the latest market, due to async
     # get latest market
     hyperdrive_market = hyperdrive_interface.get_hyperdrive_market(web3, hyperdrive_contract)
-    for account in agent_accounts:
-        # This condition is unlikely;
-        # it would happen if they created an eth address but didn't associate it with an elfpy Agent
-        if account.agent is None:
-            continue
-        trades: list[elftypes.Trade] = account.agent.get_trades(market=hyperdrive_market)
-        for trade_object in trades:
-            logging.info(
-                "AGENT %s to perform %s for %g",
-                str(account.checksum_address),
-                trade_object.trade.action_type,
-                float(trade_object.trade.trade_amount),
-            )
-            wallet_deltas = match_contract_call_to_trade(
-                web3,
-                hyperdrive_contract,
-                hyperdrive_market,
-                account,
-                trade_object,
-            )
-            account.agent.wallet.update(wallet_deltas)
+    # Make calls per account to execute_single_agent_trade
+    # Await all trades to finish before continuing
+    await asyncio.gather(
+        *[
+            async_execute_single_agent_trade(account, web3, hyperdrive_contract, hyperdrive_market)
+            for account in agent_accounts
+        ]
+    )
 
 
 def assert_never(arg: NoReturn) -> NoReturn:
@@ -144,7 +190,7 @@ def assert_never(arg: NoReturn) -> NoReturn:
     assert False, f"Unhandled type: {type(arg).__name__}"
 
 
-def match_contract_call_to_trade(
+async def async_match_contract_call_to_trade(
     web3: Web3,
     hyperdrive_contract: Contract,
     hyperdrive_market: HyperdriveMarket,
@@ -184,7 +230,7 @@ def match_contract_call_to_trade(
     match trade_object.trade.action_type:
         case MarketActionType.OPEN_LONG:
             fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
-            trade_result = transact_and_parse_logs(
+            trade_result = await async_transact_and_parse_logs(
                 web3,
                 hyperdrive_contract,
                 account,
@@ -205,7 +251,7 @@ def match_contract_call_to_trade(
             decoded_maturity_time_years = mint_time_years + hyperdrive_market.position_duration.years
             decoded_maturity_time = int(decoded_maturity_time_years * elftime.TimeUnit.YEARS.value)
             fn_args = (decoded_maturity_time, trade_amount, min_output, account.checksum_address, as_underlying)
-            trade_result = transact_and_parse_logs(
+            trade_result = await async_transact_and_parse_logs(
                 web3,
                 hyperdrive_contract,
                 account,
@@ -221,7 +267,7 @@ def match_contract_call_to_trade(
             )
         case MarketActionType.OPEN_SHORT:
             fn_args = (trade_amount, max_deposit, account.checksum_address, as_underlying)
-            trade_result = transact_and_parse_logs(
+            trade_result = await async_transact_and_parse_logs(
                 web3,
                 hyperdrive_contract,
                 account,
@@ -247,7 +293,7 @@ def match_contract_call_to_trade(
             decoded_maturity_time_years = mint_time_years + hyperdrive_market.position_duration.years
             decoded_maturity_time = int(decoded_maturity_time_years * elftime.TimeUnit.YEARS.value)
             fn_args = (decoded_maturity_time, trade_amount, min_output, account.checksum_address, as_underlying)
-            trade_result = transact_and_parse_logs(
+            trade_result = await async_transact_and_parse_logs(
                 web3,
                 hyperdrive_contract,
                 account,
@@ -268,7 +314,7 @@ def match_contract_call_to_trade(
             )
         case MarketActionType.ADD_LIQUIDITY:
             fn_args = (trade_amount, min_apr, max_apr, account.checksum_address, as_underlying)
-            trade_result = transact_and_parse_logs(
+            trade_result = await async_transact_and_parse_logs(
                 web3,
                 hyperdrive_contract,
                 account,
@@ -284,7 +330,7 @@ def match_contract_call_to_trade(
             )
         case MarketActionType.REMOVE_LIQUIDITY:
             fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
-            trade_result = transact_and_parse_logs(
+            trade_result = await async_transact_and_parse_logs(
                 web3,
                 hyperdrive_contract,
                 account,
