@@ -253,7 +253,7 @@ def eth_transact(
         "nonce": web3.eth.get_transaction_count(signer.checksum_address),
         "chainId": web3.eth.chain_id,
     }
-    gas_estimate = web3.eth.estimate_gas(unsent_txn)  # simple eth transfer should be 2100
+    gas_estimate = web3.eth.estimate_gas(unsent_txn)  # simple Ethereum transfer should be 2100
     gas_price = web3.eth.gas_price
     unsent_txn["gas"] = web3.eth.estimate_gas(unsent_txn)
     unsent_txn["maxFeePerGas"] = Wei(gas_estimate * gas_price)
