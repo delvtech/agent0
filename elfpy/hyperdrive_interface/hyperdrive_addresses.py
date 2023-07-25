@@ -11,5 +11,6 @@ class HyperdriveAddresses:
     # pylint: disable=too-few-public-methods
 
     base_token: str = attr.ib()
+    hyperdrive_factory: str = attr.ib()
     mock_hyperdrive: str = attr.ib()
     mock_hyperdrive_math: str = attr.ib()
