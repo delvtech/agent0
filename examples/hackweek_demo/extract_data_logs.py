@@ -45,13 +45,21 @@ def calculate_spot_price(
     maturity_timestamp=None,
     block_timestamp=None,
     position_duration=None,
+    stretch_time=None,
+    initial_share_price=None,
 ):
     """Calculate the spot price given the pool info data."""
     # pylint: disable=too-many-arguments
 
     # Hard coding variables to calculate spot price
-    initial_share_price = 1
-    time_remaining_stretched = 0.045071688063194093
+    if initial_share_price is None:
+        initial_share_price = 1
+
+    if stretch_time is None:
+        time_remaining_stretched = 0.045071688063194093
+    else:
+        time_remaining_stretched = stretch_time
+
     full_term_spot_price = (
         (initial_share_price * share_reserves) / (bond_reserves + lp_total_supply)
     ) ** time_remaining_stretched

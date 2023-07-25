@@ -24,7 +24,7 @@ from extract_data_logs import calculate_spot_price
 # Get data here
 
 
-def calc_ohlcv(trade_data, freq="D"):
+def calc_ohlcv(trade_data, stretch_time, initial_share_price, freq="D"):
     """
     freq var: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
     """
@@ -33,6 +33,8 @@ def calc_ohlcv(trade_data, freq="D"):
             share_reserves=trade_data["share_reserves"],
             bond_reserves=trade_data["bond_reserves"],
             lp_total_supply=trade_data["lp_total_supply"],
+            stretch_time=stretch_time,
+            initial_share_price=initial_share_price,
         )
         .to_frame()
         .astype(float)

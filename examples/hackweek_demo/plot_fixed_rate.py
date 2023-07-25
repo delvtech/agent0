@@ -9,7 +9,7 @@ from matplotlib import ticker as mpl_ticker
 # %%
 
 
-def calc_fixed_rate(trade_data):
+def calc_fixed_rate(trade_data, stretch_time, initial_share_price):
     """
     Calculates the fixed rate given trade data
     """
@@ -19,6 +19,8 @@ def calc_fixed_rate(trade_data):
             row.share_reserves,
             row.bond_reserves,
             row.lp_total_supply,
+            stretch_time=stretch_time,
+            initial_share_price=initial_share_price,
         )
         trade_data.loc[idx, "rate"] = (1 - spot_price) / spot_price
 
