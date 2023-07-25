@@ -222,7 +222,7 @@ def smart_contract_transact(
         raise err
 
 
-def eth_transact(
+def eth_transfer(
     web3: Web3,
     signer: EthAccount,
     to_address: ChecksumAddress,
