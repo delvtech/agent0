@@ -54,6 +54,7 @@ class LpAndWithdrawAgent(BasePolicy):
                     trade=HyperdriveMarketAction(
                         action_type=MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.amount_to_lp,
+                        slippage_tolerance=self.slippage_tolerance,
                         wallet=wallet,
                     ),
                 )
@@ -67,6 +68,7 @@ class LpAndWithdrawAgent(BasePolicy):
                         trade=HyperdriveMarketAction(
                             action_type=MarketActionType.REMOVE_LIQUIDITY,
                             trade_amount=wallet.lp_tokens,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                         ),
                     )

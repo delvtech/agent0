@@ -79,6 +79,7 @@ class RandomAgent(BasePolicy):
                 trade=HyperdriveMarketAction(
                     action_type=MarketActionType.OPEN_SHORT,
                     trade_amount=trade_amount,
+                    slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
                 ),
             )
@@ -95,6 +96,7 @@ class RandomAgent(BasePolicy):
                 trade=HyperdriveMarketAction(
                     action_type=MarketActionType.CLOSE_SHORT,
                     trade_amount=trade_amount,
+                    slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
                     mint_time=short_time,
                 ),
@@ -121,6 +123,7 @@ class RandomAgent(BasePolicy):
                 trade=HyperdriveMarketAction(
                     action_type=MarketActionType.OPEN_LONG,
                     trade_amount=trade_amount,
+                    slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
                 ),
             )
@@ -137,6 +140,7 @@ class RandomAgent(BasePolicy):
                 trade=HyperdriveMarketAction(
                     action_type=MarketActionType.CLOSE_LONG,
                     trade_amount=trade_amount,
+                    slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
                     mint_time=long_time,
                 ),
@@ -158,6 +162,7 @@ class RandomAgent(BasePolicy):
                 trade=HyperdriveMarketAction(
                     action_type=MarketActionType.ADD_LIQUIDITY,
                     trade_amount=trade_amount,
+                    slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
                 ),
             )
@@ -178,6 +183,7 @@ class RandomAgent(BasePolicy):
                 trade=HyperdriveMarketAction(
                     action_type=MarketActionType.REMOVE_LIQUIDITY,
                     trade_amount=trade_amount,
+                    slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
                 ),
             )

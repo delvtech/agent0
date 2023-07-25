@@ -78,6 +78,7 @@ class LongLouie(BasePolicy):
                         trade=HyperdriveMarketAction(
                             action_type=MarketActionType.CLOSE_LONG,
                             trade_amount=trade_amount,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                             mint_time=long_time,
                         ),
@@ -116,6 +117,7 @@ class LongLouie(BasePolicy):
                         trade=HyperdriveMarketAction(
                             action_type=MarketActionType.OPEN_LONG,
                             trade_amount=trade_amount,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                             mint_time=market.block_time.time,
                         ),

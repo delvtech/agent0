@@ -48,6 +48,7 @@ class SingleShortAgent(BasePolicy):
                     trade=HyperdriveMarketAction(
                         action_type=MarketActionType.OPEN_SHORT,
                         trade_amount=self.amount_to_trade,
+                        slippage_tolerance=self.slippage_tolerance,
                         wallet=wallet,
                     ),
                 )

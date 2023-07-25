@@ -220,11 +220,12 @@ async def async_match_contract_call_to_trade(
 
     """
     # TODO: figure out fees paid
-    # TODO: The following variables are hard coded for now, but should be specified in the trade spec
-    # HyperdriveMarketAction does have min_amount_out
+    # TODO: clean up this function, DRY it up to reduce number of statements
+    # pylint: disable=too-many-statements
     trade_amount: int = trade.trade.trade_amount.scaled_value
     max_deposit: int = trade_amount
 
+    # TODO: The following variables are hard coded for now, but should be specified in the trade spec
     min_apr = int(1)
     max_apr = int(1e18)
     as_underlying = True
@@ -233,7 +234,10 @@ async def async_match_contract_call_to_trade(
             min_output = 0
             fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
             preview_result = smart_contract_preview_transaction(hyperdrive_contract, account, "openLong", *fn_args)
-            min_output = (FixedPoint(scaled_value=preview_result["bondProceeds"]) * FixedPoint(0.9999)).scaled_value
+            min_output = (
+                FixedPoint(scaled_value=preview_result["bondProceeds"])
+                * (FixedPoint(1) - trade.trade.slippage_tolerance)
+            ).scaled_value
             fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
 
             trade_result = await async_transact_and_parse_logs(
@@ -266,7 +270,9 @@ async def async_match_contract_call_to_trade(
                 as_underlying,
             )
             preview_result = smart_contract_preview_transaction(hyperdrive_contract, account, "closeLong", *fn_args)
-            min_output = (FixedPoint(scaled_value=preview_result["value"]) * FixedPoint(0.9999)).scaled_value
+            min_output = (
+                FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.trade.slippage_tolerance)
+            ).scaled_value
             fn_args = (decoded_maturity_time_seconds, trade_amount, min_output, account.checksum_address, as_underlying)
             trade_result = await async_transact_and_parse_logs(
                 web3,
@@ -286,7 +292,10 @@ async def async_match_contract_call_to_trade(
             max_deposit = eth_utils.currency.MAX_WEI
             fn_args = (trade_amount, max_deposit, account.checksum_address, as_underlying)
             preview_result = smart_contract_preview_transaction(hyperdrive_contract, account, "openShort", *fn_args)
-            max_deposit = (FixedPoint(scaled_value=preview_result["traderDeposit"]) * FixedPoint(1.0001)).scaled_value
+            max_deposit = (
+                FixedPoint(scaled_value=preview_result["traderDeposit"])
+                * (FixedPoint(1) + trade.trade.slippage_tolerance)
+            ).scaled_value
             fn_args = (trade_amount, max_deposit, account.checksum_address, as_underlying)
             trade_result = await async_transact_and_parse_logs(
                 web3,
@@ -322,7 +331,9 @@ async def async_match_contract_call_to_trade(
                 as_underlying,
             )
             preview_result = smart_contract_preview_transaction(hyperdrive_contract, account, "closeShort", *fn_args)
-            min_output = (FixedPoint(scaled_value=preview_result["value"]) * FixedPoint(0.9999)).scaled_value
+            min_output = (
+                FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.trade.slippage_tolerance)
+            ).scaled_value
             fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
             trade_result = await async_transact_and_parse_logs(
                 web3,

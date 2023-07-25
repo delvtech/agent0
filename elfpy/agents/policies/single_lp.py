@@ -47,6 +47,7 @@ class SingleLpAgent(BasePolicy):
                     trade=HyperdriveMarketAction(
                         action_type=MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.amount_to_lp,
+                        slippage_tolerance=self.slippage_tolerance,
                         wallet=wallet,
                     ),
                 )

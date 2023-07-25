@@ -55,8 +55,8 @@ class HyperdriveMarketAction(BaseMarketAction):
     trade_amount: FixedPoint  # TODO: should this be a Quantity, not a float? Make sure, then delete fixme
     # the agent's wallet
     wallet: Wallet
-    # min amount to receive for the action
-    min_amount_out: FixedPoint = FixedPoint(0)
+    # slippage tolerance defaults to 0.01% for trades
+    slippage_tolerance: FixedPoint = FixedPoint(0.0001)
     # mint time is set only for trades that act on existing positions (close long or close short)
     mint_time: FixedPoint | None = None
 
