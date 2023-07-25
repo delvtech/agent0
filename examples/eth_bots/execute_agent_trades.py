@@ -87,7 +87,6 @@ async def async_transact_and_parse_logs(
         tx_receipt,
         event_names=[fn_name[0].capitalize() + fn_name[1:]],
     )
-    # if len(hyperdrive_event_logs)
     if len(hyperdrive_event_logs) == 0:
         raise AssertionError("Transaction receipt had no logs")
     if len(hyperdrive_event_logs) > 1:
@@ -129,10 +128,12 @@ async def async_execute_single_agent_trade(
     hyperdrive_market: HyperdriveMarket:
         The hyperdrive market state
     """
+
     # This condition is unlikely;
     # it would happen if they created an eth address but didn't associate it with an elfpy Agent
     if account.agent is None:
         return
+
     trades: list[elftypes.Trade] = account.agent.get_trades(market=hyperdrive_market)
     for trade_object in trades:
         logging.info(
@@ -171,6 +172,7 @@ async def async_execute_agent_trades(
     agent_accounts : list[EthAccount]
         A list of EthAccount that are conducting the trades
     """
+    # TODO: This might _not_ be the latest market, due to async
     # get latest market
     hyperdrive_market = hyperdrive_interface.get_hyperdrive_market(web3, hyperdrive_contract)
     # Make calls per account to execute_single_agent_trade
