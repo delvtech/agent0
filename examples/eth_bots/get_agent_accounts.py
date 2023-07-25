@@ -16,6 +16,8 @@ from elfpy.agents.agent import Agent
 from elfpy.bots import AgentConfig
 from elfpy.eth.accounts import EthAccount
 
+# pylint: disable=too-many-locals
+
 
 def get_agent_accounts(
     agent_config: list[AgentConfig],
@@ -80,8 +82,8 @@ def get_agent_accounts(
             agent_eth_funds = eth.rpc_interface.get_account_balance(web3, eth_account.checksum_address)
             if agent_eth_funds == 0:
                 raise AssertionError(
-                    f"Agent needs Ethereum to operate! The agent {eth_account.checksum_address=} has a balance of {agent_eth_funds=}."
-                    "\nDid you fund their accounts?"
+                    f"Agent needs Ethereum to operate! The agent {eth_account.checksum_address=} has a "
+                    f"balance of {agent_eth_funds=}.\nDid you fund their accounts?"
                 )
             agent_base_funds = eth.smart_contract_read(base_token_contract, "balanceOf", eth_account.checksum_address)
             if agent_base_funds["value"] == 0:

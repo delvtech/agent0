@@ -69,9 +69,12 @@ if __name__ == "__main__":
     ):
         # fund Ethereum
         user_eth_balance = eth.get_account_balance(web3, user_account.checksum_address)
+        if user_eth_balance is None:
+            raise AssertionError("User has no Ethereum balance")
         if user_eth_balance < agent_eth_budget:
             raise AssertionError(
-                f"User account {user_account.checksum_address=} has {user_eth_balance=}, which must be >= {agent_eth_budget=}"
+                f"User account {user_account.checksum_address=} has {user_eth_balance=}, "
+                f"which must be >= {agent_eth_budget=}"
             )
         _ = eth.eth_transfer(
             web3,
@@ -95,7 +98,8 @@ if __name__ == "__main__":
         )["value"]
         if user_base_balance < agent_eth_budget:
             raise AssertionError(
-                f"User account {user_account.checksum_address=} has {user_base_balance=}, which must be >= {agent_base_budget=}"
+                f"User account {user_account.checksum_address=} has {user_base_balance=}, "
+                f"which must be >= {agent_base_budget=}"
             )
         _ = eth.smart_contract_transact(
             web3,
