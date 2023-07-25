@@ -61,7 +61,7 @@ def main(
     # send a request to the local server to fetch the deployed contract addresses and
     # all Hyperdrive contract addresses from the server response
     addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(contracts_url)
-    abis = eth.abi.load_all_abis(abi_dir)
+    abis = eth.abi.load_abis(abi_dir)
 
     hyperdrive_contract = hyperdrive_interface.get_hyperdrive_contract(web3, abis, addresses)
     base_contract: Contract = web3.eth.contract(
