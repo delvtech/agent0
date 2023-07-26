@@ -59,7 +59,7 @@ The following instructions will not work for anyone who is not a member of Delv.
 Clone the hyperdrive repo, then create a [sym link](https://en.wikipedia.org/wiki/Symbolic_link#POSIX_and_Unix-like_operating_systems) at `hyperdrive_solidity/` pointing to the repo location.
 
 ```bash
-git clone https://github.com/delvtech/hyperdrive.git ../hyperdrive
+git clone git@github.com:delvtech/hyperdrive.git ../hyperdrive
 ln -s ../hyperdrive hyperdrive_solidity
 ```
 
