@@ -5,7 +5,7 @@ import logging
 
 import pandas as pd
 
-from elfpy.data import postgres as pg
+from elfpy.data.postgres import AgentPosition
 
 
 # TODO fix calculating spot price with position duration
@@ -61,8 +61,8 @@ def calculate_pnl(
     pool_config: pd.DataFrame,
     pool_info: pd.DataFrame,
     checkpoint_info: pd.DataFrame,
-    agent_positions: dict[str, pg.AgentPosition],
-) -> dict[str, pg.AgentPosition]:
+    agent_positions: dict[str, AgentPosition],
+) -> dict[str, AgentPosition]:
     """Calculate pnl for all agents.
 
     Arguments
@@ -103,10 +103,8 @@ def calculate_pnl(
             for position_name in ap.positions.columns:
                 if position_name.startswith("LP"):
                     # LP value
-                    total_lp_value = state.shareReserves * state.sharePrice + state.bondReserves * spot_price
+                    total_lp_value = state.shareReserves * state.sharePrice
                     share_of_pool = ap.positions.loc[block, "LP"] / state.lpTotalSupply
-                    # TODO this assertion is breaking due to positions having higher LP than supply
-                    # assert share_of_pool < 1, "share_of_pool must be less than 1"
                     ap.pnl.loc[block] += share_of_pool * total_lp_value
                 elif position_name.startswith("LONG"):
                     # LONG value
@@ -123,12 +121,12 @@ def calculate_pnl(
     return agent_positions
 
 
-def plot_pnl(agent_positions: dict[str, pg.AgentPosition], axes) -> None:
+def plot_pnl(agent_positions: dict[str, AgentPosition], axes) -> None:
     """Plot the pnl data.
 
     Arguments
     ---------
-    agent_positions : dict[str, pg.AgentPosition]
+    agent_positions : dict[str, AgentPosition]
         Dict containing each agent's AgentPosition object.
     axes : Axes
     Axes object to plot on.
