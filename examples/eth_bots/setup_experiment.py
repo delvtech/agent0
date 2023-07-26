@@ -20,13 +20,6 @@ from examples.eth_bots.get_agent_accounts import get_agent_accounts
 def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, list[EthAccount]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
-    Arguments
-    ---------
-    environment_config : EnvironmentConfig
-        Dataclass containing all of the user environment settings
-    agent_config : list[BotInfo]
-        List containing all of the agent specifications
-
     Returns
     -------
     tuple[Web3, Contract, list[EthAccount]]
@@ -86,6 +79,6 @@ def register_username(register_url: str, wallet_addrs: list[str], username: str)
     """Registers the username with the flask server."""
     # TODO: use the json schema from the server.
     json_data = {"wallet_addrs": wallet_addrs, "username": username}
-    result = requests.post(register_url + "/register_bots", json=json_data, timeout=3)
+    result = requests.post(f"{register_url}/register_bots", json=json_data, timeout=3)
     if result.status_code != HTTPStatus.OK:
         raise ConnectionError(result)
