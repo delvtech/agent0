@@ -1,4 +1,4 @@
-"""Experiment configuration"""
+"""Experiment configuration."""
 from __future__ import annotations
 
 import logging
@@ -23,7 +23,6 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
         agent_config : list[BotInfo]
             List containing all of the agent specifications
     """
-
     environment_config = EnvironmentConfig(
         delete_previous_logs=False,
         halt_on_errors=True,

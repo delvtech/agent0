@@ -27,7 +27,7 @@ class SimUtilsTest(unittest.TestCase):
 
     def test_get_initialized_market(self):
         """Compare two methods of initializing liquidity: agent-based as above, and the direct calc_liquidity method"""
-        log_utils.setup_logging(log_filename="test_sim_utils", log_level=logging.DEBUG)
+        log_utils.initialize_basic_logging(log_filename="test_sim_utils", log_level=logging.DEBUG)
         for target_liquidity in (1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9):
             for target_fixed_apr in (0.01, 0.03, 0.05, 0.10, 0.25, 0.5, 1.0, 1.1):
                 for num_position_days in [90, 365]:

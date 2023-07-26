@@ -1,4 +1,4 @@
-"""Testing for logging in the ElfPy package modules"""
+"""Testing for logging in the ElfPy package modules."""
 from __future__ import annotations
 
 import itertools
@@ -17,10 +17,10 @@ from elfpy.utils import sim_utils
 
 
 class TestLogging(unittest.TestCase):
-    """Run the logging tests"""
+    """Run the logging tests."""
 
     def test_logging(self):
-        """Tests logging"""
+        """Tests logging."""
         log_dir = ".logging"
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
@@ -38,13 +38,13 @@ class TestLogging(unittest.TestCase):
                 handler = logging.FileHandler(os.path.join(log_dir, log_name), "w")
             else:
                 handler = logging.StreamHandler(sys.stdout)
-            logging.getLogger().setLevel(level)  # events of this level and above will be tracked
+            log_utils.get_root_logger().setLevel(level)  # events of this level and above will be tracked
             handler.setFormatter(
                 logging.Formatter(
                     "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s", "%y-%m-%d %H:%M:%S"
                 )
             )
-            logging.getLogger().handlers = [
+            log_utils.get_root_logger().handlers = [
                 handler,
             ]
             config = SimulationConfig()
@@ -59,32 +59,49 @@ class TestLogging(unittest.TestCase):
                 log_utils.close_logging()
 
     def test_log_config_variables(self):
-        """Verfies that the config variables are successfully logged"""
+        """Verfies that the config variables are successfully logged."""
         log_filename = ".logging/test_logging.log"
-        log_utils.setup_logging(log_filename, log_level=logging.INFO)
+        log_utils.initialize_basic_logging(log_filename, log_level=logging.INFO)
         config = SimulationConfig()
         logging.info("%s", config)
         self.assertLogs(level=logging.INFO)
         log_utils.close_logging()
 
-    def test_multiple_handlers(self):
-        """Verfies that two handlers are created if we log to file and stdout"""
+    def test_multiple_handlers_setup_logging(self):
+        """Verfies that two handlers are created if we log to file and stdout."""
         log_filename = ".logging/test_logging.log"
         # one handler because we're logging to file only
-        log_utils.setup_logging(log_filename, log_stdout=False)
-        self.assertEqual(len(logging.getLogger().handlers), 1)
+        log_utils.initialize_basic_logging(log_filename=log_filename, log_stdout=False, keep_previous_handlers=False)
+        self.assertEqual(len(log_utils.get_root_logger().handlers), 1)
         log_utils.close_logging()
         # one handler because we're logging to stdout only
-        log_utils.setup_logging()
-        self.assertEqual(len(logging.getLogger().handlers), 1)
+        log_utils.initialize_basic_logging(log_stdout=True)
+        self.assertEqual(len(log_utils.get_root_logger().handlers), 1)
         log_utils.close_logging()
         # two handlers because we're logging to file and stdout
-        log_utils.setup_logging(log_filename, log_stdout=True)
-        self.assertEqual(len(logging.getLogger().handlers), 2)
+        log_utils.initialize_basic_logging(log_filename=log_filename, log_stdout=True)
+        self.assertEqual(len(log_utils.get_root_logger().handlers), 2)
+        log_utils.close_logging()
+
+    def test_multiple_handlers_add_handlers(self):
+        """Verfies that two handlers are created if we log to file and stdout."""
+        log_filename = ".logging/test_logging.log"
+        # one handler because we're logging to file only
+        log_utils.add_stdout_handler(keep_previous_handlers=False)
+        self.assertEqual(len(log_utils.get_root_logger().handlers), 1)
+        log_utils.close_logging()
+        # one handler because we're logging to stdout only
+        log_utils.add_file_handler(log_filename=log_filename)
+        self.assertEqual(len(log_utils.get_root_logger().handlers), 1)
+        log_utils.close_logging()
+        # two handlers because we're logging to file and stdout
+        log_utils.add_stdout_handler(keep_previous_handlers=False)
+        log_utils.add_file_handler(log_filename=log_filename)
+        self.assertEqual(len(log_utils.get_root_logger().handlers), 2)
         log_utils.close_logging()
 
     def test_hyperdrive_crash_report_logging(self):
-        """Tests logging"""
+        """Tests logging."""
         log_utils.setup_hyperdrive_crash_report_logging()
         config = SimulationConfig()
         config.pricing_model_name = "Yieldspace"

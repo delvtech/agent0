@@ -75,7 +75,7 @@ class TestCalculateMax(unittest.TestCase):
             withdrawalSharesReadyToWithdraw 0
             withdrawalSharesProceeds 0
         """
-        log_utils.setup_logging(log_filename="test_calculate_max")
+        log_utils.initialize_basic_logging(log_filename="test_calculate_max")
         pricing_model: HyperdrivePricingModel = HyperdrivePricingModel()
 
         test_case = TestCaseCalcMax(
@@ -121,7 +121,7 @@ class TestCalculateMax(unittest.TestCase):
             share_price * market_state.share_reserves >= base_buffer
             bond_reserves >= bond_buffer
         """
-        log_utils.setup_logging(log_filename="test_calculate_max")
+        log_utils.initialize_basic_logging(log_filename="test_calculate_max")
         pricing_model: HyperdrivePricingModel = HyperdrivePricingModel()
 
         # Values from Hyperdrive

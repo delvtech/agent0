@@ -1439,7 +1439,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     def test_calc_out_given_in_failure(self):
         """Failure tests for calc_out_given_in"""
-        log_utils.setup_logging("test_calc_out_given_in")
+        log_utils.initialize_basic_logging("test_calc_out_given_in")
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),
             HyperdrivePricingModel(),

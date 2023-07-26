@@ -35,7 +35,7 @@ class TestSimulator(unittest.TestCase):
     def setup_logging(log_level=logging.DEBUG):
         """Setup logging and handlers for the test"""
         log_filename = ".logging/test_sim.log"
-        log_utils.setup_logging(log_filename, log_level=log_level)
+        log_utils.initialize_basic_logging(log_filename, log_level=log_level)
 
     def test_hyperdrive_sim(self):
         """Tests hyperdrive simulation"""
