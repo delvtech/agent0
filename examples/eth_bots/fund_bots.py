@@ -77,14 +77,6 @@ if __name__ == "__main__":
             agent_eth_budget,
         )
         #  fund base
-        _ = eth.smart_contract_transact(
-            web3,
-            base_token_contract,
-            user_account,
-            "mint(address,uint256)",
-            user_account.checksum_address,
-            agent_base_budget * 2,
-        )
         user_base_balance = eth.smart_contract_read(
             base_token_contract,
             "balanceOf",
