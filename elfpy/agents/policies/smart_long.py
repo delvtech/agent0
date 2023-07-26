@@ -33,6 +33,8 @@ class LongLouie(BasePolicy):
 
     """
 
+    # pylint: disable=too-many-arguments
+
     def __init__(
         self,
         budget: FixedPoint,

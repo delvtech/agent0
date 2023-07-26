@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Sequence, TypeVar
+from typing import Any, Sequence
 
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout
-from web3.contract.contract import Contract, ContractFunction
+from web3.contract.contract import Contract
 from web3.exceptions import ContractCustomError, ContractLogicError, TimeExhausted, TransactionNotFound
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, TxParams, TxReceipt, Wei
 

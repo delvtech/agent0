@@ -25,6 +25,8 @@ class LpAndWithdrawAgent(BasePolicy):
     only has one LP open at a time
     """
 
+    # pylint: disable=too-many-arguments
+
     def __init__(
         self,
         budget: FixedPoint = FixedPoint("1000.0"),

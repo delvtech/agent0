@@ -35,6 +35,8 @@ class ShortSally(BasePolicy):
             - I only open one short at a time
     """
 
+    # pylint: disable=too-many-arguments
+
     def __init__(
         self,
         budget: FixedPoint,

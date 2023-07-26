@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 class SingleShortAgent(BasePolicy):
     """simple short thatonly has one long open at a time"""
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         budget: FixedPoint = FixedPoint("100.0"),
