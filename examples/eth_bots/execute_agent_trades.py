@@ -258,7 +258,7 @@ async def async_match_contract_call_to_trade(
         case MarketActionType.CLOSE_LONG:
             maturity_time_seconds = trade.trade.mint_time
             if not maturity_time_seconds:
-                raise ValueError("Mint time wasnot provided, can't close long position.")
+                raise ValueError("Mint time was not provided, can't close long position.")
             decoded_maturity_time_seconds = int(maturity_time_seconds)
             min_output = 0
 

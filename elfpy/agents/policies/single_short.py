@@ -27,13 +27,14 @@ class SingleShortAgent(BasePolicy):
         self,
         budget: FixedPoint = FixedPoint("100.0"),
         rng: NumpyGenerator | None = None,
+        slippage_tolerance: FixedPoint = FixedPoint("0.0001"),
         amount_to_trade: FixedPoint | None = None,
     ):
         """call basic policy init then add custom stuff"""
         if amount_to_trade is None:
             amount_to_trade = budget
         self.amount_to_trade = amount_to_trade
-        super().__init__(budget, rng)
+        super().__init__(budget, rng, slippage_tolerance)
 
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Implement user strategy: short if you can, only once."""

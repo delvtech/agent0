@@ -26,11 +26,12 @@ class SingleLpAgent(BasePolicy):
         self,
         budget: FixedPoint = FixedPoint("1000.0"),
         rng: NumpyGenerator | None = None,
+        slippage_tolerance: FixedPoint = FixedPoint("0.0001"),
         amount_to_lp: FixedPoint = FixedPoint("100.0"),
     ):
         """call basic policy init then add custom stuff"""
         self.amount_to_lp: FixedPoint = amount_to_lp
-        super().__init__(budget, rng)
+        super().__init__(budget, rng, slippage_tolerance)
 
     def action(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
         """

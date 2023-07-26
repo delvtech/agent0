@@ -39,6 +39,7 @@ class LongLouie(BasePolicy):
         rng: NumpyGenerator,
         trade_chance: FixedPoint,
         risk_threshold: FixedPoint,
+        slippage_tolerance: FixedPoint = FixedPoint("0.0001"),
     ) -> None:
         """Add custom stuff then call basic policy init"""
         if not isinstance(trade_chance, FixedPoint):
@@ -47,7 +48,7 @@ class LongLouie(BasePolicy):
             raise TypeError(f"{risk_threshold=} must be of type `FixedPoint`")
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
-        super().__init__(budget, rng)
+        super().__init__(budget, rng, slippage_tolerance)
 
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Implement a Long Louie user strategy

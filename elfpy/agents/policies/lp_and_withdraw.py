@@ -29,13 +29,14 @@ class LpAndWithdrawAgent(BasePolicy):
         self,
         budget: FixedPoint = FixedPoint("1000.0"),
         rng: NumpyGenerator | None = None,
+        slippage_tolerance: FixedPoint = FixedPoint("0.0001"),
         amount_to_lp: FixedPoint = FixedPoint("100.0"),
         time_to_withdraw: FixedPoint = FixedPoint("1.0"),
     ):
         """call basic policy init then add custom stuff"""
         self.amount_to_lp = amount_to_lp
         self.time_to_withdraw = time_to_withdraw
-        super().__init__(budget, rng)
+        super().__init__(budget, rng, slippage_tolerance)
 
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """

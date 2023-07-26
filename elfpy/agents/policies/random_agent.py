@@ -25,13 +25,14 @@ class RandomAgent(BasePolicy):
         self,
         budget: FixedPoint = FixedPoint("10_000.0"),
         rng: NumpyGenerator | None = None,
+        slippage_tolerance: FixedPoint = FixedPoint("0.0001"),
         trade_chance: FixedPoint = FixedPoint("1.0"),
     ) -> None:
         """Adds custom attributes."""
         if not isinstance(trade_chance, FixedPoint):
             raise TypeError(f"{trade_chance=} must be of type `FixedPoint`")
         self.trade_chance = trade_chance
-        super().__init__(budget, rng)
+        super().__init__(budget, rng, slippage_tolerance)
 
     def get_available_actions(
         self,
