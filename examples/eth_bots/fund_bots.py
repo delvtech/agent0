@@ -7,6 +7,7 @@ import os
 from dotenv import load_dotenv
 
 from elfpy import eth, hyperdrive_interface
+from examples.eth_bots.eth_bots_config import get_eth_bots_config
 
 if __name__ == "__main__":
     # get keys & RPC url from the environment
@@ -42,25 +43,18 @@ if __name__ == "__main__":
             f"{len(agent_accounts)=} must equal {len(agent_eth_budgets)=} and {len(agent_base_budgets)=}"
         )
 
-    # RPC URL
-    rpc_url = os.environ.get("RPC_URL")
-    if rpc_url is None:
-        raise ValueError("RPC_URL environment variable must be set")
-
-    # ARTIFACTS URL
-    artifacts_url = os.environ.get("ARTIFACTS_URL")
-    if artifacts_url is None:
-        raise ValueError("ARTIFACTS_URL environment variable must be set")
-
-    # ABI
-    base_abi_file = os.environ.get("BASE_ABI_FILE")
-    if base_abi_file is None:
-        raise ValueError("BASE_ABI_FILE environment variable must be set")
+    environment_config, agent_config = get_eth_bots_config()
 
     # setup web3 & contracts
-    web3 = eth.web3_setup.initialize_web3_with_http_provider(rpc_url)
-    base_contract_abi = eth.abi.load_abi_from_file(base_abi_file)
-    addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(os.path.join(artifacts_url, "addresses.json"))
+    web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url)
+    abi_file_loc = os.path.join(
+        os.path.join(environment_config.build_folder, environment_config.base_abi + ".sol"),
+        environment_config.base_abi + ".json",
+    )
+    base_contract_abi = eth.abi.load_abi_from_file(abi_file_loc)
+    addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(
+        os.path.join(environment_config.artifacts_url, "addresses.json")
+    )
     base_token_contract = web3.eth.contract(
         abi=base_contract_abi, address=web3.to_checksum_address(addresses.base_token)
     )
