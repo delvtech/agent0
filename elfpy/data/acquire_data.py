@@ -204,7 +204,7 @@ class EthConfig:
     # pylint: disable=invalid-name
     CONTRACTS_URL: str = "http://localhost:80/addresses.json"
     ETHEREUM_NODE: str = "http://localhost:8545"
-    ABI_DIR: str = "./hyperdrive_solidity/out/"
+    ABI_DIR: str = "./packages/hyperdrive/src/"
 
 
 def build_eth_config() -> EthConfig:
