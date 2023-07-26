@@ -215,6 +215,13 @@ async def async_smart_contract_transact(
             function_name_or_signature,
             fn_args,
         )
+
+        err.message = (
+            f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.\n"
+            + f"function name: {function_name_or_signature}"
+            + f"\nfunction args: {fn_args}"
+        )
+
         raise err
     except ContractLogicError as err:
         logging.error(
