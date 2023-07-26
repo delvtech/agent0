@@ -35,7 +35,7 @@ DEFAULT_LOG_DATETIME = "%y-%m-%d %H:%M:%S"
 DEFAULT_LOG_MAXBYTES = int(2e6)  # 2MB
 
 # Constant for time conversion
-SECONDS_IN_YEAR = FixedPoint(float(365 * 24 * 60 * 60))  # 31_536_000
+SECONDS_IN_YEAR = FixedPoint(365 * 24 * 60 * 60)  # 31_536_000
 
 # Plotting defaults
 WHITE = "white"

@@ -19,8 +19,7 @@ if TYPE_CHECKING:
 
 
 class HyperdrivePricingModel(YieldspacePricingModel):
-    """
-    Hyperdrive Pricing Model
+    """Hyperdrive Pricing Model
 
     This pricing model uses a combination of the Constant Sum and Yield Space
     invariants with modifications to the Yield Space invariant that enable the
@@ -40,8 +39,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint]:
-        r"""
-        Calculates the maximum long the market can support
+        r"""Calculates the maximum long the market can support.
 
         .. math::
             \Delta z' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot (k-(y+c \cdot z)^{1-\tau(d)}))^{\frac{1}{1-\tau(d)}}
@@ -82,9 +80,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint]:
-        r"""
-        Calculates the maximum short the market can support using the bisection
-        method.
+        r"""Calculates the maximum short the market can support using the bisection method.
 
         .. math::
             \Delta y' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot k)^{\frac{1}{1-\tau(d)}}-2y-c \cdot z
@@ -125,9 +121,8 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
-        r"""
-        Calculates the amount of an asset that must be provided to receive a
-        specified amount of the other asset given the current AMM reserves.
+        r"""Calculates the amount of an asset that must be provided to receive a specified amount of
+        the other asset given the current AMM reserves.
 
         The input is calculated as:
 
@@ -181,7 +176,8 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         Arguments
         ----------
         out : Quantity
-            The quantity of tokens that the user wants to receive (the amount and the unit of the tokens).
+            The quantity of tokens that the user wants to receive (the amount and the unit of the
+            tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
         time_remaining : StretchedTime
@@ -273,8 +269,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         market_state: HyperdriveMarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
-        r"""
-        Calculates the amount of an asset that must be provided to receive a specified amount of the
+        r"""Calculates the amount of an asset that must be provided to receive a specified amount of the
         other asset given the current AMM reserves.
 
         The output is calculated as:
@@ -473,8 +468,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         initial_share_price: FixedPoint,
         minimum_share_reserves: FixedPoint,
     ) -> FixedPoint:
-        r"""
-        Calculates the maximum amount of shares that can be used to open shorts.
+        r"""Calculates the maximum amount of shares that can be used to open shorts.
 
         Parameters
         ----------
@@ -511,8 +505,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
     def calc_tokens_out_given_lp_in(
         self, lp_in: FixedPoint, market_state: HyperdriveMarketState
     ) -> tuple[FixedPoint, FixedPoint]:
-        """
-        Calculates the amount of base shares and bonds released from burning a specified amount of
+        """Calculates the amount of base shares and bonds released from burning a specified amount of
         LP shares from the pool.
 
         Arguments

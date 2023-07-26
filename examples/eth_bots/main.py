@@ -9,7 +9,9 @@ from examples.eth_bots.trade_loop import trade_if_new_block
 
 def main():
     """Entrypoint to load all configurations and run agents."""
-    web3, hyperdrive_contract, environment_config, agent_accounts = setup_experiment()
+    # exposing the base_token_contract for debugging purposes.
+    # pylint: disable=unused-variable
+    web3, hyperdrive_contract, base_token_contract, environment_config, agent_accounts = setup_experiment()
     last_executed_block = BlockNumber(0)
     while True:
         last_executed_block = trade_if_new_block(

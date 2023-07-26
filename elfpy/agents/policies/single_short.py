@@ -23,17 +23,19 @@ if TYPE_CHECKING:
 class SingleShortAgent(BasePolicy):
     """simple short thatonly has one long open at a time"""
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         budget: FixedPoint = FixedPoint("100.0"),
         rng: NumpyGenerator | None = None,
+        slippage_tolerance: FixedPoint = FixedPoint("0.0001"),
         amount_to_trade: FixedPoint | None = None,
     ):
         """call basic policy init then add custom stuff"""
         if amount_to_trade is None:
             amount_to_trade = budget
         self.amount_to_trade = amount_to_trade
-        super().__init__(budget, rng)
+        super().__init__(budget, rng, slippage_tolerance)
 
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Implement user strategy: short if you can, only once."""
@@ -48,6 +50,7 @@ class SingleShortAgent(BasePolicy):
                     trade=HyperdriveMarketAction(
                         action_type=MarketActionType.OPEN_SHORT,
                         trade_amount=self.amount_to_trade,
+                        slippage_tolerance=self.slippage_tolerance,
                         wallet=wallet,
                     ),
                 )

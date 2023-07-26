@@ -770,8 +770,16 @@ class AgentPosition:
         self.deltas.iloc[0] = self.positions.iloc[0]
 
         # Prepare tables filled with NaNs, in the shape of [blocks, positions]
-        share_price_on_increases = pd.DataFrame(data=np.nan, index=self.deltas.index, columns=self.deltas.columns)
-        self.open_share_price = pd.DataFrame(data=np.nan, index=self.deltas.index, columns=self.deltas.columns)
+        share_price_on_increases = pd.DataFrame(
+            data=np.nan,  # type: ignore
+            index=self.deltas.index,  # type: ignore
+            columns=self.deltas.columns,  # type: ignore
+        )
+        self.open_share_price = pd.DataFrame(
+            data=np.nan,  # type: ignore
+            index=self.deltas.index,  # type: ignore
+            columns=self.deltas.columns,  # type: ignore
+        )
 
         # When we have an increase in position, we use the current block's share_price
         share_price_on_increases = share_price_on_increases.mask(self.deltas > 0, self.share_price, axis=0)
@@ -796,9 +804,11 @@ class AgentPosition:
                 # calculate update, per this general formula:
                 # new_price = (delta_amount * current_price + old_amount * old_price) / (old_amount + delta_amount)
                 new_price = (
-                    share_price_on_increases.loc[row, cols] * self.deltas.loc[row, cols]
-                    + self.open_share_price.loc[row - 1, cols] * self.positions.loc[row - 1, cols]
-                ) / (self.deltas.loc[row, cols] + self.positions.loc[row - 1, cols])
+                    share_price_on_increases.loc[row, cols] * self.deltas.loc[row, cols]  # type: ignore
+                    + self.open_share_price.loc[row - 1, cols] * self.positions.loc[row - 1, cols]  # type: ignore
+                ) / (
+                    self.deltas.loc[row, cols] + self.positions.loc[row - 1, cols]  # type: ignore
+                )
 
             # Keep previous result where an update isn't required, otherwise replace with new_price
             self.open_share_price.loc[row, :] = self.open_share_price.loc[row - 1, :].where(

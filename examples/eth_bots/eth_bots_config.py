@@ -42,7 +42,8 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
     agent_config: list[AgentConfig] = [
         AgentConfig(
             policy=Policies.random_agent,
-            number_of_agents=1,
+            number_of_agents=3,
+            slippage_tolerance=FixedPoint(0.0001),
             base_budget=Budget(
                 mean_wei=int(5_000e18),  # 5k base
                 std_wei=int(1_000e18),  # 1k base

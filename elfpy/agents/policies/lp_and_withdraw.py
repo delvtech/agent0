@@ -25,17 +25,20 @@ class LpAndWithdrawAgent(BasePolicy):
     only has one LP open at a time
     """
 
+    # pylint: disable=too-many-arguments
+
     def __init__(
         self,
         budget: FixedPoint = FixedPoint("1000.0"),
         rng: NumpyGenerator | None = None,
+        slippage_tolerance: FixedPoint = FixedPoint("0.0001"),
         amount_to_lp: FixedPoint = FixedPoint("100.0"),
         time_to_withdraw: FixedPoint = FixedPoint("1.0"),
     ):
         """call basic policy init then add custom stuff"""
         self.amount_to_lp = amount_to_lp
         self.time_to_withdraw = time_to_withdraw
-        super().__init__(budget, rng)
+        super().__init__(budget, rng, slippage_tolerance)
 
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """
@@ -54,6 +57,7 @@ class LpAndWithdrawAgent(BasePolicy):
                     trade=HyperdriveMarketAction(
                         action_type=MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.amount_to_lp,
+                        slippage_tolerance=self.slippage_tolerance,
                         wallet=wallet,
                     ),
                 )
@@ -67,6 +71,7 @@ class LpAndWithdrawAgent(BasePolicy):
                         trade=HyperdriveMarketAction(
                             action_type=MarketActionType.REMOVE_LIQUIDITY,
                             trade_amount=wallet.lp_tokens,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                         ),
                     )

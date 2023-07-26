@@ -18,10 +18,13 @@ if TYPE_CHECKING:
 class BasePolicy:
     """Base class policy"""
 
-    def __init__(self, budget: FixedPoint, rng: NumpyGenerator | None = None):
+    def __init__(
+        self, budget: FixedPoint, rng: NumpyGenerator | None = None, slippage_tolerance: FixedPoint = FixedPoint(0.0001)
+    ):
         if not isinstance(budget, FixedPoint):
             raise TypeError(f"{budget=} must be of type `FixedPoint`")
         self.budget: FixedPoint = budget
+        self.slippage_tolerance = slippage_tolerance
         if rng is None:  # TODO: Check that multiple agent.rng derefs to the same rng object
             logging.warning("Policy random number generator (rng) argument not set, using seed of `123`.")
             self.rng: NumpyGenerator = default_rng(123)

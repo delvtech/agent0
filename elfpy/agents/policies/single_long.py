@@ -38,6 +38,7 @@ class SingleLongAgent(BasePolicy):
                         trade=HyperdriveMarketAction(
                             action_type=MarketActionType.CLOSE_LONG,
                             trade_amount=longs[-1].balance,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                             mint_time=mint_time,
                         ),
@@ -51,6 +52,7 @@ class SingleLongAgent(BasePolicy):
                     trade=HyperdriveMarketAction(
                         action_type=MarketActionType.OPEN_LONG,
                         trade_amount=trade_amount,
+                        slippage_tolerance=self.slippage_tolerance,
                         wallet=wallet,
                     ),
                 )
