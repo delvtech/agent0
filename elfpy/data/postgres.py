@@ -770,8 +770,16 @@ class AgentPosition:
         self.deltas.iloc[0] = self.positions.iloc[0]
 
         # Prepare tables filled with NaNs, in the shape of [blocks, positions]
-        share_price_on_increases = pd.DataFrame(data=np.nan, index=self.deltas.index, columns=self.deltas.columns)  # type: ignore
-        self.open_share_price = pd.DataFrame(data=np.nan, index=self.deltas.index, columns=self.deltas.columns)  # type: ignore
+        share_price_on_increases = pd.DataFrame(
+            data=np.nan,  # type: ignore
+            index=self.deltas.index,  # type: ignore
+            columns=self.deltas.columns,  # type: ignore
+        )
+        self.open_share_price = pd.DataFrame(
+            data=np.nan,  # type: ignore
+            index=self.deltas.index,  # type: ignore
+            columns=self.deltas.columns,  # type: ignore
+        )
 
         # When we have an increase in position, we use the current block's share_price
         share_price_on_increases = share_price_on_increases.mask(self.deltas > 0, self.share_price, axis=0)
