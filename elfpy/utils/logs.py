@@ -5,7 +5,6 @@ import json
 import logging
 import os
 import sys
-import warnings
 from logging.handlers import RotatingFileHandler
 
 from web3.exceptions import InvalidTransaction
@@ -56,10 +55,6 @@ def initialize_basic_logging(
         - Test the various optional input combinations
     """
     # pylint: disable=too-many-arguments
-    # sane defaults to avoid spam from libraries
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
-    logging.getLogger("web3").setLevel(logging.WARNING)
-    warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
     # remove all handlers if requested
     if not keep_previous_handlers:
         _remove_handlers(get_root_logger())
