@@ -49,12 +49,12 @@ An explanation of what the above steps do:
 
 ## Working with smart contracts (optional)
 
-We run several tests and offer utilities that depend on executing Hyperdrive solidity contracts. This is not required to use elfpy.
+We run tests and offer utilities that depend on executing bytecode compiled from Hyperdrive solidity contracts. This is not required to use elfpy.
 
 NOTE: The Hyperdrive solidity implementation is currently under security review, and thus is not available publicly.
 The following instructions will not work for anyone who is not a member of Delv.
 
-### 5. Set up smart contracts
+### 1. Set up smart contracts
 
 Clone the hyperdrive repo, then create a [sym link](https://en.wikipedia.org/wiki/Symbolic_link#POSIX_and_Unix-like_operating_systems) at `hyperdrive_solidity/` pointing to the repo location.
 
@@ -63,7 +63,7 @@ git clone git@github.com:delvtech/hyperdrive.git ../hyperdrive
 ln -s ../hyperdrive hyperdrive_solidity
 ```
 
-### 6. Install Hyperdrive pre-requisites
+### 2. Install Hyperdrive
 
 Complete the steps in Hyperdrive's [Pre-requisites](https://github.com/delvtech/hyperdrive#pre-requisites) and [Build](https://github.com/delvtech/hyperdrive#build) sections.
 

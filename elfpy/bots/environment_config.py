@@ -46,8 +46,8 @@ class EnvironmentConfig(types.FrozenClass):
     # abi filenames
     hyperdrive_abi: str = "IHyperdrive"
     base_abi: str = "ERC20Mintable"
-    # build location
-    build_folder: str = "./hyperdrive_solidity/out"
+    # ABI location
+    abi_folder: str = "packages/hyperdrive/src/abis/"
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)

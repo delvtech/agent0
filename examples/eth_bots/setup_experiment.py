@@ -52,7 +52,7 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
     # point to chain env
     web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
     # setup base contract interface
-    hyperdrive_abis = eth.abi.load_all_abis(environment_config.build_folder)
+    hyperdrive_abis = eth.abi.load_all_abis(environment_config.abi_folder)
     addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(
         os.path.join(environment_config.artifacts_url, "addresses.json")
     )

@@ -19,9 +19,3 @@ RUN python -m pip install --no-cache-dir --upgrade pip && \
   apt-get remove -y gcc python3-dev libssl-dev && \
   apt-get autoremove -y && \
   pip uninstall pipenv -y
-
-# copy hyperdrive contracts from migrations image
-COPY --from=migrations /src/ ./hyperdrive_solidity/
-
-# copy foundry over from migrations image
-COPY --from=migrations /usr/local/bin/ /usr/local/bin

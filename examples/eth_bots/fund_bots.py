@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # setup web3 & contracts
     web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url)
     abi_file_loc = os.path.join(
-        os.path.join(environment_config.build_folder, environment_config.base_abi + ".sol"),
+        os.path.join(environment_config.abi_folder, environment_config.base_abi + ".sol"),
         environment_config.base_abi + ".json",
     )
     base_contract_abi = eth.abi.load_abi_from_file(abi_file_loc)
