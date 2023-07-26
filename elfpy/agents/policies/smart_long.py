@@ -41,7 +41,7 @@ class LongLouie(BasePolicy):
         rng: NumpyGenerator,
         trade_chance: FixedPoint,
         risk_threshold: FixedPoint,
-        slippage_tolerance: FixedPoint = FixedPoint("0.0001"),
+        slippage_tolerance: FixedPoint | None = None,
     ) -> None:
         """Add custom stuff then call basic policy init"""
         if not isinstance(trade_chance, FixedPoint):

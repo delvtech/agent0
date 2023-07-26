@@ -36,10 +36,7 @@ class ExampleCustomPolicy(BasePolicy):
         else:
             self.trade_amount: FixedPoint = trade_amount
 
-        if slippage_tolerance is None:
-            super().__init__(budget, rng)
-        else:
-            super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(budget, rng, slippage_tolerance)
 
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Specify actions.
