@@ -135,7 +135,7 @@ async def async_execute_single_agent_trade(
     if account.agent is None:
         return
 
-    trades: list[types.Trade] = account.agent.get_trades(market=hyperdrive_market)
+    trades: list[types.Trade[HyperdriveMarketAction]] = account.agent.get_trades(market=hyperdrive_market)
     for trade_object in trades:
         logging.info(
             "AGENT %s to perform %s for %g",
@@ -334,7 +334,7 @@ async def async_match_contract_call_to_trade(
             min_output = (
                 FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.trade.slippage_tolerance)
             ).scaled_value
-            fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
+            fn_args = (decoded_maturity_time_seconds, trade_amount, min_output, account.checksum_address, as_underlying)
             trade_result = await async_transact_and_parse_logs(
                 web3,
                 hyperdrive_contract,

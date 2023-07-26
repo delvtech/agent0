@@ -17,7 +17,7 @@ from examples.eth_bots.eth_bots_config import get_eth_bots_config
 from examples.eth_bots.get_agent_accounts import get_agent_accounts
 
 
-def setup_experiment() -> tuple[Web3, Contract, EnvironmentConfig, list[EthAccount]]:
+def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, list[EthAccount]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
     Arguments
@@ -33,6 +33,8 @@ def setup_experiment() -> tuple[Web3, Contract, EnvironmentConfig, list[EthAccou
         A tuple containing:
             - The web3 container
             - The hyperdrive contract
+            - The base token contract
+            - The environment configuration
             - A list of EthAccount objects that contain a wallet address and Elfpy Agent for determining trades
 
     """
@@ -77,7 +79,7 @@ def setup_experiment() -> tuple[Web3, Contract, EnvironmentConfig, list[EthAccou
     # initialize the postgres session
     wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
     register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
-    return web3, hyperdrive_contract, environment_config, agent_accounts
+    return web3, hyperdrive_contract, base_token_contract, environment_config, agent_accounts
 
 
 def register_username(register_url: str, wallet_addrs: list[str], username: str) -> None:
