@@ -45,7 +45,7 @@ def get_ticker(data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
 
     usernames = username_to_address(lookup, data[["operator"]])
     ticker_data = data.reset_index()[["timestamp", "blockNumber", "operator", "trade_type", "value"]].copy()
-    ticker_data.insert(2, "username", usernames.values)
+    ticker_data.insert(2, "username", usernames.values.tolist())
     ticker_data.columns = ["Timestamp", "Block", "User", "Wallet", "Method", "Amount"]
     # Shorten wallet address string
     ticker_data["Wallet"] = ticker_data["Wallet"].str[:6] + "..." + ticker_data["Wallet"].str[-4:]

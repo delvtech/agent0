@@ -6,6 +6,7 @@ import os
 from dataclasses import dataclass, field
 from typing import Type
 
+import numpy as np
 import pandas as pd
 import sqlalchemy
 from sqlalchemy import URL, MetaData, Table, create_engine, exc, func, inspect
@@ -751,7 +752,7 @@ class AgentPosition:
     def __init__(self, wallet_history: pd.DataFrame):
         """Calculate multiple relevant historical breakdowns of an agent's position."""
         # Prepare PNL Series filled with NaNs, in the shape of [blocks]
-        self.pnl = pd.Series(data=pd.NA, index=wallet_history.index)
+        self.pnl = pd.Series(data=np.nan, index=wallet_history.index)
 
         # Scrap the wallet history for parts. First we extract the share price and timestamp.
         self.share_price = wallet_history["sharePrice"]
@@ -769,8 +770,8 @@ class AgentPosition:
         self.deltas.iloc[0] = self.positions.iloc[0]
 
         # Prepare tables filled with NaNs, in the shape of [blocks, positions]
-        share_price_on_increases = pd.DataFrame(data=pd.NA, index=self.deltas.index, columns=self.deltas.columns)
-        self.open_share_price = pd.DataFrame(data=pd.NA, index=self.deltas.index, columns=self.deltas.columns)
+        share_price_on_increases = pd.DataFrame(data=np.nan, index=self.deltas.index, columns=self.deltas.columns)
+        self.open_share_price = pd.DataFrame(data=np.nan, index=self.deltas.index, columns=self.deltas.columns)
 
         # When we have an increase in position, we use the current block's share_price
         share_price_on_increases = share_price_on_increases.mask(self.deltas > 0, self.share_price, axis=0)
@@ -787,16 +788,17 @@ class AgentPosition:
         # Now we loop across the remaining rows, updated the weighted averages for positions that change.
         for row in self.deltas.index[1:]:
             # An update is required for columns which increase in size this row, identified by a positive delta.
-            update_required = self.deltas.loc[row, :] > 0
+            update_required = self.deltas.loc[row, :].values > 0  # boolean values where we have positive deltas.
+            cols = self.deltas.columns[update_required].to_list()  # associated column names
 
             new_price = []
             if len(update_required) > 0:
                 # calculate update, per this general formula:
                 # new_price = (delta_amount * current_price + old_amount * old_price) / (old_amount + delta_amount)
                 new_price = (
-                    share_price_on_increases.loc[row, update_required] * self.deltas.loc[row, update_required]
-                    + self.open_share_price.loc[row - 1, update_required] * self.positions.loc[row - 1, update_required]
-                ) / (self.deltas.loc[row, update_required] + self.positions.loc[row - 1, update_required])
+                    share_price_on_increases.loc[row, cols] * self.deltas.loc[row, cols]
+                    + self.open_share_price.loc[row - 1, cols] * self.positions.loc[row - 1, cols]
+                ) / (self.deltas.loc[row, cols] + self.positions.loc[row - 1, cols])
 
             # Keep previous result where an update isn't required, otherwise replace with new_price
             self.open_share_price.loc[row, :] = self.open_share_price.loc[row - 1, :].where(
