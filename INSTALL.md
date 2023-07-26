@@ -65,7 +65,7 @@ ln -s ../hyperdrive hyperdrive_solidity
 
 ### 6. Install Hyperdrive pre-requisites
 
-Complete the steps in [Hyperdrive's Pre-requisites section](https://github.com/delvtech/hyperdrive#pre-requisites).
+Complete the steps in Hyperdrive's [Pre-requisites](https://github.com/delvtech/hyperdrive#pre-requisites) and [Build](https://github.com/delvtech/hyperdrive#build) sections.
 
 ## Notes
 
