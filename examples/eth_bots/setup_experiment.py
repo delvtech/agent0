@@ -53,7 +53,7 @@ def setup_experiment() -> tuple[Web3, Contract, EnvironmentConfig, list[EthAccou
     logs.setup_hyperdrive_crash_report_logging()
     # Check for default name and exit if is default
     if environment_config.username == DEFAULT_USERNAME:
-        raise ValueError("Default username detected, please update 'username' in config.py")
+        raise ValueError("Default username detected, please update 'username' in eth_bots_config.py")
     # point to chain env
     web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
     # setup base contract interface
