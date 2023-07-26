@@ -23,13 +23,23 @@ if TYPE_CHECKING:
 class ExampleCustomPolicy(BasePolicy):
     """Example custom agent"""
 
-    def __init__(self, budget: FixedPoint, rng: NumpyGenerator | None = None, trade_amount: FixedPoint | None = None):
+    def __init__(
+        self,
+        budget: FixedPoint,
+        rng: NumpyGenerator | None = None,
+        slippage_tolerance: FixedPoint | None = None,
+        trade_amount: FixedPoint | None = None,
+    ):
         if trade_amount is None:
             self.trade_amount = FixedPoint(100)
             logging.warning("Policy trade_amount not set, using 100.")
         else:
             self.trade_amount: FixedPoint = trade_amount
-        super().__init__(budget, rng)
+
+        if slippage_tolerance is None:
+            super().__init__(budget, rng)
+        else:
+            super().__init__(budget, rng, slippage_tolerance)
 
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
         """Specify actions.
