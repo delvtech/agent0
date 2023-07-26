@@ -20,7 +20,7 @@ class TestBorrow(unittest.TestCase):
 
     def test_open_borrow(self, delete_logs=True):
         """Borrow 100 BASE"""
-        log_utils.initialize_basic_logging(log_filename=".logging/test_borrow.log", log_level=logging.DEBUG)
+        log_utils.setup_logging(log_filename=".logging/test_borrow.log", log_level=logging.DEBUG)
         for loan_to_value, collateral_exponent, collateral_token in itertools.product(
             range(1, 100, 5), range(0, 8, 2), [types.TokenType.BASE, types.TokenType.PT]
         ):

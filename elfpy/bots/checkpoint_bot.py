@@ -62,7 +62,7 @@ def main() -> None:
     web3 = eth.web3_setup.initialize_web3_with_http_provider(config.rpc_url, reset_provider=False)
 
     # Setup logging
-    logs.initialize_basic_logging(
+    logs.setup_logging(
         log_filename=config.log_filename,
         max_bytes=config.max_bytes,
         log_level=config.log_level,

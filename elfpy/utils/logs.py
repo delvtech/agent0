@@ -14,7 +14,7 @@ import elfpy.utils.format as format_utils
 from elfpy.data.db_schema import Base, PoolConfig, PoolInfo
 
 
-def initialize_basic_logging(
+def setup_logging(
     log_filename: str | None = None,
     max_bytes: int | None = None,
     log_level: int | None = None,

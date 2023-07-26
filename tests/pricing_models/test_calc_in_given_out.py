@@ -39,7 +39,7 @@ class TestCalcInGivenOut(unittest.TestCase):
     # TODO: Add tests for the full TradeResult object
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
-        log_utils.initialize_basic_logging("test_calc_in_given_out_failure")
+        log_utils.setup_logging("test_calc_in_given_out_failure")
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),
             HyperdrivePricingModel(),
@@ -111,7 +111,7 @@ class TestCalcInGivenOut(unittest.TestCase):
 
         .. todo:: This should be multiple tests for base & pt trade type
         """
-        log_utils.initialize_basic_logging("test_calc_in_given_out")
+        log_utils.setup_logging("test_calc_in_given_out")
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),
             HyperdrivePricingModel(),
@@ -179,7 +179,7 @@ class TestCalcInGivenOut(unittest.TestCase):
     # issue #57
     def test_calc_in_given_out_failure(self):
         """Failure tests for calc_in_given_out"""
-        log_utils.initialize_basic_logging("test_calc_in_given_out_success")
+        log_utils.setup_logging("test_calc_in_given_out_success")
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),
             HyperdrivePricingModel(),

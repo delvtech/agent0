@@ -61,7 +61,7 @@ class TestLogging(unittest.TestCase):
     def test_log_config_variables(self):
         """Verfies that the config variables are successfully logged."""
         log_filename = ".logging/test_logging.log"
-        log_utils.initialize_basic_logging(log_filename, log_level=logging.INFO)
+        log_utils.setup_logging(log_filename, log_level=logging.INFO)
         config = SimulationConfig()
         logging.info("%s", config)
         self.assertLogs(level=logging.INFO)
@@ -71,15 +71,15 @@ class TestLogging(unittest.TestCase):
         """Verfies that two handlers are created if we log to file and stdout."""
         log_filename = ".logging/test_logging.log"
         # one handler because we're logging to file only
-        log_utils.initialize_basic_logging(log_filename=log_filename, log_stdout=False, keep_previous_handlers=False)
+        log_utils.setup_logging(log_filename=log_filename, log_stdout=False, keep_previous_handlers=False)
         self.assertEqual(len(log_utils.get_root_logger().handlers), 1)
         log_utils.close_logging()
         # one handler because we're logging to stdout only
-        log_utils.initialize_basic_logging(log_stdout=True)
+        log_utils.setup_logging(log_stdout=True)
         self.assertEqual(len(log_utils.get_root_logger().handlers), 1)
         log_utils.close_logging()
         # two handlers because we're logging to file and stdout
-        log_utils.initialize_basic_logging(log_filename=log_filename, log_stdout=True)
+        log_utils.setup_logging(log_filename=log_filename, log_stdout=True)
         self.assertEqual(len(log_utils.get_root_logger().handlers), 2)
         log_utils.close_logging()
 

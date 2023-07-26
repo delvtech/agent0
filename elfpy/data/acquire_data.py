@@ -245,7 +245,7 @@ if __name__ == "__main__":
     # Load parameters from env vars if they exist
     config = build_eth_config()
 
-    log_utils.initialize_basic_logging(".logging/acquire_data.log", log_stdout=True)
+    log_utils.setup_logging(".logging/acquire_data.log", log_stdout=True)
     main(
         config.CONTRACTS_URL,
         config.ETHEREUM_NODE,

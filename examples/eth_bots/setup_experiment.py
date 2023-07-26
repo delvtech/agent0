@@ -37,7 +37,7 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
     rng = np.random.default_rng(environment_config.random_seed)
     # setup logging
-    logs.initialize_basic_logging(
+    logs.setup_logging(
         log_filename=environment_config.log_filename,
         max_bytes=environment_config.max_bytes,
         log_level=environment_config.log_level,

@@ -35,7 +35,7 @@ class TestGetMax(unittest.TestCase):
             share_price * market_state.share_reserves >= base_buffer
             bond_reserves >= bond_buffer
         """
-        log_utils.initialize_basic_logging(log_filename="test_get_max")
+        log_utils.setup_logging(log_filename="test_get_max")
         pricing_model: HyperdrivePricingModel = HyperdrivePricingModel()
         test_cases: list[TestCaseGetMax] = [
             TestCaseGetMax(  # Test 0

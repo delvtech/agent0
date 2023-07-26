@@ -23,7 +23,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
         """Unit tests for calc_k_const function
         .. todo:: fix test to use new y+s expected value instead of 2y+cz
         """
-        log_utils.initialize_basic_logging("test_pricing_model_utils")
+        log_utils.setup_logging("test_pricing_model_utils")
         test_cases = [
             # test 0: 500k share_reserves; 500k bond_reserves
             #   1 share price; 1 init_share_price; 3mo elapsed
