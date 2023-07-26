@@ -57,7 +57,7 @@ def setup_logging(
     # pylint: disable=too-many-arguments
     # remove all handlers if requested
     if not keep_previous_handlers:
-        _remove_handlers(get_root_logger())
+        remove_handlers(get_root_logger())
     # add handler logging to stdout if requested
     if log_stdout is True:
         add_stdout_handler(log_format_string=log_format_string, log_level=log_level)
@@ -76,11 +76,17 @@ def setup_logging(
     if get_root_logger().handlers:
         get_root_logger().setLevel(min(handler.level for handler in get_root_logger().handlers))
     else:
-        get_root_logger().setLevel(_create_log_level(log_level))
+        get_root_logger().setLevel(create_log_level(log_level))
 
 
-def close_logging(delete_logs=True):
-    r"""Close logging and remove handlers for the test."""
+def close_logging(delete_logs=True) -> None:
+    """Close logging and remove handlers for the test.
+
+    Arguments
+    ---------
+    delete_logs : bool
+        Whether to delete logs before closing logging.
+    """
     logging.shutdown()
     root_logger = get_root_logger()
     if delete_logs:
@@ -94,8 +100,22 @@ def close_logging(delete_logs=True):
             root_logger.removeHandler(handler)
 
 
-def _prepare_log_path(log_filename: str):
-    """Prepare log file path and name."""
+def prepare_log_path(log_filename: str) -> tuple[str, str]:
+    """Split filename into path and name. Postpend ".log" extension if necessary. Make dir if necessary.
+
+    Arguments
+    ---------
+    log_filename : str
+        Path and name of the log file.
+
+    Returns
+    -------
+    tuple[log_dir : str, log_name : str]
+        log_dir : str
+            Path of the log file.
+        log_name : str
+            Name of the log file.
+    """
     log_dir, log_name = os.path.split(log_filename)
 
     # Append ".log" extension if necessary
@@ -114,8 +134,21 @@ def _prepare_log_path(log_filename: str):
     return log_dir, log_name
 
 
-def _create_formatter(log_format_string: str | None = None):
-    """Create Formatter object from a log format string, applying default settings if log_format_string is None."""
+def create_formatter(log_format_string: str | None = None) -> logging.Formatter:
+    """Create Formatter object from a log format string, applying default settings if log_format_string is None.
+
+    Default settings are defined in elfpy.DEFAULT_LOG_FORMATTER and elfpy.DEFAULT_LOG_DATETIME.
+
+    Arguments
+    ---------
+    log_format_string : str, optional
+        Logging format described in string format.
+
+    Returns
+    -------
+    log_formatter : logging.Formatter
+        Logging format as a Formatter object, after defaults are applied.
+    """
     if log_format_string is None:
         log_formatter = logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME)
     else:
@@ -123,15 +156,55 @@ def _create_formatter(log_format_string: str | None = None):
     return log_formatter
 
 
-def _create_log_level(log_level):
-    """Create log level, applying default settings if log_level is None."""
+def create_log_level(log_level: int | None = None) -> int:
+    """Create log level, applying default elfpy.DEFAULT_LOG_LEVEL if log_level is None.
+
+    Arguments
+    ---------
+    log_level : int, optional
+        Logging level to be created. Defaults to elfpy.DEFAULT_LOG_LEVEL.
+
+    Returns
+    -------
+    log_level : int
+        Logging level that was created, after defaults are applied.
+    """
     if log_level is None:
         log_level = elfpy.DEFAULT_LOG_LEVEL
     return log_level
 
 
+def create_max_bytes(max_bytes: int | None = None) -> int:
+    """Create max bytes, applying default elfpy.DEFAULT_LOG_MAXBYTES if max_bytes is None.
+
+    Arguments
+    ---------
+    max_bytes : int, optional
+        Maximum size of the log file in bytes. Defaults to elfpy.DEFAULT_LOG_MAXBYTES.
+
+    Returns
+    -------
+    max_bytes : int
+        Maximum size of the log file in bytes, after defaults are applied.
+    """
+    if max_bytes is None:
+        max_bytes = elfpy.DEFAULT_LOG_MAXBYTES
+    return max_bytes
+
+
 def get_root_logger(root_logger: logging.Logger | None = None) -> logging.Logger:
-    """Retrieve root logger used for elf-simulations, isolated from other loggers (like pytest)."""
+    """Retrieve root logger used for elf-simulations, isolated from other loggers (like pytest).
+
+    Arguments
+    ---------
+    root_logger : logging.Logger, optional
+        Logger to which to add the handler. Defaults to  logging.getLogger().
+
+    Returns
+    -------
+    root_logger : logging.Logger
+        Root logger.
+    """
     if root_logger is None:
         root_logger = logging.getLogger()
     return root_logger
@@ -142,14 +215,27 @@ def add_stdout_handler(
     log_format_string: str | None = None,
     log_level: int | None = logging.INFO,
     keep_previous_handlers: bool = True,
-):
-    """Add a stdout handler to the root logger."""
+) -> None:
+    """Add a stdout handler to the root logger.
+
+    Arguments
+    ---------
+    logger : logging.Logger, optional
+        Logger to which to add the handler. Defaults to get_root_logger().
+    log_format_string : str, optional
+        Logging format described in string format. Defaults to
+        elfpy.DEFAULT_LOG_FORMAT and elfpy.DEFAULT_LOG_DATETIME.
+    log_level : int, optional
+        Log level to track. Defaults to elfpy.DEFAULT_LOG_LEVEL.
+    keep_previous_handlers : bool, optional
+        Whether to keep previous handlers. Defaults to True.
+    """
     logger = get_root_logger(logger)
     if not keep_previous_handlers:
-        _remove_handlers(logger)
+        remove_handlers(logger)
     stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setLevel(_create_log_level(log_level))
-    stream_handler.setFormatter(_create_formatter(log_format_string))
+    stream_handler.setLevel(create_log_level(log_level))
+    stream_handler.setFormatter(create_formatter(log_format_string))
     logger.addHandler(stream_handler)
 
 
@@ -162,41 +248,85 @@ def add_file_handler(
     max_bytes=None,
     keep_previous_handlers: bool = True,
 ):
-    """Add a file handler to the root logger."""
+    """Add a file handler to the root logger.
+
+    Arguments
+    ---------
+    log_filename : str
+        Path and name of the log file.
+    logger : logging.Logger, optional
+        Logger to which to add the handler. Defaults to get_root_logger().
+    delete_previous_logs : bool, optional
+        Whether to delete previous log file if it exists. Defaults to False.
+    log_format_string : str, optional
+        Logging format described in string format.
+    log_level : int, optional
+        Log level to track. Defaults to elfpy.DEFAULT_LOG_LEVEL.
+    max_bytes : int, optional
+        Maximum size of the log file in bytes. Defaults to elfpy.DEFAULT_LOG_MAXBYTES.
+    keep_previous_handlers : bool, optional
+        Whether to keep previous handlers. Defaults to True.
+    """
     # pylint: disable=too-many-arguments
     logger = get_root_logger(logger)
     if not keep_previous_handlers:
-        _remove_handlers(logger)
-    if max_bytes is None:
-        max_bytes = elfpy.DEFAULT_LOG_MAXBYTES
-    log_dir, log_name = _prepare_log_path(log_filename)
+        remove_handlers(logger)
+    log_dir, log_name = prepare_log_path(log_filename)
     # Delete the log file if requested
     if delete_previous_logs and os.path.exists(os.path.join(log_dir, log_name)):
         os.remove(os.path.join(log_dir, log_name))
-    file_handler = _create_file_handler(
-        log_dir, log_name, _create_formatter(log_format_string), max_bytes, _create_log_level(log_level)
+    file_handler = create_file_handler(
+        log_dir, log_name, create_formatter(log_format_string), create_max_bytes(max_bytes), create_log_level(log_level)
     )
     logger.addHandler(file_handler)
 
 
-def _remove_handlers(logger: logging.Logger):
+def remove_handlers(logger: logging.Logger):
+    """Remove all handlers from the logger.
+
+    Arguments
+    ---------
+    logger : logging.Logger
+        Logger from which to remove handlers.
+    """
     while logger.handlers:
         logger.removeHandler(logger.handlers[-1])
 
 
-def _create_file_handler(log_dir: str, log_name: str, log_formatter: logging.Formatter, max_bytes: int, log_level: int):
-    """Create a file handler for the given log file."""
+def create_file_handler(
+    log_dir: str, log_name: str, log_formatter: logging.Formatter, max_bytes: int, log_level: int
+) -> logging.Handler:
+    """Create a file handler for the given log file.
+
+    Arguments
+    ---------
+    log_dir : str
+        Directory in which to log the file.
+    log_name : str
+        File name in which to log.
+    log_formatter : logging.Formatter
+        Logging format as a Formatter object.
+    max_bytes : int
+        Maximum size of the log file in bytes. Defaults to elfpy.DEFAULT_LOG_MAXBYTES.
+    log_level : int
+        Log level.
+    """
     log_path = os.path.join(log_dir, log_name)
-    handler = RotatingFileHandler(log_path, mode="w", maxBytes=max_bytes)
+    handler = RotatingFileHandler(log_path, mode="w", maxBytes=create_max_bytes(max_bytes))
     handler.setFormatter(log_formatter)
     handler.setLevel(log_level)
     return handler
 
 
-def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None):
+def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:
     """Create a new logging file handler with CRITICAL log level for hyperdrive crash reporting.
 
     In the future, a custom log level could be used specific to crash reporting.
+
+    Arguments
+    ---------
+    log_format_string : str, optional
+        Logging format described in string format.
     """
     add_file_handler(
         logger=None,  # use the default root logger
@@ -216,7 +346,7 @@ def log_hyperdrive_crash_report(
     agent_address: str,
     pool_info: PoolInfo,
     pool_config: PoolConfig,
-):
+) -> None:
     # pylint: disable=too-many-arguments
     """Log a crash report for a hyperdrive transaction.
 
@@ -224,26 +354,16 @@ def log_hyperdrive_crash_report(
     ---------
     trade_type : str
         The type of trade being executed.
-
     error : TransactionError
         The transaction error that occurred.
-
     amount : float
         The amount of the transaction.
-
     agent_address : str
         The address of the agent executing the transaction.
-
     pool_info : PoolInfo
         Information about the pool involved in the transaction.
-
     pool_config : PoolConfig
         Configuration of the pool involved in the transaction.
-
-    Returns
-    -------
-    None
-        This function does not return any value.
     """
     pool_info_dict = _get_dict_from_schema(pool_info)
     pool_info_dict["timestamp"] = int(pool_info.timestamp.timestamp())
@@ -262,8 +382,19 @@ def log_hyperdrive_crash_report(
     )
 
 
-def _get_dict_from_schema(db_schema: Base):
-    """Quick helper to convert a SqlAlcemcy Row into a dict for printing.  There might be a better way to do this."""
+def _get_dict_from_schema(db_schema: Base) -> dict:
+    """Convert a SqlAlcemcy Row into a dict for printing. There might be a better way to do this.
+
+    Arguments
+    ---------
+    db_schema : Base
+        The database schema to convert to a dict.
+
+    Returns
+    -------
+    db_dict : dict
+        The database schema as a dict.
+    """
     db_dict = db_schema.__dict__
     del db_dict["_sa_instance_state"]
     return db_dict
