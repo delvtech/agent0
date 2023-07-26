@@ -42,7 +42,7 @@ if __name__ == "__main__":
             agent_base_budgets.append(agent_info.base_budget.sample_budget(rng).scaled_value)
             agent_eth_budgets.append(agent_info.eth_budget.sample_budget(rng).scaled_value)
     if args.user_key is not None:
-        print('export USER_KEY="' + str(parser.parse_args().user_key) + '"')
+        print("export USER_KEY='" + str(parser.parse_args().user_key) + "'")
     print("export AGENT_KEYS='" + json.dumps(agent_private_keys) + "'")
     print("export AGENT_BASE_BUDGETS='" + json.dumps(agent_base_budgets) + "'")
     print("export AGENT_ETH_BUDGETS='" + json.dumps(agent_eth_budgets) + "'")
