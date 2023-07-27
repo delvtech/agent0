@@ -15,6 +15,7 @@ from plot_pnl import calculate_current_pnl
 from elfpy.data import postgres
 
 # pylint: disable=invalid-name
+# Pandas doesn't play nice with types
 
 # The number of blocks to view at a time, e.g., only the last 500 blocks
 # None to view all
@@ -84,7 +85,7 @@ def combine_usernames(username: pd.Series) -> pd.DataFrame:
 
 def get_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Given PNL, does lookup against usernames and ranks the leaderboard"""
-    pnl = pnl.reset_index()
+    pnl = pnl.reset_index()  # type: ignore
     usernames = username_to_address(lookup, pnl["walletAddress"])
     pnl.insert(1, "username", usernames.values.tolist())
     # Hard coded funding provider from migration account
@@ -96,7 +97,9 @@ def get_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame,
     pnl["user"] = user["user"].values
 
     ind_leaderboard = (
-        pnl[["username", "walletAddress", "pnl"]].sort_values("pnl", ascending=False).reset_index(drop=True)
+        pnl[["username", "walletAddress", "pnl"]]
+        .sort_values("pnl", ascending=False)  # type: ignore
+        .reset_index(drop=True)
     )
     comb_leaderboard = (
         pnl[["user", "pnl"]].groupby("user")["pnl"].sum().reset_index().sort_values("pnl", ascending=False)
@@ -210,7 +213,7 @@ ticker_placeholder = st.empty()
 # OHLCV
 main_placeholder = st.empty()
 
-main_fig = mpf.figure(style="mike", figsize=(15, 15))  # type: ignore
+main_fig = mpf.figure(style="mike", figsize=(15, 15))
 ax_ohlcv = main_fig.add_subplot(3, 1, 1)
 ax_vol = main_fig.add_subplot(3, 1, 2)
 ax_fixed_rate = main_fig.add_subplot(3, 1, 3)
@@ -251,7 +254,7 @@ while True:
         ax_vol.tick_params(axis="both", which="both")
         ax_fixed_rate.tick_params(axis="both", which="both")
         # Fix axes labels
-        main_fig.autofmt_xdate()  # type: ignore
+        main_fig.autofmt_xdate()
         st.pyplot(fig=main_fig)  # type: ignore
 
     time.sleep(1)

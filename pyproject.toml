@@ -54,6 +54,7 @@ with-dependencies = [
     "flask-expects-json",
     "psycopg2-binary",
     "sqlalchemy",
+    "pandas-stubs"
 ]
 
 docs = [
