@@ -196,7 +196,7 @@ async def async_match_contract_call_to_trade(
     hyperdrive_contract: Contract,
     hyperdrive_market: HyperdriveMarket,
     account: EthAccount,
-    trade: types.Trade[HyperdriveMarketAction],
+    trade_envelope: types.Trade[HyperdriveMarketAction],
 ) -> WalletDeltas:
     """Match statement that executes the smart contract trade based on the provided type.
 
@@ -222,27 +222,25 @@ async def async_match_contract_call_to_trade(
     # TODO: figure out fees paid
     # TODO: clean up this function, DRY it up to reduce number of statements
     # pylint: disable=too-many-statements
-    trade_amount: int = trade.trade.trade_amount.scaled_value
+    trade = trade_envelope.trade
+    trade_amount: int = trade.trade_amount.scaled_value
     max_deposit: int = trade_amount
 
     # TODO: The following variables are hard coded for now, but should be specified in the trade spec
     min_apr = int(1)
     max_apr = int(1e18)
     as_underlying = True
-    match trade.trade.action_type:
+    match trade.action_type:
         case MarketActionType.OPEN_LONG:
             min_output = 0
             fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
-            preview_result = smart_contract_preview_transaction(hyperdrive_contract, account, "openLong", *fn_args)
-            min_output = (
-                (
-                    FixedPoint(scaled_value=preview_result["bondProceeds"])
-                    * (FixedPoint(1) - trade.trade.slippage_tolerance)
+
+            if trade.slippage_tolerance:
+                preview_result = smart_contract_preview_transaction(hyperdrive_contract, account, "openLong", *fn_args)
+                min_output = (
+                    FixedPoint(scaled_value=preview_result["bondProceeds"]) * (FixedPoint(1) - trade.slippage_tolerance)
                 ).scaled_value
-                if trade.trade.slippage_tolerance
-                else 0
-            )
-            fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
+                fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
 
             trade_result = await async_transact_and_parse_logs(
                 web3,
@@ -251,6 +249,7 @@ async def async_match_contract_call_to_trade(
                 "openLong",
                 *fn_args,
             )
+
             maturity_time_seconds = trade_result.maturity_time_seconds
             wallet_deltas = WalletDeltas(
                 balance=Quantity(
@@ -260,28 +259,25 @@ async def async_match_contract_call_to_trade(
                 longs={FixedPoint(maturity_time_seconds): Long(trade_result.bond_amount)},
             )
         case MarketActionType.CLOSE_LONG:
-            maturity_time_seconds = trade.trade.mint_time
-            if not maturity_time_seconds:
+            if not trade.mint_time:
                 raise ValueError("Mint time was not provided, can't close long position.")
-            decoded_maturity_time_seconds = int(maturity_time_seconds)
+            maturity_time_seconds = int(trade.mint_time)
             min_output = 0
-
             fn_args = (
-                decoded_maturity_time_seconds,
+                maturity_time_seconds,
                 trade_amount,
                 min_output,
                 account.checksum_address,
                 as_underlying,
             )
-            preview_result = smart_contract_preview_transaction(hyperdrive_contract, account, "closeLong", *fn_args)
-            min_output = (
-                (
-                    FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.trade.slippage_tolerance)
+
+            if trade.slippage_tolerance:
+                preview_result = smart_contract_preview_transaction(hyperdrive_contract, account, "closeLong", *fn_args)
+                min_output = (
+                    FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.slippage_tolerance)
                 ).scaled_value
-                if trade.trade.slippage_tolerance
-                else 0
-            )
-            fn_args = (decoded_maturity_time_seconds, trade_amount, min_output, account.checksum_address, as_underlying)
+                fn_args = (maturity_time_seconds, trade_amount, min_output, account.checksum_address, as_underlying)
+
             trade_result = await async_transact_and_parse_logs(
                 web3,
                 hyperdrive_contract,
@@ -294,20 +290,19 @@ async def async_match_contract_call_to_trade(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                longs={maturity_time_seconds: Long(-trade_result.bond_amount)},
+                longs={trade.mint_time: Long(-trade_result.bond_amount)},
             )
         case MarketActionType.OPEN_SHORT:
             max_deposit = eth_utils.currency.MAX_WEI
             fn_args = (trade_amount, max_deposit, account.checksum_address, as_underlying)
-            preview_result = smart_contract_preview_transaction(hyperdrive_contract, account, "openShort", *fn_args)
-            max_deposit = (
-                (
+
+            if trade.slippage_tolerance:
+                preview_result = smart_contract_preview_transaction(hyperdrive_contract, account, "openShort", *fn_args)
+                max_deposit = (
                     FixedPoint(scaled_value=preview_result["traderDeposit"])
-                    * (FixedPoint(1) + trade.trade.slippage_tolerance)
+                    * (FixedPoint(1) + trade.slippage_tolerance)
                 ).scaled_value
-                if trade.trade.slippage_tolerance
-                else 0
-            )
+
             fn_args = (trade_amount, max_deposit, account.checksum_address, as_underlying)
             trade_result = await async_transact_and_parse_logs(
                 web3,
@@ -330,28 +325,27 @@ async def async_match_contract_call_to_trade(
                 },
             )
         case MarketActionType.CLOSE_SHORT:
-            maturity_time_seconds = trade.trade.mint_time
-            if not maturity_time_seconds:
+            if not trade.mint_time:
                 raise ValueError("Mint time was not provided, can't close long position.")
-            decoded_maturity_time_seconds = int(maturity_time_seconds)
+            maturity_time_seconds = int(trade.mint_time)
             min_output = 0
             fn_args = (
-                decoded_maturity_time_seconds,
+                maturity_time_seconds,
                 trade_amount,
                 min_output,
                 account.checksum_address,
                 as_underlying,
             )
-            preview_result = smart_contract_preview_transaction(hyperdrive_contract, account, "closeShort", *fn_args)
-            min_output = (
-                (
-                    FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.trade.slippage_tolerance)
-                ).scaled_value
-                if trade.trade.slippage_tolerance
-                else 0
-            )
 
-            fn_args = (decoded_maturity_time_seconds, trade_amount, min_output, account.checksum_address, as_underlying)
+            if trade.slippage_tolerance:
+                preview_result = smart_contract_preview_transaction(
+                    hyperdrive_contract, account, "closeShort", *fn_args
+                )
+                min_output = (
+                    FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.slippage_tolerance)
+                ).scaled_value
+                fn_args = (maturity_time_seconds, trade_amount, min_output, account.checksum_address, as_underlying)
+
             trade_result = await async_transact_and_parse_logs(
                 web3,
                 hyperdrive_contract,
@@ -365,9 +359,9 @@ async def async_match_contract_call_to_trade(
                     unit=TokenType.BASE,
                 ),
                 shorts={
-                    maturity_time_seconds: Short(
+                    trade.mint_time: Short(
                         balance=-trade_result.bond_amount,
-                        open_share_price=account.agent.wallet.shorts[maturity_time_seconds].open_share_price,
+                        open_share_price=account.agent.wallet.shorts[trade.mint_time].open_share_price,
                     )
                 },
             )
@@ -407,7 +401,7 @@ async def async_match_contract_call_to_trade(
                 withdraw_shares=trade_result.withdrawal_share_amount,
             )
         case MarketActionType.INITIALIZE_MARKET:
-            raise ValueError(f"{trade.trade.action_type} not supported!")
+            raise ValueError(f"{trade.action_type} not supported!")
         case _:
-            assert_never(trade.trade.action_type)
+            assert_never(trade.action_type)
     return wallet_deltas
