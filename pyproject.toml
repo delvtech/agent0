@@ -1,6 +1,6 @@
 [project]
 name = "elfpy"
-version = "0.3.1"
+version = "0.3.2"
 authors = [
     { name = "Dylan Paiton", email = "dylan@delv.tech" },
     { name = "Mihai Cosma", email = "mihai@delv.tech" },
@@ -54,6 +54,7 @@ with-dependencies = [
     "flask-expects-json",
     "psycopg2-binary",
     "sqlalchemy",
+    "pandas-stubs"
 ]
 
 docs = [
