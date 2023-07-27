@@ -133,7 +133,7 @@ def get_click_addresses() -> pd.DataFrame:
 
 
 def get_user_lookup() -> pd.DataFrame:
-    """Helper function to generate username -> agents mapping.
+    """Generate username to agents mapping.
 
     Returns
     -------
@@ -164,7 +164,7 @@ def get_user_lookup() -> pd.DataFrame:
 
 
 def username_to_address(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Series:
-    """Helper function to lookup selected users/addrs to all addresses.
+    """Look up selected users/addrs to all addresses.
 
     Arguments
     ---------
