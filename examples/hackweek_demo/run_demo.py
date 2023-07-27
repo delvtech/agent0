@@ -1,4 +1,4 @@
-""" Script to run the streamlab demo """
+""" Script to run the streamlab demo. """
 from __future__ import annotations
 
 import time
@@ -23,7 +23,7 @@ st.set_option("deprecation.showPyplotGlobalUse", False)
 # Helper functions
 # TODO should likely move these functions to another file
 def get_ticker(data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
-    """Given transaction data, return a ticker dataframe showing recent trades
+    """Given transaction data, return a ticker dataframe showing recent trades.
 
     Arguments
     ---------
@@ -48,7 +48,7 @@ def get_ticker(data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
 
 
 def combine_usernames(username: pd.Series) -> pd.DataFrame:
-    """Given a series of usernames, map them to a single user (e.g., click with bots)"""
+    """Given a series of usernames, map them to a single user (e.g., click with bots)."""
     # Hard coded mapping:
     user_mapping = {
         "Charles St. Louis (click)": "Charles St. Louis",
@@ -80,7 +80,7 @@ def combine_usernames(username: pd.Series) -> pd.DataFrame:
 
 
 def get_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Given PNL, does lookup against usernames and ranks the leaderboard"""
+    """Given PNL, does lookup against usernames and ranks the leaderboard."""
     pnl = pnl.reset_index()  # type: ignore
     usernames = username_to_address(lookup, pnl["walletAddress"])
     pnl.insert(1, "username", usernames.values.tolist())
@@ -105,7 +105,7 @@ def get_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame,
 
 
 def get_click_addresses() -> pd.DataFrame:
-    """Returns a dataframe of hard coded click addresses"""
+    """Returns a dataframe of hard coded click addresses."""
     addresses = {
         "0x004dfC2dBA6573fa4dFb1E86e3723e1070C0CfdE": "Charles St. Louis (click)",
         "0x005182C62DA59Ff202D53d6E42Cef6585eBF9617": "Alim Khamisa (click)",
@@ -133,7 +133,7 @@ def get_click_addresses() -> pd.DataFrame:
 
 
 def get_user_lookup() -> pd.DataFrame:
-    """Helper function to generate username -> agents mapping
+    """Helper function to generate username -> agents mapping.
 
     Returns
     -------
@@ -164,7 +164,7 @@ def get_user_lookup() -> pd.DataFrame:
 
 
 def username_to_address(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Series:
-    """Helper function to lookup selected users/addrs to all addresses
+    """Helper function to lookup selected users/addrs to all addresses.
 
     Arguments
     ---------
