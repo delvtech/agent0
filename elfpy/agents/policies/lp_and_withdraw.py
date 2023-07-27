@@ -31,7 +31,7 @@ class LpAndWithdrawAgent(BasePolicy):
         self,
         budget: FixedPoint = FixedPoint("1000.0"),
         rng: NumpyGenerator | None = None,
-        slippage_tolerance: FixedPoint = FixedPoint("0.0001"),
+        slippage_tolerance: FixedPoint | None = None,
         amount_to_lp: FixedPoint = FixedPoint("100.0"),
         time_to_withdraw: FixedPoint = FixedPoint("1.0"),
     ):

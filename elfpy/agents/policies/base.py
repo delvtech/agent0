@@ -1,4 +1,5 @@
 """Base policy class. Subclasses of BasicPolicy will implement trade actions."""
+
 from __future__ import annotations
 
 import logging
@@ -19,7 +20,7 @@ class BasePolicy:
     """Base class policy"""
 
     def __init__(
-        self, budget: FixedPoint, rng: NumpyGenerator | None = None, slippage_tolerance: FixedPoint = FixedPoint(0.0001)
+        self, budget: FixedPoint, rng: NumpyGenerator | None = None, slippage_tolerance: FixedPoint | None = None
     ):
         if not isinstance(budget, FixedPoint):
             raise TypeError(f"{budget=} must be of type `FixedPoint`")
