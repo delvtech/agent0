@@ -204,6 +204,3 @@ def plot_pnl(agent_positions: dict[str, AgentPosition], axes) -> None:
     axes.yaxis.set_label_position("right")
     axes.yaxis.tick_right()
     axes.set_title("pnl over time")
-
-    # %%
-    # %%
