@@ -6,10 +6,6 @@ import logging
 import pandas as pd
 from extract_data_logs import calculate_spot_price
 
-from elfpy.data.postgres import AgentPosition
-
-# Pandas doesn't play nice with types
-
 
 # TODO fix calculating spot price with position duration
 def calculate_spot_price_from_state(state, maturity_timestamp, block_timestamp, config_data):

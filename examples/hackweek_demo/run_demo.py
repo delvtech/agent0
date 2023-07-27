@@ -15,11 +15,6 @@ from plot_pnl import calculate_current_pnl
 from elfpy.data import postgres
 
 # pylint: disable=invalid-name
-# Pandas doesn't play nice with types
-
-# The number of blocks to view at a time, e.g., only the last 500 blocks
-# None to view all
-view_window = None
 
 st.set_page_config(page_title="Trading Competition Dashboard", layout="centered")
 st.set_option("deprecation.showPyplotGlobalUse", False)
@@ -148,7 +143,7 @@ def get_user_lookup() -> pd.DataFrame:
         the wallet address itself if a wallet is found without a registered username.
     """
     # Get data
-    agents = postgres.get_agents(session, start_block=start_block)
+    agents = postgres.get_agents(session)
     user_map = postgres.get_user_map(session)
     # Usernames in postgres are bots
     user_map["username"] = user_map["username"] + " (bots)"
@@ -192,12 +187,6 @@ def username_to_address(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Se
 # Connect to postgres
 load_dotenv()
 session = postgres.initialize_session()
-
-# Determine if we want to view only a specific window of data
-if view_window is not None:
-    start_block = -view_window
-else:
-    start_block = None
 
 # pool config data is static, so just read once
 config_data = postgres.get_pool_config(session)
