@@ -1,4 +1,4 @@
-""" Script to run the streamlab demo. """
+"""Run the streamlab demo."""
 from __future__ import annotations
 
 import time
@@ -23,7 +23,7 @@ st.set_option("deprecation.showPyplotGlobalUse", False)
 # Helper functions
 # TODO should likely move these functions to another file
 def get_ticker(data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
-    """Given transaction data, return a ticker dataframe showing recent trades.
+    """Show recent trades.
 
     Arguments
     ---------
@@ -48,7 +48,7 @@ def get_ticker(data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
 
 
 def combine_usernames(username: pd.Series) -> pd.DataFrame:
-    """Given a series of usernames, map them to a single user (e.g., click with bots)."""
+    """Map usernames to a single user (e.g., combine click with bots)."""
     # Hard coded mapping:
     user_mapping = {
         "Charles St. Louis (click)": "Charles St. Louis",
@@ -80,7 +80,7 @@ def combine_usernames(username: pd.Series) -> pd.DataFrame:
 
 
 def get_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Given PNL, does lookup against usernames and ranks the leaderboard."""
+    """Rank users by PNL, individually and bomined across their accounts."""
     pnl = pnl.reset_index()  # type: ignore
     usernames = username_to_address(lookup, pnl["walletAddress"])
     pnl.insert(1, "username", usernames.values.tolist())
