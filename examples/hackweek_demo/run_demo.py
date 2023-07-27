@@ -53,6 +53,7 @@ def get_ticker(data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
 
 
 def combine_usernames(username: pd.Series) -> pd.DataFrame:
+    """Given a series of usernames, map them to a single user (e.g., click with bots)"""
     # Hard coded mapping:
     user_mapping = {
         "Charles St. Louis (click)": "Charles St. Louis",
