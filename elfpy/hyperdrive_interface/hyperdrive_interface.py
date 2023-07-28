@@ -32,12 +32,16 @@ def fetch_hyperdrive_address_from_url(contracts_url: str) -> HyperdriveAddresses
         response = requests.get(contracts_url, timeout=60)
         # Check the status code and retry the request if it fails
         if response.status_code != 200:
-            logging.warning("Request failed with status code %s @ %s", response.status_code, time.ctime())
+            logging.warning(
+                "Request for contracts_url=%s failed with status code %s @ %s",
+                contracts_url,
+                response.status_code,
+                time.ctime(),
+            )
             time.sleep(10)
             continue
         # If successful, exit attempt loop
         break
-
     if response is None:
         raise ConnectionError("Request failed, returning status `None`")
     if response.status_code != 200:
