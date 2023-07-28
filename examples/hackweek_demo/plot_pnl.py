@@ -53,6 +53,7 @@ def calculate_spot_price_for_position(
 
 def calculate_current_pnl(pool_config: pd.Series, pool_info: pd.DataFrame, current_wallet: pd.DataFrame) -> pd.Series:
     """Calculates the most current pnl values."""
+    # pylint: disable=too-many-locals
     # Most current block timestamp
     latest_pool_info = pool_info.loc[pool_info.index.max()]
     block_timestamp = latest_pool_info["timestamp"].timestamp()

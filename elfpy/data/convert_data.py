@@ -337,7 +337,7 @@ def get_wallet_info(
         token_maturity_time = transaction.event_maturity_time
         if (token_id is not None) and (token_prefix is not None):
             base_token_type = hyperdrive_interface.AssetIdPrefix(token_prefix).name
-            if (base_token_type == "LONG") or (base_token_type == "SHORT"):
+            if base_token_type in ("LONG", "SHORT"):
                 token_type = base_token_type + "-" + str(token_maturity_time)
                 # Check here if token is short
                 # If so, add share price from pool info to data
