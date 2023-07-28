@@ -203,6 +203,44 @@ def _recursive_dict_conversion(obj: Any) -> Any:
     return obj
 
 
+def _query_contract_for_balance(
+    contract: Contract, wallet_addr: str, block_number: BlockNumber, token_id: int | None = None
+) -> float | None:
+    """Queries the given contract for the wallet's token_id balance.
+
+    Arguments
+    ---------
+    contract : Contract
+        The contract to query.
+    wallet_addr: str
+        The wallet address to use for query
+    block_number: BlockNumber
+        The block number to query
+    token_id: int | None
+        The given token id. If none, assuming we're calling base contract
+
+    Returns
+    -------
+    float | None
+        The amount token_id in wallet_addr. None if failed
+    """
+    num_token_scaled = None
+    for attempt_count in range(RETRY_COUNT):
+        try:
+            if token_id is None:
+                num_token_scaled = contract.functions.balanceOf(wallet_addr).call(block_identifier=block_number)
+            else:
+                num_token_scaled = contract.functions.balanceOf(token_id, wallet_addr).call(
+                    block_identifier=block_number
+                )
+            break
+        except ValueError:
+            logging.warning("Error in getting token balance, retrying %s/%s", attempt_count + 1, RETRY_COUNT)
+            time.sleep(1)
+            continue
+    return _convert_scaled_value(num_token_scaled)
+
+
 # TODO: move this function to hyperdrive_interface and return a list of dictionaries
 def get_wallet_info(
     hyperdrive_contract: Contract,
@@ -239,25 +277,12 @@ def get_wallet_info(
     out_wallet_info = []
     for transaction in transactions:
         wallet_addr = transaction.event_operator
-        token_id = transaction.event_id
-        token_prefix = transaction.event_prefix
-        token_maturity_time = transaction.event_maturity_time
         if wallet_addr is None:
             continue
+
         # Query and add base tokens to walletinfo
-        num_base_token_scaled = None
-        for _ in range(RETRY_COUNT):
-            try:
-                num_base_token_scaled = base_contract.functions.balanceOf(wallet_addr).call(
-                    block_identifier=block_number
-                )
-                break
-            except ValueError:
-                logging.warning("Error in getting base token balance, retrying")
-                time.sleep(1)
-                continue
-        num_base_token = _convert_scaled_value(num_base_token_scaled)
-        if (num_base_token is not None) and (wallet_addr is not None):
+        num_base_token = _query_contract_for_balance(base_contract, wallet_addr, block_number)
+        if num_base_token is not None:
             out_wallet_info.append(
                 db_schema.WalletInfo(
                     blockNumber=block_number,
@@ -267,43 +292,74 @@ def get_wallet_info(
                     tokenValue=num_base_token,
                 )
             )
-        # Query and add hyperdrive tokens to walletinfo
+
+        # Query and add LP tokens to wallet info
+        lp_token_prefix = hyperdrive_interface.AssetIdPrefix.LP.value
+        # LP tokens always have 0 maturity
+        lp_token_id = hyperdrive_interface.encode_asset_id(lp_token_prefix, timestamp=0)
+        num_lp_token = _query_contract_for_balance(hyperdrive_contract, wallet_addr, block_number, lp_token_id)
+        if num_lp_token is not None:
+            out_wallet_info.append(
+                db_schema.WalletInfo(
+                    blockNumber=block_number,
+                    walletAddress=wallet_addr,
+                    baseTokenType="LP",
+                    tokenType="LP",
+                    tokenValue=num_lp_token,
+                    maturityTime=None,
+                    sharePrice=None,
+                )
+            )
+
+        # Query and add withdraw tokens to wallet info
+        withdrawl_token_prefix = hyperdrive_interface.AssetIdPrefix.WITHDRAWAL_SHARE.value
+        # Withdrawl tokens always have 0 maturity
+        withdrawl_token_id = hyperdrive_interface.encode_asset_id(withdrawl_token_prefix, timestamp=0)
+        num_withdrawl_token = _query_contract_for_balance(
+            hyperdrive_contract, wallet_addr, block_number, withdrawl_token_id
+        )
+        if num_withdrawl_token is not None:
+            out_wallet_info.append(
+                db_schema.WalletInfo(
+                    blockNumber=block_number,
+                    walletAddress=wallet_addr,
+                    baseTokenType="WITHDRAWL_SHARE",
+                    tokenType="WITHDRAWL_SHARE",
+                    tokenValue=num_withdrawl_token,
+                    maturityTime=None,
+                    sharePrice=None,
+                )
+            )
+
+        # Query and add shorts and/or longs if they exist in transaction
+        token_id = transaction.event_id
+        token_prefix = transaction.event_prefix
+        token_maturity_time = transaction.event_maturity_time
         if (token_id is not None) and (token_prefix is not None):
             base_token_type = hyperdrive_interface.AssetIdPrefix(token_prefix).name
-            if (token_maturity_time is not None) and (token_maturity_time > 0):
+            if base_token_type in ("LONG", "SHORT"):
                 token_type = base_token_type + "-" + str(token_maturity_time)
-                maturity_time = token_maturity_time
-            else:
-                token_type = base_token_type
-                maturity_time = None
-            num_custom_token_scaled = None
-            for _ in range(RETRY_COUNT):
-                try:
-                    num_custom_token_scaled = hyperdrive_contract.functions.balanceOf(int(token_id), wallet_addr).call(
-                        block_identifier=block_number
-                    )
-                except ValueError:
-                    logging.warning("Error in getting custom token balance, retrying")
-                    time.sleep(1)
-                    continue
-            num_custom_token = _convert_scaled_value(num_custom_token_scaled)
-            if num_custom_token is not None:
                 # Check here if token is short
                 # If so, add share price from pool info to data
                 share_price = None
                 if (base_token_type) == "SHORT":
                     share_price = pool_info.sharePrice
-                out_wallet_info.append(
-                    db_schema.WalletInfo(
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType=base_token_type,
-                        tokenType=token_type,
-                        tokenValue=num_custom_token,
-                        maturityTime=maturity_time,
-                        sharePrice=share_price,
-                    )
+
+                num_custom_token = _query_contract_for_balance(
+                    hyperdrive_contract, wallet_addr, block_number, int(token_id)
                 )
+                if num_custom_token is not None:
+                    out_wallet_info.append(
+                        db_schema.WalletInfo(
+                            blockNumber=block_number,
+                            walletAddress=wallet_addr,
+                            baseTokenType=base_token_type,
+                            tokenType=token_type,
+                            tokenValue=num_custom_token,
+                            maturityTime=token_maturity_time,
+                            sharePrice=share_price,
+                        )
+                    )
     return out_wallet_info
 
 

@@ -53,6 +53,7 @@ def calculate_spot_price_for_position(
 
 def calculate_current_pnl(pool_config: pd.Series, pool_info: pd.DataFrame, current_wallet: pd.DataFrame) -> pd.Series:
     """Calculates the most current pnl values."""
+    # pylint: disable=too-many-locals
     # Most current block timestamp
     latest_pool_info = pool_info.loc[pool_info.index.max()]
     block_timestamp = latest_pool_info["timestamp"].timestamp()
@@ -90,12 +91,18 @@ def calculate_current_pnl(pool_config: pd.Series, pool_info: pd.DataFrame, curre
     )
     long_pnl = wallet_longs["tokenValue"] * long_spot_prices
 
+    # Calculate for longs
+    wallet_withdrawl = current_wallet[current_wallet["baseTokenType"] == "WITHDRAWL_SHARE"]
+
+    withdrawl_pnl = wallet_withdrawl["tokenValue"] * latest_pool_info.sharePrice
+
     # Add pnl to current_wallet information
     # Index should match, so it's magic
     current_wallet.loc[base_pnl.index, "pnl"] = base_pnl
     current_wallet.loc[lp_pnl.index, "pnl"] = lp_pnl
     current_wallet.loc[shorts_pnl.index, "pnl"] = shorts_pnl
     current_wallet.loc[long_pnl.index, "pnl"] = long_pnl
+    current_wallet.loc[withdrawl_pnl.index, "pnl"] = withdrawl_pnl
     pnl = current_wallet.reset_index().groupby("walletAddress")["pnl"].sum()
     return pnl
 
