@@ -33,7 +33,7 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
         hyperdrive_abi="IHyperdrive",
         base_abi="ERC20Mintable",
         username_register_url="http://localhost:5002",
-        artifacts_url="http://localhost:80",
+        artifacts_url="http://localhost:8080",
         rpc_url="http://localhost:8545",
         username="changeme",
     )
