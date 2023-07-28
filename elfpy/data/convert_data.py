@@ -206,7 +206,7 @@ def _recursive_dict_conversion(obj: Any) -> Any:
 def _query_contract_for_balance(
     contract: Contract, wallet_addr: str, block_number: BlockNumber, token_id: int | None = None
 ) -> float | None:
-    """Queries the given contract for the balance of token_id
+    """Queries the given contract for the wallet's token_id balance.
 
     Arguments
     ---------
@@ -224,9 +224,8 @@ def _query_contract_for_balance(
     float | None
         The amount token_id in wallet_addr. None if failed
     """
-
     num_token_scaled = None
-    for _ in range(RETRY_COUNT):
+    for attempt_count in range(RETRY_COUNT):
         try:
             if token_id is None:
                 num_token_scaled = contract.functions.balanceOf(wallet_addr).call(block_identifier=block_number)
@@ -236,7 +235,7 @@ def _query_contract_for_balance(
                 )
             break
         except ValueError:
-            logging.warning("Error in getting token balance, retrying")
+            logging.warning("Error in getting token balance, retrying %s/%s", attempt_count + 1, RETRY_COUNT)
             time.sleep(1)
             continue
     return _convert_scaled_value(num_token_scaled)
@@ -295,8 +294,9 @@ def get_wallet_info(
             )
 
         # Query and add LP tokens to wallet info
-        lp_token_prefix = int(hyperdrive_interface.AssetIdPrefix.LP)
-        lp_token_id = hyperdrive_interface.encode_asset_id(lp_token_prefix, 0)
+        lp_token_prefix = hyperdrive_interface.AssetIdPrefix.LP.value
+        # LP tokens always have 0 maturity
+        lp_token_id = hyperdrive_interface.encode_asset_id(lp_token_prefix, timestamp=0)
         num_lp_token = _query_contract_for_balance(hyperdrive_contract, wallet_addr, block_number, lp_token_id)
         if num_lp_token is not None:
             out_wallet_info.append(
@@ -312,8 +312,9 @@ def get_wallet_info(
             )
 
         # Query and add withdraw tokens to wallet info
-        withdrawl_token_prefix = int(hyperdrive_interface.AssetIdPrefix.WITHDRAWAL_SHARE)
-        withdrawl_token_id = hyperdrive_interface.encode_asset_id(withdrawl_token_prefix, 0)
+        withdrawl_token_prefix = hyperdrive_interface.AssetIdPrefix.WITHDRAWAL_SHARE.value
+        # Withdrawl tokens always have 0 maturity
+        withdrawl_token_id = hyperdrive_interface.encode_asset_id(withdrawl_token_prefix, timestamp=0)
         num_withdrawl_token = _query_contract_for_balance(
             hyperdrive_contract, wallet_addr, block_number, withdrawl_token_id
         )
@@ -338,7 +339,6 @@ def get_wallet_info(
             base_token_type = hyperdrive_interface.AssetIdPrefix(token_prefix).name
             if (base_token_type == "LONG") or (base_token_type == "SHORT"):
                 token_type = base_token_type + "-" + str(token_maturity_time)
-                maturity_time = token_maturity_time
                 # Check here if token is short
                 # If so, add share price from pool info to data
                 share_price = None
@@ -356,7 +356,7 @@ def get_wallet_info(
                             baseTokenType=base_token_type,
                             tokenType=token_type,
                             tokenValue=num_custom_token,
-                            maturityTime=maturity_time,
+                            maturityTime=token_maturity_time,
                             sharePrice=share_price,
                         )
                     )
