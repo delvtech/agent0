@@ -76,7 +76,7 @@ def get_event_object(
         event_signature_text = f"{name}({inputs})"
         event_signature_hex = web3.keccak(text=event_signature_text).hex()
         # Find match between log's event signature and ABI's event signature
-        receipt_event_signature_hex = log["topics"][0].hex()
+        receipt_event_signature_hex = log["topics"][0].hex()  # first index gives event signature
         if event_signature_hex == receipt_event_signature_hex and name is not None:
             # Decode matching log
             contract_event = contract.events[name]()
