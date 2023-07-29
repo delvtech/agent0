@@ -13,7 +13,7 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, current_
     latest_pool_info = pool_info.loc[pool_info.index.max()]
     block_timestamp = latest_pool_info["timestamp"].timestamp()
     # Calculate for base
-    base_returns = current_wallet[current_wallet["baseTokenType"] == "BASE"]["tokenValue"]
+    base_balance = current_wallet[current_wallet["baseTokenType"] == "BASE"]["tokenValue"]
     # Calculate for lp
     wallet_lps = current_wallet[current_wallet["baseTokenType"] == "LP"]
     lp_returns = wallet_lps["tokenValue"] * latest_pool_info["sharePrice"]
@@ -43,7 +43,7 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, current_
     long_returns = wallet_longs["tokenValue"] * long_spot_prices
     # Add pnl to current_wallet information
     # Index should match, so it's magic
-    current_wallet.loc[base_returns.index, "pnl"] = base_returns
+    current_wallet.loc[base_balance.index, "pnl"] = base_balance
     current_wallet.loc[lp_returns.index, "pnl"] = lp_returns
     current_wallet.loc[shorts_returns.index, "pnl"] = shorts_returns
     current_wallet.loc[long_returns.index, "pnl"] = long_returns
