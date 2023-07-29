@@ -9,6 +9,7 @@ from extract_data_logs import calculate_spot_price
 
 def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, current_wallet: pd.DataFrame) -> pd.Series:
     """Calculates the most current pnl values."""
+    # pylint: disable=too-many-locals
     # Most current block timestamp
     latest_pool_info = pool_info.loc[pool_info.index.max()]
     block_timestamp = latest_pool_info["timestamp"].timestamp()
@@ -41,12 +42,16 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, current_
         block_timestamp,
     )
     long_returns = wallet_longs["tokenValue"] * long_spot_prices
+    # Calculate for withdrawal shares
+    wallet_withdrawl = current_wallet[current_wallet["baseTokenType"] == "WITHDRAWL_SHARE"]
+    withdrawl_returns = wallet_withdrawl["tokenValue"] * latest_pool_info.sharePrice
     # Add pnl to current_wallet information
     # Index should match, so it's magic
     current_wallet.loc[base_balance.index, "pnl"] = base_balance
     current_wallet.loc[lp_returns.index, "pnl"] = lp_returns
     current_wallet.loc[shorts_returns.index, "pnl"] = shorts_returns
     current_wallet.loc[long_returns.index, "pnl"] = long_returns
+    current_wallet.loc[withdrawl_returns.index, "pnl"] = withdrawl_returns
     total_returns = current_wallet.reset_index().groupby("walletAddress")["pnl"].sum()
     return total_returns
 
