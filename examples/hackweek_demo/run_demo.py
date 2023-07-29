@@ -6,7 +6,7 @@ import time
 import mplfinance as mpf
 import pandas as pd
 import streamlit as st
-from calc_pnl import calculate_current_pnl
+from calc_pnl import calc_total_returns
 from dotenv import load_dotenv
 from extract_data_logs import get_combined_data
 from plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
@@ -222,7 +222,7 @@ while True:
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)
     ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
 
-    curr_pnl = calculate_current_pnl(config_data, pool_info_data, wallets)
+    curr_pnl = calc_total_returns(config_data, pool_info_data, wallets)
     comb_rank, ind_rank = get_leaderboard(curr_pnl, user_lookup)
 
     with ticker_placeholder.container():
