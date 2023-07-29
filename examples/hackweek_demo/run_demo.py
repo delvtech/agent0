@@ -223,8 +223,17 @@ while True:
     ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
 
     # temporary hack because we know they started with 1e6 base.
-    curr_pnl = calc_total_returns(config_data, pool_info_data, wallets) - 1e6
-    comb_rank, ind_rank = get_leaderboard(curr_pnl, user_lookup)
+    current_reutrns = calc_total_returns(config_data, pool_info_data, wallets)
+    # TODO:
+    # Add initial budget column to bots
+    # when bot restarts, use initial budget for bot's wallet address to set "budget" in Agent.Wallet
+    # get initial budget & current balance for bots to know their loss
+    # for each agent, get initial budget ($1M) and current balance to know their loss
+    # agent PNL is their click trade pnl + bot pnls
+    #    - loop over bots balances & add those to the agent balance, since that money is not lost
+    #    - loop over bot losses & add those to agent losses, since that money is lost
+
+    comb_rank, ind_rank = get_leaderboard(current_reutrns, user_lookup)
 
     with ticker_placeholder.container():
         st.header("Ticker")
