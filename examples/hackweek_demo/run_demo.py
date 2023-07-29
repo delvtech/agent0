@@ -222,7 +222,8 @@ while True:
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)
     ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
 
-    curr_pnl = calc_total_returns(config_data, pool_info_data, wallets)
+    # temporary hack because we know they started with 1e6 base.
+    curr_pnl = calc_total_returns(config_data, pool_info_data, wallets) - 1e6
     comb_rank, ind_rank = get_leaderboard(curr_pnl, user_lookup)
 
     with ticker_placeholder.container():
