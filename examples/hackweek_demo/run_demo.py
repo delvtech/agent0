@@ -6,11 +6,11 @@ import time
 import mplfinance as mpf
 import pandas as pd
 import streamlit as st
+from calc_pnl import calculate_current_pnl
 from dotenv import load_dotenv
 from extract_data_logs import get_combined_data
 from plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
 from plot_ohlcv import calc_ohlcv, plot_ohlcv
-from plot_pnl import calculate_current_pnl
 
 from elfpy.data import postgres
 
