@@ -66,6 +66,7 @@ def calc_full_term_spot_price(
     block_timestamp,
 ):
     """Calculate the spot price given the pool info data."""
+    # pylint: disable=too-many-arguments
     full_term_spot_price = calculate_spot_price(share_reserves, bond_reserves, initial_share_price, time_stretch)
     time_left_seconds = maturity_timestamp - block_timestamp
     if isinstance(time_left_seconds, pd.Timedelta):
