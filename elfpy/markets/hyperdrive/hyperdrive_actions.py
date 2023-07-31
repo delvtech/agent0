@@ -44,6 +44,8 @@ class MarketActionType(Enum):
     CLOSE_LONG = "close_long"
     CLOSE_SHORT = "close_short"
 
+    REDEEM_WITHDRAW_SHARE = "redeem_withdraw_share"
+
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
