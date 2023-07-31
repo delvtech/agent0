@@ -71,13 +71,16 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, current_
         block_timestamp=block_timestamp,
     )
     long_returns = wallet_longs["tokenValue"] * long_spot_prices
+    # Calculate for withdrawal shares
+    wallet_withdrawal = current_wallet[current_wallet["baseTokenType"] == "WITHDRAWAL_SHARE"]
+    withdrawal_returns = wallet_withdrawal["tokenValue"] * latest_pool_info.sharePrice
     # Add pnl to current_wallet information
     # Current_wallet and *_pnl dataframes have the same index
     current_wallet.loc[base_balance.index, "pnl"] = base_balance
     current_wallet.loc[lp_returns.index, "pnl"] = lp_returns
     current_wallet.loc[shorts_returns.index, "pnl"] = shorts_returns
     current_wallet.loc[long_returns.index, "pnl"] = long_returns
-    current_wallet.loc[withdrawl_returns.index, "pnl"] = withdrawl_returns
+    current_wallet.loc[withdrawal_returns.index, "pnl"] = withdrawal_returns
     return current_wallet.reset_index().groupby("walletAddress")["pnl"].sum()
 
 

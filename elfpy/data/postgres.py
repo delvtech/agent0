@@ -12,7 +12,16 @@ import sqlalchemy
 from sqlalchemy import URL, MetaData, Table, create_engine, exc, func, inspect
 from sqlalchemy.orm import Session, sessionmaker
 
-from elfpy.data.db_schema import Base, CheckpointInfo, PoolConfig, PoolInfo, Transaction, UserMap, WalletInfo
+from elfpy.data.db_schema import (
+    Base,
+    CheckpointInfo,
+    PoolConfig,
+    PoolInfo,
+    Transaction,
+    UserMap,
+    WalletDelta,
+    WalletInfo,
+)
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -277,6 +286,26 @@ def add_transactions(transactions: list[Transaction], session: Session) -> None:
     except exc.DataError as err:
         session.rollback()
         print(f"{transactions=}")
+        raise err
+
+
+def add_wallet_deltas(wallet_deltas: list[WalletDelta], session: Session) -> None:
+    """Add wallet deltas to the walletdelta table.
+
+    Arguments
+    ---------
+    transactions : list[WalletDelta]
+        A list of WalletDelta objects to insert into postgres
+    session : Session
+        The initialized session object
+    """
+    for wallet_delta in wallet_deltas:
+        session.add(wallet_delta)
+    try:
+        session.commit()
+    except exc.DataError as err:
+        session.rollback()
+        print(f"{wallet_deltas=}")
         raise err
 
 

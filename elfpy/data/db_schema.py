@@ -46,6 +46,29 @@ class WalletInfo(Base):
     sharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
 
 
+class WalletDelta(Base):
+    """Table/dataclass schema for wallet information."""
+
+    __tablename__ = "walletdelta"
+
+    # Default table primary key
+    # Note that we use postgres in production and sqlite in testing, but sqlite has issues with
+    # autoincrement with BigIntegers. Hence, we use the Integer variant when using sqlite in tests
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, init=False, autoincrement=True
+    )
+
+    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), index=True)
+    walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # baseTokenType can be LONG, SHORT, LP, or WITHDRAWAL_SHARE
+    baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
+    tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    tokenDelta: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    baseDelta: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    maturityTime: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+
+
 class PoolConfig(Base):
     """Table/dataclass schema for pool config."""
 
