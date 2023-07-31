@@ -58,6 +58,8 @@ class RandomAgent(BasePolicy):
             all_available_actions.append(MarketActionType.CLOSE_SHORT)
         if wallet.lp_tokens:
             all_available_actions.append(MarketActionType.REMOVE_LIQUIDITY)
+        if wallet.withdraw_shares:
+            all_available_actions.append(MarketActionType.REDEEM_WITHDRAW_SHARE)
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
 
@@ -190,6 +192,34 @@ class RandomAgent(BasePolicy):
             )
         ]
 
+    def redeem_withdraw_shares_with_random_amount(
+        self, market: HyperdriveMarket, wallet: Wallet
+    ) -> list[Trade[HyperdriveMarketAction]]:
+        """Redeem withdraw shares with a random allowable amount."""
+        # take a guess at the trade amount, which should be about 10% of the agent’s budget
+        initial_trade_amount = FixedPoint(
+            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
+        )
+
+        shares_available_to_withdraw = min(
+            wallet.withdraw_shares, market.market_state.withdraw_shares_ready_to_withdraw
+        )
+
+        # WEI <= trade_amount <= withdraw_shares
+        trade_amount = max(WEI, min(shares_available_to_withdraw, initial_trade_amount))
+        # return a trade using a specification that is parsable by the rest of the sim framework
+        return [
+            Trade(
+                market=MarketType.HYPERDRIVE,
+                trade=HyperdriveMarketAction(
+                    action_type=MarketActionType.REDEEM_WITHDRAW_SHARE,
+                    trade_amount=trade_amount,
+                    slippage_tolerance=self.slippage_tolerance,
+                    wallet=wallet,
+                ),
+            )
+        ]
+
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade[HyperdriveMarketAction]]:
         """Implement a random user strategy.
 
@@ -233,4 +263,6 @@ class RandomAgent(BasePolicy):
             return self.add_liquidity_with_random_amount(wallet)
         if action_type == MarketActionType.REMOVE_LIQUIDITY:
             return self.remove_liquidity_with_random_amount(wallet)
+        if action_type == MarketActionType.REDEEM_WITHDRAW_SHARE:
+            return self.redeem_withdraw_shares_with_random_amount(market, wallet)
         return []
