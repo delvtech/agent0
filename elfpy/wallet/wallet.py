@@ -91,8 +91,6 @@ class Wallet:
         The short positions held by the trader.
     borrows : Dict[FixedPoint, Borrow]
         The borrow positions held by the trader.
-    fees_paid : FixedPoint
-        The fees paid by the wallet.
     """
 
     # dataclasses can have many attributes
@@ -114,7 +112,6 @@ class Wallet:
     # borrow and  collateral have token type, which is not represented here
     # this therefore assumes that only one token type can be used at any given mint time
     borrows: dict[FixedPoint, Borrow] = field(default_factory=dict)
-    fees_paid: FixedPoint = FixedPoint(0)
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
@@ -245,7 +242,7 @@ class Wallet:
         for key, value_or_dict in wallet_deltas.copy().__dict__.items():
             if value_or_dict is None or key in ["frozen", "no_new_attribs"]:
                 continue
-            if key in ["lp_tokens", "fees_paid", "withdraw_shares"]:
+            if key in ["lp_tokens", "withdraw_shares"]:
                 logging.debug(
                     "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
                     self.address,

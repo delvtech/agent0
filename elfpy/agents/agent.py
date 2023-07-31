@@ -156,10 +156,9 @@ class Agent:
     def log_status_report(self) -> None:
         """Logs the current user state"""
         logging.debug(
-            "agent #%g balance = %1g and fees_paid = %1g",
+            "agent #%g balance = %1g",
             int(self.wallet.address),
             float(self.wallet.balance.amount),
-            float(self.wallet.fees_paid) or 0,
         )
 
     def log_final_report(self, market: HyperdriveMarket) -> None:

@@ -46,7 +46,6 @@ class WalletDeltas:
     # borrow and  collateral have token type, which is not represented here
     # this therefore assumes that only one token type can be used at any given mint time
     borrows: dict[FixedPoint, Borrow] = field(default_factory=dict)
-    fees_paid: FixedPoint = FixedPoint(0)
 
     def copy(self) -> WalletDeltas:
         """Returns a new copy of self"""
