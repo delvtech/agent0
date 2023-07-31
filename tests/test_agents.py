@@ -183,7 +183,6 @@ class TestAgent(unittest.TestCase):
         example_deltas = WalletDeltas(
             balance=types.Quantity(amount=FixedPoint("-10.0"), unit=types.TokenType.BASE),
             longs={FixedPoint(0): Long(FixedPoint("15.0"))},
-            fees_paid=FixedPoint("0.001"),
         )
         example_wallet.update(example_deltas)
         assert id(example_wallet.longs[FixedPoint(0)]) != id(example_deltas.longs[FixedPoint(0)]), (
@@ -200,7 +199,6 @@ class TestAgent(unittest.TestCase):
         new_example_deltas = WalletDeltas(
             balance=types.Quantity(amount=FixedPoint("-5.0"), unit=types.TokenType.BASE),
             longs={FixedPoint(0): Long(FixedPoint("8.0"))},
-            fees_paid=FixedPoint("0.0008"),
         )
         example_wallet.update(new_example_deltas)
         assert example_wallet.longs[FixedPoint(0)].balance == FixedPoint(

@@ -433,7 +433,6 @@ def calc_open_short(
     agent_deltas = WalletDeltas(
         balance=-types.Quantity(amount=trader_deposit, unit=types.TokenType.BASE),
         shorts={latest_checkpoint_time: Short(balance=bond_amount, open_share_price=market_state.share_price)},
-        fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
 
@@ -585,7 +584,6 @@ def calc_close_short(
                 open_share_price=FixedPoint(0),
             )
         },
-        fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
 
@@ -672,7 +670,6 @@ def calc_open_long(
     agent_deltas = WalletDeltas(
         balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
         longs={latest_checkpoint_time: Long(trade_result.user_result.d_bonds)},
-        fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
 
@@ -838,7 +835,6 @@ def calc_close_long(
     agent_deltas = WalletDeltas(
         balance=types.Quantity(amount=base_proceeds, unit=types.TokenType.BASE),
         longs={mint_time: Long(-bond_amount)},
-        fees_paid=fee,
     )
     return market_deltas, agent_deltas
 
