@@ -136,6 +136,7 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
                     tokenType="LP",
                     tokenDelta=token_delta,
                     baseDelta=base_delta,
+                    tradeType="AddLiquidity",
                 )
             )
 
@@ -153,6 +154,7 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
                     tokenDelta=token_delta,
                     baseDelta=base_delta,
                     maturityTime=maturity_time,
+                    tradeType="OpenLong",
                 )
             )
 
@@ -170,6 +172,7 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
                     tokenDelta=token_delta,
                     baseDelta=base_delta,
                     maturityTime=maturity_time,
+                    tradeType="OpenShort",
                 )
             )
 
@@ -186,6 +189,7 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
                     tokenType="LP",
                     tokenDelta=token_delta,
                     baseDelta=base_delta,
+                    tradeType="RemoveLiquidity",
                 )
             )
             token_delta = _convert_scaled_value(log["args"]["withdrawalShareAmount"])
@@ -198,6 +202,7 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
                     tokenType="WITHDRAWAL_SHARE",
                     tokenDelta=token_delta,
                     baseDelta=base_delta,
+                    tradeType="RemoveLiquidity",
                 )
             )
 
@@ -215,6 +220,7 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
                     tokenDelta=token_delta,
                     baseDelta=base_delta,
                     maturityTime=maturity_time,
+                    tradeType="CloseLong",
                 )
             )
 
@@ -232,6 +238,7 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
                     tokenDelta=token_delta,
                     baseDelta=base_delta,
                     maturityTime=maturity_time,
+                    tradeType="CloseShort",
                 )
             )
 
@@ -248,6 +255,7 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
                     tokenType="WITHDRAWAL_SHARE",
                     tokenDelta=token_delta,
                     baseDelta=base_delta,
+                    tradeType="RedeemWithdrawalShares",
                 )
             )
     # Every log should have either 1 or 2 (in the case of remove liquidity) entries in the wallet delta

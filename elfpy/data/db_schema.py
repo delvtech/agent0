@@ -67,6 +67,7 @@ class WalletDelta(Base):
     tokenDelta: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     baseDelta: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
     maturityTime: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    tradeType: Mapped[Union[str, None]] = mapped_column(String, default=None)
 
 
 class PoolConfig(Base):

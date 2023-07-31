@@ -16,13 +16,13 @@ from elfpy.data import postgres
 
 # pylint: disable=invalid-name
 
-st.set_page_config(page_title="Trading Competition Dashboard", layout="centered")
+st.set_page_config(page_title="Trading Competition Dashboard", layout="wide")
 st.set_option("deprecation.showPyplotGlobalUse", False)
 
 
 # Helper functions
 # TODO should likely move these functions to another file
-def get_ticker(data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
+def get_ticker(wallet_delta: pd.DataFrame, pool_info: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
     """Show recent trades.
 
     Arguments
@@ -37,10 +37,15 @@ def get_ticker(data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
     """
     # Return reverse of methods to put most recent transactions at the top
 
-    usernames = username_to_address(lookup, data["operator"])
-    ticker_data = data.reset_index()[["timestamp", "blockNumber", "operator", "trade_type", "value"]].copy()
+    usernames = username_to_address(lookup, wallet_delta["walletAddress"])
+    timestamps = pool_info.loc[wallet_delta["blockNumber"], "timestamp"]
+
+    ticker_data = wallet_delta[
+        ["blockNumber", "walletAddress", "tradeType", "baseTokenType", "tokenDelta", "baseDelta"]
+    ].copy()
+    ticker_data.insert(0, "timestamp", timestamps.values)  # type: ignore
     ticker_data.insert(2, "username", usernames.values.tolist())
-    ticker_data.columns = ["Timestamp", "Block", "User", "Wallet", "Method", "Amount"]
+    ticker_data.columns = ["Timestamp", "Block", "User", "Wallet", "Method", "Token", "Token Delta", "Base Delta"]
     # Shorten wallet address string
     ticker_data["Wallet"] = ticker_data["Wallet"].str[:6] + "..." + ticker_data["Wallet"].str[-4:]
     ticker_data = ticker_data.set_index("Timestamp").sort_index(ascending=False)
@@ -216,21 +221,18 @@ while True:
     txn_data = postgres.get_transactions(session, -max_live_blocks)
     pool_info_data = postgres.get_pool_info(session, -max_live_blocks)
     combined_data = get_combined_data(txn_data, pool_info_data)
-    ticker = get_ticker(combined_data, user_lookup)
-    wallets = postgres.get_current_wallet_info(session)
+    wallet_deltas = postgres.get_wallet_deltas(session)
+    ticker = get_ticker(wallet_deltas, pool_info_data, user_lookup)
 
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)
     ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
 
-    # temporary hack because we know they started with 1e6 base.
-    current_reutrns = calc_total_returns(config_data, pool_info_data, wallets)
-    # TODO: FIX PNL CALCULATIONS TO INCLUDE DEPOSITS
-    #   agent PNL is their click trade pnl + bot pnls
+    current_returns = calc_total_returns(config_data, pool_info_data, wallet_deltas)
     # TODO: FIX BOT RESTARTS
     # Add initial budget column to bots
     # when bot restarts, use initial budget for bot's wallet address to set "budget" in Agent.Wallet
 
-    comb_rank, ind_rank = get_leaderboard(current_reutrns, user_lookup)
+    comb_rank, ind_rank = get_leaderboard(current_returns, user_lookup)
 
     with ticker_placeholder.container():
         st.header("Ticker")
