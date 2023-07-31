@@ -182,7 +182,8 @@ def main(
                 postgres.add_transactions(block_transactions, session)
                 postgres.add_wallet_deltas(wallet_deltas, session)
 
-                # TODO put the wallet info query as an optional block, and check these wallet values with what we get from the deltas
+                # TODO put the wallet info query as an optional block,
+                # and check these wallet values with what we get from the deltas
                 wallet_info_for_transactions = convert_data.get_wallet_info(
                     hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
                 )
