@@ -620,6 +620,41 @@ def get_current_wallet_info(
     return current_wallet_info
 
 
+def get_wallet_deltas(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+    """Get all wallet_delta data in history and returns as a pandas dataframe.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    start_block : int | None, optional
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block : int | None, optional
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried wallet info data
+    """
+    query = session.query(WalletDelta)
+
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = get_latest_block_number_from_table(WalletDelta, session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = get_latest_block_number_from_table(WalletDelta, session) + end_block + 1
+
+    if start_block is not None:
+        query = query.filter(WalletDelta.blockNumber >= start_block)
+    if end_block is not None:
+        query = query.filter(WalletDelta.blockNumber < end_block)
+
+    return pd.read_sql(query.statement, con=session.connection())
+
+
 def get_agents(session: Session, start_block: int | None = None, end_block: int | None = None) -> list[str]:
     """Get the list of all agents from the WalletInfo table.
 
@@ -698,7 +733,7 @@ def get_latest_block_number(session: Session) -> int:
 
 
 def get_latest_block_number_from_table(
-    table_obj: Type[WalletInfo | PoolInfo | Transaction | CheckpointInfo], session: Session
+    table_obj: Type[WalletInfo | WalletDelta | PoolInfo | Transaction | CheckpointInfo], session: Session
 ) -> int:
     """Get the latest block number based on the specified table in the db.
 
