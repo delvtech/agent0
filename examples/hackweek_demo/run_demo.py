@@ -125,7 +125,7 @@ def get_click_addresses() -> pd.DataFrame:
         "0x02237E07b7Ac07A17E1bdEc720722cb568f22840": "ControlC Schmidt (click)",
         "0x022ca016Dc7af612e9A8c5c0e344585De53E9667": "George Towle (click)",
         "0x0235037B42b4c0575c2575D50D700dD558098b78": "Jack Burrus (click)",
-        "0x0235037B42b4c0575c2575D50D700dD558098b78": "Jordan J (click)",
+        "0x0238811B058bA876Ae5F79cFbCAcCfA1c7e67879": "Jordan J (click)",
     }
     addresses = pd.DataFrame.from_dict(addresses, orient="index")
     addresses = addresses.reset_index()
