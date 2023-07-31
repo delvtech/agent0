@@ -732,7 +732,6 @@ def calc_close_long(
     bond_reserves_delta = FixedPoint(0)
     share_reserves_delta = FixedPoint(0)
     base_proceeds = FixedPoint(0)
-    fee = FixedPoint(0)
     gov_fee = FixedPoint(0)
     if is_trade:
         trade_result = pricing_model.calc_out_given_in(
@@ -744,7 +743,6 @@ def calc_close_long(
         bond_reserves_delta = trade_result.market_result.d_bonds
         share_reserves_delta = trade_result.market_result.d_base / market_state.share_price
         base_proceeds = trade_result.user_result.d_base
-        fee = trade_result.breakdown.fee
         gov_fee = trade_result.breakdown.gov_fee
     market_state.gov_fees_accrued += gov_fee
     # Make sure the trade is valid
