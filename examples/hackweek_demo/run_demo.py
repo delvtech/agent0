@@ -68,6 +68,7 @@ def combine_usernames(username: pd.Series) -> pd.DataFrame:
         "ControlC Schmidt (click)": "ControlC Schmidt",
         "George Towle (click)": "George Towle",
         "Jack Burrus (click)": "Jack Burrus",
+        "Jordan J (click)": "Jordan J",
         # Bot accounts
         "slundquist (bots)": "Sheng Lundquist",
     }
@@ -124,6 +125,7 @@ def get_click_addresses() -> pd.DataFrame:
         "0x02237E07b7Ac07A17E1bdEc720722cb568f22840": "ControlC Schmidt (click)",
         "0x022ca016Dc7af612e9A8c5c0e344585De53E9667": "George Towle (click)",
         "0x0235037B42b4c0575c2575D50D700dD558098b78": "Jack Burrus (click)",
+        "0x0235037B42b4c0575c2575D50D700dD558098b78": "Jordan J (click)",
     }
     addresses = pd.DataFrame.from_dict(addresses, orient="index")
     addresses = addresses.reset_index()
