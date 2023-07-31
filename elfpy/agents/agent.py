@@ -159,7 +159,6 @@ class Agent:
             "agent #%g balance = %1g and fees_paid = %1g",
             int(self.wallet.address),
             float(self.wallet.balance.amount),
-            float(self.wallet.fees_paid) or 0,
         )
 
     def log_final_report(self, market: HyperdriveMarket) -> None:
