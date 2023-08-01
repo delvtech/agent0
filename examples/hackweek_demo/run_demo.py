@@ -49,6 +49,7 @@ def get_ticker(wallet_delta: pd.DataFrame, pool_info: pd.DataFrame, lookup: pd.D
     # Shorten wallet address string
     ticker_data["Wallet"] = ticker_data["Wallet"].str[:6] + "..." + ticker_data["Wallet"].str[-4:]
     ticker_data = ticker_data.set_index("Timestamp").sort_index(ascending=False)
+    ticker_data = ticker_data.dropna(axis=0, subset="Wallet")
     return ticker_data
 
 
