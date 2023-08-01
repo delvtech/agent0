@@ -10,7 +10,7 @@ from eth_typing import ChecksumAddress
 from web3 import Web3
 
 from elfpy.agents.agent import Agent
-from elfpy.agents.policies import BasePolicy
+from elfpy.agents.policies import BasePolicy, NoActionPolicy
 from elfpy.markets.base import BaseMarket
 from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Quantity, TokenType, Trade
@@ -33,9 +33,12 @@ class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
         If None, then a random private key is created
     """
 
-    def __init__(self, policy: Policy, private_key: str | None = None):
+    def __init__(self, policy: Policy | None = None, private_key: str | None = None):
         """Initialize an agent and wallet account"""
-        self.policy: Policy = policy
+        if policy is None:
+            self.policy: BasePolicy = NoActionPolicy()
+        else:
+            self.policy: Policy = policy
         if private_key is None:
             account: LocalAccount = Account().create()
             private_key = account._key_obj  # pylint: disable=protected-access
