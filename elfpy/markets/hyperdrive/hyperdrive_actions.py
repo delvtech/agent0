@@ -435,7 +435,6 @@ def calc_open_short(
     agent_deltas = WalletDeltas(
         balance=-types.Quantity(amount=trader_deposit, unit=types.TokenType.BASE),
         shorts={latest_checkpoint_time: Short(balance=bond_amount, open_share_price=market_state.share_price)},
-        fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
 
@@ -587,7 +586,6 @@ def calc_close_short(
                 open_share_price=FixedPoint(0),
             )
         },
-        fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
 
@@ -674,7 +672,6 @@ def calc_open_long(
     agent_deltas = WalletDeltas(
         balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
         longs={latest_checkpoint_time: Long(trade_result.user_result.d_bonds)},
-        fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
 
@@ -737,7 +734,6 @@ def calc_close_long(
     bond_reserves_delta = FixedPoint(0)
     share_reserves_delta = FixedPoint(0)
     base_proceeds = FixedPoint(0)
-    fee = FixedPoint(0)
     gov_fee = FixedPoint(0)
     if is_trade:
         trade_result = pricing_model.calc_out_given_in(
@@ -749,7 +745,6 @@ def calc_close_long(
         bond_reserves_delta = trade_result.market_result.d_bonds
         share_reserves_delta = trade_result.market_result.d_base / market_state.share_price
         base_proceeds = trade_result.user_result.d_base
-        fee = trade_result.breakdown.fee
         gov_fee = trade_result.breakdown.gov_fee
     market_state.gov_fees_accrued += gov_fee
     # Make sure the trade is valid
@@ -840,7 +835,6 @@ def calc_close_long(
     agent_deltas = WalletDeltas(
         balance=types.Quantity(amount=base_proceeds, unit=types.TokenType.BASE),
         longs={mint_time: Long(-bond_amount)},
-        fees_paid=fee,
     )
     return market_deltas, agent_deltas
 

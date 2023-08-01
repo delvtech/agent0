@@ -6,11 +6,11 @@ import time
 import mplfinance as mpf
 import pandas as pd
 import streamlit as st
+from calc_pnl import calc_total_returns
 from dotenv import load_dotenv
 from extract_data_logs import get_combined_data
 from plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
 from plot_ohlcv import calc_ohlcv, plot_ohlcv
-from plot_pnl import calculate_current_pnl
 
 from elfpy.data import postgres
 
@@ -68,6 +68,7 @@ def combine_usernames(username: pd.Series) -> pd.DataFrame:
         "ControlC Schmidt (click)": "ControlC Schmidt",
         "George Towle (click)": "George Towle",
         "Jack Burrus (click)": "Jack Burrus",
+        "Jordan J (click)": "Jordan J",
         # Bot accounts
         "slundquist (bots)": "Sheng Lundquist",
     }
@@ -124,6 +125,7 @@ def get_click_addresses() -> pd.DataFrame:
         "0x02237E07b7Ac07A17E1bdEc720722cb568f22840": "ControlC Schmidt (click)",
         "0x022ca016Dc7af612e9A8c5c0e344585De53E9667": "George Towle (click)",
         "0x0235037B42b4c0575c2575D50D700dD558098b78": "Jack Burrus (click)",
+        "0x0238811B058bA876Ae5F79cFbCAcCfA1c7e67879": "Jordan J (click)",
     }
     addresses = pd.DataFrame.from_dict(addresses, orient="index")
     addresses = addresses.reset_index()
@@ -220,8 +222,15 @@ while True:
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)
     ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
 
-    curr_pnl = calculate_current_pnl(config_data, pool_info_data, wallets)
-    comb_rank, ind_rank = get_leaderboard(curr_pnl, user_lookup)
+    # temporary hack because we know they started with 1e6 base.
+    current_reutrns = calc_total_returns(config_data, pool_info_data, wallets)
+    # TODO: FIX PNL CALCULATIONS TO INCLUDE DEPOSITS
+    #   agent PNL is their click trade pnl + bot pnls
+    # TODO: FIX BOT RESTARTS
+    # Add initial budget column to bots
+    # when bot restarts, use initial budget for bot's wallet address to set "budget" in Agent.Wallet
+
+    comb_rank, ind_rank = get_leaderboard(current_reutrns, user_lookup)
 
     with ticker_placeholder.container():
         st.header("Ticker")
