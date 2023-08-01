@@ -172,7 +172,7 @@ class TestAgent(unittest.TestCase):
         wallet_copy = example_wallet.copy()
         assert example_wallet is not wallet_copy  # not the same object
         assert example_wallet == wallet_copy  # they have the same attribute values
-        wallet_copy.address += 1
+        wallet_copy.balance.amount += 1
         assert example_wallet != wallet_copy  # now they should have different attribute values
 
     def test_wallet_update(self):
