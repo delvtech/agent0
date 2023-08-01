@@ -4,8 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Generic, TypeVar
 
-from eth_account import Account
-from eth_account.signers.local import LocalAccount
+from eth_account.account import LocalAccount
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
@@ -25,10 +24,10 @@ MarketAction = TypeVar(
 )  # TODO: should be able to infer this from the market
 
 
-class EthAgent(Generic[Policy, Market, MarketAction]):
+class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
     r"""Enact policies on smart contracts and tracks wallet state"""
 
-    def __init__(self, policy: Policy | None = None, private_key: str | None = None):
+    def __init__(self, account: LocalAccount, policy: Policy | None = None):
         """Initialize an agent and wallet account
 
         Arguments
@@ -44,26 +43,16 @@ class EthAgent(Generic[Policy, Market, MarketAction]):
             self.policy = NoActionPolicy()
         else:
             self.policy = policy
-        if private_key is None:
-            self.account: LocalAccount = Account().create()
-        else:
-            self.account: LocalAccount = Account().from_key(private_key)
+        super().__init__(account._key_obj, account._publicapi)  # pylint: disable=protected-access
         self.wallet = EthWallet(
-            address=HexBytes(self.account.address),
+            address=HexBytes(self.address),
             balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE),
         )
-        super().__init__()
 
     @property
     def checksum_address(self) -> ChecksumAddress:
         """Return the checksum address of the account"""
-        return Web3.to_checksum_address(self.account.address)
-
-    @property
-    def _private_key(self) -> bytes:
-        """Return the private key for the agent"""
-        logging.warning("accessing agent private key")
-        return bytes(self)
+        return Web3.to_checksum_address(self.address)
 
     @property
     def liquidation_trades(self) -> list[Trade[MarketAction]]:
@@ -119,10 +108,6 @@ class EthAgent(Generic[Policy, Market, MarketAction]):
                 )
             )
         return action_list
-
-    def sign_transaction(self, transaction_dict):
-        """Calls the underlying LocalAccount method"""
-        return self.account.sign_transaction(transaction_dict)
 
     def get_trades(self, market: Market) -> list[Trade[MarketAction]]:
         """Helper function for computing a agent trade

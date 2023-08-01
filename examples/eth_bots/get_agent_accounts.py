@@ -7,6 +7,7 @@ import os
 
 import eth_utils
 from dotenv import load_dotenv
+from eth_account.account import Account
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import Web3
@@ -81,7 +82,7 @@ def get_agent_accounts(
                     "Private keys must be specified for the eth_bots demo. Did you list enough in your .env?"
                 )
             eth_agent = eth.accounts.EthAgent(
-                policy=agent_info.policy(**kwargs), private_key=agent_private_keys[agent_count]
+                Account().from_key(agent_private_keys[agent_count]), policy=agent_info.policy(**kwargs)
             )
             agent_eth_funds = eth.rpc_interface.get_account_balance(web3, eth_agent.checksum_address)
             if agent_eth_funds == 0:

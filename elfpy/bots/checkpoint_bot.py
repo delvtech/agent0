@@ -7,6 +7,7 @@ import os
 import time
 
 from dotenv import load_dotenv
+from eth_account.account import Account
 from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
@@ -72,7 +73,7 @@ def main() -> None:
 
     # Fund the checkpoint sender with some ETH.
     balance = int(100e18)
-    sender = EthAgent()
+    sender = EthAgent(Account().create("CHECKPOINT_BOT"))
     set_anvil_account_balance(web3, sender.address, balance)
     logging.info("Successfully funded the sender=%s.", sender.address)
 
