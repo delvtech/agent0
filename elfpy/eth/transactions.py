@@ -14,7 +14,7 @@ from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, TxParams, 
 
 from elfpy.eth.errors.errors import decode_error_selector_for_contract
 
-from .accounts import EthAccount
+from .accounts import EthAgent
 
 
 def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
@@ -72,7 +72,7 @@ def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn
 
 
 def smart_contract_preview_transaction(
-    contract: Contract, signer: EthAccount, function_name_or_signature: str, *fn_args
+    contract: Contract, signer: EthAgent, function_name_or_signature: str, *fn_args
 ) -> dict[str, Any]:
     """Returns the values from a transaction without actually submitting the transaction.
 
@@ -80,7 +80,7 @@ def smart_contract_preview_transaction(
     ---------
     contract : web3.contract.contract.Contract
         The contract that we are reading from.
-    signer: EthAccount
+    signer: EthAgent
         The address that would sign the transaction.
     function_name_or_signature : str
         The name of the function
@@ -169,7 +169,7 @@ async def async_wait_for_transaction_receipt(
 
 
 async def async_smart_contract_transact(
-    web3: Web3, contract: Contract, signer: EthAccount, function_name_or_signature: str, *fn_args
+    web3: Web3, contract: Contract, signer: EthAgent, function_name_or_signature: str, *fn_args
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
     Copy of `smart_contract_transact`, but using async wait for `wait_for_transaction_receipt`
@@ -180,8 +180,8 @@ async def async_smart_contract_transact(
         web3 provider object
     contract : Contract
         Any deployed web3 contract
-    signer : EthAccount
-        The EthAccount that will be used to pay for the gas & sign the transaction
+    signer : EthAgent
+        The EthAgent that will be used to pay for the gas & sign the transaction
     function_name_or_signature : str
         This function must exist in the compiled contract's ABI
     fn_args : ordered list
@@ -203,7 +203,7 @@ async def async_smart_contract_transact(
                 "nonce": web3.eth.get_transaction_count(signer.checksum_address),
             }
         )
-        signed_txn = signer.account.sign_transaction(unsent_txn)
+        signed_txn = signer.sign_transaction(unsent_txn)
         tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
         # TODO set poll time as a parameter
         tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash)
@@ -234,7 +234,7 @@ async def async_smart_contract_transact(
 
 
 def smart_contract_transact(
-    web3: Web3, contract: Contract, signer: EthAccount, function_name_or_signature: str, *fn_args
+    web3: Web3, contract: Contract, signer: EthAgent, function_name_or_signature: str, *fn_args
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
 
@@ -244,8 +244,8 @@ def smart_contract_transact(
         web3 container object
     contract : Contract
         Any deployed web3 contract
-    signer : EthAccount
-        The EthAccount that will be used to pay for the gas & sign the transaction
+    signer : EthAgent
+        The EthAgent that will be used to pay for the gas & sign the transaction
     function_name_or_signature : str
         This function must exist in the compiled contract's ABI
     fn_args : ordered list
@@ -267,7 +267,7 @@ def smart_contract_transact(
                 "nonce": web3.eth.get_transaction_count(signer.checksum_address),
             }
         )
-        signed_txn = signer.account.sign_transaction(unsent_txn)
+        signed_txn = signer.sign_transaction(unsent_txn)
         tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
         # TODO set poll time as parameter
         return web3.eth.wait_for_transaction_receipt(tx_hash)
@@ -292,7 +292,7 @@ def smart_contract_transact(
 
 def eth_transfer(
     web3: Web3,
-    signer: EthAccount,
+    signer: EthAgent,
     to_address: ChecksumAddress,
     amount_wei: int,
     max_priority_fee: int | None = None,
@@ -303,8 +303,8 @@ def eth_transfer(
     ---------
     web3 : Web3
         web3 container object
-    signer : EthAccount
-        The EthAccount that will be used to pay for the gas & sign the transaction
+    signer : EthAgent
+        The EthAgent that will be used to pay for the gas & sign the transaction
     to_address : ChecksumAddress
         Address for where the Ethereum is going to
     amount_wei : int
@@ -334,7 +334,7 @@ def eth_transfer(
     unsent_txn["gas"] = web3.eth.estimate_gas(unsent_txn)
     unsent_txn["maxFeePerGas"] = Wei(max_fee_per_gas)
     unsent_txn["maxPriorityFeePerGas"] = Wei(max_priority_fee)
-    signed_txn = signer.account.sign_transaction(unsent_txn)
+    signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
     return web3.eth.wait_for_transaction_receipt(tx_hash)
 
