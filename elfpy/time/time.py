@@ -144,7 +144,7 @@ class StretchedTime:
     @property
     def seconds(self) -> FixedPoint:
         r"""Convey time in seconds"""
-        return self.years / elfpy.SECONDS_IN_YEAR
+        return self.years * elfpy.SECONDS_IN_YEAR
 
 
 def get_years_remaining(

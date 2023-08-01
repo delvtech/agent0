@@ -22,7 +22,7 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
 
     Returns
     -------
-    tuple[Web3, Contract, list[EthAgent]]
+    tuple[Web3, Contract, Contract, EnvironmentConfig, list[EthAgent]]
         A tuple containing:
             - The web3 container
             - The hyperdrive contract

@@ -145,7 +145,6 @@ async def async_execute_single_agent_trade(
                 agent,
                 trade_object,
             )
-            # NOTE: this is assuming account.agent.wallet is unique to each agent!
             agent.wallet.update(wallet_deltas)
         except UnknownBlockError as exc:
             logging.error(exc)
@@ -170,10 +169,10 @@ async def async_execute_agent_trades(
     # NOTE: This might _not_ be the latest market, due to async
     # get latest market
     hyperdrive_market = hyperdrive_interface.get_hyperdrive_market(web3, hyperdrive_contract)
-    # Make calls per account to execute_single_agent_trade
+    # Make calls per agent to execute_single_agent_trade
     # Await all trades to finish before continuing
     await asyncio.gather(
-        *[async_execute_single_agent_trade(account, web3, hyperdrive_contract, hyperdrive_market) for account in agents]
+        *[async_execute_single_agent_trade(agent, web3, hyperdrive_contract, hyperdrive_market) for agent in agents]
     )
 
 
@@ -202,7 +201,7 @@ async def async_match_contract_call_to_trade(
     agent : EthAgent
         Object containing a wallet address and Elfpy Agent for determining trades
     trade_object : Trade
-        A specific trade requested by the given account
+        A specific trade requested by the given agent
 
     Returns
     -------
@@ -397,11 +396,11 @@ async def async_match_contract_call_to_trade(
             # many as possible, up to the withdrawPool.readyToRedeem limit, without reverting.  Only
             # a min_output that is too high will cause a revert here, or trying to withdraw more
             # shares than the user has obviously.
-            fn_args = (trade_amount, min_output, account.checksum_address, as_underlying)
+            fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
             trade_result = await async_transact_and_parse_logs(
                 web3,
                 hyperdrive_contract,
-                account,
+                agent,
                 "redeemWithdrawalShares",
                 *fn_args,
             )

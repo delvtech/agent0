@@ -32,12 +32,40 @@ class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
 
         Arguments
         ----------
+        account : LocalAccount
+            A Web3 local account for storing addresses & signing transactions.
         policy : Policy
             Elfpy policy for producing agent actions.
             If None, then a policy that executes no actions is used.
-        private_key : str | None, optional
-            Private key for constructing the agent's blockchain wallet.
-            If None, then a random private key is created.
+
+        Note
+        ----
+        If you wish for your private key to be generated, then you can do so with:
+
+        .. code-block:: python
+
+            >>> from eth_account.account import Account
+            >>> from elfpy.eth.accounts.eth_account import EthAgent
+            >>> agent = EthAgent(Account().create("CHECKPOINT_BOT"))
+
+        Alternatively, you can also use the Account api to provide a pre-generated key:
+
+        .. code-block:: python
+
+            >>> from eth_account.account import Account
+            >>> from elfpy.eth.accounts.eth_account import EthAgent
+            >>> agent = EthAgent(Account().from_key(agent_private_key))
+
+        The EthAgent has the same properties as a Web3 LocalAgent.
+        For example, you can get public and private keys as well as the address:
+
+            .. code-block:: python
+
+                >>> address = agent.address
+                >>> checksum_address = agent.checksum_address
+                >>> public_key = agent.key
+                >>> private_key = bytes(agent)
+
         """
         if policy is None:
             self.policy = NoActionPolicy()
