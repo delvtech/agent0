@@ -360,7 +360,7 @@ class TestCloseLong(unittest.TestCase):
         """Close a long when the interest rate was negative.
 
         .. todo:: This test only verifies that a long can be closed with a negative interest rate.
-            There is a commented assert on the accounting that should pass after withdrawl shares are implemented.
+            There is a commented assert on the accounting that should pass after withdrawal shares are implemented.
         """
         # Bob opens a long
         base_amount = FixedPoint("10.0")
@@ -405,7 +405,7 @@ class TestCloseLong(unittest.TestCase):
         """Close a long when the interest rate was negative halfway through the term
 
         .. todo:: This test only verifies that a long can be closed with a negative interest rate.
-            There is a commented assert on the accounting that should pass after withdrawl shares are implemented.
+            There is a commented assert on the accounting that should pass after withdrawal shares are implemented.
         """
         # Bob opens a long
         base_amount = FixedPoint("10.0")  # how much base the agent is using to open a long

@@ -101,8 +101,11 @@ def main(
         postgres.add_checkpoint_infos([convert_data.convert_checkpoint_info(checkpoint_info_dict)], session)
 
         # Query and add block transactions
-        block_transactions = convert_data.fetch_contract_transactions_for_block(web3, hyperdrive_contract, block_number)
+        block_transactions, wallet_deltas = convert_data.fetch_contract_transactions_for_block(
+            web3, hyperdrive_contract, block_number
+        )
         postgres.add_transactions(block_transactions, session)
+        postgres.add_wallet_deltas(wallet_deltas, session)
 
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
@@ -160,9 +163,10 @@ def main(
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_transactions = None
+                wallet_deltas = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        block_transactions = convert_data.fetch_contract_transactions_for_block(
+                        block_transactions, wallet_deltas = convert_data.fetch_contract_transactions_for_block(
                             web3, hyperdrive_contract, block_number
                         )
                         break
@@ -171,10 +175,18 @@ def main(
                         time.sleep(1)
                         continue
 
-                if block_transactions is None:  # Proceed only if we have data, otherwise do nothing
+                # This case only happens if fetch_contract_transactions throws an exception
+                # e.g., the web3 call fails. fetch_contract_transactions_for_block will return
+                # empty lists (which doesn't execute the if statement below) if there are no hyperdrive
+                # transactions for the block
+                if block_transactions is None or wallet_deltas is None:
                     raise ValueError("Error in getting transactions")
-                postgres.add_transactions(block_transactions, session)
 
+                postgres.add_transactions(block_transactions, session)
+                postgres.add_wallet_deltas(wallet_deltas, session)
+
+                # TODO put the wallet info query as an optional block,
+                # and check these wallet values with what we get from the deltas
                 wallet_info_for_transactions = convert_data.get_wallet_info(
                     hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
                 )

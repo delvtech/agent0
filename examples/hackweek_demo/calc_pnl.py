@@ -7,7 +7,7 @@ import pandas as pd
 from extract_data_logs import calculate_spot_price
 
 
-def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, current_wallet: pd.DataFrame) -> pd.Series:
+def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_deltas: pd.DataFrame) -> pd.Series:
     """Calculate the most current pnl values.
 
     Calculate_spot_price_for_position calculates the spot price for a position that has matured by some amount.
@@ -18,8 +18,8 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, current_
         Time-invariant pool configuration.
     pool_info : pd.DataFrame
         Pool information like reserves. This can contain multiple blocks, but only the most recent is used.
-    current_wallet : pd.DataFrame
-        Current agent holdings indexed by address and position (LP, LONG-YYYYMMDD, SHORT-YYYYMMDD, etc.)
+    wallet_deltas: pd.DataFrame
+        Wallet deltas for each agent and position.
 
     Returns
     -------
@@ -30,8 +30,21 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, current_
     # Most current block timestamp
     latest_pool_info = pool_info.loc[pool_info.index.max()]
     block_timestamp = latest_pool_info["timestamp"].timestamp()
+
+    # Calculate unrealized gains
+    current_wallet = wallet_deltas.groupby(["walletAddress", "tokenType"]).agg(
+        {"delta": "sum", "baseTokenType": "first", "maturityTime": "first"}
+    )
+
+    # Sanity check, no tokens except base should dip below 0
+    assert (current_wallet["delta"][current_wallet["baseTokenType"] != "BASE"] >= 0).all()
+
+    # Calculate for base
     # Base is valued at 1:1, since that's our numéraire (https://en.wikipedia.org/wiki/Num%C3%A9raire)
-    base_balance = current_wallet[current_wallet["baseTokenType"] == "BASE"]["tokenValue"]
+    wallet_base = current_wallet[current_wallet["baseTokenType"] == "BASE"]
+    base_returns = wallet_base["delta"]
+
+    # Calculate for lp
     # LP value = users_LP_tokens * sharePrice
     # derived from:
     #   total_lp_value = lpTotalSupply * sharePrice
@@ -40,10 +53,12 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, current_
     #   users_LP_value = users_LP_tokens / lpTotalSupply * lpTotalSupply * sharePrice
     #   users_LP_value = users_LP_tokens * sharePrice
     wallet_lps = current_wallet[current_wallet["baseTokenType"] == "LP"]
-    lp_returns = wallet_lps["tokenValue"] * latest_pool_info["sharePrice"]
+    lp_returns = wallet_lps["delta"] * latest_pool_info["sharePrice"]
+
     # Calculate for withdrawal shares. Same as for LPs.
-    wallet_withdrawl = current_wallet[current_wallet["baseTokenType"] == "WITHDRAWL_SHARE"]
-    withdrawl_returns = wallet_withdrawl["tokenValue"] * latest_pool_info["sharePrice"]
+    wallet_withdrawal = current_wallet[current_wallet["baseTokenType"] == "WITHDRAWAL_SHARE"]
+    withdrawal_returns = wallet_withdrawal["delta"] * latest_pool_info["sharePrice"]
+
     # Calculate for shorts
     # Short value = users_shorts * ( 1 - spot_price )
     # this could also be valued at 1 + ( p1 - p2 ) but we'd have to know their entry price (or entry base 🤔)
@@ -57,7 +72,8 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, current_
         maturity_timestamp=wallet_shorts["maturityTime"],
         block_timestamp=block_timestamp,
     )
-    shorts_returns = wallet_shorts["tokenValue"] * (1 - short_spot_prices)
+    shorts_returns = wallet_shorts["delta"] * (1 - short_spot_prices)
+
     # Calculate for longs
     # Long value = users_longs * spot_price
     wallet_longs = current_wallet[current_wallet["baseTokenType"] == "LONG"]
@@ -70,14 +86,15 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, current_
         maturity_timestamp=wallet_longs["maturityTime"],
         block_timestamp=block_timestamp,
     )
-    long_returns = wallet_longs["tokenValue"] * long_spot_prices
+    long_returns = wallet_longs["delta"] * long_spot_prices
+
     # Add pnl to current_wallet information
     # Current_wallet and *_pnl dataframes have the same index
-    current_wallet.loc[base_balance.index, "pnl"] = base_balance
+    current_wallet.loc[base_returns.index, "pnl"] = base_returns
     current_wallet.loc[lp_returns.index, "pnl"] = lp_returns
     current_wallet.loc[shorts_returns.index, "pnl"] = shorts_returns
     current_wallet.loc[long_returns.index, "pnl"] = long_returns
-    current_wallet.loc[withdrawl_returns.index, "pnl"] = withdrawl_returns
+    current_wallet.loc[withdrawal_returns.index, "pnl"] = withdrawal_returns
     return current_wallet.reset_index().groupby("walletAddress")["pnl"].sum()
 
 

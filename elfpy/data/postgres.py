@@ -12,7 +12,16 @@ import sqlalchemy
 from sqlalchemy import URL, MetaData, Table, create_engine, exc, func, inspect
 from sqlalchemy.orm import Session, sessionmaker
 
-from elfpy.data.db_schema import Base, CheckpointInfo, PoolConfig, PoolInfo, Transaction, UserMap, WalletInfo
+from elfpy.data.db_schema import (
+    Base,
+    CheckpointInfo,
+    PoolConfig,
+    PoolInfo,
+    Transaction,
+    UserMap,
+    WalletDelta,
+    WalletInfo,
+)
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -125,6 +134,7 @@ def initialize_session() -> Session:
     """
     postgres_config = build_postgres_config()
 
+    # TODO add waiting in connecting to postgres to avoid exiting out before postgres spins up
     url_object = URL.create(
         drivername="postgresql",
         username=postgres_config.POSTGRES_USER,
@@ -277,6 +287,26 @@ def add_transactions(transactions: list[Transaction], session: Session) -> None:
     except exc.DataError as err:
         session.rollback()
         print(f"{transactions=}")
+        raise err
+
+
+def add_wallet_deltas(wallet_deltas: list[WalletDelta], session: Session) -> None:
+    """Add wallet deltas to the walletdelta table.
+
+    Arguments
+    ---------
+    transactions : list[WalletDelta]
+        A list of WalletDelta objects to insert into postgres
+    session : Session
+        The initialized session object
+    """
+    for wallet_delta in wallet_deltas:
+        session.add(wallet_delta)
+    try:
+        session.commit()
+    except exc.DataError as err:
+        session.rollback()
+        print(f"{wallet_deltas=}")
         raise err
 
 
@@ -591,6 +621,41 @@ def get_current_wallet_info(
     return current_wallet_info
 
 
+def get_wallet_deltas(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+    """Get all wallet_delta data in history and returns as a pandas dataframe.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    start_block : int | None, optional
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block : int | None, optional
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried wallet info data
+    """
+    query = session.query(WalletDelta)
+
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = get_latest_block_number_from_table(WalletDelta, session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = get_latest_block_number_from_table(WalletDelta, session) + end_block + 1
+
+    if start_block is not None:
+        query = query.filter(WalletDelta.blockNumber >= start_block)
+    if end_block is not None:
+        query = query.filter(WalletDelta.blockNumber < end_block)
+
+    return pd.read_sql(query.statement, con=session.connection())
+
+
 def get_agents(session: Session, start_block: int | None = None, end_block: int | None = None) -> list[str]:
     """Get the list of all agents from the WalletInfo table.
 
@@ -669,7 +734,7 @@ def get_latest_block_number(session: Session) -> int:
 
 
 def get_latest_block_number_from_table(
-    table_obj: Type[WalletInfo | PoolInfo | Transaction | CheckpointInfo], session: Session
+    table_obj: Type[WalletInfo | WalletDelta | PoolInfo | Transaction | CheckpointInfo], session: Session
 ) -> int:
     """Get the latest block number based on the specified table in the db.
 

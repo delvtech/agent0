@@ -16,13 +16,15 @@ from elfpy.data import postgres
 
 # pylint: disable=invalid-name
 
-st.set_page_config(page_title="Trading Competition Dashboard", layout="centered")
+st.set_page_config(page_title="Trading Competition Dashboard", layout="wide")
 st.set_option("deprecation.showPyplotGlobalUse", False)
 
 
 # Helper functions
 # TODO should likely move these functions to another file
-def get_ticker(data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
+def get_ticker(
+    wallet_delta: pd.DataFrame, transactions: pd.DataFrame, pool_info: pd.DataFrame, lookup: pd.DataFrame
+) -> pd.DataFrame:
     """Show recent trades.
 
     Arguments
@@ -35,15 +37,37 @@ def get_ticker(data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         The filtered transaction data based on what we want to view in the ticker
     """
-    # Return reverse of methods to put most recent transactions at the top
 
-    usernames = username_to_address(lookup, data["operator"])
-    ticker_data = data.reset_index()[["timestamp", "blockNumber", "operator", "trade_type", "value"]].copy()
-    ticker_data.insert(2, "username", usernames.values.tolist())
-    ticker_data.columns = ["Timestamp", "Block", "User", "Wallet", "Method", "Amount"]
+    # TODO these merges should really happen via an sql query instead of in pandas here
+    # Set ticker so that each transaction is a single row
+    ticker_data = wallet_delta.groupby(["transactionHash"]).agg(
+        {"blockNumber": "first", "walletAddress": "first", "baseTokenType": tuple, "delta": tuple}
+    )
+
+    # Expand column of lists into seperate dataframes, then str cat them together
+    token_type = pd.DataFrame(ticker_data["baseTokenType"].to_list(), index=ticker_data.index)
+    token_deltas = pd.DataFrame(ticker_data["delta"].to_list(), index=ticker_data.index)
+    token_diffs = token_type + ": " + token_deltas.astype("str")
+    # Aggregate columns into a single list, removing nans
+    token_diffs = token_diffs.stack().groupby(level=0).agg(list)
+
+    # Gather other information from other tables
+    usernames = address_to_username(lookup, ticker_data["walletAddress"])
+    timestamps = pool_info.loc[ticker_data["blockNumber"], "timestamp"]
+    trade_type = transactions.set_index("transactionHash").loc[ticker_data.index, "input_method"]
+
+    ticker_data = ticker_data[["blockNumber", "walletAddress"]].copy()
+    ticker_data.insert(0, "timestamp", timestamps.values)  # type: ignore
+    ticker_data.insert(2, "username", usernames.values)  # type: ignore
+    ticker_data.insert(4, "trade_type", trade_type)
+    ticker_data.insert(5, "token_diffs", token_diffs)  # type: ignore
+    ticker_data.columns = ["Timestamp", "Block", "User", "Wallet", "Method", "Token Deltas"]
     # Shorten wallet address string
     ticker_data["Wallet"] = ticker_data["Wallet"].str[:6] + "..." + ticker_data["Wallet"].str[-4:]
+    # Return reverse of methods to put most recent transactions at the top
     ticker_data = ticker_data.set_index("Timestamp").sort_index(ascending=False)
+    # Drop rows with nonexistant wallets
+    ticker_data = ticker_data.dropna(axis=0, subset="Wallet")
     return ticker_data
 
 
@@ -83,7 +107,7 @@ def combine_usernames(username: pd.Series) -> pd.DataFrame:
 def get_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Rank users by PNL, individually and bomined across their accounts."""
     pnl = pnl.reset_index()  # type: ignore
-    usernames = username_to_address(lookup, pnl["walletAddress"])
+    usernames = address_to_username(lookup, pnl["walletAddress"])
     pnl.insert(1, "username", usernames.values.tolist())
     # Hard coded funding provider from migration account
     migration_addr = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
@@ -165,7 +189,7 @@ def get_user_lookup() -> pd.DataFrame:
     return options_map.reset_index()
 
 
-def username_to_address(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Series:
+def address_to_username(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Series:
     """Look up selected users/addrs to all addresses.
 
     Arguments
@@ -173,13 +197,12 @@ def username_to_address(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Se
     lookup: pd.DataFrame
         The lookup dataframe from `get_user_lookup` call
     selected_list: list[str]
-        A list of selected values from the multiselect input widget
-        These values can either be usernames or addresses
+        A list of addresses to look up usernames to
 
     Returns
     -------
     list[str]
-        A list of addresses based on selected_list
+        A list of usernames based on selected_list
     """
     selected_list_column = selected_list.name
     out = selected_list.to_frame().merge(lookup, how="left", left_on=selected_list_column, right_on="address")
@@ -216,21 +239,18 @@ while True:
     txn_data = postgres.get_transactions(session, -max_live_blocks)
     pool_info_data = postgres.get_pool_info(session, -max_live_blocks)
     combined_data = get_combined_data(txn_data, pool_info_data)
-    ticker = get_ticker(combined_data, user_lookup)
-    wallets = postgres.get_current_wallet_info(session)
+    wallet_deltas = postgres.get_wallet_deltas(session)
+    ticker = get_ticker(wallet_deltas, txn_data, pool_info_data, user_lookup)
 
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)
     ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
 
-    # temporary hack because we know they started with 1e6 base.
-    current_reutrns = calc_total_returns(config_data, pool_info_data, wallets)
-    # TODO: FIX PNL CALCULATIONS TO INCLUDE DEPOSITS
-    #   agent PNL is their click trade pnl + bot pnls
-    # TODO: FIX BOT RESTARTS
-    # Add initial budget column to bots
-    # when bot restarts, use initial budget for bot's wallet address to set "budget" in Agent.Wallet
+    current_returns = calc_total_returns(config_data, pool_info_data, wallet_deltas)
+    ## TODO: FIX BOT RESTARTS
+    ## Add initial budget column to bots
+    ## when bot restarts, use initial budget for bot's wallet address to set "budget" in Agent.Wallet
 
-    comb_rank, ind_rank = get_leaderboard(current_reutrns, user_lookup)
+    comb_rank, ind_rank = get_leaderboard(current_returns, user_lookup)
 
     with ticker_placeholder.container():
         st.header("Ticker")
