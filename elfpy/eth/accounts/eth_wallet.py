@@ -21,8 +21,6 @@ class EthWallet:
 
     Arguments
     ----------
-    address : HexBytes
-        The trader's address.
     balance : Quantity
         The base assets that held by the trader.
     lp_tokens : FixedPoint
@@ -150,9 +148,9 @@ class EthWallet:
             if value_or_dict is None:
                 continue
             match key:
-                case ["frozen", "no_new_attribs"]:
+                case "frozen" | "no_new_attribs" | "borrows":
                     continue
-                case ["lp_tokens", "withdraw_shares"]:
+                case "lp_tokens" | "withdraw_shares":
                     logging.debug(
                         "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
                         self.address,

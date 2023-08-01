@@ -55,7 +55,7 @@ def get_agent_accounts(
     key_string = os.environ.get("AGENT_KEYS")
     if key_string is None:
         raise ValueError("AGENT_KEYS environment variable must be set")
-    agent_private_keys = json.loads(key_string)
+    agent_private_keys: list[str] = json.loads(key_string)
     #  get agent budgets
     base_budget_string = os.environ.get("AGENT_BASE_BUDGETS")
     if base_budget_string is None:
