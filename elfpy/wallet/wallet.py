@@ -97,7 +97,7 @@ class Wallet:
     # pylint: disable=too-many-instance-attributes
 
     # agent identifier
-    address: int
+    address: int | str
 
     # fungible
     balance: Quantity = field(default_factory=lambda: Quantity(amount=FixedPoint(0), unit=TokenType.BASE))
