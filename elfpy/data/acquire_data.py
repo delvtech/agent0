@@ -175,10 +175,13 @@ def main(
                         time.sleep(1)
                         continue
 
-                if (
-                    block_transactions is None or wallet_deltas is None
-                ):  # Proceed only if we have data, otherwise do nothing
+                # This case only happens if fetch_contract_transactions throws an exception
+                # e.g., the web3 call fails. fetch_contract_transactions_for_block will return
+                # empty lists (which doesn't execute the if statement below) if there are no hyperdrive
+                # transactions for the block
+                if block_transactions is None or wallet_deltas is None:
                     raise ValueError("Error in getting transactions")
+
                 postgres.add_transactions(block_transactions, session)
                 postgres.add_wallet_deltas(wallet_deltas, session)
 
