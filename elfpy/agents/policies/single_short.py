@@ -46,8 +46,8 @@ class SingleShortAgent(BasePolicy):
         if can_open_short and not has_opened_short:
             action_list.append(
                 Trade(
-                    market=MarketType.HYPERDRIVE,
-                    trade=HyperdriveMarketAction(
+                    market_type=MarketType.HYPERDRIVE,
+                    market_action=HyperdriveMarketAction(
                         action_type=MarketActionType.OPEN_SHORT,
                         trade_amount=self.amount_to_trade,
                         slippage_tolerance=self.slippage_tolerance,

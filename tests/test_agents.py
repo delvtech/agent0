@@ -257,6 +257,6 @@ class TestAgent(unittest.TestCase):
                     # Ensure trade size is smaller than wallet size
                     self.assertGreaterEqual(
                         example_agent.policy.budget,
-                        market_action.trade.trade_amount,
-                        msg=f"{market_action.trade.trade_amount=} should be <= {example_agent.policy.budget=}",
+                        market_action.market_action.trade_amount,
+                        msg=f"{market_action.market_action.trade_amount=} should be <= {example_agent.policy.budget=}",
                     )

@@ -78,8 +78,8 @@ class RandomAgent(BasePolicy):
 
         return [
             Trade(
-                market=MarketType.HYPERDRIVE,
-                trade=HyperdriveMarketAction(
+                market_type=MarketType.HYPERDRIVE,
+                market_action=HyperdriveMarketAction(
                     action_type=MarketActionType.OPEN_SHORT,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
@@ -95,8 +95,8 @@ class RandomAgent(BasePolicy):
         trade_amount = wallet.shorts[short_time].balance  # close the full trade
         return [
             Trade(
-                market=MarketType.HYPERDRIVE,
-                trade=HyperdriveMarketAction(
+                market_type=MarketType.HYPERDRIVE,
+                market_action=HyperdriveMarketAction(
                     action_type=MarketActionType.CLOSE_SHORT,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
@@ -122,8 +122,8 @@ class RandomAgent(BasePolicy):
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             Trade(
-                market=MarketType.HYPERDRIVE,
-                trade=HyperdriveMarketAction(
+                market_type=MarketType.HYPERDRIVE,
+                market_action=HyperdriveMarketAction(
                     action_type=MarketActionType.OPEN_LONG,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
@@ -139,8 +139,8 @@ class RandomAgent(BasePolicy):
         trade_amount = wallet.longs[long_time].balance  # close the full trade
         return [
             Trade(
-                market=MarketType.HYPERDRIVE,
-                trade=HyperdriveMarketAction(
+                market_type=MarketType.HYPERDRIVE,
+                market_action=HyperdriveMarketAction(
                     action_type=MarketActionType.CLOSE_LONG,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
@@ -161,8 +161,8 @@ class RandomAgent(BasePolicy):
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             Trade(
-                market=MarketType.HYPERDRIVE,
-                trade=HyperdriveMarketAction(
+                market_type=MarketType.HYPERDRIVE,
+                market_action=HyperdriveMarketAction(
                     action_type=MarketActionType.ADD_LIQUIDITY,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
@@ -182,8 +182,8 @@ class RandomAgent(BasePolicy):
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             Trade(
-                market=MarketType.HYPERDRIVE,
-                trade=HyperdriveMarketAction(
+                market_type=MarketType.HYPERDRIVE,
+                market_action=HyperdriveMarketAction(
                     action_type=MarketActionType.REMOVE_LIQUIDITY,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
@@ -210,8 +210,8 @@ class RandomAgent(BasePolicy):
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             Trade(
-                market=MarketType.HYPERDRIVE,
-                trade=HyperdriveMarketAction(
+                market_type=MarketType.HYPERDRIVE,
+                market_action=HyperdriveMarketAction(
                     action_type=MarketActionType.REDEEM_WITHDRAW_SHARE,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,

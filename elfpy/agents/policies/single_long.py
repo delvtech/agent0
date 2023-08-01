@@ -34,8 +34,8 @@ class SingleLongAgent(BasePolicy):
             if enough_time_has_passed:
                 action_list.append(
                     Trade(
-                        market=MarketType.HYPERDRIVE,
-                        trade=HyperdriveMarketAction(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
                             action_type=MarketActionType.CLOSE_LONG,
                             trade_amount=longs[-1].balance,
                             slippage_tolerance=self.slippage_tolerance,
@@ -48,8 +48,8 @@ class SingleLongAgent(BasePolicy):
             trade_amount = market.get_max_long_for_account(wallet.balance.amount)
             action_list.append(
                 Trade(
-                    market=MarketType.HYPERDRIVE,
-                    trade=HyperdriveMarketAction(
+                    market_type=MarketType.HYPERDRIVE,
+                    market_action=HyperdriveMarketAction(
                         action_type=MarketActionType.OPEN_LONG,
                         trade_amount=trade_amount,
                         slippage_tolerance=self.slippage_tolerance,

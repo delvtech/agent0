@@ -140,8 +140,8 @@ async def async_execute_single_agent_trade(
         logging.info(
             "AGENT %s to perform %s for %g",
             str(account.checksum_address),
-            trade_object.trade.action_type,
-            float(trade_object.trade.trade_amount),
+            trade_object.market_action.action_type,
+            float(trade_object.market_action.trade_amount),
         )
         try:
             wallet_deltas = await async_match_contract_call_to_trade(
@@ -222,7 +222,7 @@ async def async_match_contract_call_to_trade(
     # TODO: figure out fees paid
     # TODO: clean up this function, DRY it up to reduce number of statements
     # pylint: disable=too-many-statements
-    trade = trade_envelope.trade
+    trade = trade_envelope.market_action
     trade_amount: int = trade.trade_amount.scaled_value
     max_deposit: int = trade_amount
 

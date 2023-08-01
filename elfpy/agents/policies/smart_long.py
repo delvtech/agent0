@@ -77,8 +77,8 @@ class LongLouie(BasePolicy):
                 trade_amount = wallet.longs[long_time].balance  # close the whole thing
                 action_list += [
                     Trade(
-                        market=MarketType.HYPERDRIVE,
-                        trade=HyperdriveMarketAction(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
                             action_type=MarketActionType.CLOSE_LONG,
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
@@ -116,8 +116,8 @@ class LongLouie(BasePolicy):
             if trade_amount > WEI and wallet.balance.amount > WEI:
                 action_list += [
                     Trade(
-                        market=MarketType.HYPERDRIVE,
-                        trade=HyperdriveMarketAction(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
                             action_type=MarketActionType.OPEN_LONG,
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,

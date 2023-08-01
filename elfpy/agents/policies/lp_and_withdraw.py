@@ -53,8 +53,8 @@ class LpAndWithdrawAgent(BasePolicy):
         if not has_lp and can_lp:
             action_list.append(
                 Trade(
-                    market=MarketType.HYPERDRIVE,
-                    trade=HyperdriveMarketAction(
+                    market_type=MarketType.HYPERDRIVE,
+                    market_action=HyperdriveMarketAction(
                         action_type=MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.amount_to_lp,
                         slippage_tolerance=self.slippage_tolerance,
@@ -67,8 +67,8 @@ class LpAndWithdrawAgent(BasePolicy):
             if enough_time_has_passed:
                 action_list.append(
                     Trade(
-                        market=MarketType.HYPERDRIVE,
-                        trade=HyperdriveMarketAction(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
                             action_type=MarketActionType.REMOVE_LIQUIDITY,
                             trade_amount=wallet.lp_tokens,
                             slippage_tolerance=self.slippage_tolerance,

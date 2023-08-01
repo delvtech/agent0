@@ -78,8 +78,8 @@ class ShortSally(BasePolicy):
                 trade_amount = wallet.shorts[short_time].balance  # close the whole thing
                 action_list += [
                     Trade(
-                        market=MarketType.HYPERDRIVE,
-                        trade=HyperdriveMarketAction(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
                             action_type=MarketActionType.CLOSE_SHORT,
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
@@ -97,8 +97,8 @@ class ShortSally(BasePolicy):
             if trade_amount > WEI and wallet.balance.amount > WEI:
                 action_list += [
                     Trade(
-                        market=MarketType.HYPERDRIVE,
-                        trade=HyperdriveMarketAction(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
                             action_type=MarketActionType.OPEN_SHORT,
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,

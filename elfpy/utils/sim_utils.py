@@ -91,7 +91,7 @@ def get_simulator(config: SimulationConfig, agents: list[Agent] | None = None) -
                         trade_number=0,
                         fixed_apr=float(simulator.market.fixed_apr),
                         spot_price=float(simulator.market.spot_price),
-                        trade_action=init_agent_action.trade,  # type: ignore # pylint: disable=unexpected-keyword-arg
+                        trade_action=init_agent_action.market_action,  # type: ignore # pylint: disable=unexpected-keyword-arg
                         market_deltas=market_deltas,
                         agent_address=0,
                         agent_deltas=init_agent_deltas,
