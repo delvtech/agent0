@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Generic, TypeVar
 
-from eth_account.account import LocalAccount
+from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
