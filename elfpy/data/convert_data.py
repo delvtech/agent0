@@ -100,17 +100,22 @@ def fetch_contract_transactions_for_block(
         receipt: dict[str, Any] = _recursive_dict_conversion(tx_receipt)  # type: ignore
         out_transactions.append(_build_hyperdrive_transaction_object(transaction_dict, logs, receipt))
         # Build wallet deltas based on transaction logs
-        out_wallet_deltas.extend(_build_wallet_deltas(logs, block_number))
+        out_wallet_deltas.extend(_build_wallet_deltas(logs, transaction_dict["hash"], block_number))
     return out_transactions, out_wallet_deltas
 
 
-def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.WalletDelta]:
+# TODO this function likely should be decoupled from postgres and added into
+# hyperdrive interface returning a list of dictionaries, with a conversion function to translate
+# into postgres
+def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[db_schema.WalletDelta]:
     """From decoded transaction logs, we look at the log that contains the trade summary
 
     Arguments
     ---------
     logs: list[dict]
         The list of dictionaries that was decoded from `eth.get_transaction_logs`
+    tx_hash: str
+        The transaction hash that resulted in this wallet delta
     block_number: BlockNumber
         The current block number of the log
 
@@ -128,16 +133,25 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
             wallet_addr = log["args"]["provider"]
             token_delta = _convert_scaled_value(log["args"]["lpAmount"])
             base_delta = _convert_scaled_value(-log["args"]["baseAmount"])
-            wallet_deltas.append(
-                db_schema.WalletDelta(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="LP",
-                    tokenType="LP",
-                    tokenDelta=token_delta,
-                    baseDelta=base_delta,
-                    tradeType="AddLiquidity",
-                )
+            wallet_deltas.extend(
+                [
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="LP",
+                        tokenType="LP",
+                        delta=token_delta,
+                    ),
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="BASE",
+                        tokenType="BASE",
+                        delta=base_delta,
+                    ),
+                ]
             )
 
         elif log["event"] == "OpenLong":
@@ -145,17 +159,26 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
             token_delta = _convert_scaled_value(log["args"]["bondAmount"])
             base_delta = _convert_scaled_value(-log["args"]["baseAmount"])
             maturity_time = log["args"]["maturityTime"]
-            wallet_deltas.append(
-                db_schema.WalletDelta(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="LONG",
-                    tokenType="LONG-" + str(maturity_time),
-                    tokenDelta=token_delta,
-                    baseDelta=base_delta,
-                    maturityTime=maturity_time,
-                    tradeType="OpenLong",
-                )
+            wallet_deltas.extend(
+                [
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="LONG",
+                        tokenType="LONG-" + str(maturity_time),
+                        delta=token_delta,
+                        maturityTime=maturity_time,
+                    ),
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="BASE",
+                        tokenType="BASE",
+                        delta=base_delta,
+                    ),
+                ]
             )
 
         elif log["event"] == "OpenShort":
@@ -163,47 +186,61 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
             token_delta = _convert_scaled_value(log["args"]["bondAmount"])
             base_delta = _convert_scaled_value(-log["args"]["baseAmount"])
             maturity_time = log["args"]["maturityTime"]
-            wallet_deltas.append(
-                db_schema.WalletDelta(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="SHORT",
-                    tokenType="SHORT-" + str(maturity_time),
-                    tokenDelta=token_delta,
-                    baseDelta=base_delta,
-                    maturityTime=maturity_time,
-                    tradeType="OpenShort",
-                )
+            wallet_deltas.extend(
+                [
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="SHORT",
+                        tokenType="SHORT-" + str(maturity_time),
+                        delta=token_delta,
+                        maturityTime=maturity_time,
+                    ),
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="BASE",
+                        tokenType="BASE",
+                        delta=base_delta,
+                    ),
+                ]
             )
 
         elif log["event"] == "RemoveLiquidity":
             wallet_addr = log["args"]["provider"]
             # Two deltas, one for withdrawal shares, one for lp tokens
-            token_delta = _convert_scaled_value(-log["args"]["lpAmount"])
+            lp_delta = _convert_scaled_value(-log["args"]["lpAmount"])
+            withdrawal_delta = _convert_scaled_value(log["args"]["withdrawalShareAmount"])
             base_delta = _convert_scaled_value(log["args"]["baseAmount"])
-            wallet_deltas.append(
-                db_schema.WalletDelta(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="LP",
-                    tokenType="LP",
-                    tokenDelta=token_delta,
-                    baseDelta=base_delta,
-                    tradeType="RemoveLiquidity",
-                )
-            )
-            token_delta = _convert_scaled_value(log["args"]["withdrawalShareAmount"])
-            base_delta = 0.0
-            wallet_deltas.append(
-                db_schema.WalletDelta(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="WITHDRAWAL_SHARE",
-                    tokenType="WITHDRAWAL_SHARE",
-                    tokenDelta=token_delta,
-                    baseDelta=base_delta,
-                    tradeType="RemoveLiquidity",
-                )
+            wallet_deltas.extend(
+                [
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="LP",
+                        tokenType="LP",
+                        delta=lp_delta,
+                    ),
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="WITHDRAWAL_SHARE",
+                        tokenType="WITHDRAWAL_SHARE",
+                        delta=withdrawal_delta,
+                    ),
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="BASE",
+                        tokenType="BASE",
+                        delta=base_delta,
+                    ),
+                ]
             )
 
         elif log["event"] == "CloseLong":
@@ -211,17 +248,26 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
             token_delta = _convert_scaled_value(-log["args"]["bondAmount"])
             base_delta = _convert_scaled_value(log["args"]["baseAmount"])
             maturity_time = log["args"]["maturityTime"]
-            wallet_deltas.append(
-                db_schema.WalletDelta(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="LONG",
-                    tokenType="LONG-" + str(maturity_time),
-                    tokenDelta=token_delta,
-                    baseDelta=base_delta,
-                    maturityTime=maturity_time,
-                    tradeType="CloseLong",
-                )
+            wallet_deltas.extend(
+                [
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="LONG",
+                        tokenType="LONG-" + str(maturity_time),
+                        delta=token_delta,
+                        maturityTime=maturity_time,
+                    ),
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="BASE",
+                        tokenType="BASE",
+                        delta=base_delta,
+                    ),
+                ]
             )
 
         elif log["event"] == "CloseShort":
@@ -229,17 +275,26 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
             token_delta = _convert_scaled_value(-log["args"]["bondAmount"])
             base_delta = _convert_scaled_value(log["args"]["baseAmount"])
             maturity_time = log["args"]["maturityTime"]
-            wallet_deltas.append(
-                db_schema.WalletDelta(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="SHORT",
-                    tokenType="SHORT-" + str(maturity_time),
-                    tokenDelta=token_delta,
-                    baseDelta=base_delta,
-                    maturityTime=maturity_time,
-                    tradeType="CloseShort",
-                )
+            wallet_deltas.extend(
+                [
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="SHORT",
+                        tokenType="SHORT-" + str(maturity_time),
+                        delta=token_delta,
+                        maturityTime=maturity_time,
+                    ),
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="BASE",
+                        tokenType="BASE",
+                        delta=base_delta,
+                    ),
+                ]
             )
 
         elif log["event"] == "RedeemWithdrawalShares":
@@ -247,19 +302,30 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
             maturity_time = None
             token_delta = _convert_scaled_value(-log["args"]["withdrawalShareAmount"])
             base_delta = _convert_scaled_value(log["args"]["baseAmount"])
-            wallet_deltas.append(
-                db_schema.WalletDelta(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="WITHDRAWAL_SHARE",
-                    tokenType="WITHDRAWAL_SHARE",
-                    tokenDelta=token_delta,
-                    baseDelta=base_delta,
-                    tradeType="RedeemWithdrawalShares",
-                )
+            wallet_deltas.extend(
+                [
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="WITHDRAWAL_SHARE",
+                        tokenType="WITHDRAWAL_SHARE",
+                        delta=token_delta,
+                        maturityTime=maturity_time,
+                    ),
+                    db_schema.WalletDelta(
+                        transactionHash=tx_hash,
+                        blockNumber=block_number,
+                        walletAddress=wallet_addr,
+                        baseTokenType="BASE",
+                        tokenType="BASE",
+                        delta=base_delta,
+                    ),
+                ]
             )
-    # Every log should have either 0 (no op), 1, or 2 (in the case of remove liquidity) entries in the wallet delta
-    assert len(wallet_deltas) in (0, 1, 2)
+    # Every log should have either 0 (no op), 2(two deltas per transaction), or 3(in the case of remove liquidity)
+    # entries in the wallet delta
+    assert len(wallet_deltas) in (0, 2, 3)
     return wallet_deltas
 
 

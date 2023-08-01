@@ -134,6 +134,7 @@ def initialize_session() -> Session:
     """
     postgres_config = build_postgres_config()
 
+    # TODO add waiting in connecting to postgres to avoid exiting out before postgres spins up
     url_object = URL.create(
         drivername="postgresql",
         username=postgres_config.POSTGRES_USER,
