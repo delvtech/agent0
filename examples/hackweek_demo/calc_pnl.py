@@ -33,11 +33,16 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
 
     # Calculate unrealized gains
     current_wallet = wallet_deltas.groupby(["walletAddress", "tokenType"]).agg(
-        {"tokenDelta": "sum", "baseTokenType": "first", "maturityTime": "first"}
+        {"delta": "sum", "baseTokenType": "first", "maturityTime": "first"}
     )
 
-    # Sanity check, no tokens should dip below 0
-    assert (current_wallet["tokenDelta"] >= 0).all()
+    # Sanity check, no tokens except base should dip below 0
+    assert (current_wallet["delta"][current_wallet["baseTokenType"] != "BASE"] >= 0).all()
+
+    # Calculate for base
+    # Base is valued at 1:1, since that's our numéraire (https://en.wikipedia.org/wiki/Num%C3%A9raire)
+    wallet_base = current_wallet[current_wallet["baseTokenType"] == "BASE"]
+    base_returns = wallet_base["delta"]
 
     # Calculate for lp
     # LP value = users_LP_tokens * sharePrice
@@ -48,11 +53,11 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
     #   users_LP_value = users_LP_tokens / lpTotalSupply * lpTotalSupply * sharePrice
     #   users_LP_value = users_LP_tokens * sharePrice
     wallet_lps = current_wallet[current_wallet["baseTokenType"] == "LP"]
-    lp_returns = wallet_lps["tokenDelta"] * latest_pool_info["sharePrice"]
+    lp_returns = wallet_lps["delta"] * latest_pool_info["sharePrice"]
 
     # Calculate for withdrawal shares. Same as for LPs.
     wallet_withdrawal = current_wallet[current_wallet["baseTokenType"] == "WITHDRAWAL_SHARE"]
-    withdrawal_returns = wallet_withdrawal["tokenDelta"] * latest_pool_info["sharePrice"]
+    withdrawal_returns = wallet_withdrawal["delta"] * latest_pool_info["sharePrice"]
 
     # Calculate for shorts
     # Short value = users_shorts * ( 1 - spot_price )
@@ -67,7 +72,7 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
         maturity_timestamp=wallet_shorts["maturityTime"],
         block_timestamp=block_timestamp,
     )
-    shorts_returns = wallet_shorts["tokenDelta"] * (1 - short_spot_prices)
+    shorts_returns = wallet_shorts["delta"] * (1 - short_spot_prices)
 
     # Calculate for longs
     # Long value = users_longs * spot_price
@@ -81,20 +86,16 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
         maturity_timestamp=wallet_longs["maturityTime"],
         block_timestamp=block_timestamp,
     )
-    long_returns = wallet_longs["tokenDelta"] * long_spot_prices
+    long_returns = wallet_longs["delta"] * long_spot_prices
 
     # Add pnl to current_wallet information
     # Current_wallet and *_pnl dataframes have the same index
+    current_wallet.loc[base_returns.index, "pnl"] = base_returns
     current_wallet.loc[lp_returns.index, "pnl"] = lp_returns
     current_wallet.loc[shorts_returns.index, "pnl"] = shorts_returns
     current_wallet.loc[long_returns.index, "pnl"] = long_returns
     current_wallet.loc[withdrawal_returns.index, "pnl"] = withdrawal_returns
-    unrealized_value = current_wallet.reset_index().groupby("walletAddress")["pnl"].sum()
-
-    # Base is valued at 1:1, since that's our numéraire (https://en.wikipedia.org/wiki/Num%C3%A9raire)
-    realized_value = wallet_deltas["baseDelta"].sum()
-    total_returns = unrealized_value + realized_value
-    return total_returns
+    return current_wallet.reset_index().groupby("walletAddress")["pnl"].sum()
 
 
 def calculate_spot_price_for_position(

@@ -22,7 +22,9 @@ st.set_option("deprecation.showPyplotGlobalUse", False)
 
 # Helper functions
 # TODO should likely move these functions to another file
-def get_ticker(wallet_delta: pd.DataFrame, pool_info: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
+def get_ticker(
+    wallet_delta: pd.DataFrame, transactions: pd.DataFrame, pool_info: pd.DataFrame, lookup: pd.DataFrame
+) -> pd.DataFrame:
     """Show recent trades.
 
     Arguments
@@ -35,20 +37,36 @@ def get_ticker(wallet_delta: pd.DataFrame, pool_info: pd.DataFrame, lookup: pd.D
     pd.DataFrame
         The filtered transaction data based on what we want to view in the ticker
     """
-    # Return reverse of methods to put most recent transactions at the top
 
-    usernames = address_to_username(lookup, wallet_delta["walletAddress"])
-    timestamps = pool_info.loc[wallet_delta["blockNumber"], "timestamp"]
+    # TODO these merges should really happen via an sql query instead of in pandas here
+    # Set ticker so that each transaction is a single row
+    ticker_data = wallet_delta.groupby(["transactionHash"]).agg(
+        {"blockNumber": "first", "walletAddress": "first", "baseTokenType": tuple, "delta": tuple}
+    )
 
-    ticker_data = wallet_delta[
-        ["blockNumber", "walletAddress", "tradeType", "baseTokenType", "tokenDelta", "baseDelta"]
-    ].copy()
+    # Expand column of lists into seperate dataframes, then str cat them together
+    token_type = pd.DataFrame(ticker_data["baseTokenType"].to_list(), index=ticker_data.index)
+    token_deltas = pd.DataFrame(ticker_data["delta"].to_list(), index=ticker_data.index)
+    token_diffs = token_type + ": " + token_deltas.astype("str")
+    # Aggregate columns into a single list, removing nans
+    token_diffs = token_diffs.stack().groupby(level=0).agg(list)
+
+    # Gather other information from other tables
+    usernames = address_to_username(lookup, ticker_data["walletAddress"])
+    timestamps = pool_info.loc[ticker_data["blockNumber"], "timestamp"]
+    trade_type = transactions.set_index("transactionHash").loc[ticker_data.index, "input_method"]
+
+    ticker_data = ticker_data[["blockNumber", "walletAddress"]].copy()
     ticker_data.insert(0, "timestamp", timestamps.values)  # type: ignore
-    ticker_data.insert(2, "username", usernames.values.tolist())
-    ticker_data.columns = ["Timestamp", "Block", "User", "Wallet", "Method", "Token", "Token Delta", "Base Delta"]
+    ticker_data.insert(2, "username", usernames.values)  # type: ignore
+    ticker_data.insert(4, "trade_type", trade_type)
+    ticker_data.insert(5, "token_diffs", token_diffs)  # type: ignore
+    ticker_data.columns = ["Timestamp", "Block", "User", "Wallet", "Method", "Token Deltas"]
     # Shorten wallet address string
     ticker_data["Wallet"] = ticker_data["Wallet"].str[:6] + "..." + ticker_data["Wallet"].str[-4:]
+    # Return reverse of methods to put most recent transactions at the top
     ticker_data = ticker_data.set_index("Timestamp").sort_index(ascending=False)
+    # Drop rows with nonexistant wallets
     ticker_data = ticker_data.dropna(axis=0, subset="Wallet")
     return ticker_data
 
@@ -222,15 +240,15 @@ while True:
     pool_info_data = postgres.get_pool_info(session, -max_live_blocks)
     combined_data = get_combined_data(txn_data, pool_info_data)
     wallet_deltas = postgres.get_wallet_deltas(session)
-    ticker = get_ticker(wallet_deltas, pool_info_data, user_lookup)
+    ticker = get_ticker(wallet_deltas, txn_data, pool_info_data, user_lookup)
 
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)
     ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
 
     current_returns = calc_total_returns(config_data, pool_info_data, wallet_deltas)
-    # TODO: FIX BOT RESTARTS
-    # Add initial budget column to bots
-    # when bot restarts, use initial budget for bot's wallet address to set "budget" in Agent.Wallet
+    ## TODO: FIX BOT RESTARTS
+    ## Add initial budget column to bots
+    ## when bot restarts, use initial budget for bot's wallet address to set "budget" in Agent.Wallet
 
     comb_rank, ind_rank = get_leaderboard(current_returns, user_lookup)
 
