@@ -4,6 +4,7 @@ from enum import Enum
 
 from fixedpointmath import FixedPoint, FixedPointMath
 
+import elfpy
 import elfpy.types as types
 
 
@@ -139,6 +140,11 @@ class StretchedTime:
     def years(self) -> FixedPoint:
         r"""Format time as normalized days"""
         return self.days / FixedPoint("365.0")
+
+    @property
+    def seconds(self) -> FixedPoint:
+        r"""Convey time in seconds"""
+        return self.years * elfpy.SECONDS_IN_YEAR
 
 
 def get_years_remaining(

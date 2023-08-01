@@ -7,12 +7,12 @@ import os
 import time
 
 from dotenv import load_dotenv
+from eth_account.account import Account
 from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
-from elfpy.agents.agent import Agent
 from elfpy.bots.environment_config import EnvironmentConfig
-from elfpy.eth.accounts.eth_account import EthAccount
+from elfpy.eth.accounts.eth_account import EthAgent
 from elfpy.eth.rpc_interface import set_anvil_account_balance
 from elfpy.eth.transactions import smart_contract_read, smart_contract_transact
 from elfpy.hyperdrive_interface.hyperdrive_interface import get_hyperdrive_config
@@ -73,9 +73,9 @@ def main() -> None:
 
     # Fund the checkpoint sender with some ETH.
     balance = int(100e18)
-    sender = EthAccount(agent=Agent(wallet_address=0))
-    set_anvil_account_balance(web3, sender.account.address, balance)
-    logging.info("Successfully funded the sender=%s.", sender.account.address)
+    sender = EthAgent(Account().create("CHECKPOINT_BOT"))
+    set_anvil_account_balance(web3, sender.address, balance)
+    logging.info("Successfully funded the sender=%s.", sender.address)
 
     # Get the Hyperdrive contract.
     hyperdrive_abis = eth.abi.load_all_abis(config.abi_folder)

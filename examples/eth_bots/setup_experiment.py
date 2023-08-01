@@ -11,24 +11,24 @@ from web3.contract.contract import Contract
 
 from elfpy import eth, hyperdrive_interface
 from elfpy.bots import DEFAULT_USERNAME, EnvironmentConfig
-from elfpy.eth.accounts import EthAccount
+from elfpy.eth.accounts import EthAgent
 from elfpy.utils import logs
 from examples.eth_bots.eth_bots_config import get_eth_bots_config
 from examples.eth_bots.get_agent_accounts import get_agent_accounts
 
 
-def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, list[EthAccount]]:
+def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, list[EthAgent]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
     Returns
     -------
-    tuple[Web3, Contract, list[EthAccount]]
+    tuple[Web3, Contract, Contract, EnvironmentConfig, list[EthAgent]]
         A tuple containing:
             - The web3 container
             - The hyperdrive contract
             - The base token contract
             - The environment configuration
-            - A list of EthAccount objects that contain a wallet address and Elfpy Agent for determining trades
+            - A list of EthAgent objects that contain a wallet address and Elfpy Agent for determining trades
 
     """
     # get the user defined config variables
@@ -66,7 +66,7 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
         address=web3.to_checksum_address(addresses.mock_hyperdrive),
     )
     # load agent policies
-    # rng is shared by the agents and can be accessed via `agent_accounts[idx].agent.policy.rng`
+    # rng is shared by the agents and can be accessed via `agent_accounts[idx].policy.rng`
     agent_accounts = get_agent_accounts(agent_config, web3, base_token_contract, hyperdrive_contract.address, rng)
     # Set up postgres to write username to agent wallet addr
     # initialize the postgres session
