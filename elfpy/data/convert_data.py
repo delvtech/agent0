@@ -258,8 +258,8 @@ def _build_wallet_deltas(logs: list[dict], block_number) -> list[db_schema.Walle
                     tradeType="RedeemWithdrawalShares",
                 )
             )
-    # Every log should have either 1 or 2 (in the case of remove liquidity) entries in the wallet delta
-    assert len(wallet_deltas) in (1, 2)
+    # Every log should have either 0 (no op), 1, or 2 (in the case of remove liquidity) entries in the wallet delta
+    assert len(wallet_deltas) in (0, 1, 2)
     return wallet_deltas
 
 
