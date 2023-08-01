@@ -248,7 +248,7 @@ if __name__ == "__main__":
     # setup constants
     START_BLOCK = 0
     # Look back limit for backfilling
-    LOOKBACK_BLOCK_LIMIT = 1000
+    LOOKBACK_BLOCK_LIMIT = 100000
     SLEEP_AMOUNT = 1
 
     # Get postgres env variables if exists
