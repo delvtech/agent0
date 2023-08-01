@@ -60,7 +60,7 @@ class WalletDelta(Base):
     transactionHash: Mapped[str] = mapped_column(String, ForeignKey("transactions.transactionHash"), index=True)
     blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
-    # baseTokenType can be LONG, SHORT, LP, or WITHDRAWAL_SHARE
+    # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
     baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
