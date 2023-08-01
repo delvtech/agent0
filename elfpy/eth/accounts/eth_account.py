@@ -12,14 +12,16 @@ from web3 import Web3
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import BasePolicy
 from elfpy.markets.base import BaseMarket
+from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Quantity, TokenType, Trade
 from elfpy.wallet.wallet import Wallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 Market = TypeVar("Market", bound=BaseMarket)
+MarketAction = TypeVar("MarketAction")  # TODO: should be able to infer this from the market
 
 
-class EthAgent(LocalAccount, Generic[Policy, Market]):
+class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
     r"""Enacts policies on smart contracts and tracks wallet state
 
     Arguments
@@ -54,25 +56,65 @@ class EthAgent(LocalAccount, Generic[Policy, Market]):
         logging.warning("accessing agent private key")
         return str(self._key_obj)  # pylint: disable=protected-access
 
-    def get_trades(self, market: Market) -> list[Trade]:
+    @property
+    def liquidation_trades(self) -> list[Trade[MarketAction]]:
+        """List of trades that liquidate all open positions
+
+        Returns
+        -------
+        list[Trade]
+            List of trades to execute in order to liquidate positions where applicable
+        """
+        action_list = []
+        for maturity_time, long in self.wallet.longs.items():
+            logging.debug("closing long: maturity_time=%g, balance=%s", maturity_time, long)
+            if long.balance > 0:
+                action_list.append(
+                    Trade(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
+                            action_type=MarketActionType.CLOSE_LONG,
+                            trade_amount=long.balance,
+                            wallet=self.wallet,
+                            maturity_time=maturity_time,
+                        ),
+                    )
+                )
+        for maturity_time, short in self.wallet.shorts.items():
+            logging.debug("closing short: maturity_time=%g, balance=%s", maturity_time, short.balance)
+            if short.balance > 0:
+                action_list.append(
+                    Trade(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
+                            action_type=MarketActionType.CLOSE_SHORT,
+                            trade_amount=short.balance,
+                            wallet=self.wallet,
+                            maturity_time=maturity_time,
+                        ),
+                    )
+                )
+        if self.wallet.lp_tokens > 0:
+            logging.debug("closing lp: lp_tokens=%s", self.wallet.lp_tokens)
+            action_list.append(
+                Trade(
+                    market_type=MarketType.HYPERDRIVE,
+                    market_action=HyperdriveMarketAction(
+                        action_type=MarketActionType.REMOVE_LIQUIDITY,
+                        trade_amount=self.wallet.lp_tokens,
+                        wallet=self.wallet,
+                    ),
+                )
+            )
+        return action_list
+
+    def get_trades(self, market: Market) -> list[Trade[MarketAction]]:
         """Helper function for computing a agent trade
-
-        direction is chosen based on this logic:
-
-            * When entering a trade (open long or short),
-            we use calcOutGivenIn because we know how much we want to spend,
-            and care less about how much we get for it.
-
-            * When exiting a trade (close long or short),
-            we use calcInGivenOut because we know how much we want to get,
-            and care less about how much we have to spend.
 
         Arguments
         ----------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
-        pricing_model : PricingModel
-            The pricing model in use for this simulated market
 
         Returns
         -------

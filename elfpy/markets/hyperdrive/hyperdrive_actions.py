@@ -61,6 +61,8 @@ class HyperdriveMarketAction(BaseMarketAction):
     slippage_tolerance: FixedPoint | None = None
     # mint time is set only for trades that act on existing positions (close long or close short)
     mint_time: FixedPoint | None = None
+    # maturity time is set only for trades that act on existing positions (close long or close short)
+    maturity_time: FixedPoint | None = None
 
 
 def calculate_lp_allocation_adjustment(
