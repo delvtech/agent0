@@ -37,7 +37,7 @@ def get_ticker(wallet_delta: pd.DataFrame, pool_info: pd.DataFrame, lookup: pd.D
     """
     # Return reverse of methods to put most recent transactions at the top
 
-    usernames = username_to_address(lookup, wallet_delta["walletAddress"])
+    usernames = address_to_username(lookup, wallet_delta["walletAddress"])
     timestamps = pool_info.loc[wallet_delta["blockNumber"], "timestamp"]
 
     ticker_data = wallet_delta[
@@ -88,7 +88,7 @@ def combine_usernames(username: pd.Series) -> pd.DataFrame:
 def get_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Rank users by PNL, individually and bomined across their accounts."""
     pnl = pnl.reset_index()  # type: ignore
-    usernames = username_to_address(lookup, pnl["walletAddress"])
+    usernames = address_to_username(lookup, pnl["walletAddress"])
     pnl.insert(1, "username", usernames.values.tolist())
     # Hard coded funding provider from migration account
     migration_addr = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
@@ -170,7 +170,7 @@ def get_user_lookup() -> pd.DataFrame:
     return options_map.reset_index()
 
 
-def username_to_address(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Series:
+def address_to_username(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Series:
     """Look up selected users/addrs to all addresses.
 
     Arguments
@@ -178,13 +178,12 @@ def username_to_address(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Se
     lookup: pd.DataFrame
         The lookup dataframe from `get_user_lookup` call
     selected_list: list[str]
-        A list of selected values from the multiselect input widget
-        These values can either be usernames or addresses
+        A list of addresses to look up usernames to
 
     Returns
     -------
     list[str]
-        A list of addresses based on selected_list
+        A list of usernames based on selected_list
     """
     selected_list_column = selected_list.name
     out = selected_list.to_frame().merge(lookup, how="left", left_on=selected_list_column, right_on="address")

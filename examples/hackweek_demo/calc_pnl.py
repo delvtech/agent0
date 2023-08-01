@@ -89,11 +89,11 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
     current_wallet.loc[shorts_returns.index, "pnl"] = shorts_returns
     current_wallet.loc[long_returns.index, "pnl"] = long_returns
     current_wallet.loc[withdrawal_returns.index, "pnl"] = withdrawal_returns
-    unrealized_gains = current_wallet.reset_index().groupby("walletAddress")["pnl"].sum()
+    unrealized_value = current_wallet.reset_index().groupby("walletAddress")["pnl"].sum()
 
     # Base is valued at 1:1, since that's our numéraire (https://en.wikipedia.org/wiki/Num%C3%A9raire)
-    realized_delta = wallet_deltas["baseDelta"].sum()
-    total_returns = unrealized_gains + realized_delta
+    realized_value = wallet_deltas["baseDelta"].sum()
+    total_returns = unrealized_value + realized_value
     return total_returns
 
 
