@@ -126,12 +126,12 @@ class Quantity:
         return Quantity(amount=-self.amount, unit=self.unit)
 
 
-T = TypeVar("T")
+MarketAction = TypeVar("MarketAction")
 
 
 @dataclass
-class Trade(Generic[T]):
+class Trade(Generic[MarketAction]):
     r"""A trade for a market"""
 
-    market: MarketType
-    trade: T  # TODO: How to specify the type as a generic market action?
+    market_type: MarketType
+    market_action: MarketAction

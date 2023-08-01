@@ -63,8 +63,8 @@ class ExampleCustomPolicy(BasePolicy):
             if wallet.lp_tokens > 0:  # agent has liquidity
                 action_list.append(
                     Trade(
-                        market=MarketType.HYPERDRIVE,
-                        trade=HyperdriveMarketAction(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
                             action_type=MarketActionType.REMOVE_LIQUIDITY,
                             trade_amount=wallet.lp_tokens,
                             wallet=wallet,
@@ -74,8 +74,8 @@ class ExampleCustomPolicy(BasePolicy):
             else:  # remove all of the agent's liquidity
                 action_list.append(
                     Trade(
-                        market=MarketType.HYPERDRIVE,
-                        trade=HyperdriveMarketAction(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
                             action_type=MarketActionType.ADD_LIQUIDITY,
                             trade_amount=self.trade_amount,
                             wallet=wallet,
@@ -91,8 +91,8 @@ class ExampleCustomPolicy(BasePolicy):
                 if market.block_time.time - mint_time >= market.position_duration.years:
                     action_list.append(
                         Trade(
-                            market=MarketType.HYPERDRIVE,
-                            trade=HyperdriveMarketAction(
+                            market_type=MarketType.HYPERDRIVE,
+                            market_action=HyperdriveMarketAction(
                                 action_type=MarketActionType.CLOSE_LONG,
                                 trade_amount=longs[0].balance,
                                 wallet=wallet,
@@ -103,8 +103,8 @@ class ExampleCustomPolicy(BasePolicy):
             else:
                 action_list.append(
                     Trade(
-                        market=MarketType.HYPERDRIVE,
-                        trade=HyperdriveMarketAction(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
                             action_type=MarketActionType.OPEN_LONG,
                             trade_amount=self.trade_amount,
                             wallet=wallet,
@@ -120,8 +120,8 @@ class ExampleCustomPolicy(BasePolicy):
                 if market.block_time.time - mint_time >= market.position_duration.years:
                     action_list.append(
                         Trade(
-                            market=MarketType.HYPERDRIVE,
-                            trade=HyperdriveMarketAction(
+                            market_type=MarketType.HYPERDRIVE,
+                            market_action=HyperdriveMarketAction(
                                 action_type=MarketActionType.CLOSE_SHORT,
                                 trade_amount=shorts[0].balance,
                                 wallet=wallet,
@@ -132,8 +132,8 @@ class ExampleCustomPolicy(BasePolicy):
             else:
                 action_list.append(
                     Trade(
-                        market=MarketType.HYPERDRIVE,
-                        trade=HyperdriveMarketAction(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
                             action_type=MarketActionType.OPEN_SHORT,
                             trade_amount=self.trade_amount,
                             wallet=wallet,

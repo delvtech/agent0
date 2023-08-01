@@ -87,9 +87,9 @@ class Agent:
         """
         actions: list[Trade] = self.action(market)  # get the action list from the policy
         for action in actions:  # edit each action in place
-            if action.market == MarketType.HYPERDRIVE and action.trade.mint_time is None:
-                action.trade.mint_time = market.latest_checkpoint_time
-                if action.trade.trade_amount <= 0:
+            if action.market_type == MarketType.HYPERDRIVE and action.market_action.mint_time is None:
+                action.market_action.mint_time = market.latest_checkpoint_time
+                if action.market_action.trade_amount <= 0:
                     raise ValueError("Trade amount cannot be zero or negative.")
         return actions
 
@@ -113,8 +113,8 @@ class Agent:
                 # TODO: Find a way to avoid converting type back and forth for dict keys
                 action_list.append(
                     Trade(
-                        market=MarketType.HYPERDRIVE,
-                        trade=HyperdriveMarketAction(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
                             action_type=MarketActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=self.wallet,
@@ -127,8 +127,8 @@ class Agent:
             if short.balance > FixedPoint(0):
                 action_list.append(
                     Trade(
-                        market=MarketType.HYPERDRIVE,
-                        trade=HyperdriveMarketAction(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
                             action_type=MarketActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             wallet=self.wallet,
@@ -142,8 +142,8 @@ class Agent:
             )
             action_list.append(
                 Trade(
-                    market=MarketType.HYPERDRIVE,
-                    trade=HyperdriveMarketAction(
+                    market_type=MarketType.HYPERDRIVE,
+                    market_action=HyperdriveMarketAction(
                         action_type=MarketActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
                         wallet=self.wallet,

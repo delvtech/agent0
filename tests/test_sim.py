@@ -159,8 +159,8 @@ class TestSimulator(unittest.TestCase):
                 "spot_price": [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1],
                 "trade_action": [
                     types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.HyperdriveMarketAction(
+                        market_type=types.MarketType.HYPERDRIVE,
+                        market_action=hyperdrive_actions.HyperdriveMarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                             trade_amount=FixedPoint(10),
                             wallet=Wallet(0),

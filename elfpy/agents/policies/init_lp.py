@@ -24,8 +24,8 @@ class InitializeLiquidityAgent(BasePolicy):
             return []
         return [
             Trade(
-                market=MarketType.HYPERDRIVE,
-                trade=HyperdriveMarketAction(
+                market_type=MarketType.HYPERDRIVE,
+                market_action=HyperdriveMarketAction(
                     action_type=MarketActionType.ADD_LIQUIDITY,
                     trade_amount=self.budget,
                     slippage_tolerance=self.slippage_tolerance,

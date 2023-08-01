@@ -204,7 +204,7 @@ class Simulator:
             # and market action before sending the info off to the
             # correct market. This way, for example, a trade can happen
             # on the borrow market OR the hyperdrive market.
-            action_details = (trade[0], trade[1].trade)
+            action_details = (trade[0], trade[1].market_action)
             market_state_before_trade = self.market.market_state.copy()
             try:
                 agent_id, agent_deltas, market_deltas = self.market.perform_action(action_details)
@@ -230,7 +230,7 @@ class Simulator:
                         self.trade_number,
                         float(self.market.fixed_apr),
                         float(self.market.spot_price),
-                        trade[1].trade,
+                        trade[1].market_action,
                         market_deltas,
                         agent_id,
                         agent_deltas,

@@ -44,8 +44,8 @@ class SingleLpAgent(BasePolicy):
         if can_lp and not has_lp:
             action_list.append(
                 Trade(
-                    market=MarketType.HYPERDRIVE,
-                    trade=HyperdriveMarketAction(
+                    market_type=MarketType.HYPERDRIVE,
+                    market_action=HyperdriveMarketAction(
                         action_type=MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.amount_to_lp,
                         slippage_tolerance=self.slippage_tolerance,
