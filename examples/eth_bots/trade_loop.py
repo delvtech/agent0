@@ -9,14 +9,14 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import RPCEndpoint
 
-from elfpy.eth.accounts import EthAccount
+from elfpy.eth.accounts import EthAgent
 from examples.eth_bots.execute_agent_trades import async_execute_agent_trades
 
 
 def trade_if_new_block(
     web3: Web3,
     hyperdrive_contract: Contract,
-    agent_accounts: list[EthAccount],
+    agent_accounts: list[EthAgent],
     halt_on_errors: bool,
     last_executed_block: int,
 ) -> int:
@@ -28,8 +28,8 @@ def trade_if_new_block(
         Web3 provider object
     hyperdrive_contract : Contract
         The deployed hyperdrive contract
-    agent_accounts : list[EthAccount]]
-        A list of EthAccount objects that contain a wallet address and Elfpy Agent for determining trades
+    agent_accounts : list[EthAgent]]
+        A list of EthAgent objects that contain a wallet address and Elfpy Agent for determining trades
     halt_on_errors : bool
         If true, raise an exception if a trade reverts. Otherwise, log a warning and move on.
     last_executed_block : int
