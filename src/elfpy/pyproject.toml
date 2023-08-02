@@ -24,8 +24,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-[project.optional-dependencies]
-with-dependencies = [
+dependencies = [
     # Install fixedpointmath from github
     # Note that this is pointing to main, so if any changes are made to fixedpointmath, we'll have to
     # upgrade this package
