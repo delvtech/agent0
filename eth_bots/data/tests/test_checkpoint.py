@@ -1,13 +1,13 @@
 """CRUD tests for CheckpointInfo"""
 from datetime import datetime
 
-import pytest
 import numpy as np
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from elfpy.data import postgres
-from elfpy.data.db_schema import Base, CheckpointInfo
+from eth_bots.data import postgres
+from eth_bots.data.db_schema import Base, CheckpointInfo
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)

@@ -12,7 +12,7 @@ import sqlalchemy
 from sqlalchemy import URL, MetaData, Table, create_engine, exc, func, inspect
 from sqlalchemy.orm import Session, sessionmaker
 
-from elfpy.data.db_schema import (
+from eth_bots.data.db_schema import (
     Base,
     CheckpointInfo,
     PoolConfig,
