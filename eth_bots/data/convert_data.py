@@ -13,7 +13,7 @@ from web3.contract.contract import Contract
 from web3.types import BlockData
 
 from elfpy import eth, hyperdrive_interface
-from elfpy.data import db_schema
+from eth_bots.data import db_schema
 
 # pylint: disable=too-many-arguments
 
@@ -21,31 +21,6 @@ from elfpy.data import db_schema
 # pylint: disable=too-many-branches
 
 RETRY_COUNT = 10
-
-
-def _convert_scaled_value(input_val: int | None) -> float | None:
-    """
-    Given a scaled value int, converts it to a float, while supporting Nones
-
-    Arguments
-    ----------
-    input_val: int | None
-        The scaled integer value to unscale and convert to float
-
-    Returns
-    -------
-    float | None
-        The unscaled floating point value
-
-    Note
-    ----
-    We cast to FixedPoint, then to floats to keep noise to a minimum.
-    There is no loss of precision when going from Fixedpoint to float.
-    Once this is fed into postgres, postgres will use the fixed-precision Numeric type.
-    """
-    if input_val is not None:
-        return float(FixedPoint(scaled_value=input_val))
-    return None
 
 
 # TODO move this function to hyperdrive_interface and return a list of dictionaries
@@ -102,6 +77,235 @@ def fetch_contract_transactions_for_block(
         # Build wallet deltas based on transaction logs
         out_wallet_deltas.extend(_build_wallet_deltas(logs, transaction_dict["hash"], block_number))
     return out_transactions, out_wallet_deltas
+
+
+# TODO move this function to hyperdrive_interface and return a list of dictionaries
+def get_wallet_info(
+    hyperdrive_contract: Contract,
+    base_contract: Contract,
+    block_number: BlockNumber,
+    transactions: list[db_schema.Transaction],
+    pool_info: db_schema.PoolInfo,
+) -> list[db_schema.WalletInfo]:
+    """Retrieve wallet information at a given block given a transaction.
+
+    Transactions are needed here to get
+    (1) the wallet address of a transaction, and
+    (2) the token id of the transaction
+
+    Arguments
+    ---------
+    hyperdrive_contract : Contract
+        The deployed hyperdrive contract instance.
+    base_contract : Contract
+        The deployed base contract instance
+    block_number : BlockNumber
+        The block number to query
+    transactions : list[db_schema.Transaction]
+        The list of transactions to get events from
+    pool_info : db_schema.PoolInfo
+        The associated pool info, used to extract share price
+
+    Returns
+    -------
+    list[db_schema.WalletInfo]
+        The list of WalletInfo objects ready to be inserted into postgres
+    """
+    # pylint: disable=too-many-locals
+    out_wallet_info = []
+    for transaction in transactions:
+        wallet_addr = transaction.event_operator
+        if wallet_addr is None:
+            continue
+
+        # Query and add base tokens to walletinfo
+        num_base_token = _query_contract_for_balance(base_contract, wallet_addr, block_number)
+        if num_base_token is not None:
+            out_wallet_info.append(
+                db_schema.WalletInfo(
+                    blockNumber=block_number,
+                    walletAddress=wallet_addr,
+                    baseTokenType="BASE",
+                    tokenType="BASE",
+                    tokenValue=num_base_token,
+                )
+            )
+
+        # Query and add LP tokens to wallet info
+        lp_token_prefix = hyperdrive_interface.AssetIdPrefix.LP.value
+        # LP tokens always have 0 maturity
+        lp_token_id = hyperdrive_interface.encode_asset_id(lp_token_prefix, timestamp=0)
+        num_lp_token = _query_contract_for_balance(hyperdrive_contract, wallet_addr, block_number, lp_token_id)
+        if num_lp_token is not None:
+            out_wallet_info.append(
+                db_schema.WalletInfo(
+                    blockNumber=block_number,
+                    walletAddress=wallet_addr,
+                    baseTokenType="LP",
+                    tokenType="LP",
+                    tokenValue=num_lp_token,
+                    maturityTime=None,
+                    sharePrice=None,
+                )
+            )
+
+        # Query and add withdraw tokens to wallet info
+        withdrawal_token_prefix = hyperdrive_interface.AssetIdPrefix.WITHDRAWAL_SHARE.value
+        # Withdrawal tokens always have 0 maturity
+        withdrawal_token_id = hyperdrive_interface.encode_asset_id(withdrawal_token_prefix, timestamp=0)
+        num_withdrawal_token = _query_contract_for_balance(
+            hyperdrive_contract, wallet_addr, block_number, withdrawal_token_id
+        )
+        if num_withdrawal_token is not None:
+            out_wallet_info.append(
+                db_schema.WalletInfo(
+                    blockNumber=block_number,
+                    walletAddress=wallet_addr,
+                    baseTokenType="WITHDRAWAL_SHARE",
+                    tokenType="WITHDRAWAL_SHARE",
+                    tokenValue=num_withdrawal_token,
+                    maturityTime=None,
+                    sharePrice=None,
+                )
+            )
+
+        # Query and add shorts and/or longs if they exist in transaction
+        token_id = transaction.event_id
+        token_prefix = transaction.event_prefix
+        token_maturity_time = transaction.event_maturity_time
+        if (token_id is not None) and (token_prefix is not None):
+            base_token_type = hyperdrive_interface.AssetIdPrefix(token_prefix).name
+            if base_token_type in ("LONG", "SHORT"):
+                token_type = base_token_type + "-" + str(token_maturity_time)
+                # Check here if token is short
+                # If so, add share price from pool info to data
+                share_price = None
+                if (base_token_type) == "SHORT":
+                    share_price = pool_info.sharePrice
+
+                num_custom_token = _query_contract_for_balance(
+                    hyperdrive_contract, wallet_addr, block_number, int(token_id)
+                )
+                if num_custom_token is not None:
+                    out_wallet_info.append(
+                        db_schema.WalletInfo(
+                            blockNumber=block_number,
+                            walletAddress=wallet_addr,
+                            baseTokenType=base_token_type,
+                            tokenType=token_type,
+                            tokenValue=num_custom_token,
+                            maturityTime=token_maturity_time,
+                            sharePrice=share_price,
+                        )
+                    )
+    return out_wallet_info
+
+
+def convert_pool_config(pool_config_dict: dict[str, Any]) -> db_schema.PoolConfig:
+    """Converts a pool_config_dict from a call in hyperdrive_interface to the postgres data type
+
+    Arguments
+    ---------
+    pool_config_dict: dict[str, Any]
+        The dictionary returned from hyperdrive_instance.get_hyperdrive_config
+
+    Returns
+    -------
+    db_schema.PoolConfig
+        The db object for pool config
+    """
+    args_dict = {}
+    for key in db_schema.PoolConfig.__annotations__:
+        if key not in pool_config_dict:
+            logging.warning("Missing %s from pool config", key)
+            value = None
+        else:
+            value = pool_config_dict[key]
+            if isinstance(value, FixedPoint):
+                value = float(value)
+        args_dict[key] = value
+    pool_config = db_schema.PoolConfig(**args_dict)
+    return pool_config
+
+
+def convert_pool_info(pool_info_dict: dict[str, Any]) -> db_schema.PoolInfo:
+    """Converts a pool_info_dict from a call in hyperdrive_interface to the postgres data type
+
+    Arguments
+    ---------
+    pool_info_dict: dict[str, Any]
+        The dictionary returned from hyperdrive_instance.get_hyperdrive_pool_info
+
+    Returns
+    -------
+    db_schema.PoolInfo
+        The db object for pool info
+    """
+    args_dict = {}
+    for key in db_schema.PoolInfo.__annotations__:
+        if key not in pool_info_dict:
+            logging.warning("Missing %s from pool info", key)
+            value = None
+        else:
+            value = pool_info_dict[key]
+            if isinstance(value, FixedPoint):
+                value = float(value)
+        args_dict[key] = value
+    block_pool_info = db_schema.PoolInfo(**args_dict)
+    return block_pool_info
+
+
+def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> db_schema.CheckpointInfo:
+    """Converts a checkpoint_info_dict from a call in hyperdrive_interface to the postgres data type
+
+    Arguments
+    ---------
+    checkpoint_info_dict: dict[str, Any]
+        The dictionary returned from hyperdrive_instance.get_hyperdrive_checkpoint_info
+
+    Returns
+    -------
+    db_schema.CheckpointInfo
+        The db object for checkpoints
+    """
+    args_dict = {}
+    for key in db_schema.CheckpointInfo.__annotations__:
+        # Keys must match
+        if key not in checkpoint_info_dict:
+            logging.warning("Missing %s from checkpoint info", key)
+            value = None
+        else:
+            value = checkpoint_info_dict[key]
+            if isinstance(value, FixedPoint):
+                value = float(value)
+        args_dict[key] = value
+    block_checkpoint_info = db_schema.CheckpointInfo(**args_dict)
+    return block_checkpoint_info
+
+
+def _convert_scaled_value(input_val: int | None) -> float | None:
+    """
+    Given a scaled value int, converts it to a float, while supporting Nones
+
+    Arguments
+    ----------
+    input_val: int | None
+        The scaled integer value to unscale and convert to float
+
+    Returns
+    -------
+    float | None
+        The unscaled floating point value
+
+    Note
+    ----
+    We cast to FixedPoint, then to floats to keep noise to a minimum.
+    There is no loss of precision when going from Fixedpoint to float.
+    Once this is fed into postgres, postgres will use the fixed-precision Numeric type.
+    """
+    if input_val is not None:
+        return float(FixedPoint(scaled_value=input_val))
+    return None
 
 
 # TODO this function likely should be decoupled from postgres and added into
@@ -468,207 +672,3 @@ def _query_contract_for_balance(
             time.sleep(1)
             continue
     return _convert_scaled_value(num_token_scaled)
-
-
-# TODO: move this function to hyperdrive_interface and return a list of dictionaries
-def get_wallet_info(
-    hyperdrive_contract: Contract,
-    base_contract: Contract,
-    block_number: BlockNumber,
-    transactions: list[db_schema.Transaction],
-    pool_info: db_schema.PoolInfo,
-) -> list[db_schema.WalletInfo]:
-    """Retrieve wallet information at a given block given a transaction.
-
-    Transactions are needed here to get
-    (1) the wallet address of a transaction, and
-    (2) the token id of the transaction
-
-    Arguments
-    ---------
-    hyperdrive_contract : Contract
-        The deployed hyperdrive contract instance.
-    base_contract : Contract
-        The deployed base contract instance
-    block_number : BlockNumber
-        The block number to query
-    transactions : list[db_schema.Transaction]
-        The list of transactions to get events from
-    pool_info : db_schema.PoolInfo
-        The associated pool info, used to extract share price
-
-    Returns
-    -------
-    list[db_schema.WalletInfo]
-        The list of WalletInfo objects ready to be inserted into postgres
-    """
-    # pylint: disable=too-many-locals
-    out_wallet_info = []
-    for transaction in transactions:
-        wallet_addr = transaction.event_operator
-        if wallet_addr is None:
-            continue
-
-        # Query and add base tokens to walletinfo
-        num_base_token = _query_contract_for_balance(base_contract, wallet_addr, block_number)
-        if num_base_token is not None:
-            out_wallet_info.append(
-                db_schema.WalletInfo(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="BASE",
-                    tokenType="BASE",
-                    tokenValue=num_base_token,
-                )
-            )
-
-        # Query and add LP tokens to wallet info
-        lp_token_prefix = hyperdrive_interface.AssetIdPrefix.LP.value
-        # LP tokens always have 0 maturity
-        lp_token_id = hyperdrive_interface.encode_asset_id(lp_token_prefix, timestamp=0)
-        num_lp_token = _query_contract_for_balance(hyperdrive_contract, wallet_addr, block_number, lp_token_id)
-        if num_lp_token is not None:
-            out_wallet_info.append(
-                db_schema.WalletInfo(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="LP",
-                    tokenType="LP",
-                    tokenValue=num_lp_token,
-                    maturityTime=None,
-                    sharePrice=None,
-                )
-            )
-
-        # Query and add withdraw tokens to wallet info
-        withdrawal_token_prefix = hyperdrive_interface.AssetIdPrefix.WITHDRAWAL_SHARE.value
-        # Withdrawal tokens always have 0 maturity
-        withdrawal_token_id = hyperdrive_interface.encode_asset_id(withdrawal_token_prefix, timestamp=0)
-        num_withdrawal_token = _query_contract_for_balance(
-            hyperdrive_contract, wallet_addr, block_number, withdrawal_token_id
-        )
-        if num_withdrawal_token is not None:
-            out_wallet_info.append(
-                db_schema.WalletInfo(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="WITHDRAWAL_SHARE",
-                    tokenType="WITHDRAWAL_SHARE",
-                    tokenValue=num_withdrawal_token,
-                    maturityTime=None,
-                    sharePrice=None,
-                )
-            )
-
-        # Query and add shorts and/or longs if they exist in transaction
-        token_id = transaction.event_id
-        token_prefix = transaction.event_prefix
-        token_maturity_time = transaction.event_maturity_time
-        if (token_id is not None) and (token_prefix is not None):
-            base_token_type = hyperdrive_interface.AssetIdPrefix(token_prefix).name
-            if base_token_type in ("LONG", "SHORT"):
-                token_type = base_token_type + "-" + str(token_maturity_time)
-                # Check here if token is short
-                # If so, add share price from pool info to data
-                share_price = None
-                if (base_token_type) == "SHORT":
-                    share_price = pool_info.sharePrice
-
-                num_custom_token = _query_contract_for_balance(
-                    hyperdrive_contract, wallet_addr, block_number, int(token_id)
-                )
-                if num_custom_token is not None:
-                    out_wallet_info.append(
-                        db_schema.WalletInfo(
-                            blockNumber=block_number,
-                            walletAddress=wallet_addr,
-                            baseTokenType=base_token_type,
-                            tokenType=token_type,
-                            tokenValue=num_custom_token,
-                            maturityTime=token_maturity_time,
-                            sharePrice=share_price,
-                        )
-                    )
-    return out_wallet_info
-
-
-def convert_pool_config(pool_config_dict: dict[str, Any]) -> db_schema.PoolConfig:
-    """Converts a pool_config_dict from a call in hyperdrive_interface to the postgres data type
-
-    Arguments
-    ---------
-    pool_config_dict: dict[str, Any]
-        The dictionary returned from hyperdrive_instance.get_hyperdrive_config
-
-    Returns
-    -------
-    db_schema.PoolConfig
-        The db object for pool config
-    """
-    args_dict = {}
-    for key in db_schema.PoolConfig.__annotations__:
-        if key not in pool_config_dict:
-            logging.warning("Missing %s from pool config", key)
-            value = None
-        else:
-            value = pool_config_dict[key]
-            if isinstance(value, FixedPoint):
-                value = float(value)
-        args_dict[key] = value
-    pool_config = db_schema.PoolConfig(**args_dict)
-    return pool_config
-
-
-def convert_pool_info(pool_info_dict: dict[str, Any]) -> db_schema.PoolInfo:
-    """Converts a pool_info_dict from a call in hyperdrive_interface to the postgres data type
-
-    Arguments
-    ---------
-    pool_info_dict: dict[str, Any]
-        The dictionary returned from hyperdrive_instance.get_hyperdrive_pool_info
-
-    Returns
-    -------
-    db_schema.PoolInfo
-        The db object for pool info
-    """
-    args_dict = {}
-    for key in db_schema.PoolInfo.__annotations__:
-        if key not in pool_info_dict:
-            logging.warning("Missing %s from pool info", key)
-            value = None
-        else:
-            value = pool_info_dict[key]
-            if isinstance(value, FixedPoint):
-                value = float(value)
-        args_dict[key] = value
-    block_pool_info = db_schema.PoolInfo(**args_dict)
-    return block_pool_info
-
-
-def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> db_schema.CheckpointInfo:
-    """Converts a checkpoint_info_dict from a call in hyperdrive_interface to the postgres data type
-
-    Arguments
-    ---------
-    checkpoint_info_dict: dict[str, Any]
-        The dictionary returned from hyperdrive_instance.get_hyperdrive_checkpoint_info
-
-    Returns
-    -------
-    db_schema.CheckpointInfo
-        The db object for checkpoints
-    """
-    args_dict = {}
-    for key in db_schema.CheckpointInfo.__annotations__:
-        # Keys must match
-        if key not in checkpoint_info_dict:
-            logging.warning("Missing %s from checkpoint info", key)
-            value = None
-        else:
-            value = checkpoint_info_dict[key]
-            if isinstance(value, FixedPoint):
-                value = float(value)
-        args_dict[key] = value
-    block_checkpoint_info = db_schema.CheckpointInfo(**args_dict)
-    return block_checkpoint_info
