@@ -5,7 +5,7 @@ These instructions can likely be followed for other unix/linux setups, however.
 
 ## Step 1: Install elfpy
 
-1. make a fork of the elf `delvtech/elf-simulations` repo ([instructions](https://docs.github.com/en/get-started/quickstart/fork-a-repo?tool=webui&platform=mac)).
+1. make a fork of the [delvtech/elf-simulations repo](https://github.com/delvtech/elf-simulations) ([Fork instructions](https://docs.github.com/en/get-started/quickstart/fork-a-repo?tool=webui&platform=mac)).
 
     >**💡NOTE:** 
     >You’ll probably want to configure the remote (`delvtech`) repository with your fork. Once you’ve made the fork and cloned it, navigate inside (`cd elf-simulations`), and run
@@ -74,7 +74,7 @@ These instructions can likely be followed for other unix/linux setups, however.
     >```
     >
     >This will generate new environment variables for the bots and write them to the `.env` file.
-    >The new variables are private keys, Base budgets, and Eth budgets for all of the agents you specified in your config.
+    >The new variables are private keys as well as Base and Eth budgets for all of the agents you specified in your config.
     >This is what your `.env` file might look like after:
     >
     >```bash
