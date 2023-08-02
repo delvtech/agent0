@@ -54,15 +54,11 @@ These instructions can likely be followed for other unix/linux setups, however.
     >```
     >
 
-3. run the `eth_bots/populate_env.py` script with your private key as an argument, and pipe the output to a `.env` file. For example:
+3. run the `eth_bots/populate_env.py` script with your private key as an argument, and pipe the output to a `.env` file.
+Be careful that you've saved any important keys before overwriting `.env`!
+For example: `python eth_bots/populate_env.py 0xUSER_PRIVATE_KEY > .env`
 
     >**💡NOTE:**
-    >This command overwrites your `.env` file, so make sure you're ok with losing whatever contents are in it first!
-    >
-    >```bash
-    >python eth_bots/populate_env.py 0xUSER_PRIVATE_KEY > .env
-    >```
-    >
     >This will generate new environment variables for the bots and write them to the `.env` file.
     >The new variables are private keys as well as Base and Eth budgets for all of the agents you specified in your config.
     >This is what your `.env` file might look like after:
@@ -74,8 +70,9 @@ These instructions can likely be followed for other unix/linux setups, however.
     >export AGENT_ETH_BUDGETS='[1000000000000000000]'
     >```
     >
-
-**CAREFUL!** In the time between steps 4 and 5, if you delete your `.env` file or otherwise lose the bot private keys, then your money is gone forever. Hang on to those keys!
+    >**CAREFUL!** In the time between steps 4 and 5, if you delete your `.env` file or otherwise lose the bot private keys, then your money is gone forever.
+    >Hang on to those keys!
+    >
 
 4. run `python eth_bots/fund_bots.py` to fund your bots. This script will parse the `.env` file and allocate the budgets by transferring Base and Eth from the wallet corresponding to the `USER_KEY` environment variable.
 
