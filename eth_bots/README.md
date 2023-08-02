@@ -33,7 +33,7 @@ These instructions can likely be followed for other unix/linux setups, however.
     >**git clone the correct repo**: You’ll want to clone your fork in step 2 of the install instructions.
     >e.g.: `git clone https://github.com/[YOUR_USERNAME]/elf-simulations.git elf-simulations`
     >
-    >**Hyperdrive contracts** You don’t need to do any of the optional install Hyperdrive steps for eth_bots to work.
+    >**Hyperdrive contracts:** You don’t need to do any of the optional install Hyperdrive steps for eth_bots to work.
 
 3. navigate to the `elf-simulations` folder: `cd elf-simulations/`
 
