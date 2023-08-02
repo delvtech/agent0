@@ -7,8 +7,20 @@ These instructions can likely be followed for other unix/linux setups, however.
 
 1. make a fork of the [delvtech/elf-simulations repo](https://github.com/delvtech/elf-simulations) ([GitHub fork instructions](https://docs.github.com/en/get-started/quickstart/fork-a-repo?tool=webui&platform=mac)).
 
+2. Install elfpy by following the installation instructions found [on github](https://github.com/delvtech/elf-simulations/blob/main/INSTALL.md).
+
     >**💡NOTE:**
-    >You’ll probably want to also configure the remote (`delvtech`) repository.
+    >
+    >**pyenv install tips:**
+    >
+    >If your using an AWS server running bash on Linux, then to install Pyenv you’ll want to follow the [automatic installer](https://github.com/pyenv/pyenv#automatic-installer) instructions, and then [add pyenv to your shell environment](https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv).
+    >
+    >**git clone the correct repo:**
+    >
+    >You’ll want to clone your fork in step 2 of the install instructions.
+    >e.g.: `git clone https://github.com/[YOUR_USERNAME]/elf-simulations.git elf-simulations`
+    >
+    >You’ll probably also want to also configure the remote (`delvtech`) repository.
     >Once you’ve made the fork and cloned it, navigate inside (`cd elf-simulations`), and run
     >
     >```bash
@@ -23,17 +35,10 @@ These instructions can likely be followed for other unix/linux setups, however.
     >git merge upstream/main
     >```
     >
-
-2. Install elfpy by following the installation instructions found [on github](https://github.com/delvtech/elf-simulations/blob/main/INSTALL.md).
-
-    >**💡NOTE:**
+    >**Hyperdrive contracts:**
     >
-    >**pyenv install tips:** If your using an AWS server running bash on Linux, then to install Pyenv you’ll want to follow the [automatic installer](https://github.com/pyenv/pyenv#automatic-installer) instructions, and then [add pyenv to your shell environment](https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv).
+    >You don’t need to do any of the optional install Hyperdrive steps for eth_bots to work.
     >
-    >**git clone the correct repo**: You’ll want to clone your fork in step 2 of the install instructions.
-    >e.g.: `git clone https://github.com/[YOUR_USERNAME]/elf-simulations.git elf-simulations`
-    >
-    >**Hyperdrive contracts:** You don’t need to do any of the optional install Hyperdrive steps for eth_bots to work.
 
 3. navigate to the `elf-simulations` folder: `cd elf-simulations/`
 
