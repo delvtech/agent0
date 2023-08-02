@@ -1,5 +1,5 @@
 """Example script for writing a custom bot config to json"""
-from elfpy.bots import DEFAULT_USERNAME, EnvironmentConfig
+from eth_bots.core import DEFAULT_USERNAME, EnvironmentConfig
 
 if __name__ == "__main__":
     # load the config file, which loads defaults
