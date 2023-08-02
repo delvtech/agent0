@@ -6,8 +6,8 @@ import warnings
 
 from eth_typing import BlockNumber
 
-from eth_bots.setup.setup_experiment import setup_experiment
-from eth_bots.setup.trade_loop import trade_if_new_block
+from eth_bots.core.setup_experiment import setup_experiment
+from eth_bots.core.trade_loop import trade_if_new_block
 
 
 def main():

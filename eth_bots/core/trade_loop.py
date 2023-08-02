@@ -10,7 +10,7 @@ from web3.contract.contract import Contract
 from web3.types import RPCEndpoint
 
 from elfpy.eth.accounts import EthAgent
-from eth_bots.setup.execute_agent_trades import async_execute_agent_trades
+from eth_bots.core.execute_agent_trades import async_execute_agent_trades
 
 
 def trade_if_new_block(
