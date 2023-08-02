@@ -5,10 +5,11 @@ These instructions can likely be followed for other unix/linux setups, however.
 
 ## Step 1: Install elfpy
 
-1. make a fork of the [delvtech/elf-simulations repo](https://github.com/delvtech/elf-simulations) ([Fork instructions](https://docs.github.com/en/get-started/quickstart/fork-a-repo?tool=webui&platform=mac)).
+1. make a fork of the [delvtech/elf-simulations repo](https://github.com/delvtech/elf-simulations) ([GitHub fork instructions](https://docs.github.com/en/get-started/quickstart/fork-a-repo?tool=webui&platform=mac)).
 
-    >**💡NOTE:** 
-    >You’ll probably want to configure the remote (`delvtech`) repository with your fork. Once you’ve made the fork and cloned it, navigate inside (`cd elf-simulations`), and run
+    >**💡NOTE:**
+    >You’ll probably want to also configure the remote (`delvtech`) repository.
+    >Once you’ve made the fork and cloned it, navigate inside (`cd elf-simulations`), and run
     >
     >```bash
     >git remote add upstream git@github.com:delvtech/elf-simulations.git
@@ -23,27 +24,16 @@ These instructions can likely be followed for other unix/linux setups, however.
     >```
     >
 
-    
 2. Install elfpy by following the installation instructions found [on github](https://github.com/delvtech/elf-simulations/blob/main/INSTALL.md).
-    
+
     >**💡NOTE:**
     >
-    >**pyenv:** If your the AWS server is running bash on linux, then to install Pyenv you’ll want to follow the “[automatic installer](https://github.com/pyenv/pyenv#automatic-installer)” instructions, which tells you to run `curl https://pyenv.run | bash` in your AWS terminal.
-    >Per the output of that command when the install is finished, you’ll want to add these lines to the bottom of your `~/.bashrc`:
+    >**pyenv install tips:** If your using an AWS server running bash on Linux, then to install Pyenv you’ll want to follow the [automatic installer](https://github.com/pyenv/pyenv#automatic-installer) instructions, and then [add pyenv to your shell environment](https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv).
     >
-    >```bash
-    >export PYENV_ROOT="$HOME/.pyenv"
-    >command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
-    >eval "$(pyenv init -)"
-    >eval "$(pyenv virtualenv-init -)"
-    >```
-    >
-    >then run `source ~/.barhrc` to enable `pyenv`.
-    >
-    >**git clone**: You’ll want to clone your fork in step 2 of the install instructions.
+    >**git clone the correct repo**: You’ll want to clone your fork in step 2 of the install instructions.
     >e.g.: `git clone https://github.com/[YOUR_USERNAME]/elf-simulations.git elf-simulations`
     >
-    >**hyperdrive:** you don’t need to do any of the optional install Hyperdrive steps
+    >**Hyperdrive contracts** You don’t need to do any of the optional install Hyperdrive steps for eth_bots to work.
 
 3. navigate to the `elf-simulations` folder: `cd elf-simulations/`
 
@@ -54,7 +44,7 @@ These instructions can likely be followed for other unix/linux setups, however.
 1. get your private key for the chain (e.g. from Anvil)
 2. modify `eth_bots/eth_bots_config.py` as you see fit for your experiment.
 
-    >**💡NOTE:** 
+    >**💡NOTE:**
     >Make sure you change the URLs (e.g. to AWS or `localhost`):
     >
     >```python
@@ -66,7 +56,7 @@ These instructions can likely be followed for other unix/linux setups, however.
 
 3. run the `eth_bots/populate_env.py` script with your private key as an argument, and pipe the output to a `.env` file. For example:
 
-    >**💡NOTE:** 
+    >**💡NOTE:**
     >This command overwrites your `.env` file, so make sure you're ok with losing whatever contents are in it first!
     >
     >```bash
