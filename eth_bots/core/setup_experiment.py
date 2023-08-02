@@ -13,8 +13,8 @@ from elfpy import eth, hyperdrive_interface
 from elfpy.bots import DEFAULT_USERNAME, EnvironmentConfig
 from elfpy.eth.accounts import EthAgent
 from elfpy.utils import logs
-from examples.eth_bots.eth_bots_config import get_eth_bots_config
-from examples.eth_bots.get_agent_accounts import get_agent_accounts
+from eth_bots.core.get_agent_accounts import get_agent_accounts
+from eth_bots.eth_bots_config import get_eth_bots_config
 
 
 def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, list[EthAgent]]:
