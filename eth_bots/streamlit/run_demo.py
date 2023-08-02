@@ -6,13 +6,13 @@ import time
 import mplfinance as mpf
 import pandas as pd
 import streamlit as st
-from calc_pnl import calc_total_returns
 from dotenv import load_dotenv
-from extract_data_logs import get_combined_data
-from plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
-from plot_ohlcv import calc_ohlcv, plot_ohlcv
 
 from elfpy.data import postgres
+from eth_bots.streamlit.calc_pnl import calc_total_returns
+from eth_bots.streamlit.extract_data_logs import get_combined_data
+from eth_bots.streamlit.plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
+from eth_bots.streamlit.plot_ohlcv import calc_ohlcv, plot_ohlcv
 
 # pylint: disable=invalid-name
 
