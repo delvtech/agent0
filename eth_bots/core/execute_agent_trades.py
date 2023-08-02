@@ -13,7 +13,7 @@ from web3.contract.contract import Contract
 
 from elfpy import eth, types
 from elfpy.eth.accounts import EthAgent
-from elfpy.eth.errors.types import UnknownBlockError
+from elfpy.eth.errors import UnknownBlockError
 from elfpy.eth.transactions import smart_contract_preview_transaction
 from elfpy.markets.hyperdrive import HyperdriveMarket, MarketActionType
 from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction
