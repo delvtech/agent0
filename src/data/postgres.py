@@ -9,7 +9,7 @@ from typing import Type
 import numpy as np
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import URL, MetaData, Table, create_engine, exc, func, inspect
+from sqlalchemy import URL, Engine, MetaData, Table, create_engine, exc, func, inspect
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.data.db_schema import Base, CheckpointInfo, PoolConfig, PoolInfo, Transaction, UserMap, WalletDelta, WalletInfo
@@ -115,13 +115,13 @@ def drop_table(session: Session, table_name: str) -> None:
     table.drop(checkfirst=True, bind=bind)
 
 
-def initialize_session() -> Session:
-    """Initialize the database if not already initialized.
+def initialize_engine() -> Engine:
+    """Initializes the postgres engine from config
 
     Returns
     -------
-    session : Session
-        The initialized session object
+    Engine
+        The initialized engine object connected to postgres
     """
     postgres_config = build_postgres_config()
 
@@ -134,7 +134,19 @@ def initialize_session() -> Session:
         port=postgres_config.POSTGRES_PORT,
         database=postgres_config.POSTGRES_DB,
     )
-    engine = create_engine(url_object)
+    return create_engine(url_object)
+
+
+def initialize_session() -> Session:
+    """Initialize the database if not already initialized.
+
+    Returns
+    -------
+    session : Session
+        The initialized session object
+    """
+
+    engine = initialize_engine()
 
     # create a configured "Session" class
     session_class = sessionmaker(bind=engine)
