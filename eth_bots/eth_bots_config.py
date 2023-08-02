@@ -35,7 +35,7 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
         username_register_url="http://localhost:5002",
         artifacts_url="http://localhost:8080",
         rpc_url="http://localhost:8545",
-        username="changem3",
+        username="changeme",
     )
 
     agent_config: list[AgentConfig] = [
