@@ -13,11 +13,11 @@ These instructions can likely be followed for other unix/linux setups, however.
     >
     >**pyenv install tips:**
     >
-    >If your using an AWS server running bash on Linux, then to install Pyenv you’ll want to follow the [automatic installer](https://github.com/pyenv/pyenv#automatic-installer) instructions, and then [add pyenv to your shell environment](https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv).
+    >If you're using an AWS server running bash on Linux, then to install Pyenv you’ll want to follow the [automatic installer](https://github.com/pyenv/pyenv#automatic-installer) instructions, and then [add pyenv to your shell environment](https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv).
     >
     >**git clone the correct repo:**
     >
-    >You’ll want to clone your fork in step 2 of the install instructions.
+    >You’ll want to clone your fork,
     >e.g.: `git clone https://github.com/[YOUR_USERNAME]/elf-simulations.git elf-simulations`
     >
     >You’ll probably also want to also configure the remote (`delvtech`) repository.
