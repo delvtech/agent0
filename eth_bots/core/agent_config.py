@@ -7,7 +7,8 @@ from typing import Type
 from fixedpointmath import FixedPoint
 
 from elfpy.agents.policies.base import BasePolicy
-from eth_bots.core import Budget
+
+from .budget import Budget
 
 
 @dataclass
