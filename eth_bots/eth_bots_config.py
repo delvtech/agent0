@@ -6,7 +6,8 @@ import logging
 from fixedpointmath import FixedPoint
 
 from elfpy.agents.policies import Policies
-from elfpy.bots import AgentConfig, Budget, EnvironmentConfig
+from elfpy.bots import Budget, EnvironmentConfig
+from eth_bots.core import AgentConfig
 
 # You can import custom policies here. For example:
 from eth_bots.custom_policies.example_custom_policy import ExampleCustomPolicy

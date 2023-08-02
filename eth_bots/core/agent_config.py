@@ -7,8 +7,7 @@ from typing import Type
 from fixedpointmath import FixedPoint
 
 from elfpy.agents.policies.base import BasePolicy
-
-from .budget import Budget
+from elfpy.bots.budget import Budget
 
 
 @dataclass
