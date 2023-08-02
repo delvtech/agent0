@@ -10,13 +10,13 @@ from dotenv import load_dotenv
 from eth_account.account import Account
 from web3.contract.contract import Contract
 
-from elfpy import eth, hyperdrive_interface
+from elfpy import eth
 from elfpy.bots.environment_config import EnvironmentConfig
 from elfpy.eth.accounts.eth_account import EthAgent
 from elfpy.eth.rpc_interface import set_anvil_account_balance
 from elfpy.eth.transactions import smart_contract_read, smart_contract_transact
-from elfpy.hyperdrive_interface.hyperdrive_interface import get_hyperdrive_config
 from elfpy.utils import logs
+from eth_bots import hyperdrive_interface
 
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.
@@ -90,7 +90,7 @@ def main() -> None:
     # Run the checkpoint bot. This bot will attempt to mint a new checkpoint
     # every checkpoint after a waiting period. It will poll very infrequently
     # to reduce the probability of needing to mint a checkpoint.
-    config = get_hyperdrive_config(hyperdrive)
+    config = hyperdrive_interface.get_hyperdrive_config(hyperdrive)
     checkpoint_duration = config["checkpointDuration"]
     while True:
         # Get the latest block time and check to see if a new checkpoint should

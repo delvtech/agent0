@@ -11,7 +11,7 @@ from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
 
-from elfpy import eth, hyperdrive_interface, types
+from elfpy import eth, types
 from elfpy.eth.accounts import EthAgent
 from elfpy.eth.errors.types import UnknownBlockError
 from elfpy.eth.transactions import smart_contract_preview_transaction
@@ -20,6 +20,7 @@ from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction
 from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet import Long, Short
 from elfpy.wallet.wallet_deltas import WalletDeltas
+from eth_bots import hyperdrive_interface
 
 # TODO: Fix these up when we refactor this file
 # pylint: disable=too-many-locals
