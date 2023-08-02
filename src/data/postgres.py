@@ -12,16 +12,7 @@ import sqlalchemy
 from sqlalchemy import URL, MetaData, Table, create_engine, exc, func, inspect
 from sqlalchemy.orm import Session, sessionmaker
 
-from eth_bots.data.db_schema import (
-    Base,
-    CheckpointInfo,
-    PoolConfig,
-    PoolInfo,
-    Transaction,
-    UserMap,
-    WalletDelta,
-    WalletInfo,
-)
+from src.data.db_schema import Base, CheckpointInfo, PoolConfig, PoolInfo, Transaction, UserMap, WalletDelta, WalletInfo
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods

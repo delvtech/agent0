@@ -12,10 +12,9 @@ from eth_utils import address
 from web3 import Web3
 from web3.contract.contract import Contract
 
-from elfpy import eth
 from elfpy.utils import logs as log_utils
-from eth_bots import hyperdrive_interface
-from eth_bots.data import convert_data, postgres
+from src import eth, hyperdrive_interface
+from src.data import convert_data, postgres
 
 # pylint: disable=too-many-arguments
 
