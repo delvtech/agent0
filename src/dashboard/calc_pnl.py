@@ -2,13 +2,80 @@
 from __future__ import annotations
 
 import logging
+from decimal import Decimal
 
+import numpy as np
 import pandas as pd
+from eth_typing import ChecksumAddress, HexAddress, HexStr
+from fixedpointmath import FixedPoint
+from web3 import Web3
 
+from src import eth
 from src.dashboard.extract_data_logs import calculate_spot_price
+from src.eth.transactions import smart_contract_preview_transaction
+from src.eth_bots.core.environment_config import EnvironmentConfig
+from src.hyperdrive import contract_interface
 
 
-def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_deltas: pd.DataFrame) -> pd.Series:
+def calc_closeout_pnl(current_wallet: pd.DataFrame, pool_info: pd.DataFrame, env_config: EnvironmentConfig):
+    """Calculate closeout value of agent positions."""
+    web3: Web3 = eth.initialize_web3_with_http_provider(env_config.rpc_url, request_kwargs={"timeout": 60})
+
+    # send a request to the local server to fetch the deployed contract addresses and
+    # all Hyperdrive contract addresses from the server response
+    addresses = contract_interface.fetch_hyperdrive_address_from_url(env_config.artifacts_url)
+    abis = eth.abi.load_all_abis(env_config.abi_folder)
+    contract = contract_interface.get_hyperdrive_contract(web3, abis, addresses)
+
+    # Define a function to handle the calculation for each group
+    def calc_single_closeout(position: pd.DataFrame, min_output: int, as_underlying: bool):
+        # Extract the relevant values (you can adjust this part to match your logic)
+        if position["baseTokenType"] == "BASE" or position["delta"] == 0:
+            position["closeout_pnl"] = position["pnl"]
+            return position
+        assert len(position.shape) == 1, "Only one position at a time for add_unrealized_pnl_closeout"
+        amount = FixedPoint(str(position["delta"])).scaled_value
+        address = position.name[0]  # first item in multi-index
+        tokentype = position["baseTokenType"]
+        sender = ChecksumAddress(HexAddress(HexStr(address)))
+        preview_result = None
+        maturity = 0
+        if tokentype in ["LONG", "SHORT"]:
+            maturity = position["maturityTime"]
+            assert isinstance(maturity, Decimal)
+            maturity = int(maturity)
+            assert isinstance(maturity, int)
+        assert isinstance(tokentype, str)
+        if tokentype == "LONG":
+            fn_args = (maturity, amount, min_output, address, as_underlying)
+            preview_result = smart_contract_preview_transaction(contract, sender, "closeLong", *fn_args)
+            position.at["closeout_pnl"] = Decimal(preview_result["value"]) / Decimal(1e18)
+        elif tokentype == "SHORT":
+            fn_args = (maturity, amount, min_output, address, as_underlying)
+            preview_result = smart_contract_preview_transaction(contract, sender, "closeShort", *fn_args)
+            position.at["closeout_pnl"] = preview_result["value"] / Decimal(1e18)
+        elif tokentype == "LP":
+            fn_args = (amount, min_output, address, as_underlying)
+            preview_result = smart_contract_preview_transaction(contract, sender, "removeLiquidity", *fn_args)
+            position.at["closeout_pnl"] = Decimal(
+                preview_result["baseProceeds"]
+                + preview_result["withdrawalShares"]
+                * pool_info["sharePrice"].values[-1]
+                * pool_info["lpSharePrice"].values[-1]
+            ) / Decimal(1e18)
+        elif tokentype == "WITHDRAWAL_SHARE":
+            fn_args = (amount, min_output, address, as_underlying)
+            preview_result = smart_contract_preview_transaction(contract, sender, "redeemWithdrawalShares", *fn_args)
+            position.at["closeout_pnl"] = preview_result["proceeds"] / Decimal(1e18)
+        return position
+
+    current_wallet["closeout_pnl"] = np.nan
+    return current_wallet.apply(calc_single_closeout, min_output=0, as_underlying=True, axis=1)  # type: ignore
+
+
+def calc_total_returns(
+    pool_config: pd.Series, pool_info: pd.DataFrame, wallet_deltas: pd.DataFrame
+) -> tuple[pd.Series, pd.DataFrame]:
     """Calculate the most current pnl values.
 
     Calculate_spot_price_for_position calculates the spot price for a position that has matured by some amount.
@@ -30,7 +97,7 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
     # pylint: disable=too-many-locals
     # Most current block timestamp
     latest_pool_info = pool_info.loc[pool_info.index.max()]
-    block_timestamp = latest_pool_info["timestamp"].timestamp()
+    block_timestamp = Decimal(latest_pool_info["timestamp"].timestamp())
 
     # Calculate unrealized gains
     current_wallet = wallet_deltas.groupby(["walletAddress", "tokenType"]).agg(
@@ -67,7 +134,6 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
     # how much base is put up for collateral, but the amount of short shares are being calculated at some price
     # This really should be, how much base do I get back if I close this short right now
     wallet_shorts = current_wallet[current_wallet["baseTokenType"] == "SHORT"]
-
     # This calculation isn't quite right, this is not accounting for the trade spot price
     # Should take into account the spot price slipping during the actual trade
     # This will get fixed when we call preview smart contract transaction for pnl calculations
@@ -80,7 +146,6 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
         maturity_timestamp=wallet_shorts["maturityTime"],
         block_timestamp=block_timestamp,
     )
-
     shorts_returns = wallet_shorts["delta"] * (1 - short_spot_prices)
 
     # Calculate for longs
@@ -104,7 +169,7 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
     current_wallet.loc[shorts_returns.index, "pnl"] = shorts_returns
     current_wallet.loc[long_returns.index, "pnl"] = long_returns
     current_wallet.loc[withdrawal_returns.index, "pnl"] = withdrawal_returns
-    return current_wallet.reset_index().groupby("walletAddress")["pnl"].sum()
+    return current_wallet.reset_index().groupby("walletAddress")["pnl"].sum(), current_wallet
 
 
 def calculate_spot_price_for_position(
@@ -114,7 +179,7 @@ def calculate_spot_price_for_position(
     initial_share_price: pd.Series,
     position_duration: pd.Series,
     maturity_timestamp: pd.Series,
-    block_timestamp: pd.Series,
+    block_timestamp: Decimal,
 ):
     """Calculate the spot price given the pool info data.
 
@@ -134,12 +199,12 @@ def calculate_spot_price_for_position(
         The position duration
     maturity_timestamp : pd.Series
         The maturity timestamp
-    block_timestamp : pd.Series
+    block_timestamp : Decimal
         The block timestamp
     """
     # pylint: disable=too-many-arguments
     full_term_spot_price = calculate_spot_price(share_reserves, bond_reserves, initial_share_price, time_stretch)
-    time_left_seconds = maturity_timestamp - block_timestamp
+    time_left_seconds = maturity_timestamp.apply(lambda x: x - block_timestamp)
     if isinstance(time_left_seconds, pd.Timedelta):
         time_left_seconds = time_left_seconds.total_seconds()
     time_left_in_years = time_left_seconds / position_duration

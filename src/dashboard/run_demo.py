@@ -9,11 +9,12 @@ import streamlit as st
 from dotenv import load_dotenv
 
 import src.data.hyperdrive.postgres
-from src.dashboard.calc_pnl import calc_total_returns
+from src.dashboard.calc_pnl import calc_closeout_pnl, calc_total_returns
 from src.dashboard.extract_data_logs import get_combined_data
 from src.dashboard.plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
 from src.dashboard.plot_ohlcv import calc_ohlcv, plot_ohlcv
 from src.data import postgres
+from src.eth_bots.eth_bots_config import get_eth_bots_config
 
 # pylint: disable=invalid-name
 
@@ -38,7 +39,6 @@ def get_ticker(
     pd.DataFrame
         The filtered transaction data based on what we want to view in the ticker
     """
-
     # TODO these merges should really happen via an sql query instead of in pandas here
     # Set ticker so that each transaction is a single row
     ticker_data = wallet_delta.groupby(["transactionHash"]).agg(
@@ -131,7 +131,7 @@ def get_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame,
 
 
 def get_click_addresses() -> pd.DataFrame:
-    """Returns a dataframe of hard coded click addresses."""
+    """Return a dataframe of hard coded click addresses."""
     addresses = {
         "0x004dfC2dBA6573fa4dFb1E86e3723e1070C0CfdE": "Charles St. Louis (click)",
         "0x005182C62DA59Ff202D53d6E42Cef6585eBF9617": "Alim Khamisa (click)",
@@ -213,9 +213,10 @@ def address_to_username(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Se
 # Connect to postgres
 load_dotenv()
 session = postgres.initialize_session()
+env_config, _ = get_eth_bots_config()
 
 # pool config data is static, so just read once
-config_data = src.data.hyperdrive.postgres.get_pool_config(session)
+config_data = postgres.get_pool_config(session, coerce_float=False)
 
 # TODO fix input invTimeStretch to be unscaled in ingestion into postgres
 config_data["invTimeStretch"] = config_data["invTimeStretch"] / 10**18
@@ -238,15 +239,19 @@ while True:
     # Place data and plots
     user_lookup = get_user_lookup()
     txn_data = postgres.get_transactions(session, -max_live_blocks)
-    pool_info_data = src.data.hyperdrive.postgres.get_pool_info(session, -max_live_blocks)
+    pool_info_data = postgres.get_pool_info(session, -max_live_blocks, coerce_float=False)
     combined_data = get_combined_data(txn_data, pool_info_data)
-    wallet_deltas = src.data.hyperdrive.postgres.get_wallet_deltas(session)
+    wallet_deltas = postgres.get_wallet_deltas(session, coerce_float=False)
     ticker = get_ticker(wallet_deltas, txn_data, pool_info_data, user_lookup)
 
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)
     ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
 
-    current_returns = calc_total_returns(config_data, pool_info_data, wallet_deltas)
+    current_returns, current_wallet = calc_total_returns(config_data, pool_info_data, wallet_deltas)
+    current_wallet = calc_closeout_pnl(current_wallet, pool_info_data, env_config)  # calc pnl using closeout method
+    current_wallet.delta = current_wallet.delta.astype(float)
+    current_wallet.pnl = current_wallet.pnl.astype(float)
+    current_wallet.closeout_pnl = current_wallet.closeout_pnl.astype(float)
     ## TODO: FIX BOT RESTARTS
     ## Add initial budget column to bots
     ## when bot restarts, use initial budget for bot's wallet address to set "budget" in Agent.Wallet
@@ -256,6 +261,8 @@ while True:
     with ticker_placeholder.container():
         st.header("Ticker")
         st.dataframe(ticker, height=200, use_container_width=True)
+        st.header("PNL")
+        st.dataframe(current_wallet, height=500, use_container_width=True)
         st.header("Total Leaderboard")
         st.dataframe(comb_rank, height=500, use_container_width=True)
         st.header("Wallet Leaderboard")

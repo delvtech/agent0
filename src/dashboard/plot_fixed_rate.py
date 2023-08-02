@@ -1,5 +1,6 @@
 """simulation for the Hyperdrive market"""
 from __future__ import annotations
+from decimal import Decimal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +16,7 @@ def calc_fixed_rate(trade_data, config_data):
     Calculates the fixed rate given trade data
     """
     trade_data["rate"] = np.nan
-    annualized_time = config_data["positionDuration"] / (60 * 60 * 24 * 365)
+    annualized_time = config_data["positionDuration"] / Decimal(60 * 60 * 24 * 365)
 
     spot_price = calculate_spot_price(
         trade_data["share_reserves"],
@@ -24,7 +25,7 @@ def calc_fixed_rate(trade_data, config_data):
         config_data["invTimeStretch"],
     )
 
-    fixed_rate = (1 - spot_price) / (spot_price * annualized_time)
+    fixed_rate = (Decimal(1) - spot_price) / (spot_price * annualized_time)
 
     x_data = trade_data["timestamp"]
     y_data = fixed_rate
