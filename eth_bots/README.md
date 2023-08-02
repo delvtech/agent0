@@ -27,7 +27,7 @@ These instructions can likely be followed for other unix/linux setups, however.
 2. follow the elfpy installation instructions found [on github](https://github.com/delvtech/elf-simulations/blob/main/INSTALL.md)
     
     <aside>
-    💡 **(install step 1)** **PYENV** **NOTE:** If your the AWS server is running linux, then to install Pyenv you’ll want to follow the “[automatic installer](https://github.com/pyenv/pyenv#automatic-installer)” instructions, which tells you to run `curl https://pyenv.run | bash` in your AWS terminal.
+    💡 **(install step 1)** **PYENV** **NOTE:** If your the AWS server is running bash on linux, then to install Pyenv you’ll want to follow the “[automatic installer](https://github.com/pyenv/pyenv#automatic-installer)” instructions, which tells you to run `curl https://pyenv.run | bash` in your AWS terminal.
     Per the output of that command when the install is finished, you’ll want to add these lines to the bottom of your `~/.bashrc`:
     
     ```bash
