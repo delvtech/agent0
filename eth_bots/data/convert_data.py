@@ -12,7 +12,8 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
-from elfpy import eth, hyperdrive_interface
+from elfpy import eth
+from eth_bots import hyperdrive_interface
 from eth_bots.data import db_schema
 
 # pylint: disable=too-many-arguments

@@ -7,7 +7,8 @@ import os
 from dotenv import load_dotenv
 from eth_account.account import Account
 
-from elfpy import eth, hyperdrive_interface
+from elfpy import eth
+from eth_bots import hyperdrive_interface
 from eth_bots.eth_bots_config import get_eth_bots_config
 
 if __name__ == "__main__":
