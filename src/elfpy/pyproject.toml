@@ -26,57 +26,16 @@ classifiers = [
 
 [project.optional-dependencies]
 with-dependencies = [
-    # Specify requirements
-    "astunparse",
-    "black",
-    "ipython",
-    "jupytext",
     # Install fixedpointmath from github
     # Note that this is pointing to main, so if any changes are made to fixedpointmath, we'll have to
     # upgrade this package
     "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
     "matplotlib",
-    "nbconvert",
     "numpy",
     "pandas",
-    "pylint",
-    "pyright",
-    "pytest",
     "python-dotenv",
     "scipy",
     "typing_extensions==4.5.0",
-    # bot dependencies
-    "web3",
-    "streamlit",
-    "mplfinance",
-    "flask",
-    "flask-expects-json",
-    "psycopg2-binary",
-    "sqlalchemy",
-    "pandas-stubs"
-]
-
-docs = [
-    "tomli>=2.0.1",
-    "sphinx>=6",
-    "sphinx_autodoc_typehints>=1.21.8",
-    "sphinx-autoapi>=2.0.1",
-    "myst-parser>=2.0.0",
-    "numpydoc>=1.5.0",
-    "sphinxcontrib-napoleon>=0.7",
-    "autodocsumm>=0.2.11",
-    "nbsphinx>=0.8.12",
-    "sphinx-rtd-theme>=1.2.2",
-    # urllib3 v2 requires OpenSSL v1.1.1+, but Vercel uses v1.0.2
-    "urllib3<2.0",
-]
-
-ape = [
-    "ape-alchemy",
-    "ape-etherscan",
-    "ape-foundry",
-    "ape-solidity",
-    "eth-ape",
 ]
 
 [project.urls]

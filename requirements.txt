@@ -1,1 +1,9 @@
 -e src/elfpy
+streamlit
+web3
+mplfinance
+flask
+flask-expects-json
+psycopg2-binary
+sqlalchemy
+pandas-stubs
