@@ -8,7 +8,7 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
-from elfpy.data import postgres
+from eth_bots.data import postgres
 from eth_bots.streamlit.calc_pnl import calc_total_returns
 from eth_bots.streamlit.extract_data_logs import get_combined_data
 from eth_bots.streamlit.plot_fixed_rate import calc_fixed_rate, plot_fixed_rate

@@ -9,7 +9,7 @@ from elfpy.agents.policies import Policies
 from elfpy.bots import AgentConfig, Budget, EnvironmentConfig
 
 # You can import custom policies here. For example:
-from .custom_policies.example_custom_policy import ExampleCustomPolicy
+from eth_bots.custom_policies.example_custom_policy import ExampleCustomPolicy
 
 
 def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
