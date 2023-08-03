@@ -4,13 +4,13 @@ from __future__ import annotations
 import logging
 from typing import Any, Sequence
 
-from eth_typing import ChecksumAddress
+from eth_typing import BlockNumber, ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.contract.contract import Contract
 from web3.exceptions import ContractCustomError, ContractLogicError, TimeExhausted, TransactionNotFound
-from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, TxParams, TxReceipt, Wei
+from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, BlockData, TxData, TxParams, TxReceipt, Wei
 
 from src.eth.accounts import EthAgent
 from src.eth.errors.errors import decode_error_selector_for_contract
@@ -386,3 +386,38 @@ def _contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> lis
     else:  # final condition is a single output
         return_names_and_types = [_get_name_and_type_from_abi(function_outputs[0])]
     return return_names_and_types
+
+
+def fetch_contract_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[TxData]:
+    """Fetch transactions related to a contract for a given block number.
+
+    Arguments
+    ---------
+    web3: Web3
+        web3 provider object
+    contract: Contract
+        The contract to query the pool info from
+    block_number: BlockNumber
+        The block number to query from the chain
+
+    Returns
+    -------
+    tuple[list[Transaction], list[WalletDelta]]
+        A list of Transaction objects ready to be inserted into Postgres, and
+        a list of wallet delta objects ready to be inserted into Postgres
+    """
+    block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
+    all_transactions = block.get("transactions")
+    if not all_transactions:
+        logging.info("no transactions in block %s", block.get("number"))
+        return []
+    contract_transactions: list[TxData] = []
+    for transaction in all_transactions:
+        if isinstance(transaction, HexBytes):
+            logging.warning("transaction HexBytes, can't decode")
+            continue
+        if transaction.get("to") != contract.address:
+            continue
+        contract_transactions.append(transaction)
+
+    return contract_transactions

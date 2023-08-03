@@ -11,7 +11,7 @@ from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract
-from web3.types import BlockData, TxData
+from web3.types import TxData
 
 import src.data.hyperdrive.db_schema
 from src import eth, hyperdrive
@@ -63,41 +63,6 @@ def convert_hyperdrive_transactions_for_block(
         # Build wallet deltas based on transaction logs
         out_wallet_deltas.extend(_build_wallet_deltas(logs, transaction_dict["hash"], transaction_dict["blockNumber"]))
     return out_transactions, out_wallet_deltas
-
-
-def fetch_contract_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[TxData]:
-    """Fetch transactions related to a contract for a given block number.
-
-    Arguments
-    ---------
-    web3: Web3
-        web3 provider object
-    contract: Contract
-        The contract to query the pool info from
-    block_number: BlockNumber
-        The block number to query from the chain
-
-    Returns
-    -------
-    tuple[list[Transaction], list[WalletDelta]]
-        A list of Transaction objects ready to be inserted into Postgres, and
-        a list of wallet delta objects ready to be inserted into Postgres
-    """
-    block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
-    all_transactions = block.get("transactions")
-    if not all_transactions:
-        logging.info("no transactions in block %s", block.get("number"))
-        return []
-    contract_transactions: list[TxData] = []
-    for transaction in all_transactions:
-        if isinstance(transaction, HexBytes):
-            logging.warning("transaction HexBytes, can't decode")
-            continue
-        if transaction.get("to") != contract.address:
-            continue
-        contract_transactions.append(transaction)
-
-    return contract_transactions
 
 
 # TODO move this function to hyperdrive_interface and return a list of dictionaries
