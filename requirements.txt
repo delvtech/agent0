@@ -1,4 +1,4 @@
--e src/elfpy
+-e lib/elfpy
 streamlit
 web3
 mplfinance

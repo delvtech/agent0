@@ -12,9 +12,8 @@ from web3.contract.contract import Contract
 from web3.exceptions import ContractCustomError, ContractLogicError, TimeExhausted, TransactionNotFound
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, TxParams, TxReceipt, Wei
 
-from elfpy.eth.errors.errors import decode_error_selector_for_contract
-
-from .accounts import EthAgent
+from src.eth.accounts import EthAgent
+from src.eth.errors.errors import decode_error_selector_for_contract
 
 
 def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn_args, **fn_kwargs) -> dict[str, Any]:

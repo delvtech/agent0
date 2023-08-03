@@ -4,8 +4,8 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from eth_bots.data import postgres
-from eth_bots.data.db_schema import Base, UserMap
+from src.data import postgres
+from src.data.db_schema import Base, UserMap
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)

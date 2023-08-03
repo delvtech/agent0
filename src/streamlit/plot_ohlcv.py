@@ -19,7 +19,7 @@ from __future__ import annotations
 import mplfinance as mpf
 import pandas as pd
 
-from eth_bots.streamlit.extract_data_logs import calculate_spot_price
+from src.streamlit.extract_data_logs import calculate_spot_price
 
 # %%
 # Get data here

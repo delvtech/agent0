@@ -8,6 +8,9 @@ from datetime import datetime
 from typing import Any
 
 import requests
+from elfpy import eth
+from elfpy import time as elftime
+from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from eth_typing import BlockNumber
 from eth_utils import address
 from fixedpointmath import FixedPoint
@@ -15,12 +18,8 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
-from elfpy import eth
-from elfpy import time as elftime
-from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
-
-from .hyperdrive_addresses import HyperdriveAddresses
-from .hyperdrive_assets import AssetIdPrefix, encode_asset_id
+from src.hyperdrive_interface.hyperdrive_addresses import HyperdriveAddresses
+from src.hyperdrive_interface.hyperdrive_assets import AssetIdPrefix, encode_asset_id
 
 RETRY_COUNT = 10
 

@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import logging
 
+from elfpy.agents.policies import Policies
 from fixedpointmath import FixedPoint
 
-from elfpy.agents.policies import Policies
-from eth_bots.core import AgentConfig, Budget, EnvironmentConfig
+from src.eth_bots.core import AgentConfig, Budget, EnvironmentConfig
 
 # You can import custom policies here. For example:
-from eth_bots.custom_policies.example_custom_policy import ExampleCustomPolicy
+from src.eth_bots.custom_policies.example_custom_policy import ExampleCustomPolicy
 
 
 def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:

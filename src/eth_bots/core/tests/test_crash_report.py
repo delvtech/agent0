@@ -5,13 +5,13 @@ import logging
 import unittest
 from datetime import datetime
 
-from web3.exceptions import InvalidTransaction
-
 import elfpy.utils.logs as log_utils
 from elfpy.simulators.smulation_config import SimulationConfig
 from elfpy.utils import sim_utils
-from eth_bots.core import crash_report
-from eth_bots.data.db_schema import PoolConfig, PoolInfo
+from web3.exceptions import InvalidTransaction
+
+from src.data.db_schema import PoolConfig, PoolInfo
+from src.eth_bots.core import crash_report
 
 
 class TestCrashReport(unittest.TestCase):
