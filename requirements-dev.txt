@@ -1,0 +1,19 @@
+autodocsumm>=0.2.11
+black
+ipython
+jupytext
+myst-parser>=2.0.0
+nbconvert
+nbsphinx>=0.8.12
+numpydoc>=1.5.0
+pylint
+pyright
+pytest
+sphinx>=6
+sphinx-autoapi>=2.0.1
+sphinx_autodoc_typehints>=1.21.8
+sphinx-rtd-theme>=1.2.2
+sphinxcontrib-napoleon>=0.7
+tomli>=2.0.1
+# urllib3 v2 requires OpenSSL v1.1.1+, but Vercel uses v1.0.2
+urllib3<2.0

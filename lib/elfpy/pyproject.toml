@@ -1,0 +1,46 @@
+[project]
+name = "elfpy"
+version = "0.3.2"
+authors = [
+    { name = "Dylan Paiton", email = "dylan@delv.tech" },
+    { name = "Mihai Cosma", email = "mihai@delv.tech" },
+    { name = "Jonny Rhea", email = "jonny@delv.tech" },
+    { name = "Matthew Brown", email = "matt@delv.tech" },
+    { name = "Alex Towle", email = "alex@delv.tech" },
+    { name = "Sheng Lundquist", email = "sheng@delv.tech" },
+    { name = "Patrick Morris", email = "patrick@delv.tech" },
+    { name = "Giovanni Effio", email = "mazygio@delv.tech" },
+    { name = "Ryan Goree", email = "ryan@delv.tech" },
+    { name = "Will Villanueva", email = "will@delv.tech" },
+    { name = "Jacob Arruda", email = "jacob@delv.tech" },
+    { name = "Violet Vienhage", email = "violet@delv.tech" },
+]
+description = "Trading bots, market simulators, and experiment management by Delv"
+readme = "README.md"
+requires-python = ">=3.10, <3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache License 2.0",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    # Install fixedpointmath from github
+    # Note that this is pointing to main, so if any changes are made to fixedpointmath, we'll have to
+    # upgrade this package
+    "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "python-dotenv",
+    "scipy",
+    "typing_extensions==4.5.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/delvtech/elf-simulations"
+"Bug Tracker" = "https://github.com/delvtech/elf-simulations/issues"
+
+[build-system]
+requires = ["flit_core>=3.2"]
+build-backend = "flit_core.buildapi"
