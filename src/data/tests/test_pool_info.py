@@ -32,7 +32,7 @@ class TestPoolInfoTable:
     def test_create_pool_info(self, session):
         """Create and entry"""
         timestamp = datetime.fromtimestamp(1628472000)
-        pool_info = PoolInfo(blockNumber=1, timestamp=timestamp)  # add your other columns here...
+        pool_info = PoolInfo(blockNumber=1, timestamp=timestamp)
         session.add(pool_info)
         session.commit()
 

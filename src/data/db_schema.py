@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from typing import Union
 
 from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, Numeric, String
@@ -41,9 +42,9 @@ class WalletInfo(Base):
     baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    tokenValue: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    maturityTime: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    sharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    tokenValue: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    maturityTime: Mapped[Union[int, None]] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), default=None)
+    sharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
 
 
 class WalletDelta(Base):
@@ -64,8 +65,8 @@ class WalletDelta(Base):
     baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    delta: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    maturityTime: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    delta: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    maturityTime: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
 
 
 class PoolConfig(Base):
@@ -75,20 +76,20 @@ class PoolConfig(Base):
 
     contractAddress: Mapped[str] = mapped_column(String, primary_key=True)
     baseToken: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    initialSharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    minimumShareReserves: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    initialSharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    minimumShareReserves: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     positionDuration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     checkpointDuration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
-    timeStretch: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    timeStretch: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     governance: Mapped[Union[str, None]] = mapped_column(String, default=None)
     feeCollector: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    curveFee: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    flatFee: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    governanceFee: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    oracleSize: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    curveFee: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    flatFee: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    governanceFee: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    oracleSize: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     updateGap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
-    invTimeStretch: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    termLength: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    invTimeStretch: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    termLength: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
 
 
 class CheckpointInfo(Base):
@@ -98,9 +99,9 @@ class CheckpointInfo(Base):
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
-    sharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    longSharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    shortBaseVolume: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    sharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    longSharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    shortBaseVolume: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
 
 
 class PoolInfo(Base):
@@ -113,18 +114,19 @@ class PoolInfo(Base):
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
-    shareReserves: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    bondReserves: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    lpTotalSupply: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    sharePrice: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    longsOutstanding: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    longAverageMaturityTime: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    shortsOutstanding: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    shortAverageMaturityTime: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    shortBaseVolume: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    withdrawalSharesReadyToWithdraw: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    withdrawalSharesProceeds: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    totalSupplyWithdrawalShares: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    shareReserves: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    bondReserves: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    lpTotalSupply: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    sharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    lpSharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    longsOutstanding: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    longAverageMaturityTime: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    shortsOutstanding: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    shortAverageMaturityTime: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    shortBaseVolume: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    withdrawalSharesReadyToWithdraw: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    withdrawalSharesProceeds: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    totalSupplyWithdrawalShares: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
 
 
 class Transaction(Base):
@@ -159,20 +161,20 @@ class Transaction(Base):
     input_method: Mapped[Union[str, None]] = mapped_column(String, default=None)
 
     # Method: initialize
-    input_params_contribution: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    input_params_apr: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    input_params_contribution: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    input_params_apr: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     input_params_destination: Mapped[Union[str, None]] = mapped_column(String, default=None)
     input_params_asUnderlying: Mapped[Union[bool, None]] = mapped_column(Boolean, default=None)
 
     # Method: openLong
-    input_params_baseAmount: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    input_params_minOutput: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    input_params_baseAmount: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    input_params_minOutput: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     # input_params_destination
     # input_params_asUnderlying
 
     # Method: openShort
-    input_params_bondAmount: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    input_params_maxDeposit: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    input_params_bondAmount: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    input_params_maxDeposit: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     # input_params_destination
     # input_params_asUnderlying
 
@@ -192,13 +194,13 @@ class Transaction(Base):
 
     # Method: addLiquidity
     # input_params_contribution
-    input_params_minApr: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
-    input_params_maxApr: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    input_params_minApr: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    input_params_maxApr: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     # input_params_destination
     # input_params_asUnderlying
 
     # Method: removeLiquidity
-    input_params_shares: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    input_params_shares: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     # input_params_minOutput
     # input_params_destination
     # input_params_asUnderlying
@@ -210,7 +212,7 @@ class Transaction(Base):
     # args_owner
     # args_spender
     # args_id
-    event_value: Mapped[Union[float, None]] = mapped_column(Numeric, default=None)
+    event_value: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     event_operator: Mapped[Union[str, None]] = mapped_column(String, default=None)
     event_id: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
     # Fields calculated from base

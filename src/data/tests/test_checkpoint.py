@@ -1,5 +1,6 @@
 """CRUD tests for CheckpointInfo"""
 from datetime import datetime
+from decimal import Decimal
 
 import numpy as np
 import pytest
@@ -50,7 +51,7 @@ class TestCheckpointTable:
         postgres.add_checkpoint_infos([checkpoint], session)
         session.commit()
 
-        checkpoint.sharePrice = 5.0
+        checkpoint.sharePrice = Decimal("5.0")
         session.commit()
 
         updated_checkpoint = session.query(CheckpointInfo).filter_by(blockNumber=1).first()
@@ -106,9 +107,9 @@ class TestCheckpointInterface:
 
     def test_block_query_checkpoints(self, session):
         """Testing querying by block number of checkpoints via interface"""
-        checkpoint_1 = CheckpointInfo(blockNumber=0, timestamp=datetime.now(), sharePrice=3.1)
-        checkpoint_2 = CheckpointInfo(blockNumber=1, timestamp=datetime.now(), sharePrice=3.2)
-        checkpoint_3 = CheckpointInfo(blockNumber=2, timestamp=datetime.now(), sharePrice=3.3)
+        checkpoint_1 = CheckpointInfo(blockNumber=0, timestamp=datetime.now(), sharePrice=Decimal("3.1"))
+        checkpoint_2 = CheckpointInfo(blockNumber=1, timestamp=datetime.now(), sharePrice=Decimal("3.2"))
+        checkpoint_3 = CheckpointInfo(blockNumber=2, timestamp=datetime.now(), sharePrice=Decimal("3.3"))
         postgres.add_checkpoint_infos([checkpoint_1, checkpoint_2, checkpoint_3], session)
 
         checkpoints_df = postgres.get_checkpoint_info(session, start_block=1)
