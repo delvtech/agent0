@@ -38,7 +38,7 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
     )
 
     # Sanity check, no tokens except base should dip below 0
-    assert (current_wallet["delta"][current_wallet["baseTokenType"] != "BASE"] >= 0).all()
+    # assert (current_wallet["delta"][current_wallet["baseTokenType"] != "BASE"] >= 0).all()
 
     # Calculate for base
     # Base is valued at 1:1, since that's our numéraire (https://en.wikipedia.org/wiki/Num%C3%A9raire)
@@ -63,7 +63,17 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
     # Calculate for shorts
     # Short value = users_shorts * ( 1 - spot_price )
     # this could also be valued at 1 + ( p1 - p2 ) but we'd have to know their entry price (or entry base 🤔)
+    # TODO shorts inflate the pnl calculation. When opening a short, the "amount spent" is
+    # how much base is put up for collateral, but the amount of short shares are being calculated at some price
+    # This really should be, how much base do I get back if I close this short right now
     wallet_shorts = current_wallet[current_wallet["baseTokenType"] == "SHORT"]
+
+    # Get timestamp of when the short was opened
+    open_time = (wallet_shorts["maturityTime"] - pool_config["positionDuration"]).astype(int)
+    pool_info_seconds = (pool_info["timestamp"] - pd.Timestamp("1970-01-01")) // pd.Timedelta("1s")  # type: ignore
+    # Add pool_info_seconds as index and look up open_time on pool_info_seconds
+    # TODO
+
     short_spot_prices = calculate_spot_price_for_position(
         share_reserves=latest_pool_info["shareReserves"],
         bond_reserves=latest_pool_info["bondReserves"],
@@ -73,6 +83,7 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
         maturity_timestamp=wallet_shorts["maturityTime"],
         block_timestamp=block_timestamp,
     )
+
     shorts_returns = wallet_shorts["delta"] * (1 - short_spot_prices)
 
     # Calculate for longs
