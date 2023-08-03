@@ -4,11 +4,11 @@ from __future__ import annotations
 import json
 import logging
 
-from web3.exceptions import InvalidTransaction
-
 import elfpy.utils.format as format_utils
 from elfpy.utils import logs
-from eth_bots.data.db_schema import Base, PoolConfig, PoolInfo
+from web3.exceptions import InvalidTransaction
+
+from src.data.db_schema import Base, PoolConfig, PoolInfo
 
 
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:

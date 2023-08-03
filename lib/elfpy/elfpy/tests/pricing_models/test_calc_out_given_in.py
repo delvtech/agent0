@@ -4,15 +4,6 @@ from __future__ import annotations
 import logging
 import unittest
 
-from calc_test_dataclasses import (
-    CalcOutGivenInFailureTestCase,
-    CalcOutGivenInSuccessByModelTestResult,
-    CalcOutGivenInSuccessTestCase,
-    CalcOutGivenInSuccessTestResult,
-)
-from fixedpointmath import FixedPoint
-from fixedpointmath import errors as fperrors
-
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.logs as log_utils
@@ -23,6 +14,14 @@ from elfpy.markets.hyperdrive import (
     YieldspacePricingModel,
     hyperdrive_actions,
 )
+from elfpy.tests.pricing_models.calc_test_dataclasses import (
+    CalcOutGivenInFailureTestCase,
+    CalcOutGivenInSuccessByModelTestResult,
+    CalcOutGivenInSuccessTestCase,
+    CalcOutGivenInSuccessTestResult,
+)
+from fixedpointmath import FixedPoint
+from fixedpointmath import errors as fperrors
 
 # pylint: disable=too-many-lines
 

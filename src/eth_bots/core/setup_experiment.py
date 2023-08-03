@@ -6,16 +6,15 @@ from http import HTTPStatus
 
 import numpy as np
 import requests
+from elfpy.utils import logs
 from web3 import Web3
 from web3.contract.contract import Contract
 
-from elfpy import eth
-from elfpy.eth.accounts import EthAgent
-from elfpy.utils import logs
-from eth_bots import hyperdrive_interface
-from eth_bots.core import DEFAULT_USERNAME, EnvironmentConfig, crash_report
-from eth_bots.core.get_agent_accounts import get_agent_accounts
-from eth_bots.eth_bots_config import get_eth_bots_config
+from src import eth, hyperdrive_interface
+from src.eth.accounts import EthAgent
+from src.eth_bots.core import DEFAULT_USERNAME, EnvironmentConfig, crash_report
+from src.eth_bots.core.get_agent_accounts import get_agent_accounts
+from src.eth_bots.eth_bots_config import get_eth_bots_config
 
 
 def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, list[EthAgent]]:

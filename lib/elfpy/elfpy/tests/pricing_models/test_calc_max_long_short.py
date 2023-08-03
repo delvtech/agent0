@@ -4,12 +4,11 @@ from __future__ import annotations
 import unittest
 from dataclasses import dataclass
 
-from fixedpointmath import FixedPoint
-
 import elfpy.time as time
 import elfpy.utils.logs as log_utils
 from elfpy.markets.hyperdrive import HyperdriveMarketState, HyperdrivePricingModel
-from tests.fixtures.hyperdrive_config import HyperdriveConfig
+from elfpy.tests.fixtures.hyperdrive_config import HyperdriveConfig
+from fixedpointmath import FixedPoint
 
 
 @dataclass

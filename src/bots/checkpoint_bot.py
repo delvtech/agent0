@@ -7,16 +7,15 @@ import os
 import time
 
 from dotenv import load_dotenv
+from elfpy.utils import logs
 from eth_account.account import Account
 from web3.contract.contract import Contract
 
-from elfpy import eth
-from elfpy.eth.accounts.eth_account import EthAgent
-from elfpy.eth.rpc_interface import set_anvil_account_balance
-from elfpy.eth.transactions import smart_contract_read, smart_contract_transact
-from elfpy.utils import logs
-from eth_bots import hyperdrive_interface
-from eth_bots.core import EnvironmentConfig
+from src import eth, hyperdrive_interface
+from src.eth.accounts.eth_account import EthAgent
+from src.eth.rpc_interface import set_anvil_account_balance
+from src.eth.transactions import smart_contract_read, smart_contract_transact
+from src.eth_bots.core import EnvironmentConfig
 
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.

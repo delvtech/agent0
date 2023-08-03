@@ -8,7 +8,6 @@ from datetime import datetime
 from typing import Any
 
 import requests
-from elfpy import eth
 from elfpy import time as elftime
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from eth_typing import BlockNumber
@@ -18,6 +17,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
+from src import eth
 from src.hyperdrive_interface.hyperdrive_addresses import HyperdriveAddresses
 from src.hyperdrive_interface.hyperdrive_assets import AssetIdPrefix, encode_asset_id
 
