@@ -11,7 +11,7 @@ from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract
-from web3.types import BlockData
+from web3.types import BlockData, TxData
 
 import src.data.hyperdrive.db_schema
 from src import eth, hyperdrive
@@ -26,12 +26,47 @@ RETRY_COUNT = 10
 
 
 # TODO move this function to hyperdrive_interface and return a list of dictionaries
-def fetch_contract_transactions_for_block(
-    web3: Web3, contract: Contract, block_number: BlockNumber
+def convert_hyperdrive_transactions_for_block(
+    hyperdrive_contract: Contract, transactions: list[TxData]
 ) -> tuple[list[db_schema.Transaction], list[src.data.hyperdrive.db_schema.WalletDelta]]:
     """Fetch transactions related to the contract.
 
-    Returns the block pool info from the Hyperdrive contract
+    Arguments
+    ---------
+    transactions: TxData
+        A list of hyperdrive transactions for a given block.
+
+    Returns
+    -------
+    tuple[list[Transaction], list[WalletDelta]]
+        A list of Transaction objects ready to be inserted into Postgres, and
+        a list of wallet delta objects ready to be inserted into Postgres
+    """
+
+    out_transactions: list[db_schema.Transaction] = []
+    out_wallet_deltas: list[src.data.hyperdrive.db_schema.WalletDelta] = []
+    for transaction in transactions:
+        transaction_dict = dict(transaction)
+        # Convert the HexBytes fields to their hex representation
+        tx_hash = transaction.get("hash") or HexBytes("")
+        transaction_dict["hash"] = tx_hash.hex()
+        # Decode the transaction input
+        try:
+            method, params = hyperdrive_contract.decode_function_input(transaction["input"])
+            transaction_dict["input"] = {"method": method.fn_name, "params": params}
+        except ValueError:  # if the input is not meant for the contract, ignore it
+            continue
+        tx_receipt = Web3.eth.get_transaction_receipt(tx_hash)
+        logs = eth.get_transaction_logs(hyperdrive_contract, tx_receipt)
+        receipt: dict[str, Any] = _recursive_dict_conversion(tx_receipt)  # type: ignore
+        out_transactions.append(_build_hyperdrive_transaction_object(transaction_dict, logs, receipt))
+        # Build wallet deltas based on transaction logs
+        out_wallet_deltas.extend(_build_wallet_deltas(logs, transaction_dict["hash"], transaction_dict["blockNumber"]))
+    return out_transactions, out_wallet_deltas
+
+
+def fetch_contract_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[TxData]:
+    """Fetch transactions related to a contract for a given block number.
 
     Arguments
     ---------
@@ -49,36 +84,20 @@ def fetch_contract_transactions_for_block(
         a list of wallet delta objects ready to be inserted into Postgres
     """
     block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
-    transactions = block.get("transactions")
-    if not transactions:
+    all_transactions = block.get("transactions")
+    if not all_transactions:
         logging.info("no transactions in block %s", block.get("number"))
-        return ([], [])
-    out_transactions = []
-    out_wallet_deltas = []
-    for transaction in transactions:
+        return []
+    contract_transactions: list[TxData] = []
+    for transaction in all_transactions:
         if isinstance(transaction, HexBytes):
-            logging.warning("transaction HexBytes")
+            logging.warning("transaction HexBytes, can't decode")
             continue
         if transaction.get("to") != contract.address:
-            logging.warning("transaction not from contract")
             continue
-        transaction_dict: dict[str, Any] = dict(transaction)
-        # Convert the HexBytes fields to their hex representation
-        tx_hash = transaction.get("hash") or HexBytes("")
-        transaction_dict["hash"] = tx_hash.hex()
-        # Decode the transaction input
-        try:
-            method, params = contract.decode_function_input(transaction["input"])
-            transaction_dict["input"] = {"method": method.fn_name, "params": params}
-        except ValueError:  # if the input is not meant for the contract, ignore it
-            continue
-        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
-        logs = eth.get_transaction_logs(web3, contract, tx_receipt)
-        receipt: dict[str, Any] = _recursive_dict_conversion(tx_receipt)  # type: ignore
-        out_transactions.append(_build_hyperdrive_transaction_object(transaction_dict, logs, receipt))
-        # Build wallet deltas based on transaction logs
-        out_wallet_deltas.extend(_build_wallet_deltas(logs, transaction_dict["hash"], block_number))
-    return out_transactions, out_wallet_deltas
+        contract_transactions.append(transaction)
+
+    return contract_transactions
 
 
 # TODO move this function to hyperdrive_interface and return a list of dictionaries

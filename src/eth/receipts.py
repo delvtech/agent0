@@ -9,14 +9,12 @@ from web3.types import ABIEvent, EventData, LogReceipt, TxReceipt
 
 
 def get_transaction_logs(
-    web3: Web3, contract: Contract, tx_receipt: TxReceipt, event_names: Sequence[str] | None = None
+    contract: Contract, tx_receipt: TxReceipt, event_names: Sequence[str] | None = None
 ) -> list[dict[str, Any]]:
     """Decode a transaction receipt.
 
     Arguments
     ---------
-    web3 : Web3
-        web3 provider object
     contract : Contract
         The contract that emitted the receipt
     tx_receipt : TxReceipt
@@ -46,14 +44,12 @@ def get_transaction_logs(
 
 
 def get_event_object(
-    web3: Web3, contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
+    contract: Contract, log: LogReceipt, tx_receipt: TxReceipt
 ) -> tuple[EventData, ABIEvent] | tuple[None, None]:
     """Retrieve the event object and anonymous types for a given contract and log.
 
     Arguments
     ---------
-    web3 : Web3
-        web3 provider object
     contract : Contract
         The contract that emitted the receipt
     log : LogReceipt
@@ -74,7 +70,7 @@ def get_event_object(
         inputs: str = ",".join([param.get("type", "") for param in event.get("inputs", [])])
         # Hash event signature
         event_signature_text = f"{name}({inputs})"
-        event_signature_hex = web3.keccak(text=event_signature_text).hex()
+        event_signature_hex = Web3.keccak(text=event_signature_text).hex()
         # Find match between log's event signature and ABI's event signature
         receipt_event_signature_hex = log["topics"][0].hex()  # first index gives event signature
         if event_signature_hex == receipt_event_signature_hex and name is not None:

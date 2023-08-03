@@ -14,6 +14,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 import src.data.hyperdrive.postgres
+import src.eth.transactions
 import src.hyperdrive.addresses
 from src import eth, hyperdrive
 from src.data import convert_data, postgres
@@ -105,8 +106,11 @@ def main(
         )
 
         # Query and add block transactions
-        block_transactions, wallet_deltas = convert_data.fetch_contract_transactions_for_block(
+        transactions = src.eth.transactions.fetch_contract_transactions_for_block(
             web3, hyperdrive_contract, block_number
+        )
+        block_transactions, wallet_deltas = convert_data.convert_hyperdrive_transactions_for_block(
+            hyperdrive_contract, transactions
         )
         postgres.add_transactions(block_transactions, session)
         src.data.hyperdrive.postgres.add_wallet_deltas(wallet_deltas, session)
@@ -170,8 +174,11 @@ def main(
                 wallet_deltas = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        block_transactions, wallet_deltas = convert_data.fetch_contract_transactions_for_block(
+                        transactions = src.eth.transactions.fetch_contract_transactions_for_block(
                             web3, hyperdrive_contract, block_number
+                        )
+                        block_transactions, wallet_deltas = convert_data.convert_hyperdrive_transactions_for_block(
+                            hyperdrive_contract, transactions
                         )
                         break
                     except ValueError:
