@@ -8,8 +8,8 @@ import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy.sql import text
 
+from src.dashboard.calc_pnl import calc_total_returns
 from src.data import postgres
-from src.streamlit.calc_pnl import calc_total_returns
 
 # pylint: disable=invalid-name
 
@@ -162,10 +162,10 @@ with engine.connect() as conn:
     pool_info_data = pd.read_sql(pool_info_query, con=conn)
     txn_data = pd.read_sql(txn_query, con=conn)
     wallet_data = pd.read_sql(wallet_query, con=conn)
-    agents = pd.read_sql(agents_query, con=conn)["walletAddress"].tolist()
-    user_map = pd.read_sql(user_map_query, con=conn)
+    agents_data = pd.read_sql(agents_query, con=conn)["walletAddress"].tolist()
+    user_map_data = pd.read_sql(user_map_query, con=conn)
 
-user_lookup = get_user_lookup(agents, user_map)
+user_lookup = get_user_lookup(agents_data, user_map_data)
 
 # TODO fix input invTimeStretch to be unscaled in ingestion into postgres
 config_data["invTimeStretch"] = config_data["invTimeStretch"] / 10**18
@@ -331,8 +331,8 @@ all_wallet_deltas.columns = [
 
 current_returns = calc_total_returns(config_data, pool_info_data, all_wallet_deltas)
 comb_rank, ind_rank = get_leaderboard(current_returns, user_lookup)
+
 # TODO External transfers of base is getting captured, so need to undo this
 # Run 1: No change needed
 # Run 2: Sheng Lundquist (click) + 500,000
 # Run 3: Dylan Paiton (click) - 1,000,000, Giovanni Effio (click) - 1,000,000
-comb_rank, ind_rank
