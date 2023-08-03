@@ -12,7 +12,8 @@ import sqlalchemy
 from sqlalchemy import URL, Engine, MetaData, Table, create_engine, exc, func, inspect
 from sqlalchemy.orm import Session, sessionmaker
 
-from src.data.db_schema import Base, CheckpointInfo, PoolInfo, Transaction, UserMap, WalletDelta, WalletInfo
+from src.data.db_schema import Base, Transaction, UserMap, WalletDelta, WalletInfo
+from src.data.hyperdrive.db_schema import CheckpointInfo, PoolInfo
 from src.data.hyperdrive.postgres import get_pool_info
 
 # classes for sqlalchemy that define table schemas have no methods.

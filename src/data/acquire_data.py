@@ -13,6 +13,7 @@ from eth_utils import address
 from web3 import Web3
 from web3.contract.contract import Contract
 
+import src.data.hyperdrive.postgres
 import src.hyperdrive.addresses
 from src import eth, hyperdrive
 from src.data import convert_data, postgres
@@ -71,7 +72,7 @@ def main(
 
     # get pool config from hyperdrive contract
     pool_config_dict = hyperdrive.contract_interface.get_hyperdrive_config(hyperdrive_contract)
-    postgres.add_pool_config(convert_data.convert_pool_config(pool_config_dict), session)
+    src.data.hyperdrive.postgres.add_pool_config(convert_data.convert_pool_config(pool_config_dict), session)
 
     # Get last entry of pool info in db
     data_latest_block_number = postgres.get_latest_block_number(session)
@@ -93,20 +94,22 @@ def main(
     if data_latest_block_number < block_number < latest_mined_block:
         # Query and add block_pool_info
         pool_info_dict = hyperdrive.contract_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
-        postgres.add_pool_infos([convert_data.convert_pool_info(pool_info_dict)], session)
+        src.data.hyperdrive.postgres.add_pool_infos([convert_data.convert_pool_info(pool_info_dict)], session)
 
         # Query and add block_checkpoint_info
         checkpoint_info_dict = hyperdrive.contract_interface.get_hyperdrive_checkpoint_info(
             web3, hyperdrive_contract, block_number
         )
-        postgres.add_checkpoint_infos([convert_data.convert_checkpoint_info(checkpoint_info_dict)], session)
+        src.data.hyperdrive.postgres.add_checkpoint_infos(
+            [convert_data.convert_checkpoint_info(checkpoint_info_dict)], session
+        )
 
         # Query and add block transactions
         block_transactions, wallet_deltas = convert_data.fetch_contract_transactions_for_block(
             web3, hyperdrive_contract, block_number
         )
         postgres.add_transactions(block_transactions, session)
-        postgres.add_wallet_deltas(wallet_deltas, session)
+        src.data.hyperdrive.postgres.add_wallet_deltas(wallet_deltas, session)
 
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
@@ -143,7 +146,7 @@ def main(
                 if pool_info_dict is None:
                     raise ValueError("Error in getting pool info")
                 block_pool_info = convert_data.convert_pool_info(pool_info_dict)
-                postgres.add_pool_infos([block_pool_info], session)
+                src.data.hyperdrive.postgres.add_pool_infos([block_pool_info], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 checkpoint_info_dict = None
@@ -160,7 +163,7 @@ def main(
                 if checkpoint_info_dict is None:
                     raise ValueError("Error in getting checkpoint info")
                 block_checkpoint_info = convert_data.convert_checkpoint_info(checkpoint_info_dict)
-                postgres.add_checkpoint_infos([block_checkpoint_info], session)
+                src.data.hyperdrive.postgres.add_checkpoint_infos([block_checkpoint_info], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_transactions = None
@@ -184,14 +187,14 @@ def main(
                     raise ValueError("Error in getting transactions")
 
                 postgres.add_transactions(block_transactions, session)
-                postgres.add_wallet_deltas(wallet_deltas, session)
+                src.data.hyperdrive.postgres.add_wallet_deltas(wallet_deltas, session)
 
                 # TODO put the wallet info query as an optional block,
                 # and check these wallet values with what we get from the deltas
                 wallet_info_for_transactions = convert_data.get_wallet_info(
                     hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
                 )
-                postgres.add_wallet_infos(wallet_info_for_transactions, session)
+                src.data.hyperdrive.postgres.add_wallet_infos(wallet_info_for_transactions, session)
         time.sleep(sleep_amount)
 
 

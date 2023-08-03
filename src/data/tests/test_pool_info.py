@@ -6,8 +6,10 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+import src.data.hyperdrive.postgres
 from src.data import postgres
-from src.data.db_schema import Base, PoolInfo
+from src.data.db_schema import Base
+from src.data.hyperdrive.db_schema import PoolInfo
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)
@@ -76,7 +78,7 @@ class TestPoolInfoInterface:
         """Testing latest block number call"""
         timestamp_1 = datetime.fromtimestamp(1628472000)
         pool_info_1 = PoolInfo(blockNumber=1, timestamp=timestamp_1)
-        postgres.add_pool_infos([pool_info_1], session)
+        src.data.hyperdrive.postgres.add_pool_infos([pool_info_1], session)
 
         latest_block_number = postgres.get_latest_block_number(session)
         assert latest_block_number == 1
@@ -85,7 +87,7 @@ class TestPoolInfoInterface:
         pool_info_1 = PoolInfo(blockNumber=2, timestamp=timestamp_1)
         timestamp_2 = datetime.fromtimestamp(1628472004)
         pool_info_2 = PoolInfo(blockNumber=3, timestamp=timestamp_2)
-        postgres.add_pool_infos([pool_info_1, pool_info_2], session)
+        src.data.hyperdrive.postgres.add_pool_infos([pool_info_1, pool_info_2], session)
 
         latest_block_number = postgres.get_latest_block_number(session)
         assert latest_block_number == 3
@@ -98,9 +100,9 @@ class TestPoolInfoInterface:
         pool_info_2 = PoolInfo(blockNumber=1, timestamp=timestamp_2)
         timestamp_3 = datetime.fromtimestamp(1628472004)
         pool_info_3 = PoolInfo(blockNumber=2, timestamp=timestamp_3)
-        postgres.add_pool_infos([pool_info_1, pool_info_2, pool_info_3], session)
+        src.data.hyperdrive.postgres.add_pool_infos([pool_info_1, pool_info_2, pool_info_3], session)
 
-        pool_info_df = postgres.get_pool_info(session)
+        pool_info_df = src.data.hyperdrive.postgres.get_pool_info(session)
         np.testing.assert_array_equal(
             pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1, timestamp_2, timestamp_3])
         )
@@ -113,23 +115,23 @@ class TestPoolInfoInterface:
         pool_info_2 = PoolInfo(blockNumber=1, timestamp=timestamp_2)
         timestamp_3 = datetime.fromtimestamp(1628472004)
         pool_info_3 = PoolInfo(blockNumber=2, timestamp=timestamp_3)
-        postgres.add_pool_infos([pool_info_1, pool_info_2, pool_info_3], session)
+        src.data.hyperdrive.postgres.add_pool_infos([pool_info_1, pool_info_2, pool_info_3], session)
 
-        pool_info_df = postgres.get_pool_info(session, start_block=1)
+        pool_info_df = src.data.hyperdrive.postgres.get_pool_info(session, start_block=1)
         np.testing.assert_array_equal(
             pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_2, timestamp_3])
         )
 
-        pool_info_df = postgres.get_pool_info(session, start_block=-1)
+        pool_info_df = src.data.hyperdrive.postgres.get_pool_info(session, start_block=-1)
         np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_3]))
 
-        pool_info_df = postgres.get_pool_info(session, end_block=1)
+        pool_info_df = src.data.hyperdrive.postgres.get_pool_info(session, end_block=1)
         np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1]))
 
-        pool_info_df = postgres.get_pool_info(session, end_block=-1)
+        pool_info_df = src.data.hyperdrive.postgres.get_pool_info(session, end_block=-1)
         np.testing.assert_array_equal(
             pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1, timestamp_2])
         )
 
-        pool_info_df = postgres.get_pool_info(session, start_block=1, end_block=-1)
+        pool_info_df = src.data.hyperdrive.postgres.get_pool_info(session, start_block=1, end_block=-1)
         np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_2]))

@@ -13,6 +13,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
+import src.data.hyperdrive.db_schema
 from src import eth, hyperdrive
 from src.data import db_schema
 
@@ -86,7 +87,7 @@ def get_wallet_info(
     base_contract: Contract,
     block_number: BlockNumber,
     transactions: list[db_schema.Transaction],
-    pool_info: db_schema.PoolInfo,
+    pool_info: src.data.hyperdrive.db_schema.PoolInfo,
 ) -> list[db_schema.WalletInfo]:
     """Retrieve wallet information at a given block given a transaction.
 
@@ -202,7 +203,7 @@ def get_wallet_info(
     return out_wallet_info
 
 
-def convert_pool_config(pool_config_dict: dict[str, Any]) -> db_schema.PoolConfig:
+def convert_pool_config(pool_config_dict: dict[str, Any]) -> src.data.hyperdrive.db_schema.PoolConfig:
     """Converts a pool_config_dict from a call in hyperdrive_interface to the postgres data type
 
     Arguments
@@ -216,7 +217,7 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> db_schema.PoolConfi
         The db object for pool config
     """
     args_dict = {}
-    for key in db_schema.PoolConfig.__annotations__:
+    for key in src.data.hyperdrive.db_schema.PoolConfig.__annotations__:
         if key not in pool_config_dict:
             logging.warning("Missing %s from pool config", key)
             value = None
@@ -225,11 +226,11 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> db_schema.PoolConfi
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
         args_dict[key] = value
-    pool_config = db_schema.PoolConfig(**args_dict)
+    pool_config = src.data.hyperdrive.db_schema.PoolConfig(**args_dict)
     return pool_config
 
 
-def convert_pool_info(pool_info_dict: dict[str, Any]) -> db_schema.PoolInfo:
+def convert_pool_info(pool_info_dict: dict[str, Any]) -> src.data.hyperdrive.db_schema.PoolInfo:
     """Converts a pool_info_dict from a call in hyperdrive_interface to the postgres data type
 
     Arguments
@@ -243,7 +244,7 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> db_schema.PoolInfo:
         The db object for pool info
     """
     args_dict = {}
-    for key in db_schema.PoolInfo.__annotations__:
+    for key in src.data.hyperdrive.db_schema.PoolInfo.__annotations__:
         if key not in pool_info_dict:
             logging.warning("Missing %s from pool info", key)
             value = None
@@ -252,11 +253,11 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> db_schema.PoolInfo:
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
         args_dict[key] = value
-    block_pool_info = db_schema.PoolInfo(**args_dict)
+    block_pool_info = src.data.hyperdrive.db_schema.PoolInfo(**args_dict)
     return block_pool_info
 
 
-def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> db_schema.CheckpointInfo:
+def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> src.data.hyperdrive.db_schema.CheckpointInfo:
     """Converts a checkpoint_info_dict from a call in hyperdrive_interface to the postgres data type
 
     Arguments
@@ -270,7 +271,7 @@ def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> db_schema.C
         The db object for checkpoints
     """
     args_dict = {}
-    for key in db_schema.CheckpointInfo.__annotations__:
+    for key in src.data.hyperdrive.db_schema.CheckpointInfo.__annotations__:
         # Keys must match
         if key not in checkpoint_info_dict:
             logging.warning("Missing %s from checkpoint info", key)
@@ -280,7 +281,7 @@ def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> db_schema.C
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
         args_dict[key] = value
-    block_checkpoint_info = db_schema.CheckpointInfo(**args_dict)
+    block_checkpoint_info = src.data.hyperdrive.db_schema.CheckpointInfo(**args_dict)
     return block_checkpoint_info
 
 
