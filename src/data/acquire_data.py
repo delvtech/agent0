@@ -64,7 +64,7 @@ def main(
     addresses = src.hyperdrive.addresses.fetch_hyperdrive_address_from_url(contracts_url)
     abis = eth.abi.load_all_abis(abi_dir)
 
-    hyperdrive_contract = hyperdrive.contract_interface.get_hyperdrive_contract(web3, abis, addresses)
+    hyperdrive_contract = _get_hyperdrive_contract(web3, abis, addresses)
     base_contract: Contract = web3.eth.contract(
         address=address.to_checksum_address(addresses.base_token), abi=abis["ERC20Mintable"]
     )
@@ -267,3 +267,32 @@ if __name__ == "__main__":
         LOOKBACK_BLOCK_LIMIT,
         SLEEP_AMOUNT,
     )
+
+
+def _get_hyperdrive_contract(
+    web3: Web3, abis: dict, addresses: src.hyperdrive.addresses.HyperdriveAddresses
+) -> Contract:
+    """Get the hyperdrive contract given abis
+
+    Arguments
+    ---------
+    web3: Web3
+        web3 provider object
+    abis: dict
+        A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
+    addresses: HyperdriveAddressesJson
+        The block number to query from the chain
+
+    Returns
+    -------
+    Contract
+        The contract object returned from the query
+    """
+    if "IHyperdrive" not in abis:
+        raise AssertionError("IHyperdrive ABI was not provided")
+    state_abi = abis["IHyperdrive"]
+    # get contract instance of hyperdrive
+    hyperdrive_contract: Contract = web3.eth.contract(
+        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
+    )
+    return hyperdrive_contract
