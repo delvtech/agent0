@@ -118,6 +118,7 @@ class PoolInfo(Base):
     bondReserves: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     lpTotalSupply: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     sharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    lpSharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     longsOutstanding: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     longAverageMaturityTime: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
     shortsOutstanding: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)

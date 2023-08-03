@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Type
 
 import numpy as np
@@ -198,7 +199,9 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
     # if multiple threads try to add pool config at the same time
     # This function is being called by acquire_data.py, which should only have one
     # instance per db, so no need to worry about it here
-    existing_pool_config = get_pool_config(session, contract_address=pool_config.contractAddress)
+
+    # Since we're doing a direct equality comparison, we don't want to coerce into floats here
+    existing_pool_config = get_pool_config(session, contract_address=pool_config.contractAddress, coerce_float=False)
 
     if len(existing_pool_config) == 0:
         session.add(pool_config)
@@ -340,7 +343,7 @@ def add_user_map(username: str, addresses: list[str], session: Session) -> None:
         raise err
 
 
-def get_pool_config(session: Session, contract_address: str | None = None) -> pd.DataFrame:
+def get_pool_config(session: Session, contract_address: str | None = None, coerce_float=True) -> pd.DataFrame:
     """Get all pool config and returns as a pandas dataframe.
 
     Arguments
@@ -358,7 +361,7 @@ def get_pool_config(session: Session, contract_address: str | None = None) -> pd
     query = session.query(PoolConfig)
     if contract_address is not None:
         query = query.filter(PoolConfig.contractAddress == contract_address)
-    return pd.read_sql(query.statement, con=session.connection())
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
 def get_pool_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
