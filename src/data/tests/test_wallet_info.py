@@ -121,12 +121,8 @@ class TestWalletInfoInterface:
 
     def test_current_wallet_info(self, session):
         """Testing helper function to get current wallet values"""
-        wallet_info_1 = WalletInfo(
-            blockNumber=0, walletAddress="addr", tokenType="BASE", tokenValue=Decimal("3.1")
-        )  # add your other columns here...
-        wallet_info_2 = WalletInfo(
-            blockNumber=1, walletAddress="addr", tokenType="LP", tokenValue=Decimal("5.1")
-        )  # add your other columns here...
+        wallet_info_1 = WalletInfo(blockNumber=0, walletAddress="addr", tokenType="BASE", tokenValue=Decimal("3.1"))
+        wallet_info_2 = WalletInfo(blockNumber=1, walletAddress="addr", tokenType="LP", tokenValue=Decimal("5.1"))
         postgres.add_wallet_infos([wallet_info_1, wallet_info_2], session)
 
         wallet_info_df = postgres.get_current_wallet_info(session).reset_index()
@@ -134,9 +130,7 @@ class TestWalletInfoInterface:
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], [3.1, 5.1])
 
         # E.g., block 2, wallet base tokens gets updated to 6.1
-        wallet_info_3 = WalletInfo(
-            blockNumber=2, walletAddress="addr", tokenType="BASE", tokenValue=Decimal("6.1")
-        )  # add your other columns here...
+        wallet_info_3 = WalletInfo(blockNumber=2, walletAddress="addr", tokenType="BASE", tokenValue=Decimal("6.1"))
         postgres.add_wallet_infos([wallet_info_3], session)
         wallet_info_df = postgres.get_current_wallet_info(session).reset_index()
         np.testing.assert_array_equal(wallet_info_df["tokenType"], ["BASE", "LP"])
@@ -144,9 +138,9 @@ class TestWalletInfoInterface:
 
     def test_get_agents(self, session):
         """Testing helper function to get current wallet values"""
-        wallet_info_1 = WalletInfo(blockNumber=0, walletAddress="addr_1")  # add your other columns here...
-        wallet_info_2 = WalletInfo(blockNumber=1, walletAddress="addr_1")  # add your other columns here...
-        wallet_info_3 = WalletInfo(blockNumber=2, walletAddress="addr_2")  # add your other columns here...
+        wallet_info_1 = WalletInfo(blockNumber=0, walletAddress="addr_1")
+        wallet_info_2 = WalletInfo(blockNumber=1, walletAddress="addr_1")
+        wallet_info_3 = WalletInfo(blockNumber=2, walletAddress="addr_2")
         postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
 
         agents = postgres.get_agents(session)

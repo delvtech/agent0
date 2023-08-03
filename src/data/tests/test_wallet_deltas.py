@@ -34,9 +34,7 @@ class TestWalletDeltaTable:
         # Note: this test is using inmemory sqlite, which doesn't seem to support
         # autoincrementing ids without init, whereas postgres does this with no issues
         # Hence, we explicitly add id here
-        wallet_delta = WalletDelta(
-            blockNumber=1, transactionHash="a", delta=Decimal("3.2")
-        )  # add your other columns here...
+        wallet_delta = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.2"))
         session.add(wallet_delta)
         session.commit()
 
