@@ -16,7 +16,11 @@ import requests
 import tomli
 
 # indicate where the elfpy Python package lives
-elfpy_root = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+elfpy_root = os.path.join(
+    os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
+    "lib",
+    "elfpy",
+)
 sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(0, elfpy_root)
 
@@ -138,9 +142,9 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Options for API document generation -------------------------------------------------
 
-autoapi_dirs = ["../../elfpy"]
+autoapi_dirs = [os.path.join("..", "..", "lib", "elfpy")]
 autoapi_type = "python"
-autoapi_template_dir = "_templates/autoapi"
+autoapi_template_dir = os.path.join("_templates", "autoapi")
 autoapi_options = [
     "members",
     "undoc-members",
