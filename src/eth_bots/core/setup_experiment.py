@@ -1,5 +1,5 @@
 """Setup helper function for running eth bot experiments."""
-from __future__ import annotations
+fro...hyperdrive __futuraddressesions
 
 import os
 from http import HTTPStatus
@@ -53,7 +53,7 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
     web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
     # setup base contract interface
     hyperdrive_abis = eth.abi.load_all_abis(environment_config.abi_folder)
-    addresses = hyperdrive.contract_interface.fetch_hyperdrive_address_from_url(
+    addresses = addresses.fetch_hyperdrive_address_from_url(
         os.path.join(environment_config.artifacts_url, "addresses.json")
     )
     # set up the ERC20 contract for minting base tokens
