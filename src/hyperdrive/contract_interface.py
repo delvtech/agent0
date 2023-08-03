@@ -108,7 +108,7 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
     current_block_timestamp = current_block.get("timestamp")
     if current_block_timestamp is None:
         raise AssertionError("Current block has no timestamp")
-    pool_info.update({"timestamp": datetime.fromtimestamp(current_block_timestamp)})
+    pool_info.update({"timestamp": datetime.utcfromtimestamp(current_block_timestamp)})
     pool_info.update({"blockNumber": int(block_number)})
     # add position duration to the data dict
     # TODO get position duration from existing config passed in instead of from the chain
