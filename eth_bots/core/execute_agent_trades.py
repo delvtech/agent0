@@ -397,7 +397,7 @@ async def async_match_contract_call_to_trade(
             # many as possible, up to the withdrawPool.readyToRedeem limit, without reverting.  Only
             # a min_output that is too high will cause a revert here, or trying to withdraw more
             # shares than the user has obviously.
-            fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
+            fn_args = (trade_amount, min_output.scaled_value, agent.checksum_address, as_underlying)
             trade_result = await async_transact_and_parse_logs(
                 web3,
                 hyperdrive_contract,
