@@ -31,7 +31,9 @@ class TestPoolConfigTable:
 
     def test_create_pool_config(self, session):
         """Create and entry"""
-        pool_config = PoolConfig(contractAddress="0", initialSharePrice=Decimal(3.2))  # add your other columns here...
+        pool_config = PoolConfig(
+            contractAddress="0", initialSharePrice=Decimal("3.2")
+        )  # add your other columns here...
         session.add(pool_config)
         session.commit()
 
@@ -41,7 +43,9 @@ class TestPoolConfigTable:
 
     def test_delete_pool_config(self, session):
         """Delete an entry"""
-        pool_config = PoolConfig(contractAddress="0", initialSharePrice=Decimal(3.2))  # add your other columns here...
+        pool_config = PoolConfig(
+            contractAddress="0", initialSharePrice=Decimal("3.2")
+        )  # add your other columns here...
         session.add(pool_config)
         session.commit()
 
@@ -58,57 +62,59 @@ class TestPoolConfigInterface:
     def test_get_pool_config(self, session):
         """Testing retrevial of pool config via interface"""
         pool_config_1 = PoolConfig(
-            contractAddress="0", initialSharePrice=Decimal(3.2)
+            contractAddress="0", initialSharePrice=Decimal("3.2")
         )  # add your other columns here...
         postgres.add_pool_config(pool_config_1, session)
 
-        pool_config_df_1 = postgres.get_pool_config(session)
+        pool_config_df_1 = postgres.get_pool_config(session, coerce_float=False)
         assert len(pool_config_df_1) == 1
-        assert pool_config_df_1.loc[0, "initialSharePrice"] == 3.2
+        assert pool_config_df_1.loc[0, "initialSharePrice"] == Decimal("3.2")
 
         pool_config_2 = PoolConfig(
-            contractAddress="1", initialSharePrice=Decimal(3.4)
+            contractAddress="1", initialSharePrice=Decimal("3.4")
         )  # add your other columns here...
         postgres.add_pool_config(pool_config_2, session)
 
-        pool_config_df_2 = postgres.get_pool_config(session)
+        pool_config_df_2 = postgres.get_pool_config(session, coerce_float=False)
         assert len(pool_config_df_2) == 2
-        np.testing.assert_array_equal(pool_config_df_2["initialSharePrice"], [3.2, 3.4])
+        np.testing.assert_array_equal(pool_config_df_2["initialSharePrice"], np.array([Decimal("3.2"), Decimal("3.4")]))
 
     def test_primary_id_query_pool_config(self, session):
         """Testing retrevial of pool config via interface"""
-        pool_config = PoolConfig(contractAddress="0", initialSharePrice=Decimal(3.2))  # add your other columns here...
+        pool_config = PoolConfig(
+            contractAddress="0", initialSharePrice=Decimal("3.2")
+        )  # add your other columns here...
         postgres.add_pool_config(pool_config, session)
 
-        pool_config_df_1 = postgres.get_pool_config(session, contract_address="0")
+        pool_config_df_1 = postgres.get_pool_config(session, contract_address="0", coerce_float=False)
         assert len(pool_config_df_1) == 1
-        assert pool_config_df_1.loc[0, "initialSharePrice"] == 3.2
+        assert pool_config_df_1.loc[0, "initialSharePrice"] == Decimal("3.2")
 
-        pool_config_df_2 = postgres.get_pool_config(session, contract_address="1")
+        pool_config_df_2 = postgres.get_pool_config(session, contract_address="1", coerce_float=False)
         assert len(pool_config_df_2) == 0
 
     def test_pool_config_verify(self, session):
         """Testing retrevial of pool config via interface"""
         pool_config_1 = PoolConfig(
-            contractAddress="0", initialSharePrice=Decimal(3.2)
+            contractAddress="0", initialSharePrice=Decimal("3.2")
         )  # add your other columns here...
         postgres.add_pool_config(pool_config_1, session)
-        pool_config_df_1 = postgres.get_pool_config(session)
+        pool_config_df_1 = postgres.get_pool_config(session, coerce_float=False)
         assert len(pool_config_df_1) == 1
-        assert pool_config_df_1.loc[0, "initialSharePrice"] == 3.2
+        assert pool_config_df_1.loc[0, "initialSharePrice"] == Decimal("3.2")
 
         # Nothing should happen if we give the same pool_config
         pool_config_2 = PoolConfig(
-            contractAddress="0", initialSharePrice=Decimal(3.2)
+            contractAddress="0", initialSharePrice=Decimal("3.2")
         )  # add your other columns here...
         postgres.add_pool_config(pool_config_2, session)
-        pool_config_df_2 = postgres.get_pool_config(session)
+        pool_config_df_2 = postgres.get_pool_config(session, coerce_float=False)
         assert len(pool_config_df_2) == 1
-        assert pool_config_df_2.loc[0, "initialSharePrice"] == 3.2
+        assert pool_config_df_2.loc[0, "initialSharePrice"] == Decimal("3.2")
 
         # If we try to add another pool config with a different value, should throw a ValueError
         pool_config_3 = PoolConfig(
-            contractAddress="0", initialSharePrice=Decimal(3.4)
+            contractAddress="0", initialSharePrice=Decimal("3.4")
         )  # add your other columns here...
         with pytest.raises(ValueError):
             postgres.add_pool_config(pool_config_3, session)

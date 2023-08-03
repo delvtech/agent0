@@ -35,7 +35,7 @@ class TestTransactionTable:
         # autoincrementing ids without init, whereas postgres does this with no issues
         # Hence, we explicitly add id here
         transaction = Transaction(
-            blockNumber=1, transactionHash="a", event_value=Decimal(3.2)
+            blockNumber=1, transactionHash="a", event_value=Decimal("3.2")
         )  # add your other columns here...
         session.add(transaction)
         session.commit()
@@ -47,11 +47,11 @@ class TestTransactionTable:
 
     def test_update_transaction(self, session):
         """Update an entry"""
-        transaction = Transaction(blockNumber=1, transactionHash="a", event_value=Decimal(3.2))
+        transaction = Transaction(blockNumber=1, transactionHash="a", event_value=Decimal("3.2"))
         session.add(transaction)
         session.commit()
 
-        transaction.event_value = Decimal(5.0)
+        transaction.event_value = Decimal("5.0")
         session.commit()
 
         updated_transaction = session.query(Transaction).filter_by(blockNumber=1).first()
@@ -60,7 +60,7 @@ class TestTransactionTable:
 
     def test_delete_transaction(self, session):
         """Delete an entry"""
-        transaction = Transaction(blockNumber=1, transactionHash="a", event_value=Decimal(3.2))
+        transaction = Transaction(blockNumber=1, transactionHash="a", event_value=Decimal("3.2"))
         session.add(transaction)
         session.commit()
 
@@ -77,7 +77,7 @@ class TestTransactionInterface:
     def test_latest_block_number(self, session):
         """Testing retrevial of transaction via interface"""
         transaction_1 = Transaction(
-            blockNumber=1, transactionHash="a", event_value=Decimal(3.0)
+            blockNumber=1, transactionHash="a", event_value=Decimal("3.0")
         )  # add your other columns here...
         postgres.add_transactions([transaction_1], session)
 
@@ -85,10 +85,10 @@ class TestTransactionInterface:
         assert latest_block_number == 1
 
         transaction_2 = Transaction(
-            blockNumber=2, transactionHash="b", event_value=Decimal(3.2)
+            blockNumber=2, transactionHash="b", event_value=Decimal("3.2")
         )  # add your other columns here...
         transaction_3 = Transaction(
-            blockNumber=3, transactionHash="c", event_value=Decimal(3.4)
+            blockNumber=3, transactionHash="c", event_value=Decimal("3.4")
         )  # add your other columns here...
         postgres.add_transactions([transaction_2, transaction_3], session)
 
@@ -98,13 +98,13 @@ class TestTransactionInterface:
     def test_get_transactions(self, session):
         """Testing retrevial of transactions via interface"""
         transaction_1 = Transaction(
-            blockNumber=0, transactionHash="a", event_value=Decimal(3.1)
+            blockNumber=0, transactionHash="a", event_value=Decimal("3.1")
         )  # add your other columns here...
         transaction_2 = Transaction(
-            blockNumber=1, transactionHash="b", event_value=Decimal(3.2)
+            blockNumber=1, transactionHash="b", event_value=Decimal("3.2")
         )  # add your other columns here...
         transaction_3 = Transaction(
-            blockNumber=2, transactionHash="c", event_value=Decimal(3.3)
+            blockNumber=2, transactionHash="c", event_value=Decimal("3.3")
         )  # add your other columns here...
         postgres.add_transactions([transaction_1, transaction_2, transaction_3], session)
 
@@ -114,13 +114,13 @@ class TestTransactionInterface:
     def test_block_query_transactions(self, session):
         """Testing querying by block number of transactions via interface"""
         transaction_1 = Transaction(
-            blockNumber=0, transactionHash="a", event_value=Decimal(3.1)
+            blockNumber=0, transactionHash="a", event_value=Decimal("3.1")
         )  # add your other columns here...
         transaction_2 = Transaction(
-            blockNumber=1, transactionHash="b", event_value=Decimal(3.2)
+            blockNumber=1, transactionHash="b", event_value=Decimal("3.2")
         )  # add your other columns here...
         transaction_3 = Transaction(
-            blockNumber=2, transactionHash="c", event_value=Decimal(3.3)
+            blockNumber=2, transactionHash="c", event_value=Decimal("3.3")
         )  # add your other columns here...
         postgres.add_transactions([transaction_1, transaction_2, transaction_3], session)
 

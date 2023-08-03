@@ -34,7 +34,7 @@ class TestWalletInfoTable:
         # Note: this test is using inmemory sqlite, which doesn't seem to support
         # autoincrementing ids without init, whereas postgres does this with no issues
         # Hence, we explicitly add id here
-        wallet_info = WalletInfo(blockNumber=1, tokenValue=Decimal(3.2))
+        wallet_info = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
         session.add(wallet_info)
         session.commit()
 
@@ -45,11 +45,11 @@ class TestWalletInfoTable:
 
     def test_update_wallet_info(self, session):
         """Update an entry"""
-        wallet_info = WalletInfo(blockNumber=1, tokenValue=Decimal(3.2))
+        wallet_info = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
         session.add(wallet_info)
         session.commit()
 
-        wallet_info.tokenValue = Decimal(5.0)
+        wallet_info.tokenValue = Decimal("5.0")
         session.commit()
 
         updated_wallet_info = session.query(WalletInfo).filter_by(blockNumber=1).first()
@@ -58,7 +58,7 @@ class TestWalletInfoTable:
 
     def test_delete_wallet_info(self, session):
         """Delete an entry"""
-        wallet_info = WalletInfo(blockNumber=1, tokenValue=Decimal(3.2))
+        wallet_info = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
         session.add(wallet_info)
         session.commit()
 
@@ -74,14 +74,14 @@ class TestWalletInfoInterface:
 
     def test_latest_block_number(self, session):
         """Testing retrevial of wallet info via interface"""
-        wallet_info_1 = WalletInfo(blockNumber=1, tokenValue=Decimal(3.0))
+        wallet_info_1 = WalletInfo(blockNumber=1, tokenValue=Decimal("3.0"))
         postgres.add_wallet_infos([wallet_info_1], session)
 
         latest_block_number = postgres.get_latest_block_number_from_table(WalletInfo, session)
         assert latest_block_number == 1
 
-        wallet_info_2 = WalletInfo(blockNumber=2, tokenValue=Decimal(3.2))
-        wallet_info_3 = WalletInfo(blockNumber=3, tokenValue=Decimal(3.4))
+        wallet_info_2 = WalletInfo(blockNumber=2, tokenValue=Decimal("3.2"))
+        wallet_info_3 = WalletInfo(blockNumber=3, tokenValue=Decimal("3.4"))
         postgres.add_wallet_infos([wallet_info_2, wallet_info_3], session)
 
         latest_block_number = postgres.get_latest_block_number_from_table(WalletInfo, session)
@@ -89,9 +89,9 @@ class TestWalletInfoInterface:
 
     def test_get_wallet_info(self, session):
         """Testing retrevial of walletinfo via interface"""
-        wallet_info_1 = WalletInfo(blockNumber=0, tokenValue=Decimal(3.1))
-        wallet_info_2 = WalletInfo(blockNumber=1, tokenValue=Decimal(3.2))
-        wallet_info_3 = WalletInfo(blockNumber=2, tokenValue=Decimal(3.3))
+        wallet_info_1 = WalletInfo(blockNumber=0, tokenValue=Decimal("3.1"))
+        wallet_info_2 = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
+        wallet_info_3 = WalletInfo(blockNumber=2, tokenValue=Decimal("3.3"))
         postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
 
         wallet_info_df = postgres.get_all_wallet_info(session)
@@ -99,9 +99,9 @@ class TestWalletInfoInterface:
 
     def test_block_query_wallet_info(self, session):
         """Testing querying by block number of wallet info via interface"""
-        wallet_info_1 = WalletInfo(blockNumber=0, tokenValue=Decimal(3.1))
-        wallet_info_2 = WalletInfo(blockNumber=1, tokenValue=Decimal(3.2))
-        wallet_info_3 = WalletInfo(blockNumber=2, tokenValue=Decimal(3.3))
+        wallet_info_1 = WalletInfo(blockNumber=0, tokenValue=Decimal("3.1"))
+        wallet_info_2 = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
+        wallet_info_3 = WalletInfo(blockNumber=2, tokenValue=Decimal("3.3"))
         postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
 
         wallet_info_df = postgres.get_all_wallet_info(session, start_block=1)
@@ -122,10 +122,10 @@ class TestWalletInfoInterface:
     def test_current_wallet_info(self, session):
         """Testing helper function to get current wallet values"""
         wallet_info_1 = WalletInfo(
-            blockNumber=0, walletAddress="addr", tokenType="BASE", tokenValue=Decimal(3.1)
+            blockNumber=0, walletAddress="addr", tokenType="BASE", tokenValue=Decimal("3.1")
         )  # add your other columns here...
         wallet_info_2 = WalletInfo(
-            blockNumber=1, walletAddress="addr", tokenType="LP", tokenValue=Decimal(5.1)
+            blockNumber=1, walletAddress="addr", tokenType="LP", tokenValue=Decimal("5.1")
         )  # add your other columns here...
         postgres.add_wallet_infos([wallet_info_1, wallet_info_2], session)
 
@@ -135,7 +135,7 @@ class TestWalletInfoInterface:
 
         # E.g., block 2, wallet base tokens gets updated to 6.1
         wallet_info_3 = WalletInfo(
-            blockNumber=2, walletAddress="addr", tokenType="BASE", tokenValue=Decimal(6.1)
+            blockNumber=2, walletAddress="addr", tokenType="BASE", tokenValue=Decimal("6.1")
         )  # add your other columns here...
         postgres.add_wallet_infos([wallet_info_3], session)
         wallet_info_df = postgres.get_current_wallet_info(session).reset_index()
