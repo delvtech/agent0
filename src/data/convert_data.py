@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import time
+from decimal import Decimal
 from typing import Any
 
 from eth_typing import BlockNumber
@@ -222,7 +223,7 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> db_schema.PoolConfi
         else:
             value = pool_config_dict[key]
             if isinstance(value, FixedPoint):
-                value = float(value)
+                value = Decimal(str(value))
         args_dict[key] = value
     pool_config = db_schema.PoolConfig(**args_dict)
     return pool_config
@@ -249,7 +250,7 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> db_schema.PoolInfo:
         else:
             value = pool_info_dict[key]
             if isinstance(value, FixedPoint):
-                value = float(value)
+                value = Decimal(str(value))
         args_dict[key] = value
     block_pool_info = db_schema.PoolInfo(**args_dict)
     return block_pool_info
@@ -277,34 +278,31 @@ def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> db_schema.C
         else:
             value = checkpoint_info_dict[key]
             if isinstance(value, FixedPoint):
-                value = float(value)
+                value = Decimal(str(value))
         args_dict[key] = value
     block_checkpoint_info = db_schema.CheckpointInfo(**args_dict)
     return block_checkpoint_info
 
 
-def _convert_scaled_value(input_val: int | None) -> float | None:
+def _convert_scaled_value(input_val: int | None) -> Decimal | None:
     """
-    Given a scaled value int, converts it to a float, while supporting Nones
+    Given a scaled value int, converts it to a Decimal, while supporting Nones
 
     Arguments
     ----------
     input_val: int | None
-        The scaled integer value to unscale and convert to float
+        The scaled integer value to unscale and convert to Decimal
 
     Returns
     -------
-    float | None
-        The unscaled floating point value
-
-    Note
-    ----
-    We cast to FixedPoint, then to floats to keep noise to a minimum.
-    There is no loss of precision when going from Fixedpoint to float.
-    Once this is fed into postgres, postgres will use the fixed-precision Numeric type.
+    Decimal | None
+        The unscaled Decimal value
     """
     if input_val is not None:
-        return float(FixedPoint(scaled_value=input_val))
+        # TODO add this cast within fixedpoint
+        fp_val = FixedPoint(scaled_value=input_val)
+        str_val = str(fp_val)
+        return Decimal(str_val)
     return None
 
 
@@ -638,7 +636,7 @@ def _recursive_dict_conversion(obj: Any) -> Any:
 
 def _query_contract_for_balance(
     contract: Contract, wallet_addr: str, block_number: BlockNumber, token_id: int | None = None
-) -> float | None:
+) -> Decimal | None:
     """Queries the given contract for the wallet's token_id balance.
 
     Arguments
@@ -654,7 +652,7 @@ def _query_contract_for_balance(
 
     Returns
     -------
-    float | None
+    Decimal | None
         The amount token_id in wallet_addr. None if failed
     """
     num_token_scaled = None

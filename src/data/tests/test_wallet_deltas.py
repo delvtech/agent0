@@ -1,4 +1,6 @@
 """CRUD tests for WalletDelta"""
+from decimal import Decimal
+
 import numpy as np
 import pytest
 from sqlalchemy import create_engine
@@ -32,7 +34,9 @@ class TestWalletDeltaTable:
         # Note: this test is using inmemory sqlite, which doesn't seem to support
         # autoincrementing ids without init, whereas postgres does this with no issues
         # Hence, we explicitly add id here
-        wallet_delta = WalletDelta(blockNumber=1, transactionHash="a", delta=3.2)  # add your other columns here...
+        wallet_delta = WalletDelta(
+            blockNumber=1, transactionHash="a", delta=Decimal(3.2)
+        )  # add your other columns here...
         session.add(wallet_delta)
         session.commit()
 
@@ -43,11 +47,11 @@ class TestWalletDeltaTable:
 
     def test_update_wallet_delta(self, session):
         """Update an entry"""
-        wallet_delta = WalletDelta(blockNumber=1, transactionHash="a", delta=3.2)
+        wallet_delta = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal(3.2))
         session.add(wallet_delta)
         session.commit()
 
-        wallet_delta.delta = 5.0
+        wallet_delta.delta = Decimal(5.0)
         session.commit()
 
         updated_wallet_delta = session.query(WalletDelta).filter_by(blockNumber=1).first()
@@ -56,7 +60,7 @@ class TestWalletDeltaTable:
 
     def test_delete_wallet_delta(self, session):
         """Delete an entry"""
-        wallet_delta = WalletDelta(blockNumber=1, transactionHash="a", delta=3.2)
+        wallet_delta = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal(3.2))
         session.add(wallet_delta)
         session.commit()
 
@@ -72,14 +76,14 @@ class TestWalletDeltaInterface:
 
     def test_latest_block_number(self, session):
         """Testing retrevial of wallet info via interface"""
-        wallet_delta_1 = WalletDelta(blockNumber=1, transactionHash="a", delta=3.0)  # add your other columns here...
+        wallet_delta_1 = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal(3.0))
         postgres.add_wallet_deltas([wallet_delta_1], session)
 
         latest_block_number = postgres.get_latest_block_number_from_table(WalletDelta, session)
         assert latest_block_number == 1
 
-        wallet_delta_2 = WalletDelta(blockNumber=2, transactionHash="a", delta=3.2)  # add your other columns here...
-        wallet_delta_3 = WalletDelta(blockNumber=3, transactionHash="a", delta=3.4)  # add your other columns here...
+        wallet_delta_2 = WalletDelta(blockNumber=2, transactionHash="a", delta=Decimal(3.2))
+        wallet_delta_3 = WalletDelta(blockNumber=3, transactionHash="a", delta=Decimal(3.4))
         postgres.add_wallet_deltas([wallet_delta_2, wallet_delta_3], session)
 
         latest_block_number = postgres.get_latest_block_number_from_table(WalletDelta, session)
@@ -87,9 +91,9 @@ class TestWalletDeltaInterface:
 
     def test_get_wallet_delta(self, session):
         """Testing retrevial of walletinfo via interface"""
-        wallet_delta_1 = WalletDelta(blockNumber=0, transactionHash="a", delta=3.1)  # add your other columns here...
-        wallet_delta_2 = WalletDelta(blockNumber=1, transactionHash="a", delta=3.2)  # add your other columns here...
-        wallet_delta_3 = WalletDelta(blockNumber=2, transactionHash="a", delta=3.3)  # add your other columns here...
+        wallet_delta_1 = WalletDelta(blockNumber=0, transactionHash="a", delta=Decimal(3.1))
+        wallet_delta_2 = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal(3.2))
+        wallet_delta_3 = WalletDelta(blockNumber=2, transactionHash="a", delta=Decimal(3.3))
         postgres.add_wallet_deltas([wallet_delta_1, wallet_delta_2, wallet_delta_3], session)
 
         wallet_delta_df = postgres.get_wallet_deltas(session)
@@ -97,9 +101,9 @@ class TestWalletDeltaInterface:
 
     def test_block_query_wallet_delta(self, session):
         """Testing querying by block number of wallet info via interface"""
-        wallet_delta_1 = WalletDelta(blockNumber=0, transactionHash="a", delta=3.1)  # add your other columns here...
-        wallet_delta_2 = WalletDelta(blockNumber=1, transactionHash="a", delta=3.2)  # add your other columns here...
-        wallet_delta_3 = WalletDelta(blockNumber=2, transactionHash="a", delta=3.3)  # add your other columns here...
+        wallet_delta_1 = WalletDelta(blockNumber=0, transactionHash="a", delta=Decimal(3.1))
+        wallet_delta_2 = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal(3.2))
+        wallet_delta_3 = WalletDelta(blockNumber=2, transactionHash="a", delta=Decimal(3.3))
         postgres.add_wallet_deltas([wallet_delta_1, wallet_delta_2, wallet_delta_3], session)
 
         wallet_delta_df = postgres.get_wallet_deltas(session, start_block=1)
