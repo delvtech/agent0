@@ -11,7 +11,7 @@ from elfpy.utils import logs
 from eth_account.account import Account
 from web3.contract.contract import Contract
 
-from src import eth, hyperdrive_interface
+from src import eth, hyperdrive
 from src.eth.accounts.eth_account import EthAgent
 from src.eth.rpc_interface import set_anvil_account_balance
 from src.eth.transactions import smart_contract_read, smart_contract_transact
@@ -47,10 +47,10 @@ def get_config() -> EnvironmentConfig:
     )
 
 
-def does_checkpoint_exist(hyperdrive: Contract, checkpoint_time: int) -> bool:
+def does_checkpoint_exist(hyperdrive_contract: Contract, checkpoint_time: int) -> bool:
     """Checks whether or not a given checkpoint exists."""
 
-    return smart_contract_read(hyperdrive, "getCheckpoint", int(checkpoint_time))["sharePrice"] > 0
+    return smart_contract_read(hyperdrive_contract, "getCheckpoint", int(checkpoint_time))["sharePrice"] > 0
 
 
 def main() -> None:
@@ -78,10 +78,10 @@ def main() -> None:
 
     # Get the Hyperdrive contract.
     hyperdrive_abis = eth.abi.load_all_abis(config.abi_folder)
-    addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(
+    addresses = hyperdrive.contract_interface.fetch_hyperdrive_address_from_url(
         os.path.join(config.artifacts_url, "addresses.json")
     )
-    hyperdrive: Contract = web3.eth.contract(
+    hyperdrive_contract: Contract = web3.eth.contract(
         abi=hyperdrive_abis[config.hyperdrive_abi],
         address=web3.to_checksum_address(addresses.mock_hyperdrive),
     )
@@ -89,7 +89,7 @@ def main() -> None:
     # Run the checkpoint bot. This bot will attempt to mint a new checkpoint
     # every checkpoint after a waiting period. It will poll very infrequently
     # to reduce the probability of needing to mint a checkpoint.
-    config = hyperdrive_interface.get_hyperdrive_config(hyperdrive)
+    config = hyperdrive.contract_interface.get_hyperdrive_config(hyperdrive_contract)
     checkpoint_duration = config["checkpointDuration"]
     while True:
         # Get the latest block time and check to see if a new checkpoint should
@@ -103,7 +103,7 @@ def main() -> None:
         checkpoint_portion_elapsed = timestamp % checkpoint_duration
         checkpoint_time = timestamp - timestamp % checkpoint_duration
         if checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration and not does_checkpoint_exist(
-            hyperdrive, checkpoint_time
+            hyperdrive_contract, checkpoint_time
         ):
             logging.info("Submitting a checkpoint for checkpointTime=%s...", checkpoint_time)
             # TODO: We will run into issues with the gas price being too low
@@ -112,7 +112,7 @@ def main() -> None:
             # transaction if the transaction gets stuck.
             receipt = smart_contract_transact(
                 web3,
-                hyperdrive,
+                hyperdrive_contract,
                 sender,
                 "checkpoint",
                 (checkpoint_time),

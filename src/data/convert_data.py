@@ -13,7 +13,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
-from src import eth, hyperdrive_interface
+from src import eth, hyperdrive
 from src.data import db_schema
 
 # pylint: disable=too-many-arguments
@@ -133,9 +133,9 @@ def get_wallet_info(
             )
 
         # Query and add LP tokens to wallet info
-        lp_token_prefix = hyperdrive_interface.AssetIdPrefix.LP.value
+        lp_token_prefix = hyperdrive.AssetIdPrefix.LP.value
         # LP tokens always have 0 maturity
-        lp_token_id = hyperdrive_interface.encode_asset_id(lp_token_prefix, timestamp=0)
+        lp_token_id = hyperdrive.encode_asset_id(lp_token_prefix, timestamp=0)
         num_lp_token = _query_contract_for_balance(hyperdrive_contract, wallet_addr, block_number, lp_token_id)
         if num_lp_token is not None:
             out_wallet_info.append(
@@ -151,9 +151,9 @@ def get_wallet_info(
             )
 
         # Query and add withdraw tokens to wallet info
-        withdrawal_token_prefix = hyperdrive_interface.AssetIdPrefix.WITHDRAWAL_SHARE.value
+        withdrawal_token_prefix = hyperdrive.AssetIdPrefix.WITHDRAWAL_SHARE.value
         # Withdrawal tokens always have 0 maturity
-        withdrawal_token_id = hyperdrive_interface.encode_asset_id(withdrawal_token_prefix, timestamp=0)
+        withdrawal_token_id = hyperdrive.encode_asset_id(withdrawal_token_prefix, timestamp=0)
         num_withdrawal_token = _query_contract_for_balance(
             hyperdrive_contract, wallet_addr, block_number, withdrawal_token_id
         )
@@ -175,7 +175,7 @@ def get_wallet_info(
         token_prefix = transaction.event_prefix
         token_maturity_time = transaction.event_maturity_time
         if (token_id is not None) and (token_prefix is not None):
-            base_token_type = hyperdrive_interface.AssetIdPrefix(token_prefix).name
+            base_token_type = hyperdrive.AssetIdPrefix(token_prefix).name
             if base_token_type in ("LONG", "SHORT"):
                 token_type = base_token_type + "-" + str(token_maturity_time)
                 # Check here if token is short
@@ -601,7 +601,7 @@ def _build_hyperdrive_transaction_object(
     out_dict["event_id"] = event_args.get("id", None)
     # Decode logs here
     if out_dict["event_id"] is not None:
-        event_prefix, event_maturity_time = hyperdrive_interface.decode_asset_id(out_dict["event_id"])
+        event_prefix, event_maturity_time = hyperdrive.decode_asset_id(out_dict["event_id"])
         out_dict["event_prefix"] = event_prefix
         out_dict["event_maturity_time"] = event_maturity_time
     transaction = db_schema.Transaction(**out_dict)

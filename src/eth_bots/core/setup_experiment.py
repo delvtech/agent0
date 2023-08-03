@@ -10,7 +10,7 @@ from elfpy.utils import logs
 from web3 import Web3
 from web3.contract.contract import Contract
 
-from src import eth, hyperdrive_interface
+from src import eth, hyperdrive
 from src.eth.accounts import EthAgent
 from src.eth_bots.core import DEFAULT_USERNAME, EnvironmentConfig, crash_report
 from src.eth_bots.core.get_agent_accounts import get_agent_accounts
@@ -53,7 +53,7 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
     web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
     # setup base contract interface
     hyperdrive_abis = eth.abi.load_all_abis(environment_config.abi_folder)
-    addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(
+    addresses = hyperdrive.contract_interface.fetch_hyperdrive_address_from_url(
         os.path.join(environment_config.artifacts_url, "addresses.json")
     )
     # set up the ERC20 contract for minting base tokens
