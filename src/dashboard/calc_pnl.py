@@ -68,12 +68,9 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
     # This really should be, how much base do I get back if I close this short right now
     wallet_shorts = current_wallet[current_wallet["baseTokenType"] == "SHORT"]
 
-    # Get timestamp of when the short was opened
-    open_time = (wallet_shorts["maturityTime"] - pool_config["positionDuration"]).astype(int)
-    pool_info_seconds = (pool_info["timestamp"] - pd.Timestamp("1970-01-01")) // pd.Timedelta("1s")  # type: ignore
-    # Add pool_info_seconds as index and look up open_time on pool_info_seconds
-    # TODO
-
+    # This calculation isn't quite right, this is not accounting for the trade spot price
+    # Should take into account the spot price slipping during the actual trade
+    # This will get fixed when we call preview smart contract transaction for pnl calculations
     short_spot_prices = calculate_spot_price_for_position(
         share_reserves=latest_pool_info["shareReserves"],
         bond_reserves=latest_pool_info["bondReserves"],
