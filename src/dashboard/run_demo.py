@@ -5,14 +5,14 @@ import time
 
 import mplfinance as mpf
 import pandas as pd
+import streamlit as st
 from dotenv import load_dotenv
 
-import streamlit as st
+from src.dashboard.calc_pnl import calc_total_returns
+from src.dashboard.extract_data_logs import get_combined_data
+from src.dashboard.plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
+from src.dashboard.plot_ohlcv import calc_ohlcv, plot_ohlcv
 from src.data import postgres
-from src.streamlit.calc_pnl import calc_total_returns
-from src.streamlit.extract_data_logs import get_combined_data
-from src.streamlit.plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
-from src.streamlit.plot_ohlcv import calc_ohlcv, plot_ohlcv
 
 # pylint: disable=invalid-name
 
