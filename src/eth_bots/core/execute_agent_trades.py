@@ -17,7 +17,7 @@ from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
 
-from src import eth, hyperdrive_interface
+from src import eth, hyperdrive
 from src.eth.accounts import EthAgent
 from src.eth.errors import UnknownBlockError
 from src.eth.transactions import smart_contract_preview_transaction
@@ -169,7 +169,7 @@ async def async_execute_agent_trades(
     """
     # NOTE: This might _not_ be the latest market, due to async
     # get latest market
-    hyperdrive_market = hyperdrive_interface.get_hyperdrive_market(web3, hyperdrive_contract)
+    hyperdrive_market = hyperdrive.contract_interface.get_hyperdrive_market(web3, hyperdrive_contract)
     # Make calls per agent to execute_single_agent_trade
     # Await all trades to finish before continuing
     await asyncio.gather(

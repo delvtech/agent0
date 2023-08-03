@@ -7,13 +7,13 @@ import time
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
+from elfpy.utils import logs as log_utils
 from eth_typing import URI, BlockNumber
 from eth_utils import address
 from web3 import Web3
 from web3.contract.contract import Contract
 
-from elfpy.utils import logs as log_utils
-from src import eth, hyperdrive_interface
+from src import eth, hyperdrive
 from src.data import convert_data, postgres
 
 # pylint: disable=too-many-arguments
@@ -60,16 +60,16 @@ def main(
 
     # send a request to the local server to fetch the deployed contract addresses and
     # all Hyperdrive contract addresses from the server response
-    addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(contracts_url)
+    addresses = hyperdrive.contract_interface.fetch_hyperdrive_address_from_url(contracts_url)
     abis = eth.abi.load_all_abis(abi_dir)
 
-    hyperdrive_contract = hyperdrive_interface.get_hyperdrive_contract(web3, abis, addresses)
+    hyperdrive_contract = hyperdrive.contract_interface.get_hyperdrive_contract(web3, abis, addresses)
     base_contract: Contract = web3.eth.contract(
         address=address.to_checksum_address(addresses.base_token), abi=abis["ERC20Mintable"]
     )
 
     # get pool config from hyperdrive contract
-    pool_config_dict = hyperdrive_interface.get_hyperdrive_config(hyperdrive_contract)
+    pool_config_dict = hyperdrive.contract_interface.get_hyperdrive_config(hyperdrive_contract)
     postgres.add_pool_config(convert_data.convert_pool_config(pool_config_dict), session)
 
     # Get last entry of pool info in db
@@ -91,11 +91,11 @@ def main(
     # and if the chain has executed until start_block (based on latest_mined_block check)
     if data_latest_block_number < block_number < latest_mined_block:
         # Query and add block_pool_info
-        pool_info_dict = hyperdrive_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
+        pool_info_dict = hyperdrive.contract_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
         postgres.add_pool_infos([convert_data.convert_pool_info(pool_info_dict)], session)
 
         # Query and add block_checkpoint_info
-        checkpoint_info_dict = hyperdrive_interface.get_hyperdrive_checkpoint_info(
+        checkpoint_info_dict = hyperdrive.contract_interface.get_hyperdrive_checkpoint_info(
             web3, hyperdrive_contract, block_number
         )
         postgres.add_checkpoint_infos([convert_data.convert_checkpoint_info(checkpoint_info_dict)], session)
@@ -131,7 +131,7 @@ def main(
                 pool_info_dict = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        pool_info_dict = hyperdrive_interface.get_hyperdrive_pool_info(
+                        pool_info_dict = hyperdrive.contract_interface.get_hyperdrive_pool_info(
                             web3, hyperdrive_contract, block_number
                         )
                         break
@@ -148,7 +148,7 @@ def main(
                 checkpoint_info_dict = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        checkpoint_info_dict = hyperdrive_interface.get_hyperdrive_checkpoint_info(
+                        checkpoint_info_dict = hyperdrive.contract_interface.get_hyperdrive_checkpoint_info(
                             web3, hyperdrive_contract, block_number
                         )
                         break

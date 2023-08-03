@@ -18,8 +18,8 @@ from web3.contract.contract import Contract
 from web3.types import BlockData
 
 from src import eth
-from src.hyperdrive_interface.hyperdrive_addresses import HyperdriveAddresses
-from src.hyperdrive_interface.hyperdrive_assets import AssetIdPrefix, encode_asset_id
+from src.hyperdrive.addresses import HyperdriveAddresses
+from src.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 
 RETRY_COUNT = 10
 

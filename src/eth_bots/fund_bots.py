@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 from eth_account.account import Account
 
-from src import eth, hyperdrive_interface
+from src import eth, hyperdrive
 from src.eth_bots.eth_bots_config import get_eth_bots_config
 
 if __name__ == "__main__":
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         environment_config.base_abi + ".json",
     )
     base_contract_abi = eth.abi.load_abi_from_file(abi_file_loc)
-    addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url(
+    addresses = hyperdrive.contract_interface.fetch_hyperdrive_address_from_url(
         os.path.join(environment_config.artifacts_url, "addresses.json")
     )
     base_token_contract = web3.eth.contract(

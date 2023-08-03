@@ -5,7 +5,7 @@ import logging
 
 import pandas as pd
 
-from src.streamlit.extract_data_logs import calculate_spot_price
+from src.dashboard.extract_data_logs import calculate_spot_price
 
 
 def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_deltas: pd.DataFrame) -> pd.Series:
