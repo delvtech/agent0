@@ -7,12 +7,12 @@ import time
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
-from elfpy.utils import logs as log_utils
 from eth_typing import URI, BlockNumber
 from eth_utils import address
 from web3 import Web3
 from web3.contract.contract import Contract
 
+from elfpy.utils import logs as log_utils
 from src import eth, hyperdrive
 from src.data import convert_data, postgres
 
@@ -112,7 +112,7 @@ def main(
     # TODO: fewer nested blocks!
     # pylint: disable=too-many-nested-blocks
     while True:
-        latest_mined_block = web3.eth.get_block_number() - 1
+        latest_mined_block = web3.eth.get_block_number()
         # if we are on a new block
         if latest_mined_block > block_number:
             # Backfilling for blocks that need updating
@@ -220,15 +220,13 @@ class EthConfig:
 
 
 def build_eth_config() -> EthConfig:
-    """Build an eth that looks for environmental variables.
-    If env var exists, use that, otherwise, default
+    """Build an eth that looks for environmental variables. If env var exists, use that, otherwise, default.
 
     Returns
     -------
     EthConfig
         Config settings required to connect to the eth node
     """
-
     contracts_url = os.getenv("CONTRACTS_URL")
     ethereum_node = os.getenv("ETHEREUM_NODE")
     abi_dir = os.getenv("ABI_DIR")
