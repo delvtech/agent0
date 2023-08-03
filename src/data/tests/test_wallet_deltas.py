@@ -8,7 +8,8 @@ from sqlalchemy.orm import sessionmaker
 
 import src.data.hyperdrive.postgres
 from src.data import postgres
-from src.data.db_schema import Base, WalletDelta
+from src.data.db_schema import Base
+from src.data.hyperdrive.db_schema import WalletDelta
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)

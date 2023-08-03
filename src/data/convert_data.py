@@ -28,7 +28,7 @@ RETRY_COUNT = 10
 # TODO move this function to hyperdrive_interface and return a list of dictionaries
 def fetch_contract_transactions_for_block(
     web3: Web3, contract: Contract, block_number: BlockNumber
-) -> tuple[list[db_schema.Transaction], list[db_schema.WalletDelta]]:
+) -> tuple[list[db_schema.Transaction], list[src.data.hyperdrive.db_schema.WalletDelta]]:
     """Fetch transactions related to the contract.
 
     Returns the block pool info from the Hyperdrive contract
@@ -88,7 +88,7 @@ def get_wallet_info(
     block_number: BlockNumber,
     transactions: list[db_schema.Transaction],
     pool_info: src.data.hyperdrive.db_schema.PoolInfo,
-) -> list[db_schema.WalletInfo]:
+) -> list[src.data.hyperdrive.db_schema.WalletInfo]:
     """Retrieve wallet information at a given block given a transaction.
 
     Transactions are needed here to get
@@ -124,7 +124,7 @@ def get_wallet_info(
         num_base_token = _query_contract_for_balance(base_contract, wallet_addr, block_number)
         if num_base_token is not None:
             out_wallet_info.append(
-                db_schema.WalletInfo(
+                src.data.hyperdrive.db_schema.WalletInfo(
                     blockNumber=block_number,
                     walletAddress=wallet_addr,
                     baseTokenType="BASE",
@@ -140,7 +140,7 @@ def get_wallet_info(
         num_lp_token = _query_contract_for_balance(hyperdrive_contract, wallet_addr, block_number, lp_token_id)
         if num_lp_token is not None:
             out_wallet_info.append(
-                db_schema.WalletInfo(
+                src.data.hyperdrive.db_schema.WalletInfo(
                     blockNumber=block_number,
                     walletAddress=wallet_addr,
                     baseTokenType="LP",
@@ -160,7 +160,7 @@ def get_wallet_info(
         )
         if num_withdrawal_token is not None:
             out_wallet_info.append(
-                db_schema.WalletInfo(
+                src.data.hyperdrive.db_schema.WalletInfo(
                     blockNumber=block_number,
                     walletAddress=wallet_addr,
                     baseTokenType="WITHDRAWAL_SHARE",
@@ -190,7 +190,7 @@ def get_wallet_info(
                 )
                 if num_custom_token is not None:
                     out_wallet_info.append(
-                        db_schema.WalletInfo(
+                        src.data.hyperdrive.db_schema.WalletInfo(
                             blockNumber=block_number,
                             walletAddress=wallet_addr,
                             baseTokenType=base_token_type,
@@ -310,7 +310,9 @@ def _convert_scaled_value(input_val: int | None) -> Decimal | None:
 # TODO this function likely should be decoupled from postgres and added into
 # hyperdrive interface returning a list of dictionaries, with a conversion function to translate
 # into postgres
-def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[db_schema.WalletDelta]:
+def _build_wallet_deltas(
+    logs: list[dict], tx_hash: str, block_number
+) -> list[src.data.hyperdrive.db_schema.WalletDelta]:
     """From decoded transaction logs, we look at the log that contains the trade summary
 
     Arguments
@@ -338,7 +340,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
             base_delta = _convert_scaled_value(-log["args"]["baseAmount"])
             wallet_deltas.extend(
                 [
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -346,7 +348,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
                         tokenType="LP",
                         delta=token_delta,
                     ),
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -364,7 +366,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -373,7 +375,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
                         delta=token_delta,
                         maturityTime=maturity_time,
                     ),
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -391,7 +393,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -400,7 +402,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
                         delta=token_delta,
                         maturityTime=maturity_time,
                     ),
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -419,7 +421,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
             base_delta = _convert_scaled_value(log["args"]["baseAmount"])
             wallet_deltas.extend(
                 [
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -427,7 +429,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
                         tokenType="LP",
                         delta=lp_delta,
                     ),
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -435,7 +437,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
                         tokenType="WITHDRAWAL_SHARE",
                         delta=withdrawal_delta,
                     ),
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -453,7 +455,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -462,7 +464,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
                         delta=token_delta,
                         maturityTime=maturity_time,
                     ),
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -480,7 +482,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -489,7 +491,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
                         delta=token_delta,
                         maturityTime=maturity_time,
                     ),
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -507,7 +509,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
             base_delta = _convert_scaled_value(log["args"]["baseAmount"])
             wallet_deltas.extend(
                 [
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -516,7 +518,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[d
                         delta=token_delta,
                         maturityTime=maturity_time,
                     ),
-                    db_schema.WalletDelta(
+                    src.data.hyperdrive.db_schema.WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,

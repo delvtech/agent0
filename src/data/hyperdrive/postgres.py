@@ -2,8 +2,7 @@ import pandas as pd
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
-from src.data.db_schema import WalletDelta, WalletInfo
-from src.data.hyperdrive.db_schema import CheckpointInfo, PoolConfig, PoolInfo
+from src.data.hyperdrive.db_schema import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
 from src.data.postgres import get_latest_block_number, get_latest_block_number_from_table
 
 
