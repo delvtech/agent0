@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from elfpy import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, types
 from elfpy.utils import json as output_utils
 
-DEFAULT_USERNAME = "changeme"
+from . import DEFAULT_USERNAME
 
 
 @types.freezable(frozen=False, no_new_attribs=True)

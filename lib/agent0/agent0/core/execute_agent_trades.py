@@ -5,6 +5,9 @@ from dataclasses import dataclass
 import logging
 from typing import NoReturn
 
+import eth_utils
+import ethpy
+from agent0.hyperdrive.accounts import EthAgent
 from elfpy import types
 from elfpy.markets.hyperdrive import HyperdriveMarket, MarketActionType
 from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction
@@ -15,11 +18,6 @@ import eth_utils
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
-
-from src import eth, hyperdrive
-from src.eth.accounts import EthAgent
-from src.eth.errors import UnknownBlockError
-from src.eth.transactions import smart_contract_preview_transaction
 
 # TODO: Fix these up when we refactor this file
 # pylint: disable=too-many-locals
@@ -72,7 +70,9 @@ async def async_transact_and_parse_logs(
     ReceiptBreakdown
         A dataclass containing the maturity time and the absolute values for token quantities changed
     """
-    tx_receipt = await eth.async_smart_contract_transact(web3, hyperdrive_contract, signer, fn_name, *fn_args)
+    tx_receipt = await ethpy.base.transactions.async_smart_contract_transact(
+        web3, hyperdrive_contract, signer, fn_name, *fn_args
+    )
     # Sometimes, smart contract transact fails with status 0 with no error message
     # We throw custom error to catch in trades loop, ignore, and move on
     # TODO need to track down why this call fails and handle better
@@ -80,9 +80,9 @@ async def async_transact_and_parse_logs(
     if status is None:
         raise AssertionError("Receipt did not return status")
     if status == 0:
-        raise UnknownBlockError(f"Receipt has no status or status is 0 \n {tx_receipt=}")
+        raise ethpy.errors.UnknownBlockError(f"Receipt has no status or status is 0 \n {tx_receipt=}")
 
-    hyperdrive_event_logs = eth.get_transaction_logs(
+    hyperdrive_event_logs = ethpy.base.receipts.get_transaction_logs(
         hyperdrive_contract,
         tx_receipt,
         event_names=[fn_name[0].capitalize() + fn_name[1:]],
@@ -146,7 +146,7 @@ async def async_execute_single_agent_trade(
                 trade_object,
             )
             agent.wallet.update(wallet_deltas)
-        except UnknownBlockError as exc:
+        except ethpy.errors.UnknownBlockError as exc:
             logging.error(exc)
 
 
@@ -168,7 +168,7 @@ async def async_execute_agent_trades(
     """
     # NOTE: This might _not_ be the latest market, due to async
     # get latest market
-    hyperdrive_market = hyperdrive.contract_interface.get_hyperdrive_market(web3, hyperdrive_contract)
+    hyperdrive_market = ethpy.hyperdrive.interface.get_hyperdrive_market(web3, hyperdrive_contract)
     # Make calls per agent to execute_single_agent_trade
     # Await all trades to finish before continuing
     await asyncio.gather(
@@ -227,7 +227,13 @@ async def async_match_contract_call_to_trade(
             fn_args = (trade_amount, min_output, address, as_underlying)
 
             if trade.slippage_tolerance:
+<<<<<<< HEAD
                 preview_result = smart_contract_preview_transaction(hyperdrive_contract, address, "openLong", *fn_args)
+=======
+                preview_result = ethpy.base.transactions.smart_contract_preview_transaction(
+                    hyperdrive_contract, agent, "openLong", *fn_args
+                )
+>>>>>>> 16dd1b2a (fixes some dependencies)
                 min_output = (
                     FixedPoint(scaled_value=preview_result["bondProceeds"]) * (FixedPoint(1) - trade.slippage_tolerance)
                 ).scaled_value
@@ -263,7 +269,13 @@ async def async_match_contract_call_to_trade(
             )
 
             if trade.slippage_tolerance:
+<<<<<<< HEAD
                 preview_result = smart_contract_preview_transaction(hyperdrive_contract, address, "closeLong", *fn_args)
+=======
+                preview_result = ethpy.base.transactions.smart_contract_preview_transaction(
+                    hyperdrive_contract, agent, "closeLong", *fn_args
+                )
+>>>>>>> 16dd1b2a (fixes some dependencies)
                 min_output = (
                     FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.slippage_tolerance)
                 ).scaled_value
@@ -288,7 +300,13 @@ async def async_match_contract_call_to_trade(
             fn_args = (trade_amount, max_deposit, address, as_underlying)
 
             if trade.slippage_tolerance:
+<<<<<<< HEAD
                 preview_result = smart_contract_preview_transaction(hyperdrive_contract, address, "openShort", *fn_args)
+=======
+                preview_result = ethpy.base.transactions.smart_contract_preview_transaction(
+                    hyperdrive_contract, agent, "openShort", *fn_args
+                )
+>>>>>>> 16dd1b2a (fixes some dependencies)
                 max_deposit = (
                     FixedPoint(scaled_value=preview_result["traderDeposit"])
                     * (FixedPoint(1) + trade.slippage_tolerance)
@@ -329,8 +347,13 @@ async def async_match_contract_call_to_trade(
             )
 
             if trade.slippage_tolerance:
+<<<<<<< HEAD
                 preview_result = smart_contract_preview_transaction(
                     hyperdrive_contract, address, "closeShort", *fn_args
+=======
+                preview_result = ethpy.base.transactions.smart_contract_preview_transaction(
+                    hyperdrive_contract, agent, "closeShort", *fn_args
+>>>>>>> 16dd1b2a (fixes some dependencies)
                 )
                 min_output = (
                     FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.slippage_tolerance)

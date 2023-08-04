@@ -4,11 +4,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Type
 
+from agent0.hyperdrive.policies.base import BasePolicy
 from fixedpointmath import FixedPoint
 
-from elfpy.agents.policies.base import BasePolicy
-
-from .budget import Budget
+from . import Budget
 
 
 @dataclass

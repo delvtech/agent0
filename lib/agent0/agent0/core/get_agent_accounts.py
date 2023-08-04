@@ -6,16 +6,15 @@ import logging
 import os
 
 import eth_utils
+import ethpy
+from agent0.config import AgentConfig
+from agent0.hyperdrive.accounts import EthAgent
 from dotenv import load_dotenv
 from eth_account.account import Account
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import Web3
 from web3.contract.contract import Contract
-
-from src import eth
-from src.eth.accounts import EthAgent
-from src.eth_bots.core import AgentConfig
 
 # pylint: disable=too-many-locals
 
@@ -81,20 +80,22 @@ def get_agent_accounts(
                 raise AssertionError(
                     "Private keys must be specified for the eth_bots demo. Did you list enough in your .env?"
                 )
-            eth_agent = eth.accounts.EthAgent(
+            eth_agent = EthAgent(
                 Account().from_key(agent_private_keys[agent_count]), policy=agent_info.policy(**kwargs)
             )
-            agent_eth_funds = eth.rpc_interface.get_account_balance(web3, eth_agent.checksum_address)
+            agent_eth_funds = ethpy.base.rpc_interface.get_account_balance(web3, eth_agent.checksum_address)
             if agent_eth_funds == 0:
                 raise AssertionError(
                     f"Agent needs Ethereum to operate! The agent {eth_agent.checksum_address=} has a "
                     f"balance of {agent_eth_funds=}.\nDid you fund their accounts?"
                 )
-            agent_base_funds = eth.smart_contract_read(base_token_contract, "balanceOf", eth_agent.checksum_address)
+            agent_base_funds = ethpy.base.transactions.smart_contract_read(
+                base_token_contract, "balanceOf", eth_agent.checksum_address
+            )
             if agent_base_funds["value"] == 0:
                 raise AssertionError("Agent needs Base tokens to operate! Did you fund their accounts?")
             # establish max approval for the hyperdrive contract
-            _ = eth.smart_contract_transact(
+            _ = ethpy.base.transactions.smart_contract_transact(
                 web3,
                 base_token_contract,
                 eth_agent,
