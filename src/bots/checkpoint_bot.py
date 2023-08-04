@@ -1,6 +1,5 @@
 """A checkpoint bot for Hyperdrive"""
 from __future__ import annotations
-
 import datetime
 import logging
 import os
@@ -11,12 +10,12 @@ from elfpy.utils import logs
 from eth_account.account import Account
 from web3.contract.contract import Contract
 
-import src.hyperdrive.addresses
 from src import eth, hyperdrive
 from src.eth.accounts.eth_account import EthAgent
 from src.eth.rpc_interface import set_anvil_account_balance
 from src.eth.transactions import smart_contract_read, smart_contract_transact
 from src.eth_bots.core import EnvironmentConfig
+import src.hyperdrive.addresses
 
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.

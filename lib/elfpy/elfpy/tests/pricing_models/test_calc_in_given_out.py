@@ -1,14 +1,10 @@
 """Testing for the calc_in_given_out of the pricing models."""
 from __future__ import annotations
-
 import decimal
 import logging
-import unittest
 from typing import TYPE_CHECKING
+import unittest
 
-import elfpy.time as time
-import elfpy.types as types
-import elfpy.utils.logs as log_utils
 from elfpy.markets.hyperdrive import (
     HyperdriveMarketState,
     HyperdrivePricingModel,
@@ -21,6 +17,9 @@ from elfpy.tests.pricing_models.calc_test_dataclasses import (
     CalcInGivenOutSuccessTestCase,
     CalcInGivenOutSuccessTestResult,
 )
+import elfpy.time as time
+import elfpy.types as types
+import elfpy.utils.logs as log_utils
 from fixedpointmath import FixedPoint
 from fixedpointmath import errors as fperrors
 

@@ -22,7 +22,21 @@ from src.hyperdrive.addresses import fetch_hyperdrive_address_from_url
 def calc_single_closeout(
     position: pd.DataFrame, contract: Contract, pool_info: pd.DataFrame, min_output: int, as_underlying: bool
 ):
-    # Extract the relevant values (you can adjust this part to match your logic)
+    """Calculate the closeout pnl for a single position.
+    
+    Arguments
+    ---------
+    position: pd.DataFrame
+        The position to calculate the closeout pnl for (one row in current_wallet)
+    contract: Contract
+        The contract object
+    pool_info: pd.DataFrame
+        The pool info
+    min_output: int
+        The minimum output to be accepted, as part of slippage tolerance
+    as_underlying: bool
+        Whether or not to use the underlying token
+    """
     if position["baseTokenType"] == "BASE" or position["delta"] == 0:
         position["closeout_pnl"] = position["pnl"]
         return position
