@@ -1,3 +1,87 @@
+[project]
+name = "elfpy"
+version = "0.3.2"
+authors = [
+    { name = "Dylan Paiton", email = "dylan@delv.tech" },
+    { name = "Mihai Cosma", email = "mihai@delv.tech" },
+    { name = "Jonny Rhea", email = "jonny@delv.tech" },
+    { name = "Matthew Brown", email = "matt@delv.tech" },
+    { name = "Alex Towle", email = "alex@delv.tech" },
+    { name = "Sheng Lundquist", email = "sheng@delv.tech" },
+    { name = "Patrick Morris", email = "patrick@delv.tech" },
+    { name = "Giovanni Effio", email = "mazygio@delv.tech" },
+    { name = "Ryan Goree", email = "ryan@delv.tech" },
+    { name = "Will Villanueva", email = "will@delv.tech" },
+    { name = "Jacob Arruda", email = "jacob@delv.tech" },
+    { name = "Violet Vienhage", email = "violet@delv.tech" },
+]
+description = "Experiment management and market simulators by Delv"
+readme = "README.md"
+requires-python = ">=3.10, <3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache License 2.0",
+    "Operating System :: OS Independent",
+]
+line-length = "120"
+
+[project.optional-dependencies]
+with-dependencies = [
+    # Specify requirements
+    "astunparse",
+    "black",
+    "ipython",
+    "jupytext",
+    # Install fixedpointmath from github
+    # Note that this is pointing to main, so if any changes are made to fixedpointmath, we'll have to
+    # upgrade this package
+    "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
+    "matplotlib",
+    "nbconvert",
+    "numpy",
+    "pandas",
+    "pylint",
+    "pyright",
+    "pytest",
+    "python-dotenv",
+    "scipy",
+    "typing_extensions==4.5.0",
+    # bot dependencies
+    "web3",
+    "streamlit",
+    "mplfinance",
+    "flask",
+    "flask-expects-json",
+    "psycopg2-binary",
+    "sqlalchemy",
+    "pandas-stubs",
+]
+
+docs = [
+    "tomli>=2.0.1",
+    "sphinx>=6",
+    "sphinx_autodoc_typehints>=1.21.8",
+    "sphinx-autoapi>=2.0.1",
+    "myst-parser>=2.0.0",
+    "numpydoc>=1.5.0",
+    "sphinxcontrib-napoleon>=0.7",
+    "autodocsumm>=0.2.11",
+    "nbsphinx>=0.8.12",
+    "sphinx-rtd-theme>=1.2.2",
+    # urllib3 v2 requires OpenSSL v1.1.1+, but Vercel uses v1.0.2
+    "urllib3<2.0",
+]
+
+ape = ["ape-alchemy", "ape-etherscan", "ape-foundry", "ape-solidity", "eth-ape"]
+
+[project.urls]
+"Homepage" = "https://github.com/delvtech/elf-simulations"
+"Bug Tracker" = "https://github.com/delvtech/elf-simulations/issues"
+
+[build-system]
+requires = ["flit_core>=3.2"]
+build-backend = "flit_core.buildapi"
+
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
 
@@ -9,10 +93,7 @@ line-length = "120"
 extend-exclude = "\\.ipynb"
 
 [tool.pylance]
-exclude = [
-    "agent_0",
-    "hyperdrive_solidity",
-]
+exclude = ["agent_0", "hyperdrive_solidity"]
 
 [tool.pyright]
 exclude = [
@@ -49,7 +130,7 @@ line-length = 120
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-# Assume Python 3.10.
+# Assume Python 3.9.
 target-version = "py310"
 
 exclude = [
