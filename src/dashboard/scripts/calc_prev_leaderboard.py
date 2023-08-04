@@ -70,8 +70,8 @@ def combine_usernames(username: pd.Series) -> pd.DataFrame:
 def get_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Rank users by PNL, individually and bomined across their accounts."""
     pnl = pnl.reset_index()  # type: ignore
-    usernames = address_to_username(lookup, pnl["walletAddress"])
-    pnl.insert(1, "username", usernames.values.tolist())
+    wallet_usernames = address_to_username(lookup, pnl["walletAddress"])
+    pnl.insert(1, "username", wallet_usernames.values.tolist())
     # Hard coded funding provider from migration account
     migration_addr = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
     # Don't show this account
