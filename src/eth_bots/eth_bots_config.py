@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import logging
 
-from elfpy.agents.policies import Policies
 from fixedpointmath import FixedPoint
 
+from elfpy.agents.policies import Policies
 from src.eth_bots.core import AgentConfig, Budget, EnvironmentConfig
 
 # You can import custom policies here. For example:
@@ -34,14 +34,14 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
         base_abi="ERC20Mintable",
         username_register_url="http://localhost:5002",
         artifacts_url="http://localhost:8080",
-        rpc_url="http://localhost:8546",
+        rpc_url="http://localhost:8545",
         username="matt",
     )
 
     agent_config: list[AgentConfig] = [
         AgentConfig(
             policy=Policies.random_agent,
-            number_of_agents=1,
+            number_of_agents=3,
             slippage_tolerance=FixedPoint(0.0001),
             base_budget=Budget(
                 mean_wei=int(5_000e18),  # 5k base
