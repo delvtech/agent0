@@ -15,7 +15,7 @@ from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
 
-from src.eth.accounts.eth_wallet import EthWallet
+from .eth_wallet import EthWallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 Market = TypeVar(
