@@ -329,6 +329,13 @@ all_wallet_deltas.columns = [
     "delta",
 ]
 
+# The following address closes LP without any corresponding open LP
+# Also this address isn't registered anywhere
+# Ignore it in all_wallet_deltas
+all_wallet_deltas = all_wallet_deltas[
+    all_wallet_deltas["walletAddress"] != "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+]
+
 current_returns = calc_total_returns(config_data, pool_info_data, all_wallet_deltas)
 comb_rank, ind_rank = get_leaderboard(current_returns, user_lookup)
 
@@ -336,3 +343,11 @@ comb_rank, ind_rank = get_leaderboard(current_returns, user_lookup)
 # Run 1: No change needed
 # Run 2: Sheng Lundquist (click) + 500,000
 # Run 3: Dylan Paiton (click) - 1,000,000, Giovanni Effio (click) - 1,000,000
+database_name = str(engine.url.database)
+comb_rank.to_csv("../comb_rank_" + database_name + ".csv")
+ind_rank.to_csv("../ind_rank_" + database_name + ".csv")
+
+# Map wallet_addresses to users for wallet deltas
+usernames = address_to_username(user_lookup, all_wallet_deltas["walletAddress"])
+all_wallet_deltas.insert(1, "username", usernames.values.tolist())
+all_wallet_deltas.to_csv("../wallet_deltas_" + database_name + ".csv")

@@ -38,7 +38,6 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
     )
 
     # Sanity check, no tokens except base should dip below 0
-    # TODO this assertion doesn't work with calculating previous leaderboards, see why
     assert (current_wallet["delta"][current_wallet["baseTokenType"] != "BASE"] >= 0).all()
 
     # Calculate for base
