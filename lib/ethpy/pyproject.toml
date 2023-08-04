@@ -1,5 +1,6 @@
 [project]
 name = "ethpy"
+version = "0.0.0"
 authors = [
     { name = "Dylan Paiton", email = "dylan@delv.tech" },
     { name = "Mihai Cosma", email = "mihai@delv.tech" },

@@ -3,9 +3,8 @@ from __future__ import annotations
 
 import logging
 
-from fixedpointmath import FixedPoint
-
 from elfpy.agents.policies import Policies
+from fixedpointmath import FixedPoint
 from src.eth_bots.core import AgentConfig, Budget, EnvironmentConfig
 
 # You can import custom policies here. For example:
