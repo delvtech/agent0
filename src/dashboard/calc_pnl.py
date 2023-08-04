@@ -63,7 +63,14 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
     # Calculate for shorts
     # Short value = users_shorts * ( 1 - spot_price )
     # this could also be valued at 1 + ( p1 - p2 ) but we'd have to know their entry price (or entry base 🤔)
+    # TODO shorts inflate the pnl calculation. When opening a short, the "amount spent" is
+    # how much base is put up for collateral, but the amount of short shares are being calculated at some price
+    # This really should be, how much base do I get back if I close this short right now
     wallet_shorts = current_wallet[current_wallet["baseTokenType"] == "SHORT"]
+
+    # This calculation isn't quite right, this is not accounting for the trade spot price
+    # Should take into account the spot price slipping during the actual trade
+    # This will get fixed when we call preview smart contract transaction for pnl calculations
     short_spot_prices = calculate_spot_price_for_position(
         share_reserves=latest_pool_info["shareReserves"],
         bond_reserves=latest_pool_info["bondReserves"],
@@ -73,6 +80,7 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
         maturity_timestamp=wallet_shorts["maturityTime"],
         block_timestamp=block_timestamp,
     )
+
     shorts_returns = wallet_shorts["delta"] * (1 - short_spot_prices)
 
     # Calculate for longs
