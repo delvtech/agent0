@@ -13,7 +13,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.data.db_schema import Base, Transaction, UserMap
-from src.data.hyperdrive.db_schema import CheckpointInfo, PoolInfo, WalletDelta, WalletInfo
+from src.data.hyperdrive.db_schema import PoolInfo
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -312,7 +312,10 @@ class TableWithBlockNumber(Base):
     __abstract__ = True
 
     @declared_attr
+    # has to be camelCase to match table column name
+    # pylint: disable=invalid-name
     def blockNumber(self):
+        """Stubed blockNumber column."""
         return Column(String)
 
 
