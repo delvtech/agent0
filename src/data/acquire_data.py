@@ -263,7 +263,7 @@ class EthConfig:
     # Matching environemnt variables to search for
     # pylint: disable=invalid-name
     CONTRACTS_URL: str = "http://localhost:8080/addresses.json"
-    ETHEREUM_NODE: str = "http://localhost:8546"
+    ETHEREUM_NODE: str = "http://localhost:8545"
     ABI_DIR: str = "./packages/hyperdrive/src/"
 
 
