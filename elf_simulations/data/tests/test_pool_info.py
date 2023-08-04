@@ -77,18 +77,22 @@ class TestPoolInfoInterface:
         """Testing latest block number call"""
         timestamp_1 = datetime.fromtimestamp(1628472000)
         pool_info_1 = PoolInfo(blockNumber=1, timestamp=timestamp_1)
-        src.data.hyperdrive.postgres.add_pool_infos([pool_info_1], session)
+        elf_simulations.data.hyperdrive.postgres.add_pool_infos([pool_info_1], session)
 
-        latest_block_number = src.data.hyperdrive.postgres.get_latest_block_number_from_pool_info_table(session)
+        latest_block_number = elf_simulations.data.hyperdrive.postgres.get_latest_block_number_from_pool_info_table(
+            session
+        )
         assert latest_block_number == 1
 
         timestamp_1 = datetime.fromtimestamp(1628472002)
         pool_info_1 = PoolInfo(blockNumber=2, timestamp=timestamp_1)
         timestamp_2 = datetime.fromtimestamp(1628472004)
         pool_info_2 = PoolInfo(blockNumber=3, timestamp=timestamp_2)
-        src.data.hyperdrive.postgres.add_pool_infos([pool_info_1, pool_info_2], session)
+        elf_simulations.data.hyperdrive.postgres.add_pool_infos([pool_info_1, pool_info_2], session)
 
-        latest_block_number = src.data.hyperdrive.postgres.get_latest_block_number_from_pool_info_table(session)
+        latest_block_number = elf_simulations.data.hyperdrive.postgres.get_latest_block_number_from_pool_info_table(
+            session
+        )
         assert latest_block_number == 3
 
     def test_get_pool_info(self, session):
@@ -99,9 +103,9 @@ class TestPoolInfoInterface:
         pool_info_2 = PoolInfo(blockNumber=1, timestamp=timestamp_2)
         timestamp_3 = datetime.fromtimestamp(1628472004)
         pool_info_3 = PoolInfo(blockNumber=2, timestamp=timestamp_3)
-        src.data.hyperdrive.postgres.add_pool_infos([pool_info_1, pool_info_2, pool_info_3], session)
+        elf_simulations.data.hyperdrive.postgres.add_pool_infos([pool_info_1, pool_info_2, pool_info_3], session)
 
-        pool_info_df = src.data.hyperdrive.postgres.get_pool_info(session)
+        pool_info_df = elf_simulations.data.hyperdrive.postgres.get_pool_info(session)
         np.testing.assert_array_equal(
             pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1, timestamp_2, timestamp_3])
         )
@@ -114,23 +118,23 @@ class TestPoolInfoInterface:
         pool_info_2 = PoolInfo(blockNumber=1, timestamp=timestamp_2)
         timestamp_3 = datetime.fromtimestamp(1628472004)
         pool_info_3 = PoolInfo(blockNumber=2, timestamp=timestamp_3)
-        src.data.hyperdrive.postgres.add_pool_infos([pool_info_1, pool_info_2, pool_info_3], session)
+        elf_simulations.data.hyperdrive.postgres.add_pool_infos([pool_info_1, pool_info_2, pool_info_3], session)
 
-        pool_info_df = src.data.hyperdrive.postgres.get_pool_info(session, start_block=1)
+        pool_info_df = elf_simulations.data.hyperdrive.postgres.get_pool_info(session, start_block=1)
         np.testing.assert_array_equal(
             pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_2, timestamp_3])
         )
 
-        pool_info_df = src.data.hyperdrive.postgres.get_pool_info(session, start_block=-1)
+        pool_info_df = elf_simulations.data.hyperdrive.postgres.get_pool_info(session, start_block=-1)
         np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_3]))
 
-        pool_info_df = src.data.hyperdrive.postgres.get_pool_info(session, end_block=1)
+        pool_info_df = elf_simulations.data.hyperdrive.postgres.get_pool_info(session, end_block=1)
         np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1]))
 
-        pool_info_df = src.data.hyperdrive.postgres.get_pool_info(session, end_block=-1)
+        pool_info_df = elf_simulations.data.hyperdrive.postgres.get_pool_info(session, end_block=-1)
         np.testing.assert_array_equal(
             pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1, timestamp_2])
         )
 
-        pool_info_df = src.data.hyperdrive.postgres.get_pool_info(session, start_block=1, end_block=-1)
+        pool_info_df = elf_simulations.data.hyperdrive.postgres.get_pool_info(session, start_block=1, end_block=-1)
         np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_2]))

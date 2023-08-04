@@ -13,11 +13,10 @@ from eth_utils import address
 from web3 import Web3
 from web3.contract.contract import Contract
 
-import elf_simulations.data.hyperdrive.convert_data
 import elf_simulations.data.hyperdrive.postgres
 import elf_simulations.eth.transactions
 import elf_simulations.hyperdrive.addresses
-from elf_simulations import eth, hyperdrive
+from elf_simulations import data, eth, hyperdrive
 from elf_simulations.data import postgres
 
 # pylint: disable=too-many-arguments
@@ -64,7 +63,7 @@ def main(
 
     # send a request to the local server to fetch the deployed contract addresses and
     # all Hyperdrive contract addresses from the server response
-    addresses = src.hyperdrive.addresses.fetch_hyperdrive_address_from_url(contracts_url)
+    addresses = hyperdrive.addresses.fetch_hyperdrive_address_from_url(contracts_url)
     abis = eth.abi.load_all_abis(abi_dir)
 
     hyperdrive_contract = _get_hyperdrive_contract(web3, abis, addresses)
@@ -74,12 +73,14 @@ def main(
 
     # get pool config from hyperdrive contract
     pool_config_dict = hyperdrive.contract_interface.get_hyperdrive_config(hyperdrive_contract)
-    src.data.hyperdrive.postgres.add_pool_config(
-        src.data.hyperdrive.convert_data.convert_pool_config(pool_config_dict), session
+    data.hyperdrive.postgres.add_pool_config(
+        data.hyperdrive.convert_data.convert_pool_config(pool_config_dict), session
     )
 
     # Get last entry of pool info in db
-    data_latest_block_number = src.data.hyperdrive.postgres.get_latest_block_number_from_pool_info_table(session)
+    data_latest_block_number = elf_simulations.data.hyperdrive.postgres.get_latest_block_number_from_pool_info_table(
+        session
+    )
     # Using max of latest block in database or specified start block
     start_block = max(start_block, data_latest_block_number)
     # Parameterized start block number
@@ -98,27 +99,30 @@ def main(
     if data_latest_block_number < block_number < latest_mined_block:
         # Query and add block_pool_info
         pool_info_dict = hyperdrive.contract_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
-        src.data.hyperdrive.postgres.add_pool_infos(
-            [src.data.hyperdrive.convert_data.convert_pool_info(pool_info_dict)], session
+        elf_simulations.data.hyperdrive.postgres.add_pool_infos(
+            [elf_simulations.data.hyperdrive.convert_data.convert_pool_info(pool_info_dict)], session
         )
 
         # Query and add block_checkpoint_info
         checkpoint_info_dict = hyperdrive.contract_interface.get_hyperdrive_checkpoint_info(
             web3, hyperdrive_contract, block_number
         )
-        src.data.hyperdrive.postgres.add_checkpoint_infos(
-            [src.data.hyperdrive.convert_data.convert_checkpoint_info(checkpoint_info_dict)], session
+        elf_simulations.data.hyperdrive.postgres.add_checkpoint_infos(
+            [elf_simulations.data.hyperdrive.convert_data.convert_checkpoint_info(checkpoint_info_dict)], session
         )
 
         # Query and add block transactions
-        transactions = src.eth.transactions.fetch_contract_transactions_for_block(
+        transactions = elf_simulations.eth.transactions.fetch_contract_transactions_for_block(
             web3, hyperdrive_contract, block_number
         )
-        block_transactions, wallet_deltas = src.data.hyperdrive.convert_data.convert_hyperdrive_transactions_for_block(
+        (
+            block_transactions,
+            wallet_deltas,
+        ) = elf_simulations.data.hyperdrive.convert_data.convert_hyperdrive_transactions_for_block(
             hyperdrive_contract, transactions
         )
         postgres.add_transactions(block_transactions, session)
-        src.data.hyperdrive.postgres.add_wallet_deltas(wallet_deltas, session)
+        elf_simulations.data.hyperdrive.postgres.add_wallet_deltas(wallet_deltas, session)
 
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
@@ -154,8 +158,8 @@ def main(
                         continue
                 if pool_info_dict is None:
                     raise ValueError("Error in getting pool info")
-                block_pool_info = src.data.hyperdrive.convert_data.convert_pool_info(pool_info_dict)
-                src.data.hyperdrive.postgres.add_pool_infos([block_pool_info], session)
+                block_pool_info = elf_simulations.data.hyperdrive.convert_data.convert_pool_info(pool_info_dict)
+                elf_simulations.data.hyperdrive.postgres.add_pool_infos([block_pool_info], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 checkpoint_info_dict = None
@@ -171,21 +175,23 @@ def main(
                         continue
                 if checkpoint_info_dict is None:
                     raise ValueError("Error in getting checkpoint info")
-                block_checkpoint_info = src.data.hyperdrive.convert_data.convert_checkpoint_info(checkpoint_info_dict)
-                src.data.hyperdrive.postgres.add_checkpoint_infos([block_checkpoint_info], session)
+                block_checkpoint_info = elf_simulations.data.hyperdrive.convert_data.convert_checkpoint_info(
+                    checkpoint_info_dict
+                )
+                elf_simulations.data.hyperdrive.postgres.add_checkpoint_infos([block_checkpoint_info], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_transactions = None
                 wallet_deltas = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        transactions = src.eth.transactions.fetch_contract_transactions_for_block(
+                        transactions = elf_simulations.eth.transactions.fetch_contract_transactions_for_block(
                             web3, hyperdrive_contract, block_number
                         )
                         (
                             block_transactions,
                             wallet_deltas,
-                        ) = src.data.hyperdrive.convert_data.convert_hyperdrive_transactions_for_block(
+                        ) = elf_simulations.data.hyperdrive.convert_data.convert_hyperdrive_transactions_for_block(
                             hyperdrive_contract, transactions
                         )
                         break
@@ -202,14 +208,14 @@ def main(
                     raise ValueError("Error in getting transactions")
 
                 postgres.add_transactions(block_transactions, session)
-                src.data.hyperdrive.postgres.add_wallet_deltas(wallet_deltas, session)
+                elf_simulations.data.hyperdrive.postgres.add_wallet_deltas(wallet_deltas, session)
 
                 # TODO put the wallet info query as an optional block,
                 # and check these wallet values with what we get from the deltas
-                wallet_info_for_transactions = src.data.hyperdrive.convert_data.get_wallet_info(
+                wallet_info_for_transactions = elf_simulations.data.hyperdrive.convert_data.get_wallet_info(
                     hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
                 )
-                src.data.hyperdrive.postgres.add_wallet_infos(wallet_info_for_transactions, session)
+                elf_simulations.data.hyperdrive.postgres.add_wallet_infos(wallet_info_for_transactions, session)
         time.sleep(sleep_amount)
 
 
@@ -235,7 +241,7 @@ class EthConfig:
     # pylint: disable=invalid-name
     CONTRACTS_URL: str = "http://localhost:8080/addresses.json"
     ETHEREUM_NODE: str = "http://localhost:8545"
-    ABI_DIR: str = "./packages/hyperdrive/src/"
+    ABI_DIR: str = "./packages/hyperdrive/elf_simulations/"
 
 
 def build_eth_config() -> EthConfig:
@@ -288,7 +294,7 @@ if __name__ == "__main__":
 
 
 def _get_hyperdrive_contract(
-    web3: Web3, abis: dict, addresses: src.hyperdrive.addresses.HyperdriveAddresses
+    web3: Web3, abis: dict, addresses: elf_simulations.hyperdrive.addresses.HyperdriveAddresses
 ) -> Contract:
     """Get the hyperdrive contract given abis
 

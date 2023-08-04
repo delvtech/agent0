@@ -11,7 +11,6 @@ from elfpy.utils import logs
 from eth_account.account import Account
 from web3.contract.contract import Contract
 
-import elf_simulations.hyperdrive.addresses
 from elf_simulations import eth, hyperdrive
 from elf_simulations.eth.accounts.eth_account import EthAgent
 from elf_simulations.eth.rpc_interface import set_anvil_account_balance
@@ -79,7 +78,7 @@ def main() -> None:
 
     # Get the Hyperdrive contract.
     hyperdrive_abis = eth.abi.load_all_abis(config.abi_folder)
-    addresses = src.hyperdrive.addresses.fetch_hyperdrive_address_from_url(
+    addresses = hyperdrive.addresses.fetch_hyperdrive_address_from_url(
         os.path.join(config.artifacts_url, "addresses.json")
     )
     hyperdrive_contract: Contract = web3.eth.contract(
