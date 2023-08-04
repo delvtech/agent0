@@ -36,6 +36,8 @@ class PoolConfig(Base):
 class CheckpointInfo(Base):
     """Table/dataclass schema for checkpoint information"""
 
+    # pylint: disable=invalid-name
+
     __tablename__ = "checkpointinfo"
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -74,6 +76,7 @@ class PoolInfo(Base):
 class WalletInfo(Base):
     """Table/dataclass schema for wallet information."""
 
+    # pytlint: disable=invalid-name
     __tablename__ = "walletinfo"
 
     # Default table primary key
