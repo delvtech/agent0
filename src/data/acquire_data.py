@@ -7,7 +7,6 @@ import time
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
-from elfpy.utils import logs as log_utils
 from eth_typing import URI, BlockNumber
 from eth_utils import address
 from web3 import Web3
@@ -17,6 +16,7 @@ import src.data.hyperdrive.convert_data
 import src.data.hyperdrive.postgres
 import src.eth.transactions
 import src.hyperdrive.addresses
+from elfpy.utils import logs as log_utils
 from src import eth, hyperdrive
 from src.data import postgres
 
@@ -26,6 +26,35 @@ from src.data import postgres
 # pylint: disable=too-many-branches
 
 RETRY_COUNT = 10
+
+
+def _get_hyperdrive_contract(
+    web3: Web3, abis: dict, addresses: src.hyperdrive.addresses.HyperdriveAddresses
+) -> Contract:
+    """Get the hyperdrive contract given abis.
+
+    Arguments
+    ---------
+    web3: Web3
+        web3 provider object
+    abis: dict
+        A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
+    addresses: HyperdriveAddressesJson
+        The block number to query from the chain
+
+    Returns
+    -------
+    Contract
+        The contract object returned from the query
+    """
+    if "IHyperdrive" not in abis:
+        raise AssertionError("IHyperdrive ABI was not provided")
+    state_abi = abis["IHyperdrive"]
+    # get contract instance of hyperdrive
+    hyperdrive_contract: Contract = web3.eth.contract(
+        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
+    )
+    return hyperdrive_contract
 
 
 def main(
@@ -239,15 +268,13 @@ class EthConfig:
 
 
 def build_eth_config() -> EthConfig:
-    """Build an eth that looks for environmental variables.
-    If env var exists, use that, otherwise, default
+    """Build an eth config that looks for environmental variables. If env var exists, use that, otherwise, default.
 
     Returns
     -------
     EthConfig
         Config settings required to connect to the eth node
     """
-
     contracts_url = os.getenv("CONTRACTS_URL")
     ethereum_node = os.getenv("ETHEREUM_NODE")
     abi_dir = os.getenv("ABI_DIR")
@@ -285,32 +312,3 @@ if __name__ == "__main__":
         LOOKBACK_BLOCK_LIMIT,
         SLEEP_AMOUNT,
     )
-
-
-def _get_hyperdrive_contract(
-    web3: Web3, abis: dict, addresses: src.hyperdrive.addresses.HyperdriveAddresses
-) -> Contract:
-    """Get the hyperdrive contract given abis
-
-    Arguments
-    ---------
-    web3: Web3
-        web3 provider object
-    abis: dict
-        A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
-    addresses: HyperdriveAddressesJson
-        The block number to query from the chain
-
-    Returns
-    -------
-    Contract
-        The contract object returned from the query
-    """
-    if "IHyperdrive" not in abis:
-        raise AssertionError("IHyperdrive ABI was not provided")
-    state_abi = abis["IHyperdrive"]
-    # get contract instance of hyperdrive
-    hyperdrive_contract: Contract = web3.eth.contract(
-        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
-    )
-    return hyperdrive_contract
