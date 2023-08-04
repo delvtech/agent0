@@ -1,3 +1,4 @@
+"""Details what the agent holds, how it's changed over time, and how much it's worth."""
 from dataclasses import dataclass, field
 
 import numpy as np
