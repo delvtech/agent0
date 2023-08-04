@@ -23,7 +23,7 @@ def calc_single_closeout(
     position: pd.DataFrame, contract: Contract, pool_info: pd.DataFrame, min_output: int, as_underlying: bool
 ):
     """Calculate the closeout pnl for a single position.
-    
+
     Arguments
     ---------
     position: pd.DataFrame

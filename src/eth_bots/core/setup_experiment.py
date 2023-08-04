@@ -1,12 +1,11 @@
 """Setup helper function for running eth bot experiments."""
 from __future__ import annotations
-
-import os
 from http import HTTPStatus
+import os
 
+from elfpy.utils import logs
 import numpy as np
 import requests
-from elfpy.utils import logs
 from web3 import Web3
 from web3.contract.contract import Contract
 

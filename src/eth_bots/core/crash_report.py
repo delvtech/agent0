@@ -1,11 +1,10 @@
 """Utility function for logging bot crash reports."""
 from __future__ import annotations
-
 import json
 import logging
 
-import elfpy.utils.format as format_utils
 from elfpy.utils import logs
+import elfpy.utils.format as format_utils
 from web3.exceptions import InvalidTransaction
 
 from src.data.db_schema import Base

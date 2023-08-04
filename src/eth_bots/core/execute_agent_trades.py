@@ -1,18 +1,17 @@
 """Main script for running bots on Hyperdrive."""
 from __future__ import annotations
-
 import asyncio
-import logging
 from dataclasses import dataclass
+import logging
 from typing import NoReturn
 
-import eth_utils
 from elfpy import types
 from elfpy.markets.hyperdrive import HyperdriveMarket, MarketActionType
 from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction
 from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet import Long, Short
 from elfpy.wallet.wallet_deltas import WalletDeltas
+import eth_utils
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract

@@ -1,24 +1,23 @@
 """Script to format on-chain hyperdrive pool, config, and transaction data post-processing."""
 from __future__ import annotations
-
+from dataclasses import dataclass
 import logging
 import os
 import time
-from dataclasses import dataclass
 
 from dotenv import load_dotenv
-from eth_typing import URI, BlockNumber
+from elfpy.utils import logs as log_utils
+from eth_typing import BlockNumber, URI
 from eth_utils import address
 from web3 import Web3
 from web3.contract.contract import Contract
 
+from src import eth, hyperdrive
+from src.data import postgres
 import src.data.hyperdrive.convert_data
 import src.data.hyperdrive.postgres as postgres_hyperdrive
 import src.eth.transactions
 import src.hyperdrive.addresses
-from elfpy.utils import logs as log_utils
-from src import eth, hyperdrive
-from src.data import postgres
 
 # pylint: disable=too-many-arguments
 
