@@ -5,8 +5,8 @@ import unittest
 
 from fixedpointmath import FixedPoint
 
-import elfpy.time as time
-import elfpy.utils.price as price_utils
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.utils.price as price_utils
 
 
 class BasePriceTest(unittest.TestCase):

@@ -1,19 +1,20 @@
-"""Testing for the calculate_max_long function of the pricing models"""
+"""Testing for the calculate_max_long function of the pricing models."""
 from __future__ import annotations
 
 import unittest
 from dataclasses import dataclass
 
-import elfpy.time as time
-import elfpy.utils.logs as log_utils
-from elfpy.markets.hyperdrive import HyperdriveMarketState, HyperdrivePricingModel
-from elfpy.tests.fixtures.hyperdrive_config import HyperdriveConfig
 from fixedpointmath import FixedPoint
+
+import lib.elfpy.elfpy.utils.logs as log_utils
+from lib.elfpy.elfpy import time
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarketState, HyperdrivePricingModel
+from lib.elfpy.elfpy.tests.fixtures.hyperdrive_config import HyperdriveConfig
 
 
 @dataclass
 class TestCaseCalcMax:
-    """Dataclass for calculate_max_long test cases"""
+    """Dataclass for calculate_max_long test cases."""
 
     market_state: HyperdriveMarketState
     market_config: HyperdriveConfig
@@ -23,10 +24,10 @@ class TestCaseCalcMax:
 
 
 class TestCalculateMax(unittest.TestCase):
-    """Tests calculate_max_short and calculate_max_long functions within the pricing model"""
+    """Tests calculate_max_short and calculate_max_long functions within the pricing model."""
 
     def test_calculate_max_long(self):
-        """Tests that calculate_max_long and calculate_max_short are safe
+        """Tests that calculate_max_long and calculate_max_short are safe.
 
         Values from Hyperdrive
 
@@ -114,11 +115,12 @@ class TestCalculateMax(unittest.TestCase):
         log_utils.close_logging()
 
     def test_calculate_max_short(self):
-        """
-        Tests that calculate_max_long and calculate_max_short are safe, by checking
-            apr >= 0
-            share_price * market_state.share_reserves >= base_buffer
-            bond_reserves >= bond_buffer
+        """Tests that calculate_max_long and calculate_max_short are safe.
+
+        This is done by checking:
+        - apr >= 0
+        - share_price * market_state.share_reserves >= base_buffer
+        - bond_reserves >= bond_buffer
         """
         log_utils.setup_logging(log_filename="test_calculate_max")
         pricing_model: HyperdrivePricingModel = HyperdrivePricingModel()

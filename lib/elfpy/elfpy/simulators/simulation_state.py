@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING, Optional
 
 import pandas as pd
 
-import elfpy.time as time
-import elfpy.types as types
-from elfpy.markets.hyperdrive import HyperdriveMarketDeltas, HyperdriveMarketState
-from elfpy.simulators.smulation_config import SimulationConfig
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.types as types
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarketDeltas, HyperdriveMarketState
+from lib.elfpy.elfpy.simulators.smulation_config import SimulationConfig
 
 if TYPE_CHECKING:
-    from elfpy.wallet.wallet import Wallet
-    from elfpy.wallet.wallet_deltas import WalletDeltas
+    from lib.elfpy.elfpy.wallet.wallet import Wallet
+    from lib.elfpy.elfpy.wallet.wallet_deltas import WalletDeltas
 
 
 @dataclass

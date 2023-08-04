@@ -8,12 +8,12 @@ from os import path, walk
 import numpy as np
 from fixedpointmath import FixedPoint
 
-import elfpy.agents.policies as policies
-import elfpy.time as time
-import elfpy.types as types
-from elfpy.agents.agent import Agent
-from elfpy.agents.get_wallet_state import get_wallet_state
-from elfpy.agents.policies import (
+import lib.elfpy.elfpy.agents.policies as policies
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.types as types
+from lib.elfpy.elfpy.agents.agent import Agent
+from lib.elfpy.elfpy.agents.get_wallet_state import get_wallet_state
+from lib.elfpy.elfpy.agents.policies import (
     InitializeLiquidityAgent,
     LongLouie,
     LpAndWithdrawAgent,
@@ -24,10 +24,10 @@ from elfpy.agents.policies import (
     SingleLpAgent,
     SingleShortAgent,
 )
-from elfpy.agents.policies.base import BasePolicy
-from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
-from elfpy.wallet.wallet import Long, Wallet
-from elfpy.wallet.wallet_deltas import WalletDeltas
+from lib.elfpy.elfpy.agents.policies.base import BasePolicy
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
+from lib.elfpy.elfpy.wallet.wallet import Long, Wallet
+from lib.elfpy.elfpy.wallet.wallet_deltas import WalletDeltas
 
 # pylint: disable=too-few-public-methods
 

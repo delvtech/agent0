@@ -7,22 +7,22 @@ from typing import TYPE_CHECKING, Literal
 
 from fixedpointmath import FixedPoint, FixedPointMath
 
-import elfpy.markets.trades as trades
-import elfpy.time as time
-import elfpy.types as types
-from elfpy.markets.base import BaseMarketAction
-from elfpy.math.update_weighted_average import update_weighted_average
-from elfpy.time.time import StretchedTime
-from elfpy.wallet.wallet import Long, Short
-from elfpy.wallet.wallet_deltas import WalletDeltas
+from lib.elfpy.elfpy.math.update_weighted_average import update_weighted_average
+import lib.elfpy.elfpy.markets.trades as trades
+from lib.elfpy.elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.types as types
+from lib.elfpy.elfpy.markets.base import BaseMarketAction
+from lib.elfpy.elfpy.time.time import StretchedTime
+from lib.elfpy.elfpy.wallet.wallet import Long, Short
+from lib.elfpy.elfpy.wallet.wallet_deltas import WalletDeltas
 
 from .checkpoint import Checkpoint
-from .hyperdrive_market_deltas import HyperdriveMarketDeltas
-from .hyperdrive_pricing_model import HyperdrivePricingModel
 
 if TYPE_CHECKING:
-    from elfpy.markets.hyperdrive import HyperdriveMarketState
-    from elfpy.wallet.wallet import Wallet
+    from lib.elfpy.elfpy.wallet.wallet import Wallet
+    from lib.elfpy.elfpy.markets.hyperdrive.hyperdrive_market import HyperdriveMarketState
+    from lib.elfpy.elfpy.markets.hyperdrive import HyperdrivePricingModel
 
 
 # TODO: clean up to avoid these

@@ -6,38 +6,38 @@ import logging
 import unittest
 from typing import TYPE_CHECKING
 
-import elfpy.time as time
-import elfpy.types as types
-import elfpy.utils.logs as log_utils
-from elfpy.markets.hyperdrive import (
+from fixedpointmath import FixedPoint
+from fixedpointmath import errors as fperrors
+
+import lib.elfpy.elfpy.utils.logs as log_utils
+from lib.elfpy.elfpy import time, types
+from lib.elfpy.elfpy.markets.hyperdrive import (
     HyperdriveMarketState,
     HyperdrivePricingModel,
     YieldspacePricingModel,
     hyperdrive_actions,
 )
-from elfpy.tests.pricing_models.calc_test_dataclasses import (
+from lib.elfpy.elfpy.tests.pricing_models.calc_test_dataclasses import (
     CalcInGivenOutFailureTestCase,
     CalcInGivenOutSuccessByModelTestResult,
     CalcInGivenOutSuccessTestCase,
     CalcInGivenOutSuccessTestResult,
 )
-from fixedpointmath import FixedPoint
-from fixedpointmath import errors as fperrors
 
 if TYPE_CHECKING:
-    from elfpy.markets.base import BasePricingModel
+    from lib.elfpy.elfpy.markets.base import BasePricingModel
 
 # pylint: disable=too-many-lines
 
 
 class TestCalcInGivenOut(unittest.TestCase):
-    """Unit tests for the calc_in_given_out function"""
+    """Unit tests for the calc_in_given_out function."""
 
     APPROX_EQ: FixedPoint = FixedPoint(1e-8)
 
     # TODO: Add tests for the full TradeResult object
     def test_calc_in_given_out_success(self):
-        """Success tests for calc_in_given_out"""
+        """Success tests for calc_in_given_out."""
         log_utils.setup_logging("test_calc_in_given_out_failure")
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),
@@ -104,9 +104,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         log_utils.close_logging()
 
     def test_calc_in_given_out_precision(self):
-        """
-        This test ensures that the pricing model can handle very extreme inputs
-        such as extremely small inputs with extremely large reserves.
+        """Ensure that the pricing model can handle very extreme inputs (small inputs and large reserves).
 
         .. todo:: This should be multiple tests for base & pt trade type
         """
@@ -177,7 +175,7 @@ class TestCalcInGivenOut(unittest.TestCase):
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     # issue #57
     def test_calc_in_given_out_failure(self):
-        """Failure tests for calc_in_given_out"""
+        """Failure tests for calc_in_given_out."""
         log_utils.setup_logging("test_calc_in_given_out_success")
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),

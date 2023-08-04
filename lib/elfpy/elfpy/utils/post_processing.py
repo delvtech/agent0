@@ -3,7 +3,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 import pandas as pd
 
-import elfpy.simulators as simulators
+import lib.elfpy.elfpy.simulators as simulators
 
 # pyright: reportGeneralTypeIssues=false
 # pyright: reportOptionalMemberAccess=false

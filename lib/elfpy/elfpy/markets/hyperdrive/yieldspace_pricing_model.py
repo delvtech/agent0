@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-import elfpy.agents.agent_trade_result as agent_trade_result
-import elfpy.markets.hyperdrive.market_action_result as market_action_result
-import elfpy.markets.trades as trades
-import elfpy.time as time
-import elfpy.types as types
-from elfpy.markets.base import BasePricingModel
+import lib.elfpy.elfpy.agents.agent_trade_result as agent_trade_result
+import lib.elfpy.elfpy.markets.hyperdrive.market_action_result as market_action_result
+import lib.elfpy.elfpy.markets.trades as trades
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.types as types
+from lib.elfpy.elfpy.markets.base import BasePricingModel
 
 if TYPE_CHECKING:
     from .hyperdrive_market import HyperdriveMarketState

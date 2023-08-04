@@ -3,10 +3,10 @@ import unittest
 
 from fixedpointmath import FixedPoint
 
-import elfpy.time as time
-import elfpy.utils.price as price_utils
-from elfpy.markets.base import BasePricingModel
-from elfpy.markets.hyperdrive import HyperdriveMarketState
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.utils.price as price_utils
+from lib.elfpy.elfpy.markets.base import BasePricingModel
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarketState
 
 
 class TestSpotPriceCalculations(unittest.TestCase):

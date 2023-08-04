@@ -7,16 +7,16 @@ from dataclasses import dataclass
 from typing import NoReturn
 
 import eth_utils
-from elfpy import types
-from elfpy.markets.hyperdrive import HyperdriveMarket, MarketActionType
-from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction
-from elfpy.types import Quantity, TokenType
-from elfpy.wallet.wallet import Long, Short
-from elfpy.wallet.wallet_deltas import WalletDeltas
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
 
+from lib.elfpy.elfpy import types
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarket, MarketActionType
+from lib.elfpy.elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction
+from lib.elfpy.elfpy.types import Quantity, TokenType
+from lib.elfpy.elfpy.wallet.wallet import Long, Short
+from lib.elfpy.elfpy.wallet.wallet_deltas import WalletDeltas
 from src import eth, hyperdrive
 from src.eth.accounts import EthAgent
 from src.eth.errors import UnknownBlockError
@@ -29,6 +29,7 @@ from src.eth.transactions import smart_contract_preview_transaction
 @dataclass
 class ReceiptBreakdown:
     r"""A granular breakdown of important values in a trade receipt."""
+
     asset_id: int = 0
     maturity_time_seconds: int = 0
     base_amount: FixedPoint = FixedPoint(0)
@@ -37,6 +38,7 @@ class ReceiptBreakdown:
     withdrawal_share_amount: FixedPoint = FixedPoint(0)
 
     def __post_init__(self):
+        """Throw an error if any of the arguments are negative."""
         if (
             self.base_amount < 0
             or self.bond_amount < 0
@@ -116,8 +118,9 @@ async def async_execute_single_agent_trade(
     hyperdrive_contract: Contract,
     hyperdrive_market: HyperdriveMarket,
 ) -> None:
-    """Executes a single agent's trade. This function is async as
-    `match_contract_call_to_trade` waits for a transaction receipt
+    """Execute a single agent's trade.
+
+    This function is async as `match_contract_call_to_trade` waits for a transaction receipt.
 
     Arguments
     ---------
@@ -178,7 +181,7 @@ async def async_execute_agent_trades(
 
 
 def assert_never(arg: NoReturn) -> NoReturn:
-    """Helper function for exhaustive matching on ENUMS"""
+    """Exhaustively match on ENUMS."""
     assert False, f"Unhandled type: {type(arg).__name__}"
 
 
@@ -201,7 +204,7 @@ async def async_match_contract_call_to_trade(
         The elfpy trading market
     agent : EthAgent
         Object containing a wallet address and Elfpy Agent for determining trades
-    trade_object : Trade
+    trade_envelope : types.Trade[HyperdriveMarketAction]
         A specific trade requested by the given agent
 
     Returns

@@ -3,18 +3,18 @@ import unittest
 
 from fixedpointmath import FixedPoint
 
-import elfpy.time as time
-import elfpy.types as types
-from elfpy.agents.agent import Agent
-from elfpy.agents.policies import NoActionPolicy
-from elfpy.markets.hyperdrive import (
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.types as types
+from lib.elfpy.elfpy.agents.agent import Agent
+from lib.elfpy.elfpy.agents.policies import NoActionPolicy
+from lib.elfpy.elfpy.markets.hyperdrive import (
     Checkpoint,
     HyperdriveMarket,
     HyperdriveMarketState,
     HyperdrivePricingModel,
     YieldspacePricingModel,
 )
-from elfpy.time.time import StretchedTime
+from lib.elfpy.elfpy.time.time import StretchedTime
 
 # pylint: disable=too-many-arguments
 

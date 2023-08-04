@@ -4,7 +4,7 @@ from __future__ import annotations
 import unittest
 from dataclasses import dataclass
 
-from elfpy.types import freezable
+from lib.elfpy.elfpy.types import freezable
 
 # dynamic member attribution breaks pylint
 # pylint: disable=no-member

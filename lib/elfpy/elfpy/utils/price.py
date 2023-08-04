@@ -3,7 +3,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 from fixedpointmath import FixedPoint
 
-import elfpy.time as time
+import lib.elfpy.elfpy.time as time
 
 
 ### Spot Price and APR ###

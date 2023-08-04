@@ -6,7 +6,7 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler
 
-import elfpy
+import lib.elfpy.elfpy as elfpy
 
 
 def setup_logging(

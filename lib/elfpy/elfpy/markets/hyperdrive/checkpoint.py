@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from elfpy import FixedPoint
+from fixedpointmath import FixedPoint
 
 
 @dataclass

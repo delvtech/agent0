@@ -8,11 +8,11 @@ import numpy as np
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 
-import elfpy.time as time
-import elfpy.types as types
-from elfpy.agents.get_wallet_state import get_wallet_state
-from elfpy.markets.hyperdrive import HyperdriveMarketDeltas
-from elfpy.simulators.simulation_state import (
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.types as types
+from lib.elfpy.elfpy.agents.get_wallet_state import get_wallet_state
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarketDeltas
+from lib.elfpy.elfpy.simulators.simulation_state import (
     BlockSimVariables,
     DaySimVariables,
     NewSimulationState,
@@ -20,11 +20,11 @@ from elfpy.simulators.simulation_state import (
     SimulationState,
     TradeSimVariables,
 )
-from elfpy.simulators.smulation_config import SimulationConfig
+from lib.elfpy.elfpy.simulators.smulation_config import SimulationConfig
 
 if TYPE_CHECKING:
-    from elfpy.agents.agent import Agent
-    from elfpy.markets.hyperdrive import HyperdriveMarket
+    from lib.elfpy.elfpy.agents.agent import Agent
+    from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarket
 
 
 class Simulator:

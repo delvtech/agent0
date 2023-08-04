@@ -1,15 +1,14 @@
-"""Helper functions for interfacing with hyperdrive"""
+"""Helper functions for interfacing with hyperdrive."""
 from __future__ import annotations
 
 import logging
 import re
 import time
 from datetime import datetime
+from http import HTTPStatus
 from typing import Any
 
 import requests
-from elfpy import time as elftime
-from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from eth_typing import BlockNumber
 from eth_utils import address
 from fixedpointmath import FixedPoint
@@ -17,6 +16,8 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
+from lib.elfpy.elfpy import time as elftime
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from src import eth
 from src.hyperdrive.addresses import HyperdriveAddresses
 from src.hyperdrive.assets import AssetIdPrefix, encode_asset_id
@@ -30,7 +31,7 @@ def fetch_hyperdrive_address_from_url(contracts_url: str) -> HyperdriveAddresses
     for _ in range(100):
         response = requests.get(contracts_url, timeout=60)
         # Check the status code and retry the request if it fails
-        if response.status_code != 200:
+        if response.status_code != HTTPStatus.OK:
             logging.warning(
                 "Request for contracts_url=%s failed with status code %s @ %s",
                 contracts_url,
@@ -43,7 +44,7 @@ def fetch_hyperdrive_address_from_url(contracts_url: str) -> HyperdriveAddresses
         break
     if response is None:
         raise ConnectionError("Request failed, returning status `None`")
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
     addresses_json = response.json()
 
@@ -55,7 +56,7 @@ def fetch_hyperdrive_address_from_url(contracts_url: str) -> HyperdriveAddresses
 
 
 def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses) -> Contract:
-    """Get the hyperdrive contract given abis
+    """Get the hyperdrive contract given abis.
 
     Arguments
     ---------
@@ -123,7 +124,7 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
 def get_hyperdrive_checkpoint_info(
     web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber
 ) -> dict[str, Any]:
-    """Returns the checkpoint info of Hyperdrive contract for the given block.
+    """Return the checkpoint info of Hyperdrive contract for the given block.
 
     Arguments
     ---------
@@ -154,12 +155,13 @@ def get_hyperdrive_checkpoint_info(
 
 
 def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict[str, Any]:
-    """Get the hyperdrive config from a deployed hyperdrive contract. This function converts all contract returns as
-    FixedPoints (i.e., contract call returned a scaled value), integer (i.e., contract call returned an unscaled value),
-    or a string (i.e., contract call returned a string)
+    """Get the hyperdrive config from a deployed hyperdrive contract.
+
+    This function converts all contract returns as FixedPoints (i.e., contract call returned a scaled value),
+     integer (i.e., contract call returned an unscaled value), or a string (i.e., contract call returned a string).
 
     Arguments
-    ----------
+    ---------
     hyperdrive_contract : Contract
         The deployed hyperdrive contract instance.
 
@@ -194,7 +196,7 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict[str, Any]:
 
 
 def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> HyperdriveMarket:
-    """Constructs an elfpy HyperdriveMarket from the onchain hyperdrive constract state"""
+    """Construct an elfpy HyperdriveMarket from the onchain hyperdrive constract state."""
     earliest_block = web3.eth.get_block("earliest")
     current_block = web3.eth.get_block("latest")
     pool_config = get_hyperdrive_config(hyperdrive_contract)

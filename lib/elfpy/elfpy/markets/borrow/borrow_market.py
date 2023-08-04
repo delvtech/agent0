@@ -8,21 +8,20 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from elfpy.markets.base import BaseMarket, BaseMarketAction
-from elfpy.types import Quantity, TokenType, freezable
-from elfpy.wallet.wallet import Borrow
-from elfpy.wallet.wallet_deltas import WalletDeltas
-
-from .borrow_market_deltas import BorrowMarketDeltas
-from .borrow_market_state import BorrowMarketState
-from .borrow_pricing_model import BorrowPricingModel
+from lib.elfpy.elfpy.markets.base import BaseMarket, BaseMarketAction
+from lib.elfpy.elfpy.markets.borrow.borrow_market_deltas import BorrowMarketDeltas
+from lib.elfpy.elfpy.markets.borrow.borrow_market_state import BorrowMarketState
+from lib.elfpy.elfpy.markets.borrow.borrow_pricing_model import BorrowPricingModel
+from lib.elfpy.elfpy.types import Quantity, TokenType, freezable
+from lib.elfpy.elfpy.wallet.wallet import Borrow
+from lib.elfpy.elfpy.wallet.wallet_deltas import WalletDeltas
 
 if TYPE_CHECKING:
-    from elfpy.wallet.wallet import Wallet
+    from lib.elfpy.elfpy.wallet.wallet import Wallet
 
 
 class MarketActionType(Enum):
-    r"""Enumerate actions available in this market"""
+    r"""Enumerate actions available in this market."""
 
     OPEN_BORROW = "open_borrow"
     CLOSE_BORROW = "close_borrow"
@@ -31,7 +30,7 @@ class MarketActionType(Enum):
 @freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class BorrowMarketAction(BaseMarketAction):
-    r"""Market action specification"""
+    r"""Market action specification."""
 
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
@@ -41,7 +40,7 @@ class BorrowMarketAction(BaseMarketAction):
 
 
 class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPricingModel]):
-    r"""Market state simulator
+    r"""Market state simulator.
 
     Holds state variables for market simulation and executes trades.
     The Market class executes trades by updating market variables according to the given pricing model.
@@ -56,11 +55,10 @@ class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPrici
 
     @property
     def total_profit(self) -> FixedPoint:
-        """
-        From the market's perspective, the profit is the difference between the borrowed and deposited assets
+        """From the market's perspective, the profit is the difference between the borrowed and deposited assets
         This is composed of two parts:
             uncollected profit = borrow_shares * share_price - borrow_outstanding
-            collected profit = borrow_closed_interest
+            collected profit = borrow_closed_interest.
         """
         return (
             self.market_state.borrow_shares * self.market_state.borrow_share_price
@@ -70,7 +68,7 @@ class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPrici
 
     @property
     def borrow_rate(self) -> FixedPoint:
-        """The borrow rate is the lending rate multiplied by the spread ratio"""
+        """The borrow rate is the lending rate multiplied by the spread ratio."""
         return self.market_state.lending_rate * self.market_state.spread_ratio
 
     @property
@@ -93,10 +91,10 @@ class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPrici
         return market_deltas, agent_deltas
 
     def check_action(self, agent_action: BorrowMarketAction) -> None:
-        r"""Ensure that the agent action is an allowed action for this market
+        r"""Ensure that the agent action is an allowed action for this market.
 
         Arguments
-        ----------
+        ---------
         agent_action : MarketAction
             Checks if the agent_action.action_type is in the list of all available actions for this market
 
@@ -110,8 +108,7 @@ class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPrici
     def perform_action(
         self, action_details: tuple[int, BorrowMarketAction]
     ) -> tuple[int, WalletDeltas, BorrowMarketDeltas]:
-        r"""
-        Execute a trade in the Borrow Market
+        r"""Execute a trade in the Borrow Market.
 
         open_borrow
             value the collateral being offered and return a borrow amount of the maximum amount that can be borrowed
@@ -154,9 +151,8 @@ class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPrici
         collateral: Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
     ) -> tuple[BorrowMarketDeltas, WalletDeltas]:
-        """
-        execute a borrow as requested by the agent, return the market and agent deltas
-        agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them
+        """Execute a borrow as requested by the agent, return the market and agent deltas
+        agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them.
         """
         _, borrow_amount_in_base = self.pricing_model.value_collateral(
             loan_to_value_ratio=self.market_state.loan_to_value_ratio,
@@ -206,9 +202,8 @@ class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPrici
         collateral: Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
     ) -> tuple[BorrowMarketDeltas, WalletDeltas]:
-        """
-        close a borrow as requested by the agent, return the market and agent deltas
-        agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it)
+        """Close a borrow as requested by the agent, return the market and agent deltas
+        agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it).
         """
         _, borrow_amount_in_base = self.pricing_model.value_collateral(
             loan_to_value_ratio=self.market_state.loan_to_value_ratio,
@@ -251,7 +246,7 @@ class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPrici
         return market_deltas, agent_deltas
 
     def update_share_prices(self, compound_vault_apr=True) -> None:
-        """Increment share price to account for accrued interest based on the current borrow rate"""
+        """Increment share price to account for accrued interest based on the current borrow rate."""
         if compound_vault_apr:  # Apply return to latest price (full compounding)
             price_multiplier = self.market_state.borrow_share_price
         else:  # Apply return to starting price (no compounding)
@@ -266,7 +261,7 @@ class BorrowMarket(BaseMarket[BorrowMarketState, BorrowMarketDeltas, BorrowPrici
         self.update_market(delta)  # save the delta of borrow share price into the market
 
     def log_market_step_string(self) -> None:
-        """Logs the current market step"""
+        """Logs the current market step."""
         logging.debug(
             ("t = %g\nborrow_asset = %g\ndeposit_assets = %g\nborrow_rate = %g"),
             self.block_time.time,

@@ -7,10 +7,10 @@ import unittest
 import numpy as np
 from fixedpointmath import FixedPoint
 
-import elfpy.time as time
-import elfpy.types as types
-import elfpy.utils.logs as log_utils
-from elfpy.markets.borrow import BorrowMarket, BorrowMarketState, BorrowPricingModel
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.types as types
+import lib.elfpy.elfpy.utils.logs as log_utils
+from lib.elfpy.elfpy.markets.borrow import BorrowMarket, BorrowMarketState, BorrowPricingModel
 
 
 class TestBorrow(unittest.TestCase):

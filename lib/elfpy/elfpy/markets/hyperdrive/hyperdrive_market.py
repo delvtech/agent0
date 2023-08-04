@@ -8,22 +8,21 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-import elfpy
-import elfpy.errors.errors as errors
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.time as time
-import elfpy.types as types
-import elfpy.utils.price as price_utils
-from elfpy.markets.base import BaseMarket, BaseMarketState
-from elfpy.wallet.wallet_deltas import WalletDeltas
-
-from .checkpoint import Checkpoint
-from .hyperdrive_actions import HyperdriveMarketAction, MarketActionType
-from .hyperdrive_market_deltas import HyperdriveMarketDeltas
-from .hyperdrive_pricing_model import HyperdrivePricingModel
+from lib.elfpy.elfpy import check_non_zero
+import lib.elfpy.elfpy.errors.errors as errors
+from lib.elfpy.elfpy.markets.hyperdrive.checkpoint import Checkpoint
+import lib.elfpy.elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+from lib.elfpy.elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
+from lib.elfpy.elfpy.markets.hyperdrive.hyperdrive_pricing_model import HyperdrivePricingModel
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.types as types
+import lib.elfpy.elfpy.utils.price as price_utils
+from lib.elfpy.elfpy.markets.base import BaseMarket, BaseMarketState
+from lib.elfpy.elfpy.wallet.wallet_deltas import WalletDeltas
+from lib.elfpy.elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction, MarketActionType
 
 if TYPE_CHECKING:
-    from elfpy.wallet.wallet import Wallet
+    from lib.elfpy.elfpy.wallet.wallet import Wallet
 
 # dataclasses can have many attributes
 # pylint: disable=too-many-instance-attributes
@@ -165,7 +164,7 @@ class HyperdriveMarketState(BaseMarketState):
         """Test that all market state variables are greater than zero"""
         if dictionary is None:
             dictionary = self.__dict__
-        elfpy.check_non_zero(dictionary)
+        check_non_zero(dictionary)
 
 
 class HyperdriveMarket(

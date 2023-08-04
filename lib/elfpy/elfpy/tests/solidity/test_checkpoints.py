@@ -4,12 +4,17 @@ import unittest
 
 from fixedpointmath import FixedPoint
 
-import elfpy.time as time
-from elfpy import types
-from elfpy.agents.agent import Agent
-from elfpy.agents.policies import NoActionPolicy
-from elfpy.errors import errors
-from elfpy.markets.hyperdrive import Checkpoint, HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
+import lib.elfpy.elfpy.time as time
+from lib.elfpy.elfpy import types
+from lib.elfpy.elfpy.agents.agent import Agent
+from lib.elfpy.elfpy.agents.policies import NoActionPolicy
+from lib.elfpy.elfpy.errors import errors
+from lib.elfpy.elfpy.markets.hyperdrive import (
+    Checkpoint,
+    HyperdriveMarket,
+    HyperdriveMarketState,
+    HyperdrivePricingModel,
+)
 
 # TODO: refactor solidity tests as a separate PR to consolidate setUps
 # TODO: Remove duplicate code disable once float code is removed
@@ -101,7 +106,8 @@ class TestCheckpoint(unittest.TestCase):
         # Ensure that the long and short balance wasn't effected by the checkpoint (the long and
         # short haven't matured yet).
         self.assertEqual(
-            self.hyperdrive.market_state.longs_outstanding, long_wallet_deltas.longs[checkpoint_time].balance
+            self.hyperdrive.market_state.longs_outstanding,
+            long_wallet_deltas.longs[checkpoint_time].balance,
         )
         self.assertEqual(self.hyperdrive.market_state.shorts_outstanding, short_amount)
 

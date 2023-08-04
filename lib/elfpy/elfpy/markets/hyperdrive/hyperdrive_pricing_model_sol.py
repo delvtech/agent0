@@ -5,7 +5,7 @@ from typing import NamedTuple
 
 from fixedpointmath import FixedPoint
 
-from elfpy.markets.hyperdrive import yieldspace_pricing_model_sol
+from lib.elfpy.elfpy.markets.hyperdrive import yieldspace_pricing_model_sol
 
 # Let the variable names be the same as their solidity counterpart so that it is easier to compare
 # the two.  We can make python wrappers that just call these methods that have better variable names

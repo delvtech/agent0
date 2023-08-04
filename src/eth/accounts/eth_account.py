@@ -1,17 +1,17 @@
-"""Empty accounts for engaging with smart contracts"""
+"""Empty accounts for engaging with smart contracts."""
 from __future__ import annotations
 
 import logging
 from typing import Generic, TypeVar
 
-from elfpy.agents.policies import BasePolicy, NoActionPolicy
-from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketAction, MarketActionType
-from elfpy.types import MarketType, Quantity, TokenType, Trade
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
 
+from lib.elfpy.elfpy.agents.policies import BasePolicy, NoActionPolicy
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketAction, MarketActionType
+from lib.elfpy.elfpy.types import MarketType, Quantity, TokenType, Trade
 from src.eth.accounts.eth_wallet import EthWallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
@@ -24,13 +24,13 @@ MarketAction = TypeVar(
 
 
 class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
-    r"""Enact policies on smart contracts and tracks wallet state"""
+    r"""Enact policies on smart contracts and tracks wallet state."""
 
     def __init__(self, account: LocalAccount, policy: Policy | None = None):
-        """Initialize an agent and wallet account
+        """Initialize an agent and wallet account.
 
         Arguments
-        ----------
+        ---------
         account : LocalAccount
             A Web3 local account for storing addresses & signing transactions.
         policy : Policy
@@ -44,7 +44,7 @@ class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
         .. code-block:: python
 
             >>> from eth_account.account import Account
-            >>> from elfpy.eth.accounts.eth_account import EthAgent
+            >>> from lib.elfpy.elfpy.eth.accounts.eth_account import EthAgent
             >>> agent = EthAgent(Account().create("CHECKPOINT_BOT"))
 
         Alternatively, you can also use the Account api to provide a pre-generated key:
@@ -52,7 +52,7 @@ class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
         .. code-block:: python
 
             >>> from eth_account.account import Account
-            >>> from elfpy.eth.accounts.eth_account import EthAgent
+            >>> from lib.elfpy.elfpy.eth.accounts.eth_account import EthAgent
             >>> agent = EthAgent(Account().from_key(agent_private_key))
 
         The EthAgent has the same properties as a Web3 LocalAgent.
@@ -78,12 +78,12 @@ class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
 
     @property
     def checksum_address(self) -> ChecksumAddress:
-        """Return the checksum address of the account"""
+        """Return the checksum address of the account."""
         return Web3.to_checksum_address(self.address)
 
     @property
     def liquidation_trades(self) -> list[Trade[MarketAction]]:
-        """List of trades that liquidate all open positions
+        """List of trades that liquidate all open positions.
 
         Returns
         -------
@@ -137,10 +137,10 @@ class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
         return action_list
 
     def get_trades(self, market: Market) -> list[Trade[MarketAction]]:
-        """Helper function for computing a agent trade
+        """Retrive trades that an agent wants to execute on the next block.
 
         Arguments
-        ----------
+        ---------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
 

@@ -1,39 +1,39 @@
-"""Testing for the calc_out_given_in of the pricing models"""
+"""Testing for the calc_out_given_in of the pricing models."""
 from __future__ import annotations
 
 import logging
 import unittest
 
-import elfpy.time as time
-import elfpy.types as types
-import elfpy.utils.logs as log_utils
-from elfpy.markets.base import BasePricingModel
-from elfpy.markets.hyperdrive import (
+from fixedpointmath import FixedPoint
+from fixedpointmath import errors as fperrors
+
+import lib.elfpy.elfpy.utils.logs as log_utils
+from lib.elfpy.elfpy import time, types
+from lib.elfpy.elfpy.markets.base import BasePricingModel
+from lib.elfpy.elfpy.markets.hyperdrive import (
     HyperdriveMarketState,
     HyperdrivePricingModel,
     YieldspacePricingModel,
     hyperdrive_actions,
 )
-from elfpy.tests.pricing_models.calc_test_dataclasses import (
+from lib.elfpy.elfpy.tests.pricing_models.calc_test_dataclasses import (
     CalcOutGivenInFailureTestCase,
     CalcOutGivenInSuccessByModelTestResult,
     CalcOutGivenInSuccessTestCase,
     CalcOutGivenInSuccessTestResult,
 )
-from fixedpointmath import FixedPoint
-from fixedpointmath import errors as fperrors
 
 # pylint: disable=too-many-lines
 
 
 class TestCalcOutGivenIn(unittest.TestCase):
-    """Unit tests for the calc_out_given_in function"""
+    """Unit tests for the calc_out_given_in function."""
 
     APPROX_EQ: FixedPoint = FixedPoint(1e-8)
 
     # TODO: Add tests for the full TradeResult object.
     def test_calc_out_given_in_success(self):
-        """Success tests for calc_out_given_in"""
+        """Success tests for calc_out_given_in."""
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),
             HyperdrivePricingModel(),
@@ -1370,10 +1370,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     raise AssertionError(f'Expected model_name to be "YieldSpace", not {model_name}')
 
     def test_calc_out_given_in_precision(self):
-        """
-        This test ensures that the pricing model can handle very extreme inputs
-        such as extremely small inputs with extremely large reserves.
-        """
+        """Ensure that the pricing model can handle very extreme inputs (small inputs and large reserves)."""
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),
             HyperdrivePricingModel(),
@@ -1437,7 +1434,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
 
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     def test_calc_out_given_in_failure(self):
-        """Failure tests for calc_out_given_in"""
+        """Failure tests for calc_out_given_in."""
         log_utils.setup_logging("test_calc_out_given_in")
         pricing_models: list[BasePricingModel] = [
             YieldspacePricingModel(),

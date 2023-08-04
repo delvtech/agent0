@@ -5,7 +5,7 @@ import unittest
 
 from fixedpointmath import FixedPoint
 
-import elfpy.time as time
+import lib.elfpy.elfpy.time as time
 
 
 class TestTimeUtils(unittest.TestCase):

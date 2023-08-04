@@ -8,11 +8,11 @@ from dataclasses import dataclass
 
 from fixedpointmath import FixedPoint
 
-import elfpy.markets.trades as trades
-import elfpy.time as time
-import elfpy.types as types
-import elfpy.utils.logs as log_utils
-from elfpy.markets.hyperdrive import HyperdriveMarketDeltas, HyperdriveMarketState, HyperdrivePricingModel
+import lib.elfpy.elfpy.markets.trades as trades
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.types as types
+import lib.elfpy.elfpy.utils.logs as log_utils
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarketDeltas, HyperdriveMarketState, HyperdrivePricingModel
 
 
 @dataclass

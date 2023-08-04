@@ -5,11 +5,11 @@ import logging
 import unittest
 from datetime import datetime
 
-import elfpy.utils.logs as log_utils
-from elfpy.simulators.smulation_config import SimulationConfig
-from elfpy.utils import sim_utils
 from web3.exceptions import InvalidTransaction
 
+import lib.elfpy.elfpy.utils.logs as log_utils
+from lib.elfpy.elfpy.simulators.smulation_config import SimulationConfig
+from lib.elfpy.elfpy.utils import sim_utils
 from src.data.db_schema import PoolConfig, PoolInfo
 from src.eth_bots.core import crash_report
 

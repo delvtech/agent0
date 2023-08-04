@@ -4,10 +4,10 @@ from __future__ import annotations
 import json
 import logging
 
-import elfpy.utils.format as format_utils
-from elfpy.utils import logs
 from web3.exceptions import InvalidTransaction
 
+import lib.elfpy.elfpy.utils.format as format_utils
+from lib.elfpy.elfpy.utils import logs
 from src.data.db_schema import Base, PoolConfig, PoolInfo
 
 

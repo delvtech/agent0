@@ -7,9 +7,9 @@ import os
 import sys
 import unittest
 
-import elfpy.utils.logs as log_utils
-from elfpy.simulators.smulation_config import SimulationConfig
-from elfpy.utils import sim_utils
+import lib.elfpy.elfpy.utils.logs as log_utils
+from lib.elfpy.elfpy.simulators.smulation_config import SimulationConfig
+from lib.elfpy.elfpy.utils import sim_utils
 
 
 class TestLogging(unittest.TestCase):

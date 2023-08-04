@@ -1,4 +1,4 @@
-"""Information for creating a bot"""
+"""Information for creating a bot."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -6,14 +6,13 @@ from typing import Type
 
 from fixedpointmath import FixedPoint
 
-from elfpy.agents.policies.base import BasePolicy
-
-from .budget import Budget
+from lib.elfpy.elfpy.agents.policies.base import BasePolicy
+from src.eth_bots.core.budget import Budget
 
 
 @dataclass
 class AgentConfig:
-    """Information about a bot
+    """Information about a bot.
 
     Attributes
     ----------

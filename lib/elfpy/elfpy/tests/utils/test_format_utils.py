@@ -3,7 +3,7 @@ import logging
 
 import numpy as np
 
-from elfpy.utils.format import format_numeric_string
+from lib.elfpy.elfpy.utils.format import format_numeric_string
 
 
 class TestFormatFloatAsString:

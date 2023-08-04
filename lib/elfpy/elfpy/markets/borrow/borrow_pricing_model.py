@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from fixedpointmath import FixedPoint
 
-import elfpy.types as types
-from elfpy.markets.base import BasePricingModel
+import lib.elfpy.elfpy.types as types
+from lib.elfpy.elfpy.markets.base import BasePricingModel
 
 
 class BorrowPricingModel(BasePricingModel):

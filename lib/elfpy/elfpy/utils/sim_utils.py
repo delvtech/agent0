@@ -1,29 +1,33 @@
-"""Implements helper functions for setting up a simulation"""
+"""Implements helper functions for setting up a simulation."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-import elfpy.simulators as simulators
-import elfpy.time as time
-from elfpy.agents.agent import Agent
-from elfpy.agents.policies import InitializeLiquidityAgent
-from elfpy.markets.hyperdrive import (
+from lib.elfpy.elfpy import simulators, time
+from lib.elfpy.elfpy.agents.agent import Agent
+from lib.elfpy.elfpy.agents.policies import InitializeLiquidityAgent
+from lib.elfpy.elfpy.markets.hyperdrive import (
     HyperdriveMarket,
     HyperdriveMarketDeltas,
     HyperdriveMarketState,
     HyperdrivePricingModel,
 )
-from elfpy.simulators import SimulationConfig
-from elfpy.simulators.simulation_state import BlockSimVariables, DaySimVariables, RunSimVariables, TradeSimVariables
+from lib.elfpy.elfpy.simulators import SimulationConfig
+from lib.elfpy.elfpy.simulators.simulation_state import (
+    BlockSimVariables,
+    DaySimVariables,
+    RunSimVariables,
+    TradeSimVariables,
+)
 
 if TYPE_CHECKING:
-    from elfpy.wallet.wallet_deltas import WalletDeltas
+    from lib.elfpy.elfpy.wallet.wallet_deltas import WalletDeltas
 
 
 def get_simulator(config: SimulationConfig, agents: list[Agent] | None = None) -> simulators.Simulator:
-    r"""Construct and initialize a simulator with sane defaults
+    r"""Construct and initialize a simulator with sane defaults.
 
     The simulated market is initialized with an initial LP.
 
@@ -110,10 +114,10 @@ def get_initialized_hyperdrive_market(
     block_time: time.BlockTime,
     config: SimulationConfig,
 ) -> tuple[HyperdriveMarket, WalletDeltas, HyperdriveMarketDeltas]:
-    r"""Setup market
+    r"""Setup market.
 
     Arguments
-    ----------
+    ---------
     pricing_model : PricingModel
         instantiated pricing model
     block_time : BlockTime

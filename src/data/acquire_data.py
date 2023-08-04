@@ -7,12 +7,12 @@ import time
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
-from elfpy.utils import logs as log_utils
 from eth_typing import URI, BlockNumber
 from eth_utils import address
 from web3 import Web3
 from web3.contract.contract import Contract
 
+from lib.elfpy.elfpy.utils import logs as log_utils
 from src import eth, hyperdrive
 from src.data import convert_data, postgres
 
@@ -228,7 +228,6 @@ def build_eth_config() -> EthConfig:
     EthConfig
         Config settings required to connect to the eth node
     """
-
     contracts_url = os.getenv("CONTRACTS_URL")
     ethereum_node = os.getenv("ETHEREUM_NODE")
     abi_dir = os.getenv("ABI_DIR")

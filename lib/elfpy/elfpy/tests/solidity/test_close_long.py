@@ -3,12 +3,17 @@ import unittest
 
 from fixedpointmath import FixedPoint
 
-import elfpy.time as time
-import elfpy.types as types
-from elfpy.agents.agent import Agent
-from elfpy.agents.policies import NoActionPolicy
-from elfpy.markets.hyperdrive import Checkpoint, HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
-from elfpy.time.time import TimeUnit
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.types as types
+from lib.elfpy.elfpy.agents.agent import Agent
+from lib.elfpy.elfpy.agents.policies import NoActionPolicy
+from lib.elfpy.elfpy.markets.hyperdrive import (
+    Checkpoint,
+    HyperdriveMarket,
+    HyperdriveMarketState,
+    HyperdrivePricingModel,
+)
+from lib.elfpy.elfpy.time.time import TimeUnit
 
 # pylint: disable=too-many-arguments
 
@@ -343,7 +348,11 @@ class TestCloseLong(unittest.TestCase):
             mint_time=FixedPoint(0),
         )
         base_proceeds = agent_deltas_close.balance.amount  # how much base agent gets as a result of the close
-        self.assertAlmostEqual(base_proceeds, agent_deltas_open.longs[FixedPoint(0)].balance, delta=self.APPROX_EQ)
+        self.assertAlmostEqual(
+            base_proceeds,
+            agent_deltas_open.longs[FixedPoint(0)].balance,
+            delta=self.APPROX_EQ,
+        )
         # verify that the close long updates were correct
         self.verify_close_long(
             example_agent=self.bob,

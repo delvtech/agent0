@@ -6,10 +6,10 @@ from typing import Union
 from fixedpointmath import FixedPoint
 from fixedpointmath import errors as fperrors
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
-import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
-import elfpy.utils.logs as log_utils
+import lib.elfpy.elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import lib.elfpy.elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
+import lib.elfpy.elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
+import lib.elfpy.elfpy.utils.logs as log_utils
 
 
 class BasePricingModelUtilsTest(unittest.TestCase):

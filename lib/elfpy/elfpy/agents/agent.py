@@ -6,15 +6,15 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from elfpy.agents.policies import NoActionPolicy
-from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
-from elfpy.types import MarketType, Quantity, TokenType, Trade
-from elfpy.wallet.wallet import Wallet
+from lib.elfpy.elfpy.agents.policies import NoActionPolicy
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
+from lib.elfpy.elfpy.types import MarketType, Quantity, TokenType, Trade
+from lib.elfpy.elfpy.wallet.wallet import Wallet
 
 if TYPE_CHECKING:
-    from elfpy.agents.policies.base import BasePolicy
-    from elfpy.markets.base import BaseMarket
-    from elfpy.markets.hyperdrive import HyperdriveMarket
+    from lib.elfpy.elfpy.agents.policies.base import BasePolicy
+    from lib.elfpy.elfpy.markets.base import BaseMarket
+    from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarket
 
 
 class Agent:

@@ -1,4 +1,4 @@
-"""A checkpoint bot for Hyperdrive"""
+"""A checkpoint bot for Hyperdrive."""
 from __future__ import annotations
 
 import datetime
@@ -7,10 +7,10 @@ import os
 import time
 
 from dotenv import load_dotenv
-from elfpy.utils import logs
 from eth_account.account import Account
 from web3.contract.contract import Contract
 
+from lib.elfpy.elfpy.utils import logs
 from src import eth, hyperdrive
 from src.eth.accounts.eth_account import EthAgent
 from src.eth.rpc_interface import set_anvil_account_balance
@@ -23,8 +23,7 @@ CHECKPOINT_WAITING_PERIOD = 0.5
 
 
 def get_config() -> EnvironmentConfig:
-    """Gets the Hyperdrive configuration."""
-
+    """Get the Hyperdrive configuration."""
     # Load some configuration variables from the environment.
     load_dotenv()
     artifacts_url = os.environ.get("ARTIFACTS_URL")
@@ -48,14 +47,12 @@ def get_config() -> EnvironmentConfig:
 
 
 def does_checkpoint_exist(hyperdrive_contract: Contract, checkpoint_time: int) -> bool:
-    """Checks whether or not a given checkpoint exists."""
-
+    """Check whether or not a given checkpoint exists."""
     return smart_contract_read(hyperdrive_contract, "getCheckpoint", int(checkpoint_time))["sharePrice"] > 0
 
 
 def main() -> None:
-    """Runs the checkpoint bot."""
-
+    """Run the checkpoint bot."""
     # Get the configuration and initialize the web3 provider.
     config = get_config()
     web3 = eth.web3_setup.initialize_web3_with_http_provider(config.rpc_url, reset_provider=False)

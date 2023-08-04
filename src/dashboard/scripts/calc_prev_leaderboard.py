@@ -337,6 +337,7 @@ all_wallet_deltas = all_wallet_deltas[
 ]
 
 current_returns = calc_total_returns(config_data, pool_info_data, all_wallet_deltas)
+assert isinstance(current_returns, pd.Series)
 comb_rank, ind_rank = get_leaderboard(current_returns, user_lookup)
 
 # TODO External transfers of base is getting captured, so need to undo this

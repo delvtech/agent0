@@ -2,10 +2,9 @@
 import pytest
 from fixedpointmath import FixedPoint
 
-from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
-from elfpy.time.time import BlockTime, StretchedTime
-
-from .hyperdrive_config import HyperdriveConfig
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
+from lib.elfpy.elfpy.tests.fixtures.hyperdrive_config import HyperdriveConfig
+from lib.elfpy.elfpy.time.time import BlockTime, StretchedTime
 
 
 @pytest.fixture(scope="function")

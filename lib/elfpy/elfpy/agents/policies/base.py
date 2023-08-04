@@ -11,9 +11,9 @@ from numpy.random import default_rng
 if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
-    from elfpy.markets.base import BaseMarket
-    from elfpy.types import Trade
-    from elfpy.wallet.wallet import Wallet
+    from lib.elfpy.elfpy.markets.base import BaseMarket
+    from lib.elfpy.elfpy.types import Trade
+    from lib.elfpy.elfpy.wallet.wallet import Wallet
 
 
 class BasePolicy:

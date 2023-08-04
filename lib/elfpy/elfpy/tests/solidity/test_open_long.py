@@ -3,11 +3,11 @@ import unittest
 
 from fixedpointmath import FixedPoint
 
-import elfpy.time as time
-import elfpy.types as types
-from elfpy.agents.agent import Agent
-from elfpy.agents.policies import NoActionPolicy
-from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.types as types
+from lib.elfpy.elfpy.agents.agent import Agent
+from lib.elfpy.elfpy.agents.policies import NoActionPolicy
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 
 # pylint: disable=too-many-arguments
 # TODO: Remove duplicate code disable once float code is removed

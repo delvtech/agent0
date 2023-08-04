@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from fixedpointmath import FixedPoint
 
-from elfpy.markets.hyperdrive import HyperdriveMarket, hyperdrive_actions
-from elfpy.wallet.wallet import Wallet
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarket, hyperdrive_actions
+from lib.elfpy.elfpy.wallet.wallet import Wallet
 
 
 def get_wallet_state(agent_wallet: Wallet, market: HyperdriveMarket) -> dict[str, FixedPoint]:

@@ -1,23 +1,24 @@
-"""Class that holds the state for the borrow market"""
+"""Class that holds the state for the borrow market."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
 from fixedpointmath import FixedPoint
 
-import elfpy.types as types
-from elfpy.markets.base import BaseMarketState
-
-from .borrow_market_deltas import BorrowMarketDeltas
+from lib.elfpy.elfpy import types
+from lib.elfpy.elfpy.markets.base import BaseMarketState
+from lib.elfpy.elfpy.markets.borrow.borrow_market_deltas import BorrowMarketDeltas
 
 
 @types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
 class BorrowMarketState(BaseMarketState):
     r"""The state of an AMM
+
     Implements a class for all that an AMM smart contract would hold or would have access to
     For example, reserve numbers are local state variables of the AMM.  The borrow_rate will most
     likely be accessible through the AMM as well.
+
     Attributes
     ----------
     loan_to_value_ratio: FixedPoint
@@ -37,8 +38,9 @@ class BorrowMarketState(BaseMarketState):
     lending_rate: FixedPoint
         The rate a user receives when lending out assets
     spread_ratio: FixedPoint
-        The ratio of the borrow rate to the lending rate
+        The ratio of the borrow rate to the lending rate.
     """
+
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
 
@@ -64,12 +66,12 @@ class BorrowMarketState(BaseMarketState):
 
     @property
     def borrow_amount(self) -> FixedPoint:
-        """The amount of borrowed asset in the market"""
+        """The amount of borrowed asset in the market."""
         return self.borrow_shares * self.borrow_share_price
 
     @property
     def deposit_amount(self) -> dict[types.TokenType, FixedPoint]:
-        """The amount of deposited asset in the market"""
+        """The amount of deposited asset in the market."""
         return {key: value * self.collateral_spot_price[key] for key, value in self.collateral.items()}
 
     def apply_delta(self, delta: BorrowMarketDeltas) -> None:
@@ -82,11 +84,11 @@ class BorrowMarketState(BaseMarketState):
             self.collateral[collateral_unit] += delta.d_collateral.amount
 
     def copy(self) -> BorrowMarketState:
-        """Returns a new copy of self"""
+        """Returns a new copy of self."""
         return BorrowMarketState(**self.__dict__)
 
     def check_valid_market_state(self, dictionary: dict | None = None) -> None:
-        """Test that all market state variables are greater than zero"""
+        """Test that all market state variables are greater than zero."""
         if dictionary is None:
             self.check_valid_market_state(self.__dict__)
         else:

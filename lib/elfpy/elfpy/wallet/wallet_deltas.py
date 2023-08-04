@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from elfpy.types import Quantity, TokenType, freezable
+from lib.elfpy.elfpy.types import Quantity, TokenType, freezable
 
 if TYPE_CHECKING:
-    from elfpy.wallet.wallet import Borrow, Long, Short
+    from lib.elfpy.elfpy.wallet.wallet import Borrow, Long, Short
 
 
 @freezable()

@@ -4,8 +4,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from elfpy import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, types
-from elfpy.utils import json as output_utils
+from lib.elfpy.elfpy import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, types
+from lib.elfpy.elfpy.utils import json as output_utils
 
 DEFAULT_USERNAME = "changeme"
 

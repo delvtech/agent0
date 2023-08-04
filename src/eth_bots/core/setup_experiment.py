@@ -6,10 +6,10 @@ from http import HTTPStatus
 
 import numpy as np
 import requests
-from elfpy.utils import logs
 from web3 import Web3
 from web3.contract.contract import Contract
 
+from lib.elfpy.elfpy.utils import logs
 from src import eth, hyperdrive
 from src.eth.accounts import EthAgent
 from src.eth_bots.core import DEFAULT_USERNAME, EnvironmentConfig, crash_report
@@ -76,7 +76,7 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
 
 
 def register_username(register_url: str, wallet_addrs: list[str], username: str) -> None:
-    """Registers the username with the flask server."""
+    """Register the username with the flask server."""
     # TODO: use the json schema from the server.
     json_data = {"wallet_addrs": wallet_addrs, "username": username}
     result = requests.post(f"{register_url}/register_bots", json=json_data, timeout=3)

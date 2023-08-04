@@ -6,8 +6,8 @@ from dataclasses import dataclass
 
 from fixedpointmath import FixedPoint
 
-from elfpy import types
-from elfpy.markets.base import BaseMarketActionResult
+from lib.elfpy.elfpy import types
+from lib.elfpy.elfpy.markets.base import BaseMarketActionResult
 
 
 @types.freezable(frozen=True, no_new_attribs=True)

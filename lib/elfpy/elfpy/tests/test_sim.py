@@ -10,22 +10,22 @@ import pandas as pd
 from fixedpointmath import FixedPoint
 from numpy.random import RandomState
 
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.types as types
-import elfpy.utils.logs as log_utils
-import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
-from elfpy.agents.agent import Agent
-from elfpy.agents.policies import SingleLongAgent
-from elfpy.simulators.simulation_state import (
+import lib.elfpy.elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+import lib.elfpy.elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import lib.elfpy.elfpy.types as types
+import lib.elfpy.elfpy.utils.logs as log_utils
+import lib.elfpy.elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
+from lib.elfpy.elfpy.agents.agent import Agent
+from lib.elfpy.elfpy.agents.policies import SingleLongAgent
+from lib.elfpy.elfpy.simulators.simulation_state import (
     BlockSimVariables,
     DaySimVariables,
     NewSimulationState,
     RunSimVariables,
     TradeSimVariables,
 )
-from elfpy.simulators.smulation_config import SimulationConfig
-from elfpy.wallet.wallet import Wallet
+from lib.elfpy.elfpy.simulators.smulation_config import SimulationConfig
+from lib.elfpy.elfpy.wallet.wallet import Wallet
 
 
 class TestSimulator(unittest.TestCase):

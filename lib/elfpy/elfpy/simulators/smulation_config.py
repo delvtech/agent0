@@ -9,8 +9,8 @@ from typing import Any
 import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 
-import elfpy.types as types
-import elfpy.utils.json as output_utils
+import lib.elfpy.elfpy.types as types
+import lib.elfpy.elfpy.utils.json as output_utils
 
 
 @types.freezable(frozen=False, no_new_attribs=True)

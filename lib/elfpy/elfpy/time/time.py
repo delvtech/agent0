@@ -4,8 +4,8 @@ from enum import Enum
 
 from fixedpointmath import FixedPoint, FixedPointMath
 
-import elfpy
-import elfpy.types as types
+from lib.elfpy.elfpy import SECONDS_IN_YEAR
+import lib.elfpy.elfpy.types as types
 
 
 class TimeUnit(Enum):
@@ -144,7 +144,7 @@ class StretchedTime:
     @property
     def seconds(self) -> FixedPoint:
         r"""Convey time in seconds"""
-        return self.years * elfpy.SECONDS_IN_YEAR
+        return self.years * SECONDS_IN_YEAR
 
 
 def get_years_remaining(

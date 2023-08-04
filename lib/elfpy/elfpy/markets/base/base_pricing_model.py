@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-import elfpy
-import elfpy.time as time
-import elfpy.types as types
-import elfpy.utils.price as price_utils
+from lib.elfpy.elfpy import MAX_RESERVES_DIFFERENCE, WEI, PRECISION_THRESHOLD
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.types as types
+import lib.elfpy.elfpy.utils.price as price_utils
 
 if TYPE_CHECKING:
-    import elfpy.markets.trades as trades
-    from elfpy.markets.hyperdrive import HyperdriveMarketState
+    import lib.elfpy.elfpy.markets.trades as trades
+    from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarketState
 
 
 class BasePricingModel(ABC):
@@ -229,7 +229,7 @@ class BasePricingModel(ABC):
     ):
         """Applies a set of assertions to the input of a trading function."""
         assert time_remaining.normalized_time <= 1
-        assert quantity.amount >= elfpy.WEI, f"expected quantity.amount >= {elfpy.WEI}, not {quantity.amount}!"
+        assert quantity.amount >= WEI, f"expected quantity.amount >= {WEI}, not {quantity.amount}!"
         assert market_state.share_reserves >= FixedPoint(
             "0.0"
         ), f"expected share_reserves >= 0, not {market_state.share_reserves}!"
@@ -246,9 +246,9 @@ class BasePricingModel(ABC):
             "1.0"
         ), f"expected init_share_price >= 1, not share_price={market_state.init_share_price}"
         reserves_difference = abs(market_state.share_reserves * market_state.share_price - market_state.bond_reserves)
-        assert reserves_difference < elfpy.MAX_RESERVES_DIFFERENCE, (
+        assert reserves_difference < MAX_RESERVES_DIFFERENCE, (
             f"expected reserves_difference = abs(share_reserves * share_price - bond_reserves) "
-            f"to be < {elfpy.MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
+            f"to be < {MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
         )
         assert (
             FixedPoint("1.0") >= market_state.curve_fee_multiple >= FixedPoint("0.0")
@@ -256,18 +256,12 @@ class BasePricingModel(ABC):
         assert (
             FixedPoint("1.0") >= market_state.flat_fee_multiple >= FixedPoint("0.0")
         ), f"expected 1 >= flat_fee_multiple >= 0, not {market_state.flat_fee_multiple}!"
-        assert (
-            FixedPoint("1.0") + elfpy.PRECISION_THRESHOLD >= time_remaining.stretched_time >= -elfpy.PRECISION_THRESHOLD
-        ), (
-            f"expected {1 + int(elfpy.PRECISION_THRESHOLD)} > "
-            f"time_remaining.stretched_time >= {-int(elfpy.PRECISION_THRESHOLD)}"
+        assert FixedPoint("1.0") + PRECISION_THRESHOLD >= time_remaining.stretched_time >= -PRECISION_THRESHOLD, (
+            f"expected {1 + int(PRECISION_THRESHOLD)} > "
+            f"time_remaining.stretched_time >= {-int(PRECISION_THRESHOLD)}"
             f", not {time_remaining.stretched_time}!"
         )
-        assert (
-            FixedPoint("1.0") + elfpy.PRECISION_THRESHOLD
-            >= time_remaining.normalized_time
-            >= -elfpy.PRECISION_THRESHOLD
-        ), (
-            f"expected {1 + int(elfpy.PRECISION_THRESHOLD)} > time_remaining >= {-int(elfpy.PRECISION_THRESHOLD)}"
+        assert FixedPoint("1.0") + PRECISION_THRESHOLD >= time_remaining.normalized_time >= -PRECISION_THRESHOLD, (
+            f"expected {1 + int(PRECISION_THRESHOLD)} > time_remaining >= {-int(PRECISION_THRESHOLD)}"
             f", not {time_remaining.normalized_time}!"
         )

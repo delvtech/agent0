@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from elfpy import check_non_zero
-from elfpy.types import Quantity, TokenType, freezable
-from elfpy.wallet.wallet_deltas import WalletDeltas
+from lib.elfpy.elfpy import check_non_zero
+from lib.elfpy.elfpy.types import Quantity, TokenType, freezable
+from lib.elfpy.elfpy.wallet.wallet_deltas import WalletDeltas
 
 if TYPE_CHECKING:
     from typing import Any, Iterable

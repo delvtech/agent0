@@ -5,9 +5,9 @@ import unittest
 
 from fixedpointmath import FixedPoint
 
-import elfpy.time as time
-from elfpy.markets.borrow import BorrowMarket, BorrowMarketState, BorrowPricingModel
-from elfpy.markets.hyperdrive import (
+import lib.elfpy.elfpy.time as time
+from lib.elfpy.elfpy.markets.borrow import BorrowMarket, BorrowMarketState, BorrowPricingModel
+from lib.elfpy.elfpy.markets.hyperdrive import (
     Checkpoint,
     HyperdriveMarket,
     HyperdriveMarketState,

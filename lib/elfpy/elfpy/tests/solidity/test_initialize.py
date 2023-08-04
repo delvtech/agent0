@@ -3,11 +3,11 @@ import unittest
 
 from fixedpointmath import FixedPoint
 
-import elfpy.time as time
-from elfpy.agents.agent import Agent
-from elfpy.agents.policies import NoActionPolicy
-from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
-from elfpy.time.time import BlockTime
+import lib.elfpy.elfpy.time as time
+from lib.elfpy.elfpy.agents.agent import Agent
+from lib.elfpy.elfpy.agents.policies import NoActionPolicy
+from lib.elfpy.elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
+from lib.elfpy.elfpy.time.time import BlockTime
 
 # pylint: disable=too-many-instance-attributes
 

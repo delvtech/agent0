@@ -9,10 +9,10 @@ from typing import Any, Iterable
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
-from elfpy import check_non_zero
-from elfpy.types import Quantity, TokenType
-from elfpy.wallet.wallet import Long, Short
-from elfpy.wallet.wallet_deltas import WalletDeltas
+from lib.elfpy.elfpy import check_non_zero
+from lib.elfpy.elfpy.types import Quantity, TokenType
+from lib.elfpy.elfpy.wallet.wallet import Long, Short
+from lib.elfpy.elfpy.wallet.wallet_deltas import WalletDeltas
 
 
 @dataclass()

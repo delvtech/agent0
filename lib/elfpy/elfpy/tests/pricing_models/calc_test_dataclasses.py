@@ -7,9 +7,9 @@ from typing import Optional, Type
 
 from fixedpointmath import FixedPoint
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.time as time
-import elfpy.types as types
+import lib.elfpy.elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import lib.elfpy.elfpy.time as time
+import lib.elfpy.elfpy.types as types
 
 
 @dataclass
