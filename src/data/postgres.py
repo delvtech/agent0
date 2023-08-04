@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Type
+from typing import Type, cast
 
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import URL, Engine, MetaData, Table, create_engine, exc, func, inspect
+from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engine, exc, func, inspect
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.data.db_schema import Base, Transaction, UserMap
@@ -305,9 +306,17 @@ def get_latest_block_number(session: Session) -> int:
     return get_latest_block_number_from_table(PoolInfo, session)
 
 
-def get_latest_block_number_from_table(
-    table_obj: Type[WalletInfo | WalletDelta | PoolInfo | Transaction | CheckpointInfo], session: Session
-) -> int:
+class TableWithBlockNumber(Base):
+    """An abstract table that has blockNumber"""
+
+    __abstract__ = True
+
+    @declared_attr
+    def blockNumber(self):
+        return Column(String)
+
+
+def get_latest_block_number_from_table(table_obj: Type[Base], session: Session) -> int:
     """Get the latest block number based on the specified table in the db.
 
     Arguments
@@ -322,8 +331,14 @@ def get_latest_block_number_from_table(
     int
         The latest block number from the specified table
     """
+
+    if not hasattr(table_obj, "blockNumber"):
+        raise ValueError("Table does not have a blockNumber column")
+
+    table = cast(TableWithBlockNumber, table_obj)
+
     # For some reason, pylint doesn't like func.max from sqlalchemy
-    result = session.query(func.max(table_obj.blockNumber)).first()  # pylint: disable=not-callable
+    result = session.query(func.max(table.blockNumber)).first()  # pylint: disable=not-callable
     # If table doesn't exist
     if result is None:
         return 0
