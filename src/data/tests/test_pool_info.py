@@ -7,7 +7,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import src.data.hyperdrive.postgres
-from src.data import postgres
 from src.data.db_schema import Base
 from src.data.hyperdrive.db_schema import PoolInfo
 
@@ -80,7 +79,7 @@ class TestPoolInfoInterface:
         pool_info_1 = PoolInfo(blockNumber=1, timestamp=timestamp_1)
         src.data.hyperdrive.postgres.add_pool_infos([pool_info_1], session)
 
-        latest_block_number = postgres.get_latest_block_number_from_pool_info_table(session)
+        latest_block_number = src.data.hyperdrive.postgres.get_latest_block_number_from_pool_info_table(session)
         assert latest_block_number == 1
 
         timestamp_1 = datetime.fromtimestamp(1628472002)
@@ -89,7 +88,7 @@ class TestPoolInfoInterface:
         pool_info_2 = PoolInfo(blockNumber=3, timestamp=timestamp_2)
         src.data.hyperdrive.postgres.add_pool_infos([pool_info_1, pool_info_2], session)
 
-        latest_block_number = postgres.get_latest_block_number_from_pool_info_table(session)
+        latest_block_number = src.data.hyperdrive.postgres.get_latest_block_number_from_pool_info_table(session)
         assert latest_block_number == 3
 
     def test_get_pool_info(self, session):

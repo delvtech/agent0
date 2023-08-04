@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from src.data.hyperdrive.agent_position import AgentPosition
 from src.data.hyperdrive.db_schema import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
-from src.data.postgres import get_latest_block_number_from_pool_info_table, get_latest_block_number_from_table
+from src.data.postgres import get_latest_block_number_from_table
 
 
 def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session) -> None:
@@ -151,6 +151,22 @@ def add_wallet_deltas(wallet_deltas: list[WalletDelta], session: Session) -> Non
         session.rollback()
         print(f"{wallet_deltas=}")
         raise err
+
+
+def get_latest_block_number_from_pool_info_table(session: Session) -> int:
+    """Get the latest block number based on the pool info table in the db.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+
+    Returns
+    -------
+    int
+        The latest block number in the poolinfo table
+    """
+    return get_latest_block_number_from_table(PoolInfo, session)
 
 
 def get_pool_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:

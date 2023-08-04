@@ -79,7 +79,7 @@ def main(
     )
 
     # Get last entry of pool info in db
-    data_latest_block_number = postgres.get_latest_block_number_from_pool_info_table(session)
+    data_latest_block_number = src.data.hyperdrive.postgres.get_latest_block_number_from_pool_info_table(session)
     # Using max of latest block in database or specified start block
     start_block = max(start_block, data_latest_block_number)
     # Parameterized start block number
