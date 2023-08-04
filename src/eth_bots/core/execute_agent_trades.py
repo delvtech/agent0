@@ -84,11 +84,11 @@ async def async_transact_and_parse_logs(
         raise UnknownBlockError(f"Receipt has no status or status is 0 \n {tx_receipt=}")
 
     hyperdrive_event_logs = eth.get_transaction_logs(
-        web3,
         hyperdrive_contract,
         tx_receipt,
         event_names=[fn_name[0].capitalize() + fn_name[1:]],
     )
+
     if len(hyperdrive_event_logs) == 0:
         raise AssertionError("Transaction receipt had no logs")
     if len(hyperdrive_event_logs) > 1:

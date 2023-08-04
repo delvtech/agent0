@@ -6,8 +6,10 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+import src.data.hyperdrive.postgres
 from src.data import postgres
-from src.data.db_schema import Base, WalletInfo
+from src.data.db_schema import Base
+from src.data.hyperdrive.db_schema import WalletInfo
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)
@@ -75,14 +77,14 @@ class TestWalletInfoInterface:
     def test_latest_block_number(self, session):
         """Testing retrevial of wallet info via interface"""
         wallet_info_1 = WalletInfo(blockNumber=1, tokenValue=Decimal("3.0"))
-        postgres.add_wallet_infos([wallet_info_1], session)
+        src.data.hyperdrive.postgres.add_wallet_infos([wallet_info_1], session)
 
         latest_block_number = postgres.get_latest_block_number_from_table(WalletInfo, session)
         assert latest_block_number == 1
 
         wallet_info_2 = WalletInfo(blockNumber=2, tokenValue=Decimal("3.2"))
         wallet_info_3 = WalletInfo(blockNumber=3, tokenValue=Decimal("3.4"))
-        postgres.add_wallet_infos([wallet_info_2, wallet_info_3], session)
+        src.data.hyperdrive.postgres.add_wallet_infos([wallet_info_2, wallet_info_3], session)
 
         latest_block_number = postgres.get_latest_block_number_from_table(WalletInfo, session)
         assert latest_block_number == 3
@@ -92,9 +94,9 @@ class TestWalletInfoInterface:
         wallet_info_1 = WalletInfo(blockNumber=0, tokenValue=Decimal("3.1"))
         wallet_info_2 = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
         wallet_info_3 = WalletInfo(blockNumber=2, tokenValue=Decimal("3.3"))
-        postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
+        src.data.hyperdrive.postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
 
-        wallet_info_df = postgres.get_all_wallet_info(session)
+        wallet_info_df = src.data.hyperdrive.postgres.get_all_wallet_info(session)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.1, 3.2, 3.3]))
 
     def test_block_query_wallet_info(self, session):
@@ -102,37 +104,37 @@ class TestWalletInfoInterface:
         wallet_info_1 = WalletInfo(blockNumber=0, tokenValue=Decimal("3.1"))
         wallet_info_2 = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
         wallet_info_3 = WalletInfo(blockNumber=2, tokenValue=Decimal("3.3"))
-        postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
+        src.data.hyperdrive.postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
 
-        wallet_info_df = postgres.get_all_wallet_info(session, start_block=1)
+        wallet_info_df = src.data.hyperdrive.postgres.get_all_wallet_info(session, start_block=1)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.2, 3.3]))
 
-        wallet_info_df = postgres.get_all_wallet_info(session, start_block=-1)
+        wallet_info_df = src.data.hyperdrive.postgres.get_all_wallet_info(session, start_block=-1)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.3]))
 
-        wallet_info_df = postgres.get_all_wallet_info(session, end_block=1)
+        wallet_info_df = src.data.hyperdrive.postgres.get_all_wallet_info(session, end_block=1)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.1]))
 
-        wallet_info_df = postgres.get_all_wallet_info(session, end_block=-1)
+        wallet_info_df = src.data.hyperdrive.postgres.get_all_wallet_info(session, end_block=-1)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.1, 3.2]))
 
-        wallet_info_df = postgres.get_all_wallet_info(session, start_block=1, end_block=-1)
+        wallet_info_df = src.data.hyperdrive.postgres.get_all_wallet_info(session, start_block=1, end_block=-1)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.2]))
 
     def test_current_wallet_info(self, session):
         """Testing helper function to get current wallet values"""
         wallet_info_1 = WalletInfo(blockNumber=0, walletAddress="addr", tokenType="BASE", tokenValue=Decimal("3.1"))
         wallet_info_2 = WalletInfo(blockNumber=1, walletAddress="addr", tokenType="LP", tokenValue=Decimal("5.1"))
-        postgres.add_wallet_infos([wallet_info_1, wallet_info_2], session)
+        src.data.hyperdrive.postgres.add_wallet_infos([wallet_info_1, wallet_info_2], session)
 
-        wallet_info_df = postgres.get_current_wallet_info(session).reset_index()
+        wallet_info_df = src.data.hyperdrive.postgres.get_current_wallet_info(session).reset_index()
         np.testing.assert_array_equal(wallet_info_df["tokenType"], ["BASE", "LP"])
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], [3.1, 5.1])
 
         # E.g., block 2, wallet base tokens gets updated to 6.1
         wallet_info_3 = WalletInfo(blockNumber=2, walletAddress="addr", tokenType="BASE", tokenValue=Decimal("6.1"))
-        postgres.add_wallet_infos([wallet_info_3], session)
-        wallet_info_df = postgres.get_current_wallet_info(session).reset_index()
+        src.data.hyperdrive.postgres.add_wallet_infos([wallet_info_3], session)
+        wallet_info_df = src.data.hyperdrive.postgres.get_current_wallet_info(session).reset_index()
         np.testing.assert_array_equal(wallet_info_df["tokenType"], ["BASE", "LP"])
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], [6.1, 5.1])
 
@@ -141,9 +143,9 @@ class TestWalletInfoInterface:
         wallet_info_1 = WalletInfo(blockNumber=0, walletAddress="addr_1")
         wallet_info_2 = WalletInfo(blockNumber=1, walletAddress="addr_1")
         wallet_info_3 = WalletInfo(blockNumber=2, walletAddress="addr_2")
-        postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
+        src.data.hyperdrive.postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
 
-        agents = postgres.get_agents(session)
+        agents = src.data.hyperdrive.postgres.get_agents(session)
         assert len(agents) == 2
         assert "addr_1" in agents
         assert "addr_2" in agents

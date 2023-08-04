@@ -6,8 +6,10 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+import src.data.hyperdrive.postgres
 from src.data import postgres
-from src.data.db_schema import Base, WalletDelta
+from src.data.db_schema import Base
+from src.data.hyperdrive.db_schema import WalletDelta
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)
@@ -75,14 +77,14 @@ class TestWalletDeltaInterface:
     def test_latest_block_number(self, session):
         """Testing retrevial of wallet info via interface"""
         wallet_delta_1 = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.0"))
-        postgres.add_wallet_deltas([wallet_delta_1], session)
+        src.data.hyperdrive.postgres.add_wallet_deltas([wallet_delta_1], session)
 
         latest_block_number = postgres.get_latest_block_number_from_table(WalletDelta, session)
         assert latest_block_number == 1
 
         wallet_delta_2 = WalletDelta(blockNumber=2, transactionHash="a", delta=Decimal("3.2"))
         wallet_delta_3 = WalletDelta(blockNumber=3, transactionHash="a", delta=Decimal("3.4"))
-        postgres.add_wallet_deltas([wallet_delta_2, wallet_delta_3], session)
+        src.data.hyperdrive.postgres.add_wallet_deltas([wallet_delta_2, wallet_delta_3], session)
 
         latest_block_number = postgres.get_latest_block_number_from_table(WalletDelta, session)
         assert latest_block_number == 3
@@ -92,9 +94,9 @@ class TestWalletDeltaInterface:
         wallet_delta_1 = WalletDelta(blockNumber=0, transactionHash="a", delta=Decimal("3.1"))
         wallet_delta_2 = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.2"))
         wallet_delta_3 = WalletDelta(blockNumber=2, transactionHash="a", delta=Decimal("3.3"))
-        postgres.add_wallet_deltas([wallet_delta_1, wallet_delta_2, wallet_delta_3], session)
+        src.data.hyperdrive.postgres.add_wallet_deltas([wallet_delta_1, wallet_delta_2, wallet_delta_3], session)
 
-        wallet_delta_df = postgres.get_wallet_deltas(session)
+        wallet_delta_df = src.data.hyperdrive.postgres.get_wallet_deltas(session)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.1, 3.2, 3.3]))
 
     def test_block_query_wallet_delta(self, session):
@@ -102,19 +104,19 @@ class TestWalletDeltaInterface:
         wallet_delta_1 = WalletDelta(blockNumber=0, transactionHash="a", delta=Decimal("3.1"))
         wallet_delta_2 = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.2"))
         wallet_delta_3 = WalletDelta(blockNumber=2, transactionHash="a", delta=Decimal("3.3"))
-        postgres.add_wallet_deltas([wallet_delta_1, wallet_delta_2, wallet_delta_3], session)
+        src.data.hyperdrive.postgres.add_wallet_deltas([wallet_delta_1, wallet_delta_2, wallet_delta_3], session)
 
-        wallet_delta_df = postgres.get_wallet_deltas(session, start_block=1)
+        wallet_delta_df = src.data.hyperdrive.postgres.get_wallet_deltas(session, start_block=1)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.2, 3.3]))
 
-        wallet_delta_df = postgres.get_wallet_deltas(session, start_block=-1)
+        wallet_delta_df = src.data.hyperdrive.postgres.get_wallet_deltas(session, start_block=-1)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.3]))
 
-        wallet_delta_df = postgres.get_wallet_deltas(session, end_block=1)
+        wallet_delta_df = src.data.hyperdrive.postgres.get_wallet_deltas(session, end_block=1)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.1]))
 
-        wallet_delta_df = postgres.get_wallet_deltas(session, end_block=-1)
+        wallet_delta_df = src.data.hyperdrive.postgres.get_wallet_deltas(session, end_block=-1)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.1, 3.2]))
 
-        wallet_delta_df = postgres.get_wallet_deltas(session, start_block=1, end_block=-1)
+        wallet_delta_df = src.data.hyperdrive.postgres.get_wallet_deltas(session, start_block=1, end_block=-1)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.2]))

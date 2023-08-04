@@ -8,6 +8,7 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
+import src.data.hyperdrive.postgres
 from src.dashboard.calc_pnl import calc_total_returns
 from src.dashboard.extract_data_logs import get_combined_data
 from src.dashboard.plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
@@ -169,7 +170,7 @@ def get_user_lookup() -> pd.DataFrame:
         the wallet address itself if a wallet is found without a registered username.
     """
     # Get data
-    agents = postgres.get_agents(session)
+    agents = src.data.hyperdrive.postgres.get_agents(session)
     user_map = postgres.get_user_map(session)
     # Usernames in postgres are bots
     user_map["username"] = user_map["username"] + " (bots)"
@@ -214,7 +215,7 @@ load_dotenv()
 session = postgres.initialize_session()
 
 # pool config data is static, so just read once
-config_data = postgres.get_pool_config(session)
+config_data = src.data.hyperdrive.postgres.get_pool_config(session)
 
 # TODO fix input invTimeStretch to be unscaled in ingestion into postgres
 config_data["invTimeStretch"] = config_data["invTimeStretch"] / 10**18
@@ -237,9 +238,9 @@ while True:
     # Place data and plots
     user_lookup = get_user_lookup()
     txn_data = postgres.get_transactions(session, -max_live_blocks)
-    pool_info_data = postgres.get_pool_info(session, -max_live_blocks)
+    pool_info_data = src.data.hyperdrive.postgres.get_pool_info(session, -max_live_blocks)
     combined_data = get_combined_data(txn_data, pool_info_data)
-    wallet_deltas = postgres.get_wallet_deltas(session)
+    wallet_deltas = src.data.hyperdrive.postgres.get_wallet_deltas(session)
     ticker = get_ticker(wallet_deltas, txn_data, pool_info_data, user_lookup)
 
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)

@@ -1,84 +1,21 @@
 """Helper functions for interfacing with hyperdrive"""
 from __future__ import annotations
 
-import logging
-import re
-import time
 from datetime import datetime
 from typing import Any
 
-import requests
 from elfpy import time as elftime
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from eth_typing import BlockNumber
-from eth_utils import address
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
 from src import eth
-from src.hyperdrive.addresses import HyperdriveAddresses
 from src.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 
 RETRY_COUNT = 10
-
-
-def fetch_hyperdrive_address_from_url(contracts_url: str) -> HyperdriveAddresses:
-    """Fetch addresses for deployed contracts in the Hyperdrive system."""
-    response = None
-    for _ in range(100):
-        response = requests.get(contracts_url, timeout=60)
-        # Check the status code and retry the request if it fails
-        if response.status_code != 200:
-            logging.warning(
-                "Request for contracts_url=%s failed with status code %s @ %s",
-                contracts_url,
-                response.status_code,
-                time.ctime(),
-            )
-            time.sleep(10)
-            continue
-        # If successful, exit attempt loop
-        break
-    if response is None:
-        raise ConnectionError("Request failed, returning status `None`")
-    if response.status_code != 200:
-        raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
-    addresses_json = response.json()
-
-    def camel_to_snake(snake_string: str) -> str:
-        return re.sub(r"(?<!^)(?=[A-Z])", "_", snake_string).lower()
-
-    addresses = HyperdriveAddresses(**{camel_to_snake(key): value for key, value in addresses_json.items()})
-    return addresses
-
-
-def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses) -> Contract:
-    """Get the hyperdrive contract given abis
-
-    Arguments
-    ---------
-    web3: Web3
-        web3 provider object
-    abis: dict
-        A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
-    addresses: HyperdriveAddressesJson
-        The block number to query from the chain
-
-    Returns
-    -------
-    Contract
-        The contract object returned from the query
-    """
-    if "IHyperdrive" not in abis:
-        raise AssertionError("IHyperdrive ABI was not provided")
-    state_abi = abis["IHyperdrive"]
-    # get contract instance of hyperdrive
-    hyperdrive_contract: Contract = web3.eth.contract(
-        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
-    )
-    return hyperdrive_contract
 
 
 def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, Any]:
