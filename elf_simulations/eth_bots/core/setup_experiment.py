@@ -10,7 +10,7 @@ from elfpy.utils import logs
 from web3 import Web3
 from web3.contract.contract import Contract
 
-from src import eth, hyperdrive
+from elf_simulations import eth, hyperdrive
 from elf_simulations.eth.accounts import EthAgent
 from elf_simulations.eth_bots.core import DEFAULT_USERNAME, EnvironmentConfig, crash_report
 from elf_simulations.eth_bots.core.get_agent_accounts import get_agent_accounts

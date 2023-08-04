@@ -11,8 +11,8 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxData
 
-import src.data.hyperdrive.db_schema
-from src import eth, hyperdrive
+import elf_simulations.data.hyperdrive.db_schema
+from elf_simulations import eth, hyperdrive
 from elf_simulations.data import db_schema
 from elf_simulations.data.conversions import convert_scaled_value_to_decimal
 from elf_simulations.eth.contract.token import get_token_balance

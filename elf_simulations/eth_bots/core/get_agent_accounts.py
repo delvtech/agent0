@@ -13,7 +13,7 @@ from numpy.random._generator import Generator as NumpyGenerator
 from web3 import Web3
 from web3.contract.contract import Contract
 
-from src import eth
+from elf_simulations import eth
 from elf_simulations.eth.accounts import EthAgent
 from elf_simulations.eth_bots.core import AgentConfig
 

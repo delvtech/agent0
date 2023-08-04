@@ -8,7 +8,7 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
-import src.data.hyperdrive.postgres
+import elf_simulations.data.hyperdrive.postgres
 from elf_simulations.dashboard.calc_pnl import calc_total_returns
 from elf_simulations.dashboard.extract_data_logs import get_combined_data
 from elf_simulations.dashboard.plot_fixed_rate import calc_fixed_rate, plot_fixed_rate

@@ -12,7 +12,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
-from src import eth
+from elf_simulations import eth
 from elf_simulations.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 
 RETRY_COUNT = 10

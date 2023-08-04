@@ -17,7 +17,7 @@ from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
 
-from src import eth, hyperdrive
+from elf_simulations import eth, hyperdrive
 from elf_simulations.eth.accounts import EthAgent
 from elf_simulations.eth.errors import UnknownBlockError
 from elf_simulations.eth.transactions import smart_contract_preview_transaction

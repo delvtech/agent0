@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import src.data.hyperdrive.postgres
+import elf_simulations.data.hyperdrive.postgres
 from elf_simulations.data.db_schema import Base
 from elf_simulations.data.hyperdrive.db_schema import PoolInfo
 

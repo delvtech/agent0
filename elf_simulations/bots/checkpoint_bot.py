@@ -11,8 +11,8 @@ from elfpy.utils import logs
 from eth_account.account import Account
 from web3.contract.contract import Contract
 
-import src.hyperdrive.addresses
-from src import eth, hyperdrive
+import elf_simulations.hyperdrive.addresses
+from elf_simulations import eth, hyperdrive
 from elf_simulations.eth.accounts.eth_account import EthAgent
 from elf_simulations.eth.rpc_interface import set_anvil_account_balance
 from elf_simulations.eth.transactions import smart_contract_read, smart_contract_transact
