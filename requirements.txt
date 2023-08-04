@@ -1,9 +1,5 @@
+# TODO Ordering might matter here for dependency resolution
 -e lib/elfpy
-streamlit
-web3
-mplfinance
-flask
-flask-expects-json
-psycopg2-binary
-sqlalchemy
-pandas-stubs
+-e lib/ethpy
+-e lib/agent0
+-e lib/chainsync

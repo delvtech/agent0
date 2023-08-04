@@ -25,10 +25,11 @@ classifiers = [
 ]
 
 dependencies = [
-    # Install fixedpointmath from github
-    # Note that this is pointing to main, so if any changes are made to fixedpointmath, we'll have to
-    # upgrade this package
+    # Lateral dependencies across subpackages are pointing to github
+    # TODO test that outermost pip install overwrites this
+    # TODO move this to either this monorepo or seperate repo
     "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
+    # TODO figure out the dependencies below
     "matplotlib",
     "numpy",
     "pandas",

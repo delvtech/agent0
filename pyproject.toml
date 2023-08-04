@@ -1,3 +1,9 @@
+[project]
+# TODO test this with docker
+name = "elfpy"
+version = "0.3.2"
+
+
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
 
