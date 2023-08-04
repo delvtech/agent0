@@ -13,7 +13,6 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.data.db_schema import Base, Transaction, UserMap
-from src.data.hyperdrive.db_schema import PoolInfo
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -288,22 +287,6 @@ def get_user_map(session: Session, address: str | None = None) -> pd.DataFrame:
     if address is not None:
         query = query.filter(UserMap.address == address)
     return pd.read_sql(query.statement, con=session.connection())
-
-
-def get_latest_block_number(session: Session) -> int:
-    """Get the latest block number based on the pool info table in the db.
-
-    Arguments
-    ---------
-    session : Session
-        The initialized session object
-
-    Returns
-    -------
-    int
-        The latest block number in the poolinfo table
-    """
-    return get_latest_block_number_from_table(PoolInfo, session)
 
 
 class TableWithBlockNumber(Base):

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from src.data.hyperdrive.agent_position import AgentPosition
 from src.data.hyperdrive.db_schema import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
-from src.data.postgres import get_latest_block_number, get_latest_block_number_from_table
+from src.data.postgres import get_latest_block_number_from_pool_info_table, get_latest_block_number_from_table
 
 
 def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session) -> None:
@@ -176,9 +176,9 @@ def get_pool_info(session: Session, start_block: int | None = None, end_block: i
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number(session) + start_block + 1
+        start_block = get_latest_block_number_from_pool_info_table(session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number(session) + end_block + 1
+        end_block = get_latest_block_number_from_pool_info_table(session) + end_block + 1
 
     if start_block is not None:
         query = query.filter(PoolInfo.blockNumber >= start_block)
