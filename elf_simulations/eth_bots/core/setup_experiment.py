@@ -11,10 +11,10 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 from src import eth, hyperdrive
-from src.eth.accounts import EthAgent
-from src.eth_bots.core import DEFAULT_USERNAME, EnvironmentConfig, crash_report
-from src.eth_bots.core.get_agent_accounts import get_agent_accounts
-from src.eth_bots.eth_bots_config import get_eth_bots_config
+from elf_simulations.eth.accounts import EthAgent
+from elf_simulations.eth_bots.core import DEFAULT_USERNAME, EnvironmentConfig, crash_report
+from elf_simulations.eth_bots.core.get_agent_accounts import get_agent_accounts
+from elf_simulations.eth_bots.eth_bots_config import get_eth_bots_config
 
 
 def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, list[EthAgent]]:

@@ -10,8 +10,8 @@ from elfpy.simulators.smulation_config import SimulationConfig
 from elfpy.utils import sim_utils
 from web3.exceptions import InvalidTransaction
 
-from src.data.hyperdrive.db_schema import PoolConfig, PoolInfo
-from src.eth_bots.core import crash_report
+from elf_simulations.data.hyperdrive.db_schema import PoolConfig, PoolInfo
+from elf_simulations.eth_bots.core import crash_report
 
 
 class TestCrashReport(unittest.TestCase):

@@ -9,7 +9,7 @@ from eth_utils.conversions import to_bytes
 from eth_utils.crypto import keccak
 from eth_utils.curried import text_if_str
 
-from src.eth_bots.eth_bots_config import get_eth_bots_config
+from elf_simulations.eth_bots.eth_bots_config import get_eth_bots_config
 
 
 def make_key() -> str:

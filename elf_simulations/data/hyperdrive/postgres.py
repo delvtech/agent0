@@ -6,9 +6,9 @@ import pandas as pd
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
-from src.data.hyperdrive.agent_position import AgentPosition
-from src.data.hyperdrive.db_schema import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
-from src.data.postgres import get_latest_block_number_from_table
+from elf_simulations.data.hyperdrive.agent_position import AgentPosition
+from elf_simulations.data.hyperdrive.db_schema import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from elf_simulations.data.postgres import get_latest_block_number_from_table
 
 
 def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session) -> None:

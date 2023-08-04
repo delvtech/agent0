@@ -12,7 +12,7 @@ from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engi
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 
-from src.data.db_schema import Base, Transaction, UserMap
+from elf_simulations.data.db_schema import Base, Transaction, UserMap
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods

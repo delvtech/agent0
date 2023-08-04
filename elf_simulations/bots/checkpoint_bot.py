@@ -13,10 +13,10 @@ from web3.contract.contract import Contract
 
 import src.hyperdrive.addresses
 from src import eth, hyperdrive
-from src.eth.accounts.eth_account import EthAgent
-from src.eth.rpc_interface import set_anvil_account_balance
-from src.eth.transactions import smart_contract_read, smart_contract_transact
-from src.eth_bots.core import EnvironmentConfig
+from elf_simulations.eth.accounts.eth_account import EthAgent
+from elf_simulations.eth.rpc_interface import set_anvil_account_balance
+from elf_simulations.eth.transactions import smart_contract_read, smart_contract_transact
+from elf_simulations.eth_bots.core import EnvironmentConfig
 
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.

@@ -14,8 +14,8 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 from src import eth
-from src.eth.accounts import EthAgent
-from src.eth_bots.core import AgentConfig
+from elf_simulations.eth.accounts import EthAgent
+from elf_simulations.eth_bots.core import AgentConfig
 
 # pylint: disable=too-many-locals
 

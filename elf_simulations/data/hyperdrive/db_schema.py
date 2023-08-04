@@ -7,7 +7,7 @@ from typing import Union
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.data.db_schema import Base
+from elf_simulations.data.db_schema import Base
 
 
 class PoolConfig(Base):

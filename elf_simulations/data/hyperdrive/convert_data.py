@@ -13,9 +13,9 @@ from web3.types import TxData
 
 import src.data.hyperdrive.db_schema
 from src import eth, hyperdrive
-from src.data import db_schema
-from src.data.conversions import convert_scaled_value_to_decimal
-from src.eth.contract.token import get_token_balance
+from elf_simulations.data import db_schema
+from elf_simulations.data.conversions import convert_scaled_value_to_decimal
+from elf_simulations.eth.contract.token import get_token_balance
 
 
 def convert_hyperdrive_transactions_for_block(

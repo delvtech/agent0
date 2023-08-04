@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import ticker as mpl_ticker
 
-from src.dashboard.extract_data_logs import calculate_spot_price
+from elf_simulations.dashboard.extract_data_logs import calculate_spot_price
 
 # %%
 

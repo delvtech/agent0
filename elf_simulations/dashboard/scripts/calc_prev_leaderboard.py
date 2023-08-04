@@ -8,8 +8,8 @@ import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy.sql import text
 
-from src.dashboard.calc_pnl import calc_total_returns
-from src.data import postgres
+from elf_simulations.dashboard.calc_pnl import calc_total_returns
+from elf_simulations.data import postgres
 
 # pylint: disable=invalid-name
 

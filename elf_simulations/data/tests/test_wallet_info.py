@@ -7,9 +7,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import src.data.hyperdrive.postgres
-from src.data import postgres
-from src.data.db_schema import Base
-from src.data.hyperdrive.db_schema import WalletInfo
+from elf_simulations.data import postgres
+from elf_simulations.data.db_schema import Base
+from elf_simulations.data.hyperdrive.db_schema import WalletInfo
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)

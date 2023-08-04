@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_expects_json import expects_json
 
-from src.data import postgres
+from elf_simulations.data import postgres
 
 app = Flask(__name__)
 

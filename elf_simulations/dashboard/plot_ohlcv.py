@@ -19,7 +19,7 @@ from __future__ import annotations
 import mplfinance as mpf
 import pandas as pd
 
-from src.dashboard.extract_data_logs import calculate_spot_price
+from elf_simulations.dashboard.extract_data_logs import calculate_spot_price
 
 # %%
 # Get data here

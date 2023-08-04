@@ -18,9 +18,9 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 from src import eth, hyperdrive
-from src.eth.accounts import EthAgent
-from src.eth.errors import UnknownBlockError
-from src.eth.transactions import smart_contract_preview_transaction
+from elf_simulations.eth.accounts import EthAgent
+from elf_simulations.eth.errors import UnknownBlockError
+from elf_simulations.eth.transactions import smart_contract_preview_transaction
 
 # TODO: Fix these up when we refactor this file
 # pylint: disable=too-many-locals

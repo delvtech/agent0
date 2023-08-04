@@ -9,11 +9,11 @@ import streamlit as st
 from dotenv import load_dotenv
 
 import src.data.hyperdrive.postgres
-from src.dashboard.calc_pnl import calc_total_returns
-from src.dashboard.extract_data_logs import get_combined_data
-from src.dashboard.plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
-from src.dashboard.plot_ohlcv import calc_ohlcv, plot_ohlcv
-from src.data import postgres
+from elf_simulations.dashboard.calc_pnl import calc_total_returns
+from elf_simulations.dashboard.extract_data_logs import get_combined_data
+from elf_simulations.dashboard.plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
+from elf_simulations.dashboard.plot_ohlcv import calc_ohlcv, plot_ohlcv
+from elf_simulations.data import postgres
 
 # pylint: disable=invalid-name
 
