@@ -96,7 +96,7 @@ class TestWalletInfoInterface:
         wallet_info_3 = WalletInfo(blockNumber=2, tokenValue=Decimal("3.3"))
         src.data.hyperdrive.postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
 
-        wallet_info_df = postgres.get_all_wallet_info(session)
+        wallet_info_df = src.data.hyperdrive.postgres.get_all_wallet_info(session)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.1, 3.2, 3.3]))
 
     def test_block_query_wallet_info(self, session):
@@ -106,19 +106,19 @@ class TestWalletInfoInterface:
         wallet_info_3 = WalletInfo(blockNumber=2, tokenValue=Decimal("3.3"))
         src.data.hyperdrive.postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
 
-        wallet_info_df = postgres.get_all_wallet_info(session, start_block=1)
+        wallet_info_df = src.data.hyperdrive.postgres.get_all_wallet_info(session, start_block=1)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.2, 3.3]))
 
-        wallet_info_df = postgres.get_all_wallet_info(session, start_block=-1)
+        wallet_info_df = src.data.hyperdrive.postgres.get_all_wallet_info(session, start_block=-1)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.3]))
 
-        wallet_info_df = postgres.get_all_wallet_info(session, end_block=1)
+        wallet_info_df = src.data.hyperdrive.postgres.get_all_wallet_info(session, end_block=1)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.1]))
 
-        wallet_info_df = postgres.get_all_wallet_info(session, end_block=-1)
+        wallet_info_df = src.data.hyperdrive.postgres.get_all_wallet_info(session, end_block=-1)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.1, 3.2]))
 
-        wallet_info_df = postgres.get_all_wallet_info(session, start_block=1, end_block=-1)
+        wallet_info_df = src.data.hyperdrive.postgres.get_all_wallet_info(session, start_block=1, end_block=-1)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.2]))
 
     def test_current_wallet_info(self, session):
@@ -127,14 +127,14 @@ class TestWalletInfoInterface:
         wallet_info_2 = WalletInfo(blockNumber=1, walletAddress="addr", tokenType="LP", tokenValue=Decimal("5.1"))
         src.data.hyperdrive.postgres.add_wallet_infos([wallet_info_1, wallet_info_2], session)
 
-        wallet_info_df = postgres.get_current_wallet_info(session).reset_index()
+        wallet_info_df = src.data.hyperdrive.postgres.get_current_wallet_info(session).reset_index()
         np.testing.assert_array_equal(wallet_info_df["tokenType"], ["BASE", "LP"])
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], [3.1, 5.1])
 
         # E.g., block 2, wallet base tokens gets updated to 6.1
         wallet_info_3 = WalletInfo(blockNumber=2, walletAddress="addr", tokenType="BASE", tokenValue=Decimal("6.1"))
         src.data.hyperdrive.postgres.add_wallet_infos([wallet_info_3], session)
-        wallet_info_df = postgres.get_current_wallet_info(session).reset_index()
+        wallet_info_df = src.data.hyperdrive.postgres.get_current_wallet_info(session).reset_index()
         np.testing.assert_array_equal(wallet_info_df["tokenType"], ["BASE", "LP"])
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], [6.1, 5.1])
 
@@ -145,7 +145,7 @@ class TestWalletInfoInterface:
         wallet_info_3 = WalletInfo(blockNumber=2, walletAddress="addr_2")
         src.data.hyperdrive.postgres.add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
 
-        agents = postgres.get_agents(session)
+        agents = src.data.hyperdrive.postgres.get_agents(session)
         assert len(agents) == 2
         assert "addr_1" in agents
         assert "addr_2" in agents

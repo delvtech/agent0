@@ -33,7 +33,7 @@ def get_transaction_logs(
     logs: list[dict[str, Any]] = []
     if tx_receipt.get("logs"):
         for log in tx_receipt["logs"]:
-            event_data, event = get_event_object(web3, contract, log, tx_receipt)
+            event_data, event = get_event_object(contract, log, tx_receipt)
             if event_data and event:
                 formatted_log = dict(event_data)
                 formatted_log["event"] = event.get("name")

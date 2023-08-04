@@ -1,6 +1,8 @@
-"""Utilities to convert hyperdrive related things to database schema objects."""
+"""Script to format on-chain hyperdrive pool, config, and transaction data post-processing."""
+from __future__ import annotations
 
 import logging
+import time
 from decimal import Decimal
 from typing import Any
 
@@ -9,24 +11,36 @@ from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract
-from web3.types import TxData
+from web3.types import BlockData
 
 import src.data.hyperdrive.db_schema
 from src import eth, hyperdrive
 from src.data import db_schema
-from src.data.conversions import convert_scaled_value_to_decimal
-from src.eth.contract.token import get_token_balance
+
+# pylint: disable=too-many-arguments
+
+# TODO fix too many branches by splitting out various things into functions
+# pylint: disable=too-many-branches
+
+RETRY_COUNT = 10
 
 
-def convert_hyperdrive_transactions_for_block(
-    hyperdrive_contract: Contract, transactions: list[TxData]
+# TODO move this function to hyperdrive_interface and return a list of dictionaries
+def fetch_contract_transactions_for_block(
+    web3: Web3, contract: Contract, block_number: BlockNumber
 ) -> tuple[list[db_schema.Transaction], list[src.data.hyperdrive.db_schema.WalletDelta]]:
     """Fetch transactions related to the contract.
 
+    Returns the block pool info from the Hyperdrive contract
+
     Arguments
     ---------
-    transactions: TxData
-        A list of hyperdrive transactions for a given block.
+    web3: Web3
+        web3 provider object
+    contract: Contract
+        The contract to query the pool info from
+    block_number: BlockNumber
+        The block number to query from the chain
 
     Returns
     -------
@@ -34,53 +48,37 @@ def convert_hyperdrive_transactions_for_block(
         A list of Transaction objects ready to be inserted into Postgres, and
         a list of wallet delta objects ready to be inserted into Postgres
     """
-
-    out_transactions: list[db_schema.Transaction] = []
-    out_wallet_deltas: list[src.data.hyperdrive.db_schema.WalletDelta] = []
+    block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
+    transactions = block.get("transactions")
+    if not transactions:
+        logging.info("no transactions in block %s", block.get("number"))
+        return ([], [])
+    out_transactions = []
+    out_wallet_deltas = []
     for transaction in transactions:
-        transaction_dict = dict(transaction)
+        if isinstance(transaction, HexBytes):
+            logging.warning("transaction HexBytes")
+            continue
+        if transaction.get("to") != contract.address:
+            logging.warning("transaction not from contract")
+            continue
+        transaction_dict: dict[str, Any] = dict(transaction)
         # Convert the HexBytes fields to their hex representation
         tx_hash = transaction.get("hash") or HexBytes("")
         transaction_dict["hash"] = tx_hash.hex()
         # Decode the transaction input
         try:
-            method, params = hyperdrive_contract.decode_function_input(transaction["input"])
+            method, params = contract.decode_function_input(transaction["input"])
             transaction_dict["input"] = {"method": method.fn_name, "params": params}
         except ValueError:  # if the input is not meant for the contract, ignore it
             continue
-        tx_receipt = Web3.eth.get_transaction_receipt(tx_hash)
-        logs = eth.get_transaction_logs(hyperdrive_contract, tx_receipt)
-        receipt: dict[str, Any] = _convert_object_hexbytes_to_strings(tx_receipt)  # type: ignore
+        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
+        logs = eth.get_transaction_logs(contract, tx_receipt)
+        receipt: dict[str, Any] = _recursive_dict_conversion(tx_receipt)  # type: ignore
         out_transactions.append(_build_hyperdrive_transaction_object(transaction_dict, logs, receipt))
         # Build wallet deltas based on transaction logs
-        out_wallet_deltas.extend(_build_wallet_deltas(logs, transaction_dict["hash"], transaction_dict["blockNumber"]))
+        out_wallet_deltas.extend(_build_wallet_deltas(logs, transaction_dict["hash"], block_number))
     return out_transactions, out_wallet_deltas
-
-
-def _convert_object_hexbytes_to_strings(obj: Any) -> Any:
-    """Recursively converts all HexBytes in an object to strings.
-
-    Arguments
-    ---------
-    obj : Any
-        Could be a HexBytes, dict, or any object with the `items` attribute
-
-    Returns
-    -------
-    Any
-        A nested dictionary containing the decoded object values
-
-
-    .. todo::
-        This function needs to be better constrained & typed, or avoided all together?
-    """
-    if isinstance(obj, HexBytes):
-        return obj.hex()
-    if isinstance(obj, dict):
-        return {key: _convert_object_hexbytes_to_strings(value) for key, value in obj.items()}
-    if hasattr(obj, "items"):  # any other type with "items" attr, e.g. TypedDict and OrderedDict
-        return {key: _convert_object_hexbytes_to_strings(value) for key, value in obj.items()}
-    return obj
 
 
 # TODO move this function to hyperdrive_interface and return a list of dictionaries
@@ -123,7 +121,7 @@ def get_wallet_info(
             continue
 
         # Query and add base tokens to walletinfo
-        num_base_token = get_token_balance(base_contract, wallet_addr, block_number, None)
+        num_base_token = _query_contract_for_balance(base_contract, wallet_addr, block_number)
         if num_base_token is not None:
             out_wallet_info.append(
                 src.data.hyperdrive.db_schema.WalletInfo(
@@ -131,7 +129,7 @@ def get_wallet_info(
                     walletAddress=wallet_addr,
                     baseTokenType="BASE",
                     tokenType="BASE",
-                    tokenValue=convert_scaled_value_to_decimal(num_base_token),
+                    tokenValue=num_base_token,
                 )
             )
 
@@ -139,7 +137,7 @@ def get_wallet_info(
         lp_token_prefix = hyperdrive.AssetIdPrefix.LP.value
         # LP tokens always have 0 maturity
         lp_token_id = hyperdrive.encode_asset_id(lp_token_prefix, timestamp=0)
-        num_lp_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, lp_token_id)
+        num_lp_token = _query_contract_for_balance(hyperdrive_contract, wallet_addr, block_number, lp_token_id)
         if num_lp_token is not None:
             out_wallet_info.append(
                 src.data.hyperdrive.db_schema.WalletInfo(
@@ -147,7 +145,7 @@ def get_wallet_info(
                     walletAddress=wallet_addr,
                     baseTokenType="LP",
                     tokenType="LP",
-                    tokenValue=convert_scaled_value_to_decimal(num_lp_token),
+                    tokenValue=num_lp_token,
                     maturityTime=None,
                     sharePrice=None,
                 )
@@ -157,7 +155,9 @@ def get_wallet_info(
         withdrawal_token_prefix = hyperdrive.AssetIdPrefix.WITHDRAWAL_SHARE.value
         # Withdrawal tokens always have 0 maturity
         withdrawal_token_id = hyperdrive.encode_asset_id(withdrawal_token_prefix, timestamp=0)
-        num_withdrawal_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, withdrawal_token_id)
+        num_withdrawal_token = _query_contract_for_balance(
+            hyperdrive_contract, wallet_addr, block_number, withdrawal_token_id
+        )
         if num_withdrawal_token is not None:
             out_wallet_info.append(
                 src.data.hyperdrive.db_schema.WalletInfo(
@@ -165,7 +165,7 @@ def get_wallet_info(
                     walletAddress=wallet_addr,
                     baseTokenType="WITHDRAWAL_SHARE",
                     tokenType="WITHDRAWAL_SHARE",
-                    tokenValue=convert_scaled_value_to_decimal(num_withdrawal_token),
+                    tokenValue=num_withdrawal_token,
                     maturityTime=None,
                     sharePrice=None,
                 )
@@ -185,7 +185,9 @@ def get_wallet_info(
                 if (base_token_type) == "SHORT":
                     share_price = pool_info.sharePrice
 
-                num_custom_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, int(token_id))
+                num_custom_token = _query_contract_for_balance(
+                    hyperdrive_contract, wallet_addr, block_number, int(token_id)
+                )
                 if num_custom_token is not None:
                     out_wallet_info.append(
                         src.data.hyperdrive.db_schema.WalletInfo(
@@ -193,7 +195,7 @@ def get_wallet_info(
                             walletAddress=wallet_addr,
                             baseTokenType=base_token_type,
                             tokenType=token_type,
-                            tokenValue=convert_scaled_value_to_decimal(num_custom_token),
+                            tokenValue=num_custom_token,
                             maturityTime=token_maturity_time,
                             sharePrice=share_price,
                         )
@@ -283,6 +285,28 @@ def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> src.data.hy
     return block_checkpoint_info
 
 
+def _convert_scaled_value(input_val: int | None) -> Decimal | None:
+    """
+    Given a scaled value int, converts it to a Decimal, while supporting Nones
+
+    Arguments
+    ----------
+    input_val: int | None
+        The scaled integer value to unscale and convert to Decimal
+
+    Returns
+    -------
+    Decimal | None
+        The unscaled Decimal value
+    """
+    if input_val is not None:
+        # TODO add this cast within fixedpoint
+        fp_val = FixedPoint(scaled_value=input_val)
+        str_val = str(fp_val)
+        return Decimal(str_val)
+    return None
+
+
 # TODO this function likely should be decoupled from postgres and added into
 # hyperdrive interface returning a list of dictionaries, with a conversion function to translate
 # into postgres
@@ -312,8 +336,8 @@ def _build_wallet_deltas(
     for log in logs:
         if log["event"] == "AddLiquidity":
             wallet_addr = log["args"]["provider"]
-            token_delta = convert_scaled_value_to_decimal(log["args"]["lpAmount"])
-            base_delta = convert_scaled_value_to_decimal(-log["args"]["baseAmount"])
+            token_delta = _convert_scaled_value(log["args"]["lpAmount"])
+            base_delta = _convert_scaled_value(-log["args"]["baseAmount"])
             wallet_deltas.extend(
                 [
                     src.data.hyperdrive.db_schema.WalletDelta(
@@ -337,8 +361,8 @@ def _build_wallet_deltas(
 
         elif log["event"] == "OpenLong":
             wallet_addr = log["args"]["trader"]
-            token_delta = convert_scaled_value_to_decimal(log["args"]["bondAmount"])
-            base_delta = convert_scaled_value_to_decimal(-log["args"]["baseAmount"])
+            token_delta = _convert_scaled_value(log["args"]["bondAmount"])
+            base_delta = _convert_scaled_value(-log["args"]["baseAmount"])
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
@@ -364,8 +388,8 @@ def _build_wallet_deltas(
 
         elif log["event"] == "OpenShort":
             wallet_addr = log["args"]["trader"]
-            token_delta = convert_scaled_value_to_decimal(log["args"]["bondAmount"])
-            base_delta = convert_scaled_value_to_decimal(-log["args"]["baseAmount"])
+            token_delta = _convert_scaled_value(log["args"]["bondAmount"])
+            base_delta = _convert_scaled_value(-log["args"]["baseAmount"])
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
@@ -392,9 +416,9 @@ def _build_wallet_deltas(
         elif log["event"] == "RemoveLiquidity":
             wallet_addr = log["args"]["provider"]
             # Two deltas, one for withdrawal shares, one for lp tokens
-            lp_delta = convert_scaled_value_to_decimal(-log["args"]["lpAmount"])
-            withdrawal_delta = convert_scaled_value_to_decimal(log["args"]["withdrawalShareAmount"])
-            base_delta = convert_scaled_value_to_decimal(log["args"]["baseAmount"])
+            lp_delta = _convert_scaled_value(-log["args"]["lpAmount"])
+            withdrawal_delta = _convert_scaled_value(log["args"]["withdrawalShareAmount"])
+            base_delta = _convert_scaled_value(log["args"]["baseAmount"])
             wallet_deltas.extend(
                 [
                     src.data.hyperdrive.db_schema.WalletDelta(
@@ -426,8 +450,8 @@ def _build_wallet_deltas(
 
         elif log["event"] == "CloseLong":
             wallet_addr = log["args"]["trader"]
-            token_delta = convert_scaled_value_to_decimal(-log["args"]["bondAmount"])
-            base_delta = convert_scaled_value_to_decimal(log["args"]["baseAmount"])
+            token_delta = _convert_scaled_value(-log["args"]["bondAmount"])
+            base_delta = _convert_scaled_value(log["args"]["baseAmount"])
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
@@ -453,8 +477,8 @@ def _build_wallet_deltas(
 
         elif log["event"] == "CloseShort":
             wallet_addr = log["args"]["trader"]
-            token_delta = convert_scaled_value_to_decimal(-log["args"]["bondAmount"])
-            base_delta = convert_scaled_value_to_decimal(log["args"]["baseAmount"])
+            token_delta = _convert_scaled_value(-log["args"]["bondAmount"])
+            base_delta = _convert_scaled_value(log["args"]["baseAmount"])
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
@@ -481,8 +505,8 @@ def _build_wallet_deltas(
         elif log["event"] == "RedeemWithdrawalShares":
             wallet_addr = log["args"]["provider"]
             maturity_time = None
-            token_delta = convert_scaled_value_to_decimal(-log["args"]["withdrawalShareAmount"])
-            base_delta = convert_scaled_value_to_decimal(log["args"]["baseAmount"])
+            token_delta = _convert_scaled_value(-log["args"]["withdrawalShareAmount"])
+            base_delta = _convert_scaled_value(log["args"]["baseAmount"])
             wallet_deltas.extend(
                 [
                     src.data.hyperdrive.db_schema.WalletDelta(
@@ -547,18 +571,18 @@ def _build_hyperdrive_transaction_object(
     # TODO can the input field ever be empty or not exist?
     out_dict["input_method"] = transaction_dict["input"]["method"]
     input_params = transaction_dict["input"]["params"]
-    out_dict["input_params_contribution"] = convert_scaled_value_to_decimal(input_params.get("_contribution", None))
-    out_dict["input_params_apr"] = convert_scaled_value_to_decimal(input_params.get("_apr", None))
+    out_dict["input_params_contribution"] = _convert_scaled_value(input_params.get("_contribution", None))
+    out_dict["input_params_apr"] = _convert_scaled_value(input_params.get("_apr", None))
     out_dict["input_params_destination"] = input_params.get("_destination", None)
     out_dict["input_params_asUnderlying"] = input_params.get("_asUnderlying", None)
-    out_dict["input_params_baseAmount"] = convert_scaled_value_to_decimal(input_params.get("_baseAmount", None))
-    out_dict["input_params_minOutput"] = convert_scaled_value_to_decimal(input_params.get("_minOutput", None))
-    out_dict["input_params_bondAmount"] = convert_scaled_value_to_decimal(input_params.get("_bondAmount", None))
-    out_dict["input_params_maxDeposit"] = convert_scaled_value_to_decimal(input_params.get("_maxDeposit", None))
+    out_dict["input_params_baseAmount"] = _convert_scaled_value(input_params.get("_baseAmount", None))
+    out_dict["input_params_minOutput"] = _convert_scaled_value(input_params.get("_minOutput", None))
+    out_dict["input_params_bondAmount"] = _convert_scaled_value(input_params.get("_bondAmount", None))
+    out_dict["input_params_maxDeposit"] = _convert_scaled_value(input_params.get("_maxDeposit", None))
     out_dict["input_params_maturityTime"] = input_params.get("_maturityTime", None)
-    out_dict["input_params_minApr"] = convert_scaled_value_to_decimal(input_params.get("_minApr", None))
-    out_dict["input_params_maxApr"] = convert_scaled_value_to_decimal(input_params.get("_maxApr", None))
-    out_dict["input_params_shares"] = convert_scaled_value_to_decimal(input_params.get("_shares", None))
+    out_dict["input_params_minApr"] = _convert_scaled_value(input_params.get("_minApr", None))
+    out_dict["input_params_maxApr"] = _convert_scaled_value(input_params.get("_maxApr", None))
+    out_dict["input_params_shares"] = _convert_scaled_value(input_params.get("_shares", None))
     # Assuming one TransferSingle per transfer
     # TODO Fix this below eventually
     # There can be two transfer singles
@@ -573,7 +597,7 @@ def _build_hyperdrive_transaction_object(
     else:
         logging.warning("Tranfer event contains multiple TransferSingle logs, selecting first")
         event_args: dict[str, Any] = event_logs[0]["args"]
-    out_dict["event_value"] = _convert_object_hexbytes_to_strings(event_args.get("value", None))
+    out_dict["event_value"] = _convert_scaled_value(event_args.get("value", None))
     out_dict["event_from"] = event_args.get("from", None)
     out_dict["event_to"] = event_args.get("to", None)
     out_dict["event_operator"] = event_args.get("operator", None)
@@ -585,3 +609,67 @@ def _build_hyperdrive_transaction_object(
         out_dict["event_maturity_time"] = event_maturity_time
     transaction = db_schema.Transaction(**out_dict)
     return transaction
+
+
+def _recursive_dict_conversion(obj: Any) -> Any:
+    """Recursively converts a dictionary to convert objects to hex values.
+
+    Arguments
+    ---------
+    obj : Any
+        Could be a HexBytes, dict, or any object with the `items` attribute
+
+    Returns
+    -------
+    Any
+        A nested dictionary containing the decoded object values
+
+
+    .. todo::
+        This function needs to be better constrained & typed, or avoided all together?
+    """
+    if isinstance(obj, HexBytes):
+        return obj.hex()
+    if isinstance(obj, dict):
+        return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
+    if hasattr(obj, "items"):  # any other type with "items" attr, e.g. TypedDict and OrderedDict
+        return {key: _recursive_dict_conversion(value) for key, value in obj.items()}
+    return obj
+
+
+def _query_contract_for_balance(
+    contract: Contract, wallet_addr: str, block_number: BlockNumber, token_id: int | None = None
+) -> Decimal | None:
+    """Queries the given contract for the wallet's token_id balance.
+
+    Arguments
+    ---------
+    contract : Contract
+        The contract to query.
+    wallet_addr: str
+        The wallet address to use for query
+    block_number: BlockNumber
+        The block number to query
+    token_id: int | None
+        The given token id. If none, assuming we're calling base contract
+
+    Returns
+    -------
+    Decimal | None
+        The amount token_id in wallet_addr. None if failed
+    """
+    num_token_scaled = None
+    for attempt_count in range(RETRY_COUNT):
+        try:
+            if token_id is None:
+                num_token_scaled = contract.functions.balanceOf(wallet_addr).call(block_identifier=block_number)
+            else:
+                num_token_scaled = contract.functions.balanceOf(token_id, wallet_addr).call(
+                    block_identifier=block_number
+                )
+            break
+        except ValueError:
+            logging.warning("Error in getting token balance, retrying %s/%s", attempt_count + 1, RETRY_COUNT)
+            time.sleep(1)
+            continue
+    return _convert_scaled_value(num_token_scaled)

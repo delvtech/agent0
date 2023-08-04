@@ -21,6 +21,10 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_co
 class Base(MappedAsDataclass, DeclarativeBase):
     """Base class to subclass from to define the schema"""
 
+
+class BaseWithBlockNumber(Base):
+    """Base class to subclass from to define the schema"""
+
     blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), index=True)
 
 
