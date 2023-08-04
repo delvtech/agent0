@@ -1,11 +1,14 @@
 """Empty accounts for engaging with smart contracts"""
 from __future__ import annotations
-
 import logging
 from typing import Generic, TypeVar
 
 from elfpy.agents.policies import BasePolicy, NoActionPolicy
-from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketAction, MarketActionType
+from elfpy.markets.hyperdrive import (
+    HyperdriveMarket,
+    HyperdriveMarketAction,
+    MarketActionType,
+)
 from elfpy.types import MarketType, Quantity, TokenType, Trade
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress

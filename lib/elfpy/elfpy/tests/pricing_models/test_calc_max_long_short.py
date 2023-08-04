@@ -1,13 +1,12 @@
 """Testing for the calculate_max_long function of the pricing models"""
 from __future__ import annotations
-
-import unittest
 from dataclasses import dataclass
+import unittest
 
-import elfpy.time as time
-import elfpy.utils.logs as log_utils
 from elfpy.markets.hyperdrive import HyperdriveMarketState, HyperdrivePricingModel
 from elfpy.tests.fixtures.hyperdrive_config import HyperdriveConfig
+import elfpy.time as time
+import elfpy.utils.logs as log_utils
 from fixedpointmath import FixedPoint
 
 

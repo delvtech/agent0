@@ -169,7 +169,9 @@ def get_latest_block_number_from_pool_info_table(session: Session) -> int:
     return get_latest_block_number_from_table(PoolInfo, session)
 
 
-def get_pool_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+def get_pool_info(
+    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
+) -> pd.DataFrame:
     """Get all pool info and returns as a pandas dataframe.
 
     Arguments
@@ -204,7 +206,7 @@ def get_pool_info(session: Session, start_block: int | None = None, end_block: i
     # Always sort by time in order
     query = query.order_by(PoolInfo.timestamp)
 
-    return pd.read_sql(query.statement, con=session.connection()).set_index("blockNumber")
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float).set_index("blockNumber")
 
 
 def get_checkpoint_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
@@ -385,7 +387,9 @@ def get_current_wallet_info(
     return current_wallet_info
 
 
-def get_wallet_deltas(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+def get_wallet_deltas(
+    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
+) -> pd.DataFrame:
     """Get all wallet_delta data in history and returns as a pandas dataframe.
 
     Arguments
@@ -417,7 +421,7 @@ def get_wallet_deltas(session: Session, start_block: int | None = None, end_bloc
     if end_block is not None:
         query = query.filter(WalletDelta.blockNumber < end_block)
 
-    return pd.read_sql(query.statement, con=session.connection())
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
 def get_agents(session: Session, start_block: int | None = None, end_block: int | None = None) -> list[str]:

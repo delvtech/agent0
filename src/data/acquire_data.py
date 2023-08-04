@@ -1,24 +1,23 @@
 """Script to format on-chain hyperdrive pool, config, and transaction data post-processing."""
 from __future__ import annotations
-
+from dataclasses import dataclass
 import logging
 import os
 import time
-from dataclasses import dataclass
 
 from dotenv import load_dotenv
 from elfpy.utils import logs as log_utils
-from eth_typing import URI, BlockNumber
+from eth_typing import BlockNumber, URI
 from eth_utils import address
 from web3 import Web3
 from web3.contract.contract import Contract
 
-import src.data.hyperdrive.convert_data
-import src.data.hyperdrive.postgres
-import src.eth.transactions
-import src.hyperdrive.addresses
 from src import eth, hyperdrive
 from src.data import postgres
+import src.data.hyperdrive.convert_data
+import src.data.hyperdrive.postgres as postgres_hyperdrive
+import src.eth.transactions
+import src.hyperdrive.addresses
 
 # pylint: disable=too-many-arguments
 
@@ -26,6 +25,35 @@ from src.data import postgres
 # pylint: disable=too-many-branches
 
 RETRY_COUNT = 10
+
+
+def _get_hyperdrive_contract(
+    web3: Web3, abis: dict, addresses: src.hyperdrive.addresses.HyperdriveAddresses
+) -> Contract:
+    """Get the hyperdrive contract given abis.
+
+    Arguments
+    ---------
+    web3: Web3
+        web3 provider object
+    abis: dict
+        A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
+    addresses: HyperdriveAddressesJson
+        The block number to query from the chain
+
+    Returns
+    -------
+    Contract
+        The contract object returned from the query
+    """
+    if "IHyperdrive" not in abis:
+        raise AssertionError("IHyperdrive ABI was not provided")
+    state_abi = abis["IHyperdrive"]
+    # get contract instance of hyperdrive
+    hyperdrive_contract: Contract = web3.eth.contract(
+        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
+    )
+    return hyperdrive_contract
 
 
 def main(
@@ -74,12 +102,10 @@ def main(
 
     # get pool config from hyperdrive contract
     pool_config_dict = hyperdrive.contract_interface.get_hyperdrive_config(hyperdrive_contract)
-    src.data.hyperdrive.postgres.add_pool_config(
-        src.data.hyperdrive.convert_data.convert_pool_config(pool_config_dict), session
-    )
+    postgres_hyperdrive.add_pool_config(src.data.hyperdrive.convert_data.convert_pool_config(pool_config_dict), session)
 
     # Get last entry of pool info in db
-    data_latest_block_number = src.data.hyperdrive.postgres.get_latest_block_number_from_pool_info_table(session)
+    data_latest_block_number = postgres_hyperdrive.get_latest_block_number_from_pool_info_table(session)
     # Using max of latest block in database or specified start block
     start_block = max(start_block, data_latest_block_number)
     # Parameterized start block number
@@ -98,7 +124,7 @@ def main(
     if data_latest_block_number < block_number < latest_mined_block:
         # Query and add block_pool_info
         pool_info_dict = hyperdrive.contract_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
-        src.data.hyperdrive.postgres.add_pool_infos(
+        postgres_hyperdrive.add_pool_infos(
             [src.data.hyperdrive.convert_data.convert_pool_info(pool_info_dict)], session
         )
 
@@ -106,7 +132,7 @@ def main(
         checkpoint_info_dict = hyperdrive.contract_interface.get_hyperdrive_checkpoint_info(
             web3, hyperdrive_contract, block_number
         )
-        src.data.hyperdrive.postgres.add_checkpoint_infos(
+        postgres_hyperdrive.add_checkpoint_infos(
             [src.data.hyperdrive.convert_data.convert_checkpoint_info(checkpoint_info_dict)], session
         )
 
@@ -118,7 +144,7 @@ def main(
             hyperdrive_contract, transactions
         )
         postgres.add_transactions(block_transactions, session)
-        src.data.hyperdrive.postgres.add_wallet_deltas(wallet_deltas, session)
+        postgres_hyperdrive.add_wallet_deltas(wallet_deltas, session)
 
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
@@ -155,7 +181,7 @@ def main(
                 if pool_info_dict is None:
                     raise ValueError("Error in getting pool info")
                 block_pool_info = src.data.hyperdrive.convert_data.convert_pool_info(pool_info_dict)
-                src.data.hyperdrive.postgres.add_pool_infos([block_pool_info], session)
+                postgres_hyperdrive.add_pool_infos([block_pool_info], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 checkpoint_info_dict = None
@@ -172,7 +198,7 @@ def main(
                 if checkpoint_info_dict is None:
                     raise ValueError("Error in getting checkpoint info")
                 block_checkpoint_info = src.data.hyperdrive.convert_data.convert_checkpoint_info(checkpoint_info_dict)
-                src.data.hyperdrive.postgres.add_checkpoint_infos([block_checkpoint_info], session)
+                postgres_hyperdrive.add_checkpoint_infos([block_checkpoint_info], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_transactions = None
@@ -202,14 +228,14 @@ def main(
                     raise ValueError("Error in getting transactions")
 
                 postgres.add_transactions(block_transactions, session)
-                src.data.hyperdrive.postgres.add_wallet_deltas(wallet_deltas, session)
+                postgres_hyperdrive.add_wallet_deltas(wallet_deltas, session)
 
                 # TODO put the wallet info query as an optional block,
                 # and check these wallet values with what we get from the deltas
                 wallet_info_for_transactions = src.data.hyperdrive.convert_data.get_wallet_info(
                     hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
                 )
-                src.data.hyperdrive.postgres.add_wallet_infos(wallet_info_for_transactions, session)
+                postgres_hyperdrive.add_wallet_infos(wallet_info_for_transactions, session)
         time.sleep(sleep_amount)
 
 
@@ -239,15 +265,13 @@ class EthConfig:
 
 
 def build_eth_config() -> EthConfig:
-    """Build an eth that looks for environmental variables.
-    If env var exists, use that, otherwise, default
+    """Build an eth config that looks for environmental variables. If env var exists, use that, otherwise, default.
 
     Returns
     -------
     EthConfig
         Config settings required to connect to the eth node
     """
-
     contracts_url = os.getenv("CONTRACTS_URL")
     ethereum_node = os.getenv("ETHEREUM_NODE")
     abi_dir = os.getenv("ABI_DIR")
@@ -285,32 +309,3 @@ if __name__ == "__main__":
         LOOKBACK_BLOCK_LIMIT,
         SLEEP_AMOUNT,
     )
-
-
-def _get_hyperdrive_contract(
-    web3: Web3, abis: dict, addresses: src.hyperdrive.addresses.HyperdriveAddresses
-) -> Contract:
-    """Get the hyperdrive contract given abis
-
-    Arguments
-    ---------
-    web3: Web3
-        web3 provider object
-    abis: dict
-        A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
-    addresses: HyperdriveAddressesJson
-        The block number to query from the chain
-
-    Returns
-    -------
-    Contract
-        The contract object returned from the query
-    """
-    if "IHyperdrive" not in abis:
-        raise AssertionError("IHyperdrive ABI was not provided")
-    state_abi = abis["IHyperdrive"]
-    # get contract instance of hyperdrive
-    hyperdrive_contract: Contract = web3.eth.contract(
-        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
-    )
-    return hyperdrive_contract

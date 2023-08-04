@@ -1,13 +1,12 @@
 """Testing for crash report logging."""
 from __future__ import annotations
-
+from datetime import datetime
 import logging
 import unittest
-from datetime import datetime
 
-import elfpy.utils.logs as log_utils
 from elfpy.simulators.smulation_config import SimulationConfig
 from elfpy.utils import sim_utils
+import elfpy.utils.logs as log_utils
 from web3.exceptions import InvalidTransaction
 
 from src.data.hyperdrive.db_schema import PoolConfig, PoolInfo

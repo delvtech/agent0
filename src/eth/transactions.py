@@ -71,7 +71,7 @@ def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn
 
 
 def smart_contract_preview_transaction(
-    contract: Contract, signer: EthAgent, function_name_or_signature: str, *fn_args
+    contract: Contract, signer_address: ChecksumAddress, function_name_or_signature: str, *fn_args
 ) -> dict[str, Any]:
     """Returns the values from a transaction without actually submitting the transaction.
 
@@ -79,7 +79,7 @@ def smart_contract_preview_transaction(
     ---------
     contract : web3.contract.contract.Contract
         The contract that we are reading from.
-    signer: EthAgent
+    signer_address: ChecksumAddress
         The address that would sign the transaction.
     function_name_or_signature : str
         The name of the function
@@ -89,7 +89,7 @@ def smart_contract_preview_transaction(
     Returns
     -------
     dict[str, Any]
-        A dictionary of value names
+        Return values of the previewed transaction.
 
     .. todo::
         Add better typing to the return value
@@ -102,7 +102,7 @@ def smart_contract_preview_transaction(
         function = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
     else:
         function = contract.get_function_by_name(function_name_or_signature)(*fn_args)
-    return_values = function.call({"from": signer.checksum_address})
+    return_values = function.call({"from": signer_address})
     if not isinstance(return_values, Sequence):  # could be list or tuple
         return_values = [return_values]
     if contract.abi:  # not all contracts have an associated ABI
