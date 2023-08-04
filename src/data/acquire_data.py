@@ -103,9 +103,7 @@ def main(
 
     # get pool config from hyperdrive contract
     pool_config_dict = hyperdrive.contract_interface.get_hyperdrive_config(hyperdrive_contract)
-    postgres_hyperdrive.add_pool_config(
-        src.data.hyperdrive.convert_data.convert_pool_config(pool_config_dict), session
-    )
+    postgres_hyperdrive.add_pool_config(src.data.hyperdrive.convert_data.convert_pool_config(pool_config_dict), session)
 
     # Get last entry of pool info in db
     data_latest_block_number = postgres_hyperdrive.get_latest_block_number_from_pool_info_table(session)
