@@ -13,7 +13,8 @@ from web3.types import TxData
 import src.data.hyperdrive.db_schema
 from src import eth, hyperdrive
 from src.data import db_schema
-from src.data.convert_data import query_contract_for_balance, recursive_dict_conversion
+from src.data.conversions import convert_scaled_value_to_decimal
+from src.eth.contract.token import get_token_balance
 
 
 def convert_hyperdrive_transactions_for_block(
@@ -48,11 +49,37 @@ def convert_hyperdrive_transactions_for_block(
             continue
         tx_receipt = Web3.eth.get_transaction_receipt(tx_hash)
         logs = eth.get_transaction_logs(hyperdrive_contract, tx_receipt)
-        receipt: dict[str, Any] = recursive_dict_conversion(tx_receipt)  # type: ignore
+        receipt: dict[str, Any] = _convert_object_hexbytes_to_strings(tx_receipt)  # type: ignore
         out_transactions.append(_build_hyperdrive_transaction_object(transaction_dict, logs, receipt))
         # Build wallet deltas based on transaction logs
         out_wallet_deltas.extend(_build_wallet_deltas(logs, transaction_dict["hash"], transaction_dict["blockNumber"]))
     return out_transactions, out_wallet_deltas
+
+
+def _convert_object_hexbytes_to_strings(obj: Any) -> Any:
+    """Recursively converts all HexBytes in an object to strings.
+
+    Arguments
+    ---------
+    obj : Any
+        Could be a HexBytes, dict, or any object with the `items` attribute
+
+    Returns
+    -------
+    Any
+        A nested dictionary containing the decoded object values
+
+
+    .. todo::
+        This function needs to be better constrained & typed, or avoided all together?
+    """
+    if isinstance(obj, HexBytes):
+        return obj.hex()
+    if isinstance(obj, dict):
+        return {key: convert_dict_hexbytes_to_strings(value) for key, value in obj.items()}
+    if hasattr(obj, "items"):  # any other type with "items" attr, e.g. TypedDict and OrderedDict
+        return {key: convert_dict_hexbytes_to_strings(value) for key, value in obj.items()}
+    return obj
 
 
 # TODO move this function to hyperdrive_interface and return a list of dictionaries
@@ -95,7 +122,7 @@ def get_wallet_info(
             continue
 
         # Query and add base tokens to walletinfo
-        num_base_token = query_contract_for_balance(base_contract, wallet_addr, block_number)
+        num_base_token = get_token_balance(base_contract, wallet_addr, block_number, None)
         if num_base_token is not None:
             out_wallet_info.append(
                 src.data.hyperdrive.db_schema.WalletInfo(
@@ -103,7 +130,7 @@ def get_wallet_info(
                     walletAddress=wallet_addr,
                     baseTokenType="BASE",
                     tokenType="BASE",
-                    tokenValue=num_base_token,
+                    tokenValue=convert_scaled_value_to_decimal(num_base_token),
                 )
             )
 
@@ -111,7 +138,7 @@ def get_wallet_info(
         lp_token_prefix = hyperdrive.AssetIdPrefix.LP.value
         # LP tokens always have 0 maturity
         lp_token_id = hyperdrive.encode_asset_id(lp_token_prefix, timestamp=0)
-        num_lp_token = query_contract_for_balance(hyperdrive_contract, wallet_addr, block_number, lp_token_id)
+        num_lp_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, lp_token_id)
         if num_lp_token is not None:
             out_wallet_info.append(
                 src.data.hyperdrive.db_schema.WalletInfo(
@@ -119,7 +146,7 @@ def get_wallet_info(
                     walletAddress=wallet_addr,
                     baseTokenType="LP",
                     tokenType="LP",
-                    tokenValue=num_lp_token,
+                    tokenValue=convert_scaled_value_to_decimal(num_lp_token),
                     maturityTime=None,
                     sharePrice=None,
                 )
@@ -129,9 +156,7 @@ def get_wallet_info(
         withdrawal_token_prefix = hyperdrive.AssetIdPrefix.WITHDRAWAL_SHARE.value
         # Withdrawal tokens always have 0 maturity
         withdrawal_token_id = hyperdrive.encode_asset_id(withdrawal_token_prefix, timestamp=0)
-        num_withdrawal_token = query_contract_for_balance(
-            hyperdrive_contract, wallet_addr, block_number, withdrawal_token_id
-        )
+        num_withdrawal_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, withdrawal_token_id)
         if num_withdrawal_token is not None:
             out_wallet_info.append(
                 src.data.hyperdrive.db_schema.WalletInfo(
@@ -139,7 +164,7 @@ def get_wallet_info(
                     walletAddress=wallet_addr,
                     baseTokenType="WITHDRAWAL_SHARE",
                     tokenType="WITHDRAWAL_SHARE",
-                    tokenValue=num_withdrawal_token,
+                    tokenValue=convert_scaled_value_to_decimal(num_withdrawal_token),
                     maturityTime=None,
                     sharePrice=None,
                 )
@@ -159,9 +184,7 @@ def get_wallet_info(
                 if (base_token_type) == "SHORT":
                     share_price = pool_info.sharePrice
 
-                num_custom_token = query_contract_for_balance(
-                    hyperdrive_contract, wallet_addr, block_number, int(token_id)
-                )
+                num_custom_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, int(token_id))
                 if num_custom_token is not None:
                     out_wallet_info.append(
                         src.data.hyperdrive.db_schema.WalletInfo(
@@ -169,7 +192,7 @@ def get_wallet_info(
                             walletAddress=wallet_addr,
                             baseTokenType=base_token_type,
                             tokenType=token_type,
-                            tokenValue=num_custom_token,
+                            tokenValue=convert_scaled_value_to_decimal(num_custom_token),
                             maturityTime=token_maturity_time,
                             sharePrice=share_price,
                         )
@@ -288,8 +311,8 @@ def _build_wallet_deltas(
     for log in logs:
         if log["event"] == "AddLiquidity":
             wallet_addr = log["args"]["provider"]
-            token_delta = _convert_scaled_value(log["args"]["lpAmount"])
-            base_delta = _convert_scaled_value(-log["args"]["baseAmount"])
+            token_delta = convert_scaled_value_to_decimal(log["args"]["lpAmount"])
+            base_delta = convert_scaled_value_to_decimal(-log["args"]["baseAmount"])
             wallet_deltas.extend(
                 [
                     src.data.hyperdrive.db_schema.WalletDelta(
@@ -313,8 +336,8 @@ def _build_wallet_deltas(
 
         elif log["event"] == "OpenLong":
             wallet_addr = log["args"]["trader"]
-            token_delta = _convert_scaled_value(log["args"]["bondAmount"])
-            base_delta = _convert_scaled_value(-log["args"]["baseAmount"])
+            token_delta = convert_scaled_value_to_decimal(log["args"]["bondAmount"])
+            base_delta = convert_scaled_value_to_decimal(-log["args"]["baseAmount"])
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
@@ -340,8 +363,8 @@ def _build_wallet_deltas(
 
         elif log["event"] == "OpenShort":
             wallet_addr = log["args"]["trader"]
-            token_delta = _convert_scaled_value(log["args"]["bondAmount"])
-            base_delta = _convert_scaled_value(-log["args"]["baseAmount"])
+            token_delta = convert_scaled_value_to_decimal(log["args"]["bondAmount"])
+            base_delta = convert_scaled_value_to_decimal(-log["args"]["baseAmount"])
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
@@ -368,9 +391,9 @@ def _build_wallet_deltas(
         elif log["event"] == "RemoveLiquidity":
             wallet_addr = log["args"]["provider"]
             # Two deltas, one for withdrawal shares, one for lp tokens
-            lp_delta = _convert_scaled_value(-log["args"]["lpAmount"])
-            withdrawal_delta = _convert_scaled_value(log["args"]["withdrawalShareAmount"])
-            base_delta = _convert_scaled_value(log["args"]["baseAmount"])
+            lp_delta = convert_scaled_value_to_decimal(-log["args"]["lpAmount"])
+            withdrawal_delta = convert_scaled_value_to_decimal(log["args"]["withdrawalShareAmount"])
+            base_delta = convert_scaled_value_to_decimal(log["args"]["baseAmount"])
             wallet_deltas.extend(
                 [
                     src.data.hyperdrive.db_schema.WalletDelta(
@@ -402,8 +425,8 @@ def _build_wallet_deltas(
 
         elif log["event"] == "CloseLong":
             wallet_addr = log["args"]["trader"]
-            token_delta = _convert_scaled_value(-log["args"]["bondAmount"])
-            base_delta = _convert_scaled_value(log["args"]["baseAmount"])
+            token_delta = convert_scaled_value_to_decimal(-log["args"]["bondAmount"])
+            base_delta = convert_scaled_value_to_decimal(log["args"]["baseAmount"])
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
@@ -429,8 +452,8 @@ def _build_wallet_deltas(
 
         elif log["event"] == "CloseShort":
             wallet_addr = log["args"]["trader"]
-            token_delta = _convert_scaled_value(-log["args"]["bondAmount"])
-            base_delta = _convert_scaled_value(log["args"]["baseAmount"])
+            token_delta = convert_scaled_value_to_decimal(-log["args"]["bondAmount"])
+            base_delta = convert_scaled_value_to_decimal(log["args"]["baseAmount"])
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
@@ -457,8 +480,8 @@ def _build_wallet_deltas(
         elif log["event"] == "RedeemWithdrawalShares":
             wallet_addr = log["args"]["provider"]
             maturity_time = None
-            token_delta = _convert_scaled_value(-log["args"]["withdrawalShareAmount"])
-            base_delta = _convert_scaled_value(log["args"]["baseAmount"])
+            token_delta = convert_scaled_value_to_decimal(-log["args"]["withdrawalShareAmount"])
+            base_delta = convert_scaled_value_to_decimal(log["args"]["baseAmount"])
             wallet_deltas.extend(
                 [
                     src.data.hyperdrive.db_schema.WalletDelta(
@@ -523,18 +546,18 @@ def _build_hyperdrive_transaction_object(
     # TODO can the input field ever be empty or not exist?
     out_dict["input_method"] = transaction_dict["input"]["method"]
     input_params = transaction_dict["input"]["params"]
-    out_dict["input_params_contribution"] = _convert_scaled_value(input_params.get("_contribution", None))
-    out_dict["input_params_apr"] = _convert_scaled_value(input_params.get("_apr", None))
+    out_dict["input_params_contribution"] = convert_scaled_value_to_decimal(input_params.get("_contribution", None))
+    out_dict["input_params_apr"] = convert_scaled_value_to_decimal(input_params.get("_apr", None))
     out_dict["input_params_destination"] = input_params.get("_destination", None)
     out_dict["input_params_asUnderlying"] = input_params.get("_asUnderlying", None)
-    out_dict["input_params_baseAmount"] = _convert_scaled_value(input_params.get("_baseAmount", None))
-    out_dict["input_params_minOutput"] = _convert_scaled_value(input_params.get("_minOutput", None))
-    out_dict["input_params_bondAmount"] = _convert_scaled_value(input_params.get("_bondAmount", None))
-    out_dict["input_params_maxDeposit"] = _convert_scaled_value(input_params.get("_maxDeposit", None))
+    out_dict["input_params_baseAmount"] = convert_scaled_value_to_decimal(input_params.get("_baseAmount", None))
+    out_dict["input_params_minOutput"] = convert_scaled_value_to_decimal(input_params.get("_minOutput", None))
+    out_dict["input_params_bondAmount"] = convert_scaled_value_to_decimal(input_params.get("_bondAmount", None))
+    out_dict["input_params_maxDeposit"] = convert_scaled_value_to_decimal(input_params.get("_maxDeposit", None))
     out_dict["input_params_maturityTime"] = input_params.get("_maturityTime", None)
-    out_dict["input_params_minApr"] = _convert_scaled_value(input_params.get("_minApr", None))
-    out_dict["input_params_maxApr"] = _convert_scaled_value(input_params.get("_maxApr", None))
-    out_dict["input_params_shares"] = _convert_scaled_value(input_params.get("_shares", None))
+    out_dict["input_params_minApr"] = convert_scaled_value_to_decimal(input_params.get("_minApr", None))
+    out_dict["input_params_maxApr"] = convert_scaled_value_to_decimal(input_params.get("_maxApr", None))
+    out_dict["input_params_shares"] = convert_scaled_value_to_decimal(input_params.get("_shares", None))
     # Assuming one TransferSingle per transfer
     # TODO Fix this below eventually
     # There can be two transfer singles
