@@ -8,12 +8,12 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
-import src.data.hyperdrive.postgres
+import src.data.hyperdrive.postgres as postgres_hyperdrive
+import src.data.postgres as postgres
 from src.dashboard.calc_pnl import calc_closeout_pnl, calc_total_returns
 from src.dashboard.extract_data_logs import get_combined_data
 from src.dashboard.plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
 from src.dashboard.plot_ohlcv import calc_ohlcv, plot_ohlcv
-from src.data import postgres
 from src.eth_bots.eth_bots_config import get_eth_bots_config
 
 # pylint: disable=invalid-name
@@ -32,7 +32,7 @@ def get_ticker(
     Arguments
     ---------
     data: pd.DataFrame
-        The dataframe resulting from postgres.get_transactions
+        The dataframe resulting from postgres_hyperdrive.get_transactions
 
     Returns
     -------
@@ -170,7 +170,7 @@ def get_user_lookup() -> pd.DataFrame:
         the wallet address itself if a wallet is found without a registered username.
     """
     # Get data
-    agents = src.data.hyperdrive.postgres.get_agents(session)
+    agents = postgres_hyperdrive.get_agents(session)
     user_map = postgres.get_user_map(session)
     # Usernames in postgres are bots
     user_map["username"] = user_map["username"] + " (bots)"
@@ -216,7 +216,7 @@ session = postgres.initialize_session()
 env_config, _ = get_eth_bots_config()
 
 # pool config data is static, so just read once
-config_data = postgres.get_pool_config(session, coerce_float=False)
+config_data = postgres_hyperdrive.get_pool_config(session, coerce_float=False)
 
 # TODO fix input invTimeStretch to be unscaled in ingestion into postgres
 config_data["invTimeStretch"] = config_data["invTimeStretch"] / 10**18
@@ -239,9 +239,9 @@ while True:
     # Place data and plots
     user_lookup = get_user_lookup()
     txn_data = postgres.get_transactions(session, -max_live_blocks)
-    pool_info_data = postgres.get_pool_info(session, -max_live_blocks, coerce_float=False)
+    pool_info_data = postgres_hyperdrive.get_pool_info(session, -max_live_blocks, coerce_float=False)
     combined_data = get_combined_data(txn_data, pool_info_data)
-    wallet_deltas = postgres.get_wallet_deltas(session, coerce_float=False)
+    wallet_deltas = postgres_hyperdrive.get_wallet_deltas(session, coerce_float=False)
     ticker = get_ticker(wallet_deltas, txn_data, pool_info_data, user_lookup)
 
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)

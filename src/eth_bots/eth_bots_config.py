@@ -34,14 +34,14 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
         base_abi="ERC20Mintable",
         username_register_url="http://localhost:5002",
         artifacts_url="http://localhost:8080",
-        rpc_url="http://localhost:8545",
+        rpc_url="http://localhost:8546",
         username="matt",
     )
 
     agent_config: list[AgentConfig] = [
         AgentConfig(
             policy=Policies.random_agent,
-            number_of_agents=3,
+            number_of_agents=1,
             slippage_tolerance=FixedPoint(0.0001),
             base_budget=Budget(
                 mean_wei=int(5_000e18),  # 5k base

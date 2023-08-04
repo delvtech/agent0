@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import src.data.hyperdrive.postgres
+import src.data.hyperdrive.postgres as postgres_hyperdrive
 from src.data.db_schema import Base
 from src.data.hyperdrive.db_schema import PoolConfig
 
@@ -59,31 +59,31 @@ class TestPoolConfigInterface:
     def test_get_pool_config(self, session):
         """Testing retrevial of pool config via interface"""
         pool_config_1 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
-        src.data.hyperdrive.postgres.add_pool_config(pool_config_1, session)
+        postgres_hyperdrive.add_pool_config(pool_config_1, session)
 
-        pool_config_df_1 = src.data.hyperdrive.postgres.get_pool_config(session, coerce_float=False)
+        pool_config_df_1 = postgres_hyperdrive.get_pool_config(session, coerce_float=False)
         assert len(pool_config_df_1) == 1
         assert pool_config_df_1.loc[0, "initialSharePrice"] == Decimal("3.2")
 
         pool_config_2 = PoolConfig(contractAddress="1", initialSharePrice=Decimal("3.4"))
-        src.data.hyperdrive.postgres.add_pool_config(pool_config_2, session)
+        postgres_hyperdrive.add_pool_config(pool_config_2, session)
 
-        pool_config_df_2 = src.data.hyperdrive.postgres.get_pool_config(session, coerce_float=False)
+        pool_config_df_2 = postgres_hyperdrive.get_pool_config(session, coerce_float=False)
         assert len(pool_config_df_2) == 2
         np.testing.assert_array_equal(pool_config_df_2["initialSharePrice"], np.array([Decimal("3.2"), Decimal("3.4")]))
 
     def test_primary_id_query_pool_config(self, session):
         """Testing retrevial of pool config via interface"""
         pool_config = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
-        src.data.hyperdrive.postgres.add_pool_config(pool_config, session)
+        postgres_hyperdrive.add_pool_config(pool_config, session)
 
-        pool_config_df_1 = src.data.hyperdrive.postgres.get_pool_config(
+        pool_config_df_1 = postgres_hyperdrive.get_pool_config(
             session, contract_address="0", coerce_float=False
         )
         assert len(pool_config_df_1) == 1
         assert pool_config_df_1.loc[0, "initialSharePrice"] == Decimal("3.2")
 
-        pool_config_df_2 = src.data.hyperdrive.postgres.get_pool_config(
+        pool_config_df_2 = postgres_hyperdrive.get_pool_config(
             session, contract_address="1", coerce_float=False
         )
         assert len(pool_config_df_2) == 0
@@ -91,19 +91,19 @@ class TestPoolConfigInterface:
     def test_pool_config_verify(self, session):
         """Testing retrevial of pool config via interface"""
         pool_config_1 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
-        src.data.hyperdrive.postgres.add_pool_config(pool_config_1, session)
-        pool_config_df_1 = src.data.hyperdrive.postgres.get_pool_config(session, coerce_float=False)
+        postgres_hyperdrive.add_pool_config(pool_config_1, session)
+        pool_config_df_1 = postgres_hyperdrive.get_pool_config(session, coerce_float=False)
         assert len(pool_config_df_1) == 1
         assert pool_config_df_1.loc[0, "initialSharePrice"] == Decimal("3.2")
 
         # Nothing should happen if we give the same pool_config
         pool_config_2 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
-        src.data.hyperdrive.postgres.add_pool_config(pool_config_2, session)
-        pool_config_df_2 = src.data.hyperdrive.postgres.get_pool_config(session, coerce_float=False)
+        postgres_hyperdrive.add_pool_config(pool_config_2, session)
+        pool_config_df_2 = postgres_hyperdrive.get_pool_config(session, coerce_float=False)
         assert len(pool_config_df_2) == 1
         assert pool_config_df_2.loc[0, "initialSharePrice"] == Decimal("3.2")
 
         # If we try to add another pool config with a different value, should throw a ValueError
         pool_config_3 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.4"))
         with pytest.raises(ValueError):
-            src.data.hyperdrive.postgres.add_pool_config(pool_config_3, session)
+            postgres_hyperdrive.add_pool_config(pool_config_3, session)

@@ -9,12 +9,58 @@ import pandas as pd
 from eth_typing import ChecksumAddress, HexAddress, HexStr
 from fixedpointmath import FixedPoint
 from web3 import Web3
+from web3.contract.contract import Contract
 
 from src import eth
 from src.dashboard.extract_data_logs import calculate_spot_price
 from src.eth.transactions import smart_contract_preview_transaction
 from src.eth_bots.core.environment_config import EnvironmentConfig
-from src.hyperdrive import contract_interface
+from src.data.acquire_data import _get_hyperdrive_contract
+from src.hyperdrive.addresses import fetch_hyperdrive_address_from_url
+
+
+def calc_single_closeout(
+    position: pd.DataFrame, contract: Contract, pool_info: pd.DataFrame, min_output: int, as_underlying: bool
+):
+    # Extract the relevant values (you can adjust this part to match your logic)
+    if position["baseTokenType"] == "BASE" or position["delta"] == 0:
+        position["closeout_pnl"] = position["pnl"]
+        return position
+    assert len(position.shape) == 1, "Only one position at a time for add_unrealized_pnl_closeout"
+    amount = FixedPoint(str(position["delta"])).scaled_value
+    address = position.name[0]  # first item in multi-index
+    tokentype = position["baseTokenType"]
+    sender = ChecksumAddress(HexAddress(HexStr(address)))
+    preview_result = None
+    maturity = 0
+    if tokentype in ["LONG", "SHORT"]:
+        maturity = position["maturityTime"]
+        assert isinstance(maturity, Decimal)
+        maturity = int(maturity)
+        assert isinstance(maturity, int)
+    assert isinstance(tokentype, str)
+    if tokentype == "LONG":
+        fn_args = (maturity, amount, min_output, address, as_underlying)
+        preview_result = smart_contract_preview_transaction(contract, sender, "closeLong", *fn_args)
+        position.at["closeout_pnl"] = Decimal(preview_result["value"]) / Decimal(1e18)
+    elif tokentype == "SHORT":
+        fn_args = (maturity, amount, min_output, address, as_underlying)
+        preview_result = smart_contract_preview_transaction(contract, sender, "closeShort", *fn_args)
+        position.at["closeout_pnl"] = preview_result["value"] / Decimal(1e18)
+    elif tokentype == "LP":
+        fn_args = (amount, min_output, address, as_underlying)
+        preview_result = smart_contract_preview_transaction(contract, sender, "removeLiquidity", *fn_args)
+        position.at["closeout_pnl"] = Decimal(
+            preview_result["baseProceeds"]
+            + preview_result["withdrawalShares"]
+            * pool_info["sharePrice"].values[-1]
+            * pool_info["lpSharePrice"].values[-1]
+        ) / Decimal(1e18)
+    elif tokentype == "WITHDRAWAL_SHARE":
+        fn_args = (amount, min_output, address, as_underlying)
+        preview_result = smart_contract_preview_transaction(contract, sender, "redeemWithdrawalShares", *fn_args)
+        position.at["closeout_pnl"] = preview_result["proceeds"] / Decimal(1e18)
+    return position
 
 
 def calc_closeout_pnl(current_wallet: pd.DataFrame, pool_info: pd.DataFrame, env_config: EnvironmentConfig):
@@ -23,54 +69,20 @@ def calc_closeout_pnl(current_wallet: pd.DataFrame, pool_info: pd.DataFrame, env
 
     # send a request to the local server to fetch the deployed contract addresses and
     # all Hyperdrive contract addresses from the server response
-    addresses = contract_interface.fetch_hyperdrive_address_from_url(env_config.artifacts_url)
+    addresses = fetch_hyperdrive_address_from_url(env_config.artifacts_url)
     abis = eth.abi.load_all_abis(env_config.abi_folder)
-    contract = contract_interface.get_hyperdrive_contract(web3, abis, addresses)
+    contract = _get_hyperdrive_contract(web3, abis, addresses)
 
     # Define a function to handle the calculation for each group
-    def calc_single_closeout(position: pd.DataFrame, min_output: int, as_underlying: bool):
-        # Extract the relevant values (you can adjust this part to match your logic)
-        if position["baseTokenType"] == "BASE" or position["delta"] == 0:
-            position["closeout_pnl"] = position["pnl"]
-            return position
-        assert len(position.shape) == 1, "Only one position at a time for add_unrealized_pnl_closeout"
-        amount = FixedPoint(str(position["delta"])).scaled_value
-        address = position.name[0]  # first item in multi-index
-        tokentype = position["baseTokenType"]
-        sender = ChecksumAddress(HexAddress(HexStr(address)))
-        preview_result = None
-        maturity = 0
-        if tokentype in ["LONG", "SHORT"]:
-            maturity = position["maturityTime"]
-            assert isinstance(maturity, Decimal)
-            maturity = int(maturity)
-            assert isinstance(maturity, int)
-        assert isinstance(tokentype, str)
-        if tokentype == "LONG":
-            fn_args = (maturity, amount, min_output, address, as_underlying)
-            preview_result = smart_contract_preview_transaction(contract, sender, "closeLong", *fn_args)
-            position.at["closeout_pnl"] = Decimal(preview_result["value"]) / Decimal(1e18)
-        elif tokentype == "SHORT":
-            fn_args = (maturity, amount, min_output, address, as_underlying)
-            preview_result = smart_contract_preview_transaction(contract, sender, "closeShort", *fn_args)
-            position.at["closeout_pnl"] = preview_result["value"] / Decimal(1e18)
-        elif tokentype == "LP":
-            fn_args = (amount, min_output, address, as_underlying)
-            preview_result = smart_contract_preview_transaction(contract, sender, "removeLiquidity", *fn_args)
-            position.at["closeout_pnl"] = Decimal(
-                preview_result["baseProceeds"]
-                + preview_result["withdrawalShares"]
-                * pool_info["sharePrice"].values[-1]
-                * pool_info["lpSharePrice"].values[-1]
-            ) / Decimal(1e18)
-        elif tokentype == "WITHDRAWAL_SHARE":
-            fn_args = (amount, min_output, address, as_underlying)
-            preview_result = smart_contract_preview_transaction(contract, sender, "redeemWithdrawalShares", *fn_args)
-            position.at["closeout_pnl"] = preview_result["proceeds"] / Decimal(1e18)
-        return position
-
     current_wallet["closeout_pnl"] = np.nan
-    return current_wallet.apply(calc_single_closeout, min_output=0, as_underlying=True, axis=1)  # type: ignore
+    return current_wallet.apply(
+        calc_single_closeout,  # type: ignore
+        contract=contract,
+        pool_info=pool_info,
+        min_output=0,
+        as_underlying=True,
+        axis=1,
+    )
 
 
 def calc_total_returns(
@@ -204,7 +216,7 @@ def calculate_spot_price_for_position(
     """
     # pylint: disable=too-many-arguments
     full_term_spot_price = calculate_spot_price(share_reserves, bond_reserves, initial_share_price, time_stretch)
-    time_left_seconds = maturity_timestamp.apply(lambda x: x - block_timestamp)
+    time_left_seconds = maturity_timestamp - block_timestamp  # type: ignore
     if isinstance(time_left_seconds, pd.Timedelta):
         time_left_seconds = time_left_seconds.total_seconds()
     time_left_in_years = time_left_seconds / position_duration
