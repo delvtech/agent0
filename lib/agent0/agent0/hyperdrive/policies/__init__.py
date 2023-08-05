@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
-from .base import BasePolicy
-from .no_action import NoActionPolicy
+from agent0.base.policies import BasePolicy, NoActionPolicy
+
 from .random_agent import RandomAgent
 from .smart_long import LongLouie
 from .smart_short import ShortSally

@@ -4,9 +4,11 @@ from __future__ import annotations
 import json
 import logging
 import os
+from typing import TypeVar
 
 import eth_utils
-from agent0.hyperdrive.accounts import EthAgent
+from agent0.base.accounts import EthAgent
+from agent0.hyperdrive.accounts import HyperdriveAgent
 from agent0.hyperdrive.config import AgentConfig
 from dotenv import load_dotenv
 from eth_account.account import Account
@@ -18,6 +20,8 @@ from web3.contract.contract import Contract
 
 # pylint: disable=too-many-locals
 
+Agent = TypeVar("Agent", bound=EthAgent)
+
 
 def get_agent_accounts(
     agent_config: list[AgentConfig],
@@ -25,7 +29,7 @@ def get_agent_accounts(
     base_token_contract: Contract,
     hyperdrive_address: str,
     rng: NumpyGenerator,
-) -> list[EthAgent]:
+) -> list[Agent]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
     Arguments
@@ -43,14 +47,14 @@ def get_agent_accounts(
 
     Returns
     -------
-    list[EthAgent]
-        A list of EthAgent objects that contain a wallet address and Elfpy Agent for determining trades
+    list[Agent]
+        A list of Agent objects that contain a wallet address and Elfpy Agent for determining trades
     """
     # load user dotenv variables
     load_dotenv()
     # TODO: raise issue on failure by looking at `rpc_response`, `tx_receipt` returned from function
     #   Do this for `set_anvil_account_balance`, `smart_contract_transact(mint)`, `smart_contract_transact(approve)`
-    agents: list[EthAgent] = []
+    agents: list[HyperdriveAgent] = []
     num_agents_so_far: list[int] = []  # maintains the total number of agents for each agent type
     key_string = os.environ.get("AGENT_KEYS")
     if key_string is None:
@@ -80,7 +84,7 @@ def get_agent_accounts(
                 raise AssertionError(
                     "Private keys must be specified for the eth_bots demo. Did you list enough in your .env?"
                 )
-            eth_agent = EthAgent(
+            eth_agent = HyperdriveAgent(
                 Account().from_key(agent_private_keys[agent_count]), policy=agent_info.policy(**kwargs)
             )
             agent_eth_funds = get_account_balance(web3, eth_agent.checksum_address)

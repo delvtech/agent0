@@ -2,11 +2,9 @@
 from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
-import logging
-from typing import NoReturn
+from typing import TYPE_CHECKING, NoReturn
 
 import eth_utils
-from agent0.hyperdrive.accounts import EthAgent
 from elfpy import types
 from elfpy.markets.hyperdrive import HyperdriveMarket, MarketActionType
 from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction
@@ -17,6 +15,9 @@ import eth_utils
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
+
+if TYPE_CHECKING:
+    from agent0.base.accounts import EthAgent
 
 # TODO: Fix these up when we refactor this file
 # pylint: disable=too-many-locals

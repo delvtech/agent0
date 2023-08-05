@@ -6,17 +6,17 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
-from fixedpointmath import FixedPoint
-from hexbytes import HexBytes
-
+from agent0.base.accounts import EthWallet
 from elfpy import check_non_zero
 from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet import Long, Short
 from elfpy.wallet.wallet_deltas import WalletDeltas
+from fixedpointmath import FixedPoint
+from hexbytes import HexBytes
 
 
-@dataclass()
-class EthWallet:
+@dataclass(kw_only=True)
+class HyperdriveWallet(EthWallet):
     r"""Stateful variable for storing what is in the agent's wallet
 
     Arguments
@@ -38,20 +38,10 @@ class EthWallet:
     """
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
-    address: HexBytes
-    # TODO: Support multiple typed balances:
-    #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
-    balance: Quantity = field(default_factory=lambda: Quantity(amount=FixedPoint(0), unit=TokenType.BASE))
     lp_tokens: FixedPoint = FixedPoint(0)
     withdraw_shares: FixedPoint = FixedPoint(0)
     longs: dict[FixedPoint, Long] = field(default_factory=dict)
     shorts: dict[FixedPoint, Short] = field(default_factory=dict)
-
-    def __getitem__(self, key: str) -> Any:
-        return getattr(self, key)
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        setattr(self, key, value)
 
     def _update_longs(self, longs: Iterable[tuple[FixedPoint, Long]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet
@@ -121,9 +111,9 @@ class EthWallet:
             if maturity_time in self.shorts and self.shorts[maturity_time].balance < FixedPoint(0):
                 raise AssertionError(f"wallet balance should be >= 0, not {self.shorts[maturity_time]}")
 
-    def copy(self) -> EthWallet:
+    def copy(self) -> HyperdriveWallet:
         """Returns a new copy of self"""
-        return EthWallet(**copy.deepcopy(self.__dict__))
+        return HyperdriveWallet(**copy.deepcopy(self.__dict__))
 
     def update(self, wallet_deltas: WalletDeltas) -> None:
         """Update the agent's wallet in-place
@@ -169,9 +159,3 @@ class EthWallet:
                 case _:
                     raise ValueError(f"wallet_{key=} is not allowed.")
             self.check_valid_wallet_state(self.__dict__)
-
-    def check_valid_wallet_state(self, dictionary: dict | None = None) -> None:
-        """Test that all wallet state variables are greater than zero"""
-        if dictionary is None:
-            dictionary = self.__dict__
-        check_non_zero(dictionary)

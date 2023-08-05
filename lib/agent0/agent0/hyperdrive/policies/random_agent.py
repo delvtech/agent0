@@ -3,12 +3,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from agent0.base.policies import BasePolicy
 from elfpy import WEI
 from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint
-
-from . import BasePolicy
 
 if TYPE_CHECKING:
     from elfpy.markets.hyperdrive import HyperdriveMarket

@@ -6,7 +6,7 @@ import logging
 import os
 import time
 
-from agent0.hyperdrive.accounts import EthAgent
+from agent0.base.accounts import EthAgent
 from agent0.hyperdrive.config import EnvironmentConfig
 from dotenv import load_dotenv
 from elfpy.utils import logs

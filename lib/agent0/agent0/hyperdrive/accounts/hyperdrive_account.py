@@ -1,15 +1,13 @@
 """Empty accounts for engaging with smart contracts"""
 from __future__ import annotations
+
 import logging
 from typing import Generic, TypeVar
 
-from agent0.hyperdrive.accounts.eth_wallet import EthWallet
-from elfpy.agents.policies import BasePolicy, NoActionPolicy
-from elfpy.markets.hyperdrive import (
-    HyperdriveMarket,
-    HyperdriveMarketAction,
-    MarketActionType,
-)
+from agent0.base.accounts import EthAgent
+from agent0.base.policies import BasePolicy
+from agent0.hyperdrive.accounts import HyperdriveWallet
+from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Quantity, TokenType, Trade
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
@@ -25,7 +23,7 @@ MarketAction = TypeVar(
 )  # TODO: should be able to infer this from the market
 
 
-class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
+class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
     r"""Enact policies on smart contracts and tracks wallet state"""
 
     def __init__(self, account: LocalAccount, policy: Policy | None = None):
@@ -77,11 +75,6 @@ class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
             address=HexBytes(self.address),
             balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE),
         )
-
-    @property
-    def checksum_address(self) -> ChecksumAddress:
-        """Return the checksum address of the account"""
-        return Web3.to_checksum_address(self.address)
 
     @property
     def liquidation_trades(self) -> list[Trade[MarketAction]]:
@@ -153,7 +146,7 @@ class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
         """
         # get the action list from the policy
         # TODO: Deprecate the old wallet in favor of this new one
-        actions: list[Trade[MarketAction]] = self.policy.action(market, self.wallet)  # type: ignore
+        actions: list[Trade[MarketAction]] = self.policy.action(market, self.wallet)
         # edit each action in place
         for action in actions:
             if action.market_type == MarketType.HYPERDRIVE and action.market_action.maturity_time is None:
