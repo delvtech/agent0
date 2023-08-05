@@ -3,19 +3,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fixedpointmath import FixedPoint, FixedPointMath
-
 from elfpy import WEI
 from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Trade
+from fixedpointmath import FixedPoint, FixedPointMath
 
-from .base import BasePolicy
+from . import BasePolicy
 
 if TYPE_CHECKING:
-    from numpy.random._generator import Generator as NumpyGenerator
-
     from elfpy.markets.hyperdrive import HyperdriveMarket
     from elfpy.wallet.wallet import Wallet
+    from numpy.random._generator import Generator as NumpyGenerator
 
 # pylint: disable=too-few-public-methods
 

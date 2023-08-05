@@ -1,21 +1,25 @@
 """A checkpoint bot for Hyperdrive"""
 from __future__ import annotations
+
 import datetime
 import logging
 import os
 import time
 
+from agent0.hyperdrive.accounts import EthAgent
+from agent0.hyperdrive.config import EnvironmentConfig
 from dotenv import load_dotenv
 from elfpy.utils import logs
 from eth_account.account import Account
+from ethpy.base import (
+    initialize_web3_with_http_provider,
+    load_all_abis,
+    set_anvil_account_balance,
+    smart_contract_read,
+    smart_contract_transact,
+)
+from ethpy.hyperdrive import fetch_hyperdrive_address_from_url, get_hyperdrive_config
 from web3.contract.contract import Contract
-
-from src import eth, hyperdrive
-from src.eth.accounts.eth_account import EthAgent
-from src.eth.rpc_interface import set_anvil_account_balance
-from src.eth.transactions import smart_contract_read, smart_contract_transact
-from src.eth_bots.core import EnvironmentConfig
-import src.hyperdrive.addresses
 
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.
@@ -58,7 +62,7 @@ def main() -> None:
 
     # Get the configuration and initialize the web3 provider.
     config = get_config()
-    web3 = eth.web3_setup.initialize_web3_with_http_provider(config.rpc_url, reset_provider=False)
+    web3 = initialize_web3_with_http_provider(config.rpc_url, reset_provider=False)
 
     # Setup logging
     logs.setup_logging(
@@ -77,10 +81,8 @@ def main() -> None:
     logging.info("Successfully funded the sender=%s.", sender.address)
 
     # Get the Hyperdrive contract.
-    hyperdrive_abis = eth.abi.load_all_abis(config.abi_folder)
-    addresses = src.hyperdrive.addresses.fetch_hyperdrive_address_from_url(
-        os.path.join(config.artifacts_url, "addresses.json")
-    )
+    hyperdrive_abis = load_all_abis(config.abi_folder)
+    addresses = fetch_hyperdrive_address_from_url(os.path.join(config.artifacts_url, "addresses.json"))
     hyperdrive_contract: Contract = web3.eth.contract(
         abi=hyperdrive_abis[config.hyperdrive_abi],
         address=web3.to_checksum_address(addresses.mock_hyperdrive),
@@ -89,7 +91,7 @@ def main() -> None:
     # Run the checkpoint bot. This bot will attempt to mint a new checkpoint
     # every checkpoint after a waiting period. It will poll very infrequently
     # to reduce the probability of needing to mint a checkpoint.
-    config = hyperdrive.contract_interface.get_hyperdrive_config(hyperdrive_contract)
+    config = get_hyperdrive_config(hyperdrive_contract)
     checkpoint_duration = config["checkpointDuration"]
     while True:
         # Get the latest block time and check to see if a new checkpoint should

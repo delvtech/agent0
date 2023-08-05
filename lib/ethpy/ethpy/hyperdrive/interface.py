@@ -10,13 +10,13 @@ from elfpy.markets.hyperdrive import (
     HyperdrivePricingModel,
 )
 from eth_typing import BlockNumber
+from ethpy.base import smart_contract_read
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
-from src import eth
-from src.hyperdrive.assets import AssetIdPrefix, encode_asset_id
+from . import AssetIdPrefix, encode_asset_id
 
 RETRY_COUNT = 10
 
@@ -39,7 +39,7 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
         A pool_info dict ready to be inserted into the Postgres PoolInfo schema
     """
     # get pool info from smart contract
-    pool_info = eth.smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
+    pool_info = smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
     # convert values to fixedpoint
     pool_info: dict[str, Any] = {str(key): FixedPoint(scaled_value=value) for (key, value) in pool_info.items()}
 
@@ -52,9 +52,9 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
     pool_info.update({"blockNumber": int(block_number)})
     # add position duration to the data dict
     # TODO get position duration from existing config passed in instead of from the chain
-    position_duration = eth.smart_contract_read(hyperdrive_contract, "getPoolConfig")["positionDuration"]
+    position_duration = smart_contract_read(hyperdrive_contract, "getPoolConfig")["positionDuration"]
     asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, position_duration)
-    pool_info["totalSupplyWithdrawalShares"] = eth.smart_contract_read(
+    pool_info["totalSupplyWithdrawalShares"] = smart_contract_read(
         hyperdrive_contract, "balanceOf", asset_id, hyperdrive_contract.address
     )["value"]
     return pool_info
@@ -83,7 +83,7 @@ def get_hyperdrive_checkpoint_info(
     current_block_timestamp = current_block.get("timestamp")
     if current_block_timestamp is None:
         raise AssertionError("Current block has no timestamp")
-    checkpoint_data: dict[str, int] = eth.smart_contract_read(hyperdrive_contract, "getCheckpoint", block_number)
+    checkpoint_data: dict[str, int] = smart_contract_read(hyperdrive_contract, "getCheckpoint", block_number)
     return {
         "blockNumber": int(block_number),
         "timestamp": datetime.fromtimestamp(current_block_timestamp),
@@ -108,7 +108,7 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict[str, Any]:
     hyperdrive_config : PoolConfig
         The hyperdrive config.
     """
-    hyperdrive_config: dict[str, Any] = eth.smart_contract_read(hyperdrive_contract, "getPoolConfig")
+    hyperdrive_config: dict[str, Any] = smart_contract_read(hyperdrive_contract, "getPoolConfig")
     pool_config: dict[str, Any] = {}
     pool_config["contractAddress"] = hyperdrive_contract.address
     pool_config["baseToken"] = hyperdrive_config["baseToken"]
