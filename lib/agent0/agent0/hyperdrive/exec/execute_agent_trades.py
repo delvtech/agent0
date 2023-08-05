@@ -13,8 +13,12 @@ from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction
 from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet import Long, Short
 from elfpy.wallet.wallet_deltas import WalletDeltas
-from ethpy.base import async_smart_contract_transact, get_transaction_logs, smart_contract_preview_transaction
-from ethpy.base.errors import UnknownBlockError
+from ethpy.base import (
+    UnknownBlockError,
+    async_smart_contract_transact,
+    get_transaction_logs,
+    smart_contract_preview_transaction,
+)
 from ethpy.hyperdrive import get_hyperdrive_market
 from fixedpointmath import FixedPoint
 from web3 import Web3

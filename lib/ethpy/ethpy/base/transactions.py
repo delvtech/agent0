@@ -6,7 +6,7 @@ from typing import Any, Sequence
 
 from agent0.hyperdrive.accounts import EthAgent
 from eth_typing import BlockNumber, ChecksumAddress
-from ethpy.base.errors import decode_error_selector_for_contract
+from ethpy.base import decode_error_selector_for_contract
 from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout

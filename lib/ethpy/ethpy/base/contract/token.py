@@ -8,8 +8,6 @@ import time
 from eth_typing import BlockNumber
 from web3.contract.contract import Contract
 
-RETRY_COUNT = 10
-
 
 def get_token_balance(
     contract: Contract, wallet_address: str, block_number: BlockNumber, token_id: int | None = None
@@ -34,8 +32,9 @@ def get_token_balance(
     Decimal | None
         The amount token_id in wallet_addr. None if failed
     """
+    retry_count = 10
     balance = None
-    for attempt_count in range(RETRY_COUNT):
+    for attempt_count in range(retry_count):
         try:
             if token_id is None:
                 # ERC20
@@ -45,7 +44,7 @@ def get_token_balance(
                 balance = contract.functions.balanceOf(token_id, wallet_address).call(block_identifier=block_number)
             break
         except ValueError:
-            logging.warning("Error in getting token balance, retrying %s/%s", attempt_count + 1, RETRY_COUNT)
+            logging.warning("Error in getting token balance, retrying %s/%s", attempt_count + 1, retry_count)
             time.sleep(1)
             continue
     return balance

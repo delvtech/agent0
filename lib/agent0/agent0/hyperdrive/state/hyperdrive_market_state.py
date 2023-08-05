@@ -5,7 +5,7 @@ import copy
 from dataclasses import dataclass, field
 
 import elfpy
-import elfpy.types as types
+from elfpy import types
 from elfpy.markets.base import BaseMarketState
 from fixedpointmath import FixedPoint
 

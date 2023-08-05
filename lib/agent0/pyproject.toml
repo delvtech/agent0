@@ -24,6 +24,7 @@ dependencies = [
     # TODO this might not work since it's not on github yet, need to test
     #"elfpy @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/elfpy",
     #"ethpy @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/ethpy",
+    #"chainsync @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/chainsync",
     # TODO figure out the dependencies below
     "matplotlib",
     "numpy",
