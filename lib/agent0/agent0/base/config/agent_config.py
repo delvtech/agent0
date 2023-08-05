@@ -7,7 +7,7 @@ from typing import Type
 from agent0.base.policies import BasePolicy
 from fixedpointmath import FixedPoint
 
-from . import Budget
+from .budget import Budget
 
 
 @dataclass

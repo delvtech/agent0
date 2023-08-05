@@ -8,10 +8,11 @@ from typing import Type, cast
 
 import pandas as pd
 import sqlalchemy
-from chainsync.base import Base, Transaction, UserMap
 from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engine, exc, func, inspect
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
+
+from .db_schema import Base, Transaction, UserMap
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods

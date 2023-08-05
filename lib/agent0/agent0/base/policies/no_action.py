@@ -3,10 +3,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from agent0.base.policies import BasePolicy
 from fixedpointmath import FixedPoint
 
-from . import MarketState, Wallet
+from .base import BasePolicy, MarketState, Wallet
 
 if TYPE_CHECKING:
     from elfpy.types import Trade

@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import pandas as pd
 from chainsync.base import get_latest_block_number_from_table
-from chainsync.hyperdrive import AgentPosition, CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
+
+from .agent_position import AgentPosition
+from .db_schema import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
 
 
 def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session) -> None:

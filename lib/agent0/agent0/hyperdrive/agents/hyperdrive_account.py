@@ -6,11 +6,12 @@ from typing import Generic, TypeVar
 
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy, NoActionPolicy
-from agent0.hyperdrive.agents import HyperdriveWallet
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Quantity, TokenType, Trade
 from eth_account.signers.local import LocalAccount
 from hexbytes import HexBytes
+
+from .hyperdrive_wallet import HyperdriveWallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 Market = TypeVar(

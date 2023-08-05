@@ -13,7 +13,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
-from . import AssetIdPrefix, encode_asset_id
+from .assets import AssetIdPrefix, encode_asset_id
 
 
 def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, Any]:

@@ -1,5 +1,4 @@
 """Base policy class. Subclasses of BasicPolicy will implement trade actions."""
-
 from __future__ import annotations
 
 import logging
