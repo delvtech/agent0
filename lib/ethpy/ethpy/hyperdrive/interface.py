@@ -1,14 +1,11 @@
 """Helper functions for interfacing with hyperdrive"""
 from __future__ import annotations
+
 from datetime import datetime
 from typing import Any
 
 from elfpy import time as elftime
-from elfpy.markets.hyperdrive import (
-    HyperdriveMarket,
-    HyperdriveMarketState,
-    HyperdrivePricingModel,
-)
+from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from eth_typing import BlockNumber
 from ethpy.base import smart_contract_read
 from fixedpointmath import FixedPoint

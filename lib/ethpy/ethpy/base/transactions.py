@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
-from agent0.hyperdrive.accounts import EthAgent
 from eth_typing import BlockNumber, ChecksumAddress
 from ethpy.base import decode_error_selector_for_contract
 from hexbytes import HexBytes
@@ -13,6 +12,9 @@ from web3._utils.threads import Timeout
 from web3.contract.contract import Contract
 from web3.exceptions import ContractCustomError, ContractLogicError, TimeExhausted, TransactionNotFound
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, BlockData, TxData, TxParams, TxReceipt, Wei
+
+if TYPE_CHECKING:
+    from agent0.base.agents import EthAgent
 
 
 def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
