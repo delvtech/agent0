@@ -25,7 +25,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 if TYPE_CHECKING:
-    from agent0.base.agents import EthAgent
+    from agent0.hyperdrive.accounts import HyperdriveAgent
 
 # TODO: Fix these up when we refactor this file
 # pylint: disable=too-many-locals
@@ -56,7 +56,7 @@ class ReceiptBreakdown:
 
 
 async def async_transact_and_parse_logs(
-    web3: Web3, hyperdrive_contract: Contract, signer: EthAgent, fn_name: str, *fn_args
+    web3: Web3, hyperdrive_contract: Contract, signer: HyperdriveAgent, fn_name: str, *fn_args
 ) -> ReceiptBreakdown:
     """Execute the hyperdrive smart contract transaction and decode the receipt to get the changes to the agent's funds.
 
@@ -66,8 +66,8 @@ async def async_transact_and_parse_logs(
         web3 provider object
     hyperdrive_contract : Contract
         Any deployed web3 contract
-    signer : EthAgent
-        The EthAgent that will be used to pay for the gas & sign the transaction
+    signer : HyperdriveAgent
+        The HyperdriveAgent that will be used to pay for the gas & sign the transaction
     fn_name : str
         This function must exist in the compiled contract's ABI
     fn_args : ordered list
@@ -116,7 +116,7 @@ async def async_transact_and_parse_logs(
 
 
 async def async_execute_single_agent_trade(
-    agent: EthAgent,
+    agent: HyperdriveAgent,
     web3: Web3,
     hyperdrive_contract: Contract,
     hyperdrive_market: HyperdriveMarket,
@@ -130,8 +130,8 @@ async def async_execute_single_agent_trade(
         web3 provider object
     hyperdrive_contract : Contract
         Any deployed web3 contract
-    agent: EthAgent
-        The EthAgent that is conducting the trade
+    agent: HyperdriveAgent
+        The HyperdriveAgent that is conducting the trade
     hyperdrive_market: HyperdriveMarket:
         The hyperdrive market state
     """
@@ -159,7 +159,7 @@ async def async_execute_single_agent_trade(
 async def async_execute_agent_trades(
     web3: Web3,
     hyperdrive_contract: Contract,
-    agents: list[EthAgent],
+    agents: list[HyperdriveAgent],
 ) -> None:
     """Hyperdrive forever into the sunset.
 
@@ -169,8 +169,8 @@ async def async_execute_agent_trades(
         web3 provider object
     hyperdrive_contract : Contract
         Any deployed web3 contract
-    agents : list[EthAgent]
-        A list of EthAgent that are conducting the trades
+    agents : list[HyperdriveAgent]
+        A list of HyperdriveAgent that are conducting the trades
     """
     # NOTE: This might _not_ be the latest market, due to async
     # get latest market
@@ -191,7 +191,7 @@ async def async_match_contract_call_to_trade(
     web3: Web3,
     hyperdrive_contract: Contract,
     hyperdrive_market: HyperdriveMarket,
-    agent: EthAgent,
+    agent: HyperdriveAgent,
     trade_envelope: types.Trade[HyperdriveMarketAction],
 ) -> WalletDeltas:
     """Match statement that executes the smart contract trade based on the provided type.
@@ -204,7 +204,7 @@ async def async_match_contract_call_to_trade(
         Any deployed web3 contract
     hyperdrive_market : HyperdriveMarket
         The elfpy trading market
-    agent : EthAgent
+    agent : HyperdriveAgent
         Object containing a wallet address and Elfpy Agent for determining trades
     trade_object : Trade
         A specific trade requested by the given agent
@@ -232,7 +232,9 @@ async def async_match_contract_call_to_trade(
             fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
 
             if trade.slippage_tolerance:
-                preview_result = smart_contract_preview_transaction(hyperdrive_contract, agent, "openLong", *fn_args)
+                preview_result = smart_contract_preview_transaction(
+                    hyperdrive_contract, agent.checksum_address, "openLong", *fn_args
+                )
                 min_output = (
                     FixedPoint(scaled_value=preview_result["bondProceeds"]) * (FixedPoint(1) - trade.slippage_tolerance)
                 ).scaled_value
@@ -268,7 +270,9 @@ async def async_match_contract_call_to_trade(
             )
 
             if trade.slippage_tolerance:
-                preview_result = smart_contract_preview_transaction(hyperdrive_contract, agent, "closeLong", *fn_args)
+                preview_result = smart_contract_preview_transaction(
+                    hyperdrive_contract, agent.checksum_address, "closeLong", *fn_args
+                )
                 min_output = (
                     FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.slippage_tolerance)
                 ).scaled_value
@@ -293,7 +297,9 @@ async def async_match_contract_call_to_trade(
             fn_args = (trade_amount, max_deposit, agent.checksum_address, as_underlying)
 
             if trade.slippage_tolerance:
-                preview_result = smart_contract_preview_transaction(hyperdrive_contract, agent, "openShort", *fn_args)
+                preview_result = smart_contract_preview_transaction(
+                    hyperdrive_contract, agent.checksum_address, "openShort", *fn_args
+                )
                 max_deposit = (
                     FixedPoint(scaled_value=preview_result["traderDeposit"])
                     * (FixedPoint(1) + trade.slippage_tolerance)
@@ -334,7 +340,9 @@ async def async_match_contract_call_to_trade(
             )
 
             if trade.slippage_tolerance:
-                preview_result = smart_contract_preview_transaction(hyperdrive_contract, agent, "closeShort", *fn_args)
+                preview_result = smart_contract_preview_transaction(
+                    hyperdrive_contract, agent.checksum_address, "closeShort", *fn_args
+                )
                 min_output = (
                     FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.slippage_tolerance)
                 ).scaled_value

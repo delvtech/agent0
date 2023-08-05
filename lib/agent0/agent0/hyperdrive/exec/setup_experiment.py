@@ -6,8 +6,8 @@ from http import HTTPStatus
 
 import numpy as np
 import requests
-from agent0.base.agents import EthAgent
 from agent0.base.config import DEFAULT_USERNAME, EnvironmentConfig
+from agent0.hyperdrive.accounts import HyperdriveAgent
 from agent0.hyperdrive.config import get_eth_bots_config
 from agent0.hyperdrive.exec import get_agent_accounts
 from chainsync.hyperdrive import setup_hyperdrive_crash_report_logging
@@ -18,18 +18,18 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 
-def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, list[EthAgent]]:
+def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, list[HyperdriveAgent]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
     Returns
     -------
-    tuple[Web3, Contract, Contract, EnvironmentConfig, list[EthAgent]]
+    tuple[Web3, Contract, Contract, EnvironmentConfig, list[HyperdriveAgent]]
         A tuple containing:
             - The web3 container
             - The hyperdrive contract
             - The base token contract
             - The environment configuration
-            - A list of EthAgent objects that contain a wallet address and Elfpy Agent for determining trades
+            - A list of HyperdriveAgent objects that contain a wallet address and Elfpy Agent for determining trades
 
     """
     # get the user defined config variables

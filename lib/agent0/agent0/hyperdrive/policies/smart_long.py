@@ -4,9 +4,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from agent0.base.policies import BasePolicy
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, HyperdriveMarketState
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
 from agent0.hyperdrive.accounts import HyperdriveWallet
 from elfpy import WEI
+
+# from agent0.hyperdrive import HyperdriveMarketState # FIXME: use agent0 market state instead of elfpy market
+from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint, FixedPointMath
 

@@ -5,7 +5,7 @@ import asyncio
 import logging
 from datetime import datetime
 
-from agent0.base.agents import EthAgent
+from agent0.hyperdrive.accounts import HyperdriveAgent
 from agent0.hyperdrive.exec import async_execute_agent_trades
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -15,7 +15,7 @@ from web3.types import RPCEndpoint
 def trade_if_new_block(
     web3: Web3,
     hyperdrive_contract: Contract,
-    agent_accounts: list[EthAgent],
+    agent_accounts: list[HyperdriveAgent],
     halt_on_errors: bool,
     last_executed_block: int,
 ) -> int:
@@ -27,8 +27,8 @@ def trade_if_new_block(
         Web3 provider object
     hyperdrive_contract : Contract
         The deployed hyperdrive contract
-    agent_accounts : list[EthAgent]]
-        A list of EthAgent objects that contain a wallet address and Elfpy Agent for determining trades
+    agent_accounts : list[HyperdriveAgent]]
+        A list of HyperdriveAgent objects that contain a wallet address and Elfpy Agent for determining trades
     halt_on_errors : bool
         If true, raise an exception if a trade reverts. Otherwise, log a warning and move on.
     last_executed_block : int
