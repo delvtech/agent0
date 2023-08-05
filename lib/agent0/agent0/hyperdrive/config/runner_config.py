@@ -7,9 +7,6 @@ from elfpy.agents.policies import Policies
 from fixedpointmath import FixedPoint
 from src.eth_bots.core import AgentConfig, Budget, EnvironmentConfig
 
-# You can import custom policies here. For example:
-from src.eth_bots.custom_policies.example_custom_policy import ExampleCustomPolicy
-
 
 def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
     """Get the instantiated config objects for the ETH bots demo.
@@ -74,18 +71,6 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
             ),
             eth_budget=Budget(min_wei=int(1e18), max_wei=int(1e18)),
             init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.8)},
-        ),
-        AgentConfig(
-            policy=ExampleCustomPolicy,
-            number_of_agents=0,
-            base_budget=Budget(
-                mean_wei=int(1_000e18),  # 1k base
-                std_wei=int(100e18),  # 100 base
-                min_wei=1,  # 1 WEI base
-                max_wei=int(100_000e18),  # 100k base
-            ),
-            eth_budget=Budget(min_wei=int(1e18), max_wei=int(1e18)),
-            init_kwargs={"trade_amount": FixedPoint(100)},
         ),
     ]
 

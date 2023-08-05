@@ -9,8 +9,8 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import RPCEndpoint
 
-from src.eth.accounts import EthAgent
-from src.eth_bots.core.execute_agent_trades import async_execute_agent_trades
+from agent0.hyperdrive.accounts import EthAgent
+from agent0.base.execute_agent_trades imoprt async_execute_agent_trades
 
 
 def trade_if_new_block(
