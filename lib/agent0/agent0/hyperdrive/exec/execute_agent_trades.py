@@ -7,8 +7,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, NoReturn
 
 import eth_utils
+from agent0.hyperdrive import HyperdriveActionType
 from elfpy import types
-from elfpy.markets.hyperdrive import HyperdriveMarket, MarketActionType
+from elfpy.markets.hyperdrive import HyperdriveMarket
 from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction
 from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet import Long, Short
@@ -227,7 +228,7 @@ async def async_match_contract_call_to_trade(
     max_apr = int(1e18)
     as_underlying = True
     match trade.action_type:
-        case MarketActionType.OPEN_LONG:
+        case HyperdriveActionType.OPEN_LONG:
             min_output = 0
             fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
 
@@ -256,7 +257,7 @@ async def async_match_contract_call_to_trade(
                 ),
                 longs={FixedPoint(maturity_time_seconds): Long(trade_result.bond_amount)},
             )
-        case MarketActionType.CLOSE_LONG:
+        case HyperdriveActionType.CLOSE_LONG:
             if not trade.mint_time:
                 raise ValueError("Mint time was not provided, can't close long position.")
             maturity_time_seconds = int(trade.mint_time)
@@ -292,7 +293,7 @@ async def async_match_contract_call_to_trade(
                 ),
                 longs={trade.mint_time: Long(-trade_result.bond_amount)},
             )
-        case MarketActionType.OPEN_SHORT:
+        case HyperdriveActionType.OPEN_SHORT:
             max_deposit = eth_utils.currency.MAX_WEI
             fn_args = (trade_amount, max_deposit, agent.checksum_address, as_underlying)
 
@@ -326,7 +327,7 @@ async def async_match_contract_call_to_trade(
                     )
                 },
             )
-        case MarketActionType.CLOSE_SHORT:
+        case HyperdriveActionType.CLOSE_SHORT:
             if not trade.mint_time:
                 raise ValueError("Mint time was not provided, can't close long position.")
             maturity_time_seconds = int(trade.mint_time)
@@ -367,7 +368,7 @@ async def async_match_contract_call_to_trade(
                     )
                 },
             )
-        case MarketActionType.ADD_LIQUIDITY:
+        case HyperdriveActionType.ADD_LIQUIDITY:
             min_output = 0
             fn_args = (trade_amount, min_apr, max_apr, agent.checksum_address, as_underlying)
             trade_result = await async_transact_and_parse_logs(
@@ -384,7 +385,7 @@ async def async_match_contract_call_to_trade(
                 ),
                 lp_tokens=trade_result.lp_amount,
             )
-        case MarketActionType.REMOVE_LIQUIDITY:
+        case HyperdriveActionType.REMOVE_LIQUIDITY:
             min_output = 0
             fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
             trade_result = await async_transact_and_parse_logs(
@@ -402,7 +403,7 @@ async def async_match_contract_call_to_trade(
                 lp_tokens=-trade_result.lp_amount,
                 withdraw_shares=trade_result.withdrawal_share_amount,
             )
-        case MarketActionType.REDEEM_WITHDRAW_SHARE:
+        case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
             # for now, assume an underlying vault share price of at least 1, should be higher by a bit
             min_output = FixedPoint(1)
 
@@ -425,7 +426,7 @@ async def async_match_contract_call_to_trade(
                 ),
                 withdraw_shares=-trade_result.withdrawal_share_amount,
             )
-        case MarketActionType.INITIALIZE_MARKET:
+        case HyperdriveActionType.INITIALIZE_MARKET:
             raise ValueError(f"{trade.action_type} not supported!")
         case _:
             assert_never(trade.action_type)

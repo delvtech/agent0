@@ -65,11 +65,7 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
                 >>> private_key = bytes(agent)
 
         """
-        if policy is None:
-            self.policy = NoActionPolicy()
-        else:
-            self.policy = policy
-        super().__init__(account._key_obj, account._publicapi)  # pylint: disable=protected-access
+        super().__init__(account, policy)
         self.wallet = HyperdriveWallet(
             address=HexBytes(self.address),
             balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE),
