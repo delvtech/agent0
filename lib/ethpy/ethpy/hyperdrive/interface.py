@@ -15,8 +15,6 @@ from web3.types import BlockData
 
 from . import AssetIdPrefix, encode_asset_id
 
-RETRY_COUNT = 10
-
 
 def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, Any]:
     """Return the block pool info from the Hyperdrive contract.

@@ -12,8 +12,8 @@ engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for te
 Session = sessionmaker(bind=engine)
 
 # fixture arguments in test function have to be the same as the fixture name
-# pylint: disable=redefined-outer-name
 # pylint: disable=invalid-name
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture(scope="function")
@@ -47,7 +47,7 @@ class TestWalletInfoTable:
         wallet_info = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
         session.add(wallet_info)
         session.commit()
-        wallet_info.tokenValue = Decimal("5.0")
+        wallet_info.tokenValue = Decimal("5.0")  # pylint: disable=invalid-name
         session.commit()
         updated_wallet_info = session.query(WalletInfo).filter_by(blockNumber=1).first()
         # tokenValue retreieved from postgres is in Decimal, cast to float

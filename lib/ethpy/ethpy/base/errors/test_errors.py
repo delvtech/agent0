@@ -1,7 +1,7 @@
 """Tests for errors.py"""
 import pytest
 
-from . import decode_error_selector_for_contract
+from .errors import decode_error_selector_for_contract
 
 
 class TestDecodeErrorSelector:

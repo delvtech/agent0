@@ -5,7 +5,6 @@ from decimal import Decimal
 from typing import Any
 
 from chainsync.base import Transaction, convert_scaled_value_to_decimal
-from chainsync.hyperdrive import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
 from eth_typing import BlockNumber
 from ethpy.base import get_token_balance, get_transaction_logs
 from ethpy.hyperdrive import AssetIdPrefix, decode_asset_id, encode_asset_id
@@ -14,6 +13,8 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxData
+
+from .db_schema import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
 
 
 def convert_hyperdrive_transactions_for_block(

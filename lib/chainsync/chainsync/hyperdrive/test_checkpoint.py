@@ -13,8 +13,8 @@ engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for te
 Session = sessionmaker(bind=engine)
 
 # fixture arguments in test function have to be the same as the fixture name
-# pylint: disable=redefined-outer-name
 # pylint: disable=invalid-name
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture(scope="function")
@@ -51,7 +51,7 @@ class TestCheckpointTable:
         add_checkpoint_infos([checkpoint], session)
         session.commit()
 
-        checkpoint.sharePrice = Decimal("5.0")
+        checkpoint.sharePrice = Decimal("5.0")  # pylint: disable=invalid-name
         session.commit()
 
         updated_checkpoint = session.query(CheckpointInfo).filter_by(blockNumber=1).first()

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from agent0.base.policies import BasePolicy
 from fixedpointmath import FixedPoint
 
-from .base import MarketState, Wallet
+from . import MarketState, Wallet
 
 if TYPE_CHECKING:
     from elfpy.types import Trade

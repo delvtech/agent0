@@ -6,9 +6,10 @@ import logging
 
 import elfpy.utils.format as format_utils
 from chainsync.base import Base
-from chainsync.hyperdrive import PoolConfig, PoolInfo
 from elfpy.utils import logs
 from web3.exceptions import InvalidTransaction
+
+from .db_schema import PoolConfig, PoolInfo
 
 
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:

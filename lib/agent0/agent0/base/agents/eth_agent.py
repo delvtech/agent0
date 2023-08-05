@@ -3,13 +3,14 @@ from __future__ import annotations
 
 from typing import Generic, TypeVar
 
-from agent0.base.agents import EthWallet
 from agent0.base.policies import BasePolicy, NoActionPolicy
 from elfpy.types import Quantity, TokenType, Trade
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
+
+from .eth_wallet import EthWallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 Market = TypeVar("Market")
