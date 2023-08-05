@@ -5,14 +5,12 @@ import logging
 from typing import Generic, TypeVar
 
 from agent0.base.accounts import EthAgent
-from agent0.base.policies import BasePolicy
+from agent0.base.policies import BasePolicy, NoActionPolicy
 from agent0.hyperdrive.accounts import HyperdriveWallet
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Quantity, TokenType, Trade
 from eth_account.signers.local import LocalAccount
-from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
-from web3 import Web3
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 Market = TypeVar(
@@ -71,7 +69,7 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
         else:
             self.policy = policy
         super().__init__(account._key_obj, account._publicapi)  # pylint: disable=protected-access
-        self.wallet = EthWallet(
+        self.wallet = HyperdriveWallet(
             address=HexBytes(self.address),
             balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE),
         )

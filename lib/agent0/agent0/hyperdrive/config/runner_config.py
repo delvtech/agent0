@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 
-from agent0.hyperdrive.config import AgentConfig, Budget, EnvironmentConfig
+from agent0.base.config import AgentConfig, Budget, EnvironmentConfig
 from agent0.hyperdrive.policies import Policies
 from fixedpointmath import FixedPoint
 from src.eth_bots.core import AgentConfig, Budget, EnvironmentConfig
