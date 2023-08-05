@@ -8,6 +8,8 @@ from chainsync.base.db_schema import Base
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
+# pylint: disable=invalid-name
+
 
 class PoolConfig(Base):
     """Table/dataclass schema for pool config."""

@@ -51,7 +51,7 @@ class TestCheckpointTable:
         add_checkpoint_infos([checkpoint], session)
         session.commit()
 
-        checkpoint.sharePrice = Decimal("5.0")  # pylint: disable=invalid-name
+        checkpoint.sharePrice = Decimal("5.0")
         session.commit()
 
         updated_checkpoint = session.query(CheckpointInfo).filter_by(blockNumber=1).first()
