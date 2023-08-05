@@ -1,0 +1,1 @@
+from web3_setup import initialize_web3_with_http_provider

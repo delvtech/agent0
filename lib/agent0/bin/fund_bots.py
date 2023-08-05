@@ -4,10 +4,13 @@ from __future__ import annotations
 import json
 import os
 
-from agent0.config.runner_config import get_eth_bots_config
+import ethpy
+from agent0.hyperdrive.accounts import EthAgent
+from agent0.hyperdrive.config.runner_config import get_eth_bots_config
 from dotenv import load_dotenv
 from eth_account.account import Account
-from src import eth, hyperdrive
+from ethpy.base import initialize_web3_with_http_provider
+from ethpy.ethpy import b
 
 if __name__ == "__main__":
     # get keys & RPC url from the environment
@@ -16,7 +19,7 @@ if __name__ == "__main__":
     user_key = os.environ.get("USER_KEY")
     if user_key is None:
         raise ValueError("USER_KEY environment variable must be set")
-    user_account = eth.accounts.EthAgent(Account().from_key(user_key))
+    user_account = EthAgent(Account().from_key(user_key))
     # LIST OF AGENT PRIVATE KEYS
     # NOTE: The env var should follow the JSON specification: https://www.json.org/json-en.html
     # for example, `export AGENT_KEYS='["foo", "bar"]'`
@@ -24,7 +27,7 @@ if __name__ == "__main__":
     if key_string is None:
         raise ValueError("AGENT_KEYS environment variable must be set")
     agent_keys = json.loads(key_string)
-    agent_accounts = [eth.accounts.EthAgent(Account().from_key(agent_private_key)) for agent_private_key in agent_keys]
+    agent_accounts = [EthAgent(Account().from_key(agent_private_key)) for agent_private_key in agent_keys]
 
     # AGENT ETHEREUM FUNDING AMOUNTS
     eth_budget_string = os.environ.get("AGENT_ETH_BUDGETS")
@@ -46,13 +49,13 @@ if __name__ == "__main__":
     environment_config, agent_config = get_eth_bots_config()
 
     # setup web3 & contracts
-    web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url)
+    web3 = initialize_web3_with_http_provider(environment_config.rpc_url)
     abi_file_loc = os.path.join(
         os.path.join(environment_config.abi_folder, environment_config.base_abi + ".sol"),
         environment_config.base_abi + ".json",
     )
-    base_contract_abi = eth.abi.load_abi_from_file(abi_file_loc)
-    addresses = hyperdrive.addresses.fetch_hyperdrive_address_from_url(
+    base_contract_abi = ethpy.base.abi.load_abi_from_file(abi_file_loc)
+    addresses = ethpy.hyperdrive.addresses.fetch_hyperdrive_address_from_url(
         os.path.join(environment_config.artifacts_url, "addresses.json")
     )
     base_token_contract = web3.eth.contract(
@@ -62,7 +65,7 @@ if __name__ == "__main__":
         agent_accounts, agent_eth_budgets, agent_base_budgets
     ):
         # fund Ethereum
-        user_eth_balance = eth.get_account_balance(web3, user_account.checksum_address)
+        user_eth_balance = ethpy.base.rpc_interface.get_account_balance(web3, user_account.checksum_address)
         if user_eth_balance is None:
             raise AssertionError("User has no Ethereum balance")
         if user_eth_balance < agent_eth_budget:
@@ -70,14 +73,14 @@ if __name__ == "__main__":
                 f"User account {user_account.checksum_address=} has {user_eth_balance=}, "
                 f"which must be >= {agent_eth_budget=}"
             )
-        _ = eth.eth_transfer(
+        _ = ethpy.base.transactions.eth_transfer(
             web3,
             user_account,
             agent_account.checksum_address,
             agent_eth_budget,
         )
         #  fund base
-        user_base_balance = eth.smart_contract_read(
+        user_base_balance = ethpy.base.transactions.smart_contract_read(
             base_token_contract,
             "balanceOf",
             user_account.checksum_address,
@@ -87,7 +90,7 @@ if __name__ == "__main__":
                 f"User account {user_account.checksum_address=} has {user_base_balance=}, "
                 f"which must be >= {agent_base_budget=}"
             )
-        _ = eth.smart_contract_transact(
+        _ = ethpy.base.transactions.smart_contract_transact(
             web3,
             base_token_contract,
             user_account,

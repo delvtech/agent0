@@ -4,7 +4,7 @@ from eth_utils.conversions import to_hex
 from eth_utils.crypto import keccak
 from web3.contract.contract import Contract
 
-from src.eth.errors.types import ABIError
+from . import ABIError
 
 
 def decode_error_selector_for_contract(error_selector: str, contract: Contract) -> str:

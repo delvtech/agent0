@@ -1,6 +1,6 @@
 [project]
 # TODO test this with docker
-name = "elfpy"
+name = "elf-simulations"
 version = "0.3.2"
 
 
