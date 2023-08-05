@@ -3,11 +3,9 @@ from decimal import Decimal
 
 import numpy as np
 import pytest
+from chainsync.base import Base, Transaction, postgres
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-from src.data import postgres
-from src.data.db_schema import Base, Transaction
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)

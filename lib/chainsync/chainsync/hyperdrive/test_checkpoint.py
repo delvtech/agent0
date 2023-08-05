@@ -4,13 +4,10 @@ from decimal import Decimal
 
 import numpy as np
 import pytest
+from chainsync.base import Base, get_latest_block_number_from_table
+from chainsync.hyperdrive import CheckpointInfo, add_checkpoint_infos, get_checkpoint_info
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-import src.data.hyperdrive.postgres
-from src.data import postgres
-from src.data.db_schema import Base
-from src.data.hyperdrive.db_schema import CheckpointInfo
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)
@@ -39,7 +36,7 @@ class TestCheckpointTable:
         # Hence, we explicitly add id here
         timestamp = datetime.now()
         checkpoint = CheckpointInfo(blockNumber=1, timestamp=timestamp)
-        src.data.hyperdrive.postgres.add_checkpoint_infos([checkpoint], session)
+        add_checkpoint_infos([checkpoint], session)
         session.commit()
 
         retrieved_checkpoint = session.query(CheckpointInfo).filter_by(blockNumber=1).first()
@@ -50,7 +47,7 @@ class TestCheckpointTable:
         """Update an entry"""
         timestamp = datetime.now()
         checkpoint = CheckpointInfo(blockNumber=1, timestamp=timestamp)
-        src.data.hyperdrive.postgres.add_checkpoint_infos([checkpoint], session)
+        add_checkpoint_infos([checkpoint], session)
         session.commit()
 
         checkpoint.sharePrice = Decimal("5.0")
@@ -63,7 +60,7 @@ class TestCheckpointTable:
         """Delete an entry"""
         timestamp = datetime.now()
         checkpoint = CheckpointInfo(blockNumber=1, timestamp=timestamp)
-        src.data.hyperdrive.postgres.add_checkpoint_infos([checkpoint], session)
+        add_checkpoint_infos([checkpoint], session)
         session.commit()
 
         session.delete(checkpoint)
@@ -79,17 +76,17 @@ class TestCheckpointInterface:
     def test_latest_block_number(self, session):
         """Testing retrevial of checkpoint via interface"""
         checkpoint_1 = CheckpointInfo(blockNumber=1, timestamp=datetime.now())
-        src.data.hyperdrive.postgres.add_checkpoint_infos([checkpoint_1], session)
+        add_checkpoint_infos([checkpoint_1], session)
         session.commit()
 
-        latest_block_number = postgres.get_latest_block_number_from_table(CheckpointInfo, session)
+        latest_block_number = get_latest_block_number_from_table(CheckpointInfo, session)
         assert latest_block_number == 1
 
         checkpoint_2 = CheckpointInfo(blockNumber=2, timestamp=datetime.now())
         checkpoint_3 = CheckpointInfo(blockNumber=3, timestamp=datetime.now())
-        src.data.hyperdrive.postgres.add_checkpoint_infos([checkpoint_2, checkpoint_3], session)
+        add_checkpoint_infos([checkpoint_2, checkpoint_3], session)
 
-        latest_block_number = postgres.get_latest_block_number_from_table(CheckpointInfo, session)
+        latest_block_number = get_latest_block_number_from_table(CheckpointInfo, session)
         assert latest_block_number == 3
 
     def test_get_checkpoints(self, session):
@@ -100,9 +97,9 @@ class TestCheckpointInterface:
         checkpoint_1 = CheckpointInfo(blockNumber=0, timestamp=date_1)
         checkpoint_2 = CheckpointInfo(blockNumber=1, timestamp=date_2)
         checkpoint_3 = CheckpointInfo(blockNumber=2, timestamp=date_3)
-        src.data.hyperdrive.postgres.add_checkpoint_infos([checkpoint_1, checkpoint_2, checkpoint_3], session)
+        add_checkpoint_infos([checkpoint_1, checkpoint_2, checkpoint_3], session)
 
-        checkpoints_df = src.data.hyperdrive.postgres.get_checkpoint_info(session)
+        checkpoints_df = get_checkpoint_info(session)
         np.testing.assert_array_equal(
             checkpoints_df["timestamp"].dt.to_pydatetime(), np.array([date_1, date_2, date_3])
         )
@@ -112,19 +109,19 @@ class TestCheckpointInterface:
         checkpoint_1 = CheckpointInfo(blockNumber=0, timestamp=datetime.now(), sharePrice=Decimal("3.1"))
         checkpoint_2 = CheckpointInfo(blockNumber=1, timestamp=datetime.now(), sharePrice=Decimal("3.2"))
         checkpoint_3 = CheckpointInfo(blockNumber=2, timestamp=datetime.now(), sharePrice=Decimal("3.3"))
-        src.data.hyperdrive.postgres.add_checkpoint_infos([checkpoint_1, checkpoint_2, checkpoint_3], session)
+        add_checkpoint_infos([checkpoint_1, checkpoint_2, checkpoint_3], session)
 
-        checkpoints_df = src.data.hyperdrive.postgres.get_checkpoint_info(session, start_block=1)
+        checkpoints_df = get_checkpoint_info(session, start_block=1)
         np.testing.assert_array_equal(checkpoints_df["sharePrice"], [3.2, 3.3])
 
-        checkpoints_df = src.data.hyperdrive.postgres.get_checkpoint_info(session, start_block=-1)
+        checkpoints_df = get_checkpoint_info(session, start_block=-1)
         np.testing.assert_array_equal(checkpoints_df["sharePrice"], [3.3])
 
-        checkpoints_df = src.data.hyperdrive.postgres.get_checkpoint_info(session, end_block=1)
+        checkpoints_df = get_checkpoint_info(session, end_block=1)
         np.testing.assert_array_equal(checkpoints_df["sharePrice"], [3.1])
 
-        checkpoints_df = src.data.hyperdrive.postgres.get_checkpoint_info(session, end_block=-1)
+        checkpoints_df = get_checkpoint_info(session, end_block=-1)
         np.testing.assert_array_equal(checkpoints_df["sharePrice"], [3.1, 3.2])
 
-        checkpoints_df = src.data.hyperdrive.postgres.get_checkpoint_info(session, start_block=1, end_block=-1)
+        checkpoints_df = get_checkpoint_info(session, start_block=1, end_block=-1)
         np.testing.assert_array_equal(checkpoints_df["sharePrice"], [3.2])

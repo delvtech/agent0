@@ -1,10 +1,9 @@
 """CRUD tests for CheckpointInfo"""
 import numpy as np
 import pytest
+from chainsync.base import postgres
 from sqlalchemy import String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, sessionmaker
-
-from src.data import postgres
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)

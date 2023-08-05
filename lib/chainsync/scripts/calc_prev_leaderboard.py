@@ -5,11 +5,10 @@ gathered in the database.
 from __future__ import annotations
 
 import pandas as pd
+from chainsync.analysis import calc_total_returns
+from chainsync.base import postgres
 from dotenv import load_dotenv
 from sqlalchemy.sql import text
-
-from src.dashboard.calc_pnl import calc_total_returns
-from src.data import postgres
 
 # pylint: disable=invalid-name
 
@@ -18,14 +17,11 @@ def get_user_lookup(agents, user_map) -> pd.DataFrame:
     """Generate username to agents mapping."""
     # Usernames in postgres are bots
     user_map["username"] = user_map["username"] + " (bots)"
-
     click_map = get_click_addresses()
     user_map = pd.concat([click_map, user_map], axis=0)
-
     # Generate a lookup of users -> address, taking into account that some addresses don't have users
     # Reindex looks up agent addresses against user_map, adding nans if it doesn't exist
     options_map = user_map.set_index("address").reindex(agents)
-
     # Set username as address if agent doesn't exist
     na_idx = options_map["username"].isna()
     # If there are any nan usernames, set address itself as username
@@ -79,7 +75,6 @@ def get_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame,
     # Rank based on pnl
     user = combine_usernames(pnl["username"])
     pnl["user"] = user["user"].values
-
     ind_leaderboard = (
         pnl[["username", "walletAddress", "pnl"]]
         .sort_values("pnl", ascending=False)  # type: ignore
@@ -88,7 +83,6 @@ def get_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame,
     comb_leaderboard = (
         pnl[["user", "pnl"]].groupby("user")["pnl"].sum().reset_index().sort_values("pnl", ascending=False)
     ).reset_index(drop=True)
-
     return (comb_leaderboard, ind_leaderboard)
 
 
@@ -117,7 +111,6 @@ def get_click_addresses() -> pd.DataFrame:
     addresses = pd.DataFrame.from_dict(addresses, orient="index")
     addresses = addresses.reset_index()
     addresses.columns = ["address", "username"]
-
     return addresses
 
 

@@ -4,23 +4,21 @@ import logging
 from decimal import Decimal
 from typing import Any
 
+from chainsync.base import Transaction, convert_scaled_value_to_decimal
+from chainsync.hyperdrive import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
 from eth_typing import BlockNumber
+from ethpy.base import get_token_balance, get_transaction_logs
+from ethpy.hyperdrive import AssetIdPrefix, decode_asset_id, encode_asset_id
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxData
 
-import src.data.hyperdrive.db_schema
-from src import eth, hyperdrive
-from src.data import db_schema
-from src.data.conversions import convert_scaled_value_to_decimal
-from src.eth.contract.token import get_token_balance
-
 
 def convert_hyperdrive_transactions_for_block(
     hyperdrive_contract: Contract, transactions: list[TxData]
-) -> tuple[list[db_schema.Transaction], list[src.data.hyperdrive.db_schema.WalletDelta]]:
+) -> tuple[list[Transaction], list[WalletDelta]]:
     """Fetch transactions related to the contract.
 
     Arguments
@@ -35,8 +33,8 @@ def convert_hyperdrive_transactions_for_block(
         a list of wallet delta objects ready to be inserted into Postgres
     """
 
-    out_transactions: list[db_schema.Transaction] = []
-    out_wallet_deltas: list[src.data.hyperdrive.db_schema.WalletDelta] = []
+    out_transactions: list[Transaction] = []
+    out_wallet_deltas: list[WalletDelta] = []
     for transaction in transactions:
         transaction_dict = dict(transaction)
         # Convert the HexBytes fields to their hex representation
@@ -49,7 +47,7 @@ def convert_hyperdrive_transactions_for_block(
         except ValueError:  # if the input is not meant for the contract, ignore it
             continue
         tx_receipt = Web3.eth.get_transaction_receipt(tx_hash)
-        logs = eth.get_transaction_logs(hyperdrive_contract, tx_receipt)
+        logs = get_transaction_logs(hyperdrive_contract, tx_receipt)
         receipt: dict[str, Any] = _convert_object_hexbytes_to_strings(tx_receipt)  # type: ignore
         out_transactions.append(_build_hyperdrive_transaction_object(transaction_dict, logs, receipt))
         # Build wallet deltas based on transaction logs
@@ -88,9 +86,9 @@ def get_wallet_info(
     hyperdrive_contract: Contract,
     base_contract: Contract,
     block_number: BlockNumber,
-    transactions: list[db_schema.Transaction],
-    pool_info: src.data.hyperdrive.db_schema.PoolInfo,
-) -> list[src.data.hyperdrive.db_schema.WalletInfo]:
+    transactions: list[Transaction],
+    pool_info: PoolInfo,
+) -> list[WalletInfo]:
     """Retrieve wallet information at a given block given a transaction.
 
     Transactions are needed here to get
@@ -105,14 +103,14 @@ def get_wallet_info(
         The deployed base contract instance
     block_number : BlockNumber
         The block number to query
-    transactions : list[db_schema.Transaction]
+    transactions : list[Transaction]
         The list of transactions to get events from
-    pool_info : db_schema.PoolInfo
+    pool_info : PoolInfo
         The associated pool info, used to extract share price
 
     Returns
     -------
-    list[db_schema.WalletInfo]
+    list[WalletInfo]
         The list of WalletInfo objects ready to be inserted into postgres
     """
     # pylint: disable=too-many-locals
@@ -126,7 +124,7 @@ def get_wallet_info(
         num_base_token = get_token_balance(base_contract, wallet_addr, block_number, None)
         if num_base_token is not None:
             out_wallet_info.append(
-                src.data.hyperdrive.db_schema.WalletInfo(
+                WalletInfo(
                     blockNumber=block_number,
                     walletAddress=wallet_addr,
                     baseTokenType="BASE",
@@ -136,13 +134,13 @@ def get_wallet_info(
             )
 
         # Query and add LP tokens to wallet info
-        lp_token_prefix = hyperdrive.AssetIdPrefix.LP.value
+        lp_token_prefix = AssetIdPrefix.LP.value
         # LP tokens always have 0 maturity
-        lp_token_id = hyperdrive.encode_asset_id(lp_token_prefix, timestamp=0)
+        lp_token_id = encode_asset_id(lp_token_prefix, timestamp=0)
         num_lp_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, lp_token_id)
         if num_lp_token is not None:
             out_wallet_info.append(
-                src.data.hyperdrive.db_schema.WalletInfo(
+                WalletInfo(
                     blockNumber=block_number,
                     walletAddress=wallet_addr,
                     baseTokenType="LP",
@@ -154,13 +152,13 @@ def get_wallet_info(
             )
 
         # Query and add withdraw tokens to wallet info
-        withdrawal_token_prefix = hyperdrive.AssetIdPrefix.WITHDRAWAL_SHARE.value
+        withdrawal_token_prefix = AssetIdPrefix.WITHDRAWAL_SHARE.value
         # Withdrawal tokens always have 0 maturity
-        withdrawal_token_id = hyperdrive.encode_asset_id(withdrawal_token_prefix, timestamp=0)
+        withdrawal_token_id = encode_asset_id(withdrawal_token_prefix, timestamp=0)
         num_withdrawal_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, withdrawal_token_id)
         if num_withdrawal_token is not None:
             out_wallet_info.append(
-                src.data.hyperdrive.db_schema.WalletInfo(
+                WalletInfo(
                     blockNumber=block_number,
                     walletAddress=wallet_addr,
                     baseTokenType="WITHDRAWAL_SHARE",
@@ -176,7 +174,7 @@ def get_wallet_info(
         token_prefix = transaction.event_prefix
         token_maturity_time = transaction.event_maturity_time
         if (token_id is not None) and (token_prefix is not None):
-            base_token_type = hyperdrive.AssetIdPrefix(token_prefix).name
+            base_token_type = AssetIdPrefix(token_prefix).name
             if base_token_type in ("LONG", "SHORT"):
                 token_type = base_token_type + "-" + str(token_maturity_time)
                 # Check here if token is short
@@ -188,7 +186,7 @@ def get_wallet_info(
                 num_custom_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, int(token_id))
                 if num_custom_token is not None:
                     out_wallet_info.append(
-                        src.data.hyperdrive.db_schema.WalletInfo(
+                        WalletInfo(
                             blockNumber=block_number,
                             walletAddress=wallet_addr,
                             baseTokenType=base_token_type,
@@ -201,7 +199,7 @@ def get_wallet_info(
     return out_wallet_info
 
 
-def convert_pool_config(pool_config_dict: dict[str, Any]) -> src.data.hyperdrive.db_schema.PoolConfig:
+def convert_pool_config(pool_config_dict: dict[str, Any]) -> PoolConfig:
     """Converts a pool_config_dict from a call in hyperdrive_interface to the postgres data type
 
     Arguments
@@ -211,11 +209,11 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> src.data.hyperdrive
 
     Returns
     -------
-    db_schema.PoolConfig
+    PoolConfig
         The db object for pool config
     """
     args_dict = {}
-    for key in src.data.hyperdrive.db_schema.PoolConfig.__annotations__:
+    for key in PoolConfig.__annotations__:
         if key not in pool_config_dict:
             logging.warning("Missing %s from pool config", key)
             value = None
@@ -224,11 +222,11 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> src.data.hyperdrive
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
         args_dict[key] = value
-    pool_config = src.data.hyperdrive.db_schema.PoolConfig(**args_dict)
+    pool_config = PoolConfig(**args_dict)
     return pool_config
 
 
-def convert_pool_info(pool_info_dict: dict[str, Any]) -> src.data.hyperdrive.db_schema.PoolInfo:
+def convert_pool_info(pool_info_dict: dict[str, Any]) -> PoolInfo:
     """Converts a pool_info_dict from a call in hyperdrive_interface to the postgres data type
 
     Arguments
@@ -238,11 +236,11 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> src.data.hyperdrive.db_
 
     Returns
     -------
-    db_schema.PoolInfo
+    PoolInfo
         The db object for pool info
     """
     args_dict = {}
-    for key in src.data.hyperdrive.db_schema.PoolInfo.__annotations__:
+    for key in PoolInfo.__annotations__:
         if key not in pool_info_dict:
             logging.warning("Missing %s from pool info", key)
             value = None
@@ -251,11 +249,11 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> src.data.hyperdrive.db_
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
         args_dict[key] = value
-    block_pool_info = src.data.hyperdrive.db_schema.PoolInfo(**args_dict)
+    block_pool_info = PoolInfo(**args_dict)
     return block_pool_info
 
 
-def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> src.data.hyperdrive.db_schema.CheckpointInfo:
+def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> CheckpointInfo:
     """Converts a checkpoint_info_dict from a call in hyperdrive_interface to the postgres data type
 
     Arguments
@@ -265,11 +263,11 @@ def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> src.data.hy
 
     Returns
     -------
-    db_schema.CheckpointInfo
+    CheckpointInfo
         The db object for checkpoints
     """
     args_dict = {}
-    for key in src.data.hyperdrive.db_schema.CheckpointInfo.__annotations__:
+    for key in CheckpointInfo.__annotations__:
         # Keys must match
         if key not in checkpoint_info_dict:
             logging.warning("Missing %s from checkpoint info", key)
@@ -279,22 +277,20 @@ def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> src.data.hy
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
         args_dict[key] = value
-    block_checkpoint_info = src.data.hyperdrive.db_schema.CheckpointInfo(**args_dict)
+    block_checkpoint_info = CheckpointInfo(**args_dict)
     return block_checkpoint_info
 
 
 # TODO this function likely should be decoupled from postgres and added into
 # hyperdrive interface returning a list of dictionaries, with a conversion function to translate
 # into postgres
-def _build_wallet_deltas(
-    logs: list[dict], tx_hash: str, block_number
-) -> list[src.data.hyperdrive.db_schema.WalletDelta]:
+def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[WalletDelta]:
     """From decoded transaction logs, we look at the log that contains the trade summary
 
     Arguments
     ---------
     logs: list[dict]
-        The list of dictionaries that was decoded from `eth.get_transaction_logs`
+        The list of dictionaries that was decoded from `get_transaction_logs`
     tx_hash: str
         The transaction hash that resulted in this wallet delta
     block_number: BlockNumber
@@ -316,7 +312,7 @@ def _build_wallet_deltas(
             base_delta = convert_scaled_value_to_decimal(-log["args"]["baseAmount"])
             wallet_deltas.extend(
                 [
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -324,7 +320,7 @@ def _build_wallet_deltas(
                         tokenType="LP",
                         delta=token_delta,
                     ),
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -342,7 +338,7 @@ def _build_wallet_deltas(
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -351,7 +347,7 @@ def _build_wallet_deltas(
                         delta=token_delta,
                         maturityTime=maturity_time,
                     ),
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -369,7 +365,7 @@ def _build_wallet_deltas(
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -378,7 +374,7 @@ def _build_wallet_deltas(
                         delta=token_delta,
                         maturityTime=maturity_time,
                     ),
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -397,7 +393,7 @@ def _build_wallet_deltas(
             base_delta = convert_scaled_value_to_decimal(log["args"]["baseAmount"])
             wallet_deltas.extend(
                 [
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -405,7 +401,7 @@ def _build_wallet_deltas(
                         tokenType="LP",
                         delta=lp_delta,
                     ),
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -413,7 +409,7 @@ def _build_wallet_deltas(
                         tokenType="WITHDRAWAL_SHARE",
                         delta=withdrawal_delta,
                     ),
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -431,7 +427,7 @@ def _build_wallet_deltas(
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -440,7 +436,7 @@ def _build_wallet_deltas(
                         delta=token_delta,
                         maturityTime=maturity_time,
                     ),
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -458,7 +454,7 @@ def _build_wallet_deltas(
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -467,7 +463,7 @@ def _build_wallet_deltas(
                         delta=token_delta,
                         maturityTime=maturity_time,
                     ),
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -485,7 +481,7 @@ def _build_wallet_deltas(
             base_delta = convert_scaled_value_to_decimal(log["args"]["baseAmount"])
             wallet_deltas.extend(
                 [
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -494,7 +490,7 @@ def _build_wallet_deltas(
                         delta=token_delta,
                         maturityTime=maturity_time,
                     ),
-                    src.data.hyperdrive.db_schema.WalletDelta(
+                    WalletDelta(
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
@@ -514,7 +510,7 @@ def _build_hyperdrive_transaction_object(
     transaction_dict: dict[str, Any],
     logs: list[dict[str, Any]],
     receipt: dict[str, Any],
-) -> db_schema.Transaction:
+) -> Transaction:
     """Conversion function to translate output of chain queries to the Transaction object.
 
     Arguments
@@ -580,8 +576,8 @@ def _build_hyperdrive_transaction_object(
     out_dict["event_id"] = event_args.get("id", None)
     # Decode logs here
     if out_dict["event_id"] is not None:
-        event_prefix, event_maturity_time = hyperdrive.decode_asset_id(out_dict["event_id"])
+        event_prefix, event_maturity_time = decode_asset_id(out_dict["event_id"])
         out_dict["event_prefix"] = event_prefix
         out_dict["event_maturity_time"] = event_maturity_time
-    transaction = db_schema.Transaction(**out_dict)
+    transaction = Transaction(**out_dict)
     return transaction
