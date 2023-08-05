@@ -70,9 +70,7 @@ async def async_transact_and_parse_logs(
     ReceiptBreakdown
         A dataclass containing the maturity time and the absolute values for token quantities changed
     """
-    tx_receipt = await ethpy.base.transactions.async_smart_contract_transact(
-        web3, hyperdrive_contract, signer, fn_name, *fn_args
-    )
+    tx_receipt = await ethpy.base.async_smart_contract_transact(web3, hyperdrive_contract, signer, fn_name, *fn_args)
     # Sometimes, smart contract transact fails with status 0 with no error message
     # We throw custom error to catch in trades loop, ignore, and move on
     # TODO need to track down why this call fails and handle better
@@ -80,9 +78,9 @@ async def async_transact_and_parse_logs(
     if status is None:
         raise AssertionError("Receipt did not return status")
     if status == 0:
-        raise ethpy.errors.UnknownBlockError(f"Receipt has no status or status is 0 \n {tx_receipt=}")
+        raise ethpy.base.errors.UnknownBlockError(f"Receipt has no status or status is 0 \n {tx_receipt=}")
 
-    hyperdrive_event_logs = ethpy.base.receipts.get_transaction_logs(
+    hyperdrive_event_logs = ethpy.base.get_transaction_logs(
         hyperdrive_contract,
         tx_receipt,
         event_names=[fn_name[0].capitalize() + fn_name[1:]],
@@ -146,7 +144,7 @@ async def async_execute_single_agent_trade(
                 trade_object,
             )
             agent.wallet.update(wallet_deltas)
-        except ethpy.errors.UnknownBlockError as exc:
+        except ethpy.base.errors.UnknownBlockError as exc:
             logging.error(exc)
 
 

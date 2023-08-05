@@ -4,8 +4,13 @@ from __future__ import annotations
 import os
 from http import HTTPStatus
 
+import ethpy
 import numpy as np
 import requests
+from agent0.base.get_agent_accounts import get_agent_accounts
+from agent0.hyperdrive.accounts import EthAgent
+from agent0.hyperdrive.config import DEFAULT_USERNAME, EnvironmentConfig, get_eth_bots_config
+from chainsync.base import crash_report
 from elfpy.utils import logs
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -44,10 +49,10 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
     if environment_config.username == DEFAULT_USERNAME:
         raise ValueError("Default username detected, please update 'username' in eth_bots_config.py")
     # point to chain env
-    web3 = eth.web3_setup.initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
+    web3 = ethpy.base.initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
     # setup base contract interface
-    hyperdrive_abis = eth.abi.load_all_abis(environment_config.abi_folder)
-    addresses = hyperdrive.addresses.fetch_hyperdrive_address_from_url(
+    hyperdrive_abis = ethpy.base.abi.load_all_abis(environment_config.abi_folder)
+    addresses = ethpy.hyperdrive.addresses.fetch_hyperdrive_address_from_url(
         os.path.join(environment_config.artifacts_url, "addresses.json")
     )
     # set up the ERC20 contract for minting base tokens

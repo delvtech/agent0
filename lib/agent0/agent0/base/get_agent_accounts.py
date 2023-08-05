@@ -7,8 +7,8 @@ import os
 
 import eth_utils
 import ethpy
-from agent0.config import AgentConfig
 from agent0.hyperdrive.accounts import EthAgent
+from agent0.hyperdrive.config import AgentConfig
 from dotenv import load_dotenv
 from eth_account.account import Account
 from fixedpointmath import FixedPoint
@@ -83,19 +83,19 @@ def get_agent_accounts(
             eth_agent = EthAgent(
                 Account().from_key(agent_private_keys[agent_count]), policy=agent_info.policy(**kwargs)
             )
-            agent_eth_funds = ethpy.base.rpc_interface.get_account_balance(web3, eth_agent.checksum_address)
+            agent_eth_funds = ethpy.base.get_account_balance(web3, eth_agent.checksum_address)
             if agent_eth_funds == 0:
                 raise AssertionError(
                     f"Agent needs Ethereum to operate! The agent {eth_agent.checksum_address=} has a "
                     f"balance of {agent_eth_funds=}.\nDid you fund their accounts?"
                 )
-            agent_base_funds = ethpy.base.transactions.smart_contract_read(
+            agent_base_funds = ethpy.base.smart_contract_read(
                 base_token_contract, "balanceOf", eth_agent.checksum_address
             )
             if agent_base_funds["value"] == 0:
                 raise AssertionError("Agent needs Base tokens to operate! Did you fund their accounts?")
             # establish max approval for the hyperdrive contract
-            _ = ethpy.base.transactions.smart_contract_transact(
+            _ = ethpy.base.smart_contract_transact(
                 web3,
                 base_token_contract,
                 eth_agent,
