@@ -20,18 +20,17 @@ dependencies = [
     # Lateral dependencies across subpackages are pointing to github
     # TODO test that outermost pip install overwrites this
     # TODO move this to either this monorepo or seperate repo
-    #"fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
+    "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
     # TODO this might not work since it's not on github yet, need to test
     #"elfpy @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/elfpy",
     #"ethpy @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/ethpy",
     #"chainsync @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/chainsync",
     # TODO figure out the dependencies below
-    "matplotlib",
     "numpy",
-    "pandas",
+    "requests",
     "python-dotenv",
-    "scipy",
-    "typing_extensions==4.5.0",
+    "web3", # will include eth- packages
+    "hexbytes"
 ]
 
 [build-system]

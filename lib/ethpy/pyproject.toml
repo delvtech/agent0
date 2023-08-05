@@ -27,8 +27,6 @@ dependencies = [
     "numpy",
     "pandas",
     "python-dotenv",
-    "scipy",
-    "typing_extensions==4.5.0",
     "web3",
 ]
 
