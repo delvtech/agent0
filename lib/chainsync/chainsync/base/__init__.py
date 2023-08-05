@@ -1,7 +1,6 @@
 """Generic database utilities"""
 
 from .conversions import convert_scaled_value_to_decimal
-from .crash_report import log_hyperdrive_crash_report, setup_hyperdrive_crash_report_logging
 from .db_schema import Base, Transaction, UserMap
 from .postgres import (
     PostgresConfig,

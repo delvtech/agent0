@@ -11,7 +11,7 @@ from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
 
-Policy = TypeVar("Policy", BasePolicy)
+Policy = TypeVar("Policy", bound=BasePolicy)
 Market = TypeVar("Market")
 MarketAction = TypeVar("MarketAction")
 

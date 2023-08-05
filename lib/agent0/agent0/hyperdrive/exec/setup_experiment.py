@@ -10,7 +10,7 @@ from agent0.base.agents import EthAgent
 from agent0.base.config import DEFAULT_USERNAME, EnvironmentConfig
 from agent0.hyperdrive.config import get_eth_bots_config
 from agent0.hyperdrive.exec import get_agent_accounts
-from chainsync.base import crash_report
+from chainsync.hyperdrive import setup_hyperdrive_crash_report_logging
 from elfpy.utils import logs
 from ethpy.base import initialize_web3_with_http_provider, load_all_abis
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
@@ -46,7 +46,7 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
         log_stdout=environment_config.log_stdout,
         log_format_string=environment_config.log_formatter,
     )
-    crash_report.setup_hyperdrive_crash_report_logging()
+    setup_hyperdrive_crash_report_logging()
     # Check for default name and exit if is default
     if environment_config.username == DEFAULT_USERNAME:
         raise ValueError("Default username detected, please update 'username' in eth_bots_config.py")

@@ -7,7 +7,6 @@ import os
 from typing import TypeVar
 
 import eth_utils
-from agent0.base.agents import EthAgent
 from agent0.base.config import AgentConfig
 from agent0.hyperdrive.accounts import HyperdriveAgent
 from dotenv import load_dotenv
@@ -20,8 +19,6 @@ from web3.contract.contract import Contract
 
 # pylint: disable=too-many-locals
 
-Agent = TypeVar("Agent", bound=EthAgent)
-
 
 def get_agent_accounts(
     agent_config: list[AgentConfig],
@@ -29,7 +26,7 @@ def get_agent_accounts(
     base_token_contract: Contract,
     hyperdrive_address: str,
     rng: NumpyGenerator,
-) -> list[Agent]:
+) -> list[HyperdriveAgent]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
     Arguments

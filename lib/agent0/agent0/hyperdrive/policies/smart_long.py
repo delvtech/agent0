@@ -4,20 +4,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from agent0.base.policies import BasePolicy
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, HyperdriveMarketState
+from agent0.hyperdrive.accounts import HyperdriveWallet
 from elfpy import WEI
-from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint, FixedPointMath
 
 if TYPE_CHECKING:
-    from elfpy.markets.hyperdrive import HyperdriveMarket
-    from elfpy.wallet.wallet import Wallet
     from numpy.random._generator import Generator as NumpyGenerator
 
 # pylint: disable=too-few-public-methods
 
 
-class LongLouie(BasePolicy):
+class LongLouie(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
     """Agent that opens longs to push the fixed-rate towards the variable-rate
 
     .. note::
@@ -49,7 +48,7 @@ class LongLouie(BasePolicy):
         self.risk_threshold = risk_threshold
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
+    def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Implement a Long Louie user strategy
 
         Parameters
@@ -76,7 +75,7 @@ class LongLouie(BasePolicy):
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
-                            action_type=MarketActionType.CLOSE_LONG,
+                            action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
@@ -115,7 +114,7 @@ class LongLouie(BasePolicy):
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
-                            action_type=MarketActionType.OPEN_LONG,
+                            action_type=HyperdriveActionType.OPEN_LONG,
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,

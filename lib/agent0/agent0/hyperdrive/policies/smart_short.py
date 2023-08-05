@@ -4,20 +4,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from agent0.base.policies import BasePolicy
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, HyperdriveMarketState
+from agent0.hyperdrive.accounts import HyperdriveWallet
 from elfpy import WEI
-from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
-    from elfpy.markets.hyperdrive import HyperdriveMarket
-    from elfpy.wallet.wallet import Wallet
     from numpy.random._generator import Generator as NumpyGenerator
 
 # pylint: disable=too-few-public-methods
 
 
-class ShortSally(BasePolicy):
+class ShortSally(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
     """Agent that paints & opens fixed rate borrow positions
 
     .. note::
@@ -51,7 +50,7 @@ class ShortSally(BasePolicy):
         self.risk_threshold = risk_threshold
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
+    def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Implement a Short Sally user strategy
 
 
@@ -77,7 +76,7 @@ class ShortSally(BasePolicy):
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
-                            action_type=MarketActionType.CLOSE_SHORT,
+                            action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
@@ -96,7 +95,7 @@ class ShortSally(BasePolicy):
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
-                            action_type=MarketActionType.OPEN_SHORT,
+                            action_type=HyperdriveActionType.OPEN_SHORT,
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,

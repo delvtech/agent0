@@ -3,14 +3,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING
 
 import elfpy.types as types
+from agent0.hyperdrive.accounts import HyperdriveWallet
 from elfpy.markets.base import BaseMarketAction
 from fixedpointmath import FixedPoint
-
-if TYPE_CHECKING:
-    from elfpy.wallet.wallet import Wallet
 
 
 class HyperdriveActionType(Enum):
@@ -38,7 +35,7 @@ class HyperdriveMarketAction(BaseMarketAction):
     # amount to supply for the action
     trade_amount: FixedPoint  # TODO: should this be a Quantity, not a float? Make sure, then delete fixme
     # the agent's wallet
-    wallet: Wallet
+    wallet: HyperdriveWallet
     # slippage tolerance percent where 0.01 would be a 1% tolerance
     slippage_tolerance: FixedPoint | None = None
     # mint time is set only for trades that act on existing positions (close long or close short)

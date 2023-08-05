@@ -7,20 +7,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from agent0.base.policies import BasePolicy
+from agent0.hyperdrive import HyperdriveMarketState
+from agent0.hyperdrive.accounts import HyperdriveWallet
 from fixedpointmath import FixedPoint
 
-from . import BasePolicy
-
 if TYPE_CHECKING:
-    from elfpy.markets.base import BaseMarket
     from elfpy.types import Trade
-    from elfpy.wallet.wallet import Wallet
     from numpy.random._generator import Generator as NumpyGenerator
 
 # pylint: disable=too-few-public-methods
 
 
-class NoActionPolicy(BasePolicy):
+class NoActionPolicy(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
     """NoOp class policy"""
 
     def __init__(self, budget: FixedPoint | None = None, rng: NumpyGenerator | None = None):
@@ -29,7 +28,7 @@ class NoActionPolicy(BasePolicy):
         else:
             super().__init__(budget, rng)
 
-    def action(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
+    def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade]:
         """Returns an empty list, indicating no action"""
         # pylint: disable=unused-argument
         return []

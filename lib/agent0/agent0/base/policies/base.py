@@ -3,20 +3,22 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from fixedpointmath import FixedPoint
 from numpy.random import default_rng
 
 if TYPE_CHECKING:
+    from agent0.base.agents import EthWallet
+    from agent0.base.state import BaseMarketState
+    from elfpy.types import Trade
     from numpy.random._generator import Generator as NumpyGenerator
 
-    from elfpy.markets.base import BaseMarket
-    from elfpy.types import Trade
-    from elfpy.wallet.wallet import Wallet
+Wallet = TypeVar("Wallet", bound="EthWallet")
+MarketState = TypeVar("MarketState", bound="BaseMarketState")
 
 
-class BasePolicy:
+class BasePolicy(Generic[MarketState, Wallet]):
     """Base class policy"""
 
     def __init__(
@@ -37,6 +39,6 @@ class BasePolicy:
         """Return the class name"""
         return self.__class__.__name__
 
-    def action(self, market: BaseMarket, wallet: Wallet) -> list[Trade]:
+    def action(self, market: MarketState, wallet: Wallet) -> list[Trade]:
         """Returns an empty list, indicating no action"""
         raise NotImplementedError

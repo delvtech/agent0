@@ -4,14 +4,13 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass, field
 
-import elfpy
 from elfpy import types
 from elfpy.markets.base import BaseMarketState
 from fixedpointmath import FixedPoint
 
 
 @types.freezable(frozen=False, no_new_attribs=False)
-@dataclass
+@dataclass(kw_only=True)
 class HyperdriveMarketState(BaseMarketState):
     r"""The state of an AMM
 
@@ -74,12 +73,6 @@ class HyperdriveMarketState(BaseMarketState):
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
 
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def __setitem__(self, key, value):
-        return setattr(self, key, value)
-
     lp_total_supply: FixedPoint = FixedPoint(0)
     share_reserves: FixedPoint = FixedPoint(0)
     bond_reserves: FixedPoint = FixedPoint(0)
@@ -138,9 +131,3 @@ class HyperdriveMarketState(BaseMarketState):
     def copy(self) -> HyperdriveMarketState:
         """Returns a new copy of self"""
         return HyperdriveMarketState(**copy.deepcopy(self.__dict__))
-
-    def check_valid_market_state(self, dictionary: dict | None = None) -> None:
-        """Test that all market state variables are greater than zero"""
-        if dictionary is None:
-            dictionary = self.__dict__
-        elfpy.check_non_zero(dictionary)

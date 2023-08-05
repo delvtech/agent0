@@ -4,18 +4,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from agent0.base.policies import BasePolicy
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, HyperdriveMarketState
+from agent0.hyperdrive.accounts import HyperdriveWallet
 from elfpy import WEI
-from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
     from elfpy.markets.hyperdrive import HyperdriveMarket
-    from elfpy.wallet.wallet import Wallet
     from numpy.random._generator import Generator as NumpyGenerator
 
 
-class RandomAgent(BasePolicy):
+class RandomAgent(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
     """Random agent."""
 
     def __init__(
@@ -33,9 +33,9 @@ class RandomAgent(BasePolicy):
 
     def get_available_actions(
         self,
-        wallet: Wallet,
-        disallowed_actions: list[MarketActionType] | None = None,
-    ) -> list[MarketActionType]:
+        wallet: HyperdriveWallet,
+        disallowed_actions: list[HyperdriveActionType] | None = None,
+    ) -> list[HyperdriveActionType]:
         """Get all available actions, excluding those listed in disallowed_actions."""
         # prevent accidental override
         if disallowed_actions is None:
@@ -45,22 +45,22 @@ class RandomAgent(BasePolicy):
             all_available_actions = []
         else:
             all_available_actions = [
-                MarketActionType.OPEN_LONG,
-                MarketActionType.OPEN_SHORT,
-                MarketActionType.ADD_LIQUIDITY,
+                HyperdriveActionType.OPEN_LONG,
+                HyperdriveActionType.OPEN_SHORT,
+                HyperdriveActionType.ADD_LIQUIDITY,
             ]
         if wallet.longs:  # if the agent has open longs
-            all_available_actions.append(MarketActionType.CLOSE_LONG)
+            all_available_actions.append(HyperdriveActionType.CLOSE_LONG)
         if wallet.shorts:  # if the agent has open shorts
-            all_available_actions.append(MarketActionType.CLOSE_SHORT)
+            all_available_actions.append(HyperdriveActionType.CLOSE_SHORT)
         if wallet.lp_tokens:
-            all_available_actions.append(MarketActionType.REMOVE_LIQUIDITY)
+            all_available_actions.append(HyperdriveActionType.REMOVE_LIQUIDITY)
         if wallet.withdraw_shares:
-            all_available_actions.append(MarketActionType.REDEEM_WITHDRAW_SHARE)
+            all_available_actions.append(HyperdriveActionType.REDEEM_WITHDRAW_SHARE)
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
 
-    def open_short_with_random_amount(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
+    def open_short_with_random_amount(self, market: HyperdriveMarket, wallet: HyperdriveWallet) -> list[Trade]:
         """Open a short with a random allowable amount."""
         maximum_trade_amount = market.get_max_short_for_account(wallet.balance.amount)
         if maximum_trade_amount <= WEI:
@@ -77,7 +77,7 @@ class RandomAgent(BasePolicy):
             Trade(
                 market_type=MarketType.HYPERDRIVE,
                 market_action=HyperdriveMarketAction(
-                    action_type=MarketActionType.OPEN_SHORT,
+                    action_type=HyperdriveActionType.OPEN_SHORT,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
@@ -85,7 +85,7 @@ class RandomAgent(BasePolicy):
             )
         ]
 
-    def close_random_short(self, wallet: Wallet) -> list[Trade[HyperdriveMarketAction]]:
+    def close_random_short(self, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Fully close the short balance for a random mint time."""
         # choose a random short time to close
         short_time: FixedPoint = list(wallet.shorts)[self.rng.integers(len(wallet.shorts))]
@@ -94,7 +94,7 @@ class RandomAgent(BasePolicy):
             Trade(
                 market_type=MarketType.HYPERDRIVE,
                 market_action=HyperdriveMarketAction(
-                    action_type=MarketActionType.CLOSE_SHORT,
+                    action_type=HyperdriveActionType.CLOSE_SHORT,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
@@ -104,7 +104,7 @@ class RandomAgent(BasePolicy):
         ]
 
     def open_long_with_random_amount(
-        self, market: HyperdriveMarket, wallet: Wallet
+        self, market: HyperdriveMarket, wallet: HyperdriveWallet
     ) -> list[Trade[HyperdriveMarketAction]]:
         """Open a long with a random allowable amount."""
         maximum_trade_amount = market.get_max_long_for_account(wallet.balance.amount)
@@ -121,7 +121,7 @@ class RandomAgent(BasePolicy):
             Trade(
                 market_type=MarketType.HYPERDRIVE,
                 market_action=HyperdriveMarketAction(
-                    action_type=MarketActionType.OPEN_LONG,
+                    action_type=HyperdriveActionType.OPEN_LONG,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
@@ -129,7 +129,7 @@ class RandomAgent(BasePolicy):
             )
         ]
 
-    def close_random_long(self, wallet: Wallet) -> list[Trade[HyperdriveMarketAction]]:
+    def close_random_long(self, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Fully close the long balance for a random mint time."""
         # choose a random long time to close
         long_time: FixedPoint = list(wallet.longs)[self.rng.integers(len(wallet.longs))]
@@ -138,7 +138,7 @@ class RandomAgent(BasePolicy):
             Trade(
                 market_type=MarketType.HYPERDRIVE,
                 market_action=HyperdriveMarketAction(
-                    action_type=MarketActionType.CLOSE_LONG,
+                    action_type=HyperdriveActionType.CLOSE_LONG,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
@@ -147,7 +147,7 @@ class RandomAgent(BasePolicy):
             )
         ]
 
-    def add_liquidity_with_random_amount(self, wallet: Wallet) -> list[Trade[HyperdriveMarketAction]]:
+    def add_liquidity_with_random_amount(self, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Add liquidity with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
@@ -160,7 +160,7 @@ class RandomAgent(BasePolicy):
             Trade(
                 market_type=MarketType.HYPERDRIVE,
                 market_action=HyperdriveMarketAction(
-                    action_type=MarketActionType.ADD_LIQUIDITY,
+                    action_type=HyperdriveActionType.ADD_LIQUIDITY,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
@@ -168,7 +168,7 @@ class RandomAgent(BasePolicy):
             )
         ]
 
-    def remove_liquidity_with_random_amount(self, wallet: Wallet) -> list[Trade[HyperdriveMarketAction]]:
+    def remove_liquidity_with_random_amount(self, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Remove liquidity with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
@@ -181,7 +181,7 @@ class RandomAgent(BasePolicy):
             Trade(
                 market_type=MarketType.HYPERDRIVE,
                 market_action=HyperdriveMarketAction(
-                    action_type=MarketActionType.REMOVE_LIQUIDITY,
+                    action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
@@ -190,7 +190,7 @@ class RandomAgent(BasePolicy):
         ]
 
     def redeem_withdraw_shares_with_random_amount(
-        self, market: HyperdriveMarket, wallet: Wallet
+        self, market: HyperdriveMarket, wallet: HyperdriveWallet
     ) -> list[Trade[HyperdriveMarketAction]]:
         """Redeem withdraw shares with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
@@ -209,7 +209,7 @@ class RandomAgent(BasePolicy):
             Trade(
                 market_type=MarketType.HYPERDRIVE,
                 market_action=HyperdriveMarketAction(
-                    action_type=MarketActionType.REDEEM_WITHDRAW_SHARE,
+                    action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
@@ -217,7 +217,7 @@ class RandomAgent(BasePolicy):
             )
         ]
 
-    def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(self, market: HyperdriveMarket, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Implement a random user strategy.
 
         The agent performs one of four possible trades:
@@ -230,7 +230,7 @@ class RandomAgent(BasePolicy):
         ---------
         market : Market
             the trading market
-        wallet : Wallet
+        wallet : HyperdriveWallet
             agent's wallet
 
         Returns
@@ -248,18 +248,18 @@ class RandomAgent(BasePolicy):
         # randomly choose one of the possible actions
         action_type = available_actions[self.rng.integers(len(available_actions))]
         # trade amount is also randomly chosen to be close to 10% of the agent's budget
-        if action_type == MarketActionType.OPEN_SHORT:
+        if action_type == HyperdriveActionType.OPEN_SHORT:
             return self.open_short_with_random_amount(market, wallet)
-        if action_type == MarketActionType.CLOSE_SHORT:
+        if action_type == HyperdriveActionType.CLOSE_SHORT:
             return self.close_random_short(wallet)
-        if action_type == MarketActionType.OPEN_LONG:
+        if action_type == HyperdriveActionType.OPEN_LONG:
             return self.open_long_with_random_amount(market, wallet)
-        if action_type == MarketActionType.CLOSE_LONG:
+        if action_type == HyperdriveActionType.CLOSE_LONG:
             return self.close_random_long(wallet)
-        if action_type == MarketActionType.ADD_LIQUIDITY:
+        if action_type == HyperdriveActionType.ADD_LIQUIDITY:
             return self.add_liquidity_with_random_amount(wallet)
-        if action_type == MarketActionType.REMOVE_LIQUIDITY:
+        if action_type == HyperdriveActionType.REMOVE_LIQUIDITY:
             return self.remove_liquidity_with_random_amount(wallet)
-        if action_type == MarketActionType.REDEEM_WITHDRAW_SHARE:
+        if action_type == HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
             return self.redeem_withdraw_shares_with_random_amount(market, wallet)
         return []
