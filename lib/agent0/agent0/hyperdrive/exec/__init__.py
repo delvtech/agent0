@@ -1,3 +1,4 @@
+"""Utilities for executing bots on Hyperdrive devnet."""
 from .execute_agent_trades import (
     ReceiptBreakdown,
     async_execute_agent_trades,

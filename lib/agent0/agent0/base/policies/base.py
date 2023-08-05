@@ -11,7 +11,7 @@ from numpy.random import default_rng
 if TYPE_CHECKING:
     from agent0.base.agents import EthWallet
 
-    # from agent0.base.state import BaseMarketState# FIXME: don't rely on elfpy base market
+    # from agent0.base.state import BaseMarketState # FIXME: don't rely on elfpy base market
     from elfpy.markets.base import BaseMarket as BaseMarketState
     from elfpy.types import Trade
     from numpy.random._generator import Generator as NumpyGenerator
@@ -23,7 +23,7 @@ Wallet = TypeVar("Wallet", bound="EthWallet")
 MarketState = TypeVar("MarketState", bound="BaseMarketState")
 
 
-# class BasePolicy(Generic[MarketState, Wallet]):# FIXME: don't rely on elfpy base market
+# class BasePolicy(Generic[MarketState, Wallet]): # FIXME: don't rely on elfpy base market
 class BasePolicy(Generic[MarketState, Wallet]):
     """Base class policy"""
 
