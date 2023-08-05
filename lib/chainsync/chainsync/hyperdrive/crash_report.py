@@ -1,14 +1,14 @@
 """Utility function for logging bot crash reports."""
 from __future__ import annotations
+
 import json
 import logging
 
-from elfpy.utils import logs
 import elfpy.utils.format as format_utils
+from chainsync.base import Base
+from chainsync.hyperdrive import PoolConfig, PoolInfo
+from elfpy.utils import logs
 from web3.exceptions import InvalidTransaction
-
-from src.data.db_schema import Base
-from src.data.hyperdrive.db_schema import PoolConfig, PoolInfo
 
 
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:

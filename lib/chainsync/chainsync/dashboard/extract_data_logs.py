@@ -7,8 +7,7 @@ import time
 
 import numpy as np
 import pandas as pd
-
-from src.hyperdrive import AssetIdPrefix
+from ethpy.hyperdrive import AssetIdPrefix
 
 
 def read_json_to_pd(json_file):

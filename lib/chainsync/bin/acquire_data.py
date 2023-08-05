@@ -1,23 +1,25 @@
 """Script to format on-chain hyperdrive pool, config, and transaction data post-processing."""
 from __future__ import annotations
-from dataclasses import dataclass
+
 import logging
 import os
 import time
+from dataclasses import dataclass
 
-from dotenv import load_dotenv
-from elfpy.utils import logs as log_utils
-from eth_typing import BlockNumber, URI
-from eth_utils import address
-from web3 import Web3
-from web3.contract.contract import Contract
-
-from src import eth, hyperdrive
-from src.data import postgres
+import chainsync
 import src.data.hyperdrive.convert_data
 import src.data.hyperdrive.postgres as postgres_hyperdrive
-import src.eth.transactions
 import src.hyperdrive.addresses
+from dotenv import load_dotenv
+from elfpy.utils import logs as log_utils
+from eth_typing import URI, BlockNumber
+from eth_utils import address
+from ethpy.base import fetch_contract_transactions_for_block, initialize_web3_with_http_provider, load_all_abis
+from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_url, get_hyperdrive_config
+from src import hyperdrive
+from src.data import postgres
+from web3 import Web3
+from web3.contract.contract import Contract
 
 # pylint: disable=too-many-arguments
 
@@ -27,9 +29,7 @@ import src.hyperdrive.addresses
 RETRY_COUNT = 10
 
 
-def _get_hyperdrive_contract(
-    web3: Web3, abis: dict, addresses: src.hyperdrive.addresses.HyperdriveAddresses
-) -> Contract:
+def _get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses) -> Contract:
     """Get the hyperdrive contract given abis.
 
     Arguments
@@ -88,12 +88,12 @@ def main(
     # initialize the postgres session
     session = postgres.initialize_session()
     # get web3 provider
-    web3: Web3 = eth.initialize_web3_with_http_provider(ethereum_node, request_kwargs={"timeout": 60})
+    web3: Web3 = initialize_web3_with_http_provider(ethereum_node, request_kwargs={"timeout": 60})
 
     # send a request to the local server to fetch the deployed contract addresses and
     # all Hyperdrive contract addresses from the server response
-    addresses = src.hyperdrive.addresses.fetch_hyperdrive_address_from_url(contracts_url)
-    abis = eth.abi.load_all_abis(abi_dir)
+    addresses = fetch_hyperdrive_address_from_url(contracts_url)
+    abis = load_all_abis(abi_dir)
 
     hyperdrive_contract = _get_hyperdrive_contract(web3, abis, addresses)
     base_contract: Contract = web3.eth.contract(
@@ -101,8 +101,8 @@ def main(
     )
 
     # get pool config from hyperdrive contract
-    pool_config_dict = hyperdrive.contract_interface.get_hyperdrive_config(hyperdrive_contract)
-    postgres_hyperdrive.add_pool_config(src.data.hyperdrive.convert_data.convert_pool_config(pool_config_dict), session)
+    pool_config_dict = get_hyperdrive_config(hyperdrive_contract)
+    postgres_hyperdrive.add_pool_config(chainsync.hyperdrive.convert_pool_config(pool_config_dict), session)
 
     # Get last entry of pool info in db
     data_latest_block_number = postgres_hyperdrive.get_latest_block_number_from_pool_info_table(session)
@@ -137,9 +137,7 @@ def main(
         )
 
         # Query and add block transactions
-        transactions = src.eth.transactions.fetch_contract_transactions_for_block(
-            web3, hyperdrive_contract, block_number
-        )
+        transactions = fetch_contract_transactions_for_block(web3, hyperdrive_contract, block_number)
         block_transactions, wallet_deltas = src.data.hyperdrive.convert_data.convert_hyperdrive_transactions_for_block(
             hyperdrive_contract, transactions
         )
@@ -205,9 +203,7 @@ def main(
                 wallet_deltas = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        transactions = src.eth.transactions.fetch_contract_transactions_for_block(
-                            web3, hyperdrive_contract, block_number
-                        )
+                        transactions = fetch_contract_transactions_for_block(web3, hyperdrive_contract, block_number)
                         (
                             block_transactions,
                             wallet_deltas,

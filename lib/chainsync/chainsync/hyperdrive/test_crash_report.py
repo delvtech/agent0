@@ -1,16 +1,20 @@
 """Testing for crash report logging."""
 from __future__ import annotations
-from datetime import datetime
+
 import logging
 import unittest
+from datetime import datetime
 
+import elfpy.utils.logs as log_utils
+from chainsync.hyperdrive import (
+    PoolConfig,
+    PoolInfo,
+    log_hyperdrive_crash_report,
+    setup_hyperdrive_crash_report_logging,
+)
 from elfpy.simulators.smulation_config import SimulationConfig
 from elfpy.utils import sim_utils
-import elfpy.utils.logs as log_utils
 from web3.exceptions import InvalidTransaction
-
-from src.data.hyperdrive.db_schema import PoolConfig, PoolInfo
-from src.eth_bots.core import crash_report
 
 
 class TestCrashReport(unittest.TestCase):
@@ -18,7 +22,7 @@ class TestCrashReport(unittest.TestCase):
 
     def test_hyperdrive_crash_report_logging(self):
         """Tests hyperdrive crash report logging."""
-        crash_report.setup_hyperdrive_crash_report_logging()
+        setup_hyperdrive_crash_report_logging()
         config = SimulationConfig()
         config.pricing_model_name = "Yieldspace"
         config.num_trading_days = 3
@@ -28,7 +32,7 @@ class TestCrashReport(unittest.TestCase):
         simulator.run_simulation()  # run
 
         self.assertLogs(level=logging.CRITICAL)
-        crash_report.log_hyperdrive_crash_report(
+        log_hyperdrive_crash_report(
             "CLOSE_LONG",
             InvalidTransaction("Message"),
             1.23,

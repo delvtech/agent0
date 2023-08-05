@@ -1,12 +1,12 @@
 """simulation for the Hyperdrive market"""
 from __future__ import annotations
+
 from decimal import Decimal
 
 import matplotlib.pyplot as plt
 import numpy as np
+from chainsync.dashboard.extract_data_logs import calculate_spot_price
 from matplotlib import ticker as mpl_ticker
-
-from src.dashboard.extract_data_logs import calculate_spot_price
 
 # %%
 
