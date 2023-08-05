@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import TypeVar
 
 import eth_utils
 from agent0.base.config import AgentConfig

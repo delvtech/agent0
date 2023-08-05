@@ -4,8 +4,8 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass, field
 
+from agent0.base.state import BaseMarketState
 from elfpy import types
-from elfpy.markets.base import BaseMarketState
 from fixedpointmath import FixedPoint
 
 

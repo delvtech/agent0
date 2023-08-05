@@ -14,7 +14,6 @@ from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
-    from elfpy.markets.hyperdrive import HyperdriveMarket
     from numpy.random._generator import Generator as NumpyGenerator
 
 
@@ -63,7 +62,7 @@ class RandomAgent(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
 
-    def open_short_with_random_amount(self, market: HyperdriveMarket, wallet: HyperdriveWallet) -> list[Trade]:
+    def open_short_with_random_amount(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade]:
         """Open a short with a random allowable amount."""
         maximum_trade_amount = market.get_max_short_for_account(wallet.balance.amount)
         if maximum_trade_amount <= WEI:
@@ -107,7 +106,7 @@ class RandomAgent(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
         ]
 
     def open_long_with_random_amount(
-        self, market: HyperdriveMarket, wallet: HyperdriveWallet
+        self, market: HyperdriveMarketState, wallet: HyperdriveWallet
     ) -> list[Trade[HyperdriveMarketAction]]:
         """Open a long with a random allowable amount."""
         maximum_trade_amount = market.get_max_long_for_account(wallet.balance.amount)
@@ -193,7 +192,7 @@ class RandomAgent(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
         ]
 
     def redeem_withdraw_shares_with_random_amount(
-        self, market: HyperdriveMarket, wallet: HyperdriveWallet
+        self, market: HyperdriveMarketState, wallet: HyperdriveWallet
     ) -> list[Trade[HyperdriveMarketAction]]:
         """Redeem withdraw shares with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
@@ -220,7 +219,7 @@ class RandomAgent(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
             )
         ]
 
-    def action(self, market: HyperdriveMarket, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Implement a random user strategy.
 
         The agent performs one of four possible trades:

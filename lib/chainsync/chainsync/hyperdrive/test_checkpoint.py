@@ -14,6 +14,7 @@ Session = sessionmaker(bind=engine)
 
 # fixture arguments in test function have to be the same as the fixture name
 # pylint: disable=redefined-outer-name
+# pylint: disable=invalid-name
 
 
 @pytest.fixture(scope="function")
