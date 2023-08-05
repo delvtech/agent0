@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import warnings
 
-from agent0.base import setup_experiment, trade_if_new_block
+from agent0.hyperdrive.exec import setup_experiment, trade_if_new_block
 from eth_typing import BlockNumber
 
 

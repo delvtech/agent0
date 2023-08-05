@@ -99,7 +99,6 @@ class HyperdriveMarketState(BaseMarketState):
     short_average_maturity_time: FixedPoint = FixedPoint(0)
     long_base_volume: FixedPoint = FixedPoint(0)
     short_base_volume: FixedPoint = FixedPoint(0)
-    checkpoints: dict[FixedPoint, Checkpoint] = field(default_factory=dict)
     checkpoint_duration: FixedPoint = FixedPoint("1.0").div_up(FixedPoint("365.0"))
     checkpoint_duration_days: FixedPoint = FixedPoint("1.0")
     total_supply_longs: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
@@ -109,15 +108,15 @@ class HyperdriveMarketState(BaseMarketState):
     withdraw_capital: FixedPoint = FixedPoint(0)
     withdraw_interest: FixedPoint = FixedPoint(0)
 
-    def apply_delta(self, delta: HyperdriveMarketDeltas) -> None:
+    def apply_delta(self, delta: HyperdriveMarketState) -> None:
         r"""Applies a delta to the market state."""
         # assets & prices
-        self.share_reserves += delta.d_base_asset / self.share_price
-        self.bond_reserves += delta.d_bond_asset
-        self.base_buffer += delta.d_base_buffer
-        self.bond_buffer += delta.d_bond_buffer
-        self.lp_total_supply += delta.d_lp_total_supply
-        self.share_price += delta.d_share_price
+        self.share_reserves += delta.share_reserves
+        self.bond_reserves += delta.bond_reserves
+        self.base_buffer += delta.base_buffer
+        self.bond_buffer += delta.bond_buffer
+        self.lp_total_supply += delta.lp_total_supply
+        self.share_price += delta.share_price
         # tracking open positions
         self.longs_outstanding += delta.longs_outstanding
         self.shorts_outstanding += delta.shorts_outstanding
@@ -131,10 +130,6 @@ class HyperdriveMarketState(BaseMarketState):
         self.withdraw_capital += delta.withdraw_capital
         self.withdraw_interest += delta.withdraw_interest
         # checkpointing
-        for mint_time, delta_checkpoint in delta.long_checkpoints.items():
-            self.checkpoints.get(mint_time, Checkpoint()).long_base_volume += delta_checkpoint
-        for mint_time, delta_checkpoint in delta.short_checkpoints.items():
-            self.checkpoints.get(mint_time, Checkpoint()).short_base_volume += delta_checkpoint
         for mint_time, delta_supply in delta.total_supply_longs.items():
             self.total_supply_longs[mint_time] = self.total_supply_longs.get(mint_time, FixedPoint(0)) + delta_supply
         for mint_time, delta_supply in delta.total_supply_shorts.items():

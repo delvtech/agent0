@@ -5,8 +5,8 @@ import asyncio
 import logging
 from datetime import datetime
 
-from agent0.base import async_execute_agent_trades
 from agent0.hyperdrive.accounts import EthAgent
+from agent0.hyperdrive.exec import async_execute_agent_trades
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import RPCEndpoint

@@ -6,7 +6,7 @@ import logging
 from typing import NoReturn
 
 import eth_utils
-from agent0.hyperdrive import EthAgent
+from agent0.hyperdrive.accounts import EthAgent
 from elfpy import types
 from elfpy.markets.hyperdrive import HyperdriveMarket, MarketActionType
 from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction
