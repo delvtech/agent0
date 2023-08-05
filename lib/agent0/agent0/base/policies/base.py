@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from elfpy.markets.base import BaseMarket  # FIXME: use agent0 market state instead of elfpy market
 from fixedpointmath import FixedPoint
 from numpy.random import default_rng
 
@@ -13,6 +12,7 @@ if TYPE_CHECKING:
     from agent0.base.agents import EthWallet
 
     # from agent0.base.state import BaseMarketState# FIXME: don't rely on elfpy base market
+    from elfpy.markets.base import BaseMarket as BaseMarketState
     from elfpy.types import Trade
     from numpy.random._generator import Generator as NumpyGenerator
 
@@ -20,7 +20,7 @@ Wallet = TypeVar("Wallet", bound="EthWallet")
 
 # FIXME: use agent0 market state instead of elfpy market
 # MarketState = TypeVar("MarketState", bound="BaseMarketState")
-MarketState = TypeVar("MarketState", bound="BaseMarket")
+MarketState = TypeVar("MarketState", bound="BaseMarketState")
 
 
 # class BasePolicy(Generic[MarketState, Wallet]):# FIXME: don't rely on elfpy base market
