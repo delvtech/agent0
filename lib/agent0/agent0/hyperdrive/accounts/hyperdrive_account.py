@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Generic, TypeVar
 
-from agent0.base.accounts import EthAgent
+from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy, NoActionPolicy
 from agent0.hyperdrive.accounts import HyperdriveWallet
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketAction, MarketActionType

@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Iterable
 
-from agent0.base.accounts import EthWallet
+from agent0.base.agents import EthWallet
 from elfpy.wallet.wallet import Long, Short
 from elfpy.wallet.wallet_deltas import WalletDeltas
 from fixedpointmath import FixedPoint

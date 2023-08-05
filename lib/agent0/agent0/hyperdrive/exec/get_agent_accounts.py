@@ -7,7 +7,7 @@ import os
 from typing import TypeVar
 
 import eth_utils
-from agent0.base.accounts import EthAgent
+from agent0.base.agents import EthAgent
 from agent0.base.config import AgentConfig
 from agent0.hyperdrive.accounts import HyperdriveAgent
 from dotenv import load_dotenv

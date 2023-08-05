@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Generic, TypeVar
 
-from agent0.base.accounts import EthWallet
+from agent0.base.agents import EthWallet
 from agent0.base.policies import BasePolicy, NoActionPolicy
 from elfpy.types import Quantity, TokenType, Trade
 from eth_account.signers.local import LocalAccount

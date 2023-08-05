@@ -34,7 +34,7 @@ class HyperdriveActionType(Enum):
 class HyperdriveMarketAction(BaseMarketAction):
     r"""Market action specification"""
     # these two variables are required to be set by the strategy
-    action_type: MarketActionType
+    action_type: HyperdriveActionType
     # amount to supply for the action
     trade_amount: FixedPoint  # TODO: should this be a Quantity, not a float? Make sure, then delete fixme
     # the agent's wallet
