@@ -4,8 +4,8 @@ from __future__ import annotations
 import logging
 import warnings
 
+from agent0.base import setup_experiment
 from eth_typing import BlockNumber
-
 from src.eth_bots.core.setup_experiment import setup_experiment
 from src.eth_bots.core.trade_loop import trade_if_new_block
 

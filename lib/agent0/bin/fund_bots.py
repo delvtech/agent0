@@ -4,13 +4,19 @@ from __future__ import annotations
 import json
 import os
 
-import ethpy
 from agent0.hyperdrive.accounts import EthAgent
 from agent0.hyperdrive.config.runner_config import get_eth_bots_config
 from dotenv import load_dotenv
 from eth_account.account import Account
-from ethpy.base import initialize_web3_with_http_provider
-from ethpy.ethpy import b
+from ethpy.base import (
+    eth_transfer,
+    get_account_balance,
+    initialize_web3_with_http_provider,
+    load_abi_from_file,
+    smart_contract_read,
+    smart_contract_transact,
+)
+from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
 
 if __name__ == "__main__":
     # get keys & RPC url from the environment
@@ -54,10 +60,8 @@ if __name__ == "__main__":
         os.path.join(environment_config.abi_folder, environment_config.base_abi + ".sol"),
         environment_config.base_abi + ".json",
     )
-    base_contract_abi = ethpy.base.abi.load_abi_from_file(abi_file_loc)
-    addresses = ethpy.hyperdrive.addresses.fetch_hyperdrive_address_from_url(
-        os.path.join(environment_config.artifacts_url, "addresses.json")
-    )
+    base_contract_abi = load_abi_from_file(abi_file_loc)
+    addresses = fetch_hyperdrive_address_from_url(os.path.join(environment_config.artifacts_url, "addresses.json"))
     base_token_contract = web3.eth.contract(
         abi=base_contract_abi, address=web3.to_checksum_address(addresses.base_token)
     )
@@ -65,7 +69,7 @@ if __name__ == "__main__":
         agent_accounts, agent_eth_budgets, agent_base_budgets
     ):
         # fund Ethereum
-        user_eth_balance = ethpy.base.rpc_interface.get_account_balance(web3, user_account.checksum_address)
+        user_eth_balance = get_account_balance(web3, user_account.checksum_address)
         if user_eth_balance is None:
             raise AssertionError("User has no Ethereum balance")
         if user_eth_balance < agent_eth_budget:
@@ -73,14 +77,14 @@ if __name__ == "__main__":
                 f"User account {user_account.checksum_address=} has {user_eth_balance=}, "
                 f"which must be >= {agent_eth_budget=}"
             )
-        _ = ethpy.base.transactions.eth_transfer(
+        _ = eth_transfer(
             web3,
             user_account,
             agent_account.checksum_address,
             agent_eth_budget,
         )
         #  fund base
-        user_base_balance = ethpy.base.transactions.smart_contract_read(
+        user_base_balance = smart_contract_read(
             base_token_contract,
             "balanceOf",
             user_account.checksum_address,
@@ -90,7 +94,7 @@ if __name__ == "__main__":
                 f"User account {user_account.checksum_address=} has {user_base_balance=}, "
                 f"which must be >= {agent_base_budget=}"
             )
-        _ = ethpy.base.transactions.smart_contract_transact(
+        _ = smart_contract_transact(
             web3,
             base_token_contract,
             user_account,
