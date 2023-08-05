@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import os
 
-from agent0.hyperdrive.accounts import EthAgent
+from agent0.hyperdrive.accounts import HyperdriveAgent
 from agent0.hyperdrive.config import get_eth_bots_config
 from dotenv import load_dotenv
 from eth_account.account import Account
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     user_key = os.environ.get("USER_KEY")
     if user_key is None:
         raise ValueError("USER_KEY environment variable must be set")
-    user_account = EthAgent(Account().from_key(user_key))
+    user_account = HyperdriveAgent(Account().from_key(user_key))
     # LIST OF AGENT PRIVATE KEYS
     # NOTE: The env var should follow the JSON specification: https://www.json.org/json-en.html
     # for example, `export AGENT_KEYS='["foo", "bar"]'`
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     if key_string is None:
         raise ValueError("AGENT_KEYS environment variable must be set")
     agent_keys = json.loads(key_string)
-    agent_accounts = [EthAgent(Account().from_key(agent_private_key)) for agent_private_key in agent_keys]
+    agent_accounts = [HyperdriveAgent(Account().from_key(agent_private_key)) for agent_private_key in agent_keys]
 
     # AGENT ETHEREUM FUNDING AMOUNTS
     eth_budget_string = os.environ.get("AGENT_ETH_BUDGETS")

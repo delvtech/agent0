@@ -8,7 +8,8 @@ import ethpy
 import numpy as np
 import requests
 from agent0.base.accounts import EthAgent
-from agent0.hyperdrive.config import DEFAULT_USERNAME, EnvironmentConfig, get_eth_bots_config
+from agent0.base.config import DEFAULT_USERNAME, EnvironmentConfig
+from agent0.hyperdrive.config import get_eth_bots_config
 from agent0.hyperdrive.exec import get_agent_accounts
 from chainsync.base import crash_report
 from elfpy.utils import logs
