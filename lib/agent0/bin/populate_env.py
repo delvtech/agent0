@@ -4,7 +4,7 @@ import json
 import os
 
 import numpy as np
-from agent0.hyperdrive.config import get_eth_bots_config
+from agent0.hyperdrive import get_eth_bots_config
 from eth_account import Account
 from eth_utils.conversions import to_bytes
 from eth_utils.crypto import keccak

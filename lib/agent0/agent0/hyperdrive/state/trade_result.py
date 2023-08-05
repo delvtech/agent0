@@ -4,15 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fixedpointmath import FixedPoint
-
 from elfpy import types
 from elfpy.markets.base import BaseMarketActionResult
+from fixedpointmath import FixedPoint
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketActionResult(BaseMarketActionResult):
+class HyperdriveActionResult(BaseMarketActionResult):
     r"""The result to a market of performing a trade"""
     d_base: FixedPoint
     d_bonds: FixedPoint

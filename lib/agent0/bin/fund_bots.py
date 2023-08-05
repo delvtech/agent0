@@ -4,8 +4,7 @@ from __future__ import annotations
 import json
 import os
 
-from agent0.hyperdrive.accounts import EthAgent
-from agent0.hyperdrive.config.runner_config import get_eth_bots_config
+from agent0.hyperdrive import EthAgent, get_eth_bots_config
 from dotenv import load_dotenv
 from eth_account.account import Account
 from ethpy.base import (

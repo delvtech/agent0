@@ -7,7 +7,7 @@ from http import HTTPStatus
 import ethpy
 import numpy as np
 import requests
-from agent0.base.get_agent_accounts import get_agent_accounts
+from agent0.base import get_agent_accounts
 from agent0.hyperdrive.accounts import EthAgent
 from agent0.hyperdrive.config import DEFAULT_USERNAME, EnvironmentConfig, get_eth_bots_config
 from chainsync.base import crash_report

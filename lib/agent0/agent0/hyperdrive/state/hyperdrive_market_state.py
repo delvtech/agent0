@@ -2,30 +2,12 @@
 from __future__ import annotations
 
 import copy
-import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
 
 import elfpy
-import elfpy.errors.errors as errors
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.time as time
 import elfpy.types as types
-import elfpy.utils.price as price_utils
-from elfpy.markets.base import BaseMarket, BaseMarketState
-from elfpy.wallet.wallet_deltas import WalletDeltas
+from elfpy.markets.base import BaseMarketState
 from fixedpointmath import FixedPoint
-
-from .checkpoint import Checkpoint
-from .hyperdrive_actions import HyperdriveMarketAction, MarketActionType
-from .hyperdrive_market_deltas import HyperdriveMarketDeltas
-from .hyperdrive_pricing_model import HyperdrivePricingModel
-
-if TYPE_CHECKING:
-    from elfpy.wallet.wallet import Wallet
-
-# dataclasses can have many attributes
-# pylint: disable=too-many-instance-attributes
 
 
 @types.freezable(frozen=False, no_new_attribs=False)
@@ -89,6 +71,8 @@ class HyperdriveMarketState(BaseMarketState):
     withdraw_interest: FixedPoint
         The interest earned by the redemptions which put capital into the withdraw pool
     """
+    # dataclasses can have many attributes
+    # pylint: disable=too-many-instance-attributes
 
     def __getitem__(self, key):
         return getattr(self, key)

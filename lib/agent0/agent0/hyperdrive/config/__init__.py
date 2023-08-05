@@ -1,6 +1,2 @@
-from .agent_config import AgentConfig
-from .budget import Budget
-from .environment_config import EnvironmentConfig
-from .runner_config import get_eth_bots_config
-
+"""Configuration for agents on Hyperdrive"""
 DEFAULT_USERNAME = "changeme"

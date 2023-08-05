@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Type
 
-from agent0.hyperdrive.policies.base import BasePolicy
+from agent0.hyperdrive.policies import BasePolicy
 from fixedpointmath import FixedPoint
 
 from . import Budget

@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Generic, TypeVar
 
+from agent0.hyperdrive.accounts.eth_wallet import EthWallet
 from elfpy.agents.policies import BasePolicy, NoActionPolicy
 from elfpy.markets.hyperdrive import (
     HyperdriveMarket,
@@ -14,8 +15,6 @@ from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
-
-from .eth_wallet import EthWallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 Market = TypeVar(
