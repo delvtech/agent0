@@ -6,15 +6,15 @@ import time
 import mplfinance as mpf
 import pandas as pd
 import streamlit as st
+from agent0.hyperdrive.config import get_eth_bots_config
+from chainsync.analysis.calc_ohlcv import calc_ohlcv
+from chainsync.analysis.calc_pnl import calc_closeout_pnl, calc_total_returns
+from chainsync.base import get_transactions, get_user_map, initialize_session
+from chainsync.dashboard.extract_data_logs import get_combined_data
+from chainsync.dashboard.plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
+from chainsync.dashboard.plot_ohlcv import plot_ohlcv
+from chainsync.hyperdrive import get_agents, get_pool_config, get_pool_info, get_wallet_deltas
 from dotenv import load_dotenv
-
-import src.data.hyperdrive.postgres as postgres_hyperdrive
-import src.data.postgres as postgres
-from src.dashboard.calc_pnl import calc_closeout_pnl, calc_total_returns
-from src.dashboard.extract_data_logs import get_combined_data
-from src.dashboard.plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
-from src.dashboard.plot_ohlcv import calc_ohlcv, plot_ohlcv
-from src.eth_bots.eth_bots_config import get_eth_bots_config
 
 # pylint: disable=invalid-name
 
@@ -32,7 +32,7 @@ def get_ticker(
     Arguments
     ---------
     data: pd.DataFrame
-        The dataframe resulting from postgres_hyperdrive.get_transactions
+        The dataframe resulting from get_transactions
 
     Returns
     -------
@@ -170,8 +170,8 @@ def get_user_lookup() -> pd.DataFrame:
         the wallet address itself if a wallet is found without a registered username.
     """
     # Get data
-    agents = postgres_hyperdrive.get_agents(session)
-    user_map = postgres.get_user_map(session)
+    agents = get_agents(session)
+    user_map = get_user_map(session)
     # Usernames in postgres are bots
     user_map["username"] = user_map["username"] + " (bots)"
 
@@ -212,11 +212,11 @@ def address_to_username(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Se
 
 # Connect to postgres
 load_dotenv()
-session = postgres.initialize_session()
+session = initialize_session()
 env_config, _ = get_eth_bots_config()
 
 # pool config data is static, so just read once
-config_data = postgres_hyperdrive.get_pool_config(session, coerce_float=False)
+config_data = get_pool_config(session, coerce_float=False)
 
 # TODO fix input invTimeStretch to be unscaled in ingestion into postgres
 config_data["invTimeStretch"] = config_data["invTimeStretch"] / 10**18
@@ -238,10 +238,10 @@ ax_fixed_rate = main_fig.add_subplot(3, 1, 3)
 while True:
     # Place data and plots
     user_lookup = get_user_lookup()
-    txn_data = postgres.get_transactions(session, -max_live_blocks)
-    pool_info_data = postgres_hyperdrive.get_pool_info(session, -max_live_blocks, coerce_float=False)
+    txn_data = get_transactions(session, -max_live_blocks)
+    pool_info_data = get_pool_info(session, -max_live_blocks, coerce_float=False)
     combined_data = get_combined_data(txn_data, pool_info_data)
-    wallet_deltas = postgres_hyperdrive.get_wallet_deltas(session, coerce_float=False)
+    wallet_deltas = get_wallet_deltas(session, coerce_float=False)
     ticker = get_ticker(wallet_deltas, txn_data, pool_info_data, user_lookup)
 
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)

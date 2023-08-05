@@ -1,9 +1,8 @@
 """A simple Flask server to run python scripts."""
+from chainsync.base import postgres
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_expects_json import expects_json
-
-from src.data import postgres
 
 app = Flask(__name__)
 

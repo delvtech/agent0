@@ -6,18 +6,32 @@ import os
 import time
 from dataclasses import dataclass
 
-import chainsync
-import src.data.hyperdrive.convert_data
-import src.data.hyperdrive.postgres as postgres_hyperdrive
-import src.hyperdrive.addresses
+from chainsync.base import add_transactions, initialize_session
+from chainsync.hyperdrive import (
+    add_checkpoint_infos,
+    add_pool_config,
+    add_pool_infos,
+    add_wallet_deltas,
+    add_wallet_infos,
+    convert_checkpoint_info,
+    convert_hyperdrive_transactions_for_block,
+    convert_pool_config,
+    convert_pool_info,
+    get_latest_block_number_from_pool_info_table,
+    get_wallet_info,
+)
 from dotenv import load_dotenv
 from elfpy.utils import logs as log_utils
 from eth_typing import URI, BlockNumber
 from eth_utils import address
 from ethpy.base import fetch_contract_transactions_for_block, initialize_web3_with_http_provider, load_all_abis
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_url, get_hyperdrive_config
-from src import hyperdrive
-from src.data import postgres
+from ethpy.hyperdrive import (
+    HyperdriveAddresses,
+    fetch_hyperdrive_address_from_url,
+    get_hyperdrive_checkpoint_info,
+    get_hyperdrive_config,
+    get_hyperdrive_pool_info,
+)
 from web3 import Web3
 from web3.contract.contract import Contract
 
@@ -86,7 +100,7 @@ def main(
     # pylint: disable=too-many-statements
 
     # initialize the postgres session
-    session = postgres.initialize_session()
+    session = initialize_session()
     # get web3 provider
     web3: Web3 = initialize_web3_with_http_provider(ethereum_node, request_kwargs={"timeout": 60})
 
@@ -102,10 +116,10 @@ def main(
 
     # get pool config from hyperdrive contract
     pool_config_dict = get_hyperdrive_config(hyperdrive_contract)
-    postgres_hyperdrive.add_pool_config(chainsync.hyperdrive.convert_pool_config(pool_config_dict), session)
+    add_pool_config(convert_pool_config(pool_config_dict), session)
 
     # Get last entry of pool info in db
-    data_latest_block_number = postgres_hyperdrive.get_latest_block_number_from_pool_info_table(session)
+    data_latest_block_number = get_latest_block_number_from_pool_info_table(session)
     # Using max of latest block in database or specified start block
     start_block = max(start_block, data_latest_block_number)
     # Parameterized start block number
@@ -123,26 +137,18 @@ def main(
     # and if the chain has executed until start_block (based on latest_mined_block check)
     if data_latest_block_number < block_number < latest_mined_block:
         # Query and add block_pool_info
-        pool_info_dict = hyperdrive.contract_interface.get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
-        postgres_hyperdrive.add_pool_infos(
-            [src.data.hyperdrive.convert_data.convert_pool_info(pool_info_dict)], session
-        )
+        pool_info_dict = get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
+        add_pool_infos([convert_pool_info(pool_info_dict)], session)
 
         # Query and add block_checkpoint_info
-        checkpoint_info_dict = hyperdrive.contract_interface.get_hyperdrive_checkpoint_info(
-            web3, hyperdrive_contract, block_number
-        )
-        postgres_hyperdrive.add_checkpoint_infos(
-            [src.data.hyperdrive.convert_data.convert_checkpoint_info(checkpoint_info_dict)], session
-        )
+        checkpoint_info_dict = get_hyperdrive_checkpoint_info(web3, hyperdrive_contract, block_number)
+        add_checkpoint_infos([convert_checkpoint_info(checkpoint_info_dict)], session)
 
         # Query and add block transactions
         transactions = fetch_contract_transactions_for_block(web3, hyperdrive_contract, block_number)
-        block_transactions, wallet_deltas = src.data.hyperdrive.convert_data.convert_hyperdrive_transactions_for_block(
-            hyperdrive_contract, transactions
-        )
-        postgres.add_transactions(block_transactions, session)
-        postgres_hyperdrive.add_wallet_deltas(wallet_deltas, session)
+        block_transactions, wallet_deltas = convert_hyperdrive_transactions_for_block(hyperdrive_contract, transactions)
+        add_transactions(block_transactions, session)
+        add_wallet_deltas(wallet_deltas, session)
 
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
@@ -164,13 +170,12 @@ def main(
                         latest_mined_block,
                     )
                     continue
+
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 pool_info_dict = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        pool_info_dict = hyperdrive.contract_interface.get_hyperdrive_pool_info(
-                            web3, hyperdrive_contract, block_number
-                        )
+                        pool_info_dict = get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
                         break
                     except ValueError:
                         logging.warning("Error in get_hyperdrive_pool_info, retrying")
@@ -178,16 +183,14 @@ def main(
                         continue
                 if pool_info_dict is None:
                     raise ValueError("Error in getting pool info")
-                block_pool_info = src.data.hyperdrive.convert_data.convert_pool_info(pool_info_dict)
-                postgres_hyperdrive.add_pool_infos([block_pool_info], session)
+                block_pool_info = convert_pool_info(pool_info_dict)
+                add_pool_infos([block_pool_info], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 checkpoint_info_dict = None
                 for _ in range(RETRY_COUNT):
                     try:
-                        checkpoint_info_dict = hyperdrive.contract_interface.get_hyperdrive_checkpoint_info(
-                            web3, hyperdrive_contract, block_number
-                        )
+                        checkpoint_info_dict = get_hyperdrive_checkpoint_info(web3, hyperdrive_contract, block_number)
                         break
                     except ValueError:
                         logging.warning("Error in get_hyperdrive_checkpoint_info, retrying")
@@ -195,8 +198,8 @@ def main(
                         continue
                 if checkpoint_info_dict is None:
                     raise ValueError("Error in getting checkpoint info")
-                block_checkpoint_info = src.data.hyperdrive.convert_data.convert_checkpoint_info(checkpoint_info_dict)
-                postgres_hyperdrive.add_checkpoint_infos([block_checkpoint_info], session)
+                block_checkpoint_info = convert_checkpoint_info(checkpoint_info_dict)
+                add_checkpoint_infos([block_checkpoint_info], session)
 
                 # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
                 block_transactions = None
@@ -207,31 +210,26 @@ def main(
                         (
                             block_transactions,
                             wallet_deltas,
-                        ) = src.data.hyperdrive.convert_data.convert_hyperdrive_transactions_for_block(
-                            hyperdrive_contract, transactions
-                        )
+                        ) = convert_hyperdrive_transactions_for_block(hyperdrive_contract, transactions)
                         break
                     except ValueError:
                         logging.warning("Error in fetch_contract_transactions_for_block, retrying")
                         time.sleep(1)
                         continue
-
                 # This case only happens if fetch_contract_transactions throws an exception
                 # e.g., the web3 call fails. fetch_contract_transactions_for_block will return
                 # empty lists (which doesn't execute the if statement below) if there are no hyperdrive
                 # transactions for the block
                 if block_transactions is None or wallet_deltas is None:
                     raise ValueError("Error in getting transactions")
-
-                postgres.add_transactions(block_transactions, session)
-                postgres_hyperdrive.add_wallet_deltas(wallet_deltas, session)
-
+                add_transactions(block_transactions, session)
+                add_wallet_deltas(wallet_deltas, session)
                 # TODO put the wallet info query as an optional block,
                 # and check these wallet values with what we get from the deltas
-                wallet_info_for_transactions = src.data.hyperdrive.convert_data.get_wallet_info(
+                wallet_info_for_transactions = get_wallet_info(
                     hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
                 )
-                postgres_hyperdrive.add_wallet_infos(wallet_info_for_transactions, session)
+                add_wallet_infos(wallet_info_for_transactions, session)
         time.sleep(sleep_amount)
 
 
@@ -271,7 +269,6 @@ def build_eth_config() -> EthConfig:
     contracts_url = os.getenv("CONTRACTS_URL")
     ethereum_node = os.getenv("ETHEREUM_NODE")
     abi_dir = os.getenv("ABI_DIR")
-
     arg_dict = {}
     if contracts_url is not None:
         arg_dict["CONTRACTS_URL"] = contracts_url
@@ -279,7 +276,6 @@ def build_eth_config() -> EthConfig:
         arg_dict["ETHEREUM_NODE"] = ethereum_node
     if abi_dir is not None:
         arg_dict["ABI_DIR"] = abi_dir
-
     return EthConfig(**arg_dict)
 
 
