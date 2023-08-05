@@ -141,8 +141,15 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Options for API document generation -------------------------------------------------
-
-autoapi_dirs = [os.path.join("..", "..", "lib", "elfpy")]
+lib_dir = os.path.join("..", "..", "lib")
+autoapi_dirs = [
+    os.path.join(lib_dir, "agent0"),
+    os.path.join(lib_dir, "chainsync"),
+    os.path.join(lib_dir, "elfpy"),
+    os.path.join(lib_dir, "ethpy"),
+    os.path.join(lib_dir, "pyperdrive"),
+    os.path.join(lib_dir, "traiderdaive"),
+]
 autoapi_type = "python"
 autoapi_template_dir = os.path.join("_templates", "autoapi")
 autoapi_options = [
