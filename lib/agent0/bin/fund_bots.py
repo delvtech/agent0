@@ -4,11 +4,10 @@ from __future__ import annotations
 import json
 import os
 
+from agent0.config.runner_config import get_eth_bots_config
 from dotenv import load_dotenv
 from eth_account.account import Account
-
 from src import eth, hyperdrive
-from src.eth_bots.eth_bots_config import get_eth_bots_config
 
 if __name__ == "__main__":
     # get keys & RPC url from the environment
