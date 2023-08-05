@@ -14,15 +14,14 @@ class HyperdriveActionType(Enum):
     r"""The descriptor of an action in a market"""
     INITIALIZE_MARKET = "initialize_market"
 
-    ADD_LIQUIDITY = "add_liquidity"
-    REMOVE_LIQUIDITY = "remove_liquidity"
-
     OPEN_LONG = "open_long"
-    OPEN_SHORT = "open_short"
-
     CLOSE_LONG = "close_long"
+
+    OPEN_SHORT = "open_short"
     CLOSE_SHORT = "close_short"
 
+    ADD_LIQUIDITY = "add_liquidity"
+    REMOVE_LIQUIDITY = "remove_liquidity"
     REDEEM_WITHDRAW_SHARE = "redeem_withdraw_share"
 
 

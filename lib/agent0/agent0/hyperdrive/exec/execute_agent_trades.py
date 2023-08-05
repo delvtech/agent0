@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn
 
 import eth_utils
 from agent0.hyperdrive import HyperdriveActionType
@@ -228,6 +228,8 @@ async def async_match_contract_call_to_trade(
     max_apr = int(1e18)
     as_underlying = True
     match trade.action_type:
+        case HyperdriveActionType.INITIALIZE_MARKET:
+            raise ValueError(f"{trade.action_type} not supported!")
         case HyperdriveActionType.OPEN_LONG:
             min_output = 0
             fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
@@ -406,7 +408,6 @@ async def async_match_contract_call_to_trade(
         case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
             # for now, assume an underlying vault share price of at least 1, should be higher by a bit
             min_output = FixedPoint(1)
-
             # NOTE: This is not guaranteed to redeem all shares.  The pool will try to redeem as
             # many as possible, up to the withdrawPool.readyToRedeem limit, without reverting.  Only
             # a min_output that is too high will cause a revert here, or trying to withdraw more
@@ -426,8 +427,6 @@ async def async_match_contract_call_to_trade(
                 ),
                 withdraw_shares=-trade_result.withdrawal_share_amount,
             )
-        case HyperdriveActionType.INITIALIZE_MARKET:
-            raise ValueError(f"{trade.action_type} not supported!")
         case _:
             assert_never(trade.action_type)
     return wallet_deltas
