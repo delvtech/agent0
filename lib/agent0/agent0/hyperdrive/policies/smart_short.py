@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
-from agent0.hyperdrive.accounts import HyperdriveWallet
+from agent0.hyperdrive.agents import HyperdriveWallet
 from elfpy import WEI
 
 # from agent0.hyperdrive import HyperdriveMarketState # FIXME: use agent0 market state instead of elfpy market

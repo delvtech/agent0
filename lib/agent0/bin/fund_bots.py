@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import os
 
-from agent0.hyperdrive.accounts import HyperdriveAgent
+from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.config import get_eth_bots_config
 from dotenv import load_dotenv
 from eth_account.account import Account

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 import elfpy.types as types
-from agent0.hyperdrive.accounts import HyperdriveWallet
+from agent0.hyperdrive.agents import HyperdriveWallet
 from elfpy.markets.base import BaseMarketAction
 from fixedpointmath import FixedPoint
 

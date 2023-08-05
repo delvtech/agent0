@@ -5,7 +5,7 @@ import asyncio
 import logging
 from datetime import datetime
 
-from agent0.hyperdrive.accounts import HyperdriveAgent
+from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.exec import async_execute_agent_trades
 from web3 import Web3
 from web3.contract.contract import Contract

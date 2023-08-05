@@ -25,7 +25,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.accounts import HyperdriveAgent
+    from agent0.hyperdrive.agents import HyperdriveAgent
 
 # TODO: Fix these up when we refactor this file
 # pylint: disable=too-many-locals

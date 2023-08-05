@@ -8,7 +8,7 @@ from typing import TypeVar
 
 import eth_utils
 from agent0.base.config import AgentConfig
-from agent0.hyperdrive.accounts import HyperdriveAgent
+from agent0.hyperdrive.agents import HyperdriveAgent
 from dotenv import load_dotenv
 from eth_account.account import Account
 from ethpy.base import get_account_balance, smart_contract_read, smart_contract_transact

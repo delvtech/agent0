@@ -6,7 +6,7 @@ from typing import Generic, TypeVar
 
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
-from agent0.hyperdrive.accounts import HyperdriveWallet
+from agent0.hyperdrive.agents import HyperdriveWallet
 from agent0.hyperdrive.policies import NoActionPolicy
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Quantity, TokenType, Trade
