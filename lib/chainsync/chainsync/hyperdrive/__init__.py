@@ -9,6 +9,7 @@ from .convert_data import (
 )
 from .crash_report import log_hyperdrive_crash_report, setup_hyperdrive_crash_report_logging
 from .db_schema import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .get_hyperdrive_contract import get_hyperdrive_contract
 from .postgres import (
     add_checkpoint_infos,
     add_pool_config,

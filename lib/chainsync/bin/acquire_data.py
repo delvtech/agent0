@@ -17,6 +17,7 @@ from chainsync.hyperdrive import (
     convert_hyperdrive_transactions_for_block,
     convert_pool_config,
     convert_pool_info,
+    get_hyperdrive_contract,
     get_latest_block_number_from_pool_info_table,
     get_wallet_info,
 )
@@ -26,7 +27,6 @@ from eth_typing import URI, BlockNumber
 from eth_utils import address
 from ethpy.base import fetch_contract_transactions_for_block, initialize_web3_with_http_provider, load_all_abis
 from ethpy.hyperdrive import (
-    HyperdriveAddresses,
     fetch_hyperdrive_address_from_url,
     get_hyperdrive_checkpoint_info,
     get_hyperdrive_config,
@@ -41,33 +41,6 @@ from web3.contract.contract import Contract
 # pylint: disable=too-many-branches
 
 RETRY_COUNT = 10
-
-
-def _get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses) -> Contract:
-    """Get the hyperdrive contract given abis.
-
-    Arguments
-    ---------
-    web3: Web3
-        web3 provider object
-    abis: dict
-        A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
-    addresses: HyperdriveAddressesJson
-        The block number to query from the chain
-
-    Returns
-    -------
-    Contract
-        The contract object returned from the query
-    """
-    if "IHyperdrive" not in abis:
-        raise AssertionError("IHyperdrive ABI was not provided")
-    state_abi = abis["IHyperdrive"]
-    # get contract instance of hyperdrive
-    hyperdrive_contract: Contract = web3.eth.contract(
-        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
-    )
-    return hyperdrive_contract
 
 
 def main(
@@ -109,7 +82,7 @@ def main(
     addresses = fetch_hyperdrive_address_from_url(contracts_url)
     abis = load_all_abis(abi_dir)
 
-    hyperdrive_contract = _get_hyperdrive_contract(web3, abis, addresses)
+    hyperdrive_contract = get_hyperdrive_contract(web3, abis, addresses)
     base_contract: Contract = web3.eth.contract(
         address=address.to_checksum_address(addresses.base_token), abi=abis["ERC20Mintable"]
     )

@@ -6,17 +6,15 @@ from decimal import Decimal
 
 import numpy as np
 import pandas as pd
+from agent0.base.config import EnvironmentConfig
+from chainsync.dashboard import calculate_spot_price
+from chainsync.hyperdrive import get_hyperdrive_contract
 from eth_typing import ChecksumAddress, HexAddress, HexStr
+from ethpy.base import initialize_web3_with_http_provider, load_all_abis, smart_contract_preview_transaction
+from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
-
-from src import eth
-from src.dashboard.extract_data_logs import calculate_spot_price
-from src.eth.transactions import smart_contract_preview_transaction
-from src.eth_bots.core.environment_config import EnvironmentConfig
-from src.data.acquire_data import _get_hyperdrive_contract
-from src.hyperdrive.addresses import fetch_hyperdrive_address_from_url
 
 
 def calc_single_closeout(
@@ -79,13 +77,13 @@ def calc_single_closeout(
 
 def calc_closeout_pnl(current_wallet: pd.DataFrame, pool_info: pd.DataFrame, env_config: EnvironmentConfig):
     """Calculate closeout value of agent positions."""
-    web3: Web3 = eth.initialize_web3_with_http_provider(env_config.rpc_url, request_kwargs={"timeout": 60})
+    web3: Web3 = initialize_web3_with_http_provider(env_config.rpc_url, request_kwargs={"timeout": 60})
 
     # send a request to the local server to fetch the deployed contract addresses and
     # all Hyperdrive contract addresses from the server response
     addresses = fetch_hyperdrive_address_from_url(env_config.artifacts_url)
-    abis = eth.abi.load_all_abis(env_config.abi_folder)
-    contract = _get_hyperdrive_contract(web3, abis, addresses)
+    abis = load_all_abis(env_config.abi_folder)
+    contract = get_hyperdrive_contract(web3, abis, addresses)
 
     # Define a function to handle the calculation for each group
     current_wallet["closeout_pnl"] = np.nan

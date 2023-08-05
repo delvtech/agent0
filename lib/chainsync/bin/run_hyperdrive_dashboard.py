@@ -7,12 +7,11 @@ import mplfinance as mpf
 import pandas as pd
 import streamlit as st
 from agent0.hyperdrive.config import get_eth_bots_config
+from chainsync.analysis.calc_fixed_rate import calc_fixed_rate
 from chainsync.analysis.calc_ohlcv import calc_ohlcv
 from chainsync.analysis.calc_pnl import calc_closeout_pnl, calc_total_returns
 from chainsync.base import get_transactions, get_user_map, initialize_session
-from chainsync.dashboard.extract_data_logs import get_combined_data
-from chainsync.dashboard.plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
-from chainsync.dashboard.plot_ohlcv import plot_ohlcv
+from chainsync.dashboard import get_combined_data, plot_fixed_rate, plot_ohlcv
 from chainsync.hyperdrive import get_agents, get_pool_config, get_pool_info, get_wallet_deltas
 from dotenv import load_dotenv
 
