@@ -37,7 +37,7 @@ wallet_deltas = [pd.read_csv(csv).sort_values("blockNumber") for csv in wallet_d
 
 # 500k transfer to bots captured in base delta, adjustment here
 comb_rank[1].loc["Sheng Lundquist"] += 500000
-ind_rank[1].loc["Sheng Lundquist (click)"] += 500000
+ind_rank[1].loc[("Sheng Lundquist (click)", "0x021f1Bbd2Ec870FB150bBCAdaaA1F85DFd72407C")] += 500000
 # Delta OI
 wallet_deltas[1].loc[
     (wallet_deltas[1]["username"] == "Sheng Lundquist (click)")
@@ -50,7 +50,7 @@ wallet_deltas[1].loc[
 # 1 million injection of base captured due to these users making a trade before the injection
 # then after the injection. Adjustment here
 comb_rank[2].loc["Dylan Paiton"] -= 1000000
-ind_rank[2].loc["Dylan Paiton (click)"] -= 1000000
+ind_rank[2].loc[("Dylan Paiton (click)", "0x02147558D39cE51e19de3A2E1e5b7c8ff2778829")] -= 1000000  # type: ignore
 wallet_deltas[2].loc[
     (wallet_deltas[2]["username"] == "Dylan Paiton (click)")
     & (wallet_deltas[2]["blockNumber"] == 39048)
@@ -60,7 +60,7 @@ wallet_deltas[2].loc[
 
 
 comb_rank[2].loc["Giovanni Effio"] -= 1000000
-ind_rank[2].loc["Giovanni Effio (click)"] -= 1000000
+ind_rank[2].loc[("Giovanni Effio (click)", "0x00905A77Dc202e618d15d1a04Bc340820F99d7C4")] -= 1000000  # type: ignore
 wallet_deltas[2].loc[
     (wallet_deltas[2]["username"] == "Giovanni Effio (click)")
     & (wallet_deltas[2]["blockNumber"] == 23289)
@@ -74,3 +74,8 @@ total_ind_rank = pd.concat(ind_rank, axis=0).groupby(["username", "walletAddress
 
 print(total_comb_rank)
 print(total_ind_rank)
+
+# Save back out the final wallet_deltas to csv
+[rank.sort_values(ascending=False).to_csv("../comb_rank_" + str(idx) + ".csv") for idx, rank in enumerate(comb_rank)]
+[rank.sort_values(ascending=False).to_csv("../ind_rank_" + str(idx) + ".csv") for idx, rank in enumerate(ind_rank)]
+[delta.to_csv("../final_trades_" + str(idx) + ".csv") for idx, delta in enumerate(wallet_deltas)]
