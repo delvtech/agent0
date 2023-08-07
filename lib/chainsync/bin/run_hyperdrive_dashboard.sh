@@ -1,0 +1,1 @@
+streamlit run chainsync/bin/run_hyperdrive_dashboard.py --server.headless true
