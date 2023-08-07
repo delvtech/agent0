@@ -66,28 +66,26 @@ def get_agent_accounts(
         kwargs = agent_info.init_kwargs
         kwargs["rng"] = rng
         for policy_instance_index in range(agent_info.number_of_agents):  # instantiate one agent per policy
-            kwargs["budget"] = agent_info.base_budget.sample_budget(rng)
-            kwargs["slippage_tolerance"] = agent_info.slippage_tolerance
             agent_count = policy_instance_index + sum(num_agents_so_far)
-            if len(agent_base_budgets) >= agent_count:
-                kwargs["budget"] = FixedPoint(scaled_value=agent_base_budgets[agent_count])
-            else:
-                kwargs["budget"] = agent_info.base_budget.sample_budget(rng)
-                # TODO: This is where we would fund the bots if we wanted to mint money from nothing
             # the agent object holds the policy, which makes decisions based
             # on the market and can produce a list of trades
             if len(agent_private_keys) < agent_count:
                 raise AssertionError(
                     "Private keys must be specified for the eth_bots demo. Did you list enough in your .env?"
                 )
+            if len(agent_base_budgets) >= agent_count:
+                kwargs["budget"] = FixedPoint(scaled_value=agent_base_budgets[agent_count])
+            else:
+                kwargs["budget"] = agent_info.base_budget.sample_budget(rng)
+                # TODO: This is where we would fund the bots if we wanted to mint money from nothing
+            kwargs["slippage_tolerance"] = agent_info.slippage_tolerance
             eth_agent = HyperdriveAgent(
                 Account().from_key(agent_private_keys[agent_count]), policy=agent_info.policy(**kwargs)
             )
-            agent_eth_funds = get_account_balance(web3, eth_agent.checksum_address)
-            if agent_eth_funds == 0:
+            if get_account_balance(web3, eth_agent.checksum_address) == 0:
                 raise AssertionError(
                     f"Agent needs Ethereum to operate! The agent {eth_agent.checksum_address=} has a "
-                    f"balance of {agent_eth_funds=}.\nDid you fund their accounts?"
+                    f"balance of 0.\nDid you fund their accounts?"
                 )
             agent_base_funds = smart_contract_read(base_token_contract, "balanceOf", eth_agent.checksum_address)
             if agent_base_funds["value"] == 0:

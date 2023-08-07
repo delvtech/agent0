@@ -7,7 +7,7 @@ from agent0.base.make_key import make_private_key
 from agent0.hyperdrive.config import get_eth_bots_config
 
 
-def populate_env(user_key: str) -> str:
+def generate_env(user_key: str) -> str:
     """Primary execution pipeline"""
     environment_config, agent_config = get_eth_bots_config()
     rng = np.random.default_rng(environment_config.random_seed)
@@ -39,5 +39,5 @@ if __name__ == "__main__":
     )
     parser.add_argument("user_key", type=str, help="The user's private key for funding bots.")
     args = parser.parse_args()
-    print_str = populate_env(str(args.user_key))
+    print_str = generate_env(str(args.user_key))
     print(print_str)

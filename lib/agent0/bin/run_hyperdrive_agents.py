@@ -38,7 +38,7 @@ def main():
 
     # exposing the base_token_contract for debugging purposes.
     # pylint: disable=unused-variable
-    web3, hyperdrive_contract, base_token_contract, environment_config, agent_accounts = setup_experiment()
+    web3, base_token_contract, hyperdrive_contract, environment_config, agent_accounts = setup_experiment()
     last_executed_block = BlockNumber(0)
     while True:
         last_executed_block = trade_if_new_block(

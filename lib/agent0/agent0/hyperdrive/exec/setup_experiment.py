@@ -26,11 +26,10 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
     tuple[Web3, Contract, Contract, EnvironmentConfig, list[HyperdriveAgent]]
         A tuple containing:
             - The web3 container
-            - The hyperdrive contract
             - The base token contract
+            - The hyperdrive contract
             - The environment configuration
             - A list of HyperdriveAgent objects that contain a wallet address and Elfpy Agent for determining trades
-
     """
     # get the user defined config variables
     environment_config, agent_config = get_eth_bots_config()
@@ -47,23 +46,7 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
         log_format_string=environment_config.log_formatter,
     )
     setup_hyperdrive_crash_report_logging()
-    # Check for default name and exit if is default
-    if environment_config.username == DEFAULT_USERNAME:
-        raise ValueError("Default username detected, please update 'username' in eth_bots_config.py")
-    # point to chain env
-    web3 = initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
-    # setup base contract interface
-    hyperdrive_abis = load_all_abis(environment_config.abi_folder)
-    addresses = fetch_hyperdrive_address_from_url(os.path.join(environment_config.artifacts_url, "addresses.json"))
-    # set up the ERC20 contract for minting base tokens
-    base_token_contract: Contract = web3.eth.contract(
-        abi=hyperdrive_abis[environment_config.base_abi], address=web3.to_checksum_address(addresses.base_token)
-    )
-    # set up hyperdrive contract
-    hyperdrive_contract: Contract = web3.eth.contract(
-        abi=hyperdrive_abis[environment_config.hyperdrive_abi],
-        address=web3.to_checksum_address(addresses.mock_hyperdrive),
-    )
+    web3, base_token_contract, hyperdrive_contract = get_web3_and_contracts(environment_config)
     # load agent policies
     # rng is shared by the agents and can be accessed via `agent_accounts[idx].policy.rng`
     agent_accounts = get_agent_accounts(agent_config, web3, base_token_contract, hyperdrive_contract.address, rng)
@@ -71,7 +54,44 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
     # initialize the postgres session
     wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
     register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
-    return web3, hyperdrive_contract, base_token_contract, environment_config, agent_accounts
+    return web3, base_token_contract, hyperdrive_contract, environment_config, agent_accounts
+
+
+def get_web3_and_contracts(environment_config: EnvironmentConfig) -> tuple[Web3, Contract, Contract]:
+    """Get the web3 container and the ERC20Base and Hyperdrive contracts.
+
+    Arguments
+    ---------
+    environment_config : EnvironmentConfig
+        An instantiated environment config with the appropriate URLs set
+
+
+    Returns
+    -------
+    tuple[Web3, Contract, Contract]
+        A tuple containing:
+            - The web3 container
+            - The base token contract
+            - The hyperdrive contract
+    """
+    # Check for default name and exit if is default
+    if environment_config.username == DEFAULT_USERNAME:
+        raise ValueError("Default username detected, please update 'username' in eth_bots_config.py")
+    # point to chain env
+    web3 = initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
+    # setup base contract interface
+    abis = load_all_abis(environment_config.abi_folder)
+    addresses = fetch_hyperdrive_address_from_url(os.path.join(environment_config.artifacts_url, "addresses.json"))
+    # set up the ERC20 contract for minting base tokens
+    base_token_contract: Contract = web3.eth.contract(
+        abi=abis[environment_config.base_abi], address=web3.to_checksum_address(addresses.base_token)
+    )
+    # set up hyperdrive contract
+    hyperdrive_contract: Contract = web3.eth.contract(
+        abi=abis[environment_config.hyperdrive_abi],
+        address=web3.to_checksum_address(addresses.mock_hyperdrive),
+    )
+    return web3, base_token_contract, hyperdrive_contract
 
 
 def register_username(register_url: str, wallet_addrs: list[str], username: str) -> None:
