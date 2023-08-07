@@ -154,6 +154,8 @@ total_comb_rank.to_csv("../final_comb_rank.csv")
 total_ind_rank.to_csv("../final_ind_rank.csv")
 
 # Save back out the final wallet_deltas to csv
-[rank.sort_values(ascending=False).to_csv("../comb_rank_" + str(idx) + ".csv") for idx, rank in enumerate(comb_rank)]
-[rank.sort_values(ascending=False).to_csv("../ind_rank_" + str(idx) + ".csv") for idx, rank in enumerate(ind_rank)]
-[delta.to_csv("../final_trades_" + str(idx) + ".csv", index=False) for idx, delta in enumerate(wallet_deltas)]
+_ = [
+    rank.sort_values(ascending=False).to_csv("../comb_rank_" + str(idx) + ".csv") for idx, rank in enumerate(comb_rank)
+]
+_ = [rank.sort_values(ascending=False).to_csv("../ind_rank_" + str(idx) + ".csv") for idx, rank in enumerate(ind_rank)]
+_ = [delta.to_csv("../final_trades_" + str(idx) + ".csv", index=False) for idx, delta in enumerate(wallet_deltas)]
