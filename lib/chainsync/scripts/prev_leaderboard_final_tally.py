@@ -37,7 +37,7 @@ wallet_deltas = [pd.read_csv(csv).sort_values("blockNumber") for csv in wallet_d
 
 # 500k transfer to bots captured in base delta, adjustment here
 comb_rank[1].loc["Sheng Lundquist"] += 500000
-ind_rank[1].loc[("Sheng Lundquist (click)", "0x021f1Bbd2Ec870FB150bBCAdaaA1F85DFd72407C")] += 500000
+ind_rank[1].loc[("Sheng Lundquist (click)", "0x021f1Bbd2Ec870FB150bBCAdaaA1F85DFd72407C")] += 500000  # type: ignore
 # Delta OI
 wallet_deltas[1].loc[
     (wallet_deltas[1]["username"] == "Sheng Lundquist (click)")
