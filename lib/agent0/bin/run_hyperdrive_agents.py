@@ -5,8 +5,12 @@ import argparse
 import logging
 import warnings
 
+from agent0.hyperdrive.create_and_fund_accounts import create_and_fund_user_account
 from agent0.hyperdrive.exec import setup_experiment, trade_if_new_block
+from agent0.hyperdrive.fund_bots import fund_bots
 from eth_typing import BlockNumber
+
+# pylint: disable=unused-variable
 
 
 def parse_args():
@@ -33,11 +37,11 @@ def main():
     warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
     # Grab stdin args, fund bots if requested
     args = parse_args()
-    if args.develop: # we need to fund the bots
-
-
+    if args.develop:  # setup env automatically & fund the bots
+        # exposing the user account for debugging purposes
+        user_account = create_and_fund_user_account()
+        fund_bots()  # uses env variables created above as inputs
     # exposing the base_token_contract for debugging purposes.
-    # pylint: disable=unused-variable
     web3, base_token_contract, hyperdrive_contract, environment_config, agent_accounts = setup_experiment()
     last_executed_block = BlockNumber(0)
     while True:
