@@ -1,6 +1,6 @@
-.. elfpy documentation master file
+.. elf-simulations documentation master file
 
-Welcome to elfpy's documentation!
+Welcome to the documentation for elf-simulations packages!
 =================================
 
 .. toctree::
@@ -17,7 +17,10 @@ Welcome to elfpy's documentation!
    :titlesonly:
    :caption: API
 
+   /autoapi/agent0/index
+   /autoapi/chainsync/index
    /autoapi/elfpy/index
+   /autoapi/ethpy/index
 
 
 Indices and tables
