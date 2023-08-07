@@ -10,8 +10,8 @@ from typing import Type, cast
 
 import pandas as pd
 import sqlalchemy
+from psycopg2 import OperationalError
 from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engine, exc, func, inspect
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -129,26 +129,15 @@ def initialize_engine() -> Engine:
     postgres_config = build_postgres_config()
 
     # TODO add waiting in connecting to postgres to avoid exiting out before postgres spins up
-    retry_count = 10
-    retry_exception = Exception()
-    for _ in range(retry_count):
-        try:
-            url_object = URL.create(
-                drivername="postgresql",
-                username=postgres_config.POSTGRES_USER,
-                password=postgres_config.POSTGRES_PASSWORD,
-                host=postgres_config.POSTGRES_HOST,
-                port=postgres_config.POSTGRES_PORT,
-                database=postgres_config.POSTGRES_DB,
-            )
-            return create_engine(url_object)
-        except OperationalError as exception:
-            retry_exception = exception
-            logging.warning("Error connecting to postgres, retrying")
-            time.sleep(1)
-            continue
-    # Failed, raise exception
-    raise retry_exception
+    url_object = URL.create(
+        drivername="postgresql",
+        username=postgres_config.POSTGRES_USER,
+        password=postgres_config.POSTGRES_PASSWORD,
+        host=postgres_config.POSTGRES_HOST,
+        port=postgres_config.POSTGRES_PORT,
+        database=postgres_config.POSTGRES_DB,
+    )
+    return create_engine(url_object)
 
 
 def initialize_session() -> Session:
@@ -169,7 +158,23 @@ def initialize_session() -> Session:
     session = session_class()
 
     # create tables
-    Base.metadata.create_all(engine)
+    # This is where we actually connect to the database
+    # TODO should likely test connection in `initialize_engine()` through dummy query
+    retry_count = 10
+    retry_exception = None
+    for _ in range(retry_count):
+        try:
+            Base.metadata.create_all(engine)
+            retry_exception = None
+        except OperationalError as exception:
+            retry_exception = exception
+            logging.warning("Error creating tables, likely due to connection to postgres, retrying")
+            time.sleep(1)
+            continue
+
+    # Retry attempts exceeded, raise connection error here
+    if retry_exception is not None:
+        raise retry_exception
 
     # commit the transaction
     session.commit()
