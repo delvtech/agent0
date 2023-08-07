@@ -14,7 +14,7 @@ from ethpy.base import set_anvil_account_balance, smart_contract_transact
 
 
 def create_and_fund_user_account() -> HyperdriveAgent:
-    """Helper function for funding a base user account
+    """Helper function for funding a fake user account
 
     Returns
     -------
