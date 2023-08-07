@@ -8,8 +8,7 @@ from agent0.base.make_key import make_private_key
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.config import get_eth_bots_config
 from agent0.hyperdrive.exec import get_web3_and_contracts
-from agent0.hyperdrive.fund_bots import fund_bots
-from agent0.hyperdrive.generate_env import generate_env
+from agent0.hyperdrive.generate_env import generate_env, set_env
 from eth_account.account import Account
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
 
@@ -29,15 +28,7 @@ def create_and_fund_user_account() -> HyperdriveAgent:
     env_string = generate_env(user_private_key)
     # instead of writing to a .env we will just set the environment variables here
     # the environment variables are used elsewhere in the run_hyperdrive_agents pipeline
-    for env_line in env_string.splitlines():
-        # if there is anything in the line after stripping empty spaces
-        # and if the env line is setting a variable
-        if env_line.strip() and env_line.startswith("export "):
-            key_value = env_line.replace("export ", "").split("=")
-            if len(key_value) == 2:
-                key, value = key_value
-                value = value.strip("\"'")  # strip quotes
-                os.environ[key] = value
+    set_env(env_string)
     # get required contracts
     environment_config, _ = get_eth_bots_config()
     web3, base_token_contract, _ = get_web3_and_contracts(environment_config)

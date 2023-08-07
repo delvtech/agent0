@@ -1,6 +1,7 @@
 """Helper script to generate a random private key."""
 import argparse
 import json
+import os
 
 import numpy as np
 from agent0.base.make_key import make_private_key
@@ -26,6 +27,24 @@ def generate_env(user_key: str) -> str:
     env_str += "export AGENT_BASE_BUDGETS='" + json.dumps(agent_base_budgets) + "'" + "\n"
     env_str += "export AGENT_ETH_BUDGETS='" + json.dumps(agent_eth_budgets) + "'" + "\n"
     return env_str
+
+
+def set_env(env_string: str) -> None:
+    """Set the user environment according to the string provided
+
+    env_string : str
+        environment string as it would look in a `.env` file.
+        EXPORT statements are converted and executed
+    """
+    for env_line in env_string.splitlines():
+        # if there is anything in the line after stripping empty spaces
+        # and if the env line is setting a variable
+        if env_line.strip() and env_line.startswith("export "):
+            key_value = env_line.replace("export ", "").split("=")
+            if len(key_value) == 2:
+                key, value = key_value
+                value = value.strip("\"'")  # strip quotes
+                os.environ[key] = value
 
 
 if __name__ == "__main__":
