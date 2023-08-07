@@ -119,7 +119,9 @@ def main(
 
         # Query and add block transactions
         transactions = fetch_contract_transactions_for_block(web3, hyperdrive_contract, block_number)
-        block_transactions, wallet_deltas = convert_hyperdrive_transactions_for_block(hyperdrive_contract, transactions)
+        block_transactions, wallet_deltas = convert_hyperdrive_transactions_for_block(
+            web3, hyperdrive_contract, transactions
+        )
         add_transactions(block_transactions, session)
         add_wallet_deltas(wallet_deltas, session)
 
@@ -183,7 +185,7 @@ def main(
                         (
                             block_transactions,
                             wallet_deltas,
-                        ) = convert_hyperdrive_transactions_for_block(hyperdrive_contract, transactions)
+                        ) = convert_hyperdrive_transactions_for_block(web3, hyperdrive_contract, transactions)
                         break
                     except ValueError:
                         logging.warning("Error in fetch_contract_transactions_for_block, retrying")
