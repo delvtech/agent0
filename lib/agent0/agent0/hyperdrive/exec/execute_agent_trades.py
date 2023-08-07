@@ -4,13 +4,12 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NoReturn
 
 import eth_utils
-from agent0.hyperdrive import HyperdriveActionType
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
 from elfpy import types
 from elfpy.markets.hyperdrive import HyperdriveMarket
-from elfpy.markets.hyperdrive.hyperdrive_actions import HyperdriveMarketAction
 from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet import Long, Short
 from elfpy.wallet.wallet_deltas import WalletDeltas
@@ -30,6 +29,11 @@ if TYPE_CHECKING:
 
 # TODO: Fix these up when we refactor this file
 # pylint: disable=too-many-locals
+
+
+def assert_never(arg: NoReturn) -> NoReturn:
+    """Helper function for exhaustive matching on ENUMS"""
+    assert False, f"Unhandled type: {type(arg).__name__}"
 
 
 @dataclass
@@ -422,5 +426,5 @@ async def async_match_contract_call_to_trade(
             )
 
         case _:
-            assert False, f"Unhandled type: {trade.action_type}"
+            assert_never(trade.action_type)
     return wallet_deltas
