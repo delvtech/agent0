@@ -71,6 +71,18 @@ Complete the steps in Hyperdrive's [Pre-requisites](https://github.com/delvtech/
 
 ## Notes
 
+The default installation directions above should automatically install all local sub-packages, and should be sufficient for development.
+
+We also support installing each subpackage independently. For example:
+```
+python -m pip install --upgrade lib/agent0[with-dependencies]
+```
+Internally, the above installation calls
+```
+pip install agent0[base] # Install with base packages only (this is what's called in requirements.txt)
+pip install agent0[lateral] # Installs dependent sub-packages from git (e.g., ethpy)
+```
+
 You can test against a local testnet node using [Anvil](<[url](https://book.getfoundry.sh/reference/anvil/)>) with `anvil`.
 
 We use [Docker](docs.docker.com/get-docker) for building images.

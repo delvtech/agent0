@@ -24,16 +24,21 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-dependencies = [
-    # Lateral dependencies across subpackages are pointing to github
-    # TODO test that outermost pip install overwrites this
-    # TODO move this to either this monorepo or seperate repo
+[project.optional-dependencies]
+# This flag installs all dependencies and should be ran when installing this subpackage in isolation
+with-dependencies = [
+    "elfpy[base, lateral]"
+]
+base = [
+    # TODO move fixedpointmath to lateral if this package comes back to this monorepo
     "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
     # TODO figure out the dependencies below
     "matplotlib",
     "numpy",
     "pandas",
     "python-dotenv",
+]
+lateral = [
 ]
 
 [project.urls]
