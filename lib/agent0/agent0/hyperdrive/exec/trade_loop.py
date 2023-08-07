@@ -19,7 +19,6 @@ def trade_if_new_block(
     agent_accounts: list[HyperdriveAgent],
     halt_on_errors: bool,
     last_executed_block: int,
-    develop: bool = False,
 ) -> int:
     """Execute trades if there is a new block.
 
@@ -35,8 +34,6 @@ def trade_if_new_block(
         If true, raise an exception if a trade reverts. Otherwise, log a warning and move on.
     last_executed_block : int
         The block number when a trade last happened
-    develop : False
-        If true, then automatically fund the bots as needed
 
     Returns
     -------

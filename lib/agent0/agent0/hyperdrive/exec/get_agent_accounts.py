@@ -8,7 +8,6 @@ import os
 import eth_utils
 from agent0.base.config import AgentConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
-from dotenv import load_dotenv
 from eth_account.account import Account
 from ethpy.base import get_account_balance, smart_contract_read, smart_contract_transact
 from fixedpointmath import FixedPoint
@@ -46,8 +45,6 @@ def get_agent_accounts(
     list[Agent]
         A list of Agent objects that contain a wallet address and Elfpy Agent for determining trades
     """
-    # load user dotenv variables
-    load_dotenv()
     # TODO: raise issue on failure by looking at `rpc_response`, `tx_receipt` returned from function
     #   Do this for `set_anvil_account_balance`, `smart_contract_transact(mint)`, `smart_contract_transact(approve)`
     agents: list[HyperdriveAgent] = []

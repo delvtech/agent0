@@ -21,8 +21,6 @@ from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
 
 def fund_bots():
     """Fund bots using config settings"""
-    # get keys & RPC url from the environment
-    load_dotenv()
     # USER PRIVATE KEY
     user_key = os.environ.get("USER_KEY")
     if user_key is None:
@@ -103,4 +101,6 @@ def fund_bots():
 
 
 if __name__ == "__main__":
+    # get keys & RPC url from the environment
+    load_dotenv()
     fund_bots()

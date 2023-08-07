@@ -8,6 +8,7 @@ import warnings
 from agent0.hyperdrive.create_and_fund_accounts import create_and_fund_user_account
 from agent0.hyperdrive.exec import setup_experiment, trade_if_new_block
 from agent0.hyperdrive.fund_bots import fund_bots
+from dotenv import load_dotenv
 from eth_typing import BlockNumber
 
 # pylint: disable=unused-variable
@@ -55,4 +56,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # load user dotenv variables
+    load_dotenv()
     main()
