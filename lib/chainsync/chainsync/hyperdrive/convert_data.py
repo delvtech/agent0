@@ -18,12 +18,16 @@ from .db_schema import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, Wallet
 
 
 def convert_hyperdrive_transactions_for_block(
-    hyperdrive_contract: Contract, transactions: list[TxData]
+    web3: Web3, hyperdrive_contract: Contract, transactions: list[TxData]
 ) -> tuple[list[Transaction], list[WalletDelta]]:
     """Fetch transactions related to the contract.
 
     Arguments
     ---------
+    web3: Web3
+        web3 provider object
+    hyperdrive_contract: Contract
+        The contract to query the transactions from
     transactions: TxData
         A list of hyperdrive transactions for a given block.
 
@@ -47,7 +51,7 @@ def convert_hyperdrive_transactions_for_block(
             transaction_dict["input"] = {"method": method.fn_name, "params": params}
         except ValueError:  # if the input is not meant for the contract, ignore it
             continue
-        tx_receipt = Web3.eth.get_transaction_receipt(tx_hash)
+        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
         logs = get_transaction_logs(hyperdrive_contract, tx_receipt)
         receipt: dict[str, Any] = _convert_object_hexbytes_to_strings(tx_receipt)  # type: ignore
         out_transactions.append(_build_hyperdrive_transaction_object(transaction_dict, logs, receipt))
