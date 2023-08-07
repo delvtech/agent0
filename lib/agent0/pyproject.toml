@@ -16,22 +16,27 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-dependencies = [
-    # Lateral dependencies across subpackages are pointing to github
-    # TODO test that outermost pip install overwrites this
-    # TODO move this to either this monorepo or seperate repo
+[project.optional-dependencies]
+# This flag installs all dependencies and should be ran when installing this subpackage in isolation
+with-dependencies = [
+    "agent0[base, lateral]"
+]
+base = [
+    # TODO move fixedpointmath to lateral if this package comes back to this monorepo
     "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
-    # TODO this might not work since it's not on github yet, need to test
-    #"elfpy @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/elfpy",
-    #"ethpy @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/ethpy",
-    #"chainsync @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/chainsync",
-    # TODO figure out the dependencies below
     "numpy",
     "requests",
     "python-dotenv",
     "web3", # will include eth- packages
     "hexbytes"
 ]
+lateral = [
+    # Lateral dependencies across subpackages are pointing to github
+    "elfpy @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/elfpy",
+    "ethpy @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/ethpy",
+    "chainsync @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/chainsync",
+]
+
 
 [build-system]
 requires = ["flit_core>=3.2"]
