@@ -10,6 +10,13 @@ The language used in this code and documentation is not intended to, and does no
 
 Documentation can be found [here](https://elfpy.delv.tech).
 
+## Packages
+Our current supported packages are:
+- agent0 ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/agent0/README.md))
+- chainsync ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/chainsync/README.md))
+- elfpy ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/elfpy/README.md))
+- ethpy ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/ethpy/README.md))
+
 ## Install
 
 Please refer to [INSTALL.md](https://github.com/delvtech/elf-simulations/blob/main/INSTALL.md).

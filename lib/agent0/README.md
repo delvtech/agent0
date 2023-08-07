@@ -3,11 +3,11 @@
 We have set up bots to run on a dedicated AWS EC2 instance.
 These instructions can likely be followed for other unix/linux setups, however.
 
-## Step 1: Install elfpy
+## Step 1: Install elf-simulations
 
 1. make a fork of the [delvtech/elf-simulations repo](https://github.com/delvtech/elf-simulations) ([GitHub fork instructions](https://docs.github.com/en/get-started/quickstart/fork-a-repo?tool=webui&platform=mac)).
 
-2. Install elfpy by following the installation instructions found [on github](https://github.com/delvtech/elf-simulations/blob/main/INSTALL.md).
+2. Install elf-simulations packages by following the installation instructions found [on github](https://github.com/delvtech/elf-simulations/blob/main/INSTALL.md).
 
     >**💡NOTE:**
     >
@@ -42,12 +42,12 @@ These instructions can likely be followed for other unix/linux setups, however.
 
 3. navigate to the `elf-simulations` folder: `cd elf-simulations/`
 
-4. run the elfpy tests to verify that everything installed correctly by executing `python -m pytest`. Make sure you have enabled the correct Python environment!
+4. run the elf-simulations tests to verify that everything installed correctly by executing `python -m pytest`. Make sure you have enabled the correct Python environment!
 
-## Step 2: Fund your bots & start trading!
+## [optional] Step 2: Fund your bots (if you wish to fund the bots from your own wallet key):
 
 1. get your private key for the chain (e.g. from Anvil)
-2. modify `eth_bots/eth_bots_config.py` as you see fit for your experiment.
+2. modify `lib/agent0/agent0/hyperdrive/config/runner_config.py` as you see fit for your experiment.
 
     >**💡NOTE:**
     >Make sure you change the URLs (e.g. to AWS or `localhost`):
@@ -59,9 +59,9 @@ These instructions can likely be followed for other unix/linux setups, however.
     >```
     >
 
-3. run the `eth_bots/populate_env.py` script with your private key as an argument, and pipe the output to a `.env` file.
+3. run the `lib/agent0/bin/fund_bots_from_user_key.py` script with your private key as an argument, and pipe the output to a `.env` file.
 Be careful that you've saved any important keys before overwriting `.env`!
-For example: `python eth_bots/populate_env.py 0xUSER_PRIVATE_KEY > .env`
+For example: `python lib/agent0/bin/fund_bots_from_user_key.py 0xUSER_PRIVATE_KEY > .env`
 
     >**💡NOTE:**
     >This will generate new environment variables for the bots and write them to the `.env` file.
@@ -79,6 +79,9 @@ For example: `python eth_bots/populate_env.py 0xUSER_PRIVATE_KEY > .env`
     >Hang on to those keys!
     >
 
-4. run `python eth_bots/fund_bots.py` to fund your bots. This script will parse the `.env` file and allocate the budgets by transferring Base and Eth from the wallet corresponding to the `USER_KEY` environment variable.
+## Step 3: Start trading!
 
-5. run `python eth_bots/main.py` to start trading!
+1. run `python lib/agent0/bin/run_hyperdrive_agents.py` to start trading!
+
+    >**💡NOTE:**
+    >If you skipped Step 2 then you'll need to add a `--develop` flag to automatically fund your bots.
