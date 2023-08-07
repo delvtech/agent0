@@ -10,6 +10,7 @@ if __name__ == "__main__":
         description="Script for generating a .env file for eth_bots.",
         epilog=(
             "Run the script with a user's private key as argument to include it in the output."
+            "Make sure you set the config variables in lib/agent0/agent0/hyperdrive/config/runner_config.py before running this script."
             "See the README on https://github.com/delvtech/elf-simulations/eth_bots/ for more implementation details"
         ),
     )

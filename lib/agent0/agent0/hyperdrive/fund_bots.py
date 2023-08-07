@@ -97,7 +97,6 @@ def fund_bots():
             agent_account.checksum_address,
             agent_base_budget,
         )
-        print(f"Funded {agent_account.checksum_address=} from {user_account.checksum_address=}")
 
 
 if __name__ == "__main__":
