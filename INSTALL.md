@@ -16,7 +16,7 @@ git clone https://github.com/delvtech/elf-simulations.git <repo_location>
 
 ### 3. Set up virtual environment
 
-Here we use [venv](https://docs.python.org/3/library/venv.html) which is part of the built-in standard Python library. You can use another virtual environment package if you prefer, like [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv).
+Here we use [venv](https://docs.python.org/3/library/venv.html) which is part of the built-in standard Python library, but any virtual environment package is fine.
 
 ```bash
 cd <repo_location>
@@ -30,14 +30,14 @@ source .venv/bin/activate
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install --upgrade -e ".[with-dependencies]"
+python -m pip install --upgrade -r requirements.txt
 ```
 
-The dependencies includes postgresql, which is required to work with files in `elfpy/data`.
-If you intend to improve the documentation, then you must also install the packages:
+Each package within `lib` has its own dependencies.
+If you want to run the CI (tests, linting, type checking) or improve the documentation, then you must also install the dev packages:
 
 ```bash
-python -m pip install --upgrade -e ".[with-dependencies,docs]"
+python -m pip install --upgrade -r requirements-dev.txt
 ```
 
 An explanation of what the above steps do:
@@ -45,7 +45,9 @@ An explanation of what the above steps do:
 - `pyenv install 3.10` You should now see the correct version when you run `pyenv versions`.
 - `pyenv local 3.10` This command creates a `.python-version` file in your current directory. If you have pyenv active in your environment, this file will automatically activate this version for you.
 - `python -m venv .venv` This will create a `.venv` folder in your repo directory that stores the local python build & packages. After this command you should be able to type which python and see that it points to an executable inside `.venv/`.
-- `python -m pip install --upgrade -e ".[with-dependencies]"` This installs elfpy locally such that the install updates automatically any time you change the source code. This also installs all dependencies defined in `pyproject.toml`.
+- `python -m pip install --upgrade -r requirements.txt` This installs elfpy locally such that the install updates automatically any time you change the source code. This also installs all dependencies defined in `pyproject.toml`.
+
+Finally, you can test that everything is working by calling: `python -m pytest .`
 
 ## Working with smart contracts (optional)
 
@@ -68,8 +70,6 @@ ln -s ../hyperdrive hyperdrive_solidity
 Complete the steps in Hyperdrive's [Pre-requisites](https://github.com/delvtech/hyperdrive#pre-requisites) and [Build](https://github.com/delvtech/hyperdrive#build) sections.
 
 ## Notes
-
-You can test that everything is working by calling: `python -m pytest .`
 
 You can test against a local testnet node using [Anvil](<[url](https://book.getfoundry.sh/reference/anvil/)>) with `anvil`.
 

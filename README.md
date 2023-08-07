@@ -36,7 +36,9 @@ then just open `htmlcov/index.html` to view the report!
 
 ## Examples
 
-Python files in the `examples/` folder should be executable from the repository root. Run them with the -h flag to see argument options. The Jupyter notebooks contained in `examples/notebooks/` should be run locally using [Jupyter](https://jupyter.org/install), [VS Code](https://code.visualstudio.com/docs/datascience/jupyter-notebooks), or something equivalent.
+Python files in the `examples/` folder should be executable from the repository root.
+Run them with the -h flag to see argument options.
+The Jupyter notebooks contained in `examples/notebooks/` should be run locally using [Jupyter](https://jupyter.org/install), [VS Code](https://code.visualstudio.com/docs/datascience/jupyter-notebooks), or something equivalent.
 
 ## Contributions
 
