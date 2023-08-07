@@ -5,9 +5,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from fixedpointmath import FixedPoint
-
 import elfpy.types as types
+from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.time as time
@@ -64,7 +63,7 @@ class BaseMarketState:
         raise NotImplementedError
 
     def check_valid_market_state(self, dictionary: dict | None = None) -> BaseMarketState:
-        """Returns a new copy of self"""
+        """Verify that the market state is finite and within valid ranges."""
         raise NotImplementedError
 
 

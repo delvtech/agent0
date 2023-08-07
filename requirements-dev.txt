@@ -1,3 +1,4 @@
+# TODO go through these dependencies
 autodocsumm>=0.2.11
 black
 ipython
@@ -8,6 +9,8 @@ nbsphinx>=0.8.12
 numpydoc>=1.5.0
 pylint
 pyright
+# TODO Pytest might be needed for individual packages
+# add to subpackages if necessary
 pytest
 sphinx>=6
 sphinx-autoapi>=2.0.1

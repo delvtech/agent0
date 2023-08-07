@@ -1,1 +1,2 @@
-Elfpy documentation and notebook examples can be built locally using the provided Makefile using `make html`. This also includes notebook examples built using CI from `https://github.com/delvtech/elf-simulations-examples`.
+elf-simulations documentation and notebook examples can be built locally using the provided Makefile using `make html`.
+This also includes notebook examples built using CI from `https://github.com/delvtech/elf-simulations-examples`.

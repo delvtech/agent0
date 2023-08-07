@@ -15,14 +15,26 @@ import sys
 import requests
 import tomli
 
-# indicate where the elfpy Python package lives
-elfpy_root = os.path.join(
-    os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
-    "lib",
+# list all packages
+packages = [
+    "agent0",
+    "chainsync",
     "elfpy",
-)
+    "ethpy",
+    "pyperdrive",
+    "traiderdaive",
+]
+
+# indicate where the elfpy Python package lives
+package_root = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 sys.path.insert(0, os.path.abspath("."))
-sys.path.insert(0, elfpy_root)
+for package in packages:
+    package_path = os.path.join(
+        package_root,
+        "lib",
+        package,
+    )
+    sys.path.insert(0, package_path)
 
 
 # -- Auto notebook index creation --------------------------------------------
@@ -83,7 +95,7 @@ with open("examples/index.rst", "w", encoding="UTF-8") as file:
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 def _get_project_meta():
-    with open(os.path.join(elfpy_root, "pyproject.toml"), mode="rb") as pyproject:
+    with open(os.path.join(package_root, "pyproject.toml"), mode="rb") as pyproject:
         return tomli.load(pyproject)["project"]
 
 
@@ -134,15 +146,13 @@ extensions = [
     "autoapi.extension",  # auto generates API reference by recursion
     "sphinx.ext.coverage",  # collect documentation coverage stats
 ]
-
 mathjax3_config = {"chtml": {"displayAlign": "left"}}
-
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Options for API document generation -------------------------------------------------
-
-autoapi_dirs = [os.path.join("..", "..", "lib", "elfpy")]
+lib_dir = os.path.join("..", "..", "lib")
+autoapi_dirs = [os.path.join(lib_dir, package) for package in packages]
 autoapi_type = "python"
 autoapi_template_dir = os.path.join("_templates", "autoapi")
 autoapi_options = [
@@ -153,14 +163,12 @@ autoapi_options = [
     "imported-members",
 ]
 autoapi_keep_files = True
-# autoapi_root = "API"
 autoapi_add_toctree_entry = True
 
 autodoc_typehints = "signature"
 autodoc_member_order = "bysource"
 autosectionlabel_prefix_document = True  # Make sure the label target is unique
 autoclass_content = "class"
-
 
 set_type_checking_flag = True
 numpydoc_show_class_members = False

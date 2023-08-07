@@ -1,21 +1,13 @@
 [project]
-name = "elfpy"
-version = "0.3.2"
+name = "ethpy"
+version = "0.0.0"
 authors = [
     { name = "Dylan Paiton", email = "dylan@delv.tech" },
     { name = "Mihai Cosma", email = "mihai@delv.tech" },
-    { name = "Jonny Rhea", email = "jonny@delv.tech" },
     { name = "Matthew Brown", email = "matt@delv.tech" },
-    { name = "Alex Towle", email = "alex@delv.tech" },
     { name = "Sheng Lundquist", email = "sheng@delv.tech" },
-    { name = "Patrick Morris", email = "patrick@delv.tech" },
-    { name = "Giovanni Effio", email = "mazygio@delv.tech" },
-    { name = "Ryan Goree", email = "ryan@delv.tech" },
-    { name = "Will Villanueva", email = "will@delv.tech" },
-    { name = "Jacob Arruda", email = "jacob@delv.tech" },
-    { name = "Violet Vienhage", email = "violet@delv.tech" },
 ]
-description = "Trading bots, market simulators, and experiment management by Delv"
+description = "Python interface for reading/writing from/to the chain"
 readme = "README.md"
 requires-python = ">=3.10, <3.11"
 classifiers = [
@@ -28,12 +20,14 @@ dependencies = [
     # Lateral dependencies across subpackages are pointing to github
     # TODO test that outermost pip install overwrites this
     # TODO move this to either this monorepo or seperate repo
-    "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
+    #"fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
+    #"elfpy @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/elfpy",
     # TODO figure out the dependencies below
     "matplotlib",
     "numpy",
     "pandas",
     "python-dotenv",
+    "web3",
 ]
 
 [project.urls]
