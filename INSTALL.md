@@ -49,19 +49,6 @@ An explanation of what the above steps do:
 
 Finally, you can test that everything is working by calling: `python -m pytest .`
 
-## Installing individual subpackages (optional)
-The default installation directions above should automatically install all local sub-packages, and should be sufficient for development.
-
-We also support installing each subpackage independently. For example:
-```
-python -m pip install --upgrade lib/agent0[with-dependencies]
-```
-Internally, the above installation calls
-```
-pip install agent0[base] # Install with base packages only (this is what's called in requirements.txt)
-pip install agent0[lateral] # Installs dependent sub-packages from git (e.g., ethpy)
-```
-
 ## Working with smart contracts (optional)
 
 We run tests and offer utilities that depend on executing bytecode compiled from Hyperdrive solidity contracts. This is not required to use elfpy.
@@ -83,6 +70,18 @@ ln -s ../hyperdrive hyperdrive_solidity
 Complete the steps in Hyperdrive's [Pre-requisites](https://github.com/delvtech/hyperdrive#pre-requisites) and [Build](https://github.com/delvtech/hyperdrive#build) sections.
 
 ## Notes
+
+The default installation directions above should automatically install all local sub-packages, and should be sufficient for development.
+
+We also support installing each subpackage independently. For example:
+```
+python -m pip install --upgrade lib/agent0[with-dependencies]
+```
+Internally, the above installation calls
+```
+pip install agent0[base] # Install with base packages only (this is what's called in requirements.txt)
+pip install agent0[lateral] # Installs dependent sub-packages from git (e.g., ethpy)
+```
 
 You can test against a local testnet node using [Anvil](<[url](https://book.getfoundry.sh/reference/anvil/)>) with `anvil`.
 
