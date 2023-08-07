@@ -9,7 +9,7 @@ from eth_utils.curried import text_if_str
 
 def make_private_key(extra_entropy: str = "SOME STRING") -> str:
     """Make a private key"""
-    extra_key_bytes = text_if_str(to_bytes, "SOME STR")
+    extra_key_bytes = text_if_str(to_bytes, extra_entropy)
     key_bytes = keccak(os.urandom(32) + extra_key_bytes)
     key = Account()._parsePrivateKey(key_bytes)  # pylint: disable=protected-access
     return str(key)
