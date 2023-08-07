@@ -23,10 +23,10 @@ def parse_args():
     )
     parser.add_argument(
         "--develop",
-        default=False,
-        type=bool,
+        action="store_true",
         help="If set, then bots will get funded automatically by minting Ethereum and Base",
     )
+
     return parser.parse_args()
 
 

@@ -76,7 +76,9 @@ def get_web3_and_contracts(environment_config: EnvironmentConfig) -> tuple[Web3,
     """
     # Check for default name and exit if is default
     if environment_config.username == DEFAULT_USERNAME:
-        raise ValueError("Default username detected, please update 'username' in eth_bots_config.py")
+        raise ValueError(
+            "Default username detected, please update 'username' in lib/agent0/agent0/hyperdrive/config/runner_config.py"
+        )
     # point to chain env
     web3 = initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
     # setup base contract interface
