@@ -18,7 +18,9 @@ from ethpy.base import (
 )
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
 
-if __name__ == "__main__":
+
+def fund_bots():
+    """Fund bots using config settings"""
     # get keys & RPC url from the environment
     load_dotenv()
     # USER PRIVATE KEY
@@ -34,26 +36,21 @@ if __name__ == "__main__":
         raise ValueError("AGENT_KEYS environment variable must be set")
     agent_keys = json.loads(key_string)
     agent_accounts = [HyperdriveAgent(Account().from_key(agent_private_key)) for agent_private_key in agent_keys]
-
     # AGENT ETHEREUM FUNDING AMOUNTS
     eth_budget_string = os.environ.get("AGENT_ETH_BUDGETS")
     if eth_budget_string is None:
         raise ValueError("AGENT_ETH_BUDGETS environment variable must be set")
     agent_eth_budgets = [int(budget) for budget in json.loads(eth_budget_string)]
-
     # AGENT BASE FUNDING AMOUNTS
     base_budget_string = os.environ.get("AGENT_BASE_BUDGETS")
     if base_budget_string is None:
         raise ValueError("AGENT_BASE_BUDGETS environment variable must be set")
     agent_base_budgets = [int(budget) for budget in json.loads(base_budget_string)]
-
     if len(agent_accounts) != len(agent_eth_budgets) or len(agent_accounts) != len(agent_base_budgets):
         raise AssertionError(
             f"{len(agent_accounts)=} must equal {len(agent_eth_budgets)=} and {len(agent_base_budgets)=}"
         )
-
-    environment_config, agent_config = get_eth_bots_config()
-
+    environment_config, _ = get_eth_bots_config()
     # setup web3 & contracts
     web3 = initialize_web3_with_http_provider(environment_config.rpc_url)
     abi_file_loc = os.path.join(
@@ -103,3 +100,7 @@ if __name__ == "__main__":
             agent_base_budget,
         )
         print(f"Funded {agent_account.checksum_address=} from {user_account.checksum_address=}")
+
+
+if __name__ == "__main__":
+    fund_bots()
