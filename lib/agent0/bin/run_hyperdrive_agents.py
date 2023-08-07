@@ -5,8 +5,9 @@ import argparse
 import logging
 import warnings
 
+from agent0.base.config import DEFAULT_USERNAME
 from agent0.hyperdrive.create_and_fund_accounts import create_and_fund_user_account
-from agent0.hyperdrive.exec import setup_experiment, trade_if_new_block
+from agent0.hyperdrive.exec import register_username, setup_experiment, trade_if_new_block
 from agent0.hyperdrive.fund_bots import fund_bots
 from dotenv import load_dotenv
 from eth_typing import BlockNumber
@@ -44,6 +45,17 @@ def main():
         fund_bots()  # uses env variables created above as inputs
     # exposing the base_token_contract for debugging purposes.
     web3, base_token_contract, hyperdrive_contract, environment_config, agent_accounts = setup_experiment()
+    if not args.develop:
+        if environment_config.username == DEFAULT_USERNAME:
+            # Check for default name and exit if is default
+            raise ValueError(
+                "Default username detected, please update 'username' in "
+                "lib/agent0/agent0/hyperdrive/config/runner_config.py"
+            )
+        # Set up postgres to write username to agent wallet addr
+        # initialize the postgres session
+        wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
+        register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
     last_executed_block = BlockNumber(0)
     while True:
         last_executed_block = trade_if_new_block(

@@ -34,11 +34,15 @@ def create_and_fund_user_account() -> HyperdriveAgent:
     web3, base_token_contract, _ = get_web3_and_contracts(environment_config)
     # fund the user with ETH
     eth_budget_string = os.environ.get("AGENT_ETH_BUDGETS")
-    eth_balance = sum([int(budget) for budget in json.loads(eth_budget_string)]) * 2  # double for good measure
+    if eth_budget_string is None:
+        raise ValueError("AGENT_ETH_BUDGETS environment variable must be set")
+    eth_balance = sum((int(budget) for budget in json.loads(eth_budget_string))) * 2  # double for good measure
     _ = set_anvil_account_balance(web3, user_account.address, eth_balance)
     # fund the user with Base
     base_budget_string = os.environ.get("AGENT_BASE_BUDGETS")
-    base_balance = sum([int(budget) for budget in json.loads(base_budget_string)]) * 2  # double for god measure
+    if base_budget_string is None:
+        raise ValueError("AGENT_BASE_BUDGETS environment variable must be set")
+    base_balance = sum((int(budget) for budget in json.loads(base_budget_string))) * 2  # double for god measure
     _ = smart_contract_transact(
         web3,
         base_token_contract,

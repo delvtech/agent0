@@ -6,7 +6,7 @@ from http import HTTPStatus
 
 import numpy as np
 import requests
-from agent0.base.config import DEFAULT_USERNAME, EnvironmentConfig
+from agent0.base.config import EnvironmentConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.config import get_eth_bots_config
 from agent0.hyperdrive.exec import get_agent_accounts
@@ -50,10 +50,6 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
     # load agent policies
     # rng is shared by the agents and can be accessed via `agent_accounts[idx].policy.rng`
     agent_accounts = get_agent_accounts(agent_config, web3, base_token_contract, hyperdrive_contract.address, rng)
-    # Set up postgres to write username to agent wallet addr
-    # initialize the postgres session
-    wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
-    register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
     return web3, base_token_contract, hyperdrive_contract, environment_config, agent_accounts
 
 
@@ -74,11 +70,6 @@ def get_web3_and_contracts(environment_config: EnvironmentConfig) -> tuple[Web3,
             - The base token contract
             - The hyperdrive contract
     """
-    # Check for default name and exit if is default
-    if environment_config.username == DEFAULT_USERNAME:
-        raise ValueError(
-            "Default username detected, please update 'username' in lib/agent0/agent0/hyperdrive/config/runner_config.py"
-        )
     # point to chain env
     web3 = initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
     # setup base contract interface

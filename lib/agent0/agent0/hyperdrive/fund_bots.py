@@ -21,6 +21,7 @@ from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
 
 def fund_bots():
     """Fund bots using config settings"""
+    # pylint: disable=too-many-locals
     # USER PRIVATE KEY
     user_key = os.environ.get("USER_KEY")
     if user_key is None:
