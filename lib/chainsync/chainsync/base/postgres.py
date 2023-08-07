@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 import os
+import time
 from dataclasses import dataclass
 from typing import Type, cast
 
 import pandas as pd
 import sqlalchemy
 from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engine, exc, func, inspect
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -126,15 +129,26 @@ def initialize_engine() -> Engine:
     postgres_config = build_postgres_config()
 
     # TODO add waiting in connecting to postgres to avoid exiting out before postgres spins up
-    url_object = URL.create(
-        drivername="postgresql",
-        username=postgres_config.POSTGRES_USER,
-        password=postgres_config.POSTGRES_PASSWORD,
-        host=postgres_config.POSTGRES_HOST,
-        port=postgres_config.POSTGRES_PORT,
-        database=postgres_config.POSTGRES_DB,
-    )
-    return create_engine(url_object)
+    retry_count = 10
+    retry_exception = Exception()
+    for _ in range(retry_count):
+        try:
+            url_object = URL.create(
+                drivername="postgresql",
+                username=postgres_config.POSTGRES_USER,
+                password=postgres_config.POSTGRES_PASSWORD,
+                host=postgres_config.POSTGRES_HOST,
+                port=postgres_config.POSTGRES_PORT,
+                database=postgres_config.POSTGRES_DB,
+            )
+            return create_engine(url_object)
+        except OperationalError as exception:
+            retry_exception = exception
+            logging.warning("Error connecting to postgres, retrying")
+            time.sleep(1)
+            continue
+    # Failed, raise exception
+    raise retry_exception
 
 
 def initialize_session() -> Session:
