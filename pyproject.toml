@@ -1,7 +1,7 @@
 [project]
 # TODO test this with docker
 name = "elf-simulations"
-version = "0.3.3"
+version = "0.4.0"
 authors = [
     { name = "Dylan Paiton", email = "dylan@delv.tech" },
     { name = "Mihai Cosma", email = "mihai@delv.tech" },
