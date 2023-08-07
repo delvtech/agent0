@@ -185,7 +185,7 @@ def get_user_lookup() -> pd.DataFrame:
     na_idx = options_map["username"].isna()
     # If there are any nan usernames, set address itself as username
     if na_idx.any():
-        options_map[na_idx] = options_map.index[na_idx]
+        options_map.loc[na_idx, "username"] = options_map.index[na_idx].values
     return options_map.reset_index()
 
 

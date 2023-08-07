@@ -10,8 +10,8 @@ from typing import Type, cast
 
 import pandas as pd
 import sqlalchemy
-from psycopg2 import OperationalError
 from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engine, exc, func, inspect
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 
