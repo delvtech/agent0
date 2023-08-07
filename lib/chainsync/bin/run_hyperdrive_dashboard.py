@@ -1,6 +1,7 @@
 """Run the streamlab demo."""
 from __future__ import annotations
 
+import os
 import time
 
 import mplfinance as mpf
@@ -212,7 +213,18 @@ def address_to_username(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Se
 # Connect to postgres
 load_dotenv()
 session = initialize_session()
+
+# TODO remove this connection and add in process to periodically calculate closing pnl
+# Adding these configs from env variables as a temp workaround
 env_config, _ = get_eth_bots_config()
+# Look for env variables and overwrite if they exist
+artifacts_url = os.getenv("ARTIFACTS_URL")
+if artifacts_url is not None:
+    env_config["artifacts_url"] = artifacts_url
+rpc_url = os.getenv("RPC_URL")
+if rpc_url is not None:
+    env_config["rpc_url"] = rpc_url
+
 
 # pool config data is static, so just read once
 config_data = get_pool_config(session, coerce_float=False)
