@@ -185,7 +185,6 @@ class Wallet:
             if short.balance != FixedPoint(0):
                 old_balance = None
                 if mint_time in self.shorts:  #  entry already exists for this mint_time, so add to it
-                    self.shorts[mint_time].balance += short.balance
                     old_balance = self.shorts[mint_time].balance
                     self.shorts[mint_time].balance = old_balance + short.balance
 
