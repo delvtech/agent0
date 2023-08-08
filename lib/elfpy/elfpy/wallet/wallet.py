@@ -184,7 +184,7 @@ class Wallet:
                 )
                 if mint_time in self.shorts:  #  entry already exists for this mint_time, so add to it
                     old_balance = self.shorts[mint_time].balance
-
+                    self.shorts[mint_time].balance += short.balance
                     # if the balance is positive, we are opening a short, therefore do a weighted
                     # mean for the open share price.  this covers an edge case where two shorts are
                     # opened for the same account in the same block.  if the balance is negative, we
