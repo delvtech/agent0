@@ -195,7 +195,7 @@ for i, delta in enumerate(wallet_deltas):
     # Combine multiple opens/closes of one token type
     comb_token_deltas = (
         token_deltas.groupby(["username", "walletAddress", "tokenType", "input_method"])
-        .agg({"delta": "sum", "base_delta": "sum", "blockNumber": (list, "min", "max")})
+        .agg({"delta": "sum", "base_delta": "sum", "blockNumber": (list, "min", "max")})  # type: ignore
         .reset_index("input_method")
     )
 
@@ -217,7 +217,7 @@ for i, delta in enumerate(wallet_deltas):
         comb_token_deltas.sort_values("block")
         .groupby(["username", "walletAddress", "tokenType"])
         .agg(
-            {
+            {  # type: ignore
                 "delta": "sum",
                 "base_delta": "sum",
                 "input_method": (list, "sum"),
