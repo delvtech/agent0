@@ -145,6 +145,7 @@ class Wallet:
         """
         for mint_time, long in longs:
             if long.balance != FixedPoint(0):
+                old_balance = None
                 logging.debug(
                     "agent #%g trade longs, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
                     self.address,
