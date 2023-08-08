@@ -153,9 +153,17 @@ class Wallet:
                     long,
                 )
                 if mint_time in self.longs:  #  entry already exists for this mint_time, so add to it
-                    self.longs[mint_time].balance += long.balance
+                    old_balance = self.longs[mint_time].balance
+                    self.longs[mint_time].balance = old_balance + long.balance
                 else:
                     self.longs.update({mint_time: long})
+                logging.debug(
+                    "agent #%g longs, pre-trade = %s post-trade = %s delta = %s",
+                    self.address,
+                    old_balance or 0,
+                    self.longs[mint_time].balance,
+                    self.longs[mint_time].balance - (old_balance or 0),
+                )
             if self.longs[mint_time].balance == FixedPoint(0):
                 # Removing the empty borrows allows us to check existance
                 # of open longs using `if wallet.longs`
@@ -174,16 +182,11 @@ class Wallet:
         """
         for mint_time, short in shorts:
             if short.balance != FixedPoint(0):
-                logging.debug(
-                    "agent #%g trade shorts, mint_time = %s\npre-trade amount = %s\ntrade delta = %s",
-                    self.address,
-                    mint_time,
-                    self.shorts,
-                    short,
-                )
+                old_balance = None
                 if mint_time in self.shorts:  #  entry already exists for this mint_time, so add to it
                     self.shorts[mint_time].balance += short.balance
                     old_balance = self.shorts[mint_time].balance
+                    self.shorts[mint_time].balance = old_balance + short.balance
 
                     # if the balance is positive, we are opening a short, therefore do a weighted
                     # mean for the open share price.  this covers an edge case where two shorts are
@@ -196,6 +199,13 @@ class Wallet:
                         ) / (short.balance + old_balance)
                 else:
                     self.shorts.update({mint_time: short})
+                logging.debug(
+                    "agent #%g shorts, pre-trade = %s post-trade = %s delta = %s",
+                    self.address,
+                    old_balance or 0,
+                    self.shorts[mint_time].balance,
+                    self.shorts[mint_time].balance - (old_balance or 0),
+                )
             if self.shorts[mint_time].balance == FixedPoint(0):
                 # Removing the empty borrows allows us to check existance
                 # of open shorts using `if wallet.shorts`
@@ -244,7 +254,7 @@ class Wallet:
                 continue
             if key in ["lp_tokens", "withdraw_shares"]:
                 logging.debug(
-                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    "agent #%g %s pre-trade = %g post-trade = %g delta = %g",
                     self.address,
                     key,
                     getattr(self, key),
@@ -255,7 +265,7 @@ class Wallet:
             # handle updating a Quantity
             elif key == "balance":
                 logging.debug(
-                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    "agent #%g %s pre-trade = %g post-trade = %g delta = %g",
                     self.address,
                     key,
                     float(getattr(self, key).amount),
