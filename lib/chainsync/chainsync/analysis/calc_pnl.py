@@ -130,7 +130,7 @@ def calc_total_returns(
 
     # Sanity check, no tokens except base should dip below 0
     # TODO there's rounding issues between decimal and floating point here, fix
-    assert (current_wallet["delta"][current_wallet["baseTokenType"] != "BASE"].abs() >= 1e-9).all()
+    assert (current_wallet["delta"][current_wallet["baseTokenType"] != "BASE"] >= -1e-9).all()
 
     # Calculate for base
     # Base is valued at 1:1, since that's our numéraire (https://en.wikipedia.org/wiki/Num%C3%A9raire)

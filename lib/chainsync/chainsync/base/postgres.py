@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 import os
+import time
 from dataclasses import dataclass
 from typing import Type, cast
 
 import pandas as pd
 import sqlalchemy
 from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engine, exc, func, inspect
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -155,7 +158,23 @@ def initialize_session() -> Session:
     session = session_class()
 
     # create tables
-    Base.metadata.create_all(engine)
+    # This is where we actually connect to the database
+    # TODO should likely test connection in `initialize_engine()` through dummy query
+    retry_count = 10
+    retry_exception = None
+    for _ in range(retry_count):
+        try:
+            Base.metadata.create_all(engine)
+            retry_exception = None
+        except OperationalError as exception:
+            retry_exception = exception
+            logging.warning("Error creating tables, likely due to connection to postgres, retrying")
+            time.sleep(1)
+            continue
+
+    # Retry attempts exceeded, raise connection error here
+    if retry_exception is not None:
+        raise retry_exception
 
     # commit the transaction
     session.commit()
