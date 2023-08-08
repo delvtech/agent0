@@ -20,18 +20,19 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
             List containing all of the agent specifications
     """
     environment_config = EnvironmentConfig(
-        delete_previous_logs=False,
+        delete_previous_logs=True,
         halt_on_errors=True,
+        log_formatter="%(message)s",
         log_filename="agent0-bots",
-        log_level=logging.INFO,
+        log_level=logging.DEBUG,
         log_stdout=True,
         random_seed=1234,
         hyperdrive_abi="IHyperdrive",
         base_abi="ERC20Mintable",
         username_register_url="http://localhost:5002",
         artifacts_url="http://localhost:8080",
-        rpc_url="http://localhost:8545",
-        username="changeme",
+        rpc_url="http://localhost:8546",
+        username="Mihai",
     )
 
     agent_config: list[AgentConfig] = [
