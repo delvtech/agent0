@@ -1,4 +1,4 @@
-"""Implements abstract classes that control user behavior"""
+"""Implements abstract classes that control user behavior."""
 from __future__ import annotations
 
 import copy
@@ -21,7 +21,7 @@ class Long:
     r"""An open long position.
 
     Arguments
-    ----------
+    ---------
     balance : FixedPoint
         The amount of bonds that the position is long.
 
@@ -36,7 +36,7 @@ class Short:
     r"""An open short position.
 
     Arguments
-    ----------
+    ---------
     balance : FixedPoint
         The amount of bonds that the position is short.
     open_share_price : FixedPoint
@@ -49,10 +49,10 @@ class Short:
 
 @dataclass
 class Borrow:
-    r"""An open borrow position
+    r"""An open borrow position.
 
     Arguments
-    ----------
+    ---------
     borrow_token : TokenType
     .. todo: add explanation
     borrow_amount : FixedPoint
@@ -64,6 +64,7 @@ class Borrow:
     start_time : FixedPoint
     .. todo: add explanation
     """
+
     borrow_token: TokenType
     borrow_amount: FixedPoint
     borrow_shares: FixedPoint
@@ -75,10 +76,10 @@ class Borrow:
 @freezable()
 @dataclass()
 class Wallet:
-    r"""Stores what is in the agent's wallet
+    r"""Stores what is in the agent's wallet.
 
     Arguments
-    ----------
+    ---------
     address : int
         The trader's address.
     balance : Quantity
@@ -114,9 +115,11 @@ class Wallet:
     borrows: dict[FixedPoint, Borrow] = field(default_factory=dict)
 
     def __getitem__(self, key: str) -> Any:
+        """Return the value associated with the given key."""
         return getattr(self, key)
 
     def __setitem__(self, key: str, value: Any) -> None:
+        """Set the value associated with the given key."""
         setattr(self, key, value)
 
     def _update_borrows(self, borrows: Iterable[tuple[FixedPoint, Borrow]]) -> None:
@@ -135,27 +138,28 @@ class Wallet:
                 del self.borrows[borrow_summary.start_time]
 
     def _update_longs(self, longs: Iterable[tuple[FixedPoint, Long]]) -> None:
-        """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
+        """Update Longs in the Agent's Wallet.
 
         Arguments
-        ----------
-        shorts : Iterable[tuple[FixedPoint, Short]]
-            A list (or other Iterable type) of tuples that contain a Long object
-            and its market-relative mint time
+        ---------
+        longs : Iterable[tuple[FixedPoint, Long]]
+            A list (or other Iterable type) of tuples that contain a Long object and its market-relative mint time
         """
         for mint_time, long in longs:
             if long.balance != FixedPoint(0):
-                logging.debug(
-                    "agent #%g trade longs, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
-                    self.address,
-                    mint_time,
-                    self.longs,
-                    long,
-                )
+                old_balance = None
                 if mint_time in self.longs:  #  entry already exists for this mint_time, so add to it
-                    self.longs[mint_time].balance += long.balance
+                    old_balance = self.longs[mint_time].balance
+                    self.longs[mint_time].balance = old_balance + long.balance
                 else:
                     self.longs.update({mint_time: long})
+                logging.debug(
+                    "agent #%g longs, pre-trade = %s post-trade = %s delta = %s",
+                    self.address,
+                    old_balance or 0,
+                    self.longs[mint_time].balance,
+                    self.longs[mint_time].balance - (old_balance or 0),
+                )
             if self.longs[mint_time].balance == FixedPoint(0):
                 # Removing the empty borrows allows us to check existance
                 # of open longs using `if wallet.longs`
@@ -164,26 +168,19 @@ class Wallet:
                 raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.longs[mint_time]}.")
 
     def _update_shorts(self, shorts: Iterable[tuple[FixedPoint, Short]]) -> None:
-        """Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
+        """Update Shorts in the Agent's Wallet.
 
         Arguments
-        ----------
+        ---------
         shorts : Iterable[tuple[FixedPoint, Short]]
-            A list (or other Iterable type) of tuples that contain a Short object
-            and its market-relative mint time
+            A list (or other Iterable type) of tuples that contain a Short object and its market-relative mint time
         """
         for mint_time, short in shorts:
             if short.balance != FixedPoint(0):
-                logging.debug(
-                    "agent #%g trade shorts, mint_time = %s\npre-trade amount = %s\ntrade delta = %s",
-                    self.address,
-                    mint_time,
-                    self.shorts,
-                    short,
-                )
+                old_balance = None
                 if mint_time in self.shorts:  #  entry already exists for this mint_time, so add to it
-                    self.shorts[mint_time].balance += short.balance
                     old_balance = self.shorts[mint_time].balance
+                    self.shorts[mint_time].balance = old_balance + short.balance
 
                     # if the balance is positive, we are opening a short, therefore do a weighted
                     # mean for the open share price.  this covers an edge case where two shorts are
@@ -196,6 +193,13 @@ class Wallet:
                         ) / (short.balance + old_balance)
                 else:
                     self.shorts.update({mint_time: short})
+                logging.debug(
+                    "agent #%g shorts, pre-trade = %s post-trade = %s delta = %s",
+                    self.address,
+                    old_balance or 0,
+                    self.shorts[mint_time].balance,
+                    self.shorts[mint_time].balance - (old_balance or 0),
+                )
             if self.shorts[mint_time].balance == FixedPoint(0):
                 # Removing the empty borrows allows us to check existance
                 # of open shorts using `if wallet.shorts`
@@ -217,20 +221,20 @@ class Wallet:
         )
 
     def check_valid_wallet_state(self, dictionary: dict | None = None) -> None:
-        """Test that all wallet state variables are greater than zero"""
+        """Test that all wallet state variables are greater than zero."""
         if dictionary is None:
             dictionary = self.__dict__
         check_non_zero(dictionary)
 
     def copy(self) -> Wallet:
-        """Returns a new copy of self"""
+        """Return a new copy of self."""
         return Wallet(**copy.deepcopy(self.__dict__))
 
     def update(self, wallet_deltas: WalletDeltas) -> None:
-        """Update the agent's wallet
+        """Update the agent's wallet.
 
         Arguments
-        ----------
+        ---------
         wallet_deltas : AgentDeltas
             The agent's wallet that tracks the amount of assets this agent holds
 
@@ -244,7 +248,7 @@ class Wallet:
                 continue
             if key in ["lp_tokens", "withdraw_shares"]:
                 logging.debug(
-                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    "agent #%g %s pre-trade = %g post-trade = %g delta = %g",
                     self.address,
                     key,
                     getattr(self, key),
@@ -255,7 +259,7 @@ class Wallet:
             # handle updating a Quantity
             elif key == "balance":
                 logging.debug(
-                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    "agent #%g %s pre-trade = %g post-trade = %g delta = %g",
                     self.address,
                     key,
                     float(getattr(self, key).amount),
