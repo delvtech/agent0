@@ -117,6 +117,14 @@ wallet_deltas[2].loc[
 ] -= 1000000
 
 
+# Tally of click trades
+counts = [delta["username"] for delta in wallet_deltas]
+total_counts = pd.concat(counts, axis=0)
+# Divide by 2 since two token transfers per click
+total_counts = total_counts.value_counts() / 2
+total_counts.to_csv("../trade_counts.csv")
+
+
 total_comb_rank = pd.concat(comb_rank, axis=0).groupby("user").sum().sort_values(ascending=False)
 total_ind_rank = pd.concat(ind_rank, axis=0).groupby(["username", "walletAddress"]).sum().sort_values(ascending=False)
 
@@ -159,3 +167,90 @@ _ = [
 ]
 _ = [rank.sort_values(ascending=False).to_csv("../ind_rank_" + str(idx) + ".csv") for idx, rank in enumerate(ind_rank)]
 _ = [delta.to_csv("../final_trades_" + str(idx) + ".csv", index=False) for idx, delta in enumerate(wallet_deltas)]
+
+
+# Calculate most gain and most loss trades
+
+
+final_trade_leaderboard = []
+
+for i, delta in enumerate(wallet_deltas):
+    delta = delta.copy()
+    trade_delta = delta.set_index(["blockNumber", "username", "walletAddress", "input_method"])[["tokenType", "delta"]]
+
+    token_deltas = trade_delta[trade_delta["tokenType"] != "BASE"]
+    base = trade_delta[trade_delta["tokenType"] == "BASE"]
+
+    token_deltas["base_delta"] = base["delta"]
+
+    # Remove lp positions
+    token_deltas = token_deltas[token_deltas["tokenType"] != "LP"]
+
+    token_deltas = (
+        token_deltas.sort_values("blockNumber")
+        .reset_index(["blockNumber"])
+        .set_index(["blockNumber"], drop=False, append=True)
+    )
+
+    # Combine multiple opens/closes of one token type
+    comb_token_deltas = (
+        token_deltas.groupby(["username", "walletAddress", "tokenType", "input_method"])
+        .agg({"delta": "sum", "base_delta": "sum", "blockNumber": (list, "min", "max")})  # type: ignore
+        .reset_index("input_method")
+    )
+
+    # Take minimum block number for open, maximum block number for close
+    block = comb_token_deltas["blockNumber", "min"]
+    block = block.mask(comb_token_deltas["input_method"].str.contains("close"), comb_token_deltas["blockNumber", "max"])
+    comb_token_deltas["block"] = block
+    comb_token_deltas.columns = [
+        "input_method",
+        "delta",
+        "base_delta",
+        "blockNumber",
+        "blockNumber_min",
+        "blockNumber_max",
+        "block",
+    ]
+
+    trade_deltas = (
+        comb_token_deltas.sort_values("block")
+        .groupby(["username", "walletAddress", "tokenType"])
+        .agg(
+            {  # type: ignore
+                "delta": "sum",
+                "base_delta": "sum",
+                "input_method": (list, "sum"),
+                "blockNumber": list,
+            }
+        )
+    )
+
+    # Remove all rows where there are no closes
+    close_only_trade_deltas = trade_deltas[trade_deltas["input_method", "sum"].str.contains("close")]
+
+    # Filter out columns of interest
+    final_trade_deltas = close_only_trade_deltas[
+        [
+            ("base_delta", "sum"),
+            ("input_method", "list"),
+            ("blockNumber", "list"),
+        ]
+    ]
+
+    final_trade_deltas.columns = [
+        "baseDelta",
+        "trades",
+        "blockNumber",
+    ]
+
+    final_trade_deltas = final_trade_deltas.sort_values("baseDelta", ascending=False)[
+        ["baseDelta", "trades", "blockNumber"]
+    ].reset_index()
+    final_trade_deltas.columns = ["username", "walletAddress", "tokenType", "baseDelta", "trades", "trade_blocks"]
+    final_trade_deltas["run_id"] = i
+
+    final_trade_leaderboard.append(final_trade_deltas)
+
+comb_final_trade_leaderboard = pd.concat(final_trade_leaderboard, axis=0).sort_values("baseDelta", ascending=False)
+comb_final_trade_leaderboard.to_csv("../trade_leaderboard.csv")
