@@ -1,3 +1,4 @@
+"""Builds the leaderboard for the dashboard."""
 import pandas as pd
 from chainsync.dashboard import address_to_username, combine_usernames
 
@@ -7,7 +8,7 @@ def build_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFram
     pnl = pnl.reset_index()  # type: ignore
     usernames = address_to_username(lookup, pnl["walletAddress"])
     pnl.insert(1, "username", usernames.values.tolist())
-    # Hard coded funding provider from migration account
+    # TODO: Hard coded funding provider from migration account
     migration_addr = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
     # Don't show this account
     pnl = pnl[pnl["walletAddress"] != migration_addr]

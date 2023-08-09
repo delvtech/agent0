@@ -18,7 +18,6 @@ from chainsync.hyperdrive import (
     convert_hyperdrive_transactions_for_block,
     convert_pool_config,
     convert_pool_info,
-    get_hyperdrive_contract,
     get_latest_block_number_from_pool_info_table,
     get_wallet_info,
 )
@@ -33,6 +32,7 @@ from ethpy.hyperdrive import (
     get_hyperdrive_config,
     get_hyperdrive_pool_info,
 )
+from ethpy.hyperdrive.interface import get_hyperdrive_contract
 from web3 import Web3
 from web3.contract.contract import Contract
 

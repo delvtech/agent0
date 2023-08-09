@@ -1,4 +1,4 @@
-"""Run the streamlab demo."""
+"""Run the dashboard."""
 from __future__ import annotations
 
 import os

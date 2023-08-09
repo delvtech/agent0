@@ -1,3 +1,4 @@
+"""Builds the ticker for the dashboard."""
 import pandas as pd
 from chainsync.dashboard import address_to_username
 

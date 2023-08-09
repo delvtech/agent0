@@ -4,7 +4,7 @@ from decimal import Decimal
 import numpy as np
 import pytest
 from chainsync.base import Base
-from chainsync.hyperdrive import HyperdriveTransaction, postgres
+from chainsync.hyperdrive import HyperdriveTransaction, db_interface
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -74,16 +74,16 @@ class TestTransactionInterface:
     def test_latest_block_number(self, session):
         """Testing retrevial of transaction via interface"""
         transaction_1 = HyperdriveTransaction(blockNumber=1, transactionHash="a", event_value=Decimal("3.0"))
-        postgres.add_transactions([transaction_1], session)
+        db_interface.add_transactions([transaction_1], session)
 
-        latest_block_number = postgres.get_latest_block_number_from_table(HyperdriveTransaction, session)
+        latest_block_number = db_interface.get_latest_block_number_from_table(HyperdriveTransaction, session)
         assert latest_block_number == 1
 
         transaction_2 = HyperdriveTransaction(blockNumber=2, transactionHash="b", event_value=Decimal("3.2"))
         transaction_3 = HyperdriveTransaction(blockNumber=3, transactionHash="c", event_value=Decimal("3.4"))
-        postgres.add_transactions([transaction_2, transaction_3], session)
+        db_interface.add_transactions([transaction_2, transaction_3], session)
 
-        latest_block_number = postgres.get_latest_block_number_from_table(HyperdriveTransaction, session)
+        latest_block_number = db_interface.get_latest_block_number_from_table(HyperdriveTransaction, session)
         assert latest_block_number == 3
 
     def test_get_transactions(self, session):
@@ -91,9 +91,9 @@ class TestTransactionInterface:
         transaction_1 = HyperdriveTransaction(blockNumber=0, transactionHash="a", event_value=Decimal("3.1"))
         transaction_2 = HyperdriveTransaction(blockNumber=1, transactionHash="b", event_value=Decimal("3.2"))
         transaction_3 = HyperdriveTransaction(blockNumber=2, transactionHash="c", event_value=Decimal("3.3"))
-        postgres.add_transactions([transaction_1, transaction_2, transaction_3], session)
+        db_interface.add_transactions([transaction_1, transaction_2, transaction_3], session)
 
-        transactions_df = postgres.get_transactions(session)
+        transactions_df = db_interface.get_transactions(session)
         np.testing.assert_array_equal(transactions_df["event_value"], [3.1, 3.2, 3.3])
 
     def test_block_query_transactions(self, session):
@@ -101,19 +101,19 @@ class TestTransactionInterface:
         transaction_1 = HyperdriveTransaction(blockNumber=0, transactionHash="a", event_value=Decimal("3.1"))
         transaction_2 = HyperdriveTransaction(blockNumber=1, transactionHash="b", event_value=Decimal("3.2"))
         transaction_3 = HyperdriveTransaction(blockNumber=2, transactionHash="c", event_value=Decimal("3.3"))
-        postgres.add_transactions([transaction_1, transaction_2, transaction_3], session)
+        db_interface.add_transactions([transaction_1, transaction_2, transaction_3], session)
 
-        transactions_df = postgres.get_transactions(session, start_block=1)
+        transactions_df = db_interface.get_transactions(session, start_block=1)
         np.testing.assert_array_equal(transactions_df["event_value"], [3.2, 3.3])
 
-        transactions_df = postgres.get_transactions(session, start_block=-1)
+        transactions_df = db_interface.get_transactions(session, start_block=-1)
         np.testing.assert_array_equal(transactions_df["event_value"], [3.3])
 
-        transactions_df = postgres.get_transactions(session, end_block=1)
+        transactions_df = db_interface.get_transactions(session, end_block=1)
         np.testing.assert_array_equal(transactions_df["event_value"], [3.1])
 
-        transactions_df = postgres.get_transactions(session, end_block=-1)
+        transactions_df = db_interface.get_transactions(session, end_block=-1)
         np.testing.assert_array_equal(transactions_df["event_value"], [3.1, 3.2])
 
-        transactions_df = postgres.get_transactions(session, start_block=1, end_block=-1)
+        transactions_df = db_interface.get_transactions(session, start_block=1, end_block=-1)
         np.testing.assert_array_equal(transactions_df["event_value"], [3.2])
