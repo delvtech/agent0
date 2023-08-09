@@ -7,7 +7,7 @@ from __future__ import annotations
 import pandas as pd
 from chainsync.analysis import calc_total_returns
 from chainsync.dashboard import address_to_username, build_leaderboard, get_user_lookup
-from chainsync.db.base import db_interface
+from chainsync.db.base import interface
 from dotenv import load_dotenv
 from sqlalchemy.sql import text
 
@@ -18,7 +18,7 @@ load_dotenv()
 
 # Can't use existing postgres code due to mismatch of schema
 # so we do direct queries here
-engine = db_interface.initialize_engine()
+engine = interface.initialize_engine()
 
 # sql queries
 config_query = text("select * from poolconfig;")

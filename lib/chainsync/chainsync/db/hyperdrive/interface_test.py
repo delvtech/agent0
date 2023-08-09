@@ -7,9 +7,9 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from ..base.db_interface import get_latest_block_number_from_table
-from ..base.db_schema import Base
-from .db_interface import (
+from ..base.interface import get_latest_block_number_from_table
+from ..base.schema import Base
+from .interface import (
     add_checkpoint_infos,
     add_pool_config,
     add_pool_infos,
@@ -27,7 +27,7 @@ from .db_interface import (
     get_transactions,
     get_wallet_deltas,
 )
-from .db_schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)

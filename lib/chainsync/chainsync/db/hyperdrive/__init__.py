@@ -7,7 +7,7 @@ from .convert_data import (
     convert_pool_info,
     get_wallet_info,
 )
-from .db_interface import (
+from .interface import (
     add_checkpoint_infos,
     add_pool_config,
     add_pool_infos,
@@ -26,4 +26,4 @@ from .db_interface import (
     get_wallet_deltas,
     get_wallet_info_history,
 )
-from .db_schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo

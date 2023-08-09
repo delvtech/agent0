@@ -6,8 +6,8 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from ..base.db_schema import Base
-from .db_schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from ..base.schema import Base
+from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)

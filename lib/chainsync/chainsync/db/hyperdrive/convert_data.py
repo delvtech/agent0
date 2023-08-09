@@ -14,7 +14,7 @@ from web3.contract.contract import Contract
 from web3.types import TxData
 
 from ..base import convert_scaled_value_to_decimal
-from .db_schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
 
 
 def convert_hyperdrive_transactions_for_block(

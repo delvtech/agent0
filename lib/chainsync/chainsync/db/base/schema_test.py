@@ -3,7 +3,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from .db_schema import Base, UserMap
+from .schema import Base, UserMap
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)

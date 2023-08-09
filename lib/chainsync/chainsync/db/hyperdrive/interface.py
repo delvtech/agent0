@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from ..base import get_latest_block_number_from_table
 from .agent_position import AgentPosition
-from .db_schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
 
 
 def add_transactions(transactions: list[HyperdriveTransaction], session: Session) -> None:

@@ -4,8 +4,8 @@ import pytest
 from sqlalchemy import String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, sessionmaker
 
-from ..base.db_schema import Base
-from .db_interface import add_user_map, drop_table, get_user_map, query_tables
+from .interface import add_user_map, drop_table, get_user_map, query_tables
+from .schema import Base
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
 Session = sessionmaker(bind=engine)

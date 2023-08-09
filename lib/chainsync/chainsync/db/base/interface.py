@@ -15,7 +15,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 
-from .db_schema import Base, UserMap
+from .schema import Base, UserMap
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
