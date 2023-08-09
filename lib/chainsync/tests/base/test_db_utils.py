@@ -1,7 +1,7 @@
 """CRUD tests for CheckpointInfo"""
 import numpy as np
 import pytest
-from chainsync.base import postgres
+from chainsync.base import db_interface
 from sqlalchemy import String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, sessionmaker
 
@@ -44,7 +44,7 @@ def session():
 
 def test_query_tables(session):
     """Return a list of tables in the database."""
-    table_names = postgres.query_tables(session)
+    table_names = db_interface.query_tables(session)
     session.commit()
 
     np.testing.assert_array_equal(table_names, ["dropme", "verybased"])
@@ -52,8 +52,8 @@ def test_query_tables(session):
 
 def test_drop_table(session):
     """Drop a table from the database."""
-    postgres.drop_table(session, "dropme")
-    table_names = postgres.query_tables(session)
+    db_interface.drop_table(session, "dropme")
+    table_names = db_interface.query_tables(session)
     session.commit()
 
     np.testing.assert_array_equal(table_names, ["verybased"])

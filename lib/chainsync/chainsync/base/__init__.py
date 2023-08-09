@@ -1,8 +1,7 @@
 """Generic database utilities"""
 
 from .conversions import convert_scaled_value_to_decimal
-from .db_schema import Base, UserMap
-from .postgres import (
+from .db_interface import (
     PostgresConfig,
     TableWithBlockNumber,
     add_user_map,
@@ -15,3 +14,4 @@ from .postgres import (
     initialize_session,
     query_tables,
 )
+from .db_schema import Base, UserMap
