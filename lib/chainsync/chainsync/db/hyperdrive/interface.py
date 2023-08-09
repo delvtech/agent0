@@ -1,6 +1,8 @@
 """Utilities for hyperdrive related postgres interactions."""
 from __future__ import annotations
 
+import logging
+
 import pandas as pd
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
@@ -26,7 +28,7 @@ def add_transactions(transactions: list[HyperdriveTransaction], session: Session
         session.commit()
     except exc.DataError as err:
         session.rollback()
-        print(f"{transactions=}")
+        logging.error("Error adding transaction: %s", err)
         raise err
 
 
@@ -46,7 +48,7 @@ def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session) -> None:
         session.commit()
     except exc.DataError as err:
         session.rollback()
-        print(f"{wallet_infos=}")
+        logging.error("Error on adding wallet_infos: %s", err)
         raise err
 
 
@@ -97,7 +99,7 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
             session.commit()
         except exc.DataError as err:
             session.rollback()
-            print(f"{pool_config=}")
+            logging.error("Error adding pool_config: %s", err)
             raise err
     elif len(existing_pool_config) == 1:
         # Verify pool config
@@ -129,7 +131,7 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
         session.commit()
     except exc.DataError as err:
         session.rollback()
-        print(f"{pool_infos=}")
+        logging.error("Error adding pool_infos: %s", err)
         raise err
 
 
@@ -168,7 +170,7 @@ def add_wallet_deltas(wallet_deltas: list[WalletDelta], session: Session) -> Non
         session.commit()
     except exc.DataError as err:
         session.rollback()
-        print(f"{wallet_deltas=}")
+        logging.error("Error in adding wallet_deltas: %s", err)
         raise err
 
 

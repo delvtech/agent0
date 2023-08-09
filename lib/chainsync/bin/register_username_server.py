@@ -1,4 +1,6 @@
 """A simple Flask server to run python scripts."""
+import logging
+
 from chainsync.db.base import interface
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
@@ -30,8 +32,7 @@ def register_bots():
     session = interface.initialize_session()
     try:
         interface.add_user_map(username, wallet_addrs, session)
-        # TODO move this to logging
-        print(f"Registered {wallet_addrs=} to {username=}")
+        logging.debug("Registered wallet_addrs=%s to username=%s}", wallet_addrs, username)
         out = (jsonify({"data": data, "error": ""}), 200)
     except Exception as exc:  # pylint: disable=broad-exception-caught
         # Ignoring broad exception, since we're simply printing out error and returning to client

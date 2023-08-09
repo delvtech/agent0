@@ -228,7 +228,7 @@ def add_user_map(username: str, addresses: list[str], session: Session) -> None:
     try:
         session.commit()
     except exc.DataError as err:
-        print(f"{username=}, {addresses=}")
+        logging.error("DB Error adding user: %s", err)
         raise err
 
 
