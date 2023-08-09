@@ -1,7 +1,7 @@
 """CRUD tests for CheckpointInfo"""
 import numpy as np
 import pytest
-from chainsync.base import db_interface
+from chainsync.db.base import db_interface
 from sqlalchemy import String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, sessionmaker
 

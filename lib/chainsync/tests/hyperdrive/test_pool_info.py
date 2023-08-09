@@ -3,8 +3,13 @@ from datetime import datetime
 
 import numpy as np
 import pytest
-from chainsync.base import Base
-from chainsync.hyperdrive import PoolInfo, add_pool_infos, get_latest_block_number_from_pool_info_table, get_pool_info
+from chainsync.db.base import Base
+from chainsync.db.hyperdrive import (
+    PoolInfo,
+    add_pool_infos,
+    get_latest_block_number_from_pool_info_table,
+    get_pool_info,
+)
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 

@@ -1,6 +1,5 @@
 """Calculate the spot price."""
 
-
 import logging
 from decimal import Decimal
 

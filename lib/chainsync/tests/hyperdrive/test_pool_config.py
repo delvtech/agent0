@@ -3,8 +3,8 @@ from decimal import Decimal
 
 import numpy as np
 import pytest
-from chainsync.base import Base
-from chainsync.hyperdrive import PoolConfig, add_pool_config, get_pool_config
+from chainsync.db.base import Base
+from chainsync.db.hyperdrive import PoolConfig, add_pool_config, get_pool_config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 

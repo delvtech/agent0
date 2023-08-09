@@ -10,7 +10,6 @@ from agent0.hyperdrive.config import get_eth_bots_config
 from chainsync.analysis.calc_fixed_rate import calc_fixed_rate
 from chainsync.analysis.calc_ohlcv import calc_ohlcv
 from chainsync.analysis.calc_pnl import calc_closeout_pnl, calc_total_returns
-from chainsync.base import get_user_map, initialize_session
 from chainsync.dashboard import (
     build_leaderboard,
     build_ticker,
@@ -19,7 +18,8 @@ from chainsync.dashboard import (
     plot_fixed_rate,
     plot_ohlcv,
 )
-from chainsync.hyperdrive import get_agents, get_pool_config, get_pool_info, get_transactions, get_wallet_deltas
+from chainsync.db.base import get_user_map, initialize_session
+from chainsync.db.hyperdrive import get_agents, get_pool_config, get_pool_info, get_transactions, get_wallet_deltas
 from dotenv import load_dotenv
 
 # pylint: disable=invalid-name

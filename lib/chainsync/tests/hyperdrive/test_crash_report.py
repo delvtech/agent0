@@ -6,7 +6,7 @@ import unittest
 from datetime import datetime
 
 import elfpy.utils.logs as log_utils
-from chainsync.hyperdrive import (
+from chainsync.db.hyperdrive import (
     PoolConfig,
     PoolInfo,
     log_hyperdrive_crash_report,

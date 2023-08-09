@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import pandas as pd
 from chainsync.analysis import calc_total_returns
-from chainsync.base import db_interface
 from chainsync.dashboard import address_to_username, build_leaderboard, get_user_lookup
+from chainsync.db.base import db_interface
 from dotenv import load_dotenv
 from sqlalchemy.sql import text
 

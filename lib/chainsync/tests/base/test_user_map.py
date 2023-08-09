@@ -1,7 +1,7 @@
 """CRUD tests for UserMap"""
 import numpy as np
 import pytest
-from chainsync.base import Base, UserMap, db_interface
+from chainsync.db.base import Base, UserMap, db_interface
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 

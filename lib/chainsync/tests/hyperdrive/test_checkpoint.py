@@ -4,8 +4,8 @@ from decimal import Decimal
 
 import numpy as np
 import pytest
-from chainsync.base import Base, get_latest_block_number_from_table
-from chainsync.hyperdrive import CheckpointInfo, add_checkpoint_infos, get_checkpoint_info
+from chainsync.db.base import Base, get_latest_block_number_from_table
+from chainsync.db.hyperdrive import CheckpointInfo, add_checkpoint_infos, get_checkpoint_info
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 

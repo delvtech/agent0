@@ -6,8 +6,8 @@ import os
 import time
 from dataclasses import dataclass
 
-from chainsync.base import initialize_session
-from chainsync.hyperdrive import (
+from chainsync.db.base import initialize_session
+from chainsync.db.hyperdrive import (
     add_checkpoint_infos,
     add_pool_config,
     add_pool_infos,

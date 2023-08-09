@@ -3,8 +3,8 @@ from decimal import Decimal
 
 import numpy as np
 import pytest
-from chainsync.base import Base, get_latest_block_number_from_table
-from chainsync.hyperdrive import WalletDelta, add_wallet_deltas, get_wallet_deltas
+from chainsync.db.base import Base, get_latest_block_number_from_table
+from chainsync.db.hyperdrive import WalletDelta, add_wallet_deltas, get_wallet_deltas
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
