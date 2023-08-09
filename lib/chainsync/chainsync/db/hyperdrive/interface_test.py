@@ -4,11 +4,10 @@ from decimal import Decimal
 
 import numpy as np
 import pytest
+from chainsync.db.base import Base, get_latest_block_number_from_table
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from ..base.interface import get_latest_block_number_from_table
-from ..base.schema import Base
 from .interface import (
     add_checkpoint_infos,
     add_pool_config,

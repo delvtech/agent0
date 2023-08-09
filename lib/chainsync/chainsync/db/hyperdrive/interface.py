@@ -4,10 +4,10 @@ from __future__ import annotations
 import logging
 
 import pandas as pd
+from chainsync.db.base import get_latest_block_number_from_table
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
-from ..base import get_latest_block_number_from_table
 from .agent_position import AgentPosition
 from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
 
