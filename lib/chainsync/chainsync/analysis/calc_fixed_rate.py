@@ -2,7 +2,8 @@
 from decimal import Decimal
 
 import numpy as np
-from chainsync.dashboard import calculate_spot_price
+
+from . import calculate_spot_price
 
 
 def calc_fixed_rate(trade_data, config_data):

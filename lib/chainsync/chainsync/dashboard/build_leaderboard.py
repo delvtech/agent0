@@ -1,6 +1,7 @@
 """Builds the leaderboard for the dashboard."""
 import pandas as pd
-from chainsync.dashboard import address_to_username, combine_usernames
+
+from . import address_to_username, combine_usernames
 
 
 def build_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:

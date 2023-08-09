@@ -1,7 +1,5 @@
+"""Helper functions for mapping addresses to usernames."""
 import pandas as pd
-from chainsync.base import get_user_map
-from chainsync.hyperdrive import get_agents
-from sqlalchemy.orm import Session
 
 
 def combine_usernames(username: pd.Series) -> pd.DataFrame:
