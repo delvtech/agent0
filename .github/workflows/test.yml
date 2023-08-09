@@ -11,14 +11,9 @@ jobs:
     name: test
     runs-on: ubuntu-latest
     steps:
-      - name: Check GitHub rate limit at start
-        uses: wakamex/rate-limit-action@master
-        with:
-          token: ${{ secrets.GH_GITHUB_COM_TOKEN || github.token}}
-
       - uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GH_GITHUB_COM_TOKEN || github.token}}
+          token: ${{github.token}}
 
       - name: install node
         uses: actions/setup-node@v3
@@ -44,7 +39,7 @@ jobs:
         with:
           python-version: "3.10"
           cache: "pip"
-          token: ${{ secrets.GH_GITHUB_COM_TOKEN || github.token}}
+          token: ${{github.token}}
       - run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
@@ -68,8 +63,3 @@ jobs:
           # A warning is thrown here unnecessarily.  tracking issue here:
           # https://github.com/github/vscode-github-actions/issues/222
           token: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Check GitHub rate limit at end
-        uses: wakamex/rate-limit-action@master
-        with:
-          token: ${{ secrets.GH_GITHUB_COM_TOKEN || github.token}}
