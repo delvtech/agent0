@@ -4,6 +4,7 @@ import pytest
 from sqlalchemy import String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, sessionmaker
 
+from ..base.db_schema import Base
 from .db_interface import add_user_map, drop_table, get_user_map, query_tables
 
 engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
@@ -34,28 +35,38 @@ class DropMe(Based):
 
 
 @pytest.fixture(scope="function")
-def session():
-    """Session fixture for tests"""
+def test_session():
+    """Dummy session fixture for tests"""
     Based.metadata.create_all(engine)  # create tables
-    session_ = Session()
-    yield session_
-    session_.close()
+    test_session_ = Session()
+    yield test_session_
+    test_session_.close()
     Based.metadata.drop_all(engine)  # drop tables
 
 
-def test_query_tables(session):
+@pytest.fixture(scope="function")
+def session():
+    """Session fixture for tests"""
+    Base.metadata.create_all(engine)  # create tables
+    session_ = Session()
+    yield session_
+    session_.close()
+    Base.metadata.drop_all(engine)  # drop tables
+
+
+def test_query_tables(test_session):
     """Return a list of tables in the database."""
-    table_names = query_tables(session)
-    session.commit()
+    table_names = query_tables(test_session)
+    test_session.commit()
 
     np.testing.assert_array_equal(table_names, ["dropme", "verybased"])
 
 
-def test_drop_table(session):
+def test_drop_table(test_session):
     """Drop a table from the database."""
-    drop_table(session, "dropme")
-    table_names = query_tables(session)
-    session.commit()
+    drop_table(test_session, "dropme")
+    table_names = query_tables(test_session)
+    test_session.commit()
 
     np.testing.assert_array_equal(table_names, ["verybased"])
 
