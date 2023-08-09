@@ -52,8 +52,8 @@ class HyperdriveWallet(EthWallet):
         for maturity_time, long in longs:
             if long.balance != FixedPoint(0):
                 logging.debug(
-                    "agent #%g trade longs, maturity_time = %g\npre-trade amount = %s\ntrade delta = %s",
-                    self.address,
+                    "agent %s trade longs, maturity_time = %g\npre-trade amount = %s\ntrade delta = %s",
+                    self.address.hex(),
                     maturity_time,
                     self.longs,
                     long,
@@ -81,8 +81,8 @@ class HyperdriveWallet(EthWallet):
         for maturity_time, short in shorts:
             if short.balance != FixedPoint(0):
                 logging.debug(
-                    "agent #%g trade shorts, maturity_time = %s\npre-trade amount = %s\ntrade delta = %s",
-                    self.address,
+                    "agent %s trade shorts, maturity_time = %s\npre-trade amount = %s\ntrade delta = %s",
+                    self.address.hex(),
                     maturity_time,
                     self.shorts,
                     short,
@@ -129,8 +129,8 @@ class HyperdriveWallet(EthWallet):
                     continue
                 case "lp_tokens" | "withdraw_shares":
                     logging.debug(
-                        "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                        self.address,
+                        "agent %s %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                        self.address.hex(),
                         key,
                         getattr(self, key),
                         getattr(self, key) + value_or_dict,
@@ -140,8 +140,8 @@ class HyperdriveWallet(EthWallet):
                 # handle updating a Quantity
                 case "balance":
                     logging.debug(
-                        "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                        self.address,
+                        "agent %s %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                        self.address.hex(),
                         key,
                         float(getattr(self, key).amount),
                         float(getattr(self, key).amount + value_or_dict.amount),
