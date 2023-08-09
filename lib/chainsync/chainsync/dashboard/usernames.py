@@ -67,7 +67,7 @@ def get_click_addresses() -> pd.DataFrame:
     return addresses
 
 
-def get_user_lookup(session: Session) -> pd.DataFrame:
+def get_user_lookup(agents, bots_map) -> pd.DataFrame:
     """Generate username to agents mapping.
 
     Returns
@@ -78,17 +78,17 @@ def get_user_lookup(session: Session) -> pd.DataFrame:
         the wallet address itself if a wallet is found without a registered username.
     """
     # Get data
-    agents = get_agents(session)
-    user_map = get_user_map(session)
+    bots_map = bots_map.copy()
     # Usernames in postgres are bots
-    user_map["username"] = user_map["username"] + " (bots)"
-
+    bots_map["username"] = bots_map["username"] + " (bots)"
+    # TODO move this to reading from a config file
     click_map = get_click_addresses()
-    user_map = pd.concat([click_map, user_map], axis=0)
+    # Add click users to map
+    bots_map = pd.concat([click_map, bots_map], axis=0)
 
     # Generate a lookup of users -> address, taking into account that some addresses don't have users
     # Reindex looks up agent addresses against user_map, adding nans if it doesn't exist
-    options_map = user_map.set_index("address").reindex(agents)
+    options_map = bots_map.set_index("address").reindex(agents)
 
     # Set username as address if agent doesn't exist
     na_idx = options_map["username"].isna()

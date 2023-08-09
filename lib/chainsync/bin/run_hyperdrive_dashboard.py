@@ -10,7 +10,7 @@ from agent0.hyperdrive.config import get_eth_bots_config
 from chainsync.analysis.calc_fixed_rate import calc_fixed_rate
 from chainsync.analysis.calc_ohlcv import calc_ohlcv
 from chainsync.analysis.calc_pnl import calc_closeout_pnl, calc_total_returns
-from chainsync.base import initialize_session
+from chainsync.base import get_user_map, initialize_session
 from chainsync.dashboard import (
     build_leaderboard,
     build_ticker,
@@ -19,7 +19,7 @@ from chainsync.dashboard import (
     plot_fixed_rate,
     plot_ohlcv,
 )
-from chainsync.hyperdrive import get_pool_config, get_pool_info, get_transactions, get_wallet_deltas
+from chainsync.hyperdrive import get_agents, get_pool_config, get_pool_info, get_transactions, get_wallet_deltas
 from dotenv import load_dotenv
 
 # pylint: disable=invalid-name
@@ -65,11 +65,13 @@ ax_fixed_rate = main_fig.add_subplot(3, 1, 3)
 
 while True:
     # Place data and plots
-    user_lookup = get_user_lookup(session)
+    agents = get_agents(session)
+    user_map = get_user_map(session)
     txn_data = get_transactions(session, -max_live_blocks)
     pool_info_data = get_pool_info(session, -max_live_blocks, coerce_float=False)
     combined_data = get_combined_data(txn_data, pool_info_data)
     wallet_deltas = get_wallet_deltas(session, coerce_float=False)
+    user_lookup = get_user_lookup(agents, user_map)
     ticker = build_ticker(wallet_deltas, txn_data, pool_info_data, user_lookup)
 
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)

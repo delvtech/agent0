@@ -6,140 +6,19 @@ from __future__ import annotations
 
 import pandas as pd
 from chainsync.analysis import calc_total_returns
-from chainsync.base import postgres
+from chainsync.base import db_interface
+from chainsync.dashboard import address_to_username, build_leaderboard, get_user_lookup
 from dotenv import load_dotenv
 from sqlalchemy.sql import text
 
 # pylint: disable=invalid-name
-
-
-def get_user_lookup(agents, user_map) -> pd.DataFrame:
-    """Generate username to agents mapping."""
-    # Usernames in postgres are bots
-    user_map["username"] = user_map["username"] + " (bots)"
-    click_map = get_click_addresses()
-    user_map = pd.concat([click_map, user_map], axis=0)
-    # Generate a lookup of users -> address, taking into account that some addresses don't have users
-    # Reindex looks up agent addresses against user_map, adding nans if it doesn't exist
-    options_map = user_map.set_index("address").reindex(agents)
-    # Set username as address if agent doesn't exist
-    na_idx = options_map["username"].isna()
-    # If there are any nan usernames, set address itself as username
-    if na_idx.any():
-        options_map[na_idx] = options_map.index[na_idx]
-    return options_map.reset_index()
-
-
-def combine_usernames(username: pd.Series) -> pd.DataFrame:
-    """Map usernames to a single user (e.g., combine click with bots)."""
-    # Hard coded mapping:
-    user_mapping = {
-        "Charles St. Louis (click)": "Charles St. Louis",
-        "Alim Khamisa (click)": "Alim Khamisa",
-        "Danny Delott (click)": "Danny Delott",
-        "Gregory Lisa (click)": "Gregory Lisa",
-        "Jonny Rhea (click)": "Jonny Rhea",
-        "Matt Brown (click)": "Matt Brown",
-        "Giovanni Effio (click)": "Giovanni Effio",
-        "Mihai Cosma (click)": "Mihai Cosma",
-        "Ryan Goree (click)": "Ryan Goree",
-        "Alex Towle (click)": "Alex Towle",
-        "Adelina Ruffolo (click)": "Adelina Ruffolo",
-        "Jacob Arruda (click)": "Jacob Arruda",
-        "Dylan Paiton (click)": "Dylan Paiton",
-        "Sheng Lundquist (click)": "Sheng Lundquist",
-        "ControlC Schmidt (click)": "ControlC Schmidt",
-        "George Towle (click)": "George Towle",
-        "Jack Burrus (click)": "Jack Burrus",
-        "Jordan J (click)": "Jordan J",
-        # Bot accounts
-        "slundquist (bots)": "Sheng Lundquist",
-    }
-    user_mapping = pd.DataFrame.from_dict(user_mapping, orient="index")
-    user_mapping.columns = ["user"]
-    # Use merge in case mapping doesn't exist
-    username_column = username.name
-    user = username.to_frame().merge(user_mapping, how="left", left_on=username_column, right_index=True)
-    return user
-
-
-def get_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Rank users by PNL, individually and bomined across their accounts."""
-    pnl = pnl.reset_index()  # type: ignore
-    wallet_usernames = address_to_username(lookup, pnl["walletAddress"])
-    pnl.insert(1, "username", wallet_usernames.values.tolist())
-    # Hard coded funding provider from migration account
-    migration_addr = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-    # Don't show this account
-    pnl = pnl[pnl["walletAddress"] != migration_addr]
-    # Rank based on pnl
-    user = combine_usernames(pnl["username"])
-    pnl["user"] = user["user"].values
-    ind_leaderboard = (
-        pnl[["username", "walletAddress", "pnl"]]
-        .sort_values("pnl", ascending=False)  # type: ignore
-        .reset_index(drop=True)
-    )
-    comb_leaderboard = (
-        pnl[["user", "pnl"]].groupby("user")["pnl"].sum().reset_index().sort_values("pnl", ascending=False)
-    ).reset_index(drop=True)
-    return (comb_leaderboard, ind_leaderboard)
-
-
-def get_click_addresses() -> pd.DataFrame:
-    """Returns a dataframe of hard coded click addresses."""
-    addresses = {
-        "0x004dfC2dBA6573fa4dFb1E86e3723e1070C0CfdE": "Charles St. Louis (click)",
-        "0x005182C62DA59Ff202D53d6E42Cef6585eBF9617": "Alim Khamisa (click)",
-        "0x005BB73FddB8CE049eE366b50d2f48763E9Dc0De": "Danny Delott (click)",
-        "0x0065291E64E40FF740aE833BE2F68F536A742b70": "Gregory Lisa (click)",
-        "0x0076b154e60BF0E9088FcebAAbd4A778deC5ce2c": "Jonny Rhea (click)",
-        "0x00860d89A40a5B4835a3d498fC1052De04996de6": "Matt Brown (click)",
-        "0x00905A77Dc202e618d15d1a04Bc340820F99d7C4": "Giovanni Effio (click)",
-        "0x009ef846DcbaA903464635B0dF2574CBEE66caDd": "Mihai Cosma (click)",
-        "0x00D5E029aFCE62738fa01EdCA21c9A4bAeabd434": "Ryan Goree (click)",
-        "0x020A6F562884395A7dA2be0b607Bf824546699e2": "Alex Towle (click)",
-        "0x020a898437E9c9DCdF3c2ffdDB94E759C0DAdFB6": "Adelina Ruffolo (click)",
-        "0x020b42c1E3665d14275E2823bCef737015c7f787": "Jacob Arruda (click)",
-        "0x02147558D39cE51e19de3A2E1e5b7c8ff2778829": "Dylan Paiton (click)",
-        "0x021f1Bbd2Ec870FB150bBCAdaaA1F85DFd72407C": "Sheng Lundquist (click)",
-        "0x02237E07b7Ac07A17E1bdEc720722cb568f22840": "ControlC Schmidt (click)",
-        "0x022ca016Dc7af612e9A8c5c0e344585De53E9667": "George Towle (click)",
-        "0x0235037B42b4c0575c2575D50D700dD558098b78": "Jack Burrus (click)",
-        "0x0238811B058bA876Ae5F79cFbCAcCfA1c7e67879": "Jordan J (click)",
-    }
-    addresses = pd.DataFrame.from_dict(addresses, orient="index")
-    addresses = addresses.reset_index()
-    addresses.columns = ["address", "username"]
-    return addresses
-
-
-def address_to_username(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Series:
-    """Look up selected users/addrs to all addresses.
-
-    Arguments
-    ---------
-    lookup: pd.DataFrame
-        The lookup dataframe from `get_user_lookup` call
-    selected_list: list[str]
-        A list of addresses to look up usernames to
-
-    Returns
-    -------
-    list[str]
-        A list of usernames based on selected_list
-    """
-    selected_list_column = selected_list.name
-    out = selected_list.to_frame().merge(lookup, how="left", left_on=selected_list_column, right_on="address")
-    return out["username"]
-
 
 # Connect to postgres
 load_dotenv()
 
 # Can't use existing postgres code due to mismatch of schema
 # so we do direct queries here
-engine = postgres.initialize_engine()
+engine = db_interface.initialize_engine()
 
 # sql queries
 config_query = text("select * from poolconfig;")
@@ -331,7 +210,7 @@ all_wallet_deltas = all_wallet_deltas[
 
 current_returns = calc_total_returns(config_data, pool_info_data, all_wallet_deltas)[0]
 assert isinstance(current_returns, pd.Series)
-comb_rank, ind_rank = get_leaderboard(current_returns, user_lookup)
+comb_rank, ind_rank = build_leaderboard(current_returns, user_lookup)
 
 # TODO External transfers of base is getting captured, so need to undo this
 # Run 1: No change needed
