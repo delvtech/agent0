@@ -1,6 +1,5 @@
 """Generic database utilities"""
 
-from .convert_scaled_value_to_decimal import convert_scaled_value_to_decimal
 from .interface import (
     PostgresConfig,
     TableWithBlockNumber,
