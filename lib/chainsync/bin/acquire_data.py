@@ -6,11 +6,12 @@ import os
 import time
 from dataclasses import dataclass
 
-from chainsync.base import add_transactions, initialize_session
+from chainsync.base import initialize_session
 from chainsync.hyperdrive import (
     add_checkpoint_infos,
     add_pool_config,
     add_pool_infos,
+    add_transactions,
     add_wallet_deltas,
     add_wallet_infos,
     convert_checkpoint_info,
