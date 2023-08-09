@@ -8,12 +8,12 @@ from elfpy import time as elftime
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from eth_typing import BlockNumber
 from eth_utils import address
+from ethpy.base import smart_contract_read
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
-from ..base import smart_contract_read
 from .addresses import HyperdriveAddresses
 from .assets import AssetIdPrefix, encode_asset_id
 
