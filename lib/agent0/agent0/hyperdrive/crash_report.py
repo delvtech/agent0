@@ -25,7 +25,7 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
     )
 
 
-# TODO this shouldn't live here, and crash reporting shouldn't use the db schema for reporting
+# TODO need to fix function below to not use db schema
 # def log_hyperdrive_crash_report(
 #    # TODO: better typing for this, an enum?
 #    trade_type: str,
