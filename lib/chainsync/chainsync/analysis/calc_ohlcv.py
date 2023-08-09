@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import pandas as pd
-from chainsync.dashboard import calculate_spot_price
+
+from .calc_spot_price import calculate_spot_price
 
 
 def calc_ohlcv(trade_data, config_data, freq="D"):

@@ -5,40 +5,7 @@ gathered in the database
 from __future__ import annotations
 
 import pandas as pd
-
-
-def combine_usernames(username: pd.Series) -> pd.DataFrame:
-    """Map usernames to a single user (e.g., combine click with bots)."""
-    # Hard coded mapping:
-    user_mapping = {
-        "Charles St. Louis (click)": "Charles St. Louis",
-        "Alim Khamisa (click)": "Alim Khamisa",
-        "Danny Delott (click)": "Danny Delott",
-        "Gregory Lisa (click)": "Gregory Lisa",
-        "Jonny Rhea (click)": "Jonny Rhea",
-        "Matt Brown (click)": "Matt Brown",
-        "Giovanni Effio (click)": "Giovanni Effio",
-        "Mihai Cosma (click)": "Mihai Cosma",
-        "Ryan Goree (click)": "Ryan Goree",
-        "Alex Towle (click)": "Alex Towle",
-        "Adelina Ruffolo (click)": "Adelina Ruffolo",
-        "Jacob Arruda (click)": "Jacob Arruda",
-        "Dylan Paiton (click)": "Dylan Paiton",
-        "Sheng Lundquist (click)": "Sheng Lundquist",
-        "ControlC Schmidt (click)": "ControlC Schmidt",
-        "George Towle (click)": "George Towle",
-        "Jack Burrus (click)": "Jack Burrus",
-        "Jordan J (click)": "Jordan J",
-        # Bot accounts
-        "slundquist (bots)": "Sheng Lundquist",
-    }
-    user_mapping = pd.DataFrame.from_dict(user_mapping, orient="index")
-    user_mapping.columns = ["user"]
-    # Use merge in case mapping doesn't exist
-    username_column = username.name
-    user = username.to_frame().merge(user_mapping, how="left", left_on=username_column, right_index=True)
-    return user
-
+from chainsync.dashboard import combine_usernames
 
 comb_rank_csvs = [
     "../comb_rank_devnet_test.csv",

@@ -1,5 +1,7 @@
 """A simple Flask server to run python scripts."""
-from chainsync.base import postgres
+import logging
+
+from chainsync.db.base import interface
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_expects_json import expects_json
@@ -27,17 +29,16 @@ def register_bots():
         return jsonify({"data": data, "error": "request.json is None"}), 500
 
     # initialize the postgres session
-    session = postgres.initialize_session()
+    session = interface.initialize_session()
     try:
-        postgres.add_user_map(username, wallet_addrs, session)
-        # TODO move this to logging
-        print(f"Registered {wallet_addrs=} to {username=}")
+        interface.add_user_map(username, wallet_addrs, session)
+        logging.debug("Registered wallet_addrs=%s to username=%s}", wallet_addrs, username)
         out = (jsonify({"data": data, "error": ""}), 200)
     except Exception as exc:  # pylint: disable=broad-exception-caught
         # Ignoring broad exception, since we're simply printing out error and returning to client
         out = (jsonify({"data": data, "error": str(exc)}), 500)
 
-    postgres.close_session(session)
+    interface.close_session(session)
     return out
 
 

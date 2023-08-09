@@ -24,11 +24,6 @@ def read_json_to_pd(json_file):
     return pd.DataFrame(json_data)
 
 
-def calculate_spot_price(share_reserves, bond_reserves, initial_share_price, time_stretch):
-    """Calculate the spot price."""
-    return ((initial_share_price * share_reserves) / bond_reserves) ** time_stretch
-
-
 def get_combined_data(txn_data, pool_info_data):
     """Combine multiple datasets into one containing transaction data, and pool info."""
     pool_info_data.index = pool_info_data.index.astype(int)
@@ -68,6 +63,8 @@ def get_combined_data(txn_data, pool_info_data):
     # Calculate trade type and timetsamp from args.id
     def decode_prefix(row):
         # Check for nans
+        if row is None:
+            return None
         if np.isnan(row):
             out = np.nan
         else:

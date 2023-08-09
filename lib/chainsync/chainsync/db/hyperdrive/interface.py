@@ -1,13 +1,35 @@
 """Utilities for hyperdrive related postgres interactions."""
 from __future__ import annotations
 
+import logging
+
 import pandas as pd
-from chainsync.base import get_latest_block_number_from_table
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
+from ..base import get_latest_block_number_from_table
 from .agent_position import AgentPosition
-from .db_schema import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+
+
+def add_transactions(transactions: list[HyperdriveTransaction], session: Session) -> None:
+    """Add transactions to the poolinfo table.
+
+    Arguments
+    ---------
+    transactions : list[HyperdriveTransaction]
+        A list of HyperdriveTransaction objects to insert into postgres
+    session : Session
+        The initialized session object
+    """
+    for transaction in transactions:
+        session.add(transaction)
+    try:
+        session.commit()
+    except exc.DataError as err:
+        session.rollback()
+        logging.error("Error adding transaction: %s", err)
+        raise err
 
 
 def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session) -> None:
@@ -26,7 +48,7 @@ def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session) -> None:
         session.commit()
     except exc.DataError as err:
         session.rollback()
-        print(f"{wallet_infos=}")
+        logging.error("Error on adding wallet_infos: %s", err)
         raise err
 
 
@@ -77,7 +99,7 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
             session.commit()
         except exc.DataError as err:
             session.rollback()
-            print(f"{pool_config=}")
+            logging.error("Error adding pool_config: %s", err)
             raise err
     elif len(existing_pool_config) == 1:
         # Verify pool config
@@ -109,7 +131,7 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
         session.commit()
     except exc.DataError as err:
         session.rollback()
-        print(f"{pool_infos=}")
+        logging.error("Error adding pool_infos: %s", err)
         raise err
 
 
@@ -148,7 +170,7 @@ def add_wallet_deltas(wallet_deltas: list[WalletDelta], session: Session) -> Non
         session.commit()
     except exc.DataError as err:
         session.rollback()
-        print(f"{wallet_deltas=}")
+        logging.error("Error in adding wallet_deltas: %s", err)
         raise err
 
 
@@ -206,6 +228,41 @@ def get_pool_info(
     query = query.order_by(PoolInfo.timestamp)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float).set_index("blockNumber")
+
+
+def get_transactions(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+    """Get all transactions and returns as a pandas dataframe.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    start_block : int | None
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block : int | None
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried transactions data
+    """
+    query = session.query(HyperdriveTransaction)
+
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = get_latest_block_number_from_table(HyperdriveTransaction, session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = get_latest_block_number_from_table(HyperdriveTransaction, session) + end_block + 1
+
+    if start_block is not None:
+        query = query.filter(HyperdriveTransaction.blockNumber >= start_block)
+    if end_block is not None:
+        query = query.filter(HyperdriveTransaction.blockNumber < end_block)
+
+    return pd.read_sql(query.statement, con=session.connection()).set_index("blockNumber")
 
 
 def get_checkpoint_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
@@ -423,8 +480,8 @@ def get_wallet_deltas(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
-def get_agents(session: Session, start_block: int | None = None, end_block: int | None = None) -> list[str]:
-    """Get the list of all agents from the WalletInfo table.
+def get_all_traders(session: Session, start_block: int | None = None, end_block: int | None = None) -> list[str]:
+    """Get the list of all traders from the WalletInfo table.
 
     Arguments
     ---------
@@ -440,7 +497,7 @@ def get_agents(session: Session, start_block: int | None = None, end_block: int 
     Returns
     -------
     list[str]
-        A list of agent addresses
+        A list of addresses that have made a trade
     """
     query = session.query(WalletInfo.walletAddress)
     # Support for negative indices

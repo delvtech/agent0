@@ -15,7 +15,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 
-from .db_schema import Base, Transaction, UserMap
+from .schema import Base, UserMap
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -193,26 +193,6 @@ def close_session(session: Session) -> None:
     session.close()
 
 
-def add_transactions(transactions: list[Transaction], session: Session) -> None:
-    """Add transactions to the poolinfo table.
-
-    Arguments
-    ---------
-    transactions : list[Transaction]
-        A list of Transaction objects to insert into postgres
-    session : Session
-        The initialized session object
-    """
-    for transaction in transactions:
-        session.add(transaction)
-    try:
-        session.commit()
-    except exc.DataError as err:
-        session.rollback()
-        print(f"{transactions=}")
-        raise err
-
-
 def add_user_map(username: str, addresses: list[str], session: Session) -> None:
     """Add username mapping to postgres during evm_bots initialization.
 
@@ -248,43 +228,8 @@ def add_user_map(username: str, addresses: list[str], session: Session) -> None:
     try:
         session.commit()
     except exc.DataError as err:
-        print(f"{username=}, {addresses=}")
+        logging.error("DB Error adding user: %s", err)
         raise err
-
-
-def get_transactions(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
-    """Get all transactions and returns as a pandas dataframe.
-
-    Arguments
-    ---------
-    session : Session
-        The initialized session object
-    start_block : int | None
-        The starting block to filter the query on. start_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block : int | None
-        The ending block to filter the query on. end_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3]
-
-    Returns
-    -------
-    DataFrame
-        A DataFrame that consists of the queried transactions data
-    """
-    query = session.query(Transaction)
-
-    # Support for negative indices
-    if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(Transaction, session) + start_block + 1
-    if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(Transaction, session) + end_block + 1
-
-    if start_block is not None:
-        query = query.filter(Transaction.blockNumber >= start_block)
-    if end_block is not None:
-        query = query.filter(Transaction.blockNumber < end_block)
-
-    return pd.read_sql(query.statement, con=session.connection()).set_index("blockNumber")
 
 
 def get_user_map(session: Session, address: str | None = None) -> pd.DataFrame:
@@ -326,7 +271,7 @@ def get_latest_block_number_from_table(table_obj: Type[Base], session: Session) 
 
     Arguments
     ---------
-    table_obj : Type[WalletInfo | PoolInfo | Transaction | CheckpointInfo]
+    table_obj : Type[Base]
         The sqlalchemy class that contains the blockNumber column
     session : Session
         The initialized session object

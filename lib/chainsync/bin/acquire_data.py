@@ -6,18 +6,18 @@ import os
 import time
 from dataclasses import dataclass
 
-from chainsync.base import add_transactions, initialize_session
-from chainsync.hyperdrive import (
+from chainsync.db.base import initialize_session
+from chainsync.db.hyperdrive import (
     add_checkpoint_infos,
     add_pool_config,
     add_pool_infos,
+    add_transactions,
     add_wallet_deltas,
     add_wallet_infos,
     convert_checkpoint_info,
     convert_hyperdrive_transactions_for_block,
     convert_pool_config,
     convert_pool_info,
-    get_hyperdrive_contract,
     get_latest_block_number_from_pool_info_table,
     get_wallet_info,
 )
@@ -32,6 +32,7 @@ from ethpy.hyperdrive import (
     get_hyperdrive_config,
     get_hyperdrive_pool_info,
 )
+from ethpy.hyperdrive.interface import get_hyperdrive_contract
 from web3 import Web3
 from web3.contract.contract import Contract
 

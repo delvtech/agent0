@@ -9,8 +9,8 @@ import requests
 from agent0.base.config import EnvironmentConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.config import get_eth_bots_config
+from agent0.hyperdrive.crash_report import setup_hyperdrive_crash_report_logging
 from agent0.hyperdrive.exec import get_agent_accounts
-from chainsync.hyperdrive import setup_hyperdrive_crash_report_logging
 from elfpy.utils import logs
 from ethpy.base import initialize_web3_with_http_provider, load_all_abis
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_url

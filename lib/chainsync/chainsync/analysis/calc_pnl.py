@@ -1,20 +1,20 @@
 """Plots the pnl."""
 from __future__ import annotations
 
-import logging
 from decimal import Decimal
 
 import numpy as np
 import pandas as pd
 from agent0.base.config import EnvironmentConfig
-from chainsync.dashboard import calculate_spot_price
-from chainsync.hyperdrive import get_hyperdrive_contract
 from eth_typing import ChecksumAddress, HexAddress, HexStr
 from ethpy.base import initialize_web3_with_http_provider, load_all_abis, smart_contract_preview_transaction
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
+from ethpy.hyperdrive.interface import get_hyperdrive_contract
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
+
+from .calc_spot_price import calculate_spot_price_for_position
 
 
 def calc_single_closeout(
@@ -195,48 +195,3 @@ def calc_total_returns(
     current_wallet.loc[long_returns.index, "pnl"] = long_returns
     current_wallet.loc[withdrawal_returns.index, "pnl"] = withdrawal_returns
     return current_wallet.reset_index().groupby("walletAddress")["pnl"].sum(), current_wallet
-
-
-def calculate_spot_price_for_position(
-    share_reserves: pd.Series,
-    bond_reserves: pd.Series,
-    time_stretch: pd.Series,
-    initial_share_price: pd.Series,
-    position_duration: pd.Series,
-    maturity_timestamp: pd.Series,
-    block_timestamp: Decimal,
-):
-    """Calculate the spot price given the pool info data.
-
-    This is calculated in a vectorized way, with every input being a scalar except for maturity_timestamp.
-
-    Arguments
-    ---------
-    share_reserves : pd.Series
-        The share reserves
-    bond_reserves : pd.Series
-        The bond reserves
-    time_stretch : pd.Series
-        The time stretch
-    initial_share_price : pd.Series
-        The initial share price
-    position_duration : pd.Series
-        The position duration
-    maturity_timestamp : pd.Series
-        The maturity timestamp
-    block_timestamp : Decimal
-        The block timestamp
-    """
-    # pylint: disable=too-many-arguments
-    full_term_spot_price = calculate_spot_price(share_reserves, bond_reserves, initial_share_price, time_stretch)
-    time_left_seconds = maturity_timestamp - block_timestamp  # type: ignore
-    if isinstance(time_left_seconds, pd.Timedelta):
-        time_left_seconds = time_left_seconds.total_seconds()
-    time_left_in_years = time_left_seconds / position_duration
-    logging.info(
-        " spot price is weighted average of %s(%s) and 1 (%s)",
-        full_term_spot_price,
-        time_left_in_years,
-        1 - time_left_in_years,
-    )
-    return full_term_spot_price * time_left_in_years + 1 * (1 - time_left_in_years)
