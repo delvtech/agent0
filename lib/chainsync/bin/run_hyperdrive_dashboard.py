@@ -5,7 +5,6 @@ import os
 import time
 
 import mplfinance as mpf
-import pandas as pd
 import streamlit as st
 from agent0.hyperdrive.config import get_eth_bots_config
 from chainsync.analysis.calc_fixed_rate import calc_fixed_rate
