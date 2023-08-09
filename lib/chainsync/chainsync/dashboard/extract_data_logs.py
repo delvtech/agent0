@@ -63,6 +63,8 @@ def get_combined_data(txn_data, pool_info_data):
     # Calculate trade type and timetsamp from args.id
     def decode_prefix(row):
         # Check for nans
+        if row is None:
+            return None
         if np.isnan(row):
             out = np.nan
         else:
