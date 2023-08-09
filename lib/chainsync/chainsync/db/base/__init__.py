@@ -1,6 +1,5 @@
 """Generic database utilities"""
 
-from .conversions import convert_scaled_value_to_decimal
 from .interface import (
     PostgresConfig,
     TableWithBlockNumber,
@@ -15,3 +14,4 @@ from .interface import (
     query_tables,
 )
 from .schema import Base, UserMap
+from .utils import convert_scaled_value_to_decimal
