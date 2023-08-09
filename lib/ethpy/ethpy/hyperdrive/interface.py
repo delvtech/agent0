@@ -14,7 +14,7 @@ from web3.contract.contract import Contract
 from web3.types import BlockData
 
 from ..base import smart_contract_read
-from . import HyperdriveAddresses
+from .addresses import HyperdriveAddresses
 from .assets import AssetIdPrefix, encode_asset_id
 
 

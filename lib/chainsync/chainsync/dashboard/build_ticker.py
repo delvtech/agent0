@@ -1,7 +1,7 @@
 """Builds the ticker for the dashboard."""
 import pandas as pd
 
-from . import address_to_username
+from .usernames import address_to_username
 
 
 def build_ticker(

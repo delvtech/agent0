@@ -1,7 +1,7 @@
 """Builds the leaderboard for the dashboard."""
 import pandas as pd
 
-from . import address_to_username, combine_usernames
+from .usernames import address_to_username, combine_usernames
 
 
 def build_leaderboard(pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
