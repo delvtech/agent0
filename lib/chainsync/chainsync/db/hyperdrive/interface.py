@@ -497,7 +497,7 @@ def get_all_traders(session: Session, start_block: int | None = None, end_block:
     Returns
     -------
     list[str]
-        A list of agent addresses
+        A list of addresses that have made a trade
     """
     query = session.query(WalletInfo.walletAddress)
     # Support for negative indices
