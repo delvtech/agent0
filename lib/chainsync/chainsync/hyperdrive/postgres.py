@@ -7,7 +7,27 @@ from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
 from .agent_position import AgentPosition
-from .db_schema import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .db_schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+
+
+def add_transactions(transactions: list[HyperdriveTransaction], session: Session) -> None:
+    """Add transactions to the poolinfo table.
+
+    Arguments
+    ---------
+    transactions : list[HyperdriveTransaction]
+        A list of HyperdriveTransaction objects to insert into postgres
+    session : Session
+        The initialized session object
+    """
+    for transaction in transactions:
+        session.add(transaction)
+    try:
+        session.commit()
+    except exc.DataError as err:
+        session.rollback()
+        print(f"{transactions=}")
+        raise err
 
 
 def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session) -> None:
@@ -206,6 +226,41 @@ def get_pool_info(
     query = query.order_by(PoolInfo.timestamp)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float).set_index("blockNumber")
+
+
+def get_transactions(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+    """Get all transactions and returns as a pandas dataframe.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    start_block : int | None
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block : int | None
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried transactions data
+    """
+    query = session.query(HyperdriveTransaction)
+
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = get_latest_block_number_from_table(HyperdriveTransaction, session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = get_latest_block_number_from_table(HyperdriveTransaction, session) + end_block + 1
+
+    if start_block is not None:
+        query = query.filter(HyperdriveTransaction.blockNumber >= start_block)
+    if end_block is not None:
+        query = query.filter(HyperdriveTransaction.blockNumber < end_block)
+
+    return pd.read_sql(query.statement, con=session.connection()).set_index("blockNumber")
 
 
 def get_checkpoint_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:

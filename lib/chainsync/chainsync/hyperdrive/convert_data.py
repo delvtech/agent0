@@ -4,7 +4,7 @@ import logging
 from decimal import Decimal
 from typing import Any
 
-from chainsync.base import Transaction, convert_scaled_value_to_decimal
+from chainsync.base import convert_scaled_value_to_decimal
 from eth_typing import BlockNumber
 from ethpy.base import get_token_balance, get_transaction_logs
 from ethpy.hyperdrive import AssetIdPrefix, decode_asset_id, encode_asset_id
@@ -14,12 +14,12 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxData
 
-from .db_schema import CheckpointInfo, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .db_schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
 
 
 def convert_hyperdrive_transactions_for_block(
     web3: Web3, hyperdrive_contract: Contract, transactions: list[TxData]
-) -> tuple[list[Transaction], list[WalletDelta]]:
+) -> tuple[list[HyperdriveTransaction], list[WalletDelta]]:
     """Fetch transactions related to the contract.
 
     Arguments
@@ -33,12 +33,12 @@ def convert_hyperdrive_transactions_for_block(
 
     Returns
     -------
-    tuple[list[Transaction], list[WalletDelta]]
-        A list of Transaction objects ready to be inserted into Postgres, and
+    tuple[list[HyperdriveTransaction], list[WalletDelta]]
+        A list of HyperdriveTransaction objects ready to be inserted into Postgres, and
         a list of wallet delta objects ready to be inserted into Postgres
     """
 
-    out_transactions: list[Transaction] = []
+    out_transactions: list[HyperdriveTransaction] = []
     out_wallet_deltas: list[WalletDelta] = []
     for transaction in transactions:
         transaction_dict = dict(transaction)
@@ -91,12 +91,12 @@ def get_wallet_info(
     hyperdrive_contract: Contract,
     base_contract: Contract,
     block_number: BlockNumber,
-    transactions: list[Transaction],
+    transactions: list[HyperdriveTransaction],
     pool_info: PoolInfo,
 ) -> list[WalletInfo]:
     """Retrieve wallet information at a given block given a transaction.
 
-    Transactions are needed here to get
+    HyperdriveTransactions are needed here to get
     (1) the wallet address of a transaction, and
     (2) the token id of the transaction
 
@@ -108,7 +108,7 @@ def get_wallet_info(
         The deployed base contract instance
     block_number : BlockNumber
         The block number to query
-    transactions : list[Transaction]
+    transactions : list[HyperdriveTransaction]
         The list of transactions to get events from
     pool_info : PoolInfo
         The associated pool info, used to extract share price
@@ -303,8 +303,8 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
 
     Returns
     -------
-    list[Transaction]
-        A list of Transaction objects ready to be inserted into Postgres
+    list[HyperdriveTransaction]
+        A list of HyperdriveTransaction objects ready to be inserted into Postgres
     """
     wallet_deltas = []
     # We iterate through the logs looking for specific events that describe the transaction
@@ -515,8 +515,8 @@ def _build_hyperdrive_transaction_object(
     transaction_dict: dict[str, Any],
     logs: list[dict[str, Any]],
     receipt: dict[str, Any],
-) -> Transaction:
-    """Conversion function to translate output of chain queries to the Transaction object.
+) -> HyperdriveTransaction:
+    """Conversion function to translate output of chain queries to the HyperdriveTransaction object.
 
     Arguments
     ----------
@@ -529,11 +529,11 @@ def _build_hyperdrive_transaction_object(
 
     Returns
     -------
-    Transaction
+    HyperdriveTransaction
         A transaction object to be inserted into postgres
     """
-    # Build output obj dict incrementally to be passed into Transaction
-    # i.e., Transaction(**out_dict)
+    # Build output obj dict incrementally to be passed into HyperdriveTransaction
+    # i.e., HyperdriveTransaction(**out_dict)
     # Base transaction fields
     out_dict: dict[str, Any] = {
         "blockNumber": transaction_dict["blockNumber"],
@@ -584,5 +584,5 @@ def _build_hyperdrive_transaction_object(
         event_prefix, event_maturity_time = decode_asset_id(out_dict["event_id"])
         out_dict["event_prefix"] = event_prefix
         out_dict["event_maturity_time"] = event_maturity_time
-    transaction = Transaction(**out_dict)
+    transaction = HyperdriveTransaction(**out_dict)
     return transaction
