@@ -15,7 +15,7 @@ from .db_interface import (
     add_wallet_deltas,
     add_wallet_infos,
     get_agent_positions,
-    get_agents,
+    get_all_traders,
     get_all_wallet_info,
     get_checkpoint_info,
     get_current_wallet_info,

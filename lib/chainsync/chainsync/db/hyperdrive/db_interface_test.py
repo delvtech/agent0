@@ -16,7 +16,7 @@ from .db_interface import (
     add_transactions,
     add_wallet_deltas,
     add_wallet_infos,
-    get_agents,
+    get_all_traders,
     get_all_wallet_info,
     get_checkpoint_info,
     get_current_wallet_info,
@@ -371,7 +371,7 @@ class TestWalletInfoInterface:
         wallet_info_2 = WalletInfo(blockNumber=1, walletAddress="addr_1")
         wallet_info_3 = WalletInfo(blockNumber=2, walletAddress="addr_2")
         add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], session)
-        agents = get_agents(session)
+        agents = get_all_traders(session)
         assert len(agents) == 2
         assert "addr_1" in agents
         assert "addr_2" in agents

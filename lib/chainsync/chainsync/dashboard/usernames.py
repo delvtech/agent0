@@ -65,28 +65,36 @@ def get_click_addresses() -> pd.DataFrame:
     return addresses
 
 
-def get_user_lookup(agents, bots_map) -> pd.DataFrame:
-    """Generate username to agents mapping.
+def get_user_lookup(traders: list[str], user_map: pd.DataFrame) -> pd.DataFrame:
+    """Generate username to address mapping.
+
+    Arguments
+    ---------
+    traders: list[str]
+        A list of all traders to build a lookup for
+    user_map: pd.DataFrame
+        A dataframe with "username" and "address" columns that map from bot address to a username
+        generated from `get_bot_map`
 
     Returns
     -------
     pd.DataFrame
         A dataframe with an "username" and "address" columns that provide a lookup
-        between a registered username and a wallet address. The username can also be
-        the wallet address itself if a wallet is found without a registered username.
+        between a registered username and a wallet address. The lookup contains all entries from
+        `traders`, with the wallet address itself if an address isn't registered.
     """
     # Get data
-    bots_map = bots_map.copy()
+    user_map = user_map.copy()
     # Usernames in postgres are bots
-    bots_map["username"] = bots_map["username"] + " (bots)"
+    user_map["username"] = user_map["username"] + " (bots)"
     # TODO move this to reading from a config file
     click_map = get_click_addresses()
     # Add click users to map
-    bots_map = pd.concat([click_map, bots_map], axis=0)
+    user_map = pd.concat([click_map, user_map], axis=0)
 
     # Generate a lookup of users -> address, taking into account that some addresses don't have users
     # Reindex looks up agent addresses against user_map, adding nans if it doesn't exist
-    options_map = bots_map.set_index("address").reindex(agents)
+    options_map = user_map.set_index("address").reindex(traders)
 
     # Set username as address if agent doesn't exist
     na_idx = options_map["username"].isna()

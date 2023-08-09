@@ -19,7 +19,7 @@ from chainsync.dashboard import (
     plot_ohlcv,
 )
 from chainsync.db.base import get_user_map, initialize_session
-from chainsync.db.hyperdrive import get_agents, get_pool_config, get_pool_info, get_transactions, get_wallet_deltas
+from chainsync.db.hyperdrive import get_all_traders, get_pool_config, get_pool_info, get_transactions, get_wallet_deltas
 from dotenv import load_dotenv
 
 # pylint: disable=invalid-name
@@ -65,7 +65,7 @@ ax_fixed_rate = main_fig.add_subplot(3, 1, 3)
 
 while True:
     # Place data and plots
-    agents = get_agents(session)
+    agents = get_all_traders(session)
     user_map = get_user_map(session)
     txn_data = get_transactions(session, -max_live_blocks)
     pool_info_data = get_pool_info(session, -max_live_blocks, coerce_float=False)

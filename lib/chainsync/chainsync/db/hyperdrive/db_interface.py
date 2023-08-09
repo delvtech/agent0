@@ -478,8 +478,8 @@ def get_wallet_deltas(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
-def get_agents(session: Session, start_block: int | None = None, end_block: int | None = None) -> list[str]:
-    """Get the list of all agents from the WalletInfo table.
+def get_all_traders(session: Session, start_block: int | None = None, end_block: int | None = None) -> list[str]:
+    """Get the list of all traders from the WalletInfo table.
 
     Arguments
     ---------
