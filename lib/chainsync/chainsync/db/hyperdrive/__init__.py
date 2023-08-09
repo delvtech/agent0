@@ -7,7 +7,6 @@ from .convert_data import (
     convert_pool_info,
     get_wallet_info,
 )
-from .crash_report import log_hyperdrive_crash_report, setup_hyperdrive_crash_report_logging
 from .db_interface import (
     add_checkpoint_infos,
     add_pool_config,
