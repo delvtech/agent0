@@ -22,6 +22,8 @@ from ethpy.hyperdrive.interface import get_hyperdrive_contract
 from web3 import Web3
 from web3.contract.contract import Contract
 
+_SLEEP_AMOUNT = 1
+
 
 def main(
     contracts_url: str,
@@ -29,7 +31,6 @@ def main(
     abi_dir: str,
     start_block: int,
     lookback_block_limit: int,
-    sleep_amount: int,
 ):
     """Execute the data acquisition pipeline.
 
@@ -45,8 +46,6 @@ def main(
         The starting block to filter the query on
     lookback_block_limit : int
         The maximum number of blocks to loko back when filling in missing data
-    sleep_amount : int
-        The amount of seconds to sleep between queries
     """
     ## Initialization
     # postgres session
@@ -67,9 +66,7 @@ def main(
     # Get last entry of pool info in db
     data_latest_block_number = get_latest_block_number_from_pool_info_table(session)
     # Using max of latest block in database or specified start block
-    start_block = max(start_block, data_latest_block_number)
-    # Parameterized start block number
-    block_number: BlockNumber = BlockNumber(start_block)
+    block_number: BlockNumber = BlockNumber(max(start_block, data_latest_block_number))
     # Make sure to not grab current block, as the current block is subject to change
     # Current block is still being built
     latest_mined_block = web3.eth.get_block_number() - 1
@@ -108,7 +105,7 @@ def main(
                 continue
             data_chain_to_db(web3, base_contract, hyperdrive_contract, block_number, session)
 
-        time.sleep(sleep_amount)
+        time.sleep(_SLEEP_AMOUNT)
 
 
 @dataclass
@@ -162,7 +159,6 @@ if __name__ == "__main__":
     START_BLOCK = 0
     # Look back limit for backfilling
     LOOKBACK_BLOCK_LIMIT = 100000
-    SLEEP_AMOUNT = 1
 
     # Get postgres env variables if exists
     load_dotenv()
@@ -177,5 +173,4 @@ if __name__ == "__main__":
         config.ABI_DIR,
         START_BLOCK,
         LOOKBACK_BLOCK_LIMIT,
-        SLEEP_AMOUNT,
     )
