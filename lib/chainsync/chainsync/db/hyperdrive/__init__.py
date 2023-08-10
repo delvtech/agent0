@@ -1,5 +1,6 @@
 """Hyperdrive database utilities."""
 from .agent_position import AgentPosition
+from .chain_to_db import data_chain_to_db, init_data_chain_to_db
 from .convert_data import (
     convert_checkpoint_info,
     convert_hyperdrive_transactions_for_block,
