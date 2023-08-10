@@ -8,40 +8,21 @@ from dataclasses import dataclass
 
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
-    add_checkpoint_infos,
-    add_pool_config,
-    add_pool_infos,
-    add_transactions,
-    add_wallet_deltas,
-    add_wallet_infos,
-    convert_checkpoint_info,
-    convert_hyperdrive_transactions_for_block,
-    convert_pool_config,
-    convert_pool_info,
+    data_chain_to_db,
     get_latest_block_number_from_pool_info_table,
-    get_wallet_info,
+    init_data_chain_to_db,
 )
 from dotenv import load_dotenv
 from elfpy.utils import logs as log_utils
 from eth_typing import URI, BlockNumber
 from eth_utils import address
-from ethpy.base import fetch_contract_transactions_for_block, initialize_web3_with_http_provider, load_all_abis
-from ethpy.hyperdrive import (
-    fetch_hyperdrive_address_from_url,
-    get_hyperdrive_checkpoint_info,
-    get_hyperdrive_config,
-    get_hyperdrive_pool_info,
-)
+from ethpy.base import initialize_web3_with_http_provider, load_all_abis
+from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
 from ethpy.hyperdrive.interface import get_hyperdrive_contract
 from web3 import Web3
 from web3.contract.contract import Contract
 
-# pylint: disable=too-many-arguments
-
-# TODO fix too many branches by splitting out various things into functions
-# pylint: disable=too-many-branches
-
-RETRY_COUNT = 10
+_SLEEP_AMOUNT = 1
 
 
 def main(
@@ -50,7 +31,6 @@ def main(
     abi_dir: str,
     start_block: int,
     lookback_block_limit: int,
-    sleep_amount: int,
 ):
     """Execute the data acquisition pipeline.
 
@@ -66,38 +46,27 @@ def main(
         The starting block to filter the query on
     lookback_block_limit : int
         The maximum number of blocks to loko back when filling in missing data
-    sleep_amount : int
-        The amount of seconds to sleep between queries
     """
-    # TODO: refactor this function, its waaay to big as indicated by these pylints
-    # pylint: disable=too-many-locals
-    # pylint: disable=too-many-statements
-
-    # initialize the postgres session
+    ## Initialization
+    # postgres session
     session = initialize_session()
-    # get web3 provider
+    # web3 provider
     web3: Web3 = initialize_web3_with_http_provider(ethereum_node, request_kwargs={"timeout": 60})
-
     # send a request to the local server to fetch the deployed contract addresses and
     # all Hyperdrive contract addresses from the server response
     addresses = fetch_hyperdrive_address_from_url(contracts_url)
     abis = load_all_abis(abi_dir)
-
+    # Contracts
     hyperdrive_contract = get_hyperdrive_contract(web3, abis, addresses)
     base_contract: Contract = web3.eth.contract(
         address=address.to_checksum_address(addresses.base_token), abi=abis["ERC20Mintable"]
     )
 
-    # get pool config from hyperdrive contract
-    pool_config_dict = get_hyperdrive_config(hyperdrive_contract)
-    add_pool_config(convert_pool_config(pool_config_dict), session)
-
+    ## Get starting point for restarts
     # Get last entry of pool info in db
     data_latest_block_number = get_latest_block_number_from_pool_info_table(session)
     # Using max of latest block in database or specified start block
-    start_block = max(start_block, data_latest_block_number)
-    # Parameterized start block number
-    block_number: BlockNumber = BlockNumber(start_block)
+    block_number: BlockNumber = BlockNumber(max(start_block, data_latest_block_number))
     # Make sure to not grab current block, as the current block is subject to change
     # Current block is still being built
     latest_mined_block = web3.eth.get_block_number() - 1
@@ -107,106 +76,36 @@ def main(
         block_number = BlockNumber(latest_mined_block - lookback_block_limit)
         logging.warning("Starting block is past lookback block limit, starting at block %s", block_number)
 
+    # Collect initial data
+    init_data_chain_to_db(hyperdrive_contract, session)
     # This if statement executes only on initial run (based on data_latest_block_number check),
     # and if the chain has executed until start_block (based on latest_mined_block check)
     if data_latest_block_number < block_number < latest_mined_block:
-        # Query and add block_pool_info
-        pool_info_dict = get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
-        add_pool_infos([convert_pool_info(pool_info_dict)], session)
+        data_chain_to_db(web3, base_contract, hyperdrive_contract, block_number, session)
 
-        # Query and add block_checkpoint_info
-        checkpoint_info_dict = get_hyperdrive_checkpoint_info(web3, hyperdrive_contract, block_number)
-        add_checkpoint_infos([convert_checkpoint_info(checkpoint_info_dict)], session)
-
-        # Query and add block transactions
-        transactions = fetch_contract_transactions_for_block(web3, hyperdrive_contract, block_number)
-        block_transactions, wallet_deltas = convert_hyperdrive_transactions_for_block(
-            web3, hyperdrive_contract, transactions
-        )
-        add_transactions(block_transactions, session)
-        add_wallet_deltas(wallet_deltas, session)
-
+    # Main data loop
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
-    # TODO: fewer nested blocks!
-    # pylint: disable=too-many-nested-blocks
     while True:
         latest_mined_block = web3.eth.get_block_number() - 1
-        # if we are on a new block
-        if latest_mined_block > block_number:
-            # Backfilling for blocks that need updating
-            for block_int in range(block_number + 1, latest_mined_block + 1):
-                block_number: BlockNumber = BlockNumber(block_int)
-                logging.info("Block %s", block_number)
-                # Explicit check against loopback block limit
-                if (latest_mined_block - block_number) > lookback_block_limit:
-                    logging.warning(
-                        "Querying block_number %s out of %s, unable to keep up with chain block iteration",
-                        block_number,
-                        latest_mined_block,
-                    )
-                    continue
-
-                # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
-                pool_info_dict = None
-                for _ in range(RETRY_COUNT):
-                    try:
-                        pool_info_dict = get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
-                        break
-                    except ValueError:
-                        logging.warning("Error in get_hyperdrive_pool_info, retrying")
-                        time.sleep(1)
-                        continue
-                if pool_info_dict is None:
-                    raise ValueError("Error in getting pool info")
-                block_pool_info = convert_pool_info(pool_info_dict)
-                add_pool_infos([block_pool_info], session)
-
-                # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
-                checkpoint_info_dict = None
-                for _ in range(RETRY_COUNT):
-                    try:
-                        checkpoint_info_dict = get_hyperdrive_checkpoint_info(web3, hyperdrive_contract, block_number)
-                        break
-                    except ValueError:
-                        logging.warning("Error in get_hyperdrive_checkpoint_info, retrying")
-                        time.sleep(1)
-                        continue
-                if checkpoint_info_dict is None:
-                    raise ValueError("Error in getting checkpoint info")
-                block_checkpoint_info = convert_checkpoint_info(checkpoint_info_dict)
-                add_checkpoint_infos([block_checkpoint_info], session)
-
-                # keep querying until it returns to avoid random crashes with ValueError on some intermediate block
-                block_transactions = None
-                wallet_deltas = None
-                for _ in range(RETRY_COUNT):
-                    try:
-                        transactions = fetch_contract_transactions_for_block(web3, hyperdrive_contract, block_number)
-                        (
-                            block_transactions,
-                            wallet_deltas,
-                        ) = convert_hyperdrive_transactions_for_block(web3, hyperdrive_contract, transactions)
-                        break
-                    except ValueError:
-                        logging.warning("Error in fetch_contract_transactions_for_block, retrying")
-                        time.sleep(1)
-                        continue
-                # This case only happens if fetch_contract_transactions throws an exception
-                # e.g., the web3 call fails. fetch_contract_transactions_for_block will return
-                # empty lists (which doesn't execute the if statement below) if there are no hyperdrive
-                # transactions for the block
-                if block_transactions is None or wallet_deltas is None:
-                    raise ValueError("Error in getting transactions")
-                add_transactions(block_transactions, session)
-                add_wallet_deltas(wallet_deltas, session)
-                # TODO put the wallet info query as an optional block,
-                # and check these wallet values with what we get from the deltas
-                wallet_info_for_transactions = get_wallet_info(
-                    hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
+        # Only execute if we are on a new block
+        if latest_mined_block <= block_number:
+            continue
+        # Backfilling for blocks that need updating
+        for block_int in range(block_number + 1, latest_mined_block + 1):
+            block_number: BlockNumber = BlockNumber(block_int)
+            logging.info("Block %s", block_number)
+            # Explicit check against loopback block limit
+            if (latest_mined_block - block_number) > lookback_block_limit:
+                logging.warning(
+                    "Querying block_number %s out of %s, unable to keep up with chain block iteration",
+                    block_number,
+                    latest_mined_block,
                 )
-                add_wallet_infos(wallet_info_for_transactions, session)
-        time.sleep(sleep_amount)
+                continue
+            data_chain_to_db(web3, base_contract, hyperdrive_contract, block_number, session)
+
+        time.sleep(_SLEEP_AMOUNT)
 
 
 @dataclass
@@ -260,7 +159,6 @@ if __name__ == "__main__":
     START_BLOCK = 0
     # Look back limit for backfilling
     LOOKBACK_BLOCK_LIMIT = 100000
-    SLEEP_AMOUNT = 1
 
     # Get postgres env variables if exists
     load_dotenv()
@@ -275,5 +173,4 @@ if __name__ == "__main__":
         config.ABI_DIR,
         START_BLOCK,
         LOOKBACK_BLOCK_LIMIT,
-        SLEEP_AMOUNT,
     )
