@@ -179,8 +179,8 @@ async def async_smart_contract_transact(
         web3 provider object
     contract : Contract
         Any deployed web3 contract
-    signer : Account
-        The Account that will be used to pay for the gas & sign the transaction
+    signer : LocalAccount
+        The LocalAccount that will be used to pay for the gas & sign the transaction
     function_name_or_signature : str
         This function must exist in the compiled contract's ABI
     fn_args : ordered list
@@ -244,8 +244,8 @@ def smart_contract_transact(
         web3 container object
     contract : Contract
         Any deployed web3 contract
-    signer : Account
-        The Account that will be used to pay for the gas & sign the transaction
+    signer : LocalAccount
+        The LocalAccount that will be used to pay for the gas & sign the transaction
     function_name_or_signature : str
         This function must exist in the compiled contract's ABI
     fn_args : ordered list
