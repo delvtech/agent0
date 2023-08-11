@@ -34,7 +34,7 @@ def local_chain():
 
 
 @pytest.fixture(scope="function")
-def hyperdrive_chain(local_chain):
+def hyperdrive_contract_address(local_chain):
     """Initializes hyperdrive on a local anvil chain for testing.
     Returns the hyperdrive contract address
 

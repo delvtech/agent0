@@ -1,1 +1,1 @@
-from .local_chain import hyperdrive_chain, local_chain
+from .local_chain import hyperdrive_contract_address, local_chain
