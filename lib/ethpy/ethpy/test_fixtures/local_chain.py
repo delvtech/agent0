@@ -22,17 +22,22 @@ def local_chain() -> Generator[str, Any, Any]:
 
     # Assuming anvil command is accessable in path
     # running into issue with contract size without --code-size-limit arg
-    with subprocess.Popen(
+
+    # Using context manager here seems to make CI hang, so explicitly killing process at the end of yield
+    # pylint: disable=consider-using-with
+    anvil_process = subprocess.Popen(
         ["anvil", "--host", "127.0.0.1", "--port", str(anvil_port), "--code-size-limit", "9999999999"]
-    ):
-        local_chain_ = "http://" + host + ":" + str(anvil_port)
+    )
 
-        # Hack, wait for anvil chain to initialize
-        time.sleep(3)
+    local_chain_ = "http://" + host + ":" + str(anvil_port)
 
-        yield local_chain_
+    # Hack, wait for anvil chain to initialize
+    time.sleep(3)
 
-    # Context manager should handle closing the subprocess
+    yield local_chain_
+
+    # Kill anvil process at end
+    anvil_process.kill()
 
 
 @pytest.fixture(scope="function")
