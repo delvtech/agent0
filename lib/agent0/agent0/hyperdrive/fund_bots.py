@@ -85,7 +85,7 @@ def fund_bots():
             "balanceOf",
             user_account.checksum_address,
         )["value"]
-        if user_base_balance < agent_eth_budget:
+        if user_base_balance < agent_base_budget:
             raise AssertionError(
                 f"User account {user_account.checksum_address=} has {user_base_balance=}, "
                 f"which must be >= {agent_base_budget=}"
