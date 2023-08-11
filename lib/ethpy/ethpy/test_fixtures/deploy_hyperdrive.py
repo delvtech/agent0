@@ -4,6 +4,7 @@ from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from ethpy.base import (
     deploy_contract,
+    deploy_contract_and_return,
     get_transaction_logs,
     initialize_web3_with_http_provider,
     load_all_abis,
@@ -18,22 +19,66 @@ from web3.contract.contract import Contract
 # initial hyperdrive conditions
 
 
-# Following solidity implementation here
-def _calculateTimeStretch(apr: int) -> int:
+# Following solidity implementation here, so matching function name
+def _calculateTimeStretch(apr: int) -> int:  # pylint: disable=invalid-name
+    """Helper function mirroring solidity calculateTimeStretch
+
+    Arguments
+    --------
+    apr: int
+        The scaled input apr
+
+    Returns
+    -------
+    int
+        The scaled output time stretch
+    """
     fp_apr = FixedPoint(scaled_value=apr)
-    timeStretch = FixedPoint(scaled_value=int(5.24592e18)) / (FixedPoint(scaled_value=int(0.04665e18)) * (apr * 100))
-    return (FixedPoint(scaled_value=int(1e18)) / timeStretch).scaled_value
+    time_stretch = FixedPoint(scaled_value=int(5.24592e18)) / (
+        FixedPoint(scaled_value=int(0.04665e18)) * (fp_apr * 100)
+    )
+    return (FixedPoint(scaled_value=int(1e18)) / time_stretch).scaled_value
 
 
 def initialize_deploy_account(web3: Web3) -> LocalAccount:
+    """Initializes the local anvil account to deploy everything from.
+
+    Arguments
+    --------
+    web3 : Web3
+        web3 provider object
+
+    Returns
+    -------
+    LocalAccount
+        The LocalAccount object
+    """
     # TODO get private key of this account programatically
     # This is the private key of account 0 of the anvil prefunded account
     account_private_key = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-    return Account().from_key(account_private_key)
+    account: LocalAccount = Account().from_key(account_private_key)
+    # Ensure this private key is actually matched to the first address of anvil
+    assert web3.eth.accounts[0] == account.address
+    return account
 
 
 def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tuple[Contract, Contract]:
+    """Deploys the hyperdrive factory contract on the rpc_url chain
+
+    Arguments
+    --------
+    rpc_url: str
+        The RPC URL of the chain
+    deploy_account: LocalAccount
+        The account that deploys the contracts
+
+    Returns
+    -------
+    tuple[Contract, Contract]
+        The base token contract and the factory contract respectively
+    """
     # TODO parameterize these parameters
+    # pylint: disable=too-many-locals
     # Initial factory settings
     initial_variable_rate = int(0.05e18)
     curve_fee = int(0.1e18)  # 10%
@@ -44,19 +89,19 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
     max_governance_fee = int(0.30e18)  # 0.30%
     # Configuration settings
     abi_folder = "packages/hyperdrive/src/abis/"
-    deploy_addr = Web3.to_checksum_address(deploy_account.address)
 
     # Load compiled objects
     abis, bytecodes = load_all_abis(abi_folder, return_bytecode=True)
     web3 = initialize_web3_with_http_provider(rpc_url, reset_provider=False)
+    # Convert deploy address to checksum address
+    deploy_addr = Web3.to_checksum_address(deploy_account.address)
 
     # Deploy contracts
-    base_token_addr, base_token_contract = deploy_contract(
+    base_token_addr, base_token_contract = deploy_contract_and_return(
         web3,
         abi=abis["ERC20Mintable"],
         bytecode=bytecodes["ERC20Mintable"],
         deploy_addr=deploy_addr,
-        return_contract=True,
     )
 
     pool_addr = deploy_contract(
@@ -65,15 +110,13 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
         bytecode=bytecodes["MockERC4626"],
         deploy_addr=deploy_addr,
         args=[base_token_addr, "Delvnet Yield Source", "DELV", initial_variable_rate],
-        return_contract=False,
     )
 
-    forwarder_factory_addr, forwarder_factory_contract = deploy_contract(
+    forwarder_factory_addr, forwarder_factory_contract = deploy_contract_and_return(
         web3,
         abi=abis["ForwarderFactory"],
         bytecode=bytecodes["ForwarderFactory"],
         deploy_addr=deploy_addr,
-        return_contract=True,
     )
 
     deployer_addr = deploy_contract(
@@ -82,7 +125,6 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
         bytecode=bytecodes["ERC4626HyperdriveDeployer"],
         deploy_addr=deploy_addr,
         args=[pool_addr],
-        return_contract=False,
     )
 
     factory_config = (
@@ -95,7 +137,7 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
     )
     forwarder_factory_link_hash = forwarder_factory_contract.functions.ERC20LINK_HASH().call()
     empty_list_array = []  # new address[](0)
-    factory_addr, factory_contract = deploy_contract(
+    _, factory_contract = deploy_contract_and_return(
         web3,
         abi=abis["ERC4626HyperdriveFactory"],
         bytecode=bytecodes["ERC4626HyperdriveFactory"],
@@ -108,10 +150,9 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
             pool_addr,
             empty_list_array,
         ],
-        return_contract=True,
     )
 
-    return (base_token_contract, factory_contract)
+    return base_token_contract, factory_contract
 
 
 def deploy_and_initialize_hyperdrive(
@@ -119,7 +160,27 @@ def deploy_and_initialize_hyperdrive(
     base_token_contract: Contract,
     factory_contract: Contract,
     deploy_account: LocalAccount,
-):
+) -> str:
+    """Calls the hyperdrive factory to deploy and initialize new hyperdrive contract
+
+    Arguments
+    --------
+    web3 : Web3
+        web3 provider object
+    base_token_contract : Contract
+        The base token contract
+    factory_contract : Contract
+        The hyperdrive factory contract
+    deploy_account: LocalAccount
+        The account that deploys the contracts
+
+    Returns
+    -------
+    str
+        The deployed hyperdrive contract address
+    """
+    # TODO parameterize these parameters
+    # pylint: disable=too-many-locals
     # Initial hyperdrive settings
     initial_contribution = int(100_000_000e18)
     initial_share_price = int(1e18)
