@@ -1,4 +1,5 @@
 """CRUD tests for UserMap"""
+# Ignoring unsued import warning, fixtures are used through variable name
 from chainsync.test_fixtures import db_session  # pylint: disable=unused-import
 
 from .schema import UserMap

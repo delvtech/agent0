@@ -5,6 +5,8 @@ from decimal import Decimal
 import numpy as np
 import pytest
 from chainsync.db.base import get_latest_block_number_from_table
+
+# Ignoring unsued import warning, fixtures are used through variable name
 from chainsync.test_fixtures import db_session  # pylint: disable=unused-import
 
 from .interface import (
@@ -26,6 +28,9 @@ from .interface import (
     get_wallet_deltas,
 )
 from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+
+# fixture arguments in test function have to be the same as the fixture name
+# pylint: disable=redefined-outer-name
 
 
 class TestTransactionInterface:
