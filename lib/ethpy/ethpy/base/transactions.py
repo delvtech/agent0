@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Sequence, Type
+from typing import Any, Sequence
 
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
