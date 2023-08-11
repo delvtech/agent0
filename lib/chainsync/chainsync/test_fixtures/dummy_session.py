@@ -1,6 +1,9 @@
+"""Pytest fixture that creates an in memory db session and creates dummy db schemas"""
+from typing import Any, Generator
+
 import pytest
 from sqlalchemy import String, create_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, Session, mapped_column, sessionmaker
 
 
 class DummyBase(MappedAsDataclass, DeclarativeBase):
@@ -24,12 +27,12 @@ class DropMe(DummyBase):
 
 
 @pytest.fixture(scope="function")
-def dummy_session():
-    engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
-    Session = sessionmaker(bind=engine)
+def dummy_session() -> Generator[Session, Any, Any]:
     """Dummy session fixture for tests"""
+    engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
+    session = sessionmaker(bind=engine)
     DummyBase.metadata.create_all(engine)  # create tables
-    test_session_ = Session()
+    test_session_ = session()
     yield test_session_
     test_session_.close()
     DummyBase.metadata.drop_all(engine)  # drop tables
