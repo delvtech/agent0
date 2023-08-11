@@ -200,8 +200,8 @@ async def async_smart_contract_transact(
             func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
         unsent_txn = func_handle.build_transaction(
             {
-                "from": signer.checksum_address,
-                "nonce": web3.eth.get_transaction_count(signer.checksum_address),
+                "from": signer_checksum_address,
+                "nonce": web3.eth.get_transaction_count(signer_checksum_address),
             }
         )
         signed_txn = signer.sign_transaction(unsent_txn)
