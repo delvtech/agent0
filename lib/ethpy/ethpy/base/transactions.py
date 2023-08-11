@@ -191,8 +191,7 @@ async def async_smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    # typing doesn't like eth_account.account.Account.address
-    signer_checksum_address = Web3.to_checksum_address(signer.address)  # type: ignore
+    signer_checksum_address = Web3.to_checksum_address(signer.address)
     try:
         if "(" in function_name_or_signature:
             func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
@@ -257,8 +256,7 @@ def smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    # typing doesn't like eth_account.account.Account.address
-    signer_checksum_address = Web3.to_checksum_address(signer.address)  # type: ignore
+    signer_checksum_address = Web3.to_checksum_address(signer.address)
     try:
         if "(" in function_name_or_signature:
             func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
@@ -320,8 +318,7 @@ def eth_transfer(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    # typing doesn't like eth_account.account
-    signer_checksum_address = Web3.to_checksum_address(signer.address)  # type: ignore
+    signer_checksum_address = Web3.to_checksum_address(signer.address)
     unsent_txn: TxParams = {
         "from": signer_checksum_address,
         "to": to_address,
