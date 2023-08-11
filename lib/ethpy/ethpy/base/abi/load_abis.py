@@ -4,6 +4,17 @@ from __future__ import annotations
 import json
 import logging
 import os
+from typing import Literal, overload
+
+
+@overload
+def load_all_abis(abi_folder: str, return_bytecode: Literal[False] = ...) -> dict:
+    ...
+
+
+@overload
+def load_all_abis(abi_folder: str, return_bytecode: Literal[True]) -> tuple[dict, dict]:
+    ...
 
 
 def load_all_abis(abi_folder: str, return_bytecode: bool = False) -> dict | tuple[dict, dict]:
