@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Sequence
+from typing import Any, Sequence, Type
 
-from eth_account.account import Account
+from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
@@ -168,7 +168,7 @@ async def async_wait_for_transaction_receipt(
 
 
 async def async_smart_contract_transact(
-    web3: Web3, contract: Contract, signer: Account, function_name_or_signature: str, *fn_args
+    web3: Web3, contract: Contract, signer: LocalAccount, function_name_or_signature: str, *fn_args
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
     Copy of `smart_contract_transact`, but using async wait for `wait_for_transaction_receipt`
@@ -235,7 +235,7 @@ async def async_smart_contract_transact(
 
 
 def smart_contract_transact(
-    web3: Web3, contract: Contract, signer: Account, function_name_or_signature: str, *fn_args
+    web3: Web3, contract: Contract, signer: LocalAccount, function_name_or_signature: str, *fn_args
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
 
@@ -295,7 +295,7 @@ def smart_contract_transact(
 
 def eth_transfer(
     web3: Web3,
-    signer: Account,
+    signer: LocalAccount,
     to_address: ChecksumAddress,
     amount_wei: int,
     max_priority_fee: int | None = None,
@@ -306,8 +306,8 @@ def eth_transfer(
     ---------
     web3 : Web3
         web3 container object
-    signer : Account
-        The Account that will be used to pay for the gas & sign the transaction
+    signer : LocalAccount
+        The LocalAccount that will be used to pay for the gas & sign the transaction
     to_address : ChecksumAddress
         Address for where the Ethereum is going to
     amount_wei : int
