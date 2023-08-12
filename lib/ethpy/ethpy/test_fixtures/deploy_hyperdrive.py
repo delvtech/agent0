@@ -24,7 +24,7 @@ def _calculateTimeStretch(apr: int) -> int:  # pylint: disable=invalid-name
     """Helper function mirroring solidity calculateTimeStretch
 
     Arguments
-    --------
+    ---------
     apr: int
         The scaled input apr
 
@@ -44,7 +44,7 @@ def initialize_deploy_account(web3: Web3) -> LocalAccount:
     """Initializes the local anvil account to deploy everything from.
 
     Arguments
-    --------
+    ---------
     web3 : Web3
         web3 provider object
 
@@ -54,6 +54,7 @@ def initialize_deploy_account(web3: Web3) -> LocalAccount:
         The LocalAccount object
     """
     # TODO get private key of this account programatically
+    # https://github.com/delvtech/elf-simulations/issues/816
     # This is the private key of account 0 of the anvil prefunded account
     account_private_key = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
     account: LocalAccount = Account().from_key(account_private_key)
@@ -66,7 +67,7 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
     """Deploys the hyperdrive factory contract on the rpc_url chain
 
     Arguments
-    --------
+    ---------
     rpc_url: str
         The RPC URL of the chain
     deploy_account: LocalAccount
@@ -164,7 +165,7 @@ def deploy_and_initialize_hyperdrive(
     """Calls the hyperdrive factory to deploy and initialize new hyperdrive contract
 
     Arguments
-    --------
+    ---------
     web3 : Web3
         web3 provider object
     base_token_contract : Contract
