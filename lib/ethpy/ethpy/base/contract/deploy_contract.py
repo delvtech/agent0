@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from eth_typing import Address
+from eth_typing import ChecksumAddress
 from web3 import Web3
 from web3.contract.contract import Contract
 
 
 def deploy_contract_and_return(
-    web3: Web3, abi: list[Any], bytecode: str, deploy_addr: str, args: list | None = None
-) -> tuple[Address, Contract]:
+    web3: Web3, abi: list[Any], bytecode: str, deploy_addr: ChecksumAddress, args: list[Any] | None = None
+) -> tuple[ChecksumAddress, Contract]:
     """Deploys a contract given the abi and the bytecode, and returns the web3 contract object along with the address.
 
     Note this function is blocking until the tx receipt returns, indicating a successful deployment
@@ -22,9 +22,9 @@ def deploy_contract_and_return(
         web3 provider object
     abi: list[Any]
         The contract abi
-    bytecode: str
+    bytecode: ChecksumAddress
         The contract bytecode
-    deploy_addr:
+    deploy_addr: str
         The address of the account that's deploying the contract
     args: list[Any] | None:
         List of arguments to pass to the contract constructor
@@ -32,16 +32,18 @@ def deploy_contract_and_return(
 
     Returns
     -------
-    str
-        The deployed contract address
+    Tuple[ChecksumAddress, Contract]
+        The deployed contract address and Contract object
 
     """
-    contract_addr: Address = deploy_contract(web3, abi, bytecode, deploy_addr, args)  # type: ignore
+    contract_addr = deploy_contract(web3, abi, bytecode, deploy_addr, args)
     contract = web3.eth.contract(address=contract_addr, abi=abi)
     return contract_addr, contract
 
 
-def deploy_contract(web3: Web3, abi: list[Any], bytecode: str, deploy_addr: str, args: list[Any] | None = None) -> str:
+def deploy_contract(
+    web3: Web3, abi: list[Any], bytecode: str, deploy_addr: ChecksumAddress, args: list[Any] | None = None
+) -> ChecksumAddress:
     """Deploys a contract given the abi and the bytecode.
 
     Note this function is blocking until the tx receipt returns, indicating a successful deployment
@@ -54,7 +56,7 @@ def deploy_contract(web3: Web3, abi: list[Any], bytecode: str, deploy_addr: str,
         The contract abi
     bytecode: str
         The contract bytecode
-    deploy_addr:
+    deploy_addr: ChecksumAddress
         The address of the account that's deploying the contract
     args: list[Any] | None:
         List of arguments to pass to the contract constructor
