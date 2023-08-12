@@ -4,9 +4,20 @@ from __future__ import annotations
 import json
 import logging
 import os
+from typing import Literal, overload
 
 
-def load_all_abis(abi_folder: str) -> dict:
+@overload
+def load_all_abis(abi_folder: str, return_bytecode: Literal[False] = ...) -> dict:
+    ...
+
+
+@overload
+def load_all_abis(abi_folder: str, return_bytecode: Literal[True]) -> tuple[dict, dict]:
+    ...
+
+
+def load_all_abis(abi_folder: str, return_bytecode: bool = False) -> dict | tuple[dict, dict]:
     """Load all ABI JSONs given an abi_folder.
 
     Arguments
@@ -20,21 +31,27 @@ def load_all_abis(abi_folder: str) -> dict:
         A dictionary with keys for each abi filename and value is the "abi" field of the JSON decoded file
     """
     abis = {}
+    bytecodes = {}
     abi_files = _collect_files(abi_folder)
     loaded = []
     for abi_file in abi_files:
         file_name = os.path.splitext(os.path.basename(abi_file))[0]
         try:
-            abi_data = load_abi_from_file(abi_file)
+            abi_data = load_abi_from_file(abi_file, return_bytecode=return_bytecode)
+            if return_bytecode:
+                (abi_data, bytecode_data) = abi_data
+                bytecodes[file_name] = bytecode_data
             abis[file_name] = abi_data
             loaded.append(abi_file)
         except AssertionError as err:
             logging.debug("JSON file %s did not contain an ABI.\nError: %s", abi_file, err)
     logging.debug("Loaded ABI files %s", str(loaded))
+    if return_bytecode:
+        return abis, bytecodes
     return abis
 
 
-def load_abi_from_file(file_name: str) -> dict:
+def load_abi_from_file(file_name: str, return_bytecode: bool = False) -> dict | tuple[dict, dict]:
     """Load an ABI JSON given an ABI file.
 
     Arguments
@@ -49,8 +66,13 @@ def load_abi_from_file(file_name: str) -> dict:
     """
     with open(file_name, mode="r", encoding="UTF-8") as file:
         data = json.load(file)
-    if "abi" in data:
-        return data["abi"]
+    if return_bytecode:
+        if "abi" in data and "bytecode" in data:
+            return data["abi"], data["bytecode"]["object"]
+    else:
+        if "abi" in data:
+            return data["abi"]
+
     raise AssertionError(f"ABI for {file_name=} must contain an 'abi' field")
 
 
