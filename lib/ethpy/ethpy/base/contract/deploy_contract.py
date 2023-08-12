@@ -24,7 +24,7 @@ def deploy_contract_and_return(
         The contract abi
     bytecode: ChecksumAddress
         The contract bytecode
-    deploy_addr: str
+    deploy_addr: ChecksumAddress
         The address of the account that's deploying the contract
     args: list[Any] | None:
         List of arguments to pass to the contract constructor
@@ -64,7 +64,7 @@ def deploy_contract(
 
     Returns
     -------
-    str
+    ChecksumAddress
         The deployed contract address
 
     """
