@@ -126,6 +126,7 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
     )
 
     # Set args and deploy factory
+    # Calling soliditry factory with deployer account as governance and fee collector
     factory_config = (
         deploy_account_addr,  # governance
         deploy_account_addr,  # hyperdriveGovernance
