@@ -104,7 +104,6 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
         bytecode=bytecodes["ERC20Mintable"],
         deploy_addr=deploy_addr,
     )
-
     pool_addr = deploy_contract(
         web3,
         abi=abis["MockERC4626"],
@@ -112,14 +111,12 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
         deploy_addr=deploy_addr,
         args=[base_token_addr, "Delvnet Yield Source", "DELV", initial_variable_rate],
     )
-
     forwarder_factory_addr, forwarder_factory_contract = deploy_contract_and_return(
         web3,
         abi=abis["ForwarderFactory"],
         bytecode=bytecodes["ForwarderFactory"],
         deploy_addr=deploy_addr,
     )
-
     deployer_addr = deploy_contract(
         web3,
         abi=abis["ERC4626HyperdriveDeployer"],
@@ -128,6 +125,7 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
         args=[pool_addr],
     )
 
+    # Set args and deploy factory
     factory_config = (
         deploy_addr,  # governance
         deploy_addr,  # hyperdriveGovernance
@@ -239,5 +237,4 @@ def deploy_and_initialize_hyperdrive(
     if hyperdrive_address is None:
         raise AssertionError("Generating hyperdrive contract didn't return address")
 
-    # TODO do I return the contract or address here?
     return hyperdrive_address
