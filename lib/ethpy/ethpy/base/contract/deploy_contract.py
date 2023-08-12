@@ -10,7 +10,7 @@ from web3.contract.contract import Contract
 
 
 def deploy_contract_and_return(
-    web3: Web3, abi: list[Any], bytecode: str, deploy_addr: ChecksumAddress, args: list[Any] | None = None
+    web3: Web3, abi: list[Any], bytecode: str, deploy_account_addr: ChecksumAddress, args: list[Any] | None = None
 ) -> tuple[ChecksumAddress, Contract]:
     """Deploys a contract given the abi and the bytecode, and returns the web3 contract object along with the address.
 
@@ -24,7 +24,7 @@ def deploy_contract_and_return(
         The contract abi
     bytecode: ChecksumAddress
         The contract bytecode
-    deploy_addr: ChecksumAddress
+    deploy_account_addr: ChecksumAddress
         The address of the account that's deploying the contract
     args: list[Any] | None:
         List of arguments to pass to the contract constructor
@@ -36,13 +36,13 @@ def deploy_contract_and_return(
         The deployed contract address and Contract object
 
     """
-    contract_addr = deploy_contract(web3, abi, bytecode, deploy_addr, args)
+    contract_addr = deploy_contract(web3, abi, bytecode, deploy_account_addr, args)
     contract = web3.eth.contract(address=contract_addr, abi=abi)
     return contract_addr, contract
 
 
 def deploy_contract(
-    web3: Web3, abi: list[Any], bytecode: str, deploy_addr: ChecksumAddress, args: list[Any] | None = None
+    web3: Web3, abi: list[Any], bytecode: str, deploy_account_addr: ChecksumAddress, args: list[Any] | None = None
 ) -> ChecksumAddress:
     """Deploys a contract given the abi and the bytecode.
 
@@ -56,7 +56,7 @@ def deploy_contract(
         The contract abi
     bytecode: str
         The contract bytecode
-    deploy_addr: ChecksumAddress
+    deploy_account_addr: ChecksumAddress
         The address of the account that's deploying the contract
     args: list[Any] | None:
         List of arguments to pass to the contract constructor
@@ -71,7 +71,7 @@ def deploy_contract(
     if args is None:
         args = []
     contract = web3.eth.contract(abi=abi, bytecode=bytecode)
-    tx_hash = contract.constructor(*args).transact({"from": deploy_addr})
+    tx_hash = contract.constructor(*args).transact({"from": deploy_account_addr})
     tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     if tx_receipt["contractAddress"] is not None:
         contract_addr = tx_receipt["contractAddress"]

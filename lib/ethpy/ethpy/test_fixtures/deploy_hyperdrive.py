@@ -95,41 +95,41 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
     abis, bytecodes = load_all_abis(abi_folder, return_bytecode=True)
     web3 = initialize_web3_with_http_provider(rpc_url, reset_provider=False)
     # Convert deploy address to checksum address
-    deploy_addr = Web3.to_checksum_address(deploy_account.address)
+    deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
 
     # Deploy contracts
-    base_token_addr, base_token_contract = deploy_contract_and_return(
+    base_token_contract_addr, base_token_contract = deploy_contract_and_return(
         web3,
         abi=abis["ERC20Mintable"],
         bytecode=bytecodes["ERC20Mintable"],
-        deploy_addr=deploy_addr,
+        deploy_account_addr=deploy_account_addr,
     )
-    pool_addr = deploy_contract(
+    pool_contract_addr = deploy_contract(
         web3,
         abi=abis["MockERC4626"],
         bytecode=bytecodes["MockERC4626"],
-        deploy_addr=deploy_addr,
-        args=[base_token_addr, "Delvnet Yield Source", "DELV", initial_variable_rate],
+        deploy_account_addr=deploy_account_addr,
+        args=[base_token_contract_addr, "Delvnet Yield Source", "DELV", initial_variable_rate],
     )
-    forwarder_factory_addr, forwarder_factory_contract = deploy_contract_and_return(
+    forwarder_factory_contract_addr, forwarder_factory_contract = deploy_contract_and_return(
         web3,
         abi=abis["ForwarderFactory"],
         bytecode=bytecodes["ForwarderFactory"],
-        deploy_addr=deploy_addr,
+        deploy_account_addr=deploy_account_addr,
     )
-    deployer_addr = deploy_contract(
+    deployer_contract_addr = deploy_contract(
         web3,
         abi=abis["ERC4626HyperdriveDeployer"],
         bytecode=bytecodes["ERC4626HyperdriveDeployer"],
-        deploy_addr=deploy_addr,
-        args=[pool_addr],
+        deploy_account_addr=deploy_account_addr,
+        args=[pool_contract_addr],
     )
 
     # Set args and deploy factory
     factory_config = (
-        deploy_addr,  # governance
-        deploy_addr,  # hyperdriveGovernance
-        deploy_addr,  # feeCollector
+        deploy_account_addr,  # governance
+        deploy_account_addr,  # hyperdriveGovernance
+        deploy_account_addr,  # feeCollector
         (curve_fee, flat_fee, governance_fee),  # fees
         (max_curve_fee, max_flat_fee, max_governance_fee),  # maxFees
         [],  # defaultPausers (new address[](1))
@@ -140,13 +140,13 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
         web3,
         abi=abis["ERC4626HyperdriveFactory"],
         bytecode=bytecodes["ERC4626HyperdriveFactory"],
-        deploy_addr=deploy_addr,
+        deploy_account_addr=deploy_account_addr,
         args=[
             factory_config,
-            deployer_addr,
-            forwarder_factory_addr,
+            deployer_contract_addr,
+            forwarder_factory_contract_addr,
             forwarder_factory_link_hash,
-            pool_addr,
+            pool_contract_addr,
             empty_list_array,
         ],
     )
@@ -191,12 +191,12 @@ def deploy_and_initialize_hyperdrive(
     update_gap = 3600  # 1 hour
     initial_fixed_rate = int(0.05e18)
 
-    deploy_addr = Web3.to_checksum_address(deploy_account.address)
+    deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
 
     # Mint base tokens
     # Need to pass signature instead of function name since multiple mint functions
     tx_receipt = smart_contract_transact(
-        web3, base_token_contract, deploy_account, "mint(address,uint256)", deploy_addr, initial_contribution
+        web3, base_token_contract, deploy_account, "mint(address,uint256)", deploy_account_addr, initial_contribution
     )
     tx_receipt = smart_contract_transact(
         web3, base_token_contract, deploy_account, "approve", factory_contract.address, initial_contribution
@@ -211,8 +211,8 @@ def deploy_and_initialize_hyperdrive(
         position_duration,
         checkpoint_duration,
         time_stretch,
-        deploy_addr,  # governance, overwritten by factory
-        deploy_addr,  # feeCollector, overwritten by factory
+        deploy_account_addr,  # governance, overwritten by factory
+        deploy_account_addr,  # feeCollector, overwritten by factory
         (0, 0, 0),  # fees, overwritten by factory
         oracle_size,  # oracleSize
         update_gap,
