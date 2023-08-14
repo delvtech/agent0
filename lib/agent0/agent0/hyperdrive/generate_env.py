@@ -4,8 +4,10 @@ import json
 import os
 
 import numpy as np
+from agent0.base.config import Budget
 from agent0.base.make_key import make_private_key
 from agent0.hyperdrive.config import get_eth_bots_config
+from fixedpointmath import FixedPoint
 
 
 def generate_env(user_key: str) -> str:
@@ -18,8 +20,20 @@ def generate_env(user_key: str) -> str:
     for agent_info in agent_config:
         for _ in range(agent_info.number_of_agents):
             agent_private_keys.append(make_private_key())
-            agent_base_budgets.append(agent_info.base_budget.sample_budget(rng).scaled_value)
-            agent_eth_budgets.append(agent_info.eth_budget.sample_budget(rng).scaled_value)
+            if isinstance(agent_info.base_budget, Budget):
+                agent_base_budgets.append(agent_info.base_budget.sample_budget(rng).scaled_value)
+            elif isinstance(agent_info.base_budget, FixedPoint):
+                agent_base_budgets.append(agent_info.base_budget.scaled_value)
+            else:
+                raise ValueError(f"Invalid base_budget type: {type(agent_info.base_budget)}")
+
+            if isinstance(agent_info.eth_budget, Budget):
+                agent_eth_budgets.append(agent_info.eth_budget.sample_budget(rng).scaled_value)
+            elif isinstance(agent_info.eth_budget, FixedPoint):
+                agent_eth_budgets.append(agent_info.eth_budget.scaled_value)
+            else:
+                raise ValueError(f"Invalid eth_budget type: {type(agent_info.eth_budget)}")
+
     env_str = ""
     if user_key is not None:
         env_str += "export USER_KEY='" + user_key + "'" + "\n"

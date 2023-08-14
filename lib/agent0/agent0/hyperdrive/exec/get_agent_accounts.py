@@ -6,7 +6,7 @@ import logging
 import os
 
 import eth_utils
-from agent0.base.config import AgentConfig
+from agent0.base.config import AgentConfig, Budget
 from agent0.hyperdrive.agents import HyperdriveAgent
 from eth_account.account import Account
 from ethpy.base import get_account_balance, smart_contract_read, smart_contract_transact
@@ -70,10 +70,19 @@ def get_agent_accounts(
                 raise AssertionError(
                     "Private keys must be specified for the eth_bots demo. Did you list enough in your .env?"
                 )
+            # If the budget was defined using the env variable
             if len(agent_base_budgets) >= agent_count:
                 kwargs["budget"] = FixedPoint(scaled_value=agent_base_budgets[agent_count])
+            # If the budget was defined in the config
             else:
-                kwargs["budget"] = agent_info.base_budget.sample_budget(rng)
+                # If budget is fixed point, use the static number
+                # If the budget is a Budget object, sample
+                if isinstance(agent_info.base_budget, Budget):
+                    kwargs["budget"] = agent_info.base_budget.sample_budget(rng)
+                elif isinstance(agent_info.base_budget, FixedPoint):
+                    kwargs["budget"] = agent_info.base_budget
+                else:
+                    raise ValueError(f"Invalid base_budget type: {type(agent_info.base_budget)}")
             kwargs["slippage_tolerance"] = agent_info.slippage_tolerance
             eth_agent = HyperdriveAgent(
                 Account().from_key(agent_private_keys[agent_count]), policy=agent_info.policy(**kwargs)
