@@ -1,7 +1,6 @@
 """Run the dashboard."""
 from __future__ import annotations
 
-import os
 import time
 
 import mplfinance as mpf
@@ -19,7 +18,6 @@ from chainsync.dashboard import (
 )
 from chainsync.db.base import get_user_map, initialize_session
 from chainsync.db.hyperdrive import get_all_traders, get_pool_config, get_pool_info, get_transactions, get_wallet_deltas
-from dotenv import load_dotenv
 from ethpy import build_eth_config
 
 # pylint: disable=invalid-name
