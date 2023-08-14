@@ -23,16 +23,16 @@ from .schema import Base, UserMap
 
 @dataclass
 class PostgresConfig:
-    """The configuration dataclass for postgress connections.
+    """The configuration dataclass for postgres connections.
 
     Replace the user, password, and db_name with the credentials of your setup.
 
     Attributes
     ----------
     POSTGRES_USER : str
-        The username to authentiate with
+        The username to authenticate with
     POSTGRES_PASSWORD : str
-        The password to authentiate with
+        The password to authenticate with
     POSTGRES_DB : str
         The name of the database
     POSTGRES_HOST : str
@@ -42,7 +42,7 @@ class PostgresConfig:
     """
 
     # default values for local postgres
-    # Matching environemnt variables to search for
+    # Matching environment variables to search for
     # pylint: disable=invalid-name
     POSTGRES_USER: str = "admin"
     POSTGRES_PASSWORD: str = "password"
@@ -128,7 +128,6 @@ def initialize_engine() -> Engine:
     """
     postgres_config = build_postgres_config()
 
-    # TODO add waiting in connecting to postgres to avoid exiting out before postgres spins up
     url_object = URL.create(
         drivername="postgresql",
         username=postgres_config.POSTGRES_USER,
@@ -137,7 +136,20 @@ def initialize_engine() -> Engine:
         port=postgres_config.POSTGRES_PORT,
         database=postgres_config.POSTGRES_DB,
     )
-    return create_engine(url_object)
+    engine = create_engine(url_object)
+    exception = None
+    for _ in range(10):
+        try:
+            connection = engine.connect()
+            connection.close()
+            exception = None
+        except OperationalError as ex:
+            logging.warning("No connection, retrying")
+            exception = ex
+            time.sleep(1)
+    if exception is not None:
+        raise exception
+    return engine
 
 
 def initialize_session() -> Session:
@@ -150,35 +162,14 @@ def initialize_session() -> Session:
     """
 
     engine = initialize_engine()
-
     # create a configured "Session" class
     session_class = sessionmaker(bind=engine)
-
     # create a session
     session = session_class()
-
     # create tables
-    # This is where we actually connect to the database
-    # TODO should likely test connection in `initialize_engine()` through dummy query
-    retry_count = 10
-    retry_exception = None
-    for _ in range(retry_count):
-        try:
-            Base.metadata.create_all(engine)
-            retry_exception = None
-        except OperationalError as exception:
-            retry_exception = exception
-            logging.warning("Error creating tables, likely due to connection to postgres, retrying")
-            time.sleep(1)
-            continue
-
-    # Retry attempts exceeded, raise connection error here
-    if retry_exception is not None:
-        raise retry_exception
-
+    Base.metadata.create_all(engine)
     # commit the transaction
     session.commit()
-
     return session
 
 
@@ -262,7 +253,7 @@ class TableWithBlockNumber(Base):
     # has to be camelCase to match table column name
     # pylint: disable=invalid-name
     def blockNumber(self):
-        """Stubed blockNumber column."""
+        """Stubbed blockNumber column."""
         return Column(String)
 
 

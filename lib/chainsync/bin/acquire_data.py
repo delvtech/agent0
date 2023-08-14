@@ -45,7 +45,7 @@ def main(
     start_block : int
         The starting block to filter the query on
     lookback_block_limit : int
-        The maximum number of blocks to loko back when filling in missing data
+        The maximum number of blocks to look back when filling in missing data
     """
     ## Initialization
     # postgres session
@@ -90,6 +90,7 @@ def main(
         latest_mined_block = web3.eth.get_block_number() - 1
         # Only execute if we are on a new block
         if latest_mined_block <= block_number:
+            time.sleep(_SLEEP_AMOUNT)
             continue
         # Backfilling for blocks that need updating
         for block_int in range(block_number + 1, latest_mined_block + 1):
@@ -104,13 +105,12 @@ def main(
                 )
                 continue
             data_chain_to_db(web3, base_contract, hyperdrive_contract, block_number, session)
-
         time.sleep(_SLEEP_AMOUNT)
 
 
 @dataclass
 class EthConfig:
-    """The configuration dataclass for postgress connections.
+    """The configuration dataclass for postgres connections.
 
     Replace the user, password, and db_name with the credentials of your setup.
 
@@ -125,8 +125,8 @@ class EthConfig:
     """
 
     # default values for local contracts
-    # TODO use port env varibles here
-    # Matching environemnt variables to search for
+    # TODO use port env variables here
+    # Matching environment variables to search for
     # pylint: disable=invalid-name
     CONTRACTS_URL: str = "http://localhost:8080/addresses.json"
     ETHEREUM_NODE: str = "http://localhost:8545"

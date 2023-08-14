@@ -366,7 +366,7 @@ def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
     all_wallet_info = all_wallet_info.pivot(
         values="tokenValue", index=["walletAddress", "blockNumber"], columns=["tokenType"]
     )
-    # Forward fill nans here, as no data means no change
+    # Forward fill nan here, as no data means no change
     all_wallet_info = all_wallet_info.fillna(method="ffill")
 
     # Convert walletAddress to outer dictionary

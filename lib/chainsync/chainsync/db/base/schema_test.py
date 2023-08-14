@@ -1,5 +1,5 @@
 """CRUD tests for UserMap"""
-# Ignoring unsued import warning, fixtures are used through variable name
+# Ignoring unused import warning, fixtures are used through variable name
 from chainsync.test_fixtures import db_session  # pylint: disable=unused-import
 
 from .schema import UserMap
@@ -13,8 +13,8 @@ class TestUserMapTable:
 
     def test_create_user_map(self, db_session):
         """Create and entry"""
-        # Note: this test is using inmemory sqlite, which doesn't seem to support
-        # autoincrementing ids without init, whereas postgres does this with no issues
+        # Note: this test is using in-memory sqlite, which doesn't seem to support
+        # autoincrement ids without init, whereas postgres does this with no issues
         # Hence, we explicitly add id here
         user_map = UserMap(address="1", username="a")
         db_session.add(user_map)
@@ -34,7 +34,7 @@ class TestUserMapTable:
         db_session.commit()
 
         updated_user_map = db_session.query(UserMap).filter_by(address="1").first()
-        # tokenValue retreieved from postgres is in Decimal, cast to float
+        # tokenValue retrieved from postgres is in Decimal, cast to float
         assert updated_user_map.username == "b"
 
     def test_delete_user_map(self, db_session):

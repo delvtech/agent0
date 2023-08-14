@@ -53,9 +53,9 @@ def initialize_deploy_account(web3: Web3) -> LocalAccount:
     LocalAccount
         The LocalAccount object
     """
-    # TODO get private key of this account programatically
+    # TODO get private key of this account programmatically
     # https://github.com/delvtech/elf-simulations/issues/816
-    # This is the private key of account 0 of the anvil prefunded account
+    # This is the private key of account 0 of the anvil pre-funded account
     account_private_key = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
     account: LocalAccount = Account().from_key(account_private_key)
     # Ensure this private key is actually matched to the first address of anvil
@@ -126,7 +126,7 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
     )
 
     # Set args and deploy factory
-    # Calling soliditry factory with deployer account as governance and fee collector
+    # Calling solidity factory with deployer account as governance and fee collector
     factory_config = (
         deploy_account_addr,  # governance
         deploy_account_addr,  # hyperdriveGovernance

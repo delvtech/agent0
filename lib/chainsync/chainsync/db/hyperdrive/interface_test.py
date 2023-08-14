@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from chainsync.db.base import get_latest_block_number_from_table
 
-# Ignoring unsued import warning, fixtures are used through variable name
+# Ignoring unused import warning, fixtures are used through variable name
 from chainsync.test_fixtures import db_session  # pylint: disable=unused-import
 
 from .interface import (
@@ -37,7 +37,7 @@ class TestTransactionInterface:
     """Testing postgres interface for transaction table"""
 
     def test_latest_block_number(self, db_session):
-        """Testing retrevial of transaction via interface"""
+        """Testing retrieval of transaction via interface"""
         transaction_1 = HyperdriveTransaction(blockNumber=1, transactionHash="a", event_value=Decimal("3.0"))
         add_transactions([transaction_1], db_session)
 
@@ -52,7 +52,7 @@ class TestTransactionInterface:
         assert latest_block_number == 3
 
     def test_get_transactions(self, db_session):
-        """Testing retrevial of transactions via interface"""
+        """Testing retrieval of transactions via interface"""
         transaction_1 = HyperdriveTransaction(blockNumber=0, transactionHash="a", event_value=Decimal("3.1"))
         transaction_2 = HyperdriveTransaction(blockNumber=1, transactionHash="b", event_value=Decimal("3.2"))
         transaction_3 = HyperdriveTransaction(blockNumber=2, transactionHash="c", event_value=Decimal("3.3"))
@@ -88,7 +88,7 @@ class TestCheckpointInterface:
     """Testing postgres interface for checkpoint table"""
 
     def test_latest_block_number(self, db_session):
-        """Testing retrevial of checkpoint via interface"""
+        """Testing retrieval of checkpoint via interface"""
         checkpoint_1 = CheckpointInfo(blockNumber=1, timestamp=datetime.now())
         add_checkpoint_infos([checkpoint_1], db_session)
         db_session.commit()
@@ -104,7 +104,7 @@ class TestCheckpointInterface:
         assert latest_block_number == 3
 
     def test_get_checkpoints(self, db_session):
-        """Testing retrevial of checkpoints via interface"""
+        """Testing retrieval of checkpoints via interface"""
         date_1 = datetime(1945, 8, 6)
         date_2 = datetime(1984, 8, 9)
         date_3 = datetime(2001, 9, 11)
@@ -145,7 +145,7 @@ class TestPoolConfigInterface:
     """Testing postgres interface for poolconfig table"""
 
     def test_get_pool_config(self, db_session):
-        """Testing retrevial of pool config via interface"""
+        """Testing retrieval of pool config via interface"""
         pool_config_1 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
         add_pool_config(pool_config_1, db_session)
 
@@ -161,7 +161,7 @@ class TestPoolConfigInterface:
         np.testing.assert_array_equal(pool_config_df_2["initialSharePrice"], np.array([Decimal("3.2"), Decimal("3.4")]))
 
     def test_primary_id_query_pool_config(self, db_session):
-        """Testing retrevial of pool config via interface"""
+        """Testing retrieval of pool config via interface"""
         pool_config = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
         add_pool_config(pool_config, db_session)
 
@@ -173,7 +173,7 @@ class TestPoolConfigInterface:
         assert len(pool_config_df_2) == 0
 
     def test_pool_config_verify(self, db_session):
-        """Testing retrevial of pool config via interface"""
+        """Testing retrieval of pool config via interface"""
         pool_config_1 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
         add_pool_config(pool_config_1, db_session)
         pool_config_df_1 = get_pool_config(db_session, coerce_float=False)
@@ -215,7 +215,7 @@ class TestPoolInfoInterface:
         assert latest_block_number == 3
 
     def test_get_pool_info(self, db_session):
-        """Testing retrevial of pool info via interface"""
+        """Testing retrieval of pool info via interface"""
         timestamp_1 = datetime.fromtimestamp(1628472000)
         pool_info_1 = PoolInfo(blockNumber=0, timestamp=timestamp_1)
         timestamp_2 = datetime.fromtimestamp(1628472002)
@@ -230,7 +230,7 @@ class TestPoolInfoInterface:
         )
 
     def test_block_query_pool_info(self, db_session):
-        """Testing retrevial of pool info via interface"""
+        """Testing retrieval of pool info via interface"""
         timestamp_1 = datetime.fromtimestamp(1628472000)
         pool_info_1 = PoolInfo(blockNumber=0, timestamp=timestamp_1)
         timestamp_2 = datetime.fromtimestamp(1628472002)
@@ -258,7 +258,7 @@ class TestWalletDeltaInterface:
     """Testing postgres interface for walletinfo table"""
 
     def test_latest_block_number(self, db_session):
-        """Testing retrevial of wallet info via interface"""
+        """Testing retrieval of wallet info via interface"""
         wallet_delta_1 = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.0"))
         add_wallet_deltas([wallet_delta_1], db_session)
         latest_block_number = get_latest_block_number_from_table(WalletDelta, db_session)
@@ -270,7 +270,7 @@ class TestWalletDeltaInterface:
         assert latest_block_number == 3
 
     def test_get_wallet_delta(self, db_session):
-        """Testing retrevial of walletinfo via interface"""
+        """Testing retrievals of walletinfo via interface"""
         wallet_delta_1 = WalletDelta(blockNumber=0, transactionHash="a", delta=Decimal("3.1"))
         wallet_delta_2 = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.2"))
         wallet_delta_3 = WalletDelta(blockNumber=2, transactionHash="a", delta=Decimal("3.3"))
@@ -300,7 +300,7 @@ class TestWalletInfoInterface:
     """Testing postgres interface for walletinfo table"""
 
     def test_latest_block_number(self, db_session):
-        """Testing retrevial of wallet info via interface"""
+        """Testing retrieval of wallet info via interface"""
         wallet_info_1 = WalletInfo(blockNumber=1, tokenValue=Decimal("3.0"))
         add_wallet_infos([wallet_info_1], db_session)
         latest_block_number = get_latest_block_number_from_table(WalletInfo, db_session)
@@ -312,7 +312,7 @@ class TestWalletInfoInterface:
         assert latest_block_number == 3
 
     def test_get_wallet_info(self, db_session):
-        """Testing retrevial of walletinfo via interface"""
+        """Testing retrieval of walletinfo via interface"""
         wallet_info_1 = WalletInfo(blockNumber=0, tokenValue=Decimal("3.1"))
         wallet_info_2 = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
         wallet_info_3 = WalletInfo(blockNumber=2, tokenValue=Decimal("3.3"))
