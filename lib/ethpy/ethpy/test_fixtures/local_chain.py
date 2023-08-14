@@ -20,7 +20,7 @@ def local_chain() -> Generator[str, Any, Any]:
     anvil_port = 9999
     host = "127.0.0.1"  # localhost
 
-    # Assuming anvil command is accessable in path
+    # Assuming anvil command is accessible in path
     # running into issue with contract size without --code-size-limit arg
 
     # Using context manager here seems to make CI hang, so explicitly killing process at the end of yield

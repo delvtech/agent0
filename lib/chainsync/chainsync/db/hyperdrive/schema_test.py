@@ -2,7 +2,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-# Ignoring unsued import warning, fixtures are used through variable name
+# Ignoring unused import warning, fixtures are used through variable name
 from chainsync.test_fixtures import db_session  # pylint: disable=unused-import
 
 from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
@@ -16,8 +16,8 @@ class TestTransactionTable:
 
     def test_create_transaction(self, db_session):
         """Create and entry"""
-        # Note: this test is using inmemory sqlite, which doesn't seem to support
-        # autoincrementing ids without init, whereas postgres does this with no issues
+        # Note: this test is using in-memory sqlite, which doesn't seem to support
+        # autoincrement ids without init, whereas postgres does this with no issues
         # Hence, we explicitly add id here
         transaction = HyperdriveTransaction(blockNumber=1, transactionHash="a", event_value=Decimal("3.2"))
         db_session.add(transaction)
@@ -25,7 +25,7 @@ class TestTransactionTable:
 
         retrieved_transaction = db_session.query(HyperdriveTransaction).filter_by(blockNumber=1).first()
         assert retrieved_transaction is not None
-        # event_value retreieved from postgres is in Decimal, cast to float
+        # event_value retrieved from postgres is in Decimal, cast to float
         assert float(retrieved_transaction.event_value) == 3.2
 
     def test_update_transaction(self, db_session):
@@ -38,7 +38,7 @@ class TestTransactionTable:
         db_session.commit()
 
         updated_transaction = db_session.query(HyperdriveTransaction).filter_by(blockNumber=1).first()
-        # event_value retreieved from postgres is in Decimal, cast to float
+        # event_value retrieved from postgres is in Decimal, cast to float
         assert float(updated_transaction.event_value) == 5.0
 
     def test_delete_transaction(self, db_session):
@@ -59,8 +59,8 @@ class TestCheckpointTable:
 
     def test_create_checkpoint(self, db_session):
         """Create and entry"""
-        # Note: this test is using inmemory sqlite, which doesn't seem to support
-        # autoincrementing ids without init, whereas postgres does this with no issues
+        # Note: this test is using in-memory sqlite, which doesn't seem to support
+        # autoincrement ids without init, whereas postgres does this with no issues
         # Hence, we explicitly add id here
         timestamp = datetime.now()
         checkpoint = CheckpointInfo(blockNumber=1, timestamp=timestamp)
@@ -172,8 +172,8 @@ class TestWalletDeltaTable:
 
     def test_create_wallet_delta(self, db_session):
         """Create and entry"""
-        # Note: this test is using inmemory sqlite, which doesn't seem to support
-        # autoincrementing ids without init, whereas postgres does this with no issues
+        # Note: this test is using in-memory sqlite, which doesn't seem to support
+        # autoincrement ids without init, whereas postgres does this with no issues
         # Hence, we explicitly add id here
         wallet_delta = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.2"))
         db_session.add(wallet_delta)
@@ -181,7 +181,7 @@ class TestWalletDeltaTable:
 
         retrieved_wallet_delta = db_session.query(WalletDelta).filter_by(blockNumber=1).first()
         assert retrieved_wallet_delta is not None
-        # toekValue retreieved from postgres is in Decimal, cast to float
+        # tokenValue retrieved from postgres is in Decimal, cast to float
         assert float(retrieved_wallet_delta.delta) == 3.2
 
     def test_update_wallet_delta(self, db_session):
@@ -192,7 +192,7 @@ class TestWalletDeltaTable:
         wallet_delta.delta = Decimal("5.0")
         db_session.commit()
         updated_wallet_delta = db_session.query(WalletDelta).filter_by(blockNumber=1).first()
-        # delta retreieved from postgres is in Decimal, cast to float
+        # delta retrieved from postgres is in Decimal, cast to float
         assert float(updated_wallet_delta.delta) == 5.0
 
     def test_delete_wallet_delta(self, db_session):
@@ -211,15 +211,15 @@ class TestWalletInfoTable:
 
     def test_create_wallet_info(self, db_session):
         """Create and entry"""
-        # Note: this test is using inmemory sqlite, which doesn't seem to support
-        # autoincrementing ids without init, whereas postgres does this with no issues
+        # Note: this test is using in-memory sqlite, which doesn't seem to support
+        # autoincrement ids without init, whereas postgres does this with no issues
         # Hence, we explicitly add id here
         wallet_info = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
         db_session.add(wallet_info)
         db_session.commit()
         retrieved_wallet_info = db_session.query(WalletInfo).filter_by(blockNumber=1).first()
         assert retrieved_wallet_info is not None
-        # toekValue retreieved from postgres is in Decimal, cast to float
+        # tokenValue retrieved from postgres is in Decimal, cast to float
         assert float(retrieved_wallet_info.tokenValue) == 3.2
 
     def test_update_wallet_info(self, db_session):
@@ -230,7 +230,7 @@ class TestWalletInfoTable:
         wallet_info.tokenValue = Decimal("5.0")
         db_session.commit()
         updated_wallet_info = db_session.query(WalletInfo).filter_by(blockNumber=1).first()
-        # tokenValue retreieved from postgres is in Decimal, cast to float
+        # tokenValue retrieved from postgres is in Decimal, cast to float
         assert float(updated_wallet_info.tokenValue) == 5.0
 
     def test_delete_wallet_info(self, db_session):
