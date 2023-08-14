@@ -6,7 +6,6 @@ import time
 
 import mplfinance as mpf
 import streamlit as st
-from agent0.hyperdrive.config import get_eth_bots_config
 from chainsync.analysis.calc_fixed_rate import calc_fixed_rate
 from chainsync.analysis.calc_ohlcv import calc_ohlcv
 from chainsync.analysis.calc_pnl import calc_closeout_pnl, calc_total_returns
@@ -21,27 +20,18 @@ from chainsync.dashboard import (
 from chainsync.db.base import get_user_map, initialize_session
 from chainsync.db.hyperdrive import get_all_traders, get_pool_config, get_pool_info, get_transactions, get_wallet_deltas
 from dotenv import load_dotenv
+from ethpy import build_eth_config
 
 # pylint: disable=invalid-name
 
 st.set_page_config(page_title="Trading Competition Dashboard", layout="wide")
 st.set_option("deprecation.showPyplotGlobalUse", False)
 
-# Connect to postgres
-load_dotenv()
+# Load and connect to postgres
 session = initialize_session()
 
 # TODO remove this connection and add in process to periodically calculate closing pnl
-# Adding these configs from env variables as a temp workaround
-env_config, _ = get_eth_bots_config()
-# Look for env variables and overwrite if they exist
-artifacts_url = os.getenv("ARTIFACTS_URL")
-if artifacts_url is not None:
-    env_config["artifacts_url"] = artifacts_url
-rpc_url = os.getenv("RPC_URL")
-if rpc_url is not None:
-    env_config["rpc_url"] = rpc_url
-
+eth_config = build_eth_config()
 
 # pool config data is static, so just read once
 config_data = get_pool_config(session, coerce_float=False)
@@ -78,7 +68,7 @@ while True:
     ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
 
     current_returns, current_wallet = calc_total_returns(config_data, pool_info_data, wallet_deltas)
-    current_wallet = calc_closeout_pnl(current_wallet, pool_info_data, env_config)  # calc pnl using closeout method
+    current_wallet = calc_closeout_pnl(current_wallet, pool_info_data, eth_config)  # calc pnl using closeout method
     current_wallet.delta = current_wallet.delta.astype(float)
     current_wallet.pnl = current_wallet.pnl.astype(float)
     current_wallet.closeout_pnl = current_wallet.closeout_pnl.astype(float)

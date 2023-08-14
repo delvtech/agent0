@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 import os
 import time
-from dataclasses import dataclass
 
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
@@ -12,10 +11,10 @@ from chainsync.db.hyperdrive import (
     get_latest_block_number_from_pool_info_table,
     init_data_chain_to_db,
 )
-from dotenv import load_dotenv
 from elfpy.utils import logs as log_utils
 from eth_typing import URI, BlockNumber
 from eth_utils import address
+from ethpy import build_eth_config
 from ethpy.base import initialize_web3_with_http_provider, load_all_abis
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
 from ethpy.hyperdrive.interface import get_hyperdrive_contract
@@ -26,8 +25,8 @@ _SLEEP_AMOUNT = 1
 
 
 def main(
-    contracts_url: str,
-    ethereum_node: URI | str,
+    artifacts_url: str,
+    rpc_url: URI | str,
     abi_dir: str,
     start_block: int,
     lookback_block_limit: int,
@@ -36,9 +35,9 @@ def main(
 
     Arguments
     ---------
-    contracts_url : str
+    artifacts_url: str
         The url of the artifacts server from which we get addresses.
-    ethereum_node : URI | str
+    rpc_url: URI | str
         The url to the ethereum node
     abi_dir : str
         The path to the abi directory
@@ -51,10 +50,10 @@ def main(
     # postgres session
     session = initialize_session()
     # web3 provider
-    web3: Web3 = initialize_web3_with_http_provider(ethereum_node, request_kwargs={"timeout": 60})
+    web3: Web3 = initialize_web3_with_http_provider(rpc_url, request_kwargs={"timeout": 60})
     # send a request to the local server to fetch the deployed contract addresses and
     # all Hyperdrive contract addresses from the server response
-    addresses = fetch_hyperdrive_address_from_url(contracts_url)
+    addresses = fetch_hyperdrive_address_from_url(os.path.join(artifacts_url, "addresses.json"))
     abis = load_all_abis(abi_dir)
     # Contracts
     hyperdrive_contract = get_hyperdrive_contract(web3, abis, addresses)
@@ -108,68 +107,19 @@ def main(
         time.sleep(_SLEEP_AMOUNT)
 
 
-@dataclass
-class EthConfig:
-    """The configuration dataclass for postgres connections.
-
-    Replace the user, password, and db_name with the credentials of your setup.
-
-    Attributes
-    ----------
-    CONTRACTS_URL: str
-        The url of the artifacts server from which we get addresses.
-    ETHEREUM_NODE: URI | str
-        The url to the ethereum node
-    ABI_DIR: str
-        The path to the abi directory
-    """
-
-    # default values for local contracts
-    # TODO use port env variables here
-    # Matching environment variables to search for
-    # pylint: disable=invalid-name
-    CONTRACTS_URL: str = "http://localhost:8080/addresses.json"
-    ETHEREUM_NODE: str = "http://localhost:8545"
-    ABI_DIR: str = "./packages/hyperdrive/src/"
-
-
-def build_eth_config() -> EthConfig:
-    """Build an eth config that looks for environmental variables. If env var exists, use that, otherwise, default.
-
-    Returns
-    -------
-    EthConfig
-        Config settings required to connect to the eth node
-    """
-    contracts_url = os.getenv("CONTRACTS_URL")
-    ethereum_node = os.getenv("ETHEREUM_NODE")
-    abi_dir = os.getenv("ABI_DIR")
-    arg_dict = {}
-    if contracts_url is not None:
-        arg_dict["CONTRACTS_URL"] = contracts_url
-    if ethereum_node is not None:
-        arg_dict["ETHEREUM_NODE"] = ethereum_node
-    if abi_dir is not None:
-        arg_dict["ABI_DIR"] = abi_dir
-    return EthConfig(**arg_dict)
-
-
 if __name__ == "__main__":
     # setup constants
     START_BLOCK = 0
     # Look back limit for backfilling
     LOOKBACK_BLOCK_LIMIT = 100000
 
-    # Get postgres env variables if exists
-    load_dotenv()
-
     # Load parameters from env vars if they exist
     config = build_eth_config()
 
     log_utils.setup_logging(".logging/acquire_data.log", log_stdout=True)
     main(
-        config.CONTRACTS_URL,
-        config.ETHEREUM_NODE,
+        config.ARTIFACTS_URL,
+        config.RPC_URL,
         config.ABI_DIR,
         START_BLOCK,
         LOOKBACK_BLOCK_LIMIT,

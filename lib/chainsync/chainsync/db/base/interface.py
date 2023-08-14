@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import logging
-import os
 import time
-from dataclasses import dataclass
 from typing import Type, cast
 
 import pandas as pd
 import sqlalchemy
+from chainsync import build_postgres_config
 from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engine, exc, func, inspect
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
@@ -19,67 +18,6 @@ from .schema import Base, UserMap
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
-
-
-@dataclass
-class PostgresConfig:
-    """The configuration dataclass for postgres connections.
-
-    Replace the user, password, and db_name with the credentials of your setup.
-
-    Attributes
-    ----------
-    POSTGRES_USER : str
-        The username to authenticate with
-    POSTGRES_PASSWORD : str
-        The password to authenticate with
-    POSTGRES_DB : str
-        The name of the database
-    POSTGRES_HOST : str
-        The hostname to connect to
-    POSTGRES_PORT : int
-        The port to connect to
-    """
-
-    # default values for local postgres
-    # Matching environment variables to search for
-    # pylint: disable=invalid-name
-    POSTGRES_USER: str = "admin"
-    POSTGRES_PASSWORD: str = "password"
-    POSTGRES_DB: str = "postgres_db"
-    POSTGRES_HOST: str = "localhost"
-    POSTGRES_PORT: int = 5432
-
-
-def build_postgres_config() -> PostgresConfig:
-    """Build a PostgresConfig that looks for environmental variables.
-
-    If env var exists, use that, otherwise, default
-
-    Returns
-    -------
-    config : PostgresConfig
-        Config settings required to connect to and use the database
-    """
-    user = os.getenv("POSTGRES_USER")
-    password = os.getenv("POSTGRES_PASSWORD")
-    database = os.getenv("POSTGRES_DB")
-    host = os.getenv("POSTGRES_HOST")
-    port = os.getenv("POSTGRES_PORT")
-
-    arg_dict = {}
-    if user is not None:
-        arg_dict["POSTGRES_USER"] = user
-    if password is not None:
-        arg_dict["POSTGRES_PASSWORD"] = password
-    if database is not None:
-        arg_dict["POSTGRES_DB"] = database
-    if host is not None:
-        arg_dict["POSTGRES_HOST"] = host
-    if port is not None:
-        arg_dict["POSTGRES_PORT"] = int(port)
-
-    return PostgresConfig(**arg_dict)
 
 
 def query_tables(session: Session) -> list[str]:
