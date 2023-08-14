@@ -1,10 +1,8 @@
 """Generic database utilities"""
 
 from .interface import (
-    PostgresConfig,
     TableWithBlockNumber,
     add_user_map,
-    build_postgres_config,
     close_session,
     drop_table,
     get_latest_block_number_from_table,
