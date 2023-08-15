@@ -10,9 +10,10 @@ from agent0.hyperdrive.config import get_eth_bots_config
 from fixedpointmath import FixedPoint
 
 
-def generate_env(user_key: str) -> str:
+def generate_env(user_key: str) -> AccountConfig:
     """Primary execution pipeline"""
-    environment_config, agent_config = get_eth_bots_config()
+    environment_config, _, agent_config = get_eth_bots_config()
+
     rng = np.random.default_rng(environment_config.random_seed)
     agent_private_keys = []
     agent_base_budgets = []
@@ -36,10 +37,11 @@ def generate_env(user_key: str) -> str:
 
     env_str = ""
     if user_key is not None:
-        env_str += "export USER_KEY='" + user_key + "'" + "\n"
-    env_str += "export AGENT_KEYS='" + json.dumps(agent_private_keys) + "'" + "\n"
-    env_str += "export AGENT_BASE_BUDGETS='" + json.dumps(agent_base_budgets) + "'" + "\n"
-    env_str += "export AGENT_ETH_BUDGETS='" + json.dumps(agent_eth_budgets) + "'" + "\n"
+        env_str += "USER_KEY='" + user_key + "'" + "\n"
+    env_str += "AGENT_KEYS='" + json.dumps(agent_private_keys) + "'" + "\n"
+    env_str += "AGENT_BASE_BUDGETS='" + json.dumps(agent_base_budgets) + "'" + "\n"
+    env_str += "AGENT_ETH_BUDGETS='" + json.dumps(agent_eth_budgets) + "'" + "\n"
+
     return env_str
 
 

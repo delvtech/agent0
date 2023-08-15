@@ -8,18 +8,15 @@ from agent0.hyperdrive.policies import Policies
 from fixedpointmath import FixedPoint
 
 
-def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
-    """Get the instantiated config objects for the ETH bots demo.
+def get_default_environment_config() -> EnvironmentConfig:
+    """Get the instantiated environment objects
 
     Returns
     -------
-    tuple[EnvironmentConfig, list[AgentConfig]]
-        environment_config : EnvironmentConfig
-            Dataclass containing all of the user environment settings
-        agent_config : list[BotInfo]
-            List containing all of the agent specifications
+    EnvironmentConfig
+        Dataclass containing all of the user environment settings
     """
-    environment_config = EnvironmentConfig(
+    return EnvironmentConfig(
         delete_previous_logs=False,
         halt_on_errors=True,
         log_filename="agent0-bots",
@@ -28,12 +25,18 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
         random_seed=1234,
         hyperdrive_abi="IHyperdrive",
         base_abi="ERC20Mintable",
-        username_register_url="http://localhost:5002",
-        artifacts_url="http://localhost:8080",
-        rpc_url="http://localhost:8545",
         username="changeme",
     )
 
+
+def get_default_agent_config() -> list[AgentConfig]:
+    """Get the instantiated agent config objects
+
+    Returns
+    -------
+    list[AgentConfig]
+        List containing all of the agent specifications
+    """
     agent_config: list[AgentConfig] = [
         AgentConfig(
             policy=Policies.random_agent,
@@ -73,5 +76,4 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
             init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.8)},
         ),
     ]
-
-    return environment_config, agent_config
+    return agent_config

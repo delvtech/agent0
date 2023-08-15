@@ -20,12 +20,6 @@ class EnvironmentConfig(types.FrozenClass):
 
     # Logical username for who is running bots
     username: str = DEFAULT_USERNAME
-    # Logical username for who is running bots
-    username_register_url: str = "http://localhost:5002"
-    # url for retrieving the contract artifacts
-    artifacts_url: str = "http://localhost:80"
-    # location of RPC
-    rpc_url: str = "http://localhost:8545"
     # if true, stop executing when trade errors occur
     halt_on_errors: bool = False
     # optional output filename for logging
@@ -46,8 +40,6 @@ class EnvironmentConfig(types.FrozenClass):
     # abi filenames
     hyperdrive_abi: str = "IHyperdrive"
     base_abi: str = "ERC20Mintable"
-    # ABI location
-    abi_folder: str = "packages/hyperdrive/src/abis/"
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)

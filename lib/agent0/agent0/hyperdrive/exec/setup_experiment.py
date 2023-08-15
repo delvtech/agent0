@@ -8,17 +8,20 @@ import numpy as np
 import requests
 from agent0.base.config import EnvironmentConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
-from agent0.hyperdrive.config import get_eth_bots_config
+from agent0.hyperdrive.config import get_default_agent_config, get_default_environment_config
 from agent0.hyperdrive.crash_report import setup_hyperdrive_crash_report_logging
 from agent0.hyperdrive.exec import get_agent_accounts
 from elfpy.utils import logs
+from ethpy import EthConfig, build_eth_config
 from ethpy.base import initialize_web3_with_http_provider, load_all_abis
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
 from web3 import Web3
 from web3.contract.contract import Contract
 
 
-def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, list[HyperdriveAgent]]:
+def setup_experiment(
+    environment_config=None, agent_config=None
+) -> tuple[Web3, Contract, Contract, EnvironmentConfig, EthConfig, list[HyperdriveAgent]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
     Returns
@@ -31,8 +34,14 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
             - The environment configuration
             - A list of HyperdriveAgent objects that contain a wallet address and Elfpy Agent for determining trades
     """
+    # Get url configs from environment
+    eth_config = build_eth_config()
     # get the user defined config variables
-    environment_config, agent_config = get_eth_bots_config()
+    if environment_config is None:
+        environment_config = get_default_environment_config()
+    if agent_config is None:
+        agent_config = get_default_agent_config()
+
     # this random number generator should be used everywhere so that the experiment is repeatable
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
     rng = np.random.default_rng(environment_config.random_seed)
@@ -46,14 +55,16 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
         log_format_string=environment_config.log_formatter,
     )
     setup_hyperdrive_crash_report_logging()
-    web3, base_token_contract, hyperdrive_contract = get_web3_and_contracts(environment_config)
+    web3, base_token_contract, hyperdrive_contract = get_web3_and_contracts(environment_config, eth_config)
     # load agent policies
     # rng is shared by the agents and can be accessed via `agent_accounts[idx].policy.rng`
     agent_accounts = get_agent_accounts(agent_config, web3, base_token_contract, hyperdrive_contract.address, rng)
-    return web3, base_token_contract, hyperdrive_contract, environment_config, agent_accounts
+    return web3, base_token_contract, hyperdrive_contract, environment_config, eth_config, agent_accounts
 
 
-def get_web3_and_contracts(environment_config: EnvironmentConfig) -> tuple[Web3, Contract, Contract]:
+def get_web3_and_contracts(
+    environment_config: EnvironmentConfig, eth_config: EthConfig
+) -> tuple[Web3, Contract, Contract]:
     """Get the web3 container and the ERC20Base and Hyperdrive contracts.
 
     Arguments
@@ -71,11 +82,12 @@ def get_web3_and_contracts(environment_config: EnvironmentConfig) -> tuple[Web3,
             - The hyperdrive contract
     """
     # point to chain env
-    web3 = initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
+    web3 = initialize_web3_with_http_provider(eth_config.RPC_URL, reset_provider=False)
     # setup base contract interface
-    abis = load_all_abis(environment_config.abi_folder)
-    addresses = fetch_hyperdrive_address_from_url(os.path.join(environment_config.artifacts_url, "addresses.json"))
+    abis = load_all_abis(eth_config.ABI_DIR)
+    addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
     # set up the ERC20 contract for minting base tokens
+    # TODO is there a better way to pass in base and hyperdrive abi?
     base_token_contract: Contract = web3.eth.contract(
         abi=abis[environment_config.base_abi], address=web3.to_checksum_address(addresses.base_token)
     )

@@ -44,7 +44,7 @@ def main():
         user_account = create_and_fund_user_account()
         fund_bots()  # uses env variables created above as inputs
     # exposing the base_token_contract for debugging purposes.
-    web3, base_token_contract, hyperdrive_contract, environment_config, agent_accounts = setup_experiment()
+    web3, base_token_contract, hyperdrive_contract, environment_config, eth_config, agent_accounts = setup_experiment()
     if not args.develop:
         if environment_config.username == DEFAULT_USERNAME:
             # Check for default name and exit if is default
@@ -55,7 +55,7 @@ def main():
         # Set up postgres to write username to agent wallet addr
         # initialize the postgres session
         wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
-        register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
+        register_username(eth_config.USERNAME_REGISTER_URL, wallet_addrs, environment_config.username)
     last_executed_block = BlockNumber(0)
     while True:
         last_executed_block = trade_if_new_block(
@@ -69,5 +69,5 @@ def main():
 
 if __name__ == "__main__":
     # load user dotenv variables
-    load_dotenv()
+    load_dotenv("accounts.env")
     main()

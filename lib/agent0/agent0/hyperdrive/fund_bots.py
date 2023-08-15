@@ -1,12 +1,11 @@
 """Fund agent private keys from a user key."""
 from __future__ import annotations
 
-import json
 import os
 
+from agent0 import build_account_config
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.config import get_eth_bots_config
-from dotenv import load_dotenv
 from eth_account.account import Account
 from ethpy.base import (
     eth_transfer,
@@ -21,48 +20,29 @@ from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
 
 def fund_bots():
     """Fund bots using config settings"""
-    # pylint: disable=too-many-locals
-    # USER PRIVATE KEY
-    user_key = os.environ.get("USER_KEY")
-    if user_key is None:
-        raise ValueError("USER_KEY environment variable must be set")
-    user_account = HyperdriveAgent(Account().from_key(user_key))
-    # LIST OF AGENT PRIVATE KEYS
-    # NOTE: The env var should follow the JSON specification: https://www.json.org/json-en.html
-    # for example, `export AGENT_KEYS='["foo", "bar"]'`
-    key_string = os.environ.get("AGENT_KEYS")
-    if key_string is None:
-        raise ValueError("AGENT_KEYS environment variable must be set")
-    agent_keys = json.loads(key_string)
-    agent_accounts = [HyperdriveAgent(Account().from_key(agent_private_key)) for agent_private_key in agent_keys]
-    # AGENT ETHEREUM FUNDING AMOUNTS
-    eth_budget_string = os.environ.get("AGENT_ETH_BUDGETS")
-    if eth_budget_string is None:
-        raise ValueError("AGENT_ETH_BUDGETS environment variable must be set")
-    agent_eth_budgets = [int(budget) for budget in json.loads(eth_budget_string)]
-    # AGENT BASE FUNDING AMOUNTS
-    base_budget_string = os.environ.get("AGENT_BASE_BUDGETS")
-    if base_budget_string is None:
-        raise ValueError("AGENT_BASE_BUDGETS environment variable must be set")
-    agent_base_budgets = [int(budget) for budget in json.loads(base_budget_string)]
-    if len(agent_accounts) != len(agent_eth_budgets) or len(agent_accounts) != len(agent_base_budgets):
-        raise AssertionError(
-            f"{len(agent_accounts)=} must equal {len(agent_eth_budgets)=} and {len(agent_base_budgets)=}"
-        )
-    environment_config, _ = get_eth_bots_config()
+
+    account_config = build_account_config()
+
+    user_account = HyperdriveAgent(Account().from_key(account_config.USER_KEY))
+    agent_accounts = [
+        HyperdriveAgent(Account().from_key(agent_private_key)) for agent_private_key in account_config.AGENT_KEYS
+    ]
+
+    environment_config, eth_config, _ = get_eth_bots_config()
     # setup web3 & contracts
-    web3 = initialize_web3_with_http_provider(environment_config.rpc_url)
+    web3 = initialize_web3_with_http_provider(eth_config.RPC_URL)
     abi_file_loc = os.path.join(
-        os.path.join(environment_config.abi_folder, environment_config.base_abi + ".sol"),
+        os.path.join(eth_config.ABI_DIR, environment_config.base_abi + ".sol"),
         environment_config.base_abi + ".json",
     )
+
     base_contract_abi = load_abi_from_file(abi_file_loc)
-    addresses = fetch_hyperdrive_address_from_url(os.path.join(environment_config.artifacts_url, "addresses.json"))
+    addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
     base_token_contract = web3.eth.contract(
         abi=base_contract_abi, address=web3.to_checksum_address(addresses.base_token)
     )
     for agent_account, agent_eth_budget, agent_base_budget in zip(
-        agent_accounts, agent_eth_budgets, agent_base_budgets
+        agent_accounts, account_config.AGENT_ETH_BUDGETS, account_config.AGENT_BASE_BUDGETS
     ):
         # fund Ethereum
         user_eth_balance = get_account_balance(web3, user_account.checksum_address)
@@ -102,5 +82,4 @@ def fund_bots():
 
 if __name__ == "__main__":
     # get keys & RPC url from the environment
-    load_dotenv()
     fund_bots()

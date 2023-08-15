@@ -30,8 +30,8 @@ def create_and_fund_user_account() -> HyperdriveAgent:
     # the environment variables are used elsewhere in the run_hyperdrive_agents pipeline
     set_env(env_string)
     # get required contracts
-    environment_config, _ = get_eth_bots_config()
-    web3, base_token_contract, _ = get_web3_and_contracts(environment_config)
+    environment_config, eth_config, _ = get_eth_bots_config()
+    web3, base_token_contract, _ = get_web3_and_contracts(environment_config, eth_config)
     # fund the user with ETH
     eth_budget_string = os.environ.get("AGENT_ETH_BUDGETS")
     if eth_budget_string is None:

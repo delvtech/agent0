@@ -1,4 +1,4 @@
-"""Defines the eth chain connection configuration."""
+"""Defines the postgres configuration from env vars."""
 
 import os
 from dataclasses import dataclass
