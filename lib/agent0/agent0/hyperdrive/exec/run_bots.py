@@ -1,3 +1,4 @@
+"""Runner script for bots"""
 from __future__ import annotations
 
 import logging
@@ -6,8 +7,7 @@ import warnings
 
 from agent0 import AccountKeyConfig
 from agent0.base.config import DEFAULT_USERNAME, AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import fund_bots
-from agent0.hyperdrive.create_and_fund_accounts import create_and_fund_user_account
+from agent0.hyperdrive import create_and_fund_user_account, fund_bots
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_url

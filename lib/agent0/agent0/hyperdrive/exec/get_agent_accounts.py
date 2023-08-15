@@ -1,13 +1,11 @@
 """Script for loading ETH & Elfpy agents with trading policies"""
 from __future__ import annotations
 
-import json
 import logging
-import os
 
 import eth_utils
 from agent0 import AccountKeyConfig
-from agent0.base.config import AgentConfig, Budget
+from agent0.base.config import AgentConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
 from eth_account.account import Account
 from ethpy.base import get_account_balance, smart_contract_read, smart_contract_transact
@@ -17,6 +15,8 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 
+# TODO consolidate config
+# pylint: disable=too-many-arguments
 def get_agent_accounts(
     web3: Web3,
     agent_config: list[AgentConfig],
