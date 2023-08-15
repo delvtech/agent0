@@ -17,7 +17,9 @@ if TYPE_CHECKING:
     from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
     from numpy.random._generator import Generator as NumpyGenerator
 
-DEVELOP = False
+DEVELOP = True
+# Define the unique env filename to use for this script
+ENV_FILE = "example_bot.account.env"
 
 
 # Build custom policy
@@ -177,13 +179,11 @@ agent_config: list[AgentConfig] = [
 ]
 
 # Build accounts env var
-# TODO this function writes a user defined env file location.
+# This function writes a user defined env file location.
 # If it doesn't exist, create it based on agent_config
+# (If develop is False, will clean exit and print instructions on how to fund bot)
 # If it does exist, read it in and use it
-account_key_config = initialize_accounts(agent_config, random_seed=env_config.random_seed, develop=DEVELOP)
+account_key_config = initialize_accounts(agent_config, ENV_FILE, random_seed=env_config.random_seed, develop=DEVELOP)
 
-# Run the bot
-# (if develop is off, print instructions on adding in user private key and running script to fund bots and exit).
-# Note during the trading competition, running the bots will fail until you fund the bot via script
-# The script takes in as a parameter the env file, and funds the bots from the user key
+# Run bots
 run_bots(env_config, agent_config, account_key_config, develop=DEVELOP)
