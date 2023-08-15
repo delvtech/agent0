@@ -50,6 +50,9 @@ __pypackages__/
 
 # Environments
 .env
+accounts.env
+eth.env
+postgres.env
 .venv
 env/
 venv/
