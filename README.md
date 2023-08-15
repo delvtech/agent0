@@ -11,11 +11,14 @@ The language used in this code and documentation is not intended to, and does no
 Documentation can be found [here](https://elfpy.delv.tech).
 
 ## Packages
+
 Our current supported packages are:
+
 - agent0 ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/agent0/README.md))
 - chainsync ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/chainsync/README.md))
 - elfpy ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/elfpy/README.md))
 - ethpy ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/ethpy/README.md))
+- pypechain ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/pypechain/README.md))
 
 ## Install
 
@@ -73,9 +76,11 @@ In that example, the internal representation is `8`, so casting it to a float wo
 To understand more, we recommend that you study the fixed point tests and source implementation in `elfpy/math/`.
 
 ## Modifying configuration for agent deployment
+
 Follow `lib/agent0/README.md` for agent deployment.
 
 ## Data pipeline
+
 The data pipeline queries the running chain and exports data to a postgres database. The `infra` repository spins up a local postgres instance via Docker, and the data pipeline will point to this by default. Optionally, you can also configure the backend database by specifying the following environmental variables (for example, in a `.env` file in the base of the repo):
 
 ```bash

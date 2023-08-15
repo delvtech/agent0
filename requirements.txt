@@ -3,3 +3,4 @@
 -e lib/agent0[base]
 -e lib/chainsync[base]
 -e lib/ethpy[base]
+-e lib/pypechain[base]
