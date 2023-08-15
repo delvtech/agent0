@@ -37,6 +37,8 @@ class EnvironmentConfig(types.FrozenClass):
     max_bytes: int = DEFAULT_LOG_MAXBYTES  # int(2e6) or 2MB
     # int to be used for the random seed
     random_seed: int = 1
+    # username registeration url
+    username_register_url: str = "http://localhost:5002"
     # abi filenames
     hyperdrive_abi: str = "IHyperdrive"
     base_abi: str = "ERC20Mintable"

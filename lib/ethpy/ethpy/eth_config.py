@@ -25,8 +25,7 @@ class EthConfig:
     # pylint: disable=invalid-name
     ARTIFACTS_URL: str = "http://localhost:8080"
     RPC_URL: str = "http://localhost:8545"
-    ABI_DIR: str = "./packages/hyperdrive/src/"
-    USERNAME_REGISTER_URL: str = "http://localhost:5002"
+    ABI_DIR: str = "./packages/hyperdrive/src/abis"
 
 
 def build_eth_config() -> EthConfig:
@@ -44,7 +43,6 @@ def build_eth_config() -> EthConfig:
     artifacts_url = os.getenv("ARTIFACTS_URL")
     rpc_url = os.getenv("RPC_URL")
     abi_dir = os.getenv("ABI_DIR")
-    username_register_url = os.getenv("USERNAME_REGISTER_URL")
 
     arg_dict = {}
     if artifacts_url is not None:
@@ -53,6 +51,4 @@ def build_eth_config() -> EthConfig:
         arg_dict["RPC_URL"] = rpc_url
     if abi_dir is not None:
         arg_dict["ABI_DIR"] = abi_dir
-    if username_register_url is not None:
-        arg_dict["USERNAME_REGISTER_URL"] = username_register_url
     return EthConfig(**arg_dict)

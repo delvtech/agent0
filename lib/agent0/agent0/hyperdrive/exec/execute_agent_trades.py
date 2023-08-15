@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, NoReturn
 
 import eth_utils
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy import types
 from elfpy.markets.hyperdrive import HyperdriveMarket
 from elfpy.types import Quantity, TokenType
