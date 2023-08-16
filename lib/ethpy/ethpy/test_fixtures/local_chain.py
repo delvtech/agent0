@@ -5,6 +5,8 @@ from typing import Any, Generator
 
 import pytest
 from ethpy.base import initialize_web3_with_http_provider
+from ethpy.hyperdrive.addresses import HyperdriveAddresses
+from web3 import Web3
 
 from .deploy_hyperdrive import deploy_and_initialize_hyperdrive, deploy_hyperdrive_factory, initialize_deploy_account
 
@@ -41,7 +43,7 @@ def local_chain() -> Generator[str, Any, Any]:
 
 
 @pytest.fixture(scope="function")
-def hyperdrive_contract_address(local_chain: str) -> str:
+def hyperdrive_contract_addresses(local_chain: str) -> HyperdriveAddresses:
     """Initializes hyperdrive on a local anvil chain for testing.
     Returns the hyperdrive contract address.
 
@@ -49,4 +51,11 @@ def hyperdrive_contract_address(local_chain: str) -> str:
     web3 = initialize_web3_with_http_provider(local_chain, reset_provider=False)
     account = initialize_deploy_account(web3)
     base_token_contract, factory_contract = deploy_hyperdrive_factory(local_chain, account)
-    return deploy_and_initialize_hyperdrive(web3, base_token_contract, factory_contract, account)
+    hyperdrive_addr = deploy_and_initialize_hyperdrive(web3, base_token_contract, factory_contract, account)
+
+    return HyperdriveAddresses(
+        base_token=Web3.to_checksum_address(base_token_contract.address),
+        hyperdrive_factory=Web3.to_checksum_address(factory_contract.address),
+        mock_hyperdrive=Web3.to_checksum_address(hyperdrive_addr),
+        mock_hyperdrive_math="not_used",
+    )
