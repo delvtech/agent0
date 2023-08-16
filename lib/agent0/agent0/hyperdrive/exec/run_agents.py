@@ -9,7 +9,7 @@ from agent0 import AccountKeyConfig
 from agent0.base.config import DEFAULT_USERNAME, AgentConfig, EnvironmentConfig
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_url
+from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_url
 
 from .create_and_fund_user_account import create_and_fund_user_account
 from .fund_agents import fund_agents

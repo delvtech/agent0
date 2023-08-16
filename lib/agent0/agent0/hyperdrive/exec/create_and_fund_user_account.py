@@ -7,9 +7,7 @@ from agent0.hyperdrive.agents import HyperdriveAgent
 from eth_account.account import Account
 from ethpy import EthConfig
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
-from ethpy.hyperdrive.addresses import HyperdriveAddresses
-
-from .setup_experiment import get_web3_and_contracts
+from ethpy.hyperdrive import HyperdriveAddresses, get_web3_and_hyperdrive_contracts
 
 
 def create_and_fund_user_account(
@@ -38,7 +36,7 @@ def create_and_fund_user_account(
     user_private_key = make_private_key(extra_entropy="FAKE USER")  # argument value can be any str
     user_account = HyperdriveAgent(Account().from_key(user_private_key))
 
-    web3, base_token_contract, _ = get_web3_and_contracts(eth_config, contract_addresses)
+    web3, base_token_contract, _ = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
 
     eth_balance = sum((int(budget) for budget in account_key_config.AGENT_ETH_BUDGETS)) * 2  # double for good measure
     _ = set_anvil_account_balance(web3, user_account.address, eth_balance)

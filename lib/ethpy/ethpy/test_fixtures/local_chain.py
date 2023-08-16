@@ -5,7 +5,7 @@ from typing import Any, Generator
 
 import pytest
 from ethpy.base import initialize_web3_with_http_provider
-from ethpy.hyperdrive.addresses import HyperdriveAddresses
+from ethpy.hyperdrive import HyperdriveAddresses
 from web3 import Web3
 
 from .deploy_hyperdrive import deploy_and_initialize_hyperdrive, deploy_hyperdrive_factory, initialize_deploy_account
