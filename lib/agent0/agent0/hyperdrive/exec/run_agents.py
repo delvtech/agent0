@@ -11,7 +11,7 @@ from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_url
 
-from .create_and_fund_accounts import create_and_fund_user_account
+from .create_and_fund_user_account import create_and_fund_user_account
 from .fund_agents import fund_agents
 from .setup_experiment import register_username, setup_experiment
 from .trade_loop import trade_if_new_block
