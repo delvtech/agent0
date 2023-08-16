@@ -127,19 +127,19 @@ def build_account_key_config_from_agent_config(
         for _ in range(agent_info.number_of_agents):
             agent_private_keys.append(make_private_key())
 
-            if isinstance(agent_info.eth_budget, Budget):
-                agent_eth_budgets.append(agent_info.eth_budget.sample_budget(rng).scaled_value)
-            elif isinstance(agent_info.eth_budget, FixedPoint):
-                agent_eth_budgets.append(agent_info.eth_budget.scaled_value)
+            if isinstance(agent_info.eth_budget_wei, Budget):
+                agent_eth_budgets.append(agent_info.eth_budget_wei.sample_budget(rng).scaled_value)
+            elif isinstance(agent_info.eth_budget_wei, int):
+                agent_eth_budgets.append(agent_info.eth_budget_wei)
             else:
-                raise ValueError(f"Unknown eth_budget type: {type(agent_info.eth_budget)}")
+                raise ValueError(f"Unknown eth_budget_wei type: {type(agent_info.eth_budget_wei)}")
 
-            if isinstance(agent_info.base_budget, Budget):
-                agent_base_budgets.append(agent_info.base_budget.sample_budget(rng).scaled_value)
-            elif isinstance(agent_info.base_budget, FixedPoint):
-                agent_base_budgets.append(agent_info.base_budget.scaled_value)
+            if isinstance(agent_info.base_budget_wei, Budget):
+                agent_base_budgets.append(agent_info.base_budget_wei.sample_budget(rng).scaled_value)
+            elif isinstance(agent_info.base_budget_wei, int):
+                agent_base_budgets.append(agent_info.base_budget_wei)
             else:
-                raise ValueError(f"Unknown base_budget type: {type(agent_info.base_budget)}")
+                raise ValueError(f"Unknown base_budget_wei type: {type(agent_info.base_budget_wei)}")
 
     return AccountKeyConfig(
         USER_KEY=user_key,

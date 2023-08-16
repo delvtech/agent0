@@ -34,9 +34,9 @@ class CycleTradesPolicy(HyperdrivePolicy):
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # Add additional parameters for custom policy here
-        static_trade_amount: FixedPoint = FixedPoint("100"),
+        static_trade_amount_wei: int = int(100e18),  # 100 base
     ):
-        self.static_trade_amount = static_trade_amount
+        self.static_trade_amount_wei = static_trade_amount_wei
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
@@ -52,7 +52,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=self.static_trade_amount,
+                        trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
                         wallet=wallet,
                     ),
                 )
@@ -64,7 +64,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=self.static_trade_amount,
+                        trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
                         wallet=wallet,
                     ),
                 )
@@ -76,7 +76,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_SHORT,
-                        trade_amount=self.static_trade_amount,
+                        trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
                         wallet=wallet,
                     ),
                 )
@@ -145,7 +145,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=self.static_trade_amount,
+                        trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
                         wallet=wallet,
                     ),
                 )
@@ -172,9 +172,9 @@ agent_config: list[AgentConfig] = [
         policy=CycleTradesPolicy,
         number_of_agents=1,
         slippage_tolerance=FixedPoint(0.0001),
-        base_budget=FixedPoint(10000),
-        eth_budget=FixedPoint(10),
-        init_kwargs={"static_trade_amount": FixedPoint(100)},
+        base_budget_wei=int(10_000e18),  # 10k base
+        eth_budget_wei=int(10e18),  # 10 base
+        init_kwargs={"static_trade_amount_wei": int(100e18)},  # 100 base static trades
     ),
 ]
 

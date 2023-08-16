@@ -44,8 +44,8 @@ def fund_bots(
 
     web3 = initialize_web3_with_http_provider(eth_config.RPC_URL, reset_provider=False)
     abi_file_loc = os.path.join(
-        os.path.join(eth_config.ABI_DIR, "ERC20Mintable" + ".sol"),
-        "ERC20Mintable" + ".json",
+        os.path.join(eth_config.ABI_DIR, "ERC20Mintable.sol"),
+        "ERC20Mintable.json",
     )
     base_contract_abi = load_abi_from_file(abi_file_loc)
 
