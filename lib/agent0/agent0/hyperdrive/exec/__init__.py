@@ -9,7 +9,7 @@ from .execute_agent_trades import (
     async_smart_contract_transact,
     async_transact_and_parse_logs,
 )
-from .fund_bots import fund_bots
+from .fund_agents import fund_agents
 from .get_agent_accounts import get_agent_accounts
 from .run_bots import run_bots
 from .setup_experiment import get_web3_and_contracts, register_username, setup_experiment

@@ -5,8 +5,8 @@ import logging
 import os
 
 from agent0 import build_account_config_from_env
-from agent0.hyperdrive import fund_bots
 from agent0.hyperdrive.agents import HyperdriveAgent
+from agent0.hyperdrive.exec import fund_agents
 from eth_account.account import Account
 from ethpy import build_eth_config
 from ethpy.hyperdrive.addresses import fetch_hyperdrive_address_from_url
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     contract_addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
     user_account = HyperdriveAgent(Account().from_key(account_key_config.USER_KEY))
 
-    fund_bots(user_account, eth_config, account_key_config, contract_addresses)
+    fund_agents(user_account, eth_config, account_key_config, contract_addresses)
 
     # User key could have been passed in here, rewrite the accounts env file
     if user_key is not None:

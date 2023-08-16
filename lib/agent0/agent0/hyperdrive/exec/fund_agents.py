@@ -18,7 +18,7 @@ from ethpy.base import (
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 
 
-def fund_bots(
+def fund_agents(
     user_account: HyperdriveAgent,
     eth_config: EthConfig,
     account_key_config: AccountKeyConfig,

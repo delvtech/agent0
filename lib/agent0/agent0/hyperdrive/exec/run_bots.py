@@ -12,7 +12,7 @@ from ethpy import EthConfig, build_eth_config
 from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_url
 
 from .create_and_fund_accounts import create_and_fund_user_account
-from .fund_bots import fund_bots
+from .fund_agents import fund_agents
 from .setup_experiment import register_username, setup_experiment
 from .trade_loop import trade_if_new_block
 
@@ -66,7 +66,7 @@ def run_bots(
     if develop:  # setup env automatically & fund the bots
         # exposing the user account for debugging purposes
         user_account = create_and_fund_user_account(eth_config, account_key_config, contract_addresses)
-        fund_bots(
+        fund_agents(
             user_account, eth_config, account_key_config, contract_addresses
         )  # uses env variables created above as inputs
 
