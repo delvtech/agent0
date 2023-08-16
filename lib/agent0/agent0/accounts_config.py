@@ -58,13 +58,33 @@ class AccountKeyConfig:
 
 
 def initialize_accounts(
-    agent_config: list[AgentConfig], env_file: str | None = None, random_seed: int = 1, develop: bool = False
+    agent_config: list[AgentConfig],
+    env_file: str | None = None,
+    random_seed: int = 1,
+    develop: bool = False,
 ) -> AccountKeyConfig:
     """
     Build or load an accounts environment file.
     If it doesn't exist, create it based on agent_config.
     (if develop is off, print instructions on adding in user private key and running script to fund agents).
     If it does exist, read it in and use it.
+
+    Arguments
+    ---------
+    agent_config: list[AgentConfig]
+        The list of agent configs that define policies and arguments.
+    env_file: str | None
+        The path to the env file to write/load from. Defaults to `accounts.env`.
+    random_seed: int
+        Random seed to use for initializing budgets.
+    develop: bool
+        Flag for development mode. If False, will exit if env_file doesn't exist and print instructions
+        on how to fund bot.
+
+    Returns
+    -------
+    AccountKeyConfig
+        The account config object linked to the env file.
     """
     # Default location
     if env_file is None:
@@ -102,21 +122,23 @@ def initialize_accounts(
 
 
 def build_account_key_config_from_agent_config(
-    agent_configs: list[AgentConfig], random_seed: int, user_key: str | None = None
+    agent_configs: list[AgentConfig], random_seed: int = 1, user_key: str | None = None
 ) -> AccountKeyConfig:
     """Build an Account Config from a provided agent config.
 
     Arguments
     --------
+    agent_config: list[AgentConfig]
+        The list of agent configs that define policies and arguments.
+    random_seed: int
+        The seed to initialize the random generator to pass for each bot
     user_key: str
         The provided user key to use
-    agent_configs: list[AgentConfig]
-        The provided agent configs
 
     Returns
     -------
-    AccountConfig
-        Config settings required to connect to the eth node
+    AccountKeyConfig
+        The account config object linked to the env file.
     """
     rng = np.random.default_rng(random_seed)
     agent_private_keys = []
@@ -150,6 +172,13 @@ def build_account_key_config_from_agent_config(
 
 def build_account_config_from_env(env_file: str | None = None, user_key: str | None = None) -> AccountKeyConfig:
     """Build an Account Config from environmental variables.
+
+    Arguments
+    --------
+    env_file: str | None
+        The path to the env file to load from. Defaults to `accounts.env`.
+    user_key: str
+        The provided user key to use
 
     Returns
     -------
