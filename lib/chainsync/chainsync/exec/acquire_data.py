@@ -11,10 +11,8 @@ from chainsync.db.hyperdrive import (
     get_latest_block_number_from_pool_info_table,
     init_data_chain_to_db,
 )
-from elfpy.utils import logs as log_utils
 from eth_typing import URI, BlockNumber
 from eth_utils import address
-from ethpy import build_eth_config
 from ethpy.base import initialize_web3_with_http_provider, load_all_abis
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
 from ethpy.hyperdrive.interface import get_hyperdrive_contract
@@ -24,12 +22,13 @@ from web3.contract.contract import Contract
 _SLEEP_AMOUNT = 1
 
 
-def main(
+def acquire_data(
     artifacts_url: str,
     rpc_url: URI | str,
     abi_dir: str,
     start_block: int,
     lookback_block_limit: int,
+    overwrite_session: Session | None = None,
 ):
     """Execute the data acquisition pipeline.
 
@@ -48,7 +47,11 @@ def main(
     """
     ## Initialization
     # postgres session
-    session = initialize_session()
+    if overwrite_session is not None:
+        session = overwrite_session
+    else:
+        session = initialize_session()
+
     # web3 provider
     web3: Web3 = initialize_web3_with_http_provider(rpc_url, request_kwargs={"timeout": 60})
     # send a request to the local server to fetch the deployed contract addresses and
@@ -105,22 +108,3 @@ def main(
                 continue
             data_chain_to_db(web3, base_contract, hyperdrive_contract, block_number, session)
         time.sleep(_SLEEP_AMOUNT)
-
-
-if __name__ == "__main__":
-    # setup constants
-    START_BLOCK = 0
-    # Look back limit for backfilling
-    LOOKBACK_BLOCK_LIMIT = 100000
-
-    # Load parameters from env vars if they exist
-    config = build_eth_config()
-
-    log_utils.setup_logging(".logging/acquire_data.log", log_stdout=True)
-    main(
-        config.ARTIFACTS_URL,
-        config.RPC_URL,
-        config.ABI_DIR,
-        START_BLOCK,
-        LOOKBACK_BLOCK_LIMIT,
-    )
