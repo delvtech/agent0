@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, Budget, EnvironmentConfig
-from agent0.hyperdrive.exec import run_bots
+from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import Policies
 from fixedpointmath import FixedPoint
 
@@ -75,4 +75,4 @@ account_key_config = initialize_accounts(
 )
 
 # Run bots
-run_bots(env_config, agent_config, account_key_config, develop=DEVELOP)
+run_agents(env_config, agent_config, account_key_config, develop=DEVELOP)

@@ -20,7 +20,7 @@ from .trade_loop import trade_if_new_block
 # TODO consolidate various configs into one config?
 # Unsure if above is necessary, as long as key agent0 interface is concise.
 # pylint: disable=too-many-arguments
-def run_bots(
+def run_agents(
     environment_config: EnvironmentConfig,
     agent_config: list[AgentConfig],
     account_key_config: AccountKeyConfig,

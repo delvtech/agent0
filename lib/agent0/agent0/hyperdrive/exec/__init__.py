@@ -11,6 +11,6 @@ from .execute_agent_trades import (
 )
 from .fund_agents import fund_agents
 from .get_agent_accounts import get_agent_accounts
-from .run_bots import run_bots
+from .run_agents import run_agents
 from .setup_experiment import get_web3_and_contracts, register_username, setup_experiment
 from .trade_loop import get_wait_for_new_block, trade_if_new_block

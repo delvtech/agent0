@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_bots
+from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy.types import MarketType, Trade
@@ -186,4 +186,4 @@ agent_config: list[AgentConfig] = [
 account_key_config = initialize_accounts(agent_config, ENV_FILE, random_seed=env_config.random_seed, develop=DEVELOP)
 
 # Run bots
-run_bots(env_config, agent_config, account_key_config, develop=DEVELOP)
+run_agents(env_config, agent_config, account_key_config, develop=DEVELOP)
