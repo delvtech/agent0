@@ -6,6 +6,7 @@ from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.exec import run_agents
+from chainsync.exec import acquire_data
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses
 from fixedpointmath import FixedPoint
@@ -81,8 +82,9 @@ class TestBotToDb:
         # Build custom eth config pointing to local chain
         eth_config = EthConfig(
             # Artifacts_url isn't used here, as we explicitly set addresses and passed to run_bots
+            ARTIFACTS_URL="not_used",
             RPC_URL=local_chain,
-            # Default abi dir
+            # Using default abi dir
         )
 
         # Run bots
@@ -93,13 +95,20 @@ class TestBotToDb:
                 account_key_config,
                 develop=True,
                 eth_config=eth_config,
-                override_addresses=hyperdrive_contract_addresses,
+                contract_addresses=hyperdrive_contract_addresses,
             )
         except AgentDoneException:
             # Using this exception to stop the agents,
             # so this exception is expected on test pass
             pass
 
-        # Run acquire data to get data from chain to db
+        # Run acquire data to get data from chain to db in subprocess
+        acquire_data(
+            eth_config=eth_config,
+            db_session=db_session,
+            contract_addresses=hyperdrive_contract_addresses,
+            # Exit the script after catching up to the chain
+            exit_on_catch_up=True,
+        )
 
         # TODO ensure all trades are in the db
