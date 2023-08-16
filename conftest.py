@@ -1,5 +1,7 @@
 # Hack to allow for vscode debugger to throw exception immediately
 # instead of allowing pytest to catch the exception and report
+# Based on https://stackoverflow.com/questions/62419998/how-can-i-get-pytest-to-not-catch-exceptions/62563106#62563106
+
 # Use this in conjunction with the following launch.json configuration:
 #      {
 #        "name": "Debug Tests",
