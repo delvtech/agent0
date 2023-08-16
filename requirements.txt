@@ -4,4 +4,3 @@
 -e lib/chainsync[base]
 -e lib/ethpy[base]
 -e lib/pypechain[base]
---find-links=packages/my_package/ pyperdrive
