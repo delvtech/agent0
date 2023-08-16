@@ -15,7 +15,6 @@ from .exec.setup_experiment import get_web3_and_contracts
 
 def create_and_fund_user_account(
     eth_config: EthConfig,
-    environment_config: EnvironmentConfig,
     account_key_config: AccountKeyConfig,
     contract_addresses: HyperdriveAddresses,
 ) -> HyperdriveAgent:
@@ -30,7 +29,7 @@ def create_and_fund_user_account(
     user_private_key = make_private_key(extra_entropy="FAKE USER")  # argument value can be any str
     user_account = HyperdriveAgent(Account().from_key(user_private_key))
 
-    web3, base_token_contract, _ = get_web3_and_contracts(environment_config, eth_config, contract_addresses)
+    web3, base_token_contract, _ = get_web3_and_contracts(eth_config, contract_addresses)
 
     eth_balance = sum((int(budget) for budget in account_key_config.AGENT_ETH_BUDGETS)) * 2  # double for good measure
     _ = set_anvil_account_balance(web3, user_account.address, eth_balance)

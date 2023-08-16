@@ -66,7 +66,7 @@ def run_bots(
         # exposing the user account for debugging purposes
         user_account = create_and_fund_user_account(eth_config, account_key_config, contract_addresses)
         fund_bots(
-            user_account, eth_config, environment_config.base_abi, account_key_config, contract_addresses
+            user_account, eth_config, account_key_config, contract_addresses
         )  # uses env variables created above as inputs
 
     web3, _, hyperdrive_contract, agent_accounts = setup_experiment(
