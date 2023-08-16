@@ -9,7 +9,6 @@ from dataclasses import dataclass
 
 import numpy as np
 from dotenv import load_dotenv
-from fixedpointmath import FixedPoint
 
 from .base.config import AgentConfig, Budget
 from .base.make_key import make_private_key
