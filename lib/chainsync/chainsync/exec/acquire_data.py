@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import time
 
 from chainsync.db.base import initialize_session
