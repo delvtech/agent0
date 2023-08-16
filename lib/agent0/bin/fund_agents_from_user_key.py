@@ -5,28 +5,28 @@ import logging
 import os
 
 from agent0 import build_account_config_from_env
-from agent0.hyperdrive import fund_bots
 from agent0.hyperdrive.agents import HyperdriveAgent
+from agent0.hyperdrive.exec import fund_agents
 from eth_account.account import Account
 from ethpy import build_eth_config
 from ethpy.hyperdrive.addresses import fetch_hyperdrive_address_from_url
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        prog="fund_bots_from_user_key",
-        description="Script for funding bots from a user key, given a written env file.",
+        prog="fund_agents_from_user_key",
+        description="Script for funding agents from a user key, given a written env file.",
         epilog=(
             "Run the script with a user's private key as argument to include it in the output."
             "Make sure you set the config variables in lib/agent0/agent0/hyperdrive/config/runner_config.py "
             "before running this script."
-            "See the README on https://github.com/delvtech/elf-simulations/eth_bots/ for more implementation details"
+            "See the README on https://github.com/delvtech/elf-simulations/agent0/ for more implementation details"
         ),
     )
     parser.add_argument(
         "-u",
         "--user_key",
         nargs=1,
-        help="The user's private key for funding bots.",
+        help="The user's private key for funding agents.",
         action="store",
         default=[None],
     )
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     contract_addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
     user_account = HyperdriveAgent(Account().from_key(account_key_config.USER_KEY))
 
-    fund_bots(user_account, eth_config, account_key_config, contract_addresses)
+    fund_agents(user_account, eth_config, account_key_config, contract_addresses)
 
     # User key could have been passed in here, rewrite the accounts env file
     if user_key is not None:

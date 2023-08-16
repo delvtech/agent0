@@ -1,9 +1,17 @@
-# APE temprorary until we get the GH actions & workflow set up
-# ape-config.yaml
+# Environment variables
+*.env
 
-# for create configuration jsons to run bot scripts
-.configs
-bots_config.default.json
+# Python environments
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+elf-env
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+.python-version
+__pypackages__/
 
 # default logging directory
 .logging
@@ -18,45 +26,18 @@ figs
 hyperdrive_solidity
 agent_0
 
-# Ape
+# ape, compiler, pytest cache
 .cache
-
-# Byte-compiled / optimized / DLL files
 __pycache__/
-
-# pytest
 .pytest_cache
 
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# pyenv
-.python-version
-
 # coverage
 .coverage
 coverage.xml
 htmlcov
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
-
-# Environments
-*.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-elf-env
 
 # documentation
 docs/source/_autosummary

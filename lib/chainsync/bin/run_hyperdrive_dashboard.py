@@ -70,9 +70,9 @@ while True:
     current_wallet.delta = current_wallet.delta.astype(float)
     current_wallet.pnl = current_wallet.pnl.astype(float)
     current_wallet.closeout_pnl = current_wallet.closeout_pnl.astype(float)
-    ## TODO: FIX BOT RESTARTS
-    ## Add initial budget column to bots
-    ## when bot restarts, use initial budget for bot's wallet address to set "budget" in Agent.Wallet
+    ## TODO: FIX AGENT RESTARTS
+    ## Add initial budget column to agents
+    ## when agent restarts, use initial budget for agent's wallet address to set "budget" in Agent.Wallet
 
     comb_rank, ind_rank = build_leaderboard(current_returns, user_lookup)
 

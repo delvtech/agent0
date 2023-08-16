@@ -1,4 +1,4 @@
-"""Utility function for logging bot crash reports."""
+"""Utility function for logging agent crash reports."""
 from __future__ import annotations
 
 import logging

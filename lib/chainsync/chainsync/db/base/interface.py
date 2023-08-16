@@ -123,7 +123,7 @@ def close_session(session: Session) -> None:
 
 
 def add_user_map(username: str, addresses: list[str], session: Session) -> None:
-    """Add username mapping to postgres during evm_bots initialization.
+    """Add username mapping to postgres during agent initialization.
 
     Arguments
     ---------

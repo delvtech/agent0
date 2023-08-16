@@ -1,4 +1,4 @@
-"""Runner script for bots"""
+"""Runner script for agents"""
 from __future__ import annotations
 
 import logging
@@ -7,11 +7,12 @@ import warnings
 
 from agent0 import AccountKeyConfig
 from agent0.base.config import DEFAULT_USERNAME, AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import create_and_fund_user_account, fund_bots
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_url
 
+from .create_and_fund_user_account import create_and_fund_user_account
+from .fund_agents import fund_agents
 from .setup_experiment import register_username, setup_experiment
 from .trade_loop import trade_if_new_block
 
@@ -19,7 +20,7 @@ from .trade_loop import trade_if_new_block
 # TODO consolidate various configs into one config?
 # Unsure if above is necessary, as long as key agent0 interface is concise.
 # pylint: disable=too-many-arguments
-def run_bots(
+def run_agents(
     environment_config: EnvironmentConfig,
     agent_config: list[AgentConfig],
     account_key_config: AccountKeyConfig,
@@ -62,10 +63,10 @@ def run_bots(
     else:
         contract_addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
 
-    if develop:  # setup env automatically & fund the bots
+    if develop:  # setup env automatically & fund the agents
         # exposing the user account for debugging purposes
         user_account = create_and_fund_user_account(eth_config, account_key_config, contract_addresses)
-        fund_bots(
+        fund_agents(
             user_account, eth_config, account_key_config, contract_addresses
         )  # uses env variables created above as inputs
 

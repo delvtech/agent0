@@ -30,7 +30,7 @@ def get_agent_accounts(
 
     Arguments
     ---------
-    agent_config : list[BotInfo]
+    agent_config : list[AgentConfig]
         List containing all of the agent specifications
     web3 : Web3
         web3 provider object
@@ -61,9 +61,7 @@ def get_agent_accounts(
             # the agent object holds the policy, which makes decisions based
             # on the market and can produce a list of trades
             if len(account_key_config.AGENT_KEYS) < agent_count:
-                raise AssertionError(
-                    "Private keys must be specified for the eth_bots demo. Did you list enough in your .env?"
-                )
+                raise AssertionError("Private keys must be specified. Did you list them in your .env?")
             # Get the budget from the env file
             kwargs["budget"] = FixedPoint(scaled_value=agent_base_budgets[agent_count])
             kwargs["slippage_tolerance"] = agent_info.slippage_tolerance

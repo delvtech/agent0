@@ -16,9 +16,9 @@ json_schema = {
 }
 
 
-@app.route("/register_bots", methods=["POST"])
+@app.route("/register_agents", methods=["POST"])
 @expects_json(json_schema)
-def register_bots():
+def register_agents():
     """Registers a list of wallet addresses to a username via post request"""
     # TODO: validate the json
     data = request.json

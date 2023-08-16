@@ -1,4 +1,4 @@
-"""Information for creating a bot"""
+"""Information for creating an agent"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -12,7 +12,7 @@ from .budget import Budget
 
 @dataclass
 class AgentConfig:
-    """Information about a bot
+    """Information about an agent
 
     Attributes
     ----------
@@ -25,7 +25,7 @@ class AgentConfig:
     eth_budget_wei : Budget | int
         The ethereum budget for the agent in units of wei
     number_of_agents : int
-        The number of bots of this type to spin up
+        The number of agents of this type to spin up
     private_keys : list[str] | None
         list of strings, where each key contains
     init_kwargs : dict

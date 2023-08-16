@@ -1,4 +1,4 @@
-"""Script to showcase setting up and running custom bots"""
+"""Script to showcase setting up and running custom agents"""
 from __future__ import annotations
 
 import logging
@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_bots
+from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy.types import MarketType, Trade
@@ -19,13 +19,13 @@ if TYPE_CHECKING:
 
 DEVELOP = True
 # Define the unique env filename to use for this script
-ENV_FILE = "example_bot.account.env"
+ENV_FILE = "example_agent.account.env"
 
 
 # Build custom policy
-# Simple bot, opens a set of all trades for a fixed amount and closes them after
+# Simple agent, opens a set of all trades for a fixed amount and closes them after
 class CycleTradesPolicy(HyperdrivePolicy):
-    """A bot that simply cycles through all trades"""
+    """An agent that simply cycles through all trades"""
 
     # Using default parameters
     def __init__(
@@ -43,7 +43,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
-        """This bot simply opens all trades for a fixed amount and closes them after, one at a time"""
+        """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
         action_list = []
         if self.counter == 0:
             # Add liquidity
@@ -159,7 +159,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
 env_config = EnvironmentConfig(
     delete_previous_logs=False,
     halt_on_errors=True,
-    log_filename="agent0-bots",
+    log_filename="agent0-logs",
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
@@ -181,9 +181,9 @@ agent_config: list[AgentConfig] = [
 # Build accounts env var
 # This function writes a user defined env file location.
 # If it doesn't exist, create it based on agent_config
-# (If develop is False, will clean exit and print instructions on how to fund bot)
+# (If develop is False, will clean exit and print instructions on how to fund agent)
 # If it does exist, read it in and use it
 account_key_config = initialize_accounts(agent_config, ENV_FILE, random_seed=env_config.random_seed, develop=DEVELOP)
 
-# Run bots
-run_bots(env_config, agent_config, account_key_config, develop=DEVELOP)
+# Run agents
+run_agents(env_config, agent_config, account_key_config, develop=DEVELOP)

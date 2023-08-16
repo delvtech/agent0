@@ -18,12 +18,12 @@ class EnvironmentConfig(types.FrozenClass):
     # lots of configs!
     # pylint: disable=too-many-instance-attributes
 
-    # Logical username for who is running bots
+    # Logical username for who is running agents
     username: str = DEFAULT_USERNAME
     # if true, stop executing when trade errors occur
     halt_on_errors: bool = False
     # optional output filename for logging
-    log_filename: str = "agent0-bots"
+    log_filename: str = "agent0-logs"
     # log level; should be in [logging.DEBUG, logging.INFO, logging.WARNING]
     log_level: int = DEFAULT_LOG_LEVEL  # INFO
     # delete_previous_logs; if True, delete existing logs at the start of the run

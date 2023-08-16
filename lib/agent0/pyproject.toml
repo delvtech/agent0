@@ -7,7 +7,7 @@ authors = [
     { name = "Matthew Brown", email = "matt@delv.tech" },
     { name = "Sheng Lundquist", email = "sheng@delv.tech" },
 ]
-description = "Bots interface to the chain"
+description = "Agent interface for on-chain protocols."
 readme = "README.md"
 requires-python = ">=3.10, <=3.11"
 classifiers = [

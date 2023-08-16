@@ -1,1 +1,1 @@
-Reinforcement learning bots
+Reinforcement learning agents
