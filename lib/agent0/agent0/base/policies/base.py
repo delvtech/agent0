@@ -25,6 +25,8 @@ class BasePolicy(Generic[MarketState, Wallet]):
     def __init__(
         self, budget: FixedPoint, rng: NumpyGenerator | None = None, slippage_tolerance: FixedPoint | None = None
     ):
+        # TODO budget should have a flag to allow for "the budget is however much this wallet has"
+        # https://github.com/delvtech/elf-simulations/issues/827
         if not isinstance(budget, FixedPoint):
             raise TypeError(f"{budget=} must be of type `FixedPoint`")
         self.budget: FixedPoint = budget

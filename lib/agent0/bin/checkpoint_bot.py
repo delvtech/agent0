@@ -5,12 +5,13 @@ import datetime
 import logging
 import os
 import time
+from typing import Tuple
 
 from agent0.base.agents import EthAgent
 from agent0.base.config import EnvironmentConfig
-from dotenv import load_dotenv
 from elfpy.utils import logs
 from eth_account.account import Account
+from ethpy import EthConfig, build_eth_config
 from ethpy.base import (
     initialize_web3_with_http_provider,
     load_all_abis,
@@ -26,52 +27,45 @@ from web3.contract.contract import Contract
 CHECKPOINT_WAITING_PERIOD = 0.5
 
 
-def get_config() -> EnvironmentConfig:
-    """Gets the Hyperdrive configuration."""
-
-    # Load some configuration variables from the environment.
-    load_dotenv()
-    artifacts_url = os.environ.get("ARTIFACTS_URL")
-    if artifacts_url is None:
-        raise ValueError("ARTIFACTS_URL environment variable must be set")
-    rpc_url = os.environ.get("RPC_URL")
-    if rpc_url is None:
-        raise ValueError("RPC_URL environment variable must be set")
-
-    # The configuration for the checkpoint bot halts on errors and logs to stdout.
-    return EnvironmentConfig(
-        # Networking
-        artifacts_url=artifacts_url,
-        rpc_url=rpc_url,
-        # Errors
-        halt_on_errors=True,
-        # Logging
-        log_stdout=True,
-        log_level=logging.INFO,
-    )
-
-
 def does_checkpoint_exist(hyperdrive_contract: Contract, checkpoint_time: int) -> bool:
     """Checks whether or not a given checkpoint exists."""
 
     return smart_contract_read(hyperdrive_contract, "getCheckpoint", int(checkpoint_time))["sharePrice"] > 0
 
 
-def main() -> None:
-    """Runs the checkpoint bot."""
+def get_config() -> Tuple[EthConfig, EnvironmentConfig]:
+    """Gets the hyperdrive configuration."""
 
     # Get the configuration and initialize the web3 provider.
-    config = get_config()
-    web3 = initialize_web3_with_http_provider(config.rpc_url, reset_provider=False)
+    eth_config = build_eth_config()
+
+    # The configuration for the checkpoint bot halts on errors and logs to stdout.
+    env_config = EnvironmentConfig(
+        # Errors
+        halt_on_errors=True,
+        # Logging
+        log_stdout=True,
+        log_level=logging.INFO,
+    )
+    return (eth_config, env_config)
+
+
+def main() -> None:
+    """Runs the checkpoint bot."""
+    # Checkpoint bot does it's own thing
+    # pylint: disable=too-many-locals
+    eth_config, env_config = get_config()
+
+    web3 = initialize_web3_with_http_provider(eth_config.RPC_URL, reset_provider=False)
 
     # Setup logging
     logs.setup_logging(
-        log_filename=config.log_filename,
-        max_bytes=config.max_bytes,
-        log_level=config.log_level,
-        delete_previous_logs=config.delete_previous_logs,
-        log_stdout=config.log_stdout,
-        log_format_string=config.log_formatter,
+        log_filename=env_config.log_filename,
+        max_bytes=env_config.max_bytes,
+        log_level=env_config.log_level,
+        delete_previous_logs=env_config.delete_previous_logs,
+        log_stdout=env_config.log_stdout,
+        log_format_string=env_config.log_formatter,
     )
 
     # Fund the checkpoint sender with some ETH.
@@ -81,10 +75,10 @@ def main() -> None:
     logging.info("Successfully funded the sender=%s.", sender.address)
 
     # Get the Hyperdrive contract.
-    hyperdrive_abis = load_all_abis(config.abi_folder)
-    addresses = fetch_hyperdrive_address_from_url(os.path.join(config.artifacts_url, "addresses.json"))
+    hyperdrive_abis = load_all_abis(eth_config.ABI_DIR)
+    addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
     hyperdrive_contract: Contract = web3.eth.contract(
-        abi=hyperdrive_abis[config.hyperdrive_abi],
+        abi=hyperdrive_abis["IHyperdrive"],
         address=web3.to_checksum_address(addresses.mock_hyperdrive),
     )
 

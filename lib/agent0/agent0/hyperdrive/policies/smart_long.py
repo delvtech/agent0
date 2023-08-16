@@ -3,23 +3,23 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from agent0.base.policies import BasePolicy
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
-from agent0.hyperdrive.agents import HyperdriveWallet
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy import WEI
-
-# from agent0.hyperdrive import HyperdriveMarketState # TODO: use agent0 market state instead of elfpy market
-from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint, FixedPointMath
 
-if TYPE_CHECKING:
-    from numpy.random._generator import Generator as NumpyGenerator
+from .hyperdrive_policy import HyperdrivePolicy
 
+if TYPE_CHECKING:
+    from agent0.hyperdrive.agents import HyperdriveWallet
+
+    # from agent0.hyperdrive import HyperdriveMarketState # TODO: use agent0 market state instead of elfpy market
+    from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
+    from numpy.random._generator import Generator as NumpyGenerator
 # pylint: disable=too-few-public-methods
 
 
-class LongLouie(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
+class LongLouie(HyperdrivePolicy):
     """Agent that opens longs to push the fixed-rate towards the variable-rate
 
     .. note::

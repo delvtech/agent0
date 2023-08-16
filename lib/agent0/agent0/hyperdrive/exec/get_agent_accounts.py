@@ -1,11 +1,10 @@
 """Script for loading ETH & Elfpy agents with trading policies"""
 from __future__ import annotations
 
-import json
 import logging
-import os
 
 import eth_utils
+from agent0 import AccountKeyConfig
 from agent0.base.config import AgentConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
 from eth_account.account import Account
@@ -15,12 +14,14 @@ from numpy.random._generator import Generator as NumpyGenerator
 from web3 import Web3
 from web3.contract.contract import Contract
 
-# pylint: disable=too-many-locals
 
-
+# TODO consolidate various configs into one config?
+# Unsure if above is necessary, as long as key agent0 interface is concise.
+# pylint: disable=too-many-arguments
 def get_agent_accounts(
-    agent_config: list[AgentConfig],
     web3: Web3,
+    agent_config: list[AgentConfig],
+    account_key_config: AccountKeyConfig,
     base_token_contract: Contract,
     hyperdrive_address: str,
     rng: NumpyGenerator,
@@ -49,15 +50,8 @@ def get_agent_accounts(
     #   Do this for `set_anvil_account_balance`, `smart_contract_transact(mint)`, `smart_contract_transact(approve)`
     agents: list[HyperdriveAgent] = []
     num_agents_so_far: list[int] = []  # maintains the total number of agents for each agent type
-    key_string = os.environ.get("AGENT_KEYS")
-    if key_string is None:
-        raise ValueError("AGENT_KEYS environment variable must be set")
-    agent_private_keys: list[str] = json.loads(key_string)
-    #  get agent budgets
-    base_budget_string = os.environ.get("AGENT_BASE_BUDGETS")
-    if base_budget_string is None:
-        raise ValueError("AGENT_BASE_BUDGETS environment variable must be set")
-    agent_base_budgets = [int(budget) for budget in json.loads(base_budget_string)]
+    agent_base_budgets = [int(budget) for budget in account_key_config.AGENT_BASE_BUDGETS]
+
     # each agent_info object specifies one agent type and a variable number of agents of that type
     for agent_info in agent_config:
         kwargs = agent_info.init_kwargs
@@ -66,17 +60,15 @@ def get_agent_accounts(
             agent_count = policy_instance_index + sum(num_agents_so_far)
             # the agent object holds the policy, which makes decisions based
             # on the market and can produce a list of trades
-            if len(agent_private_keys) < agent_count:
+            if len(account_key_config.AGENT_KEYS) < agent_count:
                 raise AssertionError(
                     "Private keys must be specified for the eth_bots demo. Did you list enough in your .env?"
                 )
-            if len(agent_base_budgets) >= agent_count:
-                kwargs["budget"] = FixedPoint(scaled_value=agent_base_budgets[agent_count])
-            else:
-                kwargs["budget"] = agent_info.base_budget.sample_budget(rng)
+            # Get the budget from the env file
+            kwargs["budget"] = FixedPoint(scaled_value=agent_base_budgets[agent_count])
             kwargs["slippage_tolerance"] = agent_info.slippage_tolerance
             eth_agent = HyperdriveAgent(
-                Account().from_key(agent_private_keys[agent_count]), policy=agent_info.policy(**kwargs)
+                Account().from_key(account_key_config.AGENT_KEYS[agent_count]), policy=agent_info.policy(**kwargs)
             )
             if get_account_balance(web3, eth_agent.checksum_address) == 0:
                 raise AssertionError(

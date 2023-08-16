@@ -3,21 +3,22 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from agent0.base.policies import BasePolicy
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
-from agent0.hyperdrive.agents import HyperdriveWallet
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy import WEI
-
-# from agent0.hyperdrive import HyperdriveMarketState # TODO: use agent0 market state instead of elfpy market
-from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint
 
+from .hyperdrive_policy import HyperdrivePolicy
+
 if TYPE_CHECKING:
+    from agent0.hyperdrive.agents import HyperdriveWallet
+
+    # from agent0.hyperdrive import HyperdriveMarketState # TODO: use agent0 market state instead of elfpy market
+    from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
     from numpy.random._generator import Generator as NumpyGenerator
 
 
-class RandomAgent(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
+class RandomAgent(HyperdrivePolicy):
     """Random agent."""
 
     def __init__(

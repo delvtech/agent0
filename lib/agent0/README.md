@@ -44,44 +44,46 @@ These instructions can likely be followed for other unix/linux setups, however.
 
 4. run the elf-simulations tests to verify that everything installed correctly by executing `python -m pytest`. Make sure you have enabled the correct Python environment!
 
-## [optional] Step 2: Fund your bots (if you wish to fund the bots from your own wallet key):
+## Step 2: Set your configuration
 
-1. get your private key for the chain (e.g. from Anvil)
-2. modify `lib/agent0/agent0/hyperdrive/config/runner_config.py` as you see fit for your experiment.
+1. [optional] If you need to connect to a remote chain, copy `eth.env.sample` to `eth.env` and edit the host.
 
-    >**💡NOTE:**
-    >Make sure you change the URLs (e.g. to AWS or `localhost`):
-    >
-    >```python
-    >username_register_url="http://<AWS_IP>:<UNAME_PORT>"
-    >artifacts_url="http://<AWS_IP>:<ARTIFACTS_PORT>"
-    >rpc_url="http://<AWS_IP>:<RPC_PORT>"
-    >```
-    >
+2. Copy (or edit) one of the template scripts found in `lib/agent0/examples`:
 
-3. run the `lib/agent0/bin/fund_bots_from_user_key.py` script with your private key as an argument, and pipe the output to a `.env` file.
-Be careful that you've saved any important keys before overwriting `.env`!
-For example: `python lib/agent0/bin/fund_bots_from_user_key.py 0xUSER_PRIVATE_KEY > .env`
+    - `hyperdrive_bots.py` for an example running existing policies.
+    - `example_bot.py` for an example of writing and running a custom bot.
+
+   This will be the main script to run your bot.
+
+3. Set `DEVLEOP=True` flag to automatically fund your bots, or set `DEVELOP=False` and go to step 3 to fund your bots from your own wallet key.
+
+## [optional] Step 3: Fund your bots (if you wish to fund the bots from your own wallet key):
+
+1. Run the script once to generate the `ENV_FILE` as defined in the script. For example, the script will generate `example_bots.account.env`
 
     >**💡NOTE:**
-    >This will generate new environment variables for the bots and write them to the `.env` file.
+    >This will generate new environment variables for the bots and write them to the specified `ENV_FILE`.
     >The new variables are private keys as well as Base and Eth budgets for all of the agents you specified in your config.
     >This is what your `.env` file might look like after:
     >
     >```bash
-    >export USER_KEY='0xUSER_PRIVATE_KEY'
+    >export USER_KEY=
     >export AGENT_KEYS='["0xAGENT_PRIVATE_KEY"]'
     >export AGENT_BASE_BUDGETS='[3396163194603698651136]'
     >export AGENT_ETH_BUDGETS='[1000000000000000000]'
     >```
     >
-    >**CAREFUL!** In the time between steps 4 and 5, if you delete your `.env` file or otherwise lose the bot private keys, then your money is gone forever.
+    >These are the generated private keys for your bots. If you delete your `ENV_FILE` file or otherwise lose the bot private keys, then your money is gone forever.
     >Hang on to those keys!
     >
 
-## Step 3: Start trading!
+2. Run the funding script. The output of the script should print the fund command. For example,
+   ```bash
+       python lib/agent0/bin/fund_bots_from_user_key.py -u 0xUSER_PRIVATE_KEY -f example_bots.accounts.env
+   ```
+   Replace the `0xUSER_PRIVATE_KEY` in the above command with your private key for the chain (e.g., from Anvil). This is the account that will fund the bots. The script will automatically update the specified `ENV_FILE` to contain your user key, which is needed by the script.
 
-1. run `python lib/agent0/bin/run_hyperdrive_agents.py` to start trading!
 
-    >**💡NOTE:**
-    >If you skipped Step 2 then you'll need to add a `--develop` flag to automatically fund your bots.
+## Step 4: Start trading!
+
+1. run your trading script to start trading!

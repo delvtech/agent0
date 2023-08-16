@@ -1,25 +1,45 @@
 """Setup helper function for running eth bot experiments."""
 from __future__ import annotations
 
-import os
 from http import HTTPStatus
 
 import numpy as np
 import requests
-from agent0.base.config import EnvironmentConfig
+from agent0 import AccountKeyConfig
+from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
-from agent0.hyperdrive.config import get_eth_bots_config
 from agent0.hyperdrive.crash_report import setup_hyperdrive_crash_report_logging
-from agent0.hyperdrive.exec import get_agent_accounts
 from elfpy.utils import logs
+from ethpy import EthConfig
 from ethpy.base import initialize_web3_with_http_provider, load_all_abis
-from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
+from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from web3 import Web3
 from web3.contract.contract import Contract
 
+from .get_agent_accounts import get_agent_accounts
 
-def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, list[HyperdriveAgent]]:
+
+def setup_experiment(
+    eth_config: EthConfig,
+    environment_config: EnvironmentConfig,
+    agent_config: list[AgentConfig],
+    account_key_config: AccountKeyConfig,
+    contract_addresses: HyperdriveAddresses,
+) -> tuple[Web3, Contract, Contract, list[HyperdriveAgent]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
+
+    Arguments
+    ---------
+    eth_config: EthConfig
+        Configuration for urls to the rpc and artifacts.
+    environment_config: EnvironmentConfig
+        The agent's environment configuration.
+    agent_config: list[AgentConfig]
+        The list of agent configurations.
+    account_key_config: AccountKeyConfig
+        Configuration linking to the env file for storing private keys and initial budgets.
+    contract_addresses: HyperdriveAddresses
+        Configuration for defining various contract addresses.
 
     Returns
     -------
@@ -28,14 +48,13 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
             - The web3 container
             - The base token contract
             - The hyperdrive contract
-            - The environment configuration
             - A list of HyperdriveAgent objects that contain a wallet address and Elfpy Agent for determining trades
     """
-    # get the user defined config variables
-    environment_config, agent_config = get_eth_bots_config()
+
     # this random number generator should be used everywhere so that the experiment is repeatable
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
     rng = np.random.default_rng(environment_config.random_seed)
+
     # setup logging
     logs.setup_logging(
         log_filename=environment_config.log_filename,
@@ -46,21 +65,26 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
         log_format_string=environment_config.log_formatter,
     )
     setup_hyperdrive_crash_report_logging()
-    web3, base_token_contract, hyperdrive_contract = get_web3_and_contracts(environment_config)
+    web3, base_token_contract, hyperdrive_contract = get_web3_and_contracts(eth_config, contract_addresses)
     # load agent policies
     # rng is shared by the agents and can be accessed via `agent_accounts[idx].policy.rng`
-    agent_accounts = get_agent_accounts(agent_config, web3, base_token_contract, hyperdrive_contract.address, rng)
-    return web3, base_token_contract, hyperdrive_contract, environment_config, agent_accounts
+    agent_accounts = get_agent_accounts(
+        web3, agent_config, account_key_config, base_token_contract, hyperdrive_contract.address, rng
+    )
+    return web3, base_token_contract, hyperdrive_contract, agent_accounts
 
 
-def get_web3_and_contracts(environment_config: EnvironmentConfig) -> tuple[Web3, Contract, Contract]:
+def get_web3_and_contracts(
+    eth_config: EthConfig, contract_addresses: HyperdriveAddresses
+) -> tuple[Web3, Contract, Contract]:
     """Get the web3 container and the ERC20Base and Hyperdrive contracts.
 
     Arguments
     ---------
-    environment_config : EnvironmentConfig
-        An instantiated environment config with the appropriate URLs set
-
+    eth_config: EthConfig
+        Configuration for urls to the rpc and artifacts.
+    contract_addresses: HyperdriveAddresses
+        Configuration for defining various contract addresses.
 
     Returns
     -------
@@ -71,24 +95,34 @@ def get_web3_and_contracts(environment_config: EnvironmentConfig) -> tuple[Web3,
             - The hyperdrive contract
     """
     # point to chain env
-    web3 = initialize_web3_with_http_provider(environment_config.rpc_url, reset_provider=False)
+    web3 = initialize_web3_with_http_provider(eth_config.RPC_URL, reset_provider=False)
     # setup base contract interface
-    abis = load_all_abis(environment_config.abi_folder)
-    addresses = fetch_hyperdrive_address_from_url(os.path.join(environment_config.artifacts_url, "addresses.json"))
+    abis = load_all_abis(eth_config.ABI_DIR)
     # set up the ERC20 contract for minting base tokens
+    # TODO is there a better way to pass in base and hyperdrive abi?
     base_token_contract: Contract = web3.eth.contract(
-        abi=abis[environment_config.base_abi], address=web3.to_checksum_address(addresses.base_token)
+        abi=abis["ERC20Mintable"], address=web3.to_checksum_address(contract_addresses.base_token)
     )
     # set up hyperdrive contract
     hyperdrive_contract: Contract = web3.eth.contract(
-        abi=abis[environment_config.hyperdrive_abi],
-        address=web3.to_checksum_address(addresses.mock_hyperdrive),
+        abi=abis["IHyperdrive"],
+        address=web3.to_checksum_address(contract_addresses.mock_hyperdrive),
     )
     return web3, base_token_contract, hyperdrive_contract
 
 
 def register_username(register_url: str, wallet_addrs: list[str], username: str) -> None:
-    """Registers the username with the flask server."""
+    """Registers the username with the flask server.
+
+    Arguments
+    ---------
+    register_url: str
+        The endpoint for the flask server.
+    wallet_addrs: list[str]
+        The list of wallet addresses to register.
+    username: str
+        The username to register the wallet addresses under.
+    """
     # TODO: use the json schema from the server.
     json_data = {"wallet_addrs": wallet_addrs, "username": username}
     result = requests.post(f"{register_url}/register_bots", json=json_data, timeout=3)
