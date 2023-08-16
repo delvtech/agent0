@@ -78,7 +78,7 @@ def main() -> None:
     hyperdrive_abis = load_all_abis(eth_config.ABI_DIR)
     addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
     hyperdrive_contract: Contract = web3.eth.contract(
-        abi=hyperdrive_abis[env_config.hyperdrive_abi],
+        abi=hyperdrive_abis["IHyperdrive"],
         address=web3.to_checksum_address(addresses.mock_hyperdrive),
     )
 

@@ -48,8 +48,7 @@ if __name__ == "__main__":
     contract_addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
     user_account = HyperdriveAgent(Account().from_key(account_key_config.USER_KEY))
 
-    # TODO We hardcode ERC20Mintable here as the base contract name, since we don't have access to env_config here
-    fund_bots(user_account, eth_config, "ERC20Mintable", account_key_config, contract_addresses)
+    fund_bots(user_account, eth_config, account_key_config, contract_addresses)
 
     # User key could have been passed in here, rewrite the accounts env file
     if user_key is not None:

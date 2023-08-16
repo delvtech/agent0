@@ -21,7 +21,6 @@ from ethpy.hyperdrive.addresses import HyperdriveAddresses
 def fund_bots(
     user_account: HyperdriveAgent,
     eth_config: EthConfig,
-    base_contract_name: str,
     account_key_config: AccountKeyConfig,
     contract_addresses: HyperdriveAddresses,
 ):
@@ -32,8 +31,8 @@ def fund_bots(
 
     web3 = initialize_web3_with_http_provider(eth_config.RPC_URL, reset_provider=False)
     abi_file_loc = os.path.join(
-        os.path.join(eth_config.ABI_DIR, base_contract_name + ".sol"),
-        base_contract_name + ".json",
+        os.path.join(eth_config.ABI_DIR, "ERC20Mintable" + ".sol"),
+        "ERC20Mintable" + ".json",
     )
     base_contract_abi = load_abi_from_file(abi_file_loc)
 

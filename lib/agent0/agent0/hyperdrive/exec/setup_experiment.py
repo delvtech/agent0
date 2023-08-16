@@ -52,9 +52,7 @@ def setup_experiment(
         log_format_string=environment_config.log_formatter,
     )
     setup_hyperdrive_crash_report_logging()
-    web3, base_token_contract, hyperdrive_contract = get_web3_and_contracts(
-        environment_config, eth_config, contract_addresses
-    )
+    web3, base_token_contract, hyperdrive_contract = get_web3_and_contracts(eth_config, contract_addresses)
     # load agent policies
     # rng is shared by the agents and can be accessed via `agent_accounts[idx].policy.rng`
     agent_accounts = get_agent_accounts(
@@ -63,9 +61,7 @@ def setup_experiment(
     return web3, base_token_contract, hyperdrive_contract, agent_accounts
 
 
-def get_web3_and_contracts(
-    environment_config: EnvironmentConfig, eth_config: EthConfig, addresses: HyperdriveAddresses
-) -> tuple[Web3, Contract, Contract]:
+def get_web3_and_contracts(eth_config: EthConfig, addresses: HyperdriveAddresses) -> tuple[Web3, Contract, Contract]:
     """Get the web3 container and the ERC20Base and Hyperdrive contracts.
 
     Arguments
@@ -89,11 +85,11 @@ def get_web3_and_contracts(
     # set up the ERC20 contract for minting base tokens
     # TODO is there a better way to pass in base and hyperdrive abi?
     base_token_contract: Contract = web3.eth.contract(
-        abi=abis[environment_config.base_abi], address=web3.to_checksum_address(addresses.base_token)
+        abi=abis["ERC20Mintable"], address=web3.to_checksum_address(addresses.base_token)
     )
     # set up hyperdrive contract
     hyperdrive_contract: Contract = web3.eth.contract(
-        abi=abis[environment_config.hyperdrive_abi],
+        abi=abis["IHyperdrive"],
         address=web3.to_checksum_address(addresses.mock_hyperdrive),
     )
     return web3, base_token_contract, hyperdrive_contract
