@@ -7,11 +7,12 @@ import warnings
 
 from agent0 import AccountKeyConfig
 from agent0.base.config import DEFAULT_USERNAME, AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import create_and_fund_user_account, fund_bots
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_url
 
+from .create_and_fund_accounts import create_and_fund_user_account
+from .fund_bots import fund_bots
 from .setup_experiment import register_username, setup_experiment
 from .trade_loop import trade_if_new_block
 
