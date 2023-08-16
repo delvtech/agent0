@@ -15,7 +15,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 
-# TODO consolidate config
+# TODO consolidate various configs into one config?
 # pylint: disable=too-many-arguments
 def get_agent_accounts(
     web3: Web3,

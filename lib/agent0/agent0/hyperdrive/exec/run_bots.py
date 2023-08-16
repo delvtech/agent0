@@ -16,7 +16,8 @@ from .setup_experiment import register_username, setup_experiment
 from .trade_loop import trade_if_new_block
 
 
-# TODO consolidate config
+# TODO consolidate various configs into one config?
+# Unsure if above is necessary, as long as key agent0 interface is concise.
 # pylint: disable=too-many-arguments
 def run_bots(
     environment_config: EnvironmentConfig,
