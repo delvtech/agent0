@@ -26,7 +26,7 @@ def run_agents(
     account_key_config: AccountKeyConfig,
     develop: bool = False,
     eth_config: EthConfig | None = None,
-    override_addresses: HyperdriveAddresses | None = None,
+    contract_addresses: HyperdriveAddresses | None = None,
 ) -> None:
     """Entrypoint to run agents.
 
@@ -43,24 +43,22 @@ def run_agents(
     eth_config: EthConfig | None
         Configuration for urls to the rpc and artifacts. If not set, will look for addresses
         in eth.env.
-    override_addresses: HyperdriveAddresses | None
+    contract_addresses: HyperdriveAddresses | None
         If set, will use these addresses instead of querying the artifact url
         defined in eth_config.
     """
-
-    # Defaults to looking for eth_config env
-    if eth_config is None:
-        eth_config = build_eth_config()
 
     # Set sane logging defaults to avoid spam from dependencies
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("web3").setLevel(logging.WARNING)
     warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
 
-    # Get addresses either from artifacts url defined in eth_config or from override_addresses
-    if override_addresses is not None:
-        contract_addresses = override_addresses
-    else:
+    # Defaults to looking for eth_config env
+    if eth_config is None:
+        eth_config = build_eth_config()
+
+    # Get addresses either from artifacts url defined in eth_config or from contract_addresses
+    if contract_addresses is None:
         contract_addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
 
     if develop:  # setup env automatically & fund the agents
