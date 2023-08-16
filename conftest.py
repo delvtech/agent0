@@ -4,7 +4,7 @@
 
 # Use this in conjunction with the following launch.json configuration:
 #      {
-#        "name": "Debug Tests",
+#        "name": "Debug Current Test",
 #        "type": "python",
 #        "request": "launch",
 #        "module": "pytest",
