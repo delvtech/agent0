@@ -49,10 +49,7 @@ htmlcov
 __pypackages__/
 
 # Environments
-.env
-*account.env
-eth.env
-postgres.env
+*.env
 .venv
 env/
 venv/
