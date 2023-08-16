@@ -16,8 +16,6 @@ from numpy.random._generator import Generator as NumpyGenerator
 class AgentDoneException(Exception):
     """Custom exception for signaling the bot is done"""
 
-    pass
-
 
 # Build custom policy
 # Simple agent, opens a set of all trades for a fixed amount and closes them after
