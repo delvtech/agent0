@@ -7,7 +7,7 @@ from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.exec import run_agents
 from ethpy import EthConfig
-from ethpy.hyperdrive.addresses import HyperdriveAddresses
+from ethpy.hyperdrive import HyperdriveAddresses
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 
