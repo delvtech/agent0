@@ -16,6 +16,7 @@ from eth_utils import address
 from ethpy.base import initialize_web3_with_http_provider, load_all_abis
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
 from ethpy.hyperdrive.interface import get_hyperdrive_contract
+from sqlalchemy.orm import Session
 from web3 import Web3
 from web3.contract.contract import Contract
 
