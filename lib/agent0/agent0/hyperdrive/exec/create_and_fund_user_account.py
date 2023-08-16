@@ -25,7 +25,7 @@ def create_and_fund_user_account(
         Configuration for urls to the rpc and artifacts.
     account_key_config: AccountKeyConfig
         Configuration linking to the env file for storing private keys and initial budgets.
-        Defines the bots to be funded.
+        Defines the agents to be funded.
     contract_addresses: HyperdriveAddresses
         Configuration for defining various contract addresses.
 

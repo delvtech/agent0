@@ -15,7 +15,7 @@ authors = [
     { name = "Jacob Arruda", email = "jacob@delv.tech" },
     { name = "Violet Vienhage", email = "violet@delv.tech" },
 ]
-description = "Trading bots, market simulators, and experiment management by Delv"
+description = "Trading agents, market simulators, and experiment management by Delv"
 readme = "README.md"
 requires-python = ">=3.10, <3.11"
 classifiers = [

@@ -13,8 +13,8 @@ from ethpy.hyperdrive.addresses import fetch_hyperdrive_address_from_url
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        prog="fund_bots_from_user_key",
-        description="Script for funding bots from a user key, given a written env file.",
+        prog="fund_agents_from_user_key",
+        description="Script for funding agents from a user key, given a written env file.",
         epilog=(
             "Run the script with a user's private key as argument to include it in the output."
             "Make sure you set the config variables in lib/agent0/agent0/hyperdrive/config/runner_config.py "
@@ -26,7 +26,7 @@ if __name__ == "__main__":
         "-u",
         "--user_key",
         nargs=1,
-        help="The user's private key for funding bots.",
+        help="The user's private key for funding agents.",
         action="store",
         default=[None],
     )

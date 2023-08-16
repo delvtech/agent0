@@ -1,6 +1,6 @@
-# Running Bots
+# Running Agents
 
-We have set up bots to run on a dedicated AWS EC2 instance.
+We have set up agents to run on a dedicated AWS EC2 instance.
 These instructions can likely be followed for other unix/linux setups, however.
 
 ## Step 1: Install elf-simulations
@@ -37,7 +37,7 @@ These instructions can likely be followed for other unix/linux setups, however.
     >
     >**Hyperdrive contracts:**
     >
-    >You don’t need to do any of the optional install Hyperdrive steps for eth_bots to work.
+    >You don’t need to do any of the optional install Hyperdrive steps for eth_agents to work.
     >
 
 3. navigate to the `elf-simulations` folder: `cd elf-simulations/`
@@ -50,19 +50,19 @@ These instructions can likely be followed for other unix/linux setups, however.
 
 2. Copy (or edit) one of the template scripts found in `lib/agent0/examples`:
 
-    - `hyperdrive_bots.py` for an example running existing policies.
-    - `example_bot.py` for an example of writing and running a custom bot.
+    - `hyperdrive_agents.py` for an example running existing policies.
+    - `example_agent.py` for an example of writing and running a custom agent.
 
-   This will be the main script to run your bot.
+   This will be the main script to run your agent.
 
-3. Set `DEVLEOP=True` flag to automatically fund your bots, or set `DEVELOP=False` and go to step 3 to fund your bots from your own wallet key.
+3. Set `DEVLEOP=True` flag to automatically fund your agents, or set `DEVELOP=False` and go to step 3 to fund your agents from your own wallet key.
 
-## [optional] Step 3: Fund your bots (if you wish to fund the bots from your own wallet key):
+## [optional] Step 3: Fund your agents (if you wish to fund the agents from your own wallet key):
 
-1. Run the script once to generate the `ENV_FILE` as defined in the script. For example, the script will generate `example_bots.account.env`
+1. Run the script once to generate the `ENV_FILE` as defined in the script. For example, the script will generate `example_agents.account.env`
 
     >**💡NOTE:**
-    >This will generate new environment variables for the bots and write them to the specified `ENV_FILE`.
+    >This will generate new environment variables for the agents and write them to the specified `ENV_FILE`.
     >The new variables are private keys as well as Base and Eth budgets for all of the agents you specified in your config.
     >This is what your `.env` file might look like after:
     >
@@ -73,15 +73,15 @@ These instructions can likely be followed for other unix/linux setups, however.
     >export AGENT_ETH_BUDGETS='[1000000000000000000]'
     >```
     >
-    >These are the generated private keys for your bots. If you delete your `ENV_FILE` file or otherwise lose the bot private keys, then your money is gone forever.
+    >These are the generated private keys for your agents. If you delete your `ENV_FILE` file or otherwise lose the agent private keys, then your money is gone forever.
     >Hang on to those keys!
     >
 
 2. Run the funding script. The output of the script should print the fund command. For example,
    ```bash
-       python lib/agent0/bin/fund_bots_from_user_key.py -u 0xUSER_PRIVATE_KEY -f example_bots.accounts.env
+       python lib/agent0/bin/fund_agents_from_user_key.py -u 0xUSER_PRIVATE_KEY -f example_agents.accounts.env
    ```
-   Replace the `0xUSER_PRIVATE_KEY` in the above command with your private key for the chain (e.g., from Anvil). This is the account that will fund the bots. The script will automatically update the specified `ENV_FILE` to contain your user key, which is needed by the script.
+   Replace the `0xUSER_PRIVATE_KEY` in the above command with your private key for the chain (e.g., from Anvil). This is the account that will fund the agents. The script will automatically update the specified `ENV_FILE` to contain your user key, which is needed by the script.
 
 
 ## Step 4: Start trading!

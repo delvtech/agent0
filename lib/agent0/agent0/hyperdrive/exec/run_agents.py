@@ -1,4 +1,4 @@
-"""Runner script for bots"""
+"""Runner script for agents"""
 from __future__ import annotations
 
 import logging
@@ -63,7 +63,7 @@ def run_agents(
     else:
         contract_addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
 
-    if develop:  # setup env automatically & fund the bots
+    if develop:  # setup env automatically & fund the agents
         # exposing the user account for debugging purposes
         user_account = create_and_fund_user_account(eth_config, account_key_config, contract_addresses)
         fund_agents(

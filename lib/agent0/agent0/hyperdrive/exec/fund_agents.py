@@ -24,17 +24,17 @@ def fund_agents(
     account_key_config: AccountKeyConfig,
     contract_addresses: HyperdriveAddresses,
 ) -> None:
-    """Fund bots using passed in configs.
+    """Fund agents using passed in configs.
 
     Arguments
     ---------
     user_account : HyperdriveAgent
-        The HyperdriveAgent corresponding to the user account to fund the bots.
+        The HyperdriveAgent corresponding to the user account to fund the agents.
     eth_config: EthConfig
         Configuration for urls to the rpc and artifacts.
     account_key_config: AccountKeyConfig
         Configuration linking to the env file for storing private keys and initial budgets.
-        Defines the bots to be funded.
+        Defines the agents to be funded.
     contract_addresses: HyperdriveAddresses
         Configuration for defining various contract addresses.
     """

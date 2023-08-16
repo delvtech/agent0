@@ -1,4 +1,4 @@
-"""Main script for running bots on Hyperdrive."""
+"""Main script for running agents on Hyperdrive."""
 from __future__ import annotations
 
 import asyncio

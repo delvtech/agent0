@@ -63,7 +63,7 @@ def initialize_accounts(
     """
     Build or load an accounts environment file.
     If it doesn't exist, create it based on agent_config.
-    (if develop is off, print instructions on adding in user private key and running script to fund bots).
+    (if develop is off, print instructions on adding in user private key and running script to fund agents).
     If it does exist, read it in and use it.
     """
     # Default location
@@ -84,19 +84,19 @@ def initialize_accounts(
             )
             # Different commands depending on if default env file is used
             if env_file == "account.env":
-                print("python lib/agent0/bin/fund_bots_from_user_key.py -u <user_private_key>")
+                print("python lib/agent0/bin/fund_agents_from_user_key.py -u <user_private_key>")
             else:
-                print(f"python lib/agent0/bin/fund_bots_from_user_key.py -u <user_private_key> -f {env_file}")
+                print(f"python lib/agent0/bin/fund_agents_from_user_key.py -u <user_private_key> -f {env_file}")
             # Clean exit
             sys.exit(0)
     else:
         logging.info("Loading %s", env_file)
         # Ensure account_config matches up with env_file
-        # TODO this is where we would read state of bot from chain
+        # TODO this is where we would read state of agent from chain
         account_key_config = build_account_config_from_env(env_file)
-        num_total_bots = sum(agent.number_of_agents for agent in agent_config)
-        if num_total_bots != len(account_key_config.AGENT_KEYS):
-            raise ValueError("Number of bots in agent config does not match number of bots in env file")
+        num_total_agents = sum(agent.number_of_agents for agent in agent_config)
+        if num_total_agents != len(account_key_config.AGENT_KEYS):
+            raise ValueError("Number of agents in agent config does not match number of agents in env file")
 
     return account_key_config
 

@@ -1,4 +1,4 @@
-"""Setup helper function for running eth bot experiments."""
+"""Setup helper function for running eth agent experiments."""
 from __future__ import annotations
 
 from http import HTTPStatus
@@ -125,6 +125,6 @@ def register_username(register_url: str, wallet_addrs: list[str], username: str)
     """
     # TODO: use the json schema from the server.
     json_data = {"wallet_addrs": wallet_addrs, "username": username}
-    result = requests.post(f"{register_url}/register_bots", json=json_data, timeout=3)
+    result = requests.post(f"{register_url}/register_agents", json=json_data, timeout=3)
     if result.status_code != HTTPStatus.OK:
         raise ConnectionError(result)

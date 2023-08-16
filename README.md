@@ -70,20 +70,8 @@ In that example, the internal representation is `8`, so casting it to a float wo
 
 To understand more, we recommend that you study the fixed point tests and source implementation in `elfpy/math/`.
 
-## Modifying configuration for bot deployment
-Bots can be deployed using the `evm_bots.py` script in the examples folder.
-If you wish to run it with non-default parameters, then you must specify them as a JSON file.
-To generate a default configuration file, from the base directory, run:
-
-```bash
-python elfpy/bots/bots_default_config.py
-```
-
-This will generate `bots_config.default.json`, which you can feed into `evm_bots.py`:
-
-```bash
-evm_bots.py bots_config.default.json
-```
+## Modifying configuration for agent deployment
+Follow `lib/agent0/README.md` for agent deployment.
 
 ## Data pipeline
 The data pipeline queries the running chain and exports data to a postgres database. The `infra` repository spins up a local postgres instance via Docker, and the data pipeline will point to this by default. Optionally, you can also configure the backend database by specifying the following environmental variables (for example, in a `.env` file in the base of the repo):

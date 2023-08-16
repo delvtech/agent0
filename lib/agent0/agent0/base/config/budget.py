@@ -1,4 +1,4 @@
-"""Budget class for bots."""
+"""Budget class for agents."""
 from __future__ import annotations
 
 from dataclasses import dataclass
