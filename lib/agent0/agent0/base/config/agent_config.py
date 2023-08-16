@@ -20,9 +20,9 @@ class AgentConfig:
         The agent's policy; should match the class name
     name : str
         The name of the agent
-    base_wei_budget : Budget | int
+    base_budget_wei : Budget | int
         The base token budget for the agent in units of wei
-    eth_wei_budget : Budget | int
+    eth_budget_wei : Budget | int
         The ethereum budget for the agent in units of wei
     number_of_agents : int
         The number of bots of this type to spin up
