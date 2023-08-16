@@ -62,10 +62,10 @@ def initialize_accounts(
     agent_config: list[AgentConfig], env_file: str | None = None, random_seed: int = 1, develop: bool = False
 ) -> AccountKeyConfig:
     """
-    Build or loads an accounts environment file
-    If it doesn't exist, create it based on agent_config
+    Build or load an accounts environment file.
+    If it doesn't exist, create it based on agent_config.
     (if develop is off, print instructions on adding in user private key and running script to fund bots).
-    If it does exist, read it in and use it
+    If it does exist, read it in and use it.
     """
     # Default location
     if env_file is None:
