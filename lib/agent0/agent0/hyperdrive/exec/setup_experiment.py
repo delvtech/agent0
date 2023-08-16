@@ -28,6 +28,19 @@ def setup_experiment(
 ) -> tuple[Web3, Contract, Contract, list[HyperdriveAgent]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
+    Arguments
+    ---------
+    eth_config: EthConfig
+        Configuration for urls to the rpc and artifacts.
+    environment_config: EnvironmentConfig
+        The agent's environment configuration.
+    agent_config: list[AgentConfig]
+        The list of agent configurations.
+    account_key_config: AccountKeyConfig
+        Configuration linking to the env file for storing private keys and initial budgets.
+    contract_addresses: HyperdriveAddresses
+        Configuration for defining various contract addresses.
+
     Returns
     -------
     tuple[Web3, Contract, Contract, EnvironmentConfig, list[HyperdriveAgent]]
@@ -61,14 +74,17 @@ def setup_experiment(
     return web3, base_token_contract, hyperdrive_contract, agent_accounts
 
 
-def get_web3_and_contracts(eth_config: EthConfig, addresses: HyperdriveAddresses) -> tuple[Web3, Contract, Contract]:
+def get_web3_and_contracts(
+    eth_config: EthConfig, contract_addresses: HyperdriveAddresses
+) -> tuple[Web3, Contract, Contract]:
     """Get the web3 container and the ERC20Base and Hyperdrive contracts.
 
     Arguments
     ---------
-    environment_config : EnvironmentConfig
-        An instantiated environment config with the appropriate URLs set
-
+    eth_config: EthConfig
+        Configuration for urls to the rpc and artifacts.
+    contract_addresses: HyperdriveAddresses
+        Configuration for defining various contract addresses.
 
     Returns
     -------
@@ -85,18 +101,28 @@ def get_web3_and_contracts(eth_config: EthConfig, addresses: HyperdriveAddresses
     # set up the ERC20 contract for minting base tokens
     # TODO is there a better way to pass in base and hyperdrive abi?
     base_token_contract: Contract = web3.eth.contract(
-        abi=abis["ERC20Mintable"], address=web3.to_checksum_address(addresses.base_token)
+        abi=abis["ERC20Mintable"], address=web3.to_checksum_address(contract_addresses.base_token)
     )
     # set up hyperdrive contract
     hyperdrive_contract: Contract = web3.eth.contract(
         abi=abis["IHyperdrive"],
-        address=web3.to_checksum_address(addresses.mock_hyperdrive),
+        address=web3.to_checksum_address(contract_addresses.mock_hyperdrive),
     )
     return web3, base_token_contract, hyperdrive_contract
 
 
 def register_username(register_url: str, wallet_addrs: list[str], username: str) -> None:
-    """Registers the username with the flask server."""
+    """Registers the username with the flask server.
+
+    Arguments
+    ---------
+    register_url: str
+        The endpoint for the flask server.
+    wallet_addrs: list[str]
+        The list of wallet addresses to register.
+    username: str
+        The username to register the wallet addresses under.
+    """
     # TODO: use the json schema from the server.
     json_data = {"wallet_addrs": wallet_addrs, "username": username}
     result = requests.post(f"{register_url}/register_bots", json=json_data, timeout=3)

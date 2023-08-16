@@ -26,25 +26,25 @@ def run_bots(
     develop: bool = False,
     eth_config: EthConfig | None = None,
     override_addresses: HyperdriveAddresses | None = None,
-):
+) -> None:
     """Entrypoint to run agents.
 
     Arguments
     ---------
     environment_config: EnvironmentConfig
-        The agent's environment configuration
+        The agent's environment configuration.
     agent_config: list[AgentConfig]
-        The list of agent configurations to run
+        The list of agent configurations to run.
     account_key_config: AccountKeyConfig
-        The env file storing private keys and initial budgets
+        Configuration linking to the env file for storing private keys and initial budgets.
     develop: bool
-        Flag for development mode
+        Flag for development mode.
     eth_config: EthConfig | None
         Configuration for urls to the rpc and artifacts. If not set, will look for addresses
-        in eth.env
+        in eth.env.
     override_addresses: HyperdriveAddresses | None
         If set, will use these addresses instead of querying the artifact url
-        defined in eth_config
+        defined in eth_config.
     """
 
     # Defaults to looking for eth_config env

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from agent0 import AccountKeyConfig
-from agent0.base.config import EnvironmentConfig
 from agent0.base.make_key import make_private_key
 from eth_account.account import Account
 from ethpy import EthConfig
@@ -18,7 +17,17 @@ def create_and_fund_user_account(
     account_key_config: AccountKeyConfig,
     contract_addresses: HyperdriveAddresses,
 ) -> HyperdriveAgent:
-    """Helper function for funding a fake user account
+    """Helper function for funding a fake user account.
+
+    Arguments
+    ---------
+    eth_config: EthConfig
+        Configuration for urls to the rpc and artifacts.
+    account_key_config: AccountKeyConfig
+        Configuration linking to the env file for storing private keys and initial budgets.
+        Defines the bots to be funded.
+    contract_addresses: HyperdriveAddresses
+        Configuration for defining various contract addresses.
 
     Returns
     -------
