@@ -12,14 +12,9 @@ from chainsync.db.hyperdrive import (
     init_data_chain_to_db,
 )
 from eth_typing import BlockNumber
-from eth_utils import address
 from ethpy import EthConfig, build_eth_config
-from ethpy.base import initialize_web3_with_http_provider, load_all_abis
-from ethpy.hyperdrive import fetch_hyperdrive_address_from_url, get_web3_and_hyperdrive_contracts
-from ethpy.hyperdrive.interface import get_hyperdrive_contract
+from ethpy.hyperdrive import get_web3_and_hyperdrive_contracts
 from sqlalchemy.orm import Session
-from web3 import Web3
-from web3.contract.contract import Contract
 
 _SLEEP_AMOUNT = 1
 
@@ -27,7 +22,7 @@ _SLEEP_AMOUNT = 1
 def acquire_data(
     start_block: int,
     lookback_block_limit: int,
-    eth_config: EthConfig | None,
+    eth_config: EthConfig | None = None,
     overwrite_db_session: Session | None = None,
 ):
     """Execute the data acquisition pipeline.
