@@ -71,7 +71,7 @@ def run_bots(
             user_account, eth_config, environment_config.base_abi, account_key_config, contract_addresses
         )  # uses env variables created above as inputs
 
-    web3, hyperdrive_contract, agent_accounts = setup_experiment(
+    web3, _, hyperdrive_contract, agent_accounts = setup_experiment(
         eth_config, environment_config, agent_config, account_key_config, contract_addresses
     )
 

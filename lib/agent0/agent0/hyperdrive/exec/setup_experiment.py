@@ -25,7 +25,7 @@ def setup_experiment(
     agent_config: list[AgentConfig],
     account_key_config: AccountKeyConfig,
     contract_addresses: HyperdriveAddresses,
-) -> tuple[Web3, Contract, list[HyperdriveAgent]]:
+) -> tuple[Web3, Contract, Contract, list[HyperdriveAgent]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
     Returns
@@ -33,6 +33,7 @@ def setup_experiment(
     tuple[Web3, Contract, Contract, EnvironmentConfig, list[HyperdriveAgent]]
         A tuple containing:
             - The web3 container
+            - The base token contract
             - The hyperdrive contract
             - A list of HyperdriveAgent objects that contain a wallet address and Elfpy Agent for determining trades
     """
@@ -59,7 +60,7 @@ def setup_experiment(
     agent_accounts = get_agent_accounts(
         web3, agent_config, account_key_config, base_token_contract, hyperdrive_contract.address, rng
     )
-    return web3, hyperdrive_contract, agent_accounts
+    return web3, base_token_contract, hyperdrive_contract, agent_accounts
 
 
 def get_web3_and_contracts(
