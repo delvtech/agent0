@@ -91,7 +91,7 @@ class WalletInfo(Base):
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
     tokenValue: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    maturityTime: Mapped[Union[int, None]] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), default=None)
+    maturityTime: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
     sharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
 
 
@@ -115,7 +115,7 @@ class WalletDelta(Base):
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
     delta: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    maturityTime: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    maturityTime: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
 
 
 class HyperdriveTransaction(Base):
@@ -168,7 +168,7 @@ class HyperdriveTransaction(Base):
     # input_params_asUnderlying
 
     # Method: closeLong
-    input_params_maturityTime: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
+    input_params_maturityTime: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
     # input_params_bondAmount
     # input_params_minOutput
     # input_params_destination
@@ -206,7 +206,7 @@ class HyperdriveTransaction(Base):
     event_id: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
     # Fields calculated from base
     event_prefix: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
-    event_maturity_time: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
+    event_maturity_time: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
 
     # Fields not used by postprocessing
 
