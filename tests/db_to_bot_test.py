@@ -19,17 +19,6 @@ from ethpy.test_fixtures.deploy_hyperdrive import _calculateTimeStretch
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 
-# These tests are using fixtures defined in conftest.py
-
-
-class TestLocalChain:
-    """Tests bringing up local chain"""
-
-    def test_hyperdrive_init_and_deploy(self, local_hyperdrive_chain: dict):
-        """Create and entry"""
-        print(local_hyperdrive_chain["rpc_url"])
-        print(local_hyperdrive_chain)
-
 
 def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
     return Decimal(str(fp_val))
@@ -103,7 +92,7 @@ class TestBotToDb:
             # so this exception is expected on test pass
             pass
 
-        # Run acquire data to get data from chain to db in subprocess
+        # Run acquire data to get data from chain to db
         acquire_data(
             start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
             eth_config=eth_config,
@@ -112,6 +101,15 @@ class TestBotToDb:
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
+
+        # This bot does the following known trades in sequence:
+        # 1. addLiquidity of 11111 base
+        # 2. openLong of 22222 base
+        # 3. openShort of 33333 bonds
+        # 4. removeLiquidity of all LP tokens
+        # 5. closeLong on long from trade 2
+        # 6. closeShort on short from trade 3
+        # 7. redeemWithdrawalShares of all withdrawal tokens from trade 4
 
         # Test db entries are what we expect
         # We don't coerce to float because we want exact values in decimal
@@ -155,11 +153,7 @@ class TestBotToDb:
 
         # Value comparison
         for key, expected_value in expected_pool_config.items():
-            if isinstance(expected_value, Decimal):
-                assert_val = db_pool_config[key] == expected_value
-            else:
-                assert_val = db_pool_config[key] == expected_value
-
+            assert_val = db_pool_config[key] == expected_value
             assert assert_val, f"Values do not match for {key} ({db_pool_config[key]} != {expected_value})"
 
         # Pool info comparison
@@ -224,7 +218,9 @@ class TestBotToDb:
         for block_number, txn in db_transaction_info.iterrows():
             if txn["input_method"] == "addLiquidity":
                 assert txn["input_params_contribution"] == Decimal(11111)
+                # Filter for all deltas of this trade
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
+                # Ensure number of token deltas
                 assert len(block_wallet_deltas) == 2
                 lp_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LP"]
                 base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
@@ -242,7 +238,9 @@ class TestBotToDb:
 
             if txn["input_method"] == "openLong":
                 assert txn["input_params_baseAmount"] == Decimal(22222)
+                # Filter for all deltas of this trade
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
+                # Ensure number of token deltas
                 assert len(block_wallet_deltas) == 2
                 long_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LONG"]
                 base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
