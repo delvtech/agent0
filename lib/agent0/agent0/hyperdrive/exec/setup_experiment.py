@@ -11,8 +11,7 @@ from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.exec.crash_report import setup_hyperdrive_crash_report_logging
 from elfpy.utils import logs
 from ethpy import EthConfig
-from ethpy.base import initialize_web3_with_http_provider, load_all_abis
-from ethpy.hyperdrive.addresses import HyperdriveAddresses
+from ethpy.hyperdrive import HyperdriveAddresses, get_web3_and_hyperdrive_contracts
 from web3 import Web3
 from web3.contract.contract import Contract
 
@@ -65,50 +64,13 @@ def setup_experiment(
         log_format_string=environment_config.log_formatter,
     )
     setup_hyperdrive_crash_report_logging()
-    web3, base_token_contract, hyperdrive_contract = get_web3_and_contracts(eth_config, contract_addresses)
+    web3, base_token_contract, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
     # load agent policies
     # rng is shared by the agents and can be accessed via `agent_accounts[idx].policy.rng`
     agent_accounts = get_agent_accounts(
         web3, agent_config, account_key_config, base_token_contract, hyperdrive_contract.address, rng
     )
     return web3, base_token_contract, hyperdrive_contract, agent_accounts
-
-
-def get_web3_and_contracts(
-    eth_config: EthConfig, contract_addresses: HyperdriveAddresses
-) -> tuple[Web3, Contract, Contract]:
-    """Get the web3 container and the ERC20Base and Hyperdrive contracts.
-
-    Arguments
-    ---------
-    eth_config: EthConfig
-        Configuration for urls to the rpc and artifacts.
-    contract_addresses: HyperdriveAddresses
-        Configuration for defining various contract addresses.
-
-    Returns
-    -------
-    tuple[Web3, Contract, Contract]
-        A tuple containing:
-            - The web3 container
-            - The base token contract
-            - The hyperdrive contract
-    """
-    # point to chain env
-    web3 = initialize_web3_with_http_provider(eth_config.RPC_URL, reset_provider=False)
-    # setup base contract interface
-    abis = load_all_abis(eth_config.ABI_DIR)
-    # set up the ERC20 contract for minting base tokens
-    # TODO is there a better way to pass in base and hyperdrive abi?
-    base_token_contract: Contract = web3.eth.contract(
-        abi=abis["ERC20Mintable"], address=web3.to_checksum_address(contract_addresses.base_token)
-    )
-    # set up hyperdrive contract
-    hyperdrive_contract: Contract = web3.eth.contract(
-        abi=abis["IHyperdrive"],
-        address=web3.to_checksum_address(contract_addresses.mock_hyperdrive),
-    )
-    return web3, base_token_contract, hyperdrive_contract
 
 
 def register_username(register_url: str, wallet_addrs: list[str], username: str) -> None:

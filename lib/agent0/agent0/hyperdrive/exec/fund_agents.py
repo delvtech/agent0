@@ -15,7 +15,7 @@ from ethpy.base import (
     smart_contract_read,
     smart_contract_transact,
 )
-from ethpy.hyperdrive.addresses import HyperdriveAddresses
+from ethpy.hyperdrive import HyperdriveAddresses
 
 
 def fund_agents(

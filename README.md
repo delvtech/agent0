@@ -27,6 +27,8 @@ Please refer to [BUILD.md](https://github.com/delvtech/elf-simulations/blob/main
 
 ## Testing
 
+We deploy a local anvil chain to run system tests. Therefore, you must [install foundry](https://github.com/foundry-rs/foundry#installatio://github.com/foundry-rs/foundry#installation) as a prerequisite for running tests.
+
 Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.html). You can run all tests from the repository root directory by running `python -m pytest`, or you can pick a specific test in the `tests/` folder with `python -m pytest tests/{test_file.py}`.
 
 ## Coverage

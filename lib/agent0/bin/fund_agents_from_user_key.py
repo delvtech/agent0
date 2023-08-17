@@ -9,7 +9,7 @@ from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.exec import fund_agents
 from eth_account.account import Account
 from ethpy import build_eth_config
-from ethpy.hyperdrive.addresses import fetch_hyperdrive_address_from_url
+from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

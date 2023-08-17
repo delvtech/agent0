@@ -565,7 +565,7 @@ def _build_hyperdrive_transaction_object(
         "transactionHash": transaction_dict["hash"],
         "txn_to": transaction_dict["to"],
         "txn_from": transaction_dict["from"],
-        "gasUsed": receipt["gasUsed"],
+        "gasUsed": _convert_scaled_value_to_decimal(receipt["gasUsed"]),
     }
     # Input solidity methods and parameters
     # TODO can the input field ever be empty or not exist?
