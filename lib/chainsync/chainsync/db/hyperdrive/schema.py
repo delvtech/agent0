@@ -36,7 +36,7 @@ class PoolConfig(Base):
     oracleSize: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     updateGap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     invTimeStretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    termLength: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    updateGap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
 
 
 class CheckpointInfo(Base):

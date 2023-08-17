@@ -116,6 +116,7 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict[str, Any]:
     # Ok so, the contracts store the time stretch constant in an inverted manner from the python.
     # In order to not break the world, we save the contract version as 'invTimeStretch' and invert
     # that to get the python version 'timeStretch'
+    # TODO fix this
     pool_config["invTimeStretch"] = FixedPoint(scaled_value=hyperdrive_config["timeStretch"])
     pool_config["timeStretch"] = FixedPoint(1) / pool_config["invTimeStretch"]
     pool_config["governance"] = hyperdrive_config["governance"]

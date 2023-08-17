@@ -149,43 +149,49 @@ class TestPoolConfigInterface:
         pool_config_1 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
         add_pool_config(pool_config_1, db_session)
 
-        pool_config_df_1 = get_pool_config(db_session, coerce_float=False)
+        pool_config_df_1 = get_pool_config(db_session)
         assert len(pool_config_df_1) == 1
-        assert pool_config_df_1.loc[0, "initialSharePrice"] == Decimal("3.2")
+        # TODO In testing, we use sqlite, which does not implement the fixed point Numeric type
+        # Internally, they store Numeric types as floats, hence we see rounding errors in testing
+        # This does not happen in postgres, where these values match exactly.
+        # https://github.com/delvtech/elf-simulations/issues/836
+        np.testing.assert_array_equal(pool_config_df_1["initialSharePrice"], np.array([3.2]))
 
         pool_config_2 = PoolConfig(contractAddress="1", initialSharePrice=Decimal("3.4"))
         add_pool_config(pool_config_2, db_session)
 
-        pool_config_df_2 = get_pool_config(db_session, coerce_float=False)
+        pool_config_df_2 = get_pool_config(db_session)
         assert len(pool_config_df_2) == 2
-        np.testing.assert_array_equal(pool_config_df_2["initialSharePrice"], np.array([Decimal("3.2"), Decimal("3.4")]))
+        np.testing.assert_array_equal(pool_config_df_2["initialSharePrice"], np.array([3.2, 3.4]))
 
     def test_primary_id_query_pool_config(self, db_session):
         """Testing retrieval of pool config via interface"""
         pool_config = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
         add_pool_config(pool_config, db_session)
 
-        pool_config_df_1 = get_pool_config(db_session, contract_address="0", coerce_float=False)
+        pool_config_df_1 = get_pool_config(db_session, contract_address="0")
         assert len(pool_config_df_1) == 1
-        assert pool_config_df_1.loc[0, "initialSharePrice"] == Decimal("3.2")
+        assert pool_config_df_1.loc[0, "initialSharePrice"] == 3.2
 
-        pool_config_df_2 = get_pool_config(db_session, contract_address="1", coerce_float=False)
+        pool_config_df_2 = get_pool_config(db_session, contract_address="1")
         assert len(pool_config_df_2) == 0
 
     def test_pool_config_verify(self, db_session):
         """Testing retrieval of pool config via interface"""
         pool_config_1 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
         add_pool_config(pool_config_1, db_session)
-        pool_config_df_1 = get_pool_config(db_session, coerce_float=False)
+        pool_config_df_1 = get_pool_config(db_session)
         assert len(pool_config_df_1) == 1
-        assert pool_config_df_1.loc[0, "initialSharePrice"] == Decimal("3.2")
+        assert pool_config_df_1.loc[0, "initialSharePrice"] == 3.2
 
         # Nothing should happen if we give the same pool_config
-        pool_config_2 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
+        # TODO Below is a hack due to sqlite not having numerics
+        # We explicitly print 18 spots after floating point to match rounding error in sqlite
+        pool_config_2 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("{:.18f}".format(3.2)))
         add_pool_config(pool_config_2, db_session)
-        pool_config_df_2 = get_pool_config(db_session, coerce_float=False)
+        pool_config_df_2 = get_pool_config(db_session)
         assert len(pool_config_df_2) == 1
-        assert pool_config_df_2.loc[0, "initialSharePrice"] == Decimal("3.2")
+        assert pool_config_df_2.loc[0, "initialSharePrice"] == 3.2
 
         # If we try to add another pool config with a different value, should throw a ValueError
         pool_config_3 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.4"))

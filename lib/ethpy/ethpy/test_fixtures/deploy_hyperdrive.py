@@ -84,10 +84,10 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
     initial_variable_rate = int(0.05e18)
     curve_fee = int(0.1e18)  # 10%
     flat_fee = int(0.0005e18)  # 0.05%
-    governance_fee = int(0.15e18)  # 0.15%
+    governance_fee = int(0.15e18)  # 15%
     max_curve_fee = int(0.3e18)  # 30%
     max_flat_fee = int(0.0015e18)  # 0.15%
-    max_governance_fee = int(0.30e18)  # 0.30%
+    max_governance_fee = int(0.30e18)  # 30%
     # Configuration settings
     abi_folder = "packages/hyperdrive/src/abis/"
 
