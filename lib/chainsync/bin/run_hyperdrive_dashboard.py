@@ -34,9 +34,6 @@ eth_config = build_eth_config()
 # pool config data is static, so just read once
 config_data = get_pool_config(session, coerce_float=False)
 
-# TODO fix input invTimeStretch to be unscaled in ingestion into postgres
-config_data["invTimeStretch"] = config_data["invTimeStretch"] / 10**18
-
 config_data = config_data.iloc[0]
 
 
