@@ -57,6 +57,7 @@ class TestBotToDb:
     """Tests pipeline from bots making trades to viewing the trades in the db"""
 
     # TODO split this up into different functions that work with tests
+    # pylint: disable=too-many-locals, too-many-statements
     def test_bot_to_db(
         self,
         local_chain: str,

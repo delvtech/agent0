@@ -187,7 +187,7 @@ class TestPoolConfigInterface:
         # Nothing should happen if we give the same pool_config
         # TODO Below is a hack due to sqlite not having numerics
         # We explicitly print 18 spots after floating point to match rounding error in sqlite
-        pool_config_2 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("{:.18f}".format(3.2)))
+        pool_config_2 = PoolConfig(contractAddress="0", initialSharePrice=Decimal(f"{3.2:.18f}"))
         add_pool_config(pool_config_2, db_session)
         pool_config_df_2 = get_pool_config(db_session)
         assert len(pool_config_df_2) == 1
