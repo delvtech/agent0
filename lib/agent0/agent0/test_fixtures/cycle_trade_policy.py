@@ -104,7 +104,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                         ),
                     )
                 )
-        elif self.counter == 4:
+        elif self.counter == 5:
             # Close All Shorts
             assert len(wallet.shorts) == 1
             for short_time, short in wallet.shorts.items():
@@ -120,7 +120,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                         ),
                     )
                 )
-        elif self.counter == 5:
+        elif self.counter == 6:
             # Redeem all withdrawal shares
             action_list.append(
                 Trade(
@@ -132,7 +132,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     ),
                 )
             )
-        elif self.counter == 6:
+        elif self.counter == 7:
             # One more dummy trade to ensure the previous trades get into the db
             # TODO test if we can remove this eventually
             action_list.append(

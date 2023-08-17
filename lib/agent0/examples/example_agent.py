@@ -24,6 +24,9 @@ ENV_FILE = "example_agent.account.env"
 
 # Build custom policy
 # Simple agent, opens a set of all trades for a fixed amount and closes them after
+# TODO this bot is almost identical to the one defined in test_fixtures for system tests
+# On one hand, this bot is nice for an example since it shows all trades
+# On the other, duplicated code between the two bots
 class CycleTradesPolicy(HyperdrivePolicy):
     """An agent that simply cycles through all trades"""
 
@@ -109,7 +112,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                         ),
                     )
                 )
-        elif self.counter == 4:
+        elif self.counter == 5:
             # Close All Shorts
             assert len(wallet.shorts) == 1
             for short_time, short in wallet.shorts.items():
@@ -125,7 +128,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                         ),
                     )
                 )
-        elif self.counter == 5:
+        elif self.counter == 6:
             # Redeem all withdrawal shares
             action_list.append(
                 Trade(
@@ -137,7 +140,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     ),
                 )
             )
-        elif self.counter == 6:
+        elif self.counter == 7:
             # One more dummy trade to ensure the previous trades get into the db
             # TODO test if we can remove this eventually
             action_list.append(
