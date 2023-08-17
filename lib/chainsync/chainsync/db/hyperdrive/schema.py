@@ -10,6 +10,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 # pylint: disable=invalid-name
 
+# Postgres numeric type that matches fixedpoint
+FIXED_NUMERIC = Numeric(precision=1000, scale=18)
+
 
 class PoolConfig(Base):
     """Table/dataclass schema for pool config."""
@@ -18,20 +21,20 @@ class PoolConfig(Base):
 
     contractAddress: Mapped[str] = mapped_column(String, primary_key=True)
     baseToken: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    initialSharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    minimumShareReserves: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    initialSharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    minimumShareReserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     positionDuration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     checkpointDuration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
-    timeStretch: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    timeStretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     governance: Mapped[Union[str, None]] = mapped_column(String, default=None)
     feeCollector: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    curveFee: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    flatFee: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    governanceFee: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    oracleSize: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    curveFee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    flatFee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    governanceFee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    oracleSize: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     updateGap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
-    invTimeStretch: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    termLength: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    invTimeStretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    termLength: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
 class CheckpointInfo(Base):
@@ -41,9 +44,9 @@ class CheckpointInfo(Base):
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
-    sharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    longSharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    shortBaseVolume: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    longSharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    shortBaseVolume: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
 class PoolInfo(Base):
@@ -56,19 +59,19 @@ class PoolInfo(Base):
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
-    shareReserves: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    bondReserves: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    lpTotalSupply: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    sharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    lpSharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    longsOutstanding: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    longAverageMaturityTime: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    shortsOutstanding: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    shortAverageMaturityTime: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    shortBaseVolume: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    withdrawalSharesReadyToWithdraw: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    withdrawalSharesProceeds: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    totalSupplyWithdrawalShares: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    shareReserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    bondReserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    lpTotalSupply: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    lpSharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    longsOutstanding: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    longAverageMaturityTime: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    shortsOutstanding: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    shortAverageMaturityTime: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    shortBaseVolume: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    withdrawalSharesReadyToWithdraw: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    withdrawalSharesProceeds: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    totalSupplyWithdrawalShares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
 # TODO: Rename this to something more accurate to what is happening, e.g. HyperdriveTransactions
@@ -90,9 +93,9 @@ class WalletInfo(Base):
     baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    tokenValue: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    tokenValue: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     maturityTime: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
-    sharePrice: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
 # TODO: either make a more general TokenDelta, or rename this to HyperdriveDelta
@@ -114,7 +117,7 @@ class WalletDelta(Base):
     baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    delta: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     maturityTime: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
 
 
@@ -142,7 +145,7 @@ class HyperdriveTransaction(Base):
     # Almost always from wallet address to smart contract address
     txn_to: Mapped[Union[str, None]] = mapped_column(String, default=None)
     txn_from: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    gasUsed: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
+    gasUsed: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
     #### Fields from solidity function calls ####
     # These fields map solidity function calls and their corresponding arguments
@@ -150,20 +153,20 @@ class HyperdriveTransaction(Base):
     input_method: Mapped[Union[str, None]] = mapped_column(String, default=None)
 
     # Method: initialize
-    input_params_contribution: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    input_params_apr: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    input_params_contribution: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    input_params_apr: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     input_params_destination: Mapped[Union[str, None]] = mapped_column(String, default=None)
     input_params_asUnderlying: Mapped[Union[bool, None]] = mapped_column(Boolean, default=None)
 
     # Method: openLong
-    input_params_baseAmount: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    input_params_minOutput: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    input_params_baseAmount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    input_params_minOutput: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # input_params_destination
     # input_params_asUnderlying
 
     # Method: openShort
-    input_params_bondAmount: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    input_params_maxDeposit: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    input_params_bondAmount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    input_params_maxDeposit: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # input_params_destination
     # input_params_asUnderlying
 
@@ -183,13 +186,13 @@ class HyperdriveTransaction(Base):
 
     # Method: addLiquidity
     # input_params_contribution
-    input_params_minApr: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
-    input_params_maxApr: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    input_params_minApr: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    input_params_maxApr: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # input_params_destination
     # input_params_asUnderlying
 
     # Method: removeLiquidity
-    input_params_shares: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    input_params_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # input_params_minOutput
     # input_params_destination
     # input_params_asUnderlying
@@ -201,9 +204,11 @@ class HyperdriveTransaction(Base):
     # args_owner
     # args_spender
     # args_id
-    event_value: Mapped[Union[Decimal, None]] = mapped_column(Numeric, default=None)
+    event_value: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     event_operator: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    event_id: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
+    event_id: Mapped[Union[int, None]] = mapped_column(
+        Numeric, default=None
+    )  # Integer too small here to store event_id, so we use Numeric here instead
     # Fields calculated from base
     event_prefix: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     event_maturity_time: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
