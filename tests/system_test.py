@@ -1,14 +1,18 @@
 """System test for end to end testing of elf-simulations"""
 import logging
+from decimal import Decimal
 from typing import Type
 
+import pandas as pd
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.exec import run_agents
+from chainsync.db.hyperdrive.interface import get_pool_config
 from chainsync.exec import acquire_data
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses
+from ethpy.test_fixtures.deploy_hyperdrive import _calculateTimeStretch
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 
@@ -40,6 +44,10 @@ class TestLocalChain:
         """Create and entry"""
         print(local_chain)
         print(hyperdrive_contract_addresses)
+
+
+def _to_unscaled_decimal(scaled_value: int) -> Decimal:
+    return Decimal(str(FixedPoint(scaled_value=scaled_value)))
 
 
 class TestBotToDb:
@@ -112,4 +120,43 @@ class TestBotToDb:
             exit_on_catch_up=True,
         )
 
-        # TODO ensure all trades are in the db
+        # Run acquire data to get data from chain to db in subprocess
+        acquire_data(
+            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            eth_config=eth_config,
+            db_session=db_session,
+            contract_addresses=hyperdrive_contract_addresses,
+            # Exit the script after catching up to the chain
+            exit_on_catch_up=True,
+        )
+
+        # Test db entries are what we expect
+        # We don't coerce to float because we want exact values in decimal
+        db_pool_config = get_pool_config(db_session, coerce_float=False)
+
+        # TODO these expected values are defined in lib/ethpy/ethpy/test_fixtures/deploy_hyperdrive.py
+        # Eventually, we want to parameterize these values to pass into deploying hyperdrive
+        expected_timestretch_fp = FixedPoint(scaled_value=_calculateTimeStretch(int(0.05e18)))
+        # TODO this is actually inv of solidity time stretch, fix
+        expected_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp).scaled_value)
+        expected_inv_timestretch = _to_unscaled_decimal(expected_timestretch_fp.scaled_value)
+
+        expected_pool_config = pd.Series(
+            {
+                "contractAddress": hyperdrive_contract_addresses.mock_hyperdrive,
+                "baseToken": hyperdrive_contract_addresses.base_token,
+                "initialSharePrice": _to_unscaled_decimal(int(1e18)),
+                "minimumShareReserves": _to_unscaled_decimal(int(10e18)),
+                "positionDuration": 604800,  # 1 week
+                "checkpointDuration": 3600,  # 1 hour
+                # TODO this is actually inv of solidity time stretch, fix
+                "timeStretch": expected_timestretch,
+                # "governance":
+                # "feeCollector":
+                "invTimeStretch": expected_timestretch,
+            }
+        )
+
+        # TODO timestretch has rounding error
+
+        # Ensure all trades are in the db
