@@ -50,6 +50,10 @@ def _to_unscaled_decimal(scaled_value: int) -> Decimal:
     return Decimal(str(FixedPoint(scaled_value=scaled_value)))
 
 
+def _decimal_almost_equal(a: Decimal, b: Decimal) -> bool:
+    return abs(a - b) < 1e-12
+
+
 class TestBotToDb:
     """Tests pipeline from bots making trades to viewing the trades in the db"""
 
@@ -83,9 +87,9 @@ class TestBotToDb:
                 policy=cycle_trade_policy,
                 number_of_agents=1,
                 slippage_tolerance=FixedPoint(0.0001),
-                base_budget_wei=int(10_000e18),  # 10k base
-                eth_budget_wei=int(10e18),  # 10 base
-                init_kwargs={"static_trade_amount_wei": int(100e18)},  # 100 base static trades
+                base_budget_wei=int(1_000_000e18),  # 1 million base
+                eth_budget_wei=int(100e18),  # 100 base
+                init_kwargs={},
             ),
         ]
 
@@ -173,7 +177,7 @@ class TestBotToDb:
             # https://github.com/delvtech/elf-simulations/issues/836
 
             if isinstance(expected_value, Decimal):
-                assert_val = abs(db_pool_config[key] - expected_value) < 1e-12
+                assert_val = _decimal_almost_equal(db_pool_config[key], expected_value)
             else:
                 assert_val = db_pool_config[key] == expected_value
 
@@ -205,6 +209,9 @@ class TestBotToDb:
         assert set(db_pool_info.columns) == set(expected_pool_info_keys)
 
         db_transaction_info: pd.DataFrame = get_transactions(db_session, coerce_float=False)
+        # TODO check transaction keys
+        # This likely involves cleaning up what columns we grab from transactions
+
         db_wallet_delta: pd.DataFrame = get_wallet_deltas(db_session, coerce_float=False)
 
         # Ensure trades exist in database
@@ -228,9 +235,141 @@ class TestBotToDb:
         # 15 different wallet deltas (2 token deltas per trade except for withdraw shares, which is 3)
         assert len(db_wallet_delta) == 15
 
-        # TODO
-        expected_pool_info = {}
+        actual_num_longs = Decimal("nan")
+        actual_num_shorts = Decimal("nan")
+        actual_num_lp = Decimal("nan")
+        actual_num_withdrawal = Decimal("nan")
+        # Go through each trade and ensure wallet deltas are correct
+        # The asserts here are equality because they are either int -> Decimal, which is lossless,
+        # or they're comparing values after the lossy conversion
+        for block_number, txn in db_transaction_info.iterrows():
+            if txn["input_method"] == "addLiquidity":
+                assert txn["input_params_contribution"] == Decimal(11111)
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
+                assert len(block_wallet_deltas) == 2
+                lp_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LP"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                assert len(lp_delta_df) == 1
+                assert len(base_delta_df) == 1
+                lp_delta = lp_delta_df.iloc[0]
+                base_delta = base_delta_df.iloc[0]
+                # 11111 base for...
+                assert base_delta["delta"] == -Decimal(11111)
+                # TODO check LP delta
+                # TODO check wallet info matches the deltas
+                # TODO check pool info after this tx
 
-        pass
+                actual_num_lp = lp_delta["delta"]
 
-        # Ensure all trades are in the db
+            if txn["input_method"] == "openLong":
+                assert txn["input_params_baseAmount"] == Decimal(22222)
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
+                assert len(block_wallet_deltas) == 2
+                long_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LONG"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                assert len(long_delta_df) == 1
+                assert len(base_delta_df) == 1
+                long_delta = long_delta_df.iloc[0]
+                base_delta = base_delta_df.iloc[0]
+                # 22222 base for...
+                assert base_delta["delta"] == -Decimal(22222)
+                # TODO check long delta
+                # TODO check maturity time and tokenType
+                # TODO check wallet info matches the deltas
+                # TODO check pool info after this tx
+
+                actual_num_longs = long_delta["delta"]
+
+            if txn["input_method"] == "openShort":
+                assert txn["input_params_bondAmount"] == Decimal(33333)
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
+                assert len(block_wallet_deltas) == 2
+                short_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "SHORT"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                assert len(short_delta_df) == 1
+                assert len(base_delta_df) == 1
+                short_delta = short_delta_df.iloc[0]
+                base_delta = base_delta_df.iloc[0]
+                # 33333 bonds for...
+                assert short_delta["delta"] == Decimal(33333)
+                # TODO check base delta
+                # TODO check maturity time and tokenType
+                # TODO check wallet info matches the deltas
+                # TODO check pool info after this tx
+
+                actual_num_shorts = short_delta["delta"]
+
+            if txn["input_method"] == "removeLiquidity":
+                # TODO change this to expected num lp
+                assert txn["input_params_shares"] == actual_num_lp
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
+                assert len(block_wallet_deltas) == 3
+                lp_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LP"]
+                withdrawal_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "WITHDRAWAL_SHARE"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                assert len(lp_delta_df) == 1
+                assert len(withdrawal_delta_df) == 1
+                assert len(base_delta_df) == 1
+                lp_delta = lp_delta_df.iloc[0]
+                withdrawal_delta = withdrawal_delta_df.iloc[0]
+                base_delta = base_delta_df.iloc[0]
+                # TODO check against expected lp
+                assert lp_delta["delta"] == -actual_num_lp
+                # TODO check base delta
+                # TODO check withdrawal delta
+                # TODO check wallet info matches the deltas
+                # TODO check pool info after this tx
+
+                actual_num_withdrawal = withdrawal_delta["delta"]
+
+            if txn["input_method"] == "closeLong":
+                # TODO change this to expected long amount
+                assert txn["input_params_bondAmount"] == actual_num_longs
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
+                assert len(block_wallet_deltas) == 2
+                long_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LONG"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                assert len(long_delta_df) == 1
+                assert len(base_delta_df) == 1
+                long_delta = long_delta_df.iloc[0]
+                base_delta = base_delta_df.iloc[0]
+                # TODO check against expected longs
+                assert long_delta["delta"] == -actual_num_longs
+                # TODO check base delta
+                # TODO check maturity time and tokenType
+                # TODO check wallet info matches the deltas
+                # TODO check pool info after this tx
+
+            if txn["input_method"] == "closeShort":
+                assert txn["input_params_bondAmount"] == Decimal(33333)
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
+                assert len(block_wallet_deltas) == 2
+                short_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "SHORT"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                assert len(short_delta_df) == 1
+                assert len(base_delta_df) == 1
+                short_delta = short_delta_df.iloc[0]
+                base_delta = base_delta_df.iloc[0]
+                # TODO check against expected shorts
+                assert short_delta["delta"] == -actual_num_shorts
+                # TODO check base delta
+                # TODO check maturity time and tokenType
+                # TODO check wallet info matches the deltas
+                # TODO check pool info after this tx
+
+            if txn["input_method"] == "redeemWithdrawalShares":
+                # TODO change this to expected withdrawal shares
+                assert txn["input_params_shares"] == actual_num_withdrawal
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
+                assert len(block_wallet_deltas) == 2
+                withdrawal_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "WITHDRAWAL_SHARE"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                assert len(withdrawal_delta_df) == 1
+                assert len(base_delta_df) == 1
+                withdrawal_delta = withdrawal_delta_df.iloc[0]
+                base_delta = base_delta_df.iloc[0]
+                # TODO check against expected withdrawal shares
+                assert withdrawal_delta["delta"] == -actual_num_withdrawal
+                # TODO check base delta
+                # TODO check wallet info matches the deltas
+                # TODO check pool info after this tx

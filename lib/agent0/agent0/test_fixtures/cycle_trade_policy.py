@@ -28,10 +28,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
         budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
-        # Add additional parameters for custom policy here
-        static_trade_amount_wei: int = int(100e18),  # 100 base
     ):
-        self.static_trade_amount_wei = static_trade_amount_wei
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
@@ -47,7 +44,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
+                        trade_amount=FixedPoint(scaled_value=int(11111e18)),
                         wallet=wallet,
                     ),
                 )
@@ -59,7 +56,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
+                        trade_amount=FixedPoint(scaled_value=int(22222e18)),
                         wallet=wallet,
                     ),
                 )
@@ -71,7 +68,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_SHORT,
-                        trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
+                        trade_amount=FixedPoint(scaled_value=int(33333e18)),
                         wallet=wallet,
                     ),
                 )
@@ -134,13 +131,14 @@ class CycleTradesPolicy(HyperdrivePolicy):
             )
         elif self.counter == 7:
             # One more dummy trade to ensure the previous trades get into the db
-            # TODO test if we can remove this eventually
+            # TODO test if we can remove this eventually by allowing acquire_data to look at
+            # current block
             action_list.append(
                 Trade(
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
+                        trade_amount=FixedPoint(scaled_value=int(1e18)),
                         wallet=wallet,
                     ),
                 )
