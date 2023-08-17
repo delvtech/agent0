@@ -210,7 +210,7 @@ class HyperdriveTransaction(Base):
     event_operator: Mapped[Union[str, None]] = mapped_column(String, default=None)
     event_id: Mapped[Union[int, None]] = mapped_column(
         Numeric, default=None
-    )  # Integer too small here to store event_id, so we use Numeric here instead
+    )  # Integer too small here to store event_id, so we use Numeric instead
     # Fields calculated from base
     event_prefix: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     event_maturity_time: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)

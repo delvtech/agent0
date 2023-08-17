@@ -40,9 +40,12 @@ def acquire_data(
     eth_config: EthConfig | None
         Configuration for urls to the rpc and artifacts. If not set, will look for addresses
         in eth.env.
-    overwrite_db_session: Session | None
+    db_session: Session | None
         Session object for connecting to db. If None, will initialize a new session based on
         postgres.env.
+    contract_addresses: HyperdriveAddresses | None
+        If set, will use these addresses instead of querying the artifact url
+        defined in eth_config.
     exit_on_catch_up: bool
         If True, will exit after catching up to current block
     """
