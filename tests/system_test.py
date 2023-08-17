@@ -3,12 +3,13 @@ import logging
 from decimal import Decimal
 from typing import Type
 
+import numpy as np
 import pandas as pd
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.exec import run_agents
-from chainsync.db.hyperdrive.interface import get_pool_config
+from chainsync.db.hyperdrive.interface import get_pool_config, get_pool_info, get_transactions, get_wallet_deltas
 from chainsync.exec import acquire_data
 from eth_account.signers.local import LocalAccount
 from ethpy import EthConfig
@@ -91,7 +92,7 @@ class TestBotToDb:
         # No need for random seed, this bot is deterministic
         account_key_config = build_account_key_config_from_agent_config(agent_config)
 
-        # Build custom eth config pointing to local chain
+        # Build custom eth config pointing to local test chain
         eth_config = EthConfig(
             # Artifacts_url isn't used here, as we explicitly set addresses and passed to run_bots
             ARTIFACTS_URL="not_used",
@@ -135,7 +136,7 @@ class TestBotToDb:
         expected_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp).scaled_value)
         expected_inv_timestretch = _to_unscaled_decimal(expected_timestretch_fp.scaled_value)
 
-        expected_values = {
+        expected_pool_config = {
             "contractAddress": hyperdrive_contract_addresses.mock_hyperdrive,
             "baseToken": hyperdrive_contract_addresses.base_token,
             "initialSharePrice": _to_unscaled_decimal(int(1e18)),
@@ -161,11 +162,11 @@ class TestBotToDb:
         # Ensure keys match
         # Converting to sets and compare
         db_keys = set(db_pool_config.index)
-        expected_keys = set(expected_values.keys())
+        expected_keys = set(expected_pool_config.keys())
         assert db_keys == expected_keys, "Keys in db do not match expected"
 
         # Value comparison
-        for key, expected_value in expected_values.items():
+        for key, expected_value in expected_pool_config.items():
             # TODO In testing, we use sqlite, which does not implement the fixed point Numeric type
             # Internally, they store Numeric types as floats, hence we see rounding errors in testing
             # This does not happen in postgres, where these values match exactly.
@@ -177,5 +178,59 @@ class TestBotToDb:
                 assert_val = db_pool_config[key] == expected_value
 
             assert assert_val, f"Values do not match for {key} ({db_pool_config[key]} != {expected_value})"
+
+        # Pool info comparison
+        db_pool_info: pd.DataFrame = get_pool_info(db_session, coerce_float=False)
+        expected_pool_info_keys = [
+            # Keys from contract call
+            "shareReserves",
+            "bondReserves",
+            "lpTotalSupply",
+            "sharePrice",
+            "longsOutstanding",
+            "longAverageMaturityTime",
+            "shortsOutstanding",
+            "shortAverageMaturityTime",
+            "shortBaseVolume",
+            "withdrawalSharesReadyToWithdraw",
+            "withdrawalSharesProceeds",
+            "lpSharePrice",
+            # Added keys
+            "timestamp",
+            # blockNumber is the index of the dataframe
+            # Calculated keys
+            "totalSupplyWithdrawalShares",
+        ]
+        # Convert to sets and compare
+        assert set(db_pool_info.columns) == set(expected_pool_info_keys)
+
+        db_transaction_info: pd.DataFrame = get_transactions(db_session, coerce_float=False)
+        db_wallet_delta: pd.DataFrame = get_wallet_deltas(db_session, coerce_float=False)
+
+        # Ensure trades exist in database
+        # Should be 7 total transactions
+        assert len(db_transaction_info) == 7
+        np.testing.assert_array_equal(
+            db_transaction_info["input_method"],
+            [
+                "addLiquidity",
+                "openLong",
+                "openShort",
+                "removeLiquidity",
+                "closeLong",
+                "closeShort",
+                "redeemWithdrawalShares",
+            ],
+        )
+
+        # 7 total trades in wallet deltas
+        assert db_wallet_delta["blockNumber"].nunique() == 7
+        # 15 different wallet deltas (2 token deltas per trade except for withdraw shares, which is 3)
+        assert len(db_wallet_delta) == 15
+
+        # TODO
+        expected_pool_info = {}
+
+        pass
 
         # Ensure all trades are in the db

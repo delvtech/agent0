@@ -205,6 +205,8 @@ def get_pool_info(
     end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
     -------
@@ -230,7 +232,9 @@ def get_pool_info(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float).set_index("blockNumber")
 
 
-def get_transactions(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+def get_transactions(
+    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
+) -> pd.DataFrame:
     """Get all transactions and returns as a pandas dataframe.
 
     Arguments
@@ -243,6 +247,8 @@ def get_transactions(session: Session, start_block: int | None = None, end_block
     end_block : int | None
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
     -------
@@ -262,10 +268,12 @@ def get_transactions(session: Session, start_block: int | None = None, end_block
     if end_block is not None:
         query = query.filter(HyperdriveTransaction.blockNumber < end_block)
 
-    return pd.read_sql(query.statement, con=session.connection()).set_index("blockNumber")
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float).set_index("blockNumber")
 
 
-def get_checkpoint_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+def get_checkpoint_info(
+    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
+) -> pd.DataFrame:
     """Get all info associated with a given checkpoint.
 
     This includes
@@ -283,6 +291,8 @@ def get_checkpoint_info(session: Session, start_block: int | None = None, end_bl
     end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
     -------
@@ -305,10 +315,12 @@ def get_checkpoint_info(session: Session, start_block: int | None = None, end_bl
     # Always sort by time in order
     query = query.order_by(CheckpointInfo.timestamp)
 
-    return pd.read_sql(query.statement, con=session.connection()).set_index("blockNumber")
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float).set_index("blockNumber")
 
 
-def get_all_wallet_info(session: Session, start_block: int | None = None, end_block: int | None = None) -> pd.DataFrame:
+def get_all_wallet_info(
+    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float: bool = True
+) -> pd.DataFrame:
     """Get all of the wallet_info data in history and returns as a pandas dataframe.
 
     Arguments
@@ -321,6 +333,8 @@ def get_all_wallet_info(session: Session, start_block: int | None = None, end_bl
     end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
     -------
@@ -340,16 +354,18 @@ def get_all_wallet_info(session: Session, start_block: int | None = None, end_bl
     if end_block is not None:
         query = query.filter(WalletInfo.blockNumber < end_block)
 
-    return pd.read_sql(query.statement, con=session.connection())
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
-def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
+def get_wallet_info_history(session: Session, coerce_float=True) -> dict[str, pd.DataFrame]:
     """Get the history of all wallet info over block time.
 
     Arguments
     ---------
     session : Session
         The initialized session object
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
     -------
@@ -359,8 +375,8 @@ def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
         token the address has at that block number, plus a timestamp and the share price of the block
     """
     # Get data
-    all_wallet_info = get_all_wallet_info(session)
-    pool_info_lookup = get_pool_info(session)[["timestamp", "sharePrice"]]
+    all_wallet_info = get_all_wallet_info(session, coerce_float=coerce_float)
+    pool_info_lookup = get_pool_info(session, coerce_float=coerce_float)[["timestamp", "sharePrice"]]
 
     # Pivot tokenType to columns, keeping walletAddress and blockNumber
     all_wallet_info = all_wallet_info.pivot(
@@ -389,7 +405,7 @@ def get_wallet_info_history(session: Session) -> dict[str, pd.DataFrame]:
 
 
 def get_current_wallet_info(
-    session: Session, start_block: int | None = None, end_block: int | None = None
+    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float: bool = True
 ) -> pd.DataFrame:
     """Get the balance of a wallet and a given end_block.
 
@@ -409,13 +425,17 @@ def get_current_wallet_info(
     end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
     -------
     DataFrame
         A DataFrame that consists of the queried wallet info data
     """
-    all_wallet_info = get_all_wallet_info(session, start_block=start_block, end_block=end_block)
+    all_wallet_info = get_all_wallet_info(
+        session, start_block=start_block, end_block=end_block, coerce_float=coerce_float
+    )
     # Get last entry in the table of each wallet address and token type
     # This should always return a dataframe
     # Pandas doesn't play nice with types
@@ -458,6 +478,8 @@ def get_wallet_deltas(
     end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
     -------
@@ -480,7 +502,9 @@ def get_wallet_deltas(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
-def get_all_traders(session: Session, start_block: int | None = None, end_block: int | None = None) -> list[str]:
+def get_all_traders(
+    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
+) -> list[str]:
     """Get the list of all traders from the WalletInfo table.
 
     Arguments
@@ -493,6 +517,8 @@ def get_all_traders(session: Session, start_block: int | None = None, end_block:
     end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
     -------
@@ -515,12 +541,14 @@ def get_all_traders(session: Session, start_block: int | None = None, end_block:
         return []
     query = query.distinct()
 
-    results = pd.read_sql(query.statement, con=session.connection())
+    results = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
     return results["walletAddress"].to_list()
 
 
-def get_agent_positions(session: Session, filter_addr: list[str] | None = None) -> dict[str, AgentPosition]:
+def get_agent_positions(
+    session: Session, filter_addr: list[str] | None = None, coerce_float: bool = True
+) -> dict[str, AgentPosition]:
     """Create an AgentPosition for each agent in the wallet history.
 
     Arguments
@@ -529,6 +557,8 @@ def get_agent_positions(session: Session, filter_addr: list[str] | None = None) 
         The initialized session object
     filter_addr : list[str] | None
         Only return these addresses. Returns all if None
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
     -------
@@ -536,9 +566,11 @@ def get_agent_positions(session: Session, filter_addr: list[str] | None = None) 
         Returns a dictionary keyed by wallet address, value of an agent's position
     """
     if filter_addr is None:
-        return {agent: AgentPosition(wallet) for agent, wallet in get_wallet_info_history(session).items()}
+        return {
+            agent: AgentPosition(wallet) for agent, wallet in get_wallet_info_history(session, coerce_float).items()
+        }
     return {
         agent: AgentPosition(wallet)
-        for agent, wallet in get_wallet_info_history(session).items()
+        for agent, wallet in get_wallet_info_history(session, coerce_float).items()
         if agent in filter_addr
     }
