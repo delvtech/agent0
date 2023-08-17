@@ -113,10 +113,9 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict[str, Any]:
     pool_config["minimumShareReserves"] = FixedPoint(scaled_value=hyperdrive_config["minimumShareReserves"])
     pool_config["positionDuration"] = hyperdrive_config["positionDuration"]
     pool_config["checkpointDuration"] = hyperdrive_config["checkpointDuration"]
-    # Ok so, the contracts store the time stretch constant in an inverted manner from the python.
+    # TODO Ok so, the contracts store the time stretch constant in an inverted manner from the python.
     # In order to not break the world, we save the contract version as 'invTimeStretch' and invert
-    # that to get the python version 'timeStretch'
-    # TODO fix this
+    # that to get the python version 'timeStretch'. Fix this issue to match solidity
     pool_config["invTimeStretch"] = FixedPoint(scaled_value=hyperdrive_config["timeStretch"])
     pool_config["timeStretch"] = FixedPoint(1) / pool_config["invTimeStretch"]
     pool_config["governance"] = hyperdrive_config["governance"]
