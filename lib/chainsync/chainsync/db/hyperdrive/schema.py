@@ -11,6 +11,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 # pylint: disable=invalid-name
 
 # Postgres numeric type that matches fixedpoint
+# The high precision doesn't actually allocate memory in postgres, as numeric is variable size
+# https://stackoverflow.com/questions/40686571/performance-of-numeric-type-with-high-precisions-and-scales-in-postgresql
 FIXED_NUMERIC = Numeric(precision=1000, scale=18)
 
 
