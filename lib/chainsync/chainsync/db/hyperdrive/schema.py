@@ -98,7 +98,9 @@ class WalletInfo(Base):
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
     tokenValue: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    maturityTime: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
+    maturityTime: Mapped[Union[int, None]] = mapped_column(
+        Numeric, default=None
+    )  # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
     sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
@@ -122,7 +124,9 @@ class WalletDelta(Base):
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
     delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    maturityTime: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
+    maturityTime: Mapped[Union[int, None]] = mapped_column(
+        Numeric, default=None
+    )  # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
 
 
 class HyperdriveTransaction(Base):
