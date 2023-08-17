@@ -106,8 +106,6 @@ def calc_closeout_pnl(current_wallet: pd.DataFrame, pool_info: pd.DataFrame, eth
 
     # Define a function to handle the calculation for each group
     current_wallet["closeout_pnl"] = np.nan
-
-    # Calculate single closeout for each wallet position
     return current_wallet.apply(
         calc_single_closeout,  # type: ignore
         contract=contract,
