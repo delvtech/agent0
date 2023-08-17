@@ -120,16 +120,6 @@ class TestBotToDb:
             exit_on_catch_up=True,
         )
 
-        # Run acquire data to get data from chain to db in subprocess
-        acquire_data(
-            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
-            eth_config=eth_config,
-            db_session=db_session,
-            contract_addresses=hyperdrive_contract_addresses,
-            # Exit the script after catching up to the chain
-            exit_on_catch_up=True,
-        )
-
         # Test db entries are what we expect
         # We don't coerce to float because we want exact values in decimal
         db_pool_config = get_pool_config(db_session, coerce_float=False)
