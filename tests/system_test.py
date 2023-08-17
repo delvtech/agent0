@@ -17,7 +17,6 @@ from ethpy.hyperdrive import HyperdriveAddresses
 from ethpy.test_fixtures.deploy_hyperdrive import _calculateTimeStretch
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
-from web3 import Web3
 
 # This pass is to prevent auto reordering imports from reordering the imports below
 pass  # pylint: disable=unnecessary-pass
@@ -28,7 +27,7 @@ from agent0.test_fixtures import (  # pylint: disable=unused-import, ungrouped-i
     AgentDoneException,
     cycle_trade_policy,
 )
-from chainsync.test_fixtures import db_session  # pylint: disable=unused-import
+from chainsync.test_fixtures import db_session  # pylint: disable=unused-import, ungrouped-imports
 from ethpy.test_fixtures import local_chain, local_hyperdrive_chain  # pylint: disable=unused-import, ungrouped-imports
 
 # fixture arguments in test function have to be the same as the fixture name
@@ -50,8 +49,8 @@ def _to_unscaled_decimal(scaled_value: int) -> Decimal:
     return Decimal(str(FixedPoint(scaled_value=scaled_value)))
 
 
-def _decimal_almost_equal(a: Decimal, b: Decimal) -> bool:
-    return abs(a - b) < 1e-12
+def _decimal_almost_equal(a_val: Decimal, b_val: Decimal) -> bool:
+    return abs(a_val - b_val) < 1e-12
 
 
 class TestBotToDb:
@@ -65,8 +64,10 @@ class TestBotToDb:
         cycle_trade_policy: Type[BasePolicy],
         db_session: Session,
     ):
+        """Runs the entire pipeline and checks the database at the end.
+        All arguments are fixtures.
+        """
         # Get hyperdrive chain info
-        web3: Web3 = local_hyperdrive_chain["web3"]
         deploy_account: LocalAccount = local_hyperdrive_chain["deploy_account"]
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain["hyperdrive_contract_addresses"]
 
