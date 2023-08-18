@@ -27,4 +27,4 @@ from .interface import (
     get_wallet_deltas,
     get_wallet_info_history,
 )
-from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .schema import CheckpointInfo, HyperdriveTransaction, PoolAnalysis, PoolConfig, PoolInfo, WalletDelta, WalletInfo

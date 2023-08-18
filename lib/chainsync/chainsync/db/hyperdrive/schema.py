@@ -18,6 +18,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 FIXED_NUMERIC = Numeric(precision=1000, scale=18)
 
 
+## Base schemas for raw data
+
+
 class PoolConfig(Base):
     """Table/dataclass schema for pool config."""
 
@@ -231,3 +234,21 @@ class HyperdriveTransaction(Base):
     # status
     # logsBloom
     # effectiveGasPrice
+
+
+## Analysis schemas
+
+
+class PoolAnalysis(Base):
+    """Table/dataclass schema for pool info.
+
+    Mapped class that is a data class on the python side, and an declarative base on the sql side.
+    """
+
+    __tablename__ = "poolinfo"
+
+    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), primary_key=True)
+
+    spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    fixed_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    base_buffer: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
