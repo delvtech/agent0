@@ -5,14 +5,11 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import TypeGuard
 
 from jinja2 import Environment, FileSystemLoader
+from pypechain.utilities import avoid_python_keywords, is_abi_function, solidity_to_python_type
 from web3 import Web3
-from web3.types import ABIEvent, ABIFunction
-
-from .pypechain.utilities.format import avoid_python_keywords
-from .pypechain.utilities.types import solidity_to_python_type
+from web3.types import ABIFunction
 
 
 def load_abi_from_file(file_path: Path):
@@ -23,20 +20,18 @@ def load_abi_from_file(file_path: Path):
 
 def main(abi_file_path: str, output_file_path: str):
     """Generates class files for a given abi."""
-    # Load ABI
-    file_path = Path(abi_file_path)
-    # contract_abi = load_abi_from_file(file_path)
-
-    # Set up the Jinja2 environment
-    env = Environment(loader=FileSystemLoader("templates"))
-
-    template_file_path = "/templates/contract.jinja2"
-    print(f"{os.getcwd() + template_file_path}")
-
+    ### Set up the Jinja2 environment
+    # Determine the absolute path to the directory containing your script.
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Construct the path to your templates directory.
+    templates_dir = os.path.join(script_dir, "templates")
+    env = Environment(loader=FileSystemLoader(templates_dir))
     template = env.get_template("contract.jinja2")
 
     _web3 = Web3()
-    contract = _web3.eth.contract(abi=abi_file_path)
+    file_path = Path(abi_file_path)
+    abi = load_abi_from_file(file_path)
+    contract = _web3.eth.contract(abi=abi)
 
     # leverage the private list of ABIFunction's
     # pylint: disable=protected-access
@@ -46,28 +41,27 @@ def main(abi_file_path: str, output_file_path: str):
     function_datas = []
     for abi_function in abi_functions_and_events:
         if is_abi_function(abi_function):
+            # TODO: investigate better typing here?  templete.render expects an object so we'll have to convert.
             function_data = {
-                "name": abi_function.get("name"),
+                # TODO: pass a typeguarded ABIFunction that has only required fields?
+                # name is required in the typeguard.  Should be safe to default to empty string.
+                "name": abi_function.get("name", "").capitalize(),
                 "input_names_and_types": get_input_names_and_values(abi_function),
-                "input_names": [get_input_names(abi_function)],
+                "input_names": get_input_names(abi_function),
             }
             function_datas.append(function_data)
 
     # Render the template
     filename = file_path.name
     contract_name = os.path.splitext(filename)[0]
+    # TODO: Add more features:
+    # TODO:  events
+    # TODO:  structs
     rendered_code = template.render(contract_name=contract_name, functions=function_datas)
 
     # Save the rendered code to a file
     with open(output_file_path, "w", encoding="utf-8") as output_file:
         output_file.write(rendered_code)
-
-
-if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python script_name.py <path_to_abi_file> <contract_address> <output_file>")
-    else:
-        main(sys.argv[1], sys.argv[2])
 
 
 def get_input_names_and_values(function: ABIFunction) -> list[str]:
@@ -86,7 +80,7 @@ def get_input_names_and_values(function: ABIFunction) -> list[str]:
         if name is None:
             raise ValueError("Solidity function parameter name cannot be None")
         python_type = solidity_to_python_type(_input.get("type", "unknown"))
-        stringified_function_parameters.append(f"{name}: {python_type}")
+        stringified_function_parameters.append(f"{avoid_python_keywords(name)}: {python_type}")
 
     return stringified_function_parameters
 
@@ -111,17 +105,12 @@ def get_input_names(function: ABIFunction) -> list[str]:
     return stringified_function_parameters
 
 
-def is_abi_function(item: ABIFunction | ABIEvent) -> TypeGuard[ABIFunction]:
-    """Typeguard function"""
-    # Check if the required keys exist
-    required_keys = ["type", "name", "inputs"]
-
-    # Check if the required keys exist
-    if not all(key in item for key in required_keys):
-        return False
-
-    # Check if the type is "function"
-    if item.get("type") != "function":
-        return False
-
-    return True
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: python script_name.py <path_to_abi_file> <contract_address> <output_file>")
+    else:
+        # TODO: pass output path, not file, i.e. './build'
+        # TODO: pass input path, not file, i.e. './abis'
+        # TODO: add a bash script to make this easier, i.e. ./pypechain './abis', './build'
+        # TODO: make this installable so that other packages can use the command line tool
+        main(sys.argv[1], sys.argv[2])

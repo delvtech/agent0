@@ -1,7 +1,8 @@
+"""A web3.py Contract class for the {{contract_name}} contract."""
 from __future__ import annotations
+
 from typing import Any, cast
 from eth_typing import ChecksumAddress
-from web3 import Web3
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 
@@ -15,6 +16,9 @@ class {{contract_name}}{{function.name}}ContractFunction(ContractFunction):
         return self
 {% endfor %}
 
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
 class {{contract_name}}ContractFunctions(ContractFunctions):
     """ContractFunctions for the {{contract_name}} contract."""
 {% for function in functions %}
@@ -22,9 +26,10 @@ class {{contract_name}}ContractFunctions(ContractFunctions):
 {% endfor %}
 
 class {{contract_name}}Contract(Contract):
+    """A web3.py Contract class for the {{contract_name}} contract."""
+
     def __init__(self, address: ChecksumAddress | None = None, abi=Any) -> None:
         self.abi = abi
-        self.w3 = Web3()
         # TODO: make this better, shouldn't initialize to the zero address, but the Contract's init
         # function requires an address.
         self.address = address if address else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
@@ -32,15 +37,6 @@ class {{contract_name}}Contract(Contract):
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
-
-            # Additional initialization, if any
-            # self.functions = super().functions
-
-            # TODO: map types like 'address' to Address
-            # TODO: map inputs to functions.functionName.args
-            # for function in self.functions._functions:  # type: ignore
-            #     result = [(item["name"], item["type"]) for item in function["inputs"]]
-            #     self.functions[function.name]["args"] = result
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")

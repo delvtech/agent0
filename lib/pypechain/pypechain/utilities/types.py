@@ -1,3 +1,6 @@
+"""Utilities to help with Solidity types."""
+
+
 def solidity_to_python_type(solidity_type: str) -> str:
     """Returns the stringfied python type for the gien solidity type."""
     # Basic types

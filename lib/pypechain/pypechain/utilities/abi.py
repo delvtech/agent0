@@ -1,7 +1,10 @@
 """Utilities for solidity contract ABIs."""
+from __future__ import annotations
 
 import json
-from typing import List, NamedTuple, Optional
+from typing import List, NamedTuple, Optional, TypeGuard
+
+from web3.types import ABIEvent, ABIFunction
 
 
 class Input(NamedTuple):
@@ -49,3 +52,35 @@ def load_abi(abi_path: str) -> AbiJson:
         abi_items = [AbiItem(**item) for item in data]
 
         return AbiJson(abi=abi_items)
+
+
+def is_abi_function(item: ABIFunction | ABIEvent) -> TypeGuard[ABIFunction]:
+    """Typeguard function for ABIFunction"""
+    # Check if the required keys exist
+    required_keys = ["type", "name", "inputs"]
+
+    # Check if the required keys exist
+    if not all(key in item for key in required_keys):
+        return False
+
+    # Check if the type is "function"
+    if item.get("type") != "function":
+        return False
+
+    return True
+
+
+def is_abi_event(item: ABIFunction | ABIEvent) -> TypeGuard[ABIEvent]:
+    """Typeguard function for ABIEvent"""
+    # Check if the required keys exist
+    required_keys = ["type", "name", "inputs"]
+
+    # Check if the required keys exist
+    if not all(key in item for key in required_keys):
+        return False
+
+    # Check if the type is "event"
+    if item.get("type") != "event":
+        return False
+
+    return True

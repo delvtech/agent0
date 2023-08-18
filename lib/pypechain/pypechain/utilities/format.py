@@ -1,3 +1,4 @@
+"""Formatting utilities."""
 import keyword
 
 
