@@ -6,10 +6,10 @@ import os
 import sys
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, Template
 from pypechain.utilities import avoid_python_keywords, is_abi_function, solidity_to_python_type
 from web3 import Web3
-from web3.types import ABIFunction
+from web3.types import ABIElement, ABIFunction
 
 
 def load_abi_from_file(file_path: Path):
@@ -42,22 +42,10 @@ def main(abi_file_path: str, output_file_path: str) -> None:
         Path to the file to output the generated code.
     """
 
-    ### Set up the Jinja2 environment
-    # Determine the absolute path to the directory containing your script.
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    # Construct the path to your templates directory.
-    templates_dir = os.path.join(script_dir, "templates")
-    env = Environment(loader=FileSystemLoader(templates_dir))
-    template = env.get_template("contract.jinja2")
-
-    web3 = Web3()
     file_path = Path(abi_file_path)
-    abi = load_abi_from_file(file_path)
-    contract = web3.eth.contract(abi=abi)
+    template = setup_template()
 
-    # leverage the private list of ABIFunction's
-    # pylint: disable=protected-access
-    abi_functions_and_events = contract.functions._functions
+    abi_functions_and_events = get_abi_items(file_path)
 
     # Extract function names and their input parameters from the ABI
     function_datas = []
@@ -85,6 +73,48 @@ def main(abi_file_path: str, output_file_path: str) -> None:
     # Save the rendered code to a file
     with open(output_file_path, "w", encoding="utf-8") as output_file:
         output_file.write(rendered_code)
+
+
+def setup_template() -> Template:
+    """Grabs the necessary template files.
+
+    Returns
+    -------
+    Template
+        A jinja template for a python file containing a custom web3.py contract and its functions.
+    """
+    ### Set up the Jinja2 environment
+    # Determine the absolute path to the directory containing your script.
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Construct the path to your templates directory.
+    templates_dir = os.path.join(script_dir, "templates")
+    env = Environment(loader=FileSystemLoader(templates_dir))
+    template = env.get_template("contract.jinja2")
+    return template
+
+
+def get_abi_items(file_path: Path) -> list[ABIElement]:
+    """Gets all the
+
+    Parameters
+    ----------
+    file_path : Path
+        the file path to the ABI.
+
+    Returns
+    -------
+    List[Union[ABIFunction, ABIEvent]]
+        _description_
+    """
+
+    web3 = Web3()
+    abi = load_abi_from_file(file_path)
+    contract = web3.eth.contract(abi=abi)
+
+    # leverage the private list of ABIFunction's
+    # pylint: disable=protected-access
+    abi_functions_and_events = contract.functions._functions
+    return abi_functions_and_events
 
 
 def get_input_names_and_values(function: ABIFunction) -> list[str]:

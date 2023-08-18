@@ -1,6 +1,6 @@
 """Sample usage of erc20Contract."""
 
-from build.ERC20Contract import ERC20Contract
+from pypechain.sample.ERC20Contract import ERC20Contract
 
 # instantiate the contract
 erc20Contract = ERC20Contract(address=None)

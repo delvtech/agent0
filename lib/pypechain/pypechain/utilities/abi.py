@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import json
-from typing import Any, List, NamedTuple, TypeGuard
+from typing import List, NamedTuple, TypeGuard
 
-from web3.types import ABIEvent, ABIFunction
+from web3.types import ABIElement, ABIEvent, ABIFunction
 
 
 class Input(NamedTuple):
@@ -66,7 +66,7 @@ def load_abi(abi_path: str) -> AbiJson:
         return AbiJson(abi=abi_items)
 
 
-def is_abi_function(item: Any) -> TypeGuard[ABIFunction]:
+def is_abi_function(item: ABIElement) -> TypeGuard[ABIFunction]:
     """Typeguard function for ABIFunction.
 
     Arguments
@@ -92,7 +92,7 @@ def is_abi_function(item: Any) -> TypeGuard[ABIFunction]:
     return True
 
 
-def is_abi_event(item: Any) -> TypeGuard[ABIEvent]:
+def is_abi_event(item: ABIElement) -> TypeGuard[ABIEvent]:
     """Typeguard function for ABIEvent.
 
     Arguments
