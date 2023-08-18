@@ -1,0 +1,51 @@
+from __future__ import annotations
+from typing import Any, cast
+from eth_typing import ChecksumAddress
+from web3 import Web3
+from web3.contract.contract import Contract, ContractFunction, ContractFunctions
+from web3.exceptions import FallbackNotFound
+
+{% for function in functions %}
+class {{contract_name}}{{function.name}}ContractFunction(ContractFunction):
+    """ContractFunction for the {{function.name}} method."""
+
+    # pylint: disable=arguments-differ
+    def __call__(self, {{function.input_names_and_types|join(', ')}}) -> "{{contract_name}}{{function.name}}ContractFunction":
+        super().__call__({{function.input_names|join(', ')}})
+        return self
+{% endfor %}
+
+class {{contract_name}}ContractFunctions(ContractFunctions):
+    """ContractFunctions for the {{contract_name}} contract."""
+{% for function in functions %}
+    {{function.name}}: {{contract_name}}{{function.name}}ContractFunction
+{% endfor %}
+
+class {{contract_name}}Contract(Contract):
+    def __init__(self, address: ChecksumAddress | None = None, abi=Any) -> None:
+        self.abi = abi
+        self.w3 = Web3()
+        # TODO: make this better, shouldn't initialize to the zero address, but the Contract's init
+        # function requires an address.
+        self.address = address if address else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
+
+        try:
+            # Initialize parent Contract class
+            super().__init__(address=address)
+
+            # Additional initialization, if any
+            # self.functions = super().functions
+
+            # TODO: map types like 'address' to Address
+            # TODO: map inputs to functions.functionName.args
+            # for function in self.functions._functions:  # type: ignore
+            #     result = [(item["name"], item["type"]) for item in function["inputs"]]
+            #     self.functions[function.name]["args"] = result
+
+        except FallbackNotFound:
+            print("Fallback function not found. Continuing...")
+
+    # TODO: add events
+    # events: ERC20ContractEvents
+
+    functions: ERC20ContractFunctions
