@@ -247,7 +247,7 @@ class PoolAnalysis(Base):
 
     __tablename__ = "pool_analysis"
 
-    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), primary_key=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 
     spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     fixed_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
