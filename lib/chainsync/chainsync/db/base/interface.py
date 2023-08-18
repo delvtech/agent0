@@ -38,6 +38,20 @@ def query_tables(session: Session) -> list[str]:
     return inspector.get_table_names()
 
 
+def drop_all_tables(session: Session) -> None:
+    """Drop a table from the database.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    """
+    metadata = MetaData()
+    bind = session.bind
+    assert isinstance(bind, sqlalchemy.engine.base.Engine), "bind is not an engine"
+    metadata.drop_all(bind=bind, checkfirst=True)
+
+
 def drop_table(session: Session, table_name: str) -> None:
     """Drop a table from the database.
 
