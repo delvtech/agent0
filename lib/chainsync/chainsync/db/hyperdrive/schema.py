@@ -24,7 +24,7 @@ FIXED_NUMERIC = Numeric(precision=1000, scale=18)
 class PoolConfig(Base):
     """Table/dataclass schema for pool config."""
 
-    __tablename__ = "poolconfig"
+    __tablename__ = "pool_config"
 
     contractAddress: Mapped[str] = mapped_column(String, primary_key=True)
     baseToken: Mapped[Union[str, None]] = mapped_column(String, default=None)
@@ -47,7 +47,7 @@ class PoolConfig(Base):
 class CheckpointInfo(Base):
     """Table/dataclass schema for checkpoint information"""
 
-    __tablename__ = "checkpointinfo"
+    __tablename__ = "checkpoint_info"
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
@@ -62,7 +62,7 @@ class PoolInfo(Base):
     Mapped class that is a data class on the python side, and an declarative base on the sql side.
     """
 
-    __tablename__ = "poolinfo"
+    __tablename__ = "pool_info"
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
@@ -85,7 +85,7 @@ class PoolInfo(Base):
 class WalletInfo(Base):
     """Table/dataclass schema for wallet information."""
 
-    __tablename__ = "walletinfo"
+    __tablename__ = "wallet_info"
 
     # Default table primary key
     id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
@@ -107,7 +107,7 @@ class WalletInfo(Base):
 class WalletDelta(Base):
     """Table/dataclass schema for wallet information."""
 
-    __tablename__ = "walletdelta"
+    __tablename__ = "wallet_delta"
 
     # Default table primary key
     id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
@@ -245,7 +245,7 @@ class PoolAnalysis(Base):
     Mapped class that is a data class on the python side, and an declarative base on the sql side.
     """
 
-    __tablename__ = "poolinfo"
+    __tablename__ = "pool_analysis"
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), primary_key=True)
 
