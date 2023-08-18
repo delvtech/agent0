@@ -2,7 +2,18 @@
 
 
 def solidity_to_python_type(solidity_type: str) -> str:
-    """Returns the stringfied python type for the gien solidity type."""
+    """Returns the stringfied python type for the gien solidity type.
+
+    Arguments
+    ---------
+    solidity_type : str
+        A solidity variable type string, i.e. 'uint8'...'uint256', 'bool', 'address',
+        'bytes2'...'bytes32' etc.
+
+    Returns
+    -------
+        A python variable type string, i.e. 'int', 'bool', 'address'
+    """
     # Basic types
     if solidity_type in [
         "uint8",

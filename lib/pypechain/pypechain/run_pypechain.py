@@ -13,13 +13,35 @@ from web3.types import ABIFunction
 
 
 def load_abi_from_file(file_path: Path):
-    """Loads a contract ABI from a file."""
+    """Loads a contract ABI from a file.
+
+    Arguments
+    ---------
+    file_path : Path
+        The path to the ABI file.
+
+    Returns
+    -------
+    Any
+        An object containing the contract's abi.
+    """
+
     with open(file_path, "r", encoding="utf-8") as file:
         return json.load(file)["abi"]
 
 
-def main(abi_file_path: str, output_file_path: str):
-    """Generates class files for a given abi."""
+def main(abi_file_path: str, output_file_path: str) -> None:
+    """Generates class files for a given abi.
+
+    Arguments
+    ---------
+    abi_file_path : str
+        Path to the abi json file.
+
+    output_file_path : str
+        Path to the file to output the generated code.
+    """
+
     ### Set up the Jinja2 environment
     # Determine the absolute path to the directory containing your script.
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -28,10 +50,10 @@ def main(abi_file_path: str, output_file_path: str):
     env = Environment(loader=FileSystemLoader(templates_dir))
     template = env.get_template("contract.jinja2")
 
-    _web3 = Web3()
+    web3 = Web3()
     file_path = Path(abi_file_path)
     abi = load_abi_from_file(file_path)
-    contract = _web3.eth.contract(abi=abi)
+    contract = web3.eth.contract(abi=abi)
 
     # leverage the private list of ABIFunction's
     # pylint: disable=protected-access
@@ -55,6 +77,7 @@ def main(abi_file_path: str, output_file_path: str):
     filename = file_path.name
     contract_name = os.path.splitext(filename)[0]
     # TODO: Add more features:
+    # TODO:  return types to function calls
     # TODO:  events
     # TODO:  structs
     rendered_code = template.render(contract_name=contract_name, functions=function_datas)
@@ -67,11 +90,21 @@ def main(abi_file_path: str, output_file_path: str):
 def get_input_names_and_values(function: ABIFunction) -> list[str]:
     """Returns function input name/type strings for jinja templating.
 
-    i.e. for the solidity function signature:
-    function doThing(address who, uint256 amount, bool flag, bytes extraData)
+    i.e. for the solidity function signature: function doThing(address who, uint256 amount, bool
+    flag, bytes extraData)
 
-    the following list would be returned:
-    ['who: str', 'amount: int', 'flag: bool', 'extraData: bytes']
+    the following list would be returned: ['who: str', 'amount: int', 'flag: bool', 'extraData:
+    bytes']
+
+    Arguments
+    ---------
+    function : ABIFunction
+        A web3 dict of an ABI function description.
+
+    Returns
+    -------
+    list[str]
+        A list of function names and corresponding python values, i.e. ['arg1: str', 'arg2: bool']
     """
 
     stringified_function_parameters: list[str] = []
@@ -93,6 +126,17 @@ def get_input_names(function: ABIFunction) -> list[str]:
 
     the following list would be returned:
     ['who', 'amount', 'flag', 'extraData']
+
+    ---------
+    Arguments
+    function : ABIFunction
+        A web3 dict of an ABI function description.
+
+    Returns
+    -------
+    list[str]
+        A list of function names i.e. ['arg1', 'arg2']
+
     """
 
     stringified_function_parameters: list[str] = []

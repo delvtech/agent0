@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import List, NamedTuple, Optional, TypeGuard
+from typing import Any, List, NamedTuple, TypeGuard
 
 from web3.types import ABIEvent, ABIFunction
 
@@ -13,7 +13,7 @@ class Input(NamedTuple):
     internalType: str
     name: str
     type: str
-    indexed: Optional[bool] = None
+    indexed: bool | None = None
 
 
 class Output(NamedTuple):
@@ -30,10 +30,10 @@ class AbiItem(NamedTuple):
 
     type: str
     inputs: List[Input]
-    stateMutability: Optional[str] = None
-    anonymous: Optional[bool] = None
-    name: Optional[str] = None
-    outputs: Optional[List[Output]] = None
+    stateMutability: str | None = None
+    anonymous: bool | None = None
+    name: str | None = None
+    outputs: List[Output] | None = None
 
 
 class AbiJson(NamedTuple):
@@ -43,7 +43,19 @@ class AbiJson(NamedTuple):
 
 
 def load_abi(abi_path: str) -> AbiJson:
-    """Loads the abi file into a json."""
+    """Loads the abi file into a json.
+
+    Arguments
+    ---------
+    abi_path : str
+        Where the abi json is location.
+
+    Returns
+    -------
+    AbiJson
+        A named tuple representation of an abi json file.
+    """
+
     with open(abi_path, "r", encoding="utf-8") as abi_file:
         data = json.load(abi_file)
 
@@ -54,8 +66,18 @@ def load_abi(abi_path: str) -> AbiJson:
         return AbiJson(abi=abi_items)
 
 
-def is_abi_function(item: ABIFunction | ABIEvent) -> TypeGuard[ABIFunction]:
-    """Typeguard function for ABIFunction"""
+def is_abi_function(item: Any) -> TypeGuard[ABIFunction]:
+    """Typeguard function for ABIFunction.
+
+    Arguments
+    ---------
+    item:  Any
+        The item we are confirming is an ABIFunction
+
+    Returns
+    -------
+    TypeGuard[ABIFunction]
+    """
     # Check if the required keys exist
     required_keys = ["type", "name", "inputs"]
 
@@ -70,8 +92,18 @@ def is_abi_function(item: ABIFunction | ABIEvent) -> TypeGuard[ABIFunction]:
     return True
 
 
-def is_abi_event(item: ABIFunction | ABIEvent) -> TypeGuard[ABIEvent]:
-    """Typeguard function for ABIEvent"""
+def is_abi_event(item: Any) -> TypeGuard[ABIEvent]:
+    """Typeguard function for ABIEvent.
+
+    Arguments
+    ---------
+    item:  Any
+        The item we are confirming is an ABIFunction
+
+    Returns
+    -------
+    TypeGuard[ABIEvent]
+    """
     # Check if the required keys exist
     required_keys = ["type", "name", "inputs"]
 
