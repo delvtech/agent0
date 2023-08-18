@@ -62,6 +62,5 @@ def data_analysis(
         for block_int in range(block_number + 1, latest_data_block_number + 1):
             block_number: BlockNumber = BlockNumber(block_int)
             logging.info("Block %s", block_number)
-            # Explicit check against loopback block limit
             data_to_analysis(block_number, db_session)
         time.sleep(_SLEEP_AMOUNT)
