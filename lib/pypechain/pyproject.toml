@@ -1,0 +1,29 @@
+[project]
+name = "pypechain"
+version = "0.0.0"
+authors = [
+    { name = "Dylan Paiton", email = "dylan@delv.tech" },
+    { name = "Matthew Brown", email = "matt@delv.tech" },
+    { name = "Sheng Lundquist", email = "sheng@delv.tech" },
+]
+description = "Codegen python interfaces for web3.py contracts."
+readme = "README.md"
+requires-python = ">=3.10, <3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache License 2.0",
+    "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+# This flag installs all dependencies and should be ran when installing this subpackage in isolation
+with-dependencies = ["pypechain[base]"]
+base = ["jinja2", "web3"]
+
+[project.urls]
+"Homepage" = "https://github.com/delvtech/elf-simulations"
+"Bug Tracker" = "https://github.com/delvtech/elf-simulations/issues"
+
+[build-system]
+requires = ["flit_core>=3.2"]
+build-backend = "flit_core.buildapi"
