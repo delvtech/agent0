@@ -4,9 +4,9 @@ from __future__ import annotations
 import logging
 import time
 
+from chainsync.analysis import data_to_analysis
 from chainsync.db.base import initialize_session
-from chainsync.db.hyperdrive import get_latest_block_number_from_pool_info_table
-from eth_typing import BlockNumber
+from chainsync.db.hyperdrive import get_latest_block_number_from_pool_info_table, get_pool_config
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
@@ -42,10 +42,27 @@ def data_analysis(
         db_session = initialize_session()
 
     ## Get starting point for restarts
-    analysis_latest_block_number = get_latest_block_number_from_analysis(db_session)
+    # TODO
+    # analysis_latest_block_number = get_latest_block_number_from_analysis(db_session)
+    analysis_latest_block_number = 0
 
     # Using max of latest block in database or specified start block
-    block_number: BlockNumber = BlockNumber(max(start_block, analysis_latest_block_number))
+    block_number = max(start_block, analysis_latest_block_number)
+
+    # Get pool config
+    # TODO this likely should return a pd.Series, not dataframe
+    pool_config_df = None
+    # Wait for pool config to exist to ensure acquire_data is up and running
+    # Retry 10 times
+    for _ in range(10):
+        pool_config_df = get_pool_config(db_session, coerce_float=False)
+        pool_config_len = len(pool_config_df)
+        if pool_config_len == 0:
+            time.sleep(_SLEEP_AMOUNT)
+    if pool_config_df is None:
+        raise ValueError("Error in getting pool config from db")
+    assert len(pool_config_df) == 1
+    pool_config = pool_config_df.iloc[0]
 
     # Main data loop
     # monitor for new blocks & add pool info per block
@@ -58,9 +75,9 @@ def data_analysis(
             if exit_on_catch_up:
                 break
             continue
-        # Backfilling for blocks that need updating
-        for block_int in range(block_number + 1, latest_data_block_number + 1):
-            block_number: BlockNumber = BlockNumber(block_int)
-            logging.info("Block %s", block_number)
-            data_to_analysis(block_number, db_session)
+        # Does batch analysis on range(analysis_start_block, latest_data_block_number) blocks
+        analysis_start_block = block_number + 1
+        analysis_end_block = latest_data_block_number + 1
+        data_to_analysis(analysis_start_block, analysis_end_block, db_session, pool_config)
+        block_number = latest_data_block_number
         time.sleep(_SLEEP_AMOUNT)
