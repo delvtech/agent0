@@ -11,7 +11,7 @@ from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.exec import run_agents
 from agent0.test_fixtures import AgentDoneException
 from chainsync.db.hyperdrive.interface import get_pool_config, get_pool_info, get_transactions, get_wallet_deltas
-from chainsync.exec import acquire_data
+from chainsync.exec import acquire_data, data_analysis
 from eth_account.signers.local import LocalAccount
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses
@@ -92,12 +92,27 @@ class TestBotToDb:
             # so this exception is expected on test pass
             pass
 
+        # fixme This is connecting to an existing postgres db (i.e., docker) for postgres debugging
+        from chainsync.db.base import initialize_session
+
+        # Drop all tables from this db for debugging
+        db_session = initialize_session(drop=True)
+        # Done fixme
+
         # Run acquire data to get data from chain to db
         acquire_data(
             start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
+            # Exit the script after catching up to the chain
+            exit_on_catch_up=True,
+        )
+
+        # Run data analysis to calculate various analysis values
+        data_analysis(
+            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            db_session=db_session,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )

@@ -38,20 +38,6 @@ def query_tables(session: Session) -> list[str]:
     return inspector.get_table_names()
 
 
-def drop_all_tables(session: Session) -> None:
-    """Drop a table from the database.
-
-    Arguments
-    ---------
-    session : Session
-        The initialized session object
-    """
-    metadata = MetaData()
-    bind = session.bind
-    assert isinstance(bind, sqlalchemy.engine.base.Engine), "bind is not an engine"
-    metadata.drop_all(bind=bind, checkfirst=True)
-
-
 def drop_table(session: Session, table_name: str) -> None:
     """Drop a table from the database.
 
@@ -105,8 +91,13 @@ def initialize_engine(postgres_config: PostgresConfig | None = None) -> Engine:
     return engine
 
 
-def initialize_session() -> Session:
+def initialize_session(drop: bool = False) -> Session:
     """Initialize the database if not already initialized.
+
+    Arguments
+    ---------
+    drop: bool
+        If true, will drop all tables in the database before doing anything for debugging
 
     Returns
     -------
@@ -115,10 +106,13 @@ def initialize_session() -> Session:
     """
 
     engine = initialize_engine()
+
     # create a configured "Session" class
     session_class = sessionmaker(bind=engine)
     # create a session
     session = session_class()
+    if drop:
+        Base.metadata.drop_all(engine, checkfirst=True)
     # create tables
     Base.metadata.create_all(engine)
     # commit the transaction

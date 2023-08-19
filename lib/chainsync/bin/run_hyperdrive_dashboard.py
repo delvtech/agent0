@@ -6,11 +6,11 @@ import time
 import mplfinance as mpf
 import streamlit as st
 from chainsync.analysis.calc_fixed_rate import calc_fixed_rate
-from chainsync.analysis.calc_ohlcv import calc_ohlcv
 from chainsync.analysis.calc_pnl import calc_closeout_pnl, calc_total_returns
 from chainsync.dashboard import (
     build_leaderboard,
     build_ticker,
+    calc_ohlcv,
     get_combined_data,
     get_user_lookup,
     plot_fixed_rate,
