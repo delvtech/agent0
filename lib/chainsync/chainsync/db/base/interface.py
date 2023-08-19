@@ -13,6 +13,7 @@ from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engi
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.sql import text
 
 from .schema import Base, UserMap
 
@@ -112,7 +113,15 @@ def initialize_session(drop: bool = False) -> Session:
     # create a session
     session = session_class()
     if drop:
-        Base.metadata.drop_all(engine, checkfirst=True)
+        # Executing raw sql since sqlalchemy can't drop all with cascade
+        metadata = MetaData()
+        metadata.reflect(engine)
+        all_tables = metadata.tables.keys()
+        with engine.connect() as conn:
+            for table in all_tables:
+                drop_query = text(f"DROP TABLE IF EXISTS {table} CASCADE;")
+                conn.execute(drop_query)
+            conn.commit()
     # create tables
     Base.metadata.create_all(engine)
     # commit the transaction
