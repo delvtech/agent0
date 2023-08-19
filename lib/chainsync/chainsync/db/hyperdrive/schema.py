@@ -82,10 +82,10 @@ class PoolInfo(Base):
 
 
 # TODO: Rename this to something more accurate to what is happening, e.g. HyperdriveTransactions
-class WalletInfo(Base):
+class WalletInfoFromChain(Base):
     """Table/dataclass schema for wallet information."""
 
-    __tablename__ = "wallet_info"
+    __tablename__ = "wallet_info_from_chain"
 
     # Default table primary key
     id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
@@ -105,7 +105,7 @@ class WalletInfo(Base):
 
 # TODO: either make a more general TokenDelta, or rename this to HyperdriveDelta
 class WalletDelta(Base):
-    """Table/dataclass schema for wallet information."""
+    """Table/dataclass schema for wallet deltas."""
 
     __tablename__ = "wallet_delta"
 
@@ -113,6 +113,29 @@ class WalletDelta(Base):
     id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
     transactionHash: Mapped[str] = mapped_column(String, index=True)
     blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
+    walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
+    baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
+    tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    maturityTime: Mapped[Union[int, None]] = mapped_column(
+        Numeric, default=None
+    )  # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+
+
+class CurrentWallet(Base):
+    """Table/dataclass schema for current wallet positions."""
+
+    __tablename__ = "current_wallet"
+
+    # Default table primary key
+    # Note that we use postgres in production and sqlite in testing, but sqlite has issues with
+    # autoincrement with BigIntegers. Hence, we use the Integer variant when using sqlite in tests
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, init=False, autoincrement=True
+    )
+    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("pool_info.blockNumber"), index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
     baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)

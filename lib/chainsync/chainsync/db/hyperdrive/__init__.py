@@ -19,6 +19,7 @@ from .interface import (
     get_all_traders,
     get_all_wallet_info,
     get_checkpoint_info,
+    get_current_wallet,
     get_current_wallet_info,
     get_latest_block_number_from_pool_info_table,
     get_pool_config,
@@ -27,4 +28,12 @@ from .interface import (
     get_wallet_deltas,
     get_wallet_info_history,
 )
-from .schema import CheckpointInfo, HyperdriveTransaction, PoolAnalysis, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .schema import (
+    CheckpointInfo,
+    HyperdriveTransaction,
+    PoolAnalysis,
+    PoolConfig,
+    PoolInfo,
+    WalletDelta,
+    WalletInfoFromChain,
+)

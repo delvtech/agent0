@@ -2,7 +2,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfoFromChain
 
 # These tests are using fixtures defined in conftest.py
 
@@ -198,31 +198,31 @@ class TestWalletInfoTable:
 
     def test_create_wallet_info(self, db_session):
         """Create and entry"""
-        wallet_info = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
+        wallet_info = WalletInfoFromChain(blockNumber=1, tokenValue=Decimal("3.2"))
         db_session.add(wallet_info)
         db_session.commit()
-        retrieved_wallet_info = db_session.query(WalletInfo).filter_by(blockNumber=1).first()
+        retrieved_wallet_info = db_session.query(WalletInfoFromChain).filter_by(blockNumber=1).first()
         assert retrieved_wallet_info is not None
         # tokenValue retrieved from postgres is in Decimal, cast to float
         assert float(retrieved_wallet_info.tokenValue) == 3.2
 
     def test_update_wallet_info(self, db_session):
         """Update an entry"""
-        wallet_info = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
+        wallet_info = WalletInfoFromChain(blockNumber=1, tokenValue=Decimal("3.2"))
         db_session.add(wallet_info)
         db_session.commit()
         wallet_info.tokenValue = Decimal("5.0")
         db_session.commit()
-        updated_wallet_info = db_session.query(WalletInfo).filter_by(blockNumber=1).first()
+        updated_wallet_info = db_session.query(WalletInfoFromChain).filter_by(blockNumber=1).first()
         # tokenValue retrieved from postgres is in Decimal, cast to float
         assert float(updated_wallet_info.tokenValue) == 5.0
 
     def test_delete_wallet_info(self, db_session):
         """Delete an entry"""
-        wallet_info = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
+        wallet_info = WalletInfoFromChain(blockNumber=1, tokenValue=Decimal("3.2"))
         db_session.add(wallet_info)
         db_session.commit()
         db_session.delete(wallet_info)
         db_session.commit()
-        deleted_wallet_info = db_session.query(WalletInfo).filter_by(blockNumber=1).first()
+        deleted_wallet_info = db_session.query(WalletInfoFromChain).filter_by(blockNumber=1).first()
         assert deleted_wallet_info is None

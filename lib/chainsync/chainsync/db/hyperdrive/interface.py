@@ -9,7 +9,15 @@ from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
 from .agent_position import AgentPosition
-from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .schema import (
+    CheckpointInfo,
+    CurrentWallet,
+    HyperdriveTransaction,
+    PoolConfig,
+    PoolInfo,
+    WalletDelta,
+    WalletInfoFromChain,
+)
 
 
 def add_transactions(transactions: list[HyperdriveTransaction], session: Session) -> None:
@@ -32,7 +40,7 @@ def add_transactions(transactions: list[HyperdriveTransaction], session: Session
         raise err
 
 
-def add_wallet_infos(wallet_infos: list[WalletInfo], session: Session) -> None:
+def add_wallet_infos(wallet_infos: list[WalletInfoFromChain], session: Session) -> None:
     """Add wallet info to the walletinfo table.
 
     Arguments
@@ -341,18 +349,18 @@ def get_all_wallet_info(
     DataFrame
         A DataFrame that consists of the queried wallet info data
     """
-    query = session.query(WalletInfo)
+    query = session.query(WalletInfoFromChain)
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(WalletInfo, session) + start_block + 1
+        start_block = get_latest_block_number_from_table(WalletInfoFromChain, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(WalletInfo, session) + end_block + 1
+        end_block = get_latest_block_number_from_table(WalletInfoFromChain, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(WalletInfo.blockNumber >= start_block)
+        query = query.filter(WalletInfoFromChain.blockNumber >= start_block)
     if end_block is not None:
-        query = query.filter(WalletInfo.blockNumber < end_block)
+        query = query.filter(WalletInfoFromChain.blockNumber < end_block)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
@@ -502,6 +510,45 @@ def get_wallet_deltas(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
+def get_current_wallet(
+    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
+) -> pd.DataFrame:
+    """Get all current wallet data in history and returns as a pandas dataframe.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    start_block : int | None, optional
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block : int | None, optional
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried wallet info data
+    """
+    query = session.query(CurrentWallet)
+
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = get_latest_block_number_from_table(CurrentWallet, session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = get_latest_block_number_from_table(CurrentWallet, session) + end_block + 1
+
+    if start_block is not None:
+        query = query.filter(CurrentWallet.blockNumber >= start_block)
+    if end_block is not None:
+        query = query.filter(CurrentWallet.blockNumber < end_block)
+
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
+
+
 def get_all_traders(
     session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
 ) -> list[str]:
@@ -525,17 +572,17 @@ def get_all_traders(
     list[str]
         A list of addresses that have made a trade
     """
-    query = session.query(WalletInfo.walletAddress)
+    query = session.query(WalletInfoFromChain.walletAddress)
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(WalletInfo, session) + start_block + 1
+        start_block = get_latest_block_number_from_table(WalletInfoFromChain, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(WalletInfo, session) + end_block + 1
+        end_block = get_latest_block_number_from_table(WalletInfoFromChain, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(WalletInfo.blockNumber >= start_block)
+        query = query.filter(WalletInfoFromChain.blockNumber >= start_block)
     if end_block is not None:
-        query = query.filter(WalletInfo.blockNumber < end_block)
+        query = query.filter(WalletInfoFromChain.blockNumber < end_block)
 
     if query is None:
         return []

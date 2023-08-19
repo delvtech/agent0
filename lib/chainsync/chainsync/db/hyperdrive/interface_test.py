@@ -24,7 +24,7 @@ from .interface import (
     get_transactions,
     get_wallet_deltas,
 )
-from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfoFromChain
 
 
 # These tests are using fixtures defined in conftest.py
@@ -296,30 +296,30 @@ class TestWalletInfoInterface:
 
     def test_latest_block_number(self, db_session):
         """Testing retrieval of wallet info via interface"""
-        wallet_info_1 = WalletInfo(blockNumber=1, tokenValue=Decimal("3.0"))
+        wallet_info_1 = WalletInfoFromChain(blockNumber=1, tokenValue=Decimal("3.0"))
         add_wallet_infos([wallet_info_1], db_session)
-        latest_block_number = get_latest_block_number_from_table(WalletInfo, db_session)
+        latest_block_number = get_latest_block_number_from_table(WalletInfoFromChain, db_session)
         assert latest_block_number == 1
-        wallet_info_2 = WalletInfo(blockNumber=2, tokenValue=Decimal("3.2"))
-        wallet_info_3 = WalletInfo(blockNumber=3, tokenValue=Decimal("3.4"))
+        wallet_info_2 = WalletInfoFromChain(blockNumber=2, tokenValue=Decimal("3.2"))
+        wallet_info_3 = WalletInfoFromChain(blockNumber=3, tokenValue=Decimal("3.4"))
         add_wallet_infos([wallet_info_2, wallet_info_3], db_session)
-        latest_block_number = get_latest_block_number_from_table(WalletInfo, db_session)
+        latest_block_number = get_latest_block_number_from_table(WalletInfoFromChain, db_session)
         assert latest_block_number == 3
 
     def test_get_wallet_info(self, db_session):
         """Testing retrieval of walletinfo via interface"""
-        wallet_info_1 = WalletInfo(blockNumber=0, tokenValue=Decimal("3.1"))
-        wallet_info_2 = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
-        wallet_info_3 = WalletInfo(blockNumber=2, tokenValue=Decimal("3.3"))
+        wallet_info_1 = WalletInfoFromChain(blockNumber=0, tokenValue=Decimal("3.1"))
+        wallet_info_2 = WalletInfoFromChain(blockNumber=1, tokenValue=Decimal("3.2"))
+        wallet_info_3 = WalletInfoFromChain(blockNumber=2, tokenValue=Decimal("3.3"))
         add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], db_session)
         wallet_info_df = get_all_wallet_info(db_session)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.1, 3.2, 3.3]))
 
     def test_block_query_wallet_info(self, db_session):
         """Testing querying by block number of wallet info via interface"""
-        wallet_info_1 = WalletInfo(blockNumber=0, tokenValue=Decimal("3.1"))
-        wallet_info_2 = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
-        wallet_info_3 = WalletInfo(blockNumber=2, tokenValue=Decimal("3.3"))
+        wallet_info_1 = WalletInfoFromChain(blockNumber=0, tokenValue=Decimal("3.1"))
+        wallet_info_2 = WalletInfoFromChain(blockNumber=1, tokenValue=Decimal("3.2"))
+        wallet_info_3 = WalletInfoFromChain(blockNumber=2, tokenValue=Decimal("3.3"))
         add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], db_session)
         wallet_info_df = get_all_wallet_info(db_session, start_block=1)
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], np.array([3.2, 3.3]))
@@ -334,14 +334,20 @@ class TestWalletInfoInterface:
 
     def test_current_wallet_info(self, db_session):
         """Testing helper function to get current wallet values"""
-        wallet_info_1 = WalletInfo(blockNumber=0, walletAddress="addr", tokenType="BASE", tokenValue=Decimal("3.1"))
-        wallet_info_2 = WalletInfo(blockNumber=1, walletAddress="addr", tokenType="LP", tokenValue=Decimal("5.1"))
+        wallet_info_1 = WalletInfoFromChain(
+            blockNumber=0, walletAddress="addr", tokenType="BASE", tokenValue=Decimal("3.1")
+        )
+        wallet_info_2 = WalletInfoFromChain(
+            blockNumber=1, walletAddress="addr", tokenType="LP", tokenValue=Decimal("5.1")
+        )
         add_wallet_infos([wallet_info_1, wallet_info_2], db_session)
         wallet_info_df = get_current_wallet_info(db_session).reset_index()
         np.testing.assert_array_equal(wallet_info_df["tokenType"], ["BASE", "LP"])
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], [3.1, 5.1])
         # E.g., block 2, wallet base tokens gets updated to 6.1
-        wallet_info_3 = WalletInfo(blockNumber=2, walletAddress="addr", tokenType="BASE", tokenValue=Decimal("6.1"))
+        wallet_info_3 = WalletInfoFromChain(
+            blockNumber=2, walletAddress="addr", tokenType="BASE", tokenValue=Decimal("6.1")
+        )
         add_wallet_infos([wallet_info_3], db_session)
         wallet_info_df = get_current_wallet_info(db_session).reset_index()
         np.testing.assert_array_equal(wallet_info_df["tokenType"], ["BASE", "LP"])
@@ -349,9 +355,9 @@ class TestWalletInfoInterface:
 
     def test_get_agents(self, db_session):
         """Testing helper function to get current wallet values"""
-        wallet_info_1 = WalletInfo(blockNumber=0, walletAddress="addr_1")
-        wallet_info_2 = WalletInfo(blockNumber=1, walletAddress="addr_1")
-        wallet_info_3 = WalletInfo(blockNumber=2, walletAddress="addr_2")
+        wallet_info_1 = WalletInfoFromChain(blockNumber=0, walletAddress="addr_1")
+        wallet_info_2 = WalletInfoFromChain(blockNumber=1, walletAddress="addr_1")
+        wallet_info_3 = WalletInfoFromChain(blockNumber=2, walletAddress="addr_2")
         add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], db_session)
         agents = get_all_traders(db_session)
         assert len(agents) == 2

@@ -15,7 +15,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxData
 
-from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfo
+from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfoFromChain
 
 
 def convert_hyperdrive_transactions_for_block(
@@ -116,7 +116,7 @@ def get_wallet_info(
     block_number: BlockNumber,
     transactions: list[HyperdriveTransaction],
     pool_info: PoolInfo,
-) -> list[WalletInfo]:
+) -> list[WalletInfoFromChain]:
     """Retrieve wallet information at a given block given a transaction.
 
     HyperdriveTransactions are needed here to get
@@ -152,7 +152,7 @@ def get_wallet_info(
         num_base_token = get_token_balance(base_contract, wallet_addr, block_number, None)
         if num_base_token is not None:
             out_wallet_info.append(
-                WalletInfo(
+                WalletInfoFromChain(
                     blockNumber=block_number,
                     walletAddress=wallet_addr,
                     baseTokenType="BASE",
@@ -168,7 +168,7 @@ def get_wallet_info(
         num_lp_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, lp_token_id)
         if num_lp_token is not None:
             out_wallet_info.append(
-                WalletInfo(
+                WalletInfoFromChain(
                     blockNumber=block_number,
                     walletAddress=wallet_addr,
                     baseTokenType="LP",
@@ -186,7 +186,7 @@ def get_wallet_info(
         num_withdrawal_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, withdrawal_token_id)
         if num_withdrawal_token is not None:
             out_wallet_info.append(
-                WalletInfo(
+                WalletInfoFromChain(
                     blockNumber=block_number,
                     walletAddress=wallet_addr,
                     baseTokenType="WITHDRAWAL_SHARE",
@@ -214,7 +214,7 @@ def get_wallet_info(
                 num_custom_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, int(token_id))
                 if num_custom_token is not None:
                     out_wallet_info.append(
-                        WalletInfo(
+                        WalletInfoFromChain(
                             blockNumber=block_number,
                             walletAddress=wallet_addr,
                             baseTokenType=base_token_type,
