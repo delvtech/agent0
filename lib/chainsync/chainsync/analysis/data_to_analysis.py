@@ -80,6 +80,7 @@ def calc_current_wallet(wallet_deltas_df: pd.DataFrame, latest_wallet: pd.DataFr
         # We broadcast latest wallet across all blockNumbers. If a position does not exist in latest_wallet,
         # it will treat it as 0 (based on fill_value)
         wallet_deltas_df["value"] = wallet_deltas_df["value"].add(latest_wallet["value"], fill_value=0)
+        wallet_deltas_df = wallet_deltas_df.reset_index()
 
         # In the case where latest_wallet has positions not in wallet_deltas, we can ignore them
         # since if they're not in wallet_deltas, there's no change in positions

@@ -18,6 +18,7 @@ from ethpy.test_fixtures import local_chain, local_hyperdrive_chain
 # This means that the local postgres fixture (which launches a docker container) will not automatically
 # be cleaned up if you, e.g., use the debugger and a db test fails. Make sure to manually clean up.
 # TODO maybe automatically close the container on catch here
+# TODO this seems to happen sometimes, not all the time, track down
 
 # Use this in conjunction with the following launch.json configuration:
 #      {

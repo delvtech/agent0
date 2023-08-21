@@ -392,18 +392,18 @@ class TestCurrentWalletInterface:
 
     def test_get_current_wallet(self, db_session):
         """Testing retrieval of walletinfo via interface"""
-        wallet_info_1 = CurrentWallet(blockNumber=0, value=Decimal("3.1"))
-        wallet_info_2 = CurrentWallet(blockNumber=1, value=Decimal("3.2"))
-        wallet_info_3 = CurrentWallet(blockNumber=2, value=Decimal("3.3"))
+        wallet_info_1 = CurrentWallet(blockNumber=0, walletAddress="a", value=Decimal("3.1"))
+        wallet_info_2 = CurrentWallet(blockNumber=1, walletAddress="b", value=Decimal("3.2"))
+        wallet_info_3 = CurrentWallet(blockNumber=2, walletAddress="c", value=Decimal("3.3"))
         add_current_wallet([wallet_info_1, wallet_info_2, wallet_info_3], db_session)
         wallet_info_df = get_current_wallet(db_session)
         np.testing.assert_array_equal(wallet_info_df["value"], np.array([3.1, 3.2, 3.3]))
 
     def test_block_query_wallet_info(self, db_session):
         """Testing querying by block number of wallet info via interface"""
-        wallet_info_1 = CurrentWallet(blockNumber=0, value=Decimal("3.1"))
-        wallet_info_2 = CurrentWallet(blockNumber=1, value=Decimal("3.2"))
-        wallet_info_3 = CurrentWallet(blockNumber=2, value=Decimal("3.3"))
+        wallet_info_1 = CurrentWallet(blockNumber=0, walletAddress="a", value=Decimal("3.1"))
+        wallet_info_2 = CurrentWallet(blockNumber=1, walletAddress="b", value=Decimal("3.2"))
+        wallet_info_3 = CurrentWallet(blockNumber=2, walletAddress="c", value=Decimal("3.3"))
         add_current_wallet([wallet_info_1, wallet_info_2, wallet_info_3], db_session)
         wallet_info_df = get_current_wallet(db_session, end_block=1)
         np.testing.assert_array_equal(wallet_info_df["value"], np.array([3.1]))

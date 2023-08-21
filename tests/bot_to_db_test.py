@@ -77,13 +77,6 @@ class TestBotToDb:
             # Using default abi dir
         )
 
-        # fixme This is connecting to an existing postgres db (i.e., docker) for postgres debugging
-        from chainsync.db.base import initialize_session
-
-        # Drop all tables from this db for debugging
-        db_session = initialize_session(drop=True)
-        # Done fixme
-
         # Run bots
         try:
             run_agents(
@@ -149,6 +142,7 @@ class TestBotToDb:
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
+        # Done fixme
 
         # This bot does the following known trades in sequence:
         # 1. addLiquidity of 11111 base
