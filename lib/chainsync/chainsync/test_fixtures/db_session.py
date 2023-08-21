@@ -1,6 +1,6 @@
 """Pytest fixture that creates an in memory db session and creates the base db schema"""
 import time
-from typing import Any, Generator
+from typing import Any, Iterator
 
 import docker
 import pytest
@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 
 @pytest.fixture(scope="session")
-def psql_docker() -> Generator[PostgresConfig, Any, Any]:
+def psql_docker() -> Iterator[PostgresConfig]:
     """Test fixture for running postgres in docker"""
     client = docker.from_env()
 
@@ -68,7 +68,7 @@ def database_engine(psql_docker):
 
 
 @pytest.fixture(scope="function")
-def db_session(database_engine) -> Generator[Session, Any, Any]:
+def db_session(database_engine) -> Iterator[Session]:
     """Initializes the in memory db session and creates the db schema"""
     session = sessionmaker(bind=database_engine)
 
