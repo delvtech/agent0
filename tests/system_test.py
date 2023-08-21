@@ -28,7 +28,7 @@ from agent0.test_fixtures import (  # pylint: disable=unused-import, ungrouped-i
     cycle_trade_policy,
 )
 from chainsync.test_fixtures import db_session  # pylint: disable=unused-import, ungrouped-imports
-from ethpy.test_fixtures import local_chain, local_hyperdrive_chain  # pylint: disable=unused-import, ungrouped-imports
+from ethpy.test_fixtures import local_hyperdrive_chain  # pylint: disable=unused-import, ungrouped-imports
 
 # fixture arguments in test function have to be the same as the fixture name
 # pylint: disable=redefined-outer-name
@@ -37,11 +37,9 @@ from ethpy.test_fixtures import local_chain, local_hyperdrive_chain  # pylint: d
 class TestLocalChain:
     """Tests bringing up local chain"""
 
-    # This is using 2 fixtures. Since hyperdrive_contract_address depends on local_chain, we need both here
-    # This is due to adding test fixtures through imports
-    def test_hyperdrive_init_and_deploy(self, local_chain: str, local_hyperdrive_chain: dict):
+    def test_hyperdrive_init_and_deploy(self, local_hyperdrive_chain: dict):
         """Create and entry"""
-        print(local_chain)
+        print(local_hyperdrive_chain["rpc_url"])
         print(local_hyperdrive_chain)
 
 
@@ -60,7 +58,6 @@ class TestBotToDb:
     # pylint: disable=too-many-locals, too-many-statements
     def test_bot_to_db(
         self,
-        local_chain: str,
         local_hyperdrive_chain: dict,
         cycle_trade_policy: Type[BasePolicy],
         db_session: Session,
@@ -69,6 +66,7 @@ class TestBotToDb:
         All arguments are fixtures.
         """
         # Get hyperdrive chain info
+        rpc_url: str = local_hyperdrive_chain["rpc_url"]
         deploy_account: LocalAccount = local_hyperdrive_chain["deploy_account"]
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain["hyperdrive_contract_addresses"]
 
@@ -102,7 +100,7 @@ class TestBotToDb:
         eth_config = EthConfig(
             # Artifacts_url isn't used here, as we explicitly set addresses and passed to run_bots
             ARTIFACTS_URL="not_used",
-            RPC_URL=local_chain,
+            RPC_URL=rpc_url,
             # Using default abi dir
         )
 

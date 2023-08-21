@@ -20,3 +20,6 @@ sphinxcontrib-napoleon>=0.7
 tomli>=2.0.1
 # urllib3 v2 requires OpenSSL v1.1.1+, but Vercel uses v1.0.2
 urllib3<2.0
+# Used for tests of db interface
+docker
+pytest-postgresql

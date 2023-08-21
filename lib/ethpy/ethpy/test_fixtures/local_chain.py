@@ -74,6 +74,7 @@ def local_hyperdrive_chain(local_chain: str) -> dict:
     hyperdrive_addr = deploy_and_initialize_hyperdrive(web3, base_token_contract, factory_contract, account)
 
     return {
+        "rpc_url": local_chain,
         "web3": web3,
         "deploy_account": account,
         "hyperdrive_contract_addresses": HyperdriveAddresses(
