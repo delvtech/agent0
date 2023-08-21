@@ -39,7 +39,7 @@ class AgentConfig:
     name: str = "BoringBotty"
     base_budget_wei: Budget | int = Budget()
     eth_budget_wei: Budget | int = Budget(min_wei=0, max_wei=0)
-    slippage_tolerance: FixedPoint = FixedPoint(0.0001)  # default to 0.01%
+    slippage_tolerance: FixedPoint = FixedPoint("0.0001")  # default to 0.01%
     number_of_agents: int = 1
     private_keys: list[str] | None = None
     init_kwargs: dict = field(default_factory=dict)

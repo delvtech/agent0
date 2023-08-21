@@ -34,10 +34,8 @@ def _calculateTimeStretch(apr: int) -> int:  # pylint: disable=invalid-name
         The scaled output time stretch
     """
     fp_apr = FixedPoint(scaled_value=apr)
-    time_stretch = FixedPoint(scaled_value=int(5.24592e18)) / (
-        FixedPoint(scaled_value=int(0.04665e18)) * (fp_apr * 100)
-    )
-    return (FixedPoint(scaled_value=int(1e18)) / time_stretch).scaled_value
+    time_stretch = FixedPoint("5.24592") / (FixedPoint("0.04665") * (fp_apr * 100))
+    return (FixedPoint(1) / time_stretch).scaled_value
 
 
 def initialize_deploy_account(web3: Web3) -> LocalAccount:
@@ -81,13 +79,13 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
     # TODO parameterize these parameters
     # pylint: disable=too-many-locals
     # Initial factory settings
-    initial_variable_rate = int(0.05e18)
-    curve_fee = int(0.1e18)  # 10%
-    flat_fee = int(0.0005e18)  # 0.05%
-    governance_fee = int(0.15e18)  # 15%
-    max_curve_fee = int(0.3e18)  # 30%
-    max_flat_fee = int(0.0015e18)  # 0.15%
-    max_governance_fee = int(0.30e18)  # 30%
+    initial_variable_rate = FixedPoint("0.05").scaled_value
+    curve_fee = FixedPoint("0.1").scaled_value  # 10%
+    flat_fee = FixedPoint("0.0005").scaled_value  # 0.05%
+    governance_fee = FixedPoint("0.15").scaled_value  # 15%
+    max_curve_fee = FixedPoint("0.3").scaled_value  # 30%
+    max_flat_fee = FixedPoint("0.0015").scaled_value  # 0.15%
+    max_governance_fee = FixedPoint("0.30").scaled_value  # 30%
     # Configuration settings
     abi_folder = "packages/hyperdrive/src/abis/"
 
@@ -182,15 +180,15 @@ def deploy_and_initialize_hyperdrive(
     # TODO parameterize these parameters
     # pylint: disable=too-many-locals
     # Initial hyperdrive settings
-    initial_contribution = int(100_000_000e18)
-    initial_share_price = int(1e18)
-    minimum_share_reserves = int(10e18)
+    initial_contribution = FixedPoint(100_000_000).scaled_value
+    initial_share_price = FixedPoint(1).scaled_value
+    minimum_share_reserves = FixedPoint(10).scaled_value
     position_duration = 604800  # 1 week
     checkpoint_duration = 3600  # 1 hour
-    time_stretch = _calculateTimeStretch(int(0.05e18))
+    time_stretch = _calculateTimeStretch(FixedPoint("0.05").scaled_value)
     oracle_size = 10
     update_gap = 3600  # 1 hour
-    initial_fixed_rate = int(0.05e18)
+    initial_fixed_rate = FixedPoint("0.05").scaled_value
 
     deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
 
