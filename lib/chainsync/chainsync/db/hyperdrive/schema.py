@@ -35,7 +35,7 @@ class PoolConfig(Base):
     curveFee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     flatFee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     governanceFee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    oracleSize: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    oracleSize: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     updateGap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     invTimeStretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     updateGap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)

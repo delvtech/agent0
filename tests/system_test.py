@@ -138,7 +138,7 @@ class TestBotToDb:
             "curveFee": _to_unscaled_decimal(FixedPoint("0.1")),  # 10%
             "flatFee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05%
             "governanceFee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%
-            "oracleSize": _to_unscaled_decimal(FixedPoint("10")),
+            "oracleSize": 10,
             "updateGap": 3600,  # TODO don't know where this is getting set
             "invTimeStretch": expected_inv_timestretch,
         }
