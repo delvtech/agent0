@@ -118,12 +118,8 @@ def data_to_analysis(start_block: int, end_block: int, session: Session, pool_co
 
     # Get current wallet of previous timestamp here
     # If it doesn't exist, should be an empty dataframe
-    # TODO this doens't work, getting current wallet needs to look back to most recent update
-    # where the code below only gets one row
     if start_block > 0:
-        latest_wallet = get_current_wallet(
-            session, start_block=start_block - 1, end_block=start_block, coerce_float=False
-        )
+        latest_wallet = get_current_wallet(session, end_block=start_block, coerce_float=False)
     else:
         latest_wallet = pd.DataFrame([])
 

@@ -527,9 +527,7 @@ def get_wallet_deltas(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
-def get_current_wallet(
-    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
-) -> pd.DataFrame:
+def get_current_wallet(session: Session, end_block: int | None = None, coerce_float=True) -> pd.DataFrame:
     """Get all current wallet data in history and returns as a pandas dataframe.
 
     Arguments
@@ -550,18 +548,27 @@ def get_current_wallet(
     DataFrame
         A DataFrame that consists of the queried wallet info data
     """
+    # TODO this function might not scale, as it's looking across all blocks from the beginning of time
+    # Ways to improve: add indexes on walletAddress, tokenType, blockNumber
+
+    # SQL query:
+    # select distinct on (walletAddress, tokenType) * from CurrentWallet
+    # order by blockNumber DESC;
+    # This query selects distinct walletAddress and tokenType from current wallets,
+    # selecting only the first entry of each group. Since we order each group by descending blockNumber,
+    # this first entry is the latest entry of blockNumber.
+
     query = session.query(CurrentWallet)
 
     # Support for negative indices
-    if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(CurrentWallet, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
         end_block = get_latest_block_number_from_table(CurrentWallet, session) + end_block + 1
 
-    if start_block is not None:
-        query = query.filter(CurrentWallet.blockNumber >= start_block)
     if end_block is not None:
         query = query.filter(CurrentWallet.blockNumber < end_block)
+
+    query = query.distinct(CurrentWallet.walletAddress, CurrentWallet.tokenType)
+    query = query.order_by(CurrentWallet.blockNumber.desc())
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
