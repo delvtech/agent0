@@ -77,6 +77,13 @@ class TestBotToDb:
             # Using default abi dir
         )
 
+        # fixme This is connecting to an existing postgres db (i.e., docker) for postgres debugging
+        from chainsync.db.base import initialize_session
+
+        # Drop all tables from this db for debugging
+        db_session = initialize_session(drop=True)
+        # Done fixme
+
         # Run bots
         try:
             run_agents(
@@ -92,12 +99,38 @@ class TestBotToDb:
             # so this exception is expected on test pass
             pass
 
-        # fixme This is connecting to an existing postgres db (i.e., docker) for postgres debugging
-        from chainsync.db.base import initialize_session
+        # Run acquire data to get data from chain to db
+        acquire_data(
+            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            eth_config=eth_config,
+            db_session=db_session,
+            contract_addresses=hyperdrive_contract_addresses,
+            # Exit the script after catching up to the chain
+            exit_on_catch_up=True,
+        )
 
-        # Drop all tables from this db for debugging
-        db_session = initialize_session(drop=True)
-        # Done fixme
+        # Run data analysis to calculate various analysis values
+        data_analysis(
+            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            db_session=db_session,
+            # Exit the script after catching up to the chain
+            exit_on_catch_up=True,
+        )
+
+        # fixme remove this Run bots again
+        try:
+            run_agents(
+                env_config,
+                agent_config,
+                account_key_config,
+                develop=True,
+                eth_config=eth_config,
+                contract_addresses=hyperdrive_contract_addresses,
+            )
+        except AgentDoneException:
+            # Using this exception to stop the agents,
+            # so this exception is expected on test pass
+            pass
 
         # Run acquire data to get data from chain to db
         acquire_data(
