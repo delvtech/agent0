@@ -33,21 +33,14 @@ max-line-length = "120"
 line-length = "120"
 extend-exclude = "\\.ipynb"
 
+[tool.pylint]
+exclude = ["agent_0", "hyperdrive_solidity", ".venv", ".vscode", "docs"]
+
 [tool.pylance]
-exclude = [
-    "agent_0",
-    "hyperdrive_solidity",
-]
+exclude = ["agent_0", "hyperdrive_solidity", ".venv", ".vscode", "docs"]
 
 [tool.pyright]
-exclude = [
-    "agent_0",
-    ".venv",
-    ".vscode",
-    "docs",
-    "hyperdrive_solidity/.venv",
-    "hyperdrive_solidity",
-]
+exclude = ["agent_0", "hyperdrive_solidity", ".venv", ".vscode", "docs"]
 
 [tool.ruff]
 # Default is: pycodestyle (E) and Pyflakes (F)
