@@ -9,9 +9,13 @@ from chainsync.db.base import Base, initialize_engine
 from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy.orm import Session, sessionmaker
 
+# fixture arguments in test function have to be the same as the fixture name
+# pylint: disable=redefined-outer-name
+
 
 @pytest.fixture(scope="session")
 def psql_docker() -> Generator[PostgresConfig, Any, Any]:
+    """Test fixture for running postgres in docker"""
     client = docker.from_env()
 
     # Using these config for tests
@@ -47,6 +51,7 @@ def psql_docker() -> Generator[PostgresConfig, Any, Any]:
 
 @pytest.fixture(scope="session")
 def database_engine(psql_docker):
+    """Test fixture creating psql engine on local postgres container"""
     # Using default postgres info
     # Renaming variable to match what it actually is, i.e., the postgres config
     postgres_config = psql_docker
