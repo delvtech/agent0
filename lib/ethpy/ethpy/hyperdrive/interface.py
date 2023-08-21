@@ -124,7 +124,7 @@ def get_hyperdrive_config(hyperdrive_contract: Contract) -> dict[str, Any]:
     pool_config["curveFee"] = FixedPoint(scaled_value=curve_fee)
     pool_config["flatFee"] = FixedPoint(scaled_value=flat_fee)
     pool_config["governanceFee"] = FixedPoint(scaled_value=governance_fee)
-    pool_config["oracleSize"] = FixedPoint(scaled_value=hyperdrive_config["oracleSize"])
+    pool_config["oracleSize"] = hyperdrive_config["oracleSize"]
     pool_config["updateGap"] = hyperdrive_config["updateGap"]
     return pool_config
 
@@ -159,7 +159,7 @@ def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> Hyperdri
         total_supply_longs={FixedPoint(0): FixedPoint(pool_info["longsOutstanding"])},
         total_supply_shorts={FixedPoint(0): FixedPoint(pool_info["shortsOutstanding"])},
         total_supply_withdraw_shares=FixedPoint(pool_info["totalSupplyWithdrawalShares"]),
-        variable_apr=FixedPoint(0.01),  # TODO: insert real value
+        variable_apr=FixedPoint("0.01"),  # TODO: insert real value
         withdraw_shares_ready_to_withdraw=FixedPoint(pool_info["withdrawalSharesReadyToWithdraw"]),
         withdraw_capital=FixedPoint(0),
         withdraw_interest=FixedPoint(0),

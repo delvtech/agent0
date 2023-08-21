@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Union
 
 from chainsync.db.base import Base
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import BigInteger, Boolean, DateTime, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 # pylint: disable=invalid-name
@@ -35,7 +35,7 @@ class PoolConfig(Base):
     curveFee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     flatFee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     governanceFee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    oracleSize: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    oracleSize: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     updateGap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     invTimeStretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     updateGap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
@@ -85,13 +85,9 @@ class WalletInfo(Base):
     __tablename__ = "walletinfo"
 
     # Default table primary key
-    # Note that we use postgres in production and sqlite in testing, but sqlite has issues with
-    # autoincrement with BigIntegers. Hence, we use the Integer variant when using sqlite in tests
-    id: Mapped[int] = mapped_column(
-        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, init=False, autoincrement=True
-    )
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
 
-    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), index=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
     baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
@@ -111,13 +107,9 @@ class WalletDelta(Base):
     __tablename__ = "walletdelta"
 
     # Default table primary key
-    # Note that we use postgres in production and sqlite in testing, but sqlite has issues with
-    # autoincrement with BigIntegers. Hence, we use the Integer variant when using sqlite in tests
-    id: Mapped[int] = mapped_column(
-        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, init=False, autoincrement=True
-    )
-    transactionHash: Mapped[str] = mapped_column(String, ForeignKey("transactions.transactionHash"), index=True)
-    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), index=True)
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
+    transactionHash: Mapped[str] = mapped_column(String, index=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
     baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
@@ -138,15 +130,11 @@ class HyperdriveTransaction(Base):
     __tablename__ = "transactions"
 
     # Default table primary key
-    # Note that we use postgres in production and sqlite in testing, but sqlite has issues with
-    # autoincrement with BigIntegers. Hence, we use the Integer variant when using sqlite in tests
-    id: Mapped[int] = mapped_column(
-        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, init=False, autoincrement=True
-    )
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
     transactionHash: Mapped[str] = mapped_column(String, index=True, unique=True)
 
     #### Fields from base transactions ####
-    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), index=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
     transactionIndex: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     nonce: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     # Transaction receipt to/from

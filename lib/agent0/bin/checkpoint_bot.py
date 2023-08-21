@@ -20,6 +20,7 @@ from ethpy.base import (
     smart_contract_transact,
 )
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_url, get_hyperdrive_config
+from fixedpointmath import FixedPoint
 from web3.contract.contract import Contract
 
 # The portion of the checkpoint that the bot will wait before attempting to
@@ -69,7 +70,7 @@ def main() -> None:
     )
 
     # Fund the checkpoint sender with some ETH.
-    balance = int(100e18)
+    balance = FixedPoint(100).scaled_value
     sender = EthAgent(Account().create("CHECKPOINT_BOT"))
     set_anvil_account_balance(web3, sender.address, balance)
     logging.info("Successfully funded the sender=%s.", sender.address)

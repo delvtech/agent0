@@ -67,13 +67,20 @@ Due to a lack of known precision, operations against Python floats are not allow
 However, operations against `int` are allowed.
 In this case, the `int` _argument_ is assumed to be "unscaled", i.e. if you write `int(8) * FixedPoint(8)` we will scale up the first variable return a `FixedPoint` number that represents the float `64.0` in 18-decimal FixedPoint format.
 So in this example the internal representation of that operation would be `64*10**18`.
-If you cast FixedPoint numbers to ints or floats you will get "unscaled" representation, e.g. `float(FixedPoint(8.0)) == 8.0` and `int(FixedPoint(8.528)) == 8`.
+If you cast FixedPoint numbers to ints or floats you will get "unscaled" representation, e.g. `float(FixedPoint("8.0")) == 8.0` and `int(FixedPoint("8.528")) == 8`.
 
-If you want the integer scaled representation, which can be useful for communicating with Solidity contracts, you must ask for it explicitly, e.g. `FixedPoint(8.52).scaled_value == 8520000000000000000`.
+If you want the integer scaled representation, which can be useful for communicating with Solidity contracts, you must ask for it explicitly, e.g. `FixedPoint("8.52").scaled_value == 8520000000000000000`.
 Conversely, if you want to initialize a FixedPoint variable using the scaled integer representation, then you need to instantiate the variable using the `scaled_value` argument, e.g. `FixedPoint(scaled_value=8)`.
 In that example, the internal representation is `8`, so casting it to a float would produce a small value: `float(FixedPoint(scaled_value=8)) == 8e-18`.
 
 To understand more, we recommend that you study the fixed point tests and source implementation in `elfpy/math/`.
+
+Warning! Using floating point as a constructor to FixedPoint can cause loss of precision. For example, 
+```
+>>> FixedPoint(1e18)
+FixedPoint("1000000000000000042.420637374017961984")
+```
+Allowing floating point in the constructor of FixedPoint will be removed in a future version of `fixedpointmath`.
 
 ## Modifying configuration for agent deployment
 
