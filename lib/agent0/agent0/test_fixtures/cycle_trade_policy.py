@@ -44,7 +44,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=FixedPoint(scaled_value=int(11111e18)),
+                        trade_amount=FixedPoint(11111),
                         wallet=wallet,
                     ),
                 )
@@ -56,7 +56,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=FixedPoint(scaled_value=int(22222e18)),
+                        trade_amount=FixedPoint(22222),
                         wallet=wallet,
                     ),
                 )
@@ -68,7 +68,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_SHORT,
-                        trade_amount=FixedPoint(scaled_value=int(33333e18)),
+                        trade_amount=FixedPoint(33333),
                         wallet=wallet,
                     ),
                 )
@@ -138,7 +138,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=FixedPoint(scaled_value=int(1e18)),
+                        trade_amount=FixedPoint(1),
                         wallet=wallet,
                     ),
                 )

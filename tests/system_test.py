@@ -47,10 +47,6 @@ def _to_unscaled_decimal(scaled_value: int) -> Decimal:
     return Decimal(str(FixedPoint(scaled_value=scaled_value)))
 
 
-def _decimal_almost_equal(a_val: Decimal, b_val: Decimal) -> bool:
-    return abs(a_val - b_val) < 1e-12
-
-
 class TestBotToDb:
     """Tests pipeline from bots making trades to viewing the trades in the db"""
 
@@ -86,9 +82,9 @@ class TestBotToDb:
             AgentConfig(
                 policy=cycle_trade_policy,
                 number_of_agents=1,
-                slippage_tolerance=FixedPoint(0.0001),
-                base_budget_wei=int(1_000_000e18),  # 1 million base
-                eth_budget_wei=int(100e18),  # 100 base
+                slippage_tolerance=FixedPoint("0.0001"),
+                base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
+                eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
                 init_kwargs={},
             ),
         ]
@@ -135,7 +131,7 @@ class TestBotToDb:
 
         # TODO these expected values are defined in lib/ethpy/ethpy/test_fixtures/deploy_hyperdrive.py
         # Eventually, we want to parameterize these values to pass into deploying hyperdrive
-        expected_timestretch_fp = FixedPoint(scaled_value=_calculateTimeStretch(int(0.05e18)))
+        expected_timestretch_fp = FixedPoint(scaled_value=_calculateTimeStretch(FixedPoint("0.05").scaled_value))
         # TODO this is actually inv of solidity time stretch, fix
         expected_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp).scaled_value)
         expected_inv_timestretch = _to_unscaled_decimal(expected_timestretch_fp.scaled_value)
@@ -143,17 +139,17 @@ class TestBotToDb:
         expected_pool_config = {
             "contractAddress": hyperdrive_contract_addresses.mock_hyperdrive,
             "baseToken": hyperdrive_contract_addresses.base_token,
-            "initialSharePrice": _to_unscaled_decimal(int(1e18)),
-            "minimumShareReserves": _to_unscaled_decimal(int(10e18)),
+            "initialSharePrice": _to_unscaled_decimal(FixedPoint("1").scaled_value),
+            "minimumShareReserves": _to_unscaled_decimal(FixedPoint("10").scaled_value),
             "positionDuration": 604800,  # 1 week
             "checkpointDuration": 3600,  # 1 hour
             # TODO this is actually inv of solidity time stretch, fix
             "timeStretch": expected_timestretch,
             "governance": deploy_account.address,
             "feeCollector": deploy_account.address,
-            "curveFee": _to_unscaled_decimal(int(0.1e18)),  # 10%
-            "flatFee": _to_unscaled_decimal(int(0.0005e18)),  # 0.05%
-            "governanceFee": _to_unscaled_decimal(int(0.15e18)),  # 15%
+            "curveFee": _to_unscaled_decimal(FixedPoint("0.1").scaled_value),  # 10%
+            "flatFee": _to_unscaled_decimal(FixedPoint("0.0005").scaled_value),  # 0.05%
+            "governanceFee": _to_unscaled_decimal(FixedPoint("0.15").scaled_value),  # 15%
             "oracleSize": _to_unscaled_decimal(10),
             "updateGap": 3600,  # TODO don't know where this is getting set
             "invTimeStretch": expected_inv_timestretch,
@@ -171,13 +167,8 @@ class TestBotToDb:
 
         # Value comparison
         for key, expected_value in expected_pool_config.items():
-            # TODO In testing, we use sqlite, which does not implement the fixed point Numeric type
-            # Internally, they store Numeric types as floats, hence we see rounding errors in testing
-            # This does not happen in postgres, where these values match exactly.
-            # https://github.com/delvtech/elf-simulations/issues/836
-
             if isinstance(expected_value, Decimal):
-                assert_val = _decimal_almost_equal(db_pool_config[key], expected_value)
+                assert_val = db_pool_config[key] == expected_value
             else:
                 assert_val = db_pool_config[key] == expected_value
 

@@ -5,6 +5,7 @@
 import os
 
 import pytest
+from agent0.test_fixtures import cycle_trade_policy
 from chainsync.test_fixtures import database_engine, db_session, dummy_session, psql_docker
 from ethpy.test_fixtures import local_chain, local_hyperdrive_chain
 
@@ -39,4 +40,12 @@ if os.getenv("_PYTEST_RAISE", "0") != "0":
 # Importing all fixtures here and defining here
 # This allows for users of fixtures to not have to import all dependency fixtures when running
 # TODO this means pytest can only be ran from this directory
-__all__ = ["database_engine", "db_session", "dummy_session", "psql_docker", "local_chain", "local_hyperdrive_chain"]
+__all__ = [
+    "database_engine",
+    "db_session",
+    "dummy_session",
+    "psql_docker",
+    "local_chain",
+    "local_hyperdrive_chain",
+    "cycle_trade_policy",
+]

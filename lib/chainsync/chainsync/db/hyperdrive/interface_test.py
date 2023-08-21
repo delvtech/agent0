@@ -151,10 +151,6 @@ class TestPoolConfigInterface:
 
         pool_config_df_1 = get_pool_config(db_session)
         assert len(pool_config_df_1) == 1
-        # TODO In testing, we use sqlite, which does not implement the fixed point Numeric type
-        # Internally, they store Numeric types as floats, hence we see rounding errors in testing
-        # This does not happen in postgres, where these values match exactly.
-        # https://github.com/delvtech/elf-simulations/issues/836
         np.testing.assert_array_equal(pool_config_df_1["initialSharePrice"], np.array([3.2]))
 
         pool_config_2 = PoolConfig(contractAddress="1", initialSharePrice=Decimal("3.4"))
@@ -185,9 +181,7 @@ class TestPoolConfigInterface:
         assert pool_config_df_1.loc[0, "initialSharePrice"] == 3.2
 
         # Nothing should happen if we give the same pool_config
-        # TODO Below is a hack due to sqlite not having numerics
-        # We explicitly print 18 spots after floating point to match rounding error in sqlite
-        pool_config_2 = PoolConfig(contractAddress="0", initialSharePrice=Decimal(f"{3.2:.18f}"))
+        pool_config_2 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
         add_pool_config(pool_config_2, db_session)
         pool_config_df_2 = get_pool_config(db_session)
         assert len(pool_config_df_2) == 1
