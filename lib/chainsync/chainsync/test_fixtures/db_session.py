@@ -30,10 +30,10 @@ def psql_docker() -> Generator[PostgresConfig, Any, Any]:
     container = client.containers.run(
         image="postgres:12",
         auto_remove=True,
-        environment=dict(
-            POSTGRES_USER=postgres_config.POSTGRES_USER,
-            POSTGRES_PASSWORD=postgres_config.POSTGRES_PASSWORD,
-        ),
+        environment={
+            "POSTGRES_USER": postgres_config.POSTGRES_USER,
+            "POSTGRES_PASSWORD": postgres_config.POSTGRES_PASSWORD,
+        },
         name="test_postgres",
         ports={"5432/tcp": ("127.0.0.1", postgres_config.POSTGRES_PORT)},
         detach=True,
