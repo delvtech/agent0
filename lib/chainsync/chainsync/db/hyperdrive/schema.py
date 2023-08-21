@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Union
 
 from chainsync.db.base import Base
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import BigInteger, Boolean, DateTime, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 # pylint: disable=invalid-name
@@ -91,7 +91,7 @@ class WalletInfo(Base):
         BigInteger().with_variant(Integer, "sqlite"), primary_key=True, init=False, autoincrement=True
     )
 
-    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), index=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
     baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
@@ -116,8 +116,8 @@ class WalletDelta(Base):
     id: Mapped[int] = mapped_column(
         BigInteger().with_variant(Integer, "sqlite"), primary_key=True, init=False, autoincrement=True
     )
-    transactionHash: Mapped[str] = mapped_column(String, ForeignKey("transactions.transactionHash"), index=True)
-    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), index=True)
+    transactionHash: Mapped[str] = mapped_column(String, index=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
     baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
@@ -146,7 +146,7 @@ class HyperdriveTransaction(Base):
     transactionHash: Mapped[str] = mapped_column(String, index=True, unique=True)
 
     #### Fields from base transactions ####
-    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("poolinfo.blockNumber"), index=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
     transactionIndex: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     nonce: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     # Transaction receipt to/from
