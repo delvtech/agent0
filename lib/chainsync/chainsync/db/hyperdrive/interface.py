@@ -61,6 +61,26 @@ def add_wallet_infos(wallet_infos: list[WalletInfoFromChain], session: Session) 
         raise err
 
 
+def add_current_wallet(current_wallet: list[CurrentWallet], session: Session) -> None:
+    """Add wallet info to the walletinfo table.
+
+    Arguments
+    ---------
+    wallet_infos: list[WalletInfo]
+        A list of WalletInfo objects to insert into postgres
+    session: Session
+        The initialized session object
+    """
+    for wallet in current_wallet:
+        session.add(wallet)
+    try:
+        session.commit()
+    except exc.DataError as err:
+        session.rollback()
+        logging.error("Error on adding wallet_infos: %s", err)
+        raise err
+
+
 def get_pool_config(session: Session, contract_address: str | None = None, coerce_float=True) -> pd.DataFrame:
     """Get all pool config and returns as a pandas dataframe.
 
@@ -551,24 +571,26 @@ def get_current_wallet(session: Session, end_block: int | None = None, coerce_fl
     # TODO this function might not scale, as it's looking across all blocks from the beginning of time
     # Ways to improve: add indexes on walletAddress, tokenType, blockNumber
 
-    # SQL query:
+    # Postgres SQL query (this one is fast, but isn't supported by sqlite)
     # select distinct on (walletAddress, tokenType) * from CurrentWallet
     # order by blockNumber DESC;
     # This query selects distinct walletAddress and tokenType from current wallets,
     # selecting only the first entry of each group. Since we order each group by descending blockNumber,
     # this first entry is the latest entry of blockNumber.
 
+    # Generic SQL query (this one is slow, but is database agnostic)
+
     query = session.query(CurrentWallet)
 
     # Support for negative indices
     if (end_block is not None) and (end_block < 0):
         end_block = get_latest_block_number_from_table(CurrentWallet, session) + end_block + 1
-
     if end_block is not None:
         query = query.filter(CurrentWallet.blockNumber < end_block)
 
     query = query.distinct(CurrentWallet.walletAddress, CurrentWallet.tokenType)
-    query = query.order_by(CurrentWallet.blockNumber.desc())
+
+    query = query.order_by(CurrentWallet.walletAddress, CurrentWallet.tokenType, CurrentWallet.blockNumber.desc())
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
