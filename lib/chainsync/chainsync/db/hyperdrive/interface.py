@@ -592,7 +592,13 @@ def get_current_wallet(session: Session, end_block: int | None = None, coerce_fl
 
     query = query.order_by(CurrentWallet.walletAddress, CurrentWallet.tokenType, CurrentWallet.blockNumber.desc())
 
-    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
+    current_wallet = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
+
+    # filter non-base zero positions here
+    has_value = current_wallet["value"] > 0
+    is_base = current_wallet["tokenType"] == "BASE"
+
+    return current_wallet[has_value | is_base]
 
 
 def get_all_traders(

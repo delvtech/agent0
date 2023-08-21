@@ -36,12 +36,6 @@ def calc_total_wallet_delta(wallet_deltas: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def _filter_zero_positions(wallet: pd.DataFrame) -> pd.DataFrame:
-    pos_values = wallet["value"] > 0
-    is_base = wallet["tokenType"] == "BASE"
-    return wallet[pos_values | is_base]
-
-
 def calc_current_wallet(wallet_deltas_df: pd.DataFrame, latest_wallet: pd.DataFrame) -> pd.DataFrame:
     """Calculates the current wallet positions given the wallet deltas
     This function takes a batch of wallet deltas and calculates the current wallet position for each
@@ -85,7 +79,9 @@ def calc_current_wallet(wallet_deltas_df: pd.DataFrame, latest_wallet: pd.DataFr
         # In the case where latest_wallet has positions not in wallet_deltas, we can ignore them
         # since if they're not in wallet_deltas, there's no change in positions
 
-    return _filter_zero_positions(wallet_deltas_df)
+    # Need to keep zero positions in the db since a delta could have made the current wallet 0
+    # We can filter zero positions after the query of current positions
+    return wallet_deltas_df
 
 
 def data_to_analysis(start_block: int, end_block: int, session: Session, pool_config: pd.Series) -> None:

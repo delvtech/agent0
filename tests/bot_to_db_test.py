@@ -10,7 +10,13 @@ from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.exec import run_agents
 from agent0.test_fixtures import AgentDoneException
-from chainsync.db.hyperdrive.interface import get_pool_config, get_pool_info, get_transactions, get_wallet_deltas
+from chainsync.db.hyperdrive.interface import (
+    get_current_wallet,
+    get_pool_config,
+    get_pool_info,
+    get_transactions,
+    get_wallet_deltas,
+)
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.signers.local import LocalAccount
 from ethpy import EthConfig
@@ -347,7 +353,6 @@ class TestBotToDb:
                 assert short_delta["delta"] == Decimal(33333)
                 # TODO check base delta
                 # TODO check maturity time and tokenType
-                # TODO check wallet info matches the deltas
                 # TODO check pool info after this tx
 
                 actual_num_shorts = short_delta["delta"]
@@ -426,3 +431,10 @@ class TestBotToDb:
                 # TODO check base delta
                 # TODO check wallet info matches the deltas
                 # TODO check pool info after this tx
+
+        # Check final wallet positions
+        db_current_wallet: pd.DataFrame = get_current_wallet(db_session, coerce_float=False)
+        # TODO currently only shorts are not dependent on poolinfo, so we only check shorts here
+        # Eventually we want to double check all token types
+        short_pos = db_current_wallet[db_current_wallet["baseTokenType"] == "SHORT"]
+        assert short_pos.iloc[0]["value"] == Decimal(33333)
