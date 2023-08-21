@@ -1,6 +1,6 @@
 """Pytest fixture that creates an in memory db session and creates the base db schema"""
 import time
-from typing import Any, Iterator
+from typing import Iterator
 
 import docker
 import pytest

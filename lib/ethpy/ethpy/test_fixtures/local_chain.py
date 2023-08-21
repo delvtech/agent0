@@ -1,7 +1,7 @@
 """Test fixture for deploying local anvil chain and initializing hyperdrive"""
 import subprocess
 import time
-from typing import Any, Iterator
+from typing import Iterator
 
 import pytest
 from ethpy.base import initialize_web3_with_http_provider

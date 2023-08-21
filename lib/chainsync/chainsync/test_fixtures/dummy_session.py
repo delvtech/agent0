@@ -1,5 +1,5 @@
 """Pytest fixture that creates an in memory db session and creates dummy db schemas"""
-from typing import Any, Iterator
+from typing import Iterator
 
 import pytest
 from sqlalchemy import String, create_engine
