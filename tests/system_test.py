@@ -9,6 +9,7 @@ from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.exec import run_agents
+from agent0.test_fixtures import AgentDoneException
 from chainsync.db.hyperdrive.interface import get_pool_config, get_pool_info, get_transactions, get_wallet_deltas
 from chainsync.exec import acquire_data
 from eth_account.signers.local import LocalAccount
@@ -18,20 +19,7 @@ from ethpy.test_fixtures.deploy_hyperdrive import _calculateTimeStretch
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 
-# This pass is to prevent auto reordering imports from reordering the imports below
-pass  # pylint: disable=unnecessary-pass
-
-# Test fixture imports
-# Ignoring unused import warning, fixtures are used through variable name
-from agent0.test_fixtures import (  # pylint: disable=unused-import, ungrouped-imports
-    AgentDoneException,
-    cycle_trade_policy,
-)
-from chainsync.test_fixtures import db_session  # pylint: disable=unused-import, ungrouped-imports
-from ethpy.test_fixtures import local_hyperdrive_chain  # pylint: disable=unused-import, ungrouped-imports
-
-# fixture arguments in test function have to be the same as the fixture name
-# pylint: disable=redefined-outer-name
+# These tests are using fixtures defined in conftest.py
 
 
 class TestLocalChain:
