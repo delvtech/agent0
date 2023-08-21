@@ -31,8 +31,8 @@ class TestLocalChain:
         print(local_hyperdrive_chain)
 
 
-def _to_unscaled_decimal(scaled_value: int) -> Decimal:
-    return Decimal(str(FixedPoint(scaled_value=scaled_value)))
+def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
+    return Decimal(str(fp_val))
 
 
 class TestBotToDb:
@@ -121,24 +121,24 @@ class TestBotToDb:
         # Eventually, we want to parameterize these values to pass into deploying hyperdrive
         expected_timestretch_fp = FixedPoint(scaled_value=_calculateTimeStretch(FixedPoint("0.05").scaled_value))
         # TODO this is actually inv of solidity time stretch, fix
-        expected_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp).scaled_value)
-        expected_inv_timestretch = _to_unscaled_decimal(expected_timestretch_fp.scaled_value)
+        expected_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
+        expected_inv_timestretch = _to_unscaled_decimal(expected_timestretch_fp)
 
         expected_pool_config = {
             "contractAddress": hyperdrive_contract_addresses.mock_hyperdrive,
             "baseToken": hyperdrive_contract_addresses.base_token,
-            "initialSharePrice": _to_unscaled_decimal(FixedPoint("1").scaled_value),
-            "minimumShareReserves": _to_unscaled_decimal(FixedPoint("10").scaled_value),
+            "initialSharePrice": _to_unscaled_decimal(FixedPoint("1")),
+            "minimumShareReserves": _to_unscaled_decimal(FixedPoint("10")),
             "positionDuration": 604800,  # 1 week
             "checkpointDuration": 3600,  # 1 hour
             # TODO this is actually inv of solidity time stretch, fix
             "timeStretch": expected_timestretch,
             "governance": deploy_account.address,
             "feeCollector": deploy_account.address,
-            "curveFee": _to_unscaled_decimal(FixedPoint("0.1").scaled_value),  # 10%
-            "flatFee": _to_unscaled_decimal(FixedPoint("0.0005").scaled_value),  # 0.05%
-            "governanceFee": _to_unscaled_decimal(FixedPoint("0.15").scaled_value),  # 15%
-            "oracleSize": _to_unscaled_decimal(10),
+            "curveFee": _to_unscaled_decimal(FixedPoint("0.1")),  # 10%
+            "flatFee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05%
+            "governanceFee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%
+            "oracleSize": _to_unscaled_decimal(FixedPoint("10")),
             "updateGap": 3600,  # TODO don't know where this is getting set
             "invTimeStretch": expected_inv_timestretch,
         }
