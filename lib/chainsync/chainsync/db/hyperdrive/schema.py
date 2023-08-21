@@ -130,12 +130,8 @@ class CurrentWallet(Base):
     __tablename__ = "current_wallet"
 
     # Default table primary key
-    # Note that we use postgres in production and sqlite in testing, but sqlite has issues with
-    # autoincrement with BigIntegers. Hence, we use the Integer variant when using sqlite in tests
-    id: Mapped[int] = mapped_column(
-        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, init=False, autoincrement=True
-    )
-    blockNumber: Mapped[int] = mapped_column(BigInteger, ForeignKey("pool_info.blockNumber"), index=True)
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
     baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
