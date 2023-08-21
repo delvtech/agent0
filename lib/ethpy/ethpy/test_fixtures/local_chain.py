@@ -1,7 +1,7 @@
 """Test fixture for deploying local anvil chain and initializing hyperdrive"""
 import subprocess
 import time
-from typing import Any, Generator
+from typing import Iterator
 
 import pytest
 from ethpy.base import initialize_web3_with_http_provider
@@ -15,12 +15,12 @@ from .deploy_hyperdrive import deploy_and_initialize_hyperdrive, deploy_hyperdri
 
 
 @pytest.fixture(scope="function")
-def local_chain() -> Generator[str, Any, Any]:
+def local_chain() -> Iterator[str]:
     """Launches a local anvil chain for testing. Kills the anvil chain after.
 
     Returns
     -------
-    Generator[str, Any, Any]
+    Iterator[str]
         Yields the local anvil chain url
     """
     anvil_port = 9999
@@ -74,6 +74,7 @@ def local_hyperdrive_chain(local_chain: str) -> dict:
     hyperdrive_addr = deploy_and_initialize_hyperdrive(web3, base_token_contract, factory_contract, account)
 
     return {
+        "rpc_url": local_chain,
         "web3": web3,
         "deploy_account": account,
         "hyperdrive_contract_addresses": HyperdriveAddresses(

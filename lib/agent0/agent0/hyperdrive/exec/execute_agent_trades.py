@@ -229,7 +229,7 @@ async def async_match_contract_call_to_trade(
 
     # TODO: The following variables are hard coded for now, but should be specified in the trade spec
     min_apr = int(1)
-    max_apr = int(1e18)
+    max_apr = FixedPoint(1).scaled_value
     as_underlying = True
     match trade.action_type:
         case HyperdriveActionType.INITIALIZE_MARKET:

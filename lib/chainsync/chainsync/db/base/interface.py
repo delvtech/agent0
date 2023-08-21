@@ -8,7 +8,7 @@ from typing import Type, cast
 
 import pandas as pd
 import sqlalchemy
-from chainsync import build_postgres_config
+from chainsync import PostgresConfig, build_postgres_config
 from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engine, exc, func, inspect
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
@@ -56,7 +56,7 @@ def drop_table(session: Session, table_name: str) -> None:
     table.drop(checkfirst=True, bind=bind)
 
 
-def initialize_engine() -> Engine:
+def initialize_engine(postgres_config: PostgresConfig | None = None) -> Engine:
     """Initializes the postgres engine from config
 
     Returns
@@ -64,7 +64,8 @@ def initialize_engine() -> Engine:
     Engine
         The initialized engine object connected to postgres
     """
-    postgres_config = build_postgres_config()
+    if postgres_config is None:
+        postgres_config = build_postgres_config()
 
     url_object = URL.create(
         drivername="postgresql",

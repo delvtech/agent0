@@ -32,35 +32,35 @@ agent_config: list[AgentConfig] = [
     AgentConfig(
         policy=Policies.random_agent,
         number_of_agents=3,
-        slippage_tolerance=FixedPoint(0.0001),
+        slippage_tolerance=FixedPoint("0.0001"),
         base_budget_wei=Budget(
-            mean_wei=int(5_000e18),  # 5k base
-            std_wei=int(1_000e18),  # 1k base
+            mean_wei=FixedPoint(5_000).scaled_value,  # 5k base
+            std_wei=FixedPoint(1_000).scaled_value,  # 1k base
             min_wei=1,  # 1 WEI base
-            max_wei=int(100_000e18),  # 100k base
+            max_wei=FixedPoint(100_000).scaled_value,  # 100k base
         ),
-        eth_budget_wei=Budget(min_wei=int(1e18), max_wei=int(1e18)),
-        init_kwargs={"trade_chance": FixedPoint(0.8)},
+        eth_budget_wei=Budget(min_wei=FixedPoint(1).scaled_value, max_wei=FixedPoint(1).scaled_value),
+        init_kwargs={"trade_chance": FixedPoint("0.8")},
     ),
     AgentConfig(
         policy=Policies.long_louie,
         number_of_agents=0,
         # Fixed budgets
-        base_budget_wei=int(5_000e18),  # 5k base
-        eth_budget_wei=int(1e18),  # 1 base
-        init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.9)},
+        base_budget_wei=FixedPoint(5_000).scaled_value,  # 5k base
+        eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
+        init_kwargs={"trade_chance": FixedPoint("0.8"), "risk_threshold": FixedPoint("0.9")},
     ),
     AgentConfig(
         policy=Policies.short_sally,
         number_of_agents=0,
         base_budget_wei=Budget(
-            mean_wei=int(5_000e18),  # 5k base
-            std_wei=int(1_000e18),  # 1k base
+            mean_wei=FixedPoint(5_000).scaled_value,  # 5k base
+            std_wei=FixedPoint(1_000).scaled_value,  # 1k base
             min_wei=1,  # 1 WEI base
-            max_wei=int(100_000e18),  # 100k base
+            max_wei=FixedPoint(100_000).scaled_value,  # 100k base
         ),
-        eth_budget_wei=Budget(min_wei=int(1e18), max_wei=int(1e18)),
-        init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.8)},
+        eth_budget_wei=Budget(min_wei=FixedPoint(1).scaled_value, max_wei=FixedPoint(1).scaled_value),
+        init_kwargs={"trade_chance": FixedPoint("0.8"), "risk_threshold": FixedPoint("0.8")},
     ),
 ]
 
