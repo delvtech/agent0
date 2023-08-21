@@ -1,20 +1,73 @@
 """Pytest fixture that creates an in memory db session and creates the base db schema"""
+import time
 from typing import Any, Generator
 
+import docker
 import pytest
-from chainsync.db.base import Base
-from sqlalchemy import create_engine
+from chainsync import PostgresConfig
+from chainsync.db.base import Base, initialize_engine
+from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy.orm import Session, sessionmaker
 
 
-@pytest.fixture(scope="function")
-def db_session() -> Generator[Session, Any, Any]:
-    """Initializes the in memory db session and creates the db schema"""
-    engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
-    session = sessionmaker(bind=engine)
+@pytest.fixture(scope="session")
+def psql_docker() -> Generator[PostgresConfig, Any, Any]:
+    client = docker.from_env()
 
-    Base.metadata.create_all(engine)  # create tables
+    # Using these config for tests
+    postgres_config = PostgresConfig(
+        POSTGRES_USER="admin",
+        POSTGRES_PASSWORD="password",
+        POSTGRES_DB="postgres_db_test",
+        POSTGRES_HOST="localhost",
+        POSTGRES_PORT=5555,
+    )
+
+    container = client.containers.run(
+        image="postgres:12",
+        auto_remove=True,
+        environment=dict(
+            POSTGRES_USER=postgres_config.POSTGRES_USER,
+            POSTGRES_PASSWORD=postgres_config.POSTGRES_PASSWORD,
+        ),
+        name="test_postgres",
+        ports={"5432/tcp": ("127.0.0.1", postgres_config.POSTGRES_PORT)},
+        detach=True,
+        remove=True,
+    )
+
+    # Wait for the container to start
+    time.sleep(5)
+
+    yield postgres_config
+
+    container.stop()
+
+
+@pytest.fixture(scope="session")
+def database_engine(psql_docker):
+    # Using default postgres info
+    # Renaming variable to match what it actually is, i.e., the postgres config
+    postgres_config = psql_docker
+    with DatabaseJanitor(
+        user=postgres_config.POSTGRES_USER,
+        host="localhost",
+        port=postgres_config.POSTGRES_PORT,
+        dbname=postgres_config.POSTGRES_DB,
+        version=12,
+        password=postgres_config.POSTGRES_PASSWORD,
+    ):
+        engine = initialize_engine(postgres_config)
+        yield engine
+
+
+@pytest.fixture(scope="function")
+def db_session(database_engine) -> Generator[Session, Any, Any]:
+    """Initializes the in memory db session and creates the db schema"""
+    session = sessionmaker(bind=database_engine)
+
+    Base.metadata.create_all(database_engine)  # create tables
     db_session_ = session()
     yield db_session_
     db_session_.close()
-    Base.metadata.drop_all(engine)  # drop tables
+    Base.metadata.drop_all(database_engine)  # drop tables
