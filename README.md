@@ -75,6 +75,13 @@ In that example, the internal representation is `8`, so casting it to a float wo
 
 To understand more, we recommend that you study the fixed point tests and source implementation in `elfpy/math/`.
 
+Warning! Using floating point as a constructor to FixedPoint can cause loss of precision. For example, 
+```
+>>> FixedPoint(1e18)
+FixedPoint("1000000000000000042.420637374017961984")
+```
+Allowing floating point in the constructor of FixedPoint will be removed in a future version of `fixedpointmath`.
+
 ## Modifying configuration for agent deployment
 
 Follow `lib/agent0/README.md` for agent deployment.
