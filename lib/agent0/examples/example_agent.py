@@ -177,7 +177,7 @@ agent_config: list[AgentConfig] = [
         slippage_tolerance=FixedPoint("0.0001"),
         base_budget_wei=FixedPoint(10_000).scaled_value,  # 10k base
         eth_budget_wei=FixedPoint(10).scaled_value,  # 10 base
-        init_kwargs={"static_trade_amount_wei": FixedPoint(100).scaled_value)},  # 100 base static trades
+        init_kwargs={"static_trade_amount_wei": FixedPoint(100).scaled_value},  # 100 base static trades
     ),
 ]
 

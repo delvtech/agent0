@@ -41,7 +41,8 @@ def psql_docker() -> Generator[PostgresConfig, Any, Any]:
 
     yield postgres_config
 
-    container.stop()
+    # Docker doesn't play nice with types
+    container.stop()  # type:ignore
 
 
 @pytest.fixture(scope="session")
