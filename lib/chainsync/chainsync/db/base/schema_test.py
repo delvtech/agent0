@@ -13,9 +13,6 @@ class TestUserMapTable:
 
     def test_create_user_map(self, db_session):
         """Create and entry"""
-        # Note: this test is using in-memory sqlite, which doesn't seem to support
-        # autoincrement ids without init, whereas postgres does this with no issues
-        # Hence, we explicitly add id here
         user_map = UserMap(address="1", username="a")
         db_session.add(user_map)
         db_session.commit()

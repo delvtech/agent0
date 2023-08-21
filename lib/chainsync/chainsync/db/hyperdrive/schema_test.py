@@ -16,9 +16,6 @@ class TestTransactionTable:
 
     def test_create_transaction(self, db_session):
         """Create and entry"""
-        # Note: this test is using in-memory sqlite, which doesn't seem to support
-        # autoincrement ids without init, whereas postgres does this with no issues
-        # Hence, we explicitly add id here
         transaction = HyperdriveTransaction(blockNumber=1, transactionHash="a", event_value=Decimal("3.2"))
         db_session.add(transaction)
         db_session.commit()
@@ -59,9 +56,6 @@ class TestCheckpointTable:
 
     def test_create_checkpoint(self, db_session):
         """Create and entry"""
-        # Note: this test is using in-memory sqlite, which doesn't seem to support
-        # autoincrement ids without init, whereas postgres does this with no issues
-        # Hence, we explicitly add id here
         timestamp = datetime.now()
         checkpoint = CheckpointInfo(blockNumber=1, timestamp=timestamp)
         db_session.add(checkpoint)
@@ -172,9 +166,6 @@ class TestWalletDeltaTable:
 
     def test_create_wallet_delta(self, db_session):
         """Create and entry"""
-        # Note: this test is using in-memory sqlite, which doesn't seem to support
-        # autoincrement ids without init, whereas postgres does this with no issues
-        # Hence, we explicitly add id here
         wallet_delta = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.2"))
         db_session.add(wallet_delta)
         db_session.commit()
@@ -211,9 +202,6 @@ class TestWalletInfoTable:
 
     def test_create_wallet_info(self, db_session):
         """Create and entry"""
-        # Note: this test is using in-memory sqlite, which doesn't seem to support
-        # autoincrement ids without init, whereas postgres does this with no issues
-        # Hence, we explicitly add id here
         wallet_info = WalletInfo(blockNumber=1, tokenValue=Decimal("3.2"))
         db_session.add(wallet_info)
         db_session.commit()

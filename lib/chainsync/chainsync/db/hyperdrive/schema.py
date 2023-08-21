@@ -85,11 +85,7 @@ class WalletInfo(Base):
     __tablename__ = "walletinfo"
 
     # Default table primary key
-    # Note that we use postgres in production and sqlite in testing, but sqlite has issues with
-    # autoincrement with BigIntegers. Hence, we use the Integer variant when using sqlite in tests
-    id: Mapped[int] = mapped_column(
-        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, init=False, autoincrement=True
-    )
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
@@ -111,11 +107,7 @@ class WalletDelta(Base):
     __tablename__ = "walletdelta"
 
     # Default table primary key
-    # Note that we use postgres in production and sqlite in testing, but sqlite has issues with
-    # autoincrement with BigIntegers. Hence, we use the Integer variant when using sqlite in tests
-    id: Mapped[int] = mapped_column(
-        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, init=False, autoincrement=True
-    )
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
     transactionHash: Mapped[str] = mapped_column(String, index=True)
     blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
@@ -138,11 +130,7 @@ class HyperdriveTransaction(Base):
     __tablename__ = "transactions"
 
     # Default table primary key
-    # Note that we use postgres in production and sqlite in testing, but sqlite has issues with
-    # autoincrement with BigIntegers. Hence, we use the Integer variant when using sqlite in tests
-    id: Mapped[int] = mapped_column(
-        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, init=False, autoincrement=True
-    )
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
     transactionHash: Mapped[str] = mapped_column(String, index=True, unique=True)
 
     #### Fields from base transactions ####
