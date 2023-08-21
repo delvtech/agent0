@@ -110,7 +110,20 @@ class TestBotToDb:
             exit_on_catch_up=True,
         )
 
-        # fixme remove this Run bots again
+        # Run bots again, but this time only for 4 trades
+
+        # Build agent config
+        agent_config: list[AgentConfig] = [
+            AgentConfig(
+                policy=cycle_trade_policy,
+                number_of_agents=1,
+                slippage_tolerance=FixedPoint("0.0001"),
+                base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
+                eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
+                init_kwargs={"max_trades": 4},
+            ),
+        ]
+
         try:
             run_agents(
                 env_config,
@@ -142,7 +155,6 @@ class TestBotToDb:
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
-        # Done fixme
 
         # This bot does the following known trades in sequence:
         # 1. addLiquidity of 11111 base
@@ -152,6 +164,13 @@ class TestBotToDb:
         # 5. closeLong on long from trade 2
         # 6. closeShort on short from trade 3
         # 7. redeemWithdrawalShares of all withdrawal tokens from trade 4
+        # 8. openLong for 1 base
+        # The bot then runs again, this time for 4 trades:
+        # 9. addLiquidity of 11111 base
+        # 10. openLong of 22222 base
+        # 11. openShort of 33333 bonds
+        # 12. removeLiquidity of all LP tokens
+        # The last trade here won't show up in the database, due to data lag of one block
 
         # Test db entries are what we expect
         # We don't coerce to float because we want exact values in decimal
@@ -230,8 +249,8 @@ class TestBotToDb:
         db_wallet_delta: pd.DataFrame = get_wallet_deltas(db_session, coerce_float=False)
 
         # Ensure trades exist in database
-        # Should be 7 total transactions
-        assert len(db_transaction_info) == 7
+        # Should be 11 total transactions
+        assert len(db_transaction_info) == 11
         np.testing.assert_array_equal(
             db_transaction_info["input_method"],
             [
@@ -242,13 +261,17 @@ class TestBotToDb:
                 "closeLong",
                 "closeShort",
                 "redeemWithdrawalShares",
+                "openLong",
+                "addLiquidity",
+                "openLong",
+                "openShort",
             ],
         )
 
-        # 7 total trades in wallet deltas
-        assert db_wallet_delta["blockNumber"].nunique() == 7
-        # 15 different wallet deltas (2 token deltas per trade except for withdraw shares, which is 3)
-        assert len(db_wallet_delta) == 15
+        # 11 total trades in wallet deltas
+        assert db_wallet_delta["blockNumber"].nunique() == 11
+        # 23 different wallet deltas (2 token deltas per trade except for withdraw shares, which is 3)
+        assert len(db_wallet_delta) == 23
 
         actual_num_longs = Decimal("nan")
         actual_num_shorts = Decimal("nan")
@@ -258,6 +281,7 @@ class TestBotToDb:
         # The asserts here are equality because they are either int -> Decimal, which is lossless,
         # or they're comparing values after the lossy conversion
         for block_number, txn in db_transaction_info.iterrows():
+            # TODO differentiate between the first and second addLiquidity
             if txn["input_method"] == "addLiquidity":
                 assert txn["input_params_contribution"] == Decimal(11111)
                 # Filter for all deltas of this trade
@@ -278,8 +302,17 @@ class TestBotToDb:
 
                 actual_num_lp = lp_delta["delta"]
 
+            # TODO differentiate between the first, second, and third openLong
             if txn["input_method"] == "openLong":
-                assert txn["input_params_baseAmount"] == Decimal(22222)
+                # First and third openLong, TODO differentiate between the two
+                if txn["input_params_baseAmount"] == Decimal(22222):
+                    expected_base = Decimal(22222)
+                # Second openLong
+                elif txn["input_params_baseAmount"] == Decimal(1):
+                    expected_base = Decimal(1)
+                else:
+                    assert False
+
                 # Filter for all deltas of this trade
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
                 # Ensure number of token deltas
@@ -291,14 +324,15 @@ class TestBotToDb:
                 long_delta = long_delta_df.iloc[0]
                 base_delta = base_delta_df.iloc[0]
                 # 22222 base for...
-                assert base_delta["delta"] == -Decimal(22222)
+                assert base_delta["delta"] == -expected_base
                 # TODO check long delta
                 # TODO check maturity time and tokenType
-                # TODO check wallet info matches the deltas
+                # TODO check current wallet matches the deltas
                 # TODO check pool info after this tx
 
                 actual_num_longs = long_delta["delta"]
 
+            # TODO differentiate between the first and second openShort
             if txn["input_method"] == "openShort":
                 assert txn["input_params_bondAmount"] == Decimal(33333)
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
