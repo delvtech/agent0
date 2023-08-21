@@ -4,12 +4,14 @@ from __future__ import annotations
 import json
 import os
 import sys
+from dataclasses import dataclass
 from pathlib import Path
+from typing import NamedTuple
 
 from jinja2 import Environment, FileSystemLoader, Template
 from pypechain.utilities import avoid_python_keywords, is_abi_function, solidity_to_python_type
 from web3 import Web3
-from web3.types import ABIElement, ABIFunction
+from web3.types import ABI, ABIElement, ABIFunction
 
 
 def load_abi_from_file(file_path: Path):
@@ -58,6 +60,7 @@ def main(abi_file_path: str, output_file_path: str) -> None:
                 "name": abi_function.get("name", "").capitalize(),
                 "input_names_and_types": get_input_names_and_values(abi_function),
                 "input_names": get_input_names(abi_function),
+                "outputs": get_outputs(abi_function),
             }
             function_datas.append(function_data)
 
@@ -170,6 +173,38 @@ def get_input_names(function: ABIFunction) -> list[str]:
     """
 
     stringified_function_parameters: list[str] = []
+    for _input in function.get("inputs", []):
+        name = _input.get("name")
+        if name is None:
+            raise ValueError("name cannot be None")
+        stringified_function_parameters.append(avoid_python_keywords(name))
+
+    return stringified_function_parameters
+
+
+def get_outputs(function: ABIFunction) -> list[str]:
+    """Returns function input name/type strings for jinja templating.
+
+    i.e. for the solidity function signature:
+    function doThing(address who, uint256 amount, bool flag, bytes extraData)
+
+    the following list would be returned:
+    ['who', 'amount', 'flag', 'extraData']
+
+    ---------
+    Arguments
+    function : ABIFunction
+        A web3 dict of an ABI function description.
+
+    Returns
+    -------
+    list[str]
+        A list of function names i.e. [{name: 'arg1', type: 'int'}, { name: 'TransferInfo', components: [{
+            name: 'from', type: 'str'}, name: '
+        }]]
+    """
+
+    stringified_function_outputs: list[str] = []
     for _input in function.get("inputs", []):
         name = _input.get("name")
         if name is None:

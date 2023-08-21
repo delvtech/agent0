@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from typing import List, NamedTuple, TypeGuard
 
-from web3.types import ABIElement, ABIEvent, ABIFunction
+from web3.types import ABI, ABIElement, ABIEvent, ABIFunction
 
 
 class Input(NamedTuple):
@@ -116,3 +116,28 @@ def is_abi_event(item: ABIElement) -> TypeGuard[ABIEvent]:
         return False
 
     return True
+
+@dataclass
+class StructInfo:
+    name: str
+    values: dict[str, str | StructInfo]
+
+def get_internal_types(abi: ABI, internal_types: list[StructInfo]) -> list[NamedTuple]:
+    """Gets all the
+
+    Parameters
+    ----------
+    file_path : Path
+        the file path to the ABI.
+
+    Returns
+    -------
+    List[Union[ABIFunction, ABIEvent]]
+        _description_
+    """
+
+    # leverage the private list of ABIFunction's
+    # pylint: disable=protected-access
+    for abi_item in abi:
+
+    return abi_functions_and_events
