@@ -13,6 +13,12 @@ from ethpy.test_fixtures import local_chain, local_hyperdrive_chain
 # instead of allowing pytest to catch the exception and report
 # Based on https://stackoverflow.com/questions/62419998/how-can-i-get-pytest-to-not-catch-exceptions/62563106#62563106
 
+# IMPORTANT NOTE!!!!!
+# If you end up using this debugging method, this will catch exceptions before teardown of fixtures
+# This means that the local postgres fixture (which launches a docker container) will not automatically
+# be cleaned up if you, e.g., use the debugger and a db test fails. Make sure to manually clean up.
+# TODO maybe automatically close the container on catch here
+
 # Use this in conjunction with the following launch.json configuration:
 #      {
 #        "name": "Debug Current Test",
