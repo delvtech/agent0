@@ -21,6 +21,7 @@ from .interface import (
     get_checkpoint_info,
     get_current_wallet,
     get_current_wallet_info,
+    get_latest_block_number_from_analysis_table,
     get_latest_block_number_from_pool_info_table,
     get_pool_config,
     get_pool_info,
@@ -30,6 +31,7 @@ from .interface import (
 )
 from .schema import (
     CheckpointInfo,
+    CurrentWallet,
     HyperdriveTransaction,
     PoolAnalysis,
     PoolConfig,

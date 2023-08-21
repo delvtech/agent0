@@ -141,7 +141,7 @@ class CurrentWallet(Base):
     baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    value: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     maturityTime: Mapped[Union[int, None]] = mapped_column(
         Numeric, default=None
     )  # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs

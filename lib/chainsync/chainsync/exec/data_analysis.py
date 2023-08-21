@@ -6,7 +6,11 @@ import time
 
 from chainsync.analysis import data_to_analysis
 from chainsync.db.base import initialize_session
-from chainsync.db.hyperdrive import get_latest_block_number_from_pool_info_table, get_pool_config
+from chainsync.db.hyperdrive import (
+    get_latest_block_number_from_analysis_table,
+    get_latest_block_number_from_pool_info_table,
+    get_pool_config,
+)
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
@@ -42,9 +46,7 @@ def data_analysis(
         db_session = initialize_session()
 
     ## Get starting point for restarts
-    # TODO
-    # analysis_latest_block_number = get_latest_block_number_from_analysis(db_session)
-    analysis_latest_block_number = 0
+    analysis_latest_block_number = get_latest_block_number_from_analysis_table(db_session)
 
     # Using max of latest block in database or specified start block
     block_number = max(start_block, analysis_latest_block_number)

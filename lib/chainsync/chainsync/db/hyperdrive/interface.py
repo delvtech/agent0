@@ -13,6 +13,7 @@ from .schema import (
     CheckpointInfo,
     CurrentWallet,
     HyperdriveTransaction,
+    PoolAnalysis,
     PoolConfig,
     PoolInfo,
     WalletDelta,
@@ -196,6 +197,22 @@ def get_latest_block_number_from_pool_info_table(session: Session) -> int:
         The latest block number in the poolinfo table
     """
     return get_latest_block_number_from_table(PoolInfo, session)
+
+
+def get_latest_block_number_from_analysis_table(session: Session) -> int:
+    """Get the latest block number based on the pool info table in the db.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+
+    Returns
+    -------
+    int
+        The latest block number in the poolinfo table
+    """
+    return get_latest_block_number_from_table(PoolAnalysis, session)
 
 
 def get_pool_info(
