@@ -15,6 +15,7 @@ def build_fixed_rate(pool_analysis: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         The ready to plot fixed rate
     """
-    fixed_rate = pool_analysis[["timestamp", "fixed_rate"]]
+    fixed_rate = pool_analysis[["timestamp", "fixed_rate"]].copy()
+    fixed_rate["fixed_rate"] = fixed_rate["fixed_rate"].astype(float)
     # Return here as float for plotting
-    return fixed_rate.astype(float)
+    return fixed_rate
