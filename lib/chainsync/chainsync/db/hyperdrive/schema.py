@@ -50,7 +50,7 @@ class CheckpointInfo(Base):
     __tablename__ = "checkpoint_info"
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime)
     sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     longSharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     shortBaseVolume: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -65,7 +65,7 @@ class PoolInfo(Base):
     __tablename__ = "pool_info"
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime)
     shareReserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     bondReserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     lpTotalSupply: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -278,8 +278,9 @@ class Ticker(Base):
 
     __tablename__ = "ticker"
 
-    blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     trade_type: Mapped[Union[str, None]] = mapped_column(String, default=None)
     token_diffs: Mapped[Union[list[str], None]] = mapped_column(ARRAY(String), default=None)
