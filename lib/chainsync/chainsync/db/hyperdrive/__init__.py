@@ -24,6 +24,7 @@ from .interface import (
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
+    get_ticker,
     get_transactions,
     get_wallet_deltas,
     get_wallet_info_history,
