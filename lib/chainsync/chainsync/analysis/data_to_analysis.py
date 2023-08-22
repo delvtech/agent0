@@ -158,6 +158,9 @@ def data_to_analysis(
     # number_of_blocks * number_of_addresses * number_of_open_positions, which is not scalable.
     # We alleviate this by sampling periodically, and not calculate this for every block
     # TODO implement sampling by setting the start + end block parameters in the caller of this function
+    # TODO If sampling, might want to move this to be a separate function, with the caller controlling
+    # the sampling rate. Otherwise, the e.g., ticker updates will also be on the sampling rate (won't miss data,
+    # just lower frequency updates)
     # TODO do scaling tests to see the limit of this
     wallet_pnl["pnl"] = pnl_df
     # Add wallet_pnl to the database

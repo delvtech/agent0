@@ -70,6 +70,7 @@ def calc_single_closeout(
         fn_args = (amount, min_output, address, as_underlying)
         # If this fails, keep as nan and continue iterating
         try:
+            # TODO this function breaks in system tests when calculating pnl of remove liquidity
             preview_result = smart_contract_preview_transaction(contract, sender, "removeLiquidity", *fn_args)
             return Decimal(
                 preview_result["baseProceeds"]
