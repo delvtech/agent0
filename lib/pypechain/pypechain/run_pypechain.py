@@ -1,38 +1,21 @@
 """Script to generate typed web3.py classes for solidity contracts."""
 from __future__ import annotations
 
-import json
 import os
 import sys
-from dataclasses import dataclass
+from dataclasses import asdict
 from pathlib import Path
 from typing import NamedTuple
 
 from jinja2 import Environment, FileSystemLoader, Template
-from pypechain.utilities import avoid_python_keywords, is_abi_function, solidity_to_python_type
+from pypechain.utilities.abi import get_param_name, get_structs_for_abi, is_abi_function, load_abi_from_file
+from pypechain.utilities.format import avoid_python_keywords
+from pypechain.utilities.types import solidity_to_python_type
 from web3 import Web3
-from web3.types import ABI, ABIElement, ABIFunction
+from web3.types import ABIElement, ABIFunction
 
 
-def load_abi_from_file(file_path: Path):
-    """Loads a contract ABI from a file.
-
-    Arguments
-    ---------
-    file_path : Path
-        The path to the ABI file.
-
-    Returns
-    -------
-    Any
-        An object containing the contract's abi.
-    """
-
-    with open(file_path, "r", encoding="utf-8") as file:
-        return json.load(file)["abi"]
-
-
-def main(abi_file_path: str, output_file_path: str) -> None:
+def main(abi_file_path: str, output_dir: str) -> None:
     """Generates class files for a given abi.
 
     Arguments
@@ -40,12 +23,12 @@ def main(abi_file_path: str, output_file_path: str) -> None:
     abi_file_path : str
         Path to the abi json file.
 
-    output_file_path : str
-        Path to the file to output the generated code.
+    output_dr: str
+        Path to the directory to output the generated files.
     """
 
     file_path = Path(abi_file_path)
-    template = setup_template()
+    contract_template, types_template = setup_templates()
 
     abi_functions_and_events = get_abi_items(file_path)
 
@@ -71,14 +54,31 @@ def main(abi_file_path: str, output_file_path: str) -> None:
     # TODO:  return types to function calls
     # TODO:  events
     # TODO:  structs
-    rendered_code = template.render(contract_name=contract_name, functions=function_datas)
+    rendered_contract_code = contract_template.render(contract_name=contract_name, functions=function_datas)
+    abi = load_abi_from_file(file_path)
+    structs = get_structs_for_abi(abi)
+    struct_infos = list(structs.values())
+    struct_infos = [asdict(info) for info in struct_infos]
+    rendered_types_code = types_template.render(contract_name=contract_name, structs=struct_infos)
 
+    contract_output_file_path = Path(output_dir).joinpath(contract_name + "Contract.py")
+    types_output_file_path = Path(output_dir).joinpath(contract_name + "Types.py")
     # Save the rendered code to a file
-    with open(output_file_path, "w", encoding="utf-8") as output_file:
-        output_file.write(rendered_code)
+    with open(contract_output_file_path, "w", encoding="utf-8") as output_file:
+        output_file.write(rendered_contract_code)
+    # TODO: makes this better, don't use splitting/joining.  have user pass in dir, not file name
+    with open(types_output_file_path, "w", encoding="utf-8") as output_file:
+        output_file.write(rendered_types_code)
 
 
-def setup_template() -> Template:
+class Templates(NamedTuple):
+    """Templates for codegen.  Each template represent a different file."""
+
+    contract_template: Template
+    types_template: Template
+
+
+def setup_templates() -> Templates:
     """Grabs the necessary template files.
 
     Returns
@@ -92,8 +92,9 @@ def setup_template() -> Template:
     # Construct the path to your templates directory.
     templates_dir = os.path.join(script_dir, "templates")
     env = Environment(loader=FileSystemLoader(templates_dir))
-    template = env.get_template("contract.jinja2")
-    return template
+    contract_template = env.get_template("contract.jinja2")
+    types_template = env.get_template("types.jinja2")
+    return Templates(contract_template, types_template)
 
 
 def get_abi_items(file_path: Path) -> list[ABIElement]:
@@ -206,20 +207,20 @@ def get_outputs(function: ABIFunction) -> list[str]:
 
     stringified_function_outputs: list[str] = []
     for _input in function.get("inputs", []):
-        name = _input.get("name")
-        if name is None:
-            raise ValueError("name cannot be None")
-        stringified_function_parameters.append(avoid_python_keywords(name))
+        name = get_param_name(_input)
+        if not name:
+            # TODO: handle empty strings.  Should replace them with 'arg1', 'arg2', and so one.
+            # TODO: recursively handle this too for evil nested tuples with no names.
+            raise ValueError("name cannot be empty")
+        stringified_function_outputs.append(avoid_python_keywords(name))
 
-    return stringified_function_parameters
+    return stringified_function_outputs
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python script_name.py <path_to_abi_file> <contract_address> <output_file>")
     else:
-        # TODO: pass output path, not file, i.e. './build'
-        # TODO: pass input path, not file, i.e. './abis'
         # TODO: add a bash script to make this easier, i.e. ./pypechain './abis', './build'
         # TODO: make this installable so that other packages can use the command line tool
         main(sys.argv[1], sys.argv[2])

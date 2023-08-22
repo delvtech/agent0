@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, NamedTuple, Sequence, TypeGuard, cast
 
 from web3.types import ABI, ABIElement, ABIEvent, ABIFunction, ABIFunctionComponents, ABIFunctionParams
@@ -40,7 +41,7 @@ class AbiItem(NamedTuple):
 class AbiJson(NamedTuple):
     """A JSON representation of a solidity contract's Application Boundary Interface."""
 
-    abi: List[AbiItem]
+    abi: ABI
 
 
 def load_abi(abi_path: str) -> AbiJson:
@@ -285,3 +286,21 @@ def get_param_name(param_or_component: ABIFunctionParams | ABIFunctionComponents
         return string_type[0].upper() + string_type[1:]
 
     return param_or_component.get("name", "")
+
+
+def load_abi_from_file(file_path: Path) -> ABI:
+    """Loads a contract ABI from a file.
+
+    Arguments
+    ---------
+    file_path : Path
+        The path to the ABI file.
+
+    Returns
+    -------
+    Any
+        An object containing the contract's abi.
+    """
+
+    with open(file_path, "r", encoding="utf-8") as file:
+        return json.load(file)["abi"]

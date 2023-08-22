@@ -1,0 +1,14 @@
+
+"""Dataclasses for all structs in the {{contract_name}} contract."""
+
+from dataclasses import dataclass
+
+{% for struct in structs %}
+@dataclass
+class {{struct.name}}:
+    """{{struct.name}} struct."""
+
+    {% for struct_value in struct['values'] %}
+    {{struct_value.name}}: "{{struct_value.type}}"
+    {% endfor %}
+{% endfor %}
