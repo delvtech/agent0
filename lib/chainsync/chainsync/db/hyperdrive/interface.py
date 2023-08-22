@@ -583,16 +583,20 @@ def get_current_wallet(session: Session, end_block: int | None = None, coerce_fl
     query = session.query(CurrentWallet)
 
     # Support for negative indices
-    if (end_block is not None) and (end_block < 0):
+    if end_block is None:
+        end_block = get_latest_block_number_from_table(CurrentWallet, session) + 1
+
+    elif end_block < 0:
         end_block = get_latest_block_number_from_table(CurrentWallet, session) + end_block + 1
-    if end_block is not None:
-        query = query.filter(CurrentWallet.blockNumber < end_block)
 
+    query = query.filter(CurrentWallet.blockNumber < end_block)
     query = query.distinct(CurrentWallet.walletAddress, CurrentWallet.tokenType)
-
     query = query.order_by(CurrentWallet.walletAddress, CurrentWallet.tokenType, CurrentWallet.blockNumber.desc())
-
     current_wallet = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
+
+    # Rename blockNumber column to be latest_block_update, and set the new blockNumber to be the query block
+    current_wallet["latest_block_update"] = current_wallet["blockNumber"]
+    current_wallet["blockNumber"] = end_block - 1
 
     # filter non-base zero positions here
     has_value = current_wallet["value"] > 0

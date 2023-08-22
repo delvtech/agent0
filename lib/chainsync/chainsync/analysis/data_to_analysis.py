@@ -9,6 +9,7 @@ from chainsync.db.hyperdrive import (
     CurrentWallet,
     PoolAnalysis,
     Ticker,
+    WalletPNL,
     get_current_wallet,
     get_pool_info,
     get_transactions,
@@ -147,8 +148,8 @@ def data_to_analysis(
     # Alternatively, set sample rate so we don't calculate this every block
     # We can set a sample rate by doing batch processing on this function
     # since we only get the current wallet for the end_block
-    current_wallet = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
-    pnl_df = calc_closeout_pnl(current_wallet, pool_info, hyperdrive_contract)
+    wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
+    pnl_df = calc_closeout_pnl(wallet_pnl, pool_info, hyperdrive_contract)
 
     # This sets the pnl to the current wallet dataframe, but there may be scaling issues here.
     # This is because the `CurrentWallet` table has one entry per change in wallet position,
@@ -158,13 +159,12 @@ def data_to_analysis(
     # We alleviate this by sampling periodically, and not calculate this for every block
     # TODO implement sampling by setting the start + end block parameters in the caller of this function
     # TODO do scaling tests to see the limit of this
-    current_wallet["pnl"] = pnl_df
-    # TODO add this current_wallet + pnl to the database
+    wallet_pnl["pnl"] = pnl_df
+    # Add wallet_pnl to the database
+    _df_to_db(wallet_pnl, WalletPNL, db_session, index=False)
 
-    # TODO Build ticker from wallet delta
+    # Build ticker from wallet delta
     transactions = get_transactions(db_session, start_block, end_block, coerce_float=False)
     ticker_df = calc_ticker(wallet_deltas_df, transactions, pool_info)
     # TODO add ticker to database
     _df_to_db(ticker_df, Ticker, db_session, index=False)
-
-    pass

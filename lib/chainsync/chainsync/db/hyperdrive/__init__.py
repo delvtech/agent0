@@ -39,4 +39,5 @@ from .schema import (
     Ticker,
     WalletDelta,
     WalletInfoFromChain,
+    WalletPNL,
 )

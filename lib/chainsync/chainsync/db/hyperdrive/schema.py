@@ -88,8 +88,7 @@ class WalletInfoFromChain(Base):
     __tablename__ = "wallet_info_from_chain"
 
     # Default table primary key
-    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
-
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
     blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
@@ -97,9 +96,8 @@ class WalletInfoFromChain(Base):
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
     tokenValue: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    maturityTime: Mapped[Union[int, None]] = mapped_column(
-        Numeric, default=None
-    )  # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+    # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+    maturityTime: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
     sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
@@ -110,7 +108,7 @@ class WalletDelta(Base):
     __tablename__ = "wallet_delta"
 
     # Default table primary key
-    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
     transactionHash: Mapped[str] = mapped_column(String, index=True)
     blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
@@ -119,9 +117,8 @@ class WalletDelta(Base):
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
     delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    maturityTime: Mapped[Union[int, None]] = mapped_column(
-        Numeric, default=None
-    )  # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+    # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+    maturityTime: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
 
 
 class HyperdriveTransaction(Base):
@@ -133,7 +130,7 @@ class HyperdriveTransaction(Base):
     __tablename__ = "transactions"
 
     # Default table primary key
-    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
     transactionHash: Mapped[str] = mapped_column(String, index=True, unique=True)
 
     #### Fields from base transactions ####
@@ -268,9 +265,8 @@ class CurrentWallet(Base):
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
     value: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    maturityTime: Mapped[Union[int, None]] = mapped_column(
-        Numeric, default=None
-    )  # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+    # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+    maturityTime: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
 
 
 class Ticker(Base):
@@ -286,3 +282,28 @@ class Ticker(Base):
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     trade_type: Mapped[Union[str, None]] = mapped_column(String, default=None)
     token_diffs: Mapped[Union[list[str], None]] = mapped_column(ARRAY(String), default=None)
+
+
+class WalletPNL(Base):
+    """Table/dataclass schema for pnl data
+    This table differs from CurrentWallet by (1) including the PNL, and (2) contains all wallet positions
+    for a given block.
+
+    Mapped class that is a data class on the python side, and an declarative base on the sql side.
+    """
+
+    __tablename__ = "wallet_pnl"
+
+    # Default table primary key
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
+    walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
+    baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
+    tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    value: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+    maturityTime: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
+    latest_block_update: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
+    pnl: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)

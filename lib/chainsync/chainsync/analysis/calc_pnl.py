@@ -2,21 +2,13 @@
 from __future__ import annotations
 
 import logging
-import os
 from decimal import Decimal
 
-import numpy as np
 import pandas as pd
 from eth_typing import ChecksumAddress, HexAddress, HexStr
-from ethpy import EthConfig
-from ethpy.base import initialize_web3_with_http_provider, load_all_abis, smart_contract_preview_transaction
-from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
-from ethpy.hyperdrive.interface import get_hyperdrive_contract
+from ethpy.base import smart_contract_preview_transaction
 from fixedpointmath import FixedPoint
-from web3 import Web3
 from web3.contract.contract import Contract
-
-from .calc_spot_price import calculate_spot_price_for_position
 
 
 def calc_single_closeout(
