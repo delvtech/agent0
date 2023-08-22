@@ -42,8 +42,8 @@ ticker_placeholder = st.empty()
 main_placeholder = st.empty()
 
 main_fig = mpf.figure(style="mike", figsize=(15, 15))
-ax_ohlcv = main_fig.add_subplot(3, 1, 1)
-ax_fixed_rate = main_fig.add_subplot(3, 1, 3)
+ax_ohlcv = main_fig.add_subplot(2, 1, 1)
+ax_fixed_rate = main_fig.add_subplot(2, 1, 2)
 
 while True:
     # Wallet addr to username mapping

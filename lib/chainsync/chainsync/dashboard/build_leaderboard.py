@@ -24,4 +24,8 @@ def build_leaderboard(wallet_pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.D
         total_pnl[["user", "pnl"]].groupby("user")["pnl"].sum().reset_index().sort_values("pnl", ascending=False)
     ).reset_index(drop=True)
 
-    return (comb_leaderboard, ind_leaderboard)
+    ind_leaderboard.index.name = "rank"
+    comb_leaderboard.index.name = "rank"
+
+    # Convert these leaderboards to strings, as streamlit doesn't like decimals
+    return (comb_leaderboard.astype(str), ind_leaderboard.astype(str))
