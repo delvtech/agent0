@@ -18,7 +18,7 @@ def calc_ticker(wallet_delta: pd.DataFrame, transactions: pd.DataFrame, pool_inf
     token_diffs = token_diffs.stack().groupby(level=0).agg(list)
 
     # Gather other information from other tables
-    timestamps = pool_info.loc[ticker_data["blockNumber"], "timestamp"]
+    timestamps = pool_info.set_index("blockNumber").loc[ticker_data["blockNumber"], "timestamp"]
     trade_type = transactions.set_index("transactionHash").loc[ticker_data.index, "input_method"]
 
     ticker_data = ticker_data[["blockNumber", "walletAddress"]].copy()

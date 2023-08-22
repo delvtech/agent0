@@ -28,10 +28,10 @@ from .calc_ticker import calc_ticker
 pd.set_option("display.max_columns", None)
 
 
-def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session, index=True):
+def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
     """Helper function to add a dataframe to a database"""
     table_name = schema_obj.__tablename__
-    insert_df.to_sql(table_name, con=session.connection(), if_exists="append", method="multi", index=index)
+    insert_df.to_sql(table_name, con=session.connection(), if_exists="append", method="multi", index=False)
     # commit the transaction
     try:
         session.commit()
@@ -127,9 +127,9 @@ def data_to_analysis(
         pool_info["longsOutstanding"], pool_info["sharePrice"], pool_config["minimumShareReserves"]
     )
 
-    pool_analysis_df = pd.concat([spot_price, fixed_rate, base_buffer], axis=1)
-    pool_analysis_df.columns = ["spot_price", "fixed_rate", "base_buffer"]
-    _df_to_db(pool_analysis_df, PoolAnalysis, db_session, index=True)
+    pool_analysis_df = pd.concat([pool_info["blockNumber"], spot_price, fixed_rate, base_buffer], axis=1)
+    pool_analysis_df.columns = ["blockNumber", "spot_price", "fixed_rate", "base_buffer"]
+    _df_to_db(pool_analysis_df, PoolAnalysis, db_session)
 
     # TODO calculate current wallet positions for this block
     # This should be done from the deltas, not queries from chain
@@ -142,7 +142,7 @@ def data_to_analysis(
     # If it doesn't exist, should be an empty dataframe
     latest_wallet = get_current_wallet(db_session, end_block=start_block, coerce_float=False)
     current_wallet_df = calc_current_wallet(wallet_deltas_df, latest_wallet)
-    _df_to_db(current_wallet_df, CurrentWallet, db_session, index=False)
+    _df_to_db(current_wallet_df, CurrentWallet, db_session)
 
     # calculate pnl through closeout pnl
     # TODO this function might be slow due to contract call on chain
@@ -167,10 +167,10 @@ def data_to_analysis(
     # TODO do scaling tests to see the limit of this
     wallet_pnl["pnl"] = pnl_df
     # Add wallet_pnl to the database
-    _df_to_db(wallet_pnl, WalletPNL, db_session, index=False)
+    _df_to_db(wallet_pnl, WalletPNL, db_session)
 
     # Build ticker from wallet delta
     transactions = get_transactions(db_session, start_block, end_block, coerce_float=False)
     ticker_df = calc_ticker(wallet_deltas_df, transactions, pool_info)
     # TODO add ticker to database
-    _df_to_db(ticker_df, Ticker, db_session, index=False)
+    _df_to_db(ticker_df, Ticker, db_session)

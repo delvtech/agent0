@@ -231,6 +231,7 @@ class TestBotToDb:
         db_pool_info: pd.DataFrame = get_pool_info(db_session, coerce_float=False)
         expected_pool_info_keys = [
             # Keys from contract call
+            "blockNumber",
             "shareReserves",
             "bondReserves",
             "lpTotalSupply",
@@ -245,7 +246,6 @@ class TestBotToDb:
             "lpSharePrice",
             # Added keys
             "timestamp",
-            # blockNumber is the index of the dataframe
             # Calculated keys
             "totalSupplyWithdrawalShares",
         ]
@@ -290,8 +290,9 @@ class TestBotToDb:
         # Go through each trade and ensure wallet deltas are correct
         # The asserts here are equality because they are either int -> Decimal, which is lossless,
         # or they're comparing values after the lossy conversion
-        for block_number, txn in db_transaction_info.iterrows():
+        for _, txn in db_transaction_info.iterrows():
             # TODO differentiate between the first and second addLiquidity
+            block_number = txn["blockNumber"]
             if txn["input_method"] == "addLiquidity":
                 assert txn["input_params_contribution"] == Decimal(11111)
                 # Filter for all deltas of this trade

@@ -254,7 +254,7 @@ def get_pool_info(
     # Always sort by time in order
     query = query.order_by(PoolInfo.timestamp)
 
-    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float).set_index("blockNumber")
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
 def get_transactions(
@@ -293,7 +293,7 @@ def get_transactions(
     if end_block is not None:
         query = query.filter(HyperdriveTransaction.blockNumber < end_block)
 
-    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float).set_index("blockNumber")
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
 def get_checkpoint_info(
@@ -340,7 +340,7 @@ def get_checkpoint_info(
     # Always sort by time in order
     query = query.order_by(CheckpointInfo.timestamp)
 
-    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float).set_index("blockNumber")
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
 def get_all_wallet_info(
@@ -699,7 +699,7 @@ def get_pool_analysis(
     # Always sort by block in order
     query = query.order_by(PoolAnalysis.blockNumber)
 
-    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float).set_index("blockNumber")
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
 def get_ticker(
@@ -744,4 +744,4 @@ def get_ticker(
     # Always sort by block in order
     query = query.order_by(Ticker.blockNumber)
 
-    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float).set_index("blockNumber")
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
