@@ -42,6 +42,7 @@ def calc_single_closeout(
     sender = ChecksumAddress(HexAddress(HexStr(address)))
     preview_result = None
     maturity = 0
+    block_number = position["blockNumber"].iloc[0]
     if tokentype in ["LONG", "SHORT"]:
         maturity = position["maturityTime"]
         assert isinstance(maturity, Decimal)
@@ -52,7 +53,9 @@ def calc_single_closeout(
         fn_args = (maturity, amount, min_output, address, as_underlying)
         # If this fails, keep as nan and continue iterating
         try:
-            preview_result = smart_contract_preview_transaction(contract, sender, "closeLong", *fn_args)
+            preview_result = smart_contract_preview_transaction(
+                contract, sender, "closeLong", fn_args, position["blockNumber"]
+            )
             return Decimal(preview_result["value"]) / Decimal(1e18)
         except Exception as exception:  # pylint: disable=broad-except
             logging.warning("Exception caught, ignoring: %s", exception)
@@ -61,7 +64,9 @@ def calc_single_closeout(
         fn_args = (maturity, amount, min_output, address, as_underlying)
         # If this fails, keep as nan and continue iterating
         try:
-            preview_result = smart_contract_preview_transaction(contract, sender, "closeShort", *fn_args)
+            preview_result = smart_contract_preview_transaction(
+                contract, sender, "closeShort", fn_args, position["blockNumber"]
+            )
             return preview_result["value"] / Decimal(1e18)
         except Exception as exception:  # pylint: disable=broad-except
             logging.warning("Exception caught, ignoring: %s", exception)
@@ -71,7 +76,9 @@ def calc_single_closeout(
         # If this fails, keep as nan and continue iterating
         try:
             # TODO this function breaks in system tests when calculating pnl of remove liquidity
-            preview_result = smart_contract_preview_transaction(contract, sender, "removeLiquidity", *fn_args)
+            preview_result = smart_contract_preview_transaction(
+                contract, sender, "removeLiquidity", fn_args, position["blockNumber"]
+            )
             return Decimal(
                 preview_result["baseProceeds"]
                 + preview_result["withdrawalShares"]
@@ -85,7 +92,9 @@ def calc_single_closeout(
         fn_args = (amount, min_output, address, as_underlying)
         # If this fails, keep as nan and continue iterating
         try:
-            preview_result = smart_contract_preview_transaction(contract, sender, "redeemWithdrawalShares", *fn_args)
+            preview_result = smart_contract_preview_transaction(
+                contract, sender, "redeemWithdrawalShares", fn_args, position["blockNumber"]
+            )
             return preview_result["proceeds"] / Decimal(1e18)
         except Exception as exception:  # pylint: disable=broad-except
             logging.warning("Exception caught, ignoring: %s", exception)

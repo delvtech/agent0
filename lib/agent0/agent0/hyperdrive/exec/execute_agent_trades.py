@@ -240,7 +240,7 @@ async def async_match_contract_call_to_trade(
             fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
             if trade.slippage_tolerance:
                 preview_result = smart_contract_preview_transaction(
-                    hyperdrive_contract, agent.checksum_address, "openLong", *fn_args
+                    hyperdrive_contract, agent.checksum_address, "openLong", fn_args
                 )
                 min_output = (
                     FixedPoint(scaled_value=preview_result["bondProceeds"]) * (FixedPoint(1) - trade.slippage_tolerance)
@@ -276,7 +276,7 @@ async def async_match_contract_call_to_trade(
             )
             if trade.slippage_tolerance:
                 preview_result = smart_contract_preview_transaction(
-                    hyperdrive_contract, agent.checksum_address, "closeLong", *fn_args
+                    hyperdrive_contract, agent.checksum_address, "closeLong", fn_args
                 )
                 min_output = (
                     FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.slippage_tolerance)
@@ -302,7 +302,7 @@ async def async_match_contract_call_to_trade(
             fn_args = (trade_amount, max_deposit, agent.checksum_address, as_underlying)
             if trade.slippage_tolerance:
                 preview_result = smart_contract_preview_transaction(
-                    hyperdrive_contract, agent.checksum_address, "openShort", *fn_args
+                    hyperdrive_contract, agent.checksum_address, "openShort", fn_args
                 )
                 max_deposit = (
                     FixedPoint(scaled_value=preview_result["traderDeposit"])
@@ -344,7 +344,7 @@ async def async_match_contract_call_to_trade(
             )
             if trade.slippage_tolerance:
                 preview_result = smart_contract_preview_transaction(
-                    hyperdrive_contract, agent.checksum_address, "closeShort", *fn_args
+                    hyperdrive_contract, agent.checksum_address, "closeShort", fn_args
                 )
                 min_output = (
                     FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.slippage_tolerance)
@@ -391,6 +391,12 @@ async def async_match_contract_call_to_trade(
         case HyperdriveActionType.REMOVE_LIQUIDITY:
             min_output = 0
             fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
+            preview_result = smart_contract_preview_transaction(
+                hyperdrive_contract,
+                agent.checksum_address,
+                "removeLiquidity",
+                fn_args,
+            )
             trade_result = await async_transact_and_parse_logs(
                 web3,
                 hyperdrive_contract,

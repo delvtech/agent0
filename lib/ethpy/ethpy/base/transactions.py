@@ -71,7 +71,11 @@ def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn
 
 
 def smart_contract_preview_transaction(
-    contract: Contract, signer_address: ChecksumAddress, function_name_or_signature: str, *fn_args
+    contract: Contract,
+    signer_address: ChecksumAddress,
+    function_name_or_signature: str,
+    fn_args: Sequence,
+    block_number: BlockNumber | None = None,
 ) -> dict[str, Any]:
     """Returns the values from a transaction without actually submitting the transaction.
 
@@ -83,8 +87,10 @@ def smart_contract_preview_transaction(
         The address that would sign the transaction.
     function_name_or_signature : str
         The name of the function
-    *fn_args : Unknown
+    fn_args : Sequence
         The arguments passed to the contract method.
+    block_number : BlockNumber
+        The block to query the chain at
 
     Returns
     -------
@@ -102,7 +108,7 @@ def smart_contract_preview_transaction(
         function = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
     else:
         function = contract.get_function_by_name(function_name_or_signature)(*fn_args)
-    return_values = function.call({"from": signer_address})
+    return_values = function.call({"from": signer_address}, block_identifier=block_number)
     if not isinstance(return_values, Sequence):  # could be list or tuple
         return_values = [return_values]
     if contract.abi:  # not all contracts have an associated ABI
