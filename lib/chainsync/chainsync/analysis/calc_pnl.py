@@ -1,6 +1,7 @@
 """Calculates the pnl."""
 from __future__ import annotations
 
+import logging
 from decimal import Decimal
 
 import pandas as pd
@@ -54,34 +55,51 @@ def calc_single_closeout(
     assert isinstance(tokentype, str)
     if tokentype == "LONG":
         fn_args = (maturity, amount, min_output, address, as_underlying)
-        preview_result = smart_contract_preview_transaction(
-            contract, sender, "closeLong", *fn_args, block_identifier=position["blockNumber"]
-        )
-        return Decimal(preview_result["value"]) / Decimal(1e18)
+        try:
+            preview_result = smart_contract_preview_transaction(
+                contract, sender, "closeLong", *fn_args, block_identifier=position["blockNumber"]
+            )
+            return Decimal(preview_result["value"]) / Decimal(1e18)
+        except Exception as exception:  # pylint: disable=broad-except
+            logging.warning("Exception caught, ignoring: %s", exception)
+            return Decimal("nan")
     if tokentype == "SHORT":
         fn_args = (maturity, amount, min_output, address, as_underlying)
-        preview_result = smart_contract_preview_transaction(
-            contract, sender, "closeShort", *fn_args, block_identifier=position["blockNumber"]
-        )
-        return preview_result["value"] / Decimal(1e18)
+        try:
+            preview_result = smart_contract_preview_transaction(
+                contract, sender, "closeShort", *fn_args, block_identifier=position["blockNumber"]
+            )
+            return preview_result["value"] / Decimal(1e18)
+        except Exception as exception:  # pylint: disable=broad-except
+            logging.warning("Exception caught, ignoring: %s", exception)
+            return Decimal("nan")
     if tokentype == "LP":
         fn_args = (amount, min_output, address, as_underlying)
         # If this fails, keep as nan and continue iterating
-        preview_result = smart_contract_preview_transaction(
-            contract, sender, "removeLiquidity", *fn_args, block_identifier=position["blockNumber"]
-        )
-        return Decimal(
-            preview_result["baseProceeds"]
-            + preview_result["withdrawalShares"]
-            * pool_info["sharePrice"].values[-1]
-            * pool_info["lpSharePrice"].values[-1]
-        ) / Decimal(1e18)
+        try:
+            preview_result = smart_contract_preview_transaction(
+                contract, sender, "removeLiquidity", *fn_args, block_identifier=position["blockNumber"]
+            )
+            return Decimal(
+                preview_result["baseProceeds"]
+                + preview_result["withdrawalShares"]
+                * pool_info["sharePrice"].values[-1]
+                * pool_info["lpSharePrice"].values[-1]
+            ) / Decimal(1e18)
+        except Exception as exception:  # pylint: disable=broad-except
+            logging.warning("Exception caught, ignoring: %s", exception)
+            return Decimal("nan")
+
     if tokentype == "WITHDRAWAL_SHARE":
         fn_args = (amount, min_output, address, as_underlying)
-        preview_result = smart_contract_preview_transaction(
-            contract, sender, "redeemWithdrawalShares", *fn_args, block_identifier=position["blockNumber"]
-        )
-        return preview_result["proceeds"] / Decimal(1e18)
+        try:
+            preview_result = smart_contract_preview_transaction(
+                contract, sender, "redeemWithdrawalShares", *fn_args, block_identifier=position["blockNumber"]
+            )
+            return preview_result["proceeds"] / Decimal(1e18)
+        except Exception as exception:  # pylint: disable=broad-except
+            logging.warning("Exception caught, ignoring: %s", exception)
+            return Decimal("nan")
     # Should never get here
     raise ValueError(f"Unexpected token type: {tokentype}")
 
