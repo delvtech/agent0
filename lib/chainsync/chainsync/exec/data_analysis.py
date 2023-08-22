@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
 
 from chainsync.analysis import data_to_analysis
@@ -11,6 +12,8 @@ from chainsync.db.hyperdrive import (
     get_latest_block_number_from_pool_info_table,
     get_pool_config,
 )
+from ethpy import EthConfig, build_eth_config
+from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_url, get_web3_and_hyperdrive_contracts
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
@@ -18,7 +21,9 @@ _SLEEP_AMOUNT = 1
 
 def data_analysis(
     start_block: int = 0,
+    eth_config: EthConfig | None = None,
     db_session: Session | None = None,
+    contract_addresses: HyperdriveAddresses | None = None,
     exit_on_catch_up: bool = False,
 ):
     """Execute the data acquisition pipeline.
@@ -41,9 +46,22 @@ def data_analysis(
     exit_on_catch_up: bool
         If True, will exit after catching up to current block
     """
+    ## Initialization
+    # eth config
+    if eth_config is None:
+        # Load parameters from env vars if they exist
+        eth_config = build_eth_config()
+
     # postgres session
     if db_session is None:
         db_session = initialize_session()
+
+    # Get addresses either from artifacts url defined in eth_config or from contract_addresses
+    if contract_addresses is None:
+        contract_addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
+
+    # Get hyperdrive contract
+    _, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
 
     ## Get starting point for restarts
     analysis_latest_block_number = get_latest_block_number_from_analysis_table(db_session)
@@ -80,6 +98,6 @@ def data_analysis(
         # Does batch analysis on range(analysis_start_block, latest_data_block_number) blocks
         analysis_start_block = block_number + 1
         analysis_end_block = latest_data_block_number + 1
-        data_to_analysis(analysis_start_block, analysis_end_block, db_session, pool_config)
+        data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
         block_number = latest_data_block_number
         time.sleep(_SLEEP_AMOUNT)

@@ -111,7 +111,9 @@ class TestBotToDb:
         # Run data analysis to calculate various analysis values
         data_analysis(
             start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            eth_config=eth_config,
             db_session=db_session,
+            contract_addresses=hyperdrive_contract_addresses,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
@@ -157,7 +159,9 @@ class TestBotToDb:
         # Run data analysis to calculate various analysis values
         data_analysis(
             start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            eth_config=eth_config,
             db_session=db_session,
+            contract_addresses=hyperdrive_contract_addresses,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )

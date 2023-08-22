@@ -8,9 +8,12 @@ from chainsync.db.base import Base
 from chainsync.db.hyperdrive import CurrentWallet, PoolAnalysis, get_current_wallet, get_pool_info, get_wallet_deltas
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
+from web3 import Web3
+from web3.contract.contract import Contract
 
 from .calc_base_buffer import calc_base_buffer
 from .calc_fixed_rate import calc_fixed_rate
+from .calc_pnl import calc_closeout_pnl
 from .calc_spot_price import calc_spot_price
 
 pd.set_option("display.max_columns", None)
@@ -84,10 +87,20 @@ def calc_current_wallet(wallet_deltas_df: pd.DataFrame, latest_wallet: pd.DataFr
     return wallet_deltas_df
 
 
-def data_to_analysis(start_block: int, end_block: int, session: Session, pool_config: pd.Series) -> None:
+# TODO this function shouldn't need hyperdrive_contract eventually
+# instead, should call rust implementation
+# TODO clean up this function
+# pylint: disable=too-many-locals, too-many-arguments
+def data_to_analysis(
+    start_block: int,
+    end_block: int,
+    pool_config: pd.Series,
+    db_session: Session,
+    hyperdrive_contract: Contract,
+) -> None:
     """Function to query postgres data tables and insert to analysis tables"""
     # Get data
-    pool_info = get_pool_info(session, start_block, end_block, coerce_float=False)
+    pool_info = get_pool_info(db_session, start_block, end_block, coerce_float=False)
 
     # Calculate spot prices
     spot_price = calc_spot_price(
@@ -107,23 +120,28 @@ def data_to_analysis(start_block: int, end_block: int, session: Session, pool_co
 
     pool_analysis_df = pd.concat([spot_price, fixed_rate, base_buffer], axis=1)
     pool_analysis_df.columns = ["spot_price", "fixed_rate", "base_buffer"]
-    _df_to_db(pool_analysis_df, PoolAnalysis, session, index=True)
+    _df_to_db(pool_analysis_df, PoolAnalysis, db_session, index=True)
 
     # TODO calculate current wallet positions for this block
     # This should be done from the deltas, not queries from chain
-    wallet_deltas_df = get_wallet_deltas(session, start_block, end_block, coerce_float=False)
+    wallet_deltas_df = get_wallet_deltas(db_session, start_block, end_block, coerce_float=False)
 
     # Get current wallet of previous timestamp here
     # If it doesn't exist, should be an empty dataframe
-    if start_block > 0:
-        latest_wallet = get_current_wallet(session, end_block=start_block, coerce_float=False)
-    else:
-        latest_wallet = pd.DataFrame([])
-
+    latest_wallet = get_current_wallet(db_session, end_block=start_block, coerce_float=False)
     current_wallet_df = calc_current_wallet(wallet_deltas_df, latest_wallet)
-    _df_to_db(current_wallet_df, CurrentWallet, session, index=False)
+    _df_to_db(current_wallet_df, CurrentWallet, db_session, index=False)
 
-    # TODO calculate pnl through closeout pnl
+    # calculate pnl through closeout pnl
+    # TODO this function might be slow due to contract call on chain
+    # and calculating for every position, wallet, and block
+    # This will get better when we have the rust implementation of `smart_contract_preview_transaction`.
+    # Alternatively, set sample rate so we don't calculate this every block
+    # We can set a sample rate by doing batch processing on this function
+    # since we only get the current wallet for the end_block
+    current_wallet = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
+    pnl_df = calc_closeout_pnl(current_wallet, pool_info, hyperdrive_contract)
+    # TODO add pnl to db
 
     # TODO Build ticker from wallet delta
 
