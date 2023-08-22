@@ -1,6 +1,7 @@
 """Calculates the pnl."""
 from __future__ import annotations
 
+import logging
 from decimal import Decimal
 
 import pandas as pd
@@ -52,38 +53,58 @@ def calc_single_closeout(
         maturity = int(maturity)
         assert isinstance(maturity, int)
     assert isinstance(tokentype, str)
+
+    out_pnl = Decimal("nan")
+
     if tokentype == "LONG":
         fn_args = (maturity, amount, min_output, address, as_underlying)
-        preview_result = smart_contract_preview_transaction(
-            contract, sender, "closeLong", *fn_args, block_identifier=position["blockNumber"]
-        )
-        return Decimal(preview_result["value"]) / Decimal(1e18)
-    if tokentype == "SHORT":
+        try:
+            preview_result = smart_contract_preview_transaction(
+                contract, sender, "closeLong", *fn_args, block_identifier=position["blockNumber"]
+            )
+            out_pnl = Decimal(preview_result["value"]) / Decimal(1e18)
+        except Exception as exception:  # pylint: disable=broad-except
+            logging.warning("Exception caught, ignoring: %s", exception)
+
+    elif tokentype == "SHORT":
         fn_args = (maturity, amount, min_output, address, as_underlying)
-        preview_result = smart_contract_preview_transaction(
-            contract, sender, "closeShort", *fn_args, block_identifier=position["blockNumber"]
-        )
-        return preview_result["value"] / Decimal(1e18)
-    if tokentype == "LP":
+        try:
+            preview_result = smart_contract_preview_transaction(
+                contract, sender, "closeShort", *fn_args, block_identifier=position["blockNumber"]
+            )
+            out_pnl = preview_result["value"] / Decimal(1e18)
+        except Exception as exception:  # pylint: disable=broad-except
+            logging.warning("Exception caught, ignoring: %s", exception)
+
+    elif tokentype == "LP":
         fn_args = (amount, min_output, address, as_underlying)
         # If this fails, keep as nan and continue iterating
-        preview_result = smart_contract_preview_transaction(
-            contract, sender, "removeLiquidity", *fn_args, block_identifier=position["blockNumber"]
-        )
-        return Decimal(
-            preview_result["baseProceeds"]
-            + preview_result["withdrawalShares"]
-            * pool_info["sharePrice"].values[-1]
-            * pool_info["lpSharePrice"].values[-1]
-        ) / Decimal(1e18)
-    if tokentype == "WITHDRAWAL_SHARE":
+        try:
+            preview_result = smart_contract_preview_transaction(
+                contract, sender, "removeLiquidity", *fn_args, block_identifier=position["blockNumber"]
+            )
+            out_pnl = Decimal(
+                preview_result["baseProceeds"]
+                + preview_result["withdrawalShares"]
+                * pool_info["sharePrice"].values[-1]
+                * pool_info["lpSharePrice"].values[-1]
+            ) / Decimal(1e18)
+        except Exception as exception:  # pylint: disable=broad-except
+            logging.warning("Exception caught, ignoring: %s", exception)
+
+    elif tokentype == "WITHDRAWAL_SHARE":
         fn_args = (amount, min_output, address, as_underlying)
-        preview_result = smart_contract_preview_transaction(
-            contract, sender, "redeemWithdrawalShares", *fn_args, block_identifier=position["blockNumber"]
-        )
-        return preview_result["proceeds"] / Decimal(1e18)
-    # Should never get here
-    raise ValueError(f"Unexpected token type: {tokentype}")
+        try:
+            preview_result = smart_contract_preview_transaction(
+                contract, sender, "redeemWithdrawalShares", *fn_args, block_identifier=position["blockNumber"]
+            )
+            out_pnl = preview_result["proceeds"] / Decimal(1e18)
+        except Exception as exception:  # pylint: disable=broad-except
+            logging.warning("Exception caught, ignoring: %s", exception)
+    else:
+        # Should never get here
+        raise ValueError(f"Unexpected token type: {tokentype}")
+    return out_pnl
 
 
 def calc_closeout_pnl(
