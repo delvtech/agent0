@@ -165,7 +165,7 @@ def data_to_analysis(
     # the sampling rate. Otherwise, the e.g., ticker updates will also be on the sampling rate (won't miss data,
     # just lower frequency updates)
     # TODO do scaling tests to see the limit of this
-    wallet_pnl["pnl"] = pnl_df
+    wallet_pnl.loc["pnl"] = pnl_df
     # Add wallet_pnl to the database
     _df_to_db(wallet_pnl, WalletPNL, db_session)
 
