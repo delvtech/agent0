@@ -700,9 +700,8 @@ def get_pool_analysis(
         query = query.filter(PoolAnalysis.blockNumber < end_block)
 
     if return_timestamp:
-        # TODO query from PoolInfo the timestamp
+        # query from PoolInfo the timestamp
         query = query.join(PoolInfo, PoolAnalysis.blockNumber == PoolInfo.blockNumber)
-        pass
 
     # Always sort by block in order
     query = query.order_by(PoolAnalysis.blockNumber)

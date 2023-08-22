@@ -1,11 +1,24 @@
-from decimal import Decimal
+"""Builds the ohlcv dataframe for the dashboard."""
 
 import pandas as pd
 
 
-def build_ohlcv(pool_analysis, freq="D"):
-    """
-    freq var: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
+def build_ohlcv(pool_analysis, freq="D") -> pd.DataFrame:
+    """Builds the ohlcv dataframe ready to be plot
+
+    Arguments
+    ---------
+    pool_analysis: pd.DataFrame
+        The pool analysis object from `get_pool_anlysis`
+    freq: str
+        The grouping frequency for the ohlcv plot.
+        See https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
+        for accepted values
+
+    Returns
+    -------
+    pd.DataFrame
+        The ready to plot dataframe for ohlcv
     """
     spot_prices = pool_analysis[["timestamp", "spot_price"]].copy()
     spot_prices = spot_prices.set_index("timestamp")

@@ -1,7 +1,6 @@
-"""Plots the pnl."""
+"""Calculates the pnl."""
 from __future__ import annotations
 
-import logging
 from decimal import Decimal
 
 import pandas as pd
@@ -13,7 +12,7 @@ from web3.contract.contract import Contract
 
 def calc_single_closeout(
     position: pd.Series, contract: Contract, pool_info: pd.DataFrame, min_output: int, as_underlying: bool
-):
+) -> Decimal:
     """Calculate the closeout pnl for a single position.
 
     Arguments
@@ -28,6 +27,11 @@ def calc_single_closeout(
         The minimum output to be accepted, as part of slippage tolerance
     as_underlying: bool
         Whether or not to use the underlying token
+
+    Returns
+    -------
+    Decimal
+        The closeout pnl
     """
     # pnl is itself
     if position["baseTokenType"] == "BASE":
@@ -54,13 +58,13 @@ def calc_single_closeout(
             contract, sender, "closeLong", fn_args, position["blockNumber"]
         )
         return Decimal(preview_result["value"]) / Decimal(1e18)
-    elif tokentype == "SHORT":
+    if tokentype == "SHORT":
         fn_args = (maturity, amount, min_output, address, as_underlying)
         preview_result = smart_contract_preview_transaction(
             contract, sender, "closeShort", fn_args, position["blockNumber"]
         )
         return preview_result["value"] / Decimal(1e18)
-    elif tokentype == "LP":
+    if tokentype == "LP":
         fn_args = (amount, min_output, address, as_underlying)
         # If this fails, keep as nan and continue iterating
         preview_result = smart_contract_preview_transaction(
@@ -72,7 +76,7 @@ def calc_single_closeout(
             * pool_info["sharePrice"].values[-1]
             * pool_info["lpSharePrice"].values[-1]
         ) / Decimal(1e18)
-    elif tokentype == "WITHDRAWAL_SHARE":
+    if tokentype == "WITHDRAWAL_SHARE":
         fn_args = (amount, min_output, address, as_underlying)
         preview_result = smart_contract_preview_transaction(
             contract, sender, "redeemWithdrawalShares", fn_args, position["blockNumber"]
@@ -85,7 +89,22 @@ def calc_single_closeout(
 def calc_closeout_pnl(
     current_wallet: pd.DataFrame, pool_info: pd.DataFrame, hyperdrive_contract: Contract
 ) -> pd.DataFrame:
-    """Calculate closeout value of agent positions."""
+    """Calculate closeout value of agent positions.
+
+    Arguments
+    ---------
+    current_wallet: pd.DataFrame
+        A dataframe resulting from `get_current_wallet` that describes the current wallet position
+    pool_info: pd.DataFrame
+        The pool info object
+    hyperdrive_contract: Contract
+        The hyperdrive contract object
+
+    Returns
+    -------
+    Decimal
+        The closeout pnl
+    """
 
     # Define a function to handle the calculation for each group
     out_pnl = current_wallet.apply(

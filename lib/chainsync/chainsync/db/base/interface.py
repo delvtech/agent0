@@ -134,6 +134,8 @@ def initialize_session(drop: bool = False) -> Session:
             session.commit()
             exception = None
             break
+        # Catching general exception for retry, will throw if it keeps happening
+        # pylint: disable=broad-except
         except Exception as ex:
             logging.warning("Error creating tables, retrying")
             exception = ex
