@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import json
-from typing import List, NamedTuple, TypeGuard
+from dataclasses import dataclass
+from typing import List, NamedTuple, Sequence, TypeGuard, cast
 
-from web3.types import ABI, ABIElement, ABIEvent, ABIFunction
+from web3.types import ABI, ABIElement, ABIEvent, ABIFunction, ABIFunctionComponents, ABIFunctionParams
 
 
 class Input(NamedTuple):
@@ -117,13 +118,57 @@ def is_abi_event(item: ABIElement) -> TypeGuard[ABIEvent]:
 
     return True
 
+
 @dataclass
 class StructInfo:
-    name: str
-    values: dict[str, str | StructInfo]
+    """Solidity struct information needed for codegen."""
 
-def get_internal_types(abi: ABI, internal_types: list[StructInfo]) -> list[NamedTuple]:
-    """Gets all the
+    name: str
+    values: list[StructValue]
+
+
+@dataclass
+class StructValue:
+    """The name and python type of a solidity struct value."""
+
+    name: str
+    # TODO: type this better with an exahaustive list of python type strings.  Even better, maybe a
+    # mapping from solidity to python types?
+    type: str
+
+
+def get_structs(
+    function_params: Sequence[ABIFunctionParams] | Sequence[ABIFunctionComponents],
+    structs: dict[str, StructInfo] = {},  # pylint disable=dangerous-default-value
+) -> dict[str, StructInfo]:
+    """Gets all the structs for a contract by walking all function parameters.
+
+     Pseudo code of the shape of a Sequence[ABIFunctionParams]:
+     [
+        { #ABIFunctionParams
+            name:
+            type: asdf
+            internalType:
+            components:
+        },
+        { #ABIFunctionParams
+            name:
+            type:
+            internalType:
+            components: [ #Sequence[ABIFunctionComponents]
+                { #ABIFunctionComponents
+                    name:
+                    type:
+                },
+                { #ABIFunctionComponents
+                    name:
+                    type:
+                    internalType:
+                    components: # Sequence[ABIFunctionComponents]
+                }
+            ]
+        },
+    ]
 
     Parameters
     ----------
@@ -136,8 +181,102 @@ def get_internal_types(abi: ABI, internal_types: list[StructInfo]) -> list[Named
         _description_
     """
 
-    # leverage the private list of ABIFunction's
-    # pylint: disable=protected-access
-    for abi_item in abi:
+    for param in function_params:
+        components = param.get("components")
+        internal_type = cast(str, param.get("internalType", ""))
 
-    return abi_functions_and_events
+        # if we find a struct, we'll add it to the dict of StructInfo's
+        if is_struct(internal_type) and components:
+            struct_name = get_param_name(param)
+            struct_values: list[StructValue] = []
+
+            # walk over the components of the struct
+            for component in components:
+                component_internal_type = cast(str, component.get("internalType", ""))
+
+                # do recursion if nested struct
+                if is_struct(component_internal_type):
+                    get_structs([component], structs)
+
+                component_name = get_param_name(component)
+                component_type = component_name if is_struct(component_internal_type) else component.get("type", "")
+                struct_values.append(StructValue(name=component_name, type=component_type))
+
+            # lastly, add the struct to the dict
+            structs[struct_name] = StructInfo(name=struct_name, values=struct_values)
+    return structs
+
+
+def get_structs_for_abi(abi: ABI) -> dict[str, StructInfo]:
+    """
+
+    Parameters
+    ----------
+    abi : ABI
+        An Application Boundary Interface object.
+
+    Returns
+    -------
+    dict[str, StructInfo]
+        A dictionary of StructInfos keyed by name.
+    """
+    structs: dict[str, StructInfo] = {}
+    for item in abi:
+        if is_abi_function(item):
+            fn_inputs = item.get("inputs")
+            fn_outputs = item.get("outputs")
+            if fn_inputs:
+                input_structs = get_structs(fn_inputs)
+                structs.update(input_structs)
+            if fn_outputs:
+                output_structs = get_structs(fn_outputs)
+                structs.update(output_structs)
+
+    return structs
+
+
+def is_struct(internal_type: str) -> bool:
+    """Returns True if the internal type of the parameter is a solidity struct.
+
+    Arguments
+    ---------
+    internal_type : str
+        The internalType attribute of an ABIFunctionParams or ABIFunctionComponents.  If the
+        internal type has the form 'struct ContractName.StructName' then we know we are dealing with
+        solidity struct.  Otherwise it will be equivalent to the 'type' attribute.
+
+    Returns
+    -------
+    bool
+        If the type is a struct.
+    """
+    # internal_type looks like 'struct ContractName.StructName' if they are structs
+    return True if internal_type.startswith("struct") else False
+
+
+def get_param_name(param_or_component: ABIFunctionParams | ABIFunctionComponents) -> str:
+    """Returns the name for a given ABIFunctionParams or ABIFunctionComponents.
+
+    If the item is a struct, then we pull the name from the internalType attribute, otherwise we use
+    the name if available.
+
+    Arguments
+    ---------
+    param : ABIFunctionParams | ABIFunctionComponents
+
+
+    Returns
+    -------
+    str
+        The name of the item.
+    """
+    internal_type = cast(str, param_or_component.get("internalType", ""))
+    if is_struct(internal_type):
+        # internal_type looks like 'struct ContractName.StructName' if it is a struct,
+        # pluck off the name
+        string_type = internal_type.split(".").pop()
+        # and capitalize first letter, don't lowercase the rest of the letters (.capitalize() does
+        # this)
+        return string_type[0].upper() + string_type[1:]
+
+    return param_or_component.get("name", "")
