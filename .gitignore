@@ -25,8 +25,10 @@ __pypackages__/
 # output directory for saved notebook figures
 figs
 
-# symlinks (should only ignore top level folder)
+# other Delv packages
 hyperdrive_solidity
+hyperdrive
+pyperdrive
 agent_0
 
 # ape, compiler, pytest cache
