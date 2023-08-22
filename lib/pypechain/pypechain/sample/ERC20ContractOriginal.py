@@ -3,21 +3,72 @@
 as in the jinja template"""
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, NamedTuple, cast
 
 from eth_typing import ChecksumAddress
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
-
+from web3.types import BlockIdentifier, CallOverride, TxParams
 
 # TODO: break out function classes to their own files?
+
+
+class AllowanceOutput(NamedTuple):
+    """Output for the allowance method."""
+
+    arg1: str
+
+
 class AllowanceContractFunction(ContractFunction):
-    """ContractFunction for the Allowance method."""
+    """ContractFunction for the allowance method."""
 
     # pylint: disable=arguments-differ
     def __call__(self, owner: str, spender: str) -> "AllowanceContractFunction":
         super().__call__(owner, spender)
         return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> AllowanceOutput:
+        """
+        Execute a contract function call using the `eth_call` interface.
+
+        See web3.py ContractFunction's call method for more info.
+
+        Arguments
+        ---------
+        transaction : TxParams | None
+            Dictionary of transaction info for web3 interface.
+        block_identifier : BlockIdentifier
+            Hash or string used to identify a block, see BlockIdentifier for more info.
+        state_override : CallOverride
+            A dictionary keyed by contract address of eth_call overrides.
+        ccip_read_enabled : bool
+
+        Returns
+        -------
+            Returns the output of the contract.
+        """
+
+        result = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return result
+
+    # def transact(self, transaction: TxParams | None = None) -> HexBytes:
+    #     setup_transaction = self._transact(transaction)
+    #     return transact_with_contract_function(
+    #         self.address,
+    #         self.w3,
+    #         self.function_identifier,
+    #         setup_transaction,
+    #         self.contract_abi,
+    #         self.abi,
+    #         *self.args,
+    #         **self.kwargs,
+    #     )
 
 
 class ApproveContractFunction(ContractFunction):
