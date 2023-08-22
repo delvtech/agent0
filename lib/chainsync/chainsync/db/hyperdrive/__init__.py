@@ -1,5 +1,4 @@
 """Hyperdrive database utilities."""
-from .agent_position import AgentPosition
 from .chain_to_db import data_chain_to_db, init_data_chain_to_db
 from .convert_data import (
     convert_checkpoint_info,
@@ -15,7 +14,6 @@ from .interface import (
     add_transactions,
     add_wallet_deltas,
     add_wallet_infos,
-    get_agent_positions,
     get_all_traders,
     get_all_wallet_info,
     get_checkpoint_info,
@@ -23,6 +21,7 @@ from .interface import (
     get_current_wallet_info,
     get_latest_block_number_from_analysis_table,
     get_latest_block_number_from_pool_info_table,
+    get_pool_analysis,
     get_pool_config,
     get_pool_info,
     get_transactions,

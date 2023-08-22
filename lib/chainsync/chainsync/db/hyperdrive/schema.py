@@ -82,6 +82,7 @@ class PoolInfo(Base):
 
 
 # TODO: Rename this to something more accurate to what is happening, e.g. HyperdriveTransactions
+# TODO deprecate this schema
 class WalletInfoFromChain(Base):
     """Table/dataclass schema for wallet information."""
 

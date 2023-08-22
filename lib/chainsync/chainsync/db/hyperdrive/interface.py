@@ -8,7 +8,6 @@ from chainsync.db.base import get_latest_block_number_from_table
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
-from .agent_position import AgentPosition
 from .schema import (
     CheckpointInfo,
     CurrentWallet,
@@ -16,6 +15,7 @@ from .schema import (
     PoolAnalysis,
     PoolConfig,
     PoolInfo,
+    Ticker,
     WalletDelta,
     WalletInfoFromChain,
 )
@@ -53,26 +53,6 @@ def add_wallet_infos(wallet_infos: list[WalletInfoFromChain], session: Session) 
     """
     for wallet_info in wallet_infos:
         session.add(wallet_info)
-    try:
-        session.commit()
-    except exc.DataError as err:
-        session.rollback()
-        logging.error("Error on adding wallet_infos: %s", err)
-        raise err
-
-
-def add_current_wallet(current_wallet: list[CurrentWallet], session: Session) -> None:
-    """Add wallet info to the walletinfo table.
-
-    Arguments
-    ---------
-    wallet_infos: list[WalletInfo]
-        A list of WalletInfo objects to insert into postgres
-    session: Session
-        The initialized session object
-    """
-    for wallet in current_wallet:
-        session.add(wallet)
     try:
         session.commit()
     except exc.DataError as err:
@@ -547,6 +527,73 @@ def get_wallet_deltas(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
+def get_all_traders(
+    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
+) -> list[str]:
+    """Get the list of all traders from the WalletInfo table.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    start_block : int | None, optional
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block : int | None, optional
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
+
+    Returns
+    -------
+    list[str]
+        A list of addresses that have made a trade
+    """
+    query = session.query(WalletInfoFromChain.walletAddress)
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = get_latest_block_number_from_table(WalletInfoFromChain, session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = get_latest_block_number_from_table(WalletInfoFromChain, session) + end_block + 1
+
+    if start_block is not None:
+        query = query.filter(WalletInfoFromChain.blockNumber >= start_block)
+    if end_block is not None:
+        query = query.filter(WalletInfoFromChain.blockNumber < end_block)
+
+    if query is None:
+        return []
+    query = query.distinct()
+
+    results = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
+
+    return results["walletAddress"].to_list()
+
+
+# Analysis schema interfaces
+
+
+def add_current_wallet(current_wallet: list[CurrentWallet], session: Session) -> None:
+    """Add wallet info to the walletinfo table.
+
+    Arguments
+    ---------
+    wallet_infos: list[WalletInfo]
+        A list of WalletInfo objects to insert into postgres
+    session: Session
+        The initialized session object
+    """
+    for wallet in current_wallet:
+        session.add(wallet)
+    try:
+        session.commit()
+    except exc.DataError as err:
+        session.rollback()
+        logging.error("Error on adding wallet_infos: %s", err)
+        raise err
+
+
 def get_current_wallet(session: Session, end_block: int | None = None, coerce_float=True) -> pd.DataFrame:
     """Get all current wallet data in history and returns as a pandas dataframe.
 
@@ -605,10 +652,14 @@ def get_current_wallet(session: Session, end_block: int | None = None, coerce_fl
     return current_wallet[has_value | is_base]
 
 
-def get_all_traders(
-    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
-) -> list[str]:
-    """Get the list of all traders from the WalletInfo table.
+def get_pool_analysis(
+    session: Session,
+    start_block: int | None = None,
+    end_block: int | None = None,
+    return_timestamp: bool = True,
+    coerce_float=True,
+) -> pd.DataFrame:
+    """Get all pool analysis and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -625,55 +676,72 @@ def get_all_traders(
 
     Returns
     -------
-    list[str]
-        A list of addresses that have made a trade
+    DataFrame
+        A DataFrame that consists of the queried pool info data
     """
-    query = session.query(WalletInfoFromChain.walletAddress)
+    query = session.query(PoolAnalysis)
+
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(WalletInfoFromChain, session) + start_block + 1
+        start_block = get_latest_block_number_from_table(PoolAnalysis, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(WalletInfoFromChain, session) + end_block + 1
+        end_block = get_latest_block_number_from_table(PoolAnalysis, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(WalletInfoFromChain.blockNumber >= start_block)
+        query = query.filter(PoolAnalysis.blockNumber >= start_block)
     if end_block is not None:
-        query = query.filter(WalletInfoFromChain.blockNumber < end_block)
+        query = query.filter(PoolAnalysis.blockNumber < end_block)
 
-    if query is None:
-        return []
-    query = query.distinct()
+    if return_timestamp:
+        # TODO query from PoolInfo the timestamp
+        pass
 
-    results = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
+    # Always sort by block in order
+    query = query.order_by(PoolAnalysis.blockNumber)
 
-    return results["walletAddress"].to_list()
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float).set_index("blockNumber")
 
 
-def get_agent_positions(
-    session: Session, filter_addr: list[str] | None = None, coerce_float: bool = True
-) -> dict[str, AgentPosition]:
-    """Create an AgentPosition for each agent in the wallet history.
+def get_ticker(
+    session: Session,
+    start_block: int | None = None,
+    end_block: int | None = None,
+    coerce_float=True,
+) -> pd.DataFrame:
+    """Get all pool analysis and returns as a pandas dataframe.
 
     Arguments
     ---------
     session : Session
         The initialized session object
-    filter_addr : list[str] | None
-        Only return these addresses. Returns all if None
+    start_block : int | None, optional
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block : int | None, optional
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
     coerce_float : bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
     -------
-    dict[str, AgentPosition]
-        Returns a dictionary keyed by wallet address, value of an agent's position
+    DataFrame
+        A DataFrame that consists of the queried pool info data
     """
-    if filter_addr is None:
-        return {
-            agent: AgentPosition(wallet) for agent, wallet in get_wallet_info_history(session, coerce_float).items()
-        }
-    return {
-        agent: AgentPosition(wallet)
-        for agent, wallet in get_wallet_info_history(session, coerce_float).items()
-        if agent in filter_addr
-    }
+    query = session.query(Ticker)
+
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = get_latest_block_number_from_table(Ticker, session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = get_latest_block_number_from_table(Ticker, session) + end_block + 1
+
+    if start_block is not None:
+        query = query.filter(Ticker.blockNumber >= start_block)
+    if end_block is not None:
+        query = query.filter(Ticker.blockNumber < end_block)
+
+    # Always sort by block in order
+    query = query.order_by(Ticker.blockNumber)
+
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float).set_index("blockNumber")
