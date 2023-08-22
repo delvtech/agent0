@@ -1,7 +1,4 @@
-from ethpy.test_fixtures import local_chain, local_hyperdrive_chain  # pylint: disable=unused-import, ungrouped-imports
-
-# fixture arguments in test function have to be the same as the fixture name
-# pylint: disable=redefined-outer-name
+"""Tests bringing up local chain"""
 
 
 class TestLocalChain:
