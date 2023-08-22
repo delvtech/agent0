@@ -53,6 +53,7 @@ def calc_single_closeout(
         maturity = int(maturity)
         assert isinstance(maturity, int)
     assert isinstance(tokentype, str)
+
     if tokentype == "LONG":
         fn_args = (maturity, amount, min_output, address, as_underlying)
         try:
@@ -63,6 +64,7 @@ def calc_single_closeout(
         except Exception as exception:  # pylint: disable=broad-except
             logging.warning("Exception caught, ignoring: %s", exception)
             return Decimal("nan")
+
     if tokentype == "SHORT":
         fn_args = (maturity, amount, min_output, address, as_underlying)
         try:
@@ -73,6 +75,7 @@ def calc_single_closeout(
         except Exception as exception:  # pylint: disable=broad-except
             logging.warning("Exception caught, ignoring: %s", exception)
             return Decimal("nan")
+
     if tokentype == "LP":
         fn_args = (amount, min_output, address, as_underlying)
         # If this fails, keep as nan and continue iterating
