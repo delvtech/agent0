@@ -55,20 +55,20 @@ def calc_single_closeout(
     if tokentype == "LONG":
         fn_args = (maturity, amount, min_output, address, as_underlying)
         preview_result = smart_contract_preview_transaction(
-            contract, sender, "closeLong", fn_args, position["blockNumber"]
+            contract, sender, "closeLong", *fn_args, block_identifier=position["blockNumber"]
         )
         return Decimal(preview_result["value"]) / Decimal(1e18)
     if tokentype == "SHORT":
         fn_args = (maturity, amount, min_output, address, as_underlying)
         preview_result = smart_contract_preview_transaction(
-            contract, sender, "closeShort", fn_args, position["blockNumber"]
+            contract, sender, "closeShort", *fn_args, block_identifier=position["blockNumber"]
         )
         return preview_result["value"] / Decimal(1e18)
     if tokentype == "LP":
         fn_args = (amount, min_output, address, as_underlying)
         # If this fails, keep as nan and continue iterating
         preview_result = smart_contract_preview_transaction(
-            contract, sender, "removeLiquidity", fn_args, position["blockNumber"]
+            contract, sender, "removeLiquidity", *fn_args, block_identifier=position["blockNumber"]
         )
         return Decimal(
             preview_result["baseProceeds"]
@@ -79,7 +79,7 @@ def calc_single_closeout(
     if tokentype == "WITHDRAWAL_SHARE":
         fn_args = (amount, min_output, address, as_underlying)
         preview_result = smart_contract_preview_transaction(
-            contract, sender, "redeemWithdrawalShares", fn_args, position["blockNumber"]
+            contract, sender, "redeemWithdrawalShares", *fn_args, block_identifier=position["blockNumber"]
         )
         return preview_result["proceeds"] / Decimal(1e18)
     # Should never get here
