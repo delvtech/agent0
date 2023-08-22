@@ -9,13 +9,22 @@ from chainsync.dashboard import (
     build_fixed_rate,
     build_leaderboard,
     build_ohlcv,
+    build_outstanding_positions,
     build_ticker,
     get_user_lookup,
     plot_fixed_rate,
     plot_ohlcv,
+    plot_outstanding_positions,
 )
 from chainsync.db.base import get_user_map, initialize_session
-from chainsync.db.hyperdrive import get_all_traders, get_pool_analysis, get_pool_config, get_ticker, get_wallet_pnl
+from chainsync.db.hyperdrive import (
+    get_all_traders,
+    get_pool_analysis,
+    get_pool_config,
+    get_pool_info,
+    get_ticker,
+    get_wallet_pnl,
+)
 from ethpy import build_eth_config
 
 # pylint: disable=invalid-name
@@ -42,8 +51,9 @@ ticker_placeholder = st.empty()
 main_placeholder = st.empty()
 
 main_fig = mpf.figure(style="mike", figsize=(15, 15))
-ax_ohlcv = main_fig.add_subplot(2, 1, 1)
-ax_fixed_rate = main_fig.add_subplot(2, 1, 2)
+ax_ohlcv = main_fig.add_subplot(3, 1, 1)
+ax_fixed_rate = main_fig.add_subplot(3, 1, 2)
+ax_positions = main_fig.add_subplot(3, 1, 3)
 
 while True:
     # Wallet addr to username mapping
@@ -51,6 +61,7 @@ while True:
     user_map = get_user_map(session)
     user_lookup = get_user_lookup(agents, user_map)
 
+    pool_info = get_pool_info(session, start_block=-max_live_blocks, coerce_float=False)
     pool_analysis = get_pool_analysis(session, start_block=-max_live_blocks, coerce_float=False)
     ticker = get_ticker(session, start_block=-max_live_blocks, coerce_float=False)
     # Adds user lookup to the ticker
@@ -66,6 +77,8 @@ while True:
     ohlcv = build_ohlcv(pool_analysis, freq="5T")
     # build fixed rate
     fixed_rate = build_fixed_rate(pool_analysis)
+    # build outstanding positions plots
+    outstanding_positions = build_outstanding_positions(pool_info)
 
     with ticker_placeholder.container():
         st.header("Ticker")
@@ -79,9 +92,11 @@ while True:
         # Clears all axes
         ax_ohlcv.clear()
         ax_fixed_rate.clear()
+        ax_positions.clear()
 
         plot_ohlcv(ohlcv, ax_ohlcv)
         plot_fixed_rate(fixed_rate, ax_fixed_rate)
+        plot_outstanding_positions(outstanding_positions, ax_positions)
 
         ax_ohlcv.tick_params(axis="both", which="both")
         ax_fixed_rate.tick_params(axis="both", which="both")
