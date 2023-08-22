@@ -98,6 +98,7 @@ def data_analysis(
         # Does batch analysis on range(analysis_start_block, latest_data_block_number) blocks
         analysis_start_block = block_number + 1
         analysis_end_block = latest_data_block_number + 1
+        logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
         data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
         block_number = latest_data_block_number
         time.sleep(_SLEEP_AMOUNT)
