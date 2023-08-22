@@ -83,6 +83,7 @@ def initialize_engine(postgres_config: PostgresConfig | None = None) -> Engine:
             connection = engine.connect()
             connection.close()
             exception = None
+            break
         except OperationalError as ex:
             logging.warning("No connection, retrying")
             exception = ex
@@ -122,10 +123,25 @@ def initialize_session(drop: bool = False) -> Session:
                 drop_query = text(f"DROP TABLE IF EXISTS {table} CASCADE;")
                 conn.execute(drop_query)
             conn.commit()
-    # create tables
-    Base.metadata.create_all(engine)
-    # commit the transaction
-    session.commit()
+
+    # There sometimes is a race condition here between data and analysis, keep trying until successful
+    exception = None
+    for _ in range(10):
+        try:
+            # create tables
+            Base.metadata.create_all(engine)
+            # commit the transaction
+            session.commit()
+            exception = None
+            break
+        except Exception as ex:
+            logging.warning("Error creating tables, retrying")
+            exception = ex
+            time.sleep(1)
+
+    if exception is not None:
+        raise exception
+
     return session
 
 
