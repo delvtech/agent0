@@ -73,7 +73,7 @@ def acquire_data(
     block_number: BlockNumber = BlockNumber(max(start_block, data_latest_block_number))
     # Make sure to not grab current block, as the current block is subject to change
     # Current block is still being built
-    latest_mined_block = web3.eth.get_block_number() - 1
+    latest_mined_block = web3.eth.get_block_number()
     lookback_block_limit = BlockNumber(lookback_block_limit)
 
     if (latest_mined_block - block_number) > lookback_block_limit:
@@ -91,7 +91,7 @@ def acquire_data(
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
     while True:
-        latest_mined_block = web3.eth.get_block_number() - 1
+        latest_mined_block = web3.eth.get_block_number()
         # Only execute if we are on a new block
         if latest_mined_block <= block_number:
             time.sleep(_SLEEP_AMOUNT)
