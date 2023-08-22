@@ -8,6 +8,7 @@ from chainsync.db.base import Base
 from chainsync.db.hyperdrive import (
     CurrentWallet,
     PoolAnalysis,
+    Ticker,
     get_current_wallet,
     get_pool_info,
     get_transactions,
@@ -15,7 +16,6 @@ from chainsync.db.hyperdrive import (
 )
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
-from web3 import Web3
 from web3.contract.contract import Contract
 
 from .calc_base_buffer import calc_base_buffer
@@ -165,5 +165,6 @@ def data_to_analysis(
     transactions = get_transactions(db_session, start_block, end_block, coerce_float=False)
     ticker_df = calc_ticker(wallet_deltas_df, transactions, pool_info)
     # TODO add ticker to database
+    _df_to_db(ticker_df, Ticker, db_session, index=False)
 
     pass

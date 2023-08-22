@@ -36,6 +36,7 @@ from .schema import (
     PoolAnalysis,
     PoolConfig,
     PoolInfo,
+    Ticker,
     WalletDelta,
     WalletInfoFromChain,
 )
