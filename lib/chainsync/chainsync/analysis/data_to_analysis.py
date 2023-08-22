@@ -141,7 +141,17 @@ def data_to_analysis(
     # since we only get the current wallet for the end_block
     current_wallet = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
     pnl_df = calc_closeout_pnl(current_wallet, pool_info, hyperdrive_contract)
-    # TODO add pnl to db
+
+    # This sets the pnl to the current wallet dataframe, but there may be scaling issues here.
+    # This is because the `CurrentWallet` table has one entry per change in wallet position,
+    # and the `get_current_wallet` function handles getting all current positions at a block.
+    # If we add this current_wallet (plus pnl) to the database here, the final size in the db is
+    # number_of_blocks * number_of_addresses * number_of_open_positions, which is not scalable.
+    # We alleviate this by sampling periodically, and not calculate this for every block
+    # TODO implement sampling by setting the start + end block parameters in the caller of this function
+    # TODO do scaling tests to see the limit of this
+    current_wallet["pnl"] = pnl_df
+    # TODO add this current_wallet + pnl to the database
 
     # TODO Build ticker from wallet delta
 
