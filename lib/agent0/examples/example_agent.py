@@ -140,19 +140,6 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     ),
                 )
             )
-        elif self.counter == 7:
-            # One more dummy trade to ensure the previous trades get into the db
-            # TODO test if we can remove this eventually
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
-                        wallet=wallet,
-                    ),
-                )
-            )
 
         self.counter += 1
         return action_list

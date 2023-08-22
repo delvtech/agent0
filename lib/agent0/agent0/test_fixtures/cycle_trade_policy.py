@@ -129,20 +129,6 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     ),
                 )
             )
-        elif self.counter == 7:
-            # One more dummy trade to ensure the previous trades get into the db
-            # TODO test if we can remove this eventually by allowing acquire_data to look at
-            # current block
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=FixedPoint(1),
-                        wallet=wallet,
-                    ),
-                )
-            )
         else:
             # We want this bot to exit and crash after it's done the trades it needs to do
             raise AgentDoneException("Bot done")
