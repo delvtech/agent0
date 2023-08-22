@@ -6,6 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, NamedTuple, Sequence, TypeGuard, cast
 
+from pypechain.utilities.format import capitalize_first_letter_only
+from pypechain.utilities.types import solidity_to_python_type
+from web3 import Web3
 from web3.types import ABI, ABIElement, ABIEvent, ABIFunction, ABIFunctionComponents, ABIFunctionParams
 
 
@@ -63,7 +66,7 @@ def load_abi(abi_path: str) -> AbiJson:
 
         # Assuming that the ABI data structure is at the top level of the JSON
         # (i.e., the file is a list of ABI items):
-        abi_items = [AbiItem(**item) for item in data]
+        abi_items = [cast(ABIElement, item) for item in data]
 
         return AbiJson(abi=abi_items)
 
@@ -135,7 +138,8 @@ class StructValue:
     name: str
     # TODO: type this better with an exahaustive list of python type strings.  Even better, maybe a
     # mapping from solidity to python types?
-    type: str
+    solidity_type: str
+    python_type: str
 
 
 # This is a recursive function, need to initialize with an empty dict.
@@ -206,7 +210,14 @@ def get_structs(
 
                 component_name = get_param_name(component)
                 component_type = component_name if is_struct(component_internal_type) else component.get("type", "")
-                struct_values.append(StructValue(name=component_name, type=component_type))
+                python_type = solidity_to_python_type(component_type)
+                struct_values.append(
+                    StructValue(
+                        name=component_name,
+                        solidity_type=component_type,
+                        python_type=python_type,
+                    )
+                )
 
             # lastly, add the struct to the dict
             structs[struct_name] = StructInfo(name=struct_name, values=struct_values)
@@ -281,9 +292,7 @@ def get_param_name(param_or_component: ABIFunctionParams | ABIFunctionComponents
         # internal_type looks like 'struct ContractName.StructName' if it is a struct,
         # pluck off the name
         string_type = internal_type.split(".").pop()
-        # and capitalize first letter, don't lowercase the rest of the letters (.capitalize() does
-        # this)
-        return string_type[0].upper() + string_type[1:]
+        return capitalize_first_letter_only(string_type)
 
     return param_or_component.get("name", "")
 
@@ -304,3 +313,27 @@ def load_abi_from_file(file_path: Path) -> ABI:
 
     with open(file_path, "r", encoding="utf-8") as file:
         return json.load(file)["abi"]
+
+
+def get_abi_items(file_path: Path) -> list[ABIElement]:
+    """Gets all the
+
+    Parameters
+    ----------
+    file_path : Path
+        the file path to the ABI.
+
+    Returns
+    -------
+    List[Union[ABIFunction, ABIEvent]]
+        _description_
+    """
+
+    web3 = Web3()
+    abi = load_abi_from_file(file_path)
+    contract = web3.eth.contract(abi=abi)
+
+    # leverage the private list of ABIFunction's
+    # pylint: disable=protected-access
+    abi_functions_and_events = contract.functions._functions
+    return abi_functions_and_events

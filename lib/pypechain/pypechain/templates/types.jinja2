@@ -1,4 +1,4 @@
-
+#pylint: disable=invalid-name
 """Dataclasses for all structs in the {{contract_name}} contract."""
 
 from dataclasses import dataclass
@@ -7,8 +7,8 @@ from dataclasses import dataclass
 @dataclass
 class {{struct.name}}:
     """{{struct.name}} struct."""
+{% for struct_value in struct['values'] %}
+    {{struct_value.name}}: {{struct_value.python_type}}
+{%- endfor %}
 
-    {% for struct_value in struct['values'] %}
-    {{struct_value.name}}: "{{struct_value.type}}"
-    {% endfor %}
 {% endfor %}

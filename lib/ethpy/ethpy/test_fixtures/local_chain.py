@@ -9,7 +9,7 @@ from ethpy.base import initialize_web3_with_http_provider
 from ethpy.base.abi.load_abis import load_all_abis
 from ethpy.hyperdrive import HyperdriveAddresses
 from web3 import Web3
-from web3.contract import Contract
+from web3.contract.contract import Contract
 
 from .deploy_hyperdrive import deploy_and_initialize_hyperdrive, deploy_hyperdrive_factory, initialize_deploy_account
 

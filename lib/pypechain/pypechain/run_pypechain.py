@@ -5,14 +5,19 @@ import os
 import sys
 from dataclasses import asdict
 from pathlib import Path
-from typing import NamedTuple
 
-from jinja2 import Environment, FileSystemLoader, Template
-from pypechain.utilities.abi import get_param_name, get_structs_for_abi, is_abi_function, load_abi_from_file
-from pypechain.utilities.format import avoid_python_keywords
+from jinja2 import Template
+from pypechain.utilities.abi import (
+    get_abi_items,
+    get_param_name,
+    get_structs_for_abi,
+    is_abi_function,
+    load_abi_from_file,
+)
+from pypechain.utilities.format import avoid_python_keywords, capitalize_first_letter_only
+from pypechain.utilities.templates import setup_templates
 from pypechain.utilities.types import solidity_to_python_type
-from web3 import Web3
-from web3.types import ABIElement, ABIFunction
+from web3.types import ABIFunction
 
 
 def main(abi_file_path: str, output_dir: str) -> None:
@@ -27,98 +32,89 @@ def main(abi_file_path: str, output_dir: str) -> None:
         Path to the directory to output the generated files.
     """
 
+    # get names
     file_path = Path(abi_file_path)
+    filename = file_path.name
+    contract_name = os.path.splitext(filename)[0]
+
+    # grab the templates
     contract_template, types_template = setup_templates()
 
-    abi_functions_and_events = get_abi_items(file_path)
+    # render the code
+    rendered_contract_code = render_contract_file(contract_name, contract_template, file_path)
+    rendered_types_code = render_types_file(contract_name, types_template, file_path)
 
+    # TODO: Add more features:
+    # TODO:  events
+
+    # Write the renders to a file
+    types_output_file_path = Path(output_dir).joinpath(contract_name + "Types.py")
+    contract_output_file_path = Path(output_dir).joinpath(contract_name + "Contract.py")
+    with open(contract_output_file_path, "w", encoding="utf-8") as output_file:
+        output_file.write(rendered_contract_code)
+    with open(types_output_file_path, "w", encoding="utf-8") as output_file:
+        output_file.write(rendered_types_code)
+
+
+def render_contract_file(contract_name: str, contract_template: Template, abi_file_path: Path) -> str:
+    """Returns a string of the contract file to be generated.
+
+    Parameters
+    ----------
+    contract_template : Template
+        A jinja template containging types for all structs within an abi.
+    abi_file_path : Path
+        The path to the abi file to parse.
+
+    Returns
+    -------
+    str
+        _description_
+    """
+    # TODO:  return types to function calls
     # Extract function names and their input parameters from the ABI
+    abi_functions_and_events = get_abi_items(abi_file_path)
+
     function_datas = []
     for abi_function in abi_functions_and_events:
         if is_abi_function(abi_function):
             # TODO: investigate better typing here?  templete.render expects an object so we'll have to convert.
+            name = abi_function.get("name", "")
             function_data = {
                 # TODO: pass a typeguarded ABIFunction that has only required fields?
                 # name is required in the typeguard.  Should be safe to default to empty string.
-                "name": abi_function.get("name", "").capitalize(),
+                "name": name,
+                "capitalized_name": capitalize_first_letter_only(name),
                 "input_names_and_types": get_input_names_and_values(abi_function),
                 "input_names": get_input_names(abi_function),
                 "outputs": get_outputs(abi_function),
             }
             function_datas.append(function_data)
-
     # Render the template
-    filename = file_path.name
-    contract_name = os.path.splitext(filename)[0]
-    # TODO: Add more features:
-    # TODO:  return types to function calls
-    # TODO:  events
-    # TODO:  structs
-    rendered_contract_code = contract_template.render(contract_name=contract_name, functions=function_datas)
-    abi = load_abi_from_file(file_path)
-    structs = get_structs_for_abi(abi)
-    struct_infos = list(structs.values())
-    struct_infos = [asdict(info) for info in struct_infos]
-    rendered_types_code = types_template.render(contract_name=contract_name, structs=struct_infos)
-
-    contract_output_file_path = Path(output_dir).joinpath(contract_name + "Contract.py")
-    types_output_file_path = Path(output_dir).joinpath(contract_name + "Types.py")
-    # Save the rendered code to a file
-    with open(contract_output_file_path, "w", encoding="utf-8") as output_file:
-        output_file.write(rendered_contract_code)
-    # TODO: makes this better, don't use splitting/joining.  have user pass in dir, not file name
-    with open(types_output_file_path, "w", encoding="utf-8") as output_file:
-        output_file.write(rendered_types_code)
+    return contract_template.render(contract_name=contract_name, functions=function_datas)
 
 
-class Templates(NamedTuple):
-    """Templates for codegen.  Each template represent a different file."""
-
-    contract_template: Template
-    types_template: Template
-
-
-def setup_templates() -> Templates:
-    """Grabs the necessary template files.
-
-    Returns
-    -------
-    Template
-        A jinja template for a python file containing a custom web3.py contract and its functions.
-    """
-    ### Set up the Jinja2 environment
-    # Determine the absolute path to the directory containing your script.
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    # Construct the path to your templates directory.
-    templates_dir = os.path.join(script_dir, "templates")
-    env = Environment(loader=FileSystemLoader(templates_dir))
-    contract_template = env.get_template("contract.jinja2")
-    types_template = env.get_template("types.jinja2")
-    return Templates(contract_template, types_template)
-
-
-def get_abi_items(file_path: Path) -> list[ABIElement]:
-    """Gets all the
+def render_types_file(contract_name: str, types_template: Template, abi_file_path: Path) -> str:
+    """Returns a string of the types file to be generated.
 
     Parameters
     ----------
-    file_path : Path
-        the file path to the ABI.
+    types_template : Template
+        A jinja template containging types for all structs within an abi.
+    abi_file_path : Path
+        The path to the abi file to parse.
 
     Returns
     -------
-    List[Union[ABIFunction, ABIEvent]]
+    str
         _description_
     """
+    abi = load_abi_from_file(abi_file_path)
 
-    web3 = Web3()
-    abi = load_abi_from_file(file_path)
-    contract = web3.eth.contract(abi=abi)
-
-    # leverage the private list of ABIFunction's
-    # pylint: disable=protected-access
-    abi_functions_and_events = contract.functions._functions
-    return abi_functions_and_events
+    structs_by_name = get_structs_for_abi(abi)
+    structs_list = list(structs_by_name.values())
+    structs = [asdict(struct) for struct in structs_list]
+    return types_template.render(contract_name=contract_name, structs=structs)
 
 
 def get_input_names_and_values(function: ABIFunction) -> list[str]:
