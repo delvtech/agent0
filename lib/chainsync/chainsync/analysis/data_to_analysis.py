@@ -134,6 +134,9 @@ def data_to_analysis(
     # TODO calculate current wallet positions for this block
     # This should be done from the deltas, not queries from chain
     wallet_deltas_df = get_wallet_deltas(db_session, start_block, end_block, coerce_float=False)
+    # Explicit check for empty wallet_deltas here
+    if len(wallet_deltas_df) == 0:
+        return
 
     # Get current wallet of previous timestamp here
     # If it doesn't exist, should be an empty dataframe
