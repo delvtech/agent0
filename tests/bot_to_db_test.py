@@ -258,7 +258,7 @@ class TestBotToDb:
         db_wallet_delta: pd.DataFrame = get_wallet_deltas(db_session, coerce_float=False)
 
         # Ensure trades exist in database
-        # Should be 11 total transactions
+        # Should be 10 total transactions
         assert len(db_transaction_info) == 10
         np.testing.assert_array_equal(
             db_transaction_info["input_method"],
