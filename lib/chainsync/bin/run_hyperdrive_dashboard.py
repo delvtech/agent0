@@ -5,16 +5,9 @@ import time
 
 import mplfinance as mpf
 import streamlit as st
-from chainsync.dashboard import (
-    build_leaderboard,
-    build_ticker,
-    calc_ohlcv,
-    get_user_lookup,
-    plot_fixed_rate,
-    plot_ohlcv,
-)
+from chainsync.dashboard import build_leaderboard, build_ticker, get_user_lookup, plot_fixed_rate, plot_ohlcv
 from chainsync.db.base import get_user_map, initialize_session
-from chainsync.db.hyperdrive import get_all_traders, get_pool_analysis, get_pool_config, get_ticker
+from chainsync.db.hyperdrive import get_all_traders, get_pool_analysis, get_pool_config, get_ticker, get_wallet_pnl
 from ethpy import build_eth_config
 
 # pylint: disable=invalid-name
@@ -56,17 +49,19 @@ while True:
     # Adds user lookup to the ticker
     display_ticker = build_ticker(ticker, user_lookup)
 
-    # TODO calculate ohlcv and volume
-    ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
-
     # TODO get wallet pnl and calculate leaderboard
-    comb_rank, ind_rank = build_leaderboard(current_returns, user_lookup)
+    wallet_pnl = get_wallet_pnl(session, start_block=-max_live_blocks, coerce_float=False)
+    # Get the latest updated block
+    latest_wallet_pnl = wallet_pnl[wallet_pnl["blockNumber"] == wallet_pnl["blockNumber"].max()]
+
+    comb_rank, ind_rank = build_leaderboard(latest_wallet_pnl, user_lookup)
+
+    # TODO calculate ohlcv and volume
+    # ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
 
     with ticker_placeholder.container():
         st.header("Ticker")
         st.dataframe(ticker, height=200, use_container_width=True)
-        st.header("PNL")
-        st.dataframe(current_wallet, height=500, use_container_width=True)
         st.header("Total Leaderboard")
         st.dataframe(comb_rank, height=500, use_container_width=True)
         st.header("Wallet Leaderboard")

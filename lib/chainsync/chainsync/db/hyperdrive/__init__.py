@@ -28,6 +28,7 @@ from .interface import (
     get_transactions,
     get_wallet_deltas,
     get_wallet_info_history,
+    get_wallet_pnl,
 )
 from .schema import (
     CheckpointInfo,

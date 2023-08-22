@@ -22,6 +22,7 @@ def build_ticker(ticker_data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFram
     usernames = address_to_username(lookup, ticker_data["walletAddress"])
 
     ticker_data = ticker_data.copy()
+    ticker_data = ticker_data.drop("id", axis=1)
     ticker_data.insert(2, "username", usernames.values)  # type: ignore
     ticker_data.columns = ["blockNumber", "Timestamp", "User", "Wallet", "Method", "Token Deltas"]
     # Shorten wallet address string
