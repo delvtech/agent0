@@ -683,7 +683,10 @@ def get_pool_analysis(
     DataFrame
         A DataFrame that consists of the queried pool info data
     """
-    query = session.query(PoolAnalysis)
+    if return_timestamp:
+        query = session.query(PoolInfo.timestamp, PoolAnalysis)
+    else:
+        query = session.query(PoolAnalysis)
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
@@ -698,6 +701,7 @@ def get_pool_analysis(
 
     if return_timestamp:
         # TODO query from PoolInfo the timestamp
+        query = query.join(PoolInfo, PoolAnalysis.blockNumber == PoolInfo.blockNumber)
         pass
 
     # Always sort by block in order

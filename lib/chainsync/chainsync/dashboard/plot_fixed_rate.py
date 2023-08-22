@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker as mpl_ticker
 
 
-def plot_fixed_rate(x_data, y_data, axes):
+def plot_fixed_rate(data, axes):
     """Returns the fixed rate plot"""
-    axes.plot(x_data, y_data)
+    axes.plot(data["timestamp"], data["fixed_rate"])
     # change y-axis unit format to 0.1%
     axes.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(x, "0.3%")))
     axes.yaxis.set_label_position("right")
