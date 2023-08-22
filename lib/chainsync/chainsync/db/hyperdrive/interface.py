@@ -18,6 +18,7 @@ from .schema import (
     Ticker,
     WalletDelta,
     WalletInfoFromChain,
+    WalletPNL,
 )
 
 
@@ -645,6 +646,9 @@ def get_current_wallet(session: Session, end_block: int | None = None, coerce_fl
     current_wallet["latest_block_update"] = current_wallet["blockNumber"]
     current_wallet["blockNumber"] = end_block - 1
 
+    # Drop id, as id is autofilled when inserting
+    current_wallet = current_wallet.drop("id", axis=1)
+
     # filter non-base zero positions here
     has_value = current_wallet["value"] > 0
     is_base = current_wallet["tokenType"] == "BASE"
@@ -743,5 +747,50 @@ def get_ticker(
 
     # Always sort by block in order
     query = query.order_by(Ticker.blockNumber)
+
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
+
+
+def get_wallet_pnl(
+    session: Session,
+    start_block: int | None = None,
+    end_block: int | None = None,
+    coerce_float=True,
+) -> pd.DataFrame:
+    """Get all pool analysis and returns as a pandas dataframe.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    start_block : int | None, optional
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block : int | None, optional
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried pool info data
+    """
+    query = session.query(WalletPNL)
+
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = get_latest_block_number_from_table(WalletPNL, session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = get_latest_block_number_from_table(WalletPNL, session) + end_block + 1
+
+    if start_block is not None:
+        query = query.filter(WalletPNL.blockNumber >= start_block)
+    if end_block is not None:
+        query = query.filter(WalletPNL.blockNumber < end_block)
+
+    # Always sort by block in order
+    query = query.order_by(WalletPNL.blockNumber)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
