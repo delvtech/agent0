@@ -10,25 +10,20 @@ from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.exec import run_agents
 from agent0.test_fixtures import AgentDoneException
-from chainsync.db.hyperdrive.interface import get_pool_config, get_pool_info, get_transactions, get_wallet_deltas
-from chainsync.exec import acquire_data
+from chainsync.db.hyperdrive.interface import (
+    get_current_wallet,
+    get_pool_config,
+    get_pool_info,
+    get_transactions,
+    get_wallet_deltas,
+)
+from chainsync.exec import acquire_data, data_analysis
 from eth_account.signers.local import LocalAccount
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses
 from ethpy.test_fixtures.deploy_hyperdrive import _calculateTimeStretch
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
-
-# These tests are using fixtures defined in conftest.py
-
-
-class TestLocalChain:
-    """Tests bringing up local chain"""
-
-    def test_hyperdrive_init_and_deploy(self, local_hyperdrive_chain: dict):
-        """Create and entry"""
-        print(local_hyperdrive_chain["rpc_url"])
-        print(local_hyperdrive_chain)
 
 
 def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
@@ -103,7 +98,7 @@ class TestBotToDb:
             # so this exception is expected on test pass
             pass
 
-        # Run acquire data to get data from chain to db in subprocess
+        # Run acquire data to get data from chain to db
         acquire_data(
             start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
             eth_config=eth_config,
@@ -112,6 +107,79 @@ class TestBotToDb:
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
+
+        # Run data analysis to calculate various analysis values
+        data_analysis(
+            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            eth_config=eth_config,
+            db_session=db_session,
+            contract_addresses=hyperdrive_contract_addresses,
+            # Exit the script after catching up to the chain
+            exit_on_catch_up=True,
+        )
+
+        # Run bots again, but this time only for 4 trades
+
+        # Build agent config
+        agent_config: list[AgentConfig] = [
+            AgentConfig(
+                policy=cycle_trade_policy,
+                number_of_agents=1,
+                slippage_tolerance=FixedPoint("0.0001"),
+                base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
+                eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
+                init_kwargs={"max_trades": 3},
+            ),
+        ]
+
+        try:
+            run_agents(
+                env_config,
+                agent_config,
+                account_key_config,
+                develop=True,
+                eth_config=eth_config,
+                contract_addresses=hyperdrive_contract_addresses,
+            )
+        except AgentDoneException:
+            # Using this exception to stop the agents,
+            # so this exception is expected on test pass
+            pass
+
+        # Run acquire data to get data from chain to db
+        acquire_data(
+            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            eth_config=eth_config,
+            db_session=db_session,
+            contract_addresses=hyperdrive_contract_addresses,
+            # Exit the script after catching up to the chain
+            exit_on_catch_up=True,
+        )
+
+        # Run data analysis to calculate various analysis values
+        data_analysis(
+            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            eth_config=eth_config,
+            db_session=db_session,
+            contract_addresses=hyperdrive_contract_addresses,
+            # Exit the script after catching up to the chain
+            exit_on_catch_up=True,
+        )
+
+        # This bot does the following known trades in sequence:
+        # 1. addLiquidity of 11111 base
+        # 2. openLong of 22222 base
+        # 3. openShort of 33333 bonds
+        # 4. removeLiquidity of all LP tokens
+        # 5. closeLong on long from trade 2
+        # 6. closeShort on short from trade 3
+        # 7. redeemWithdrawalShares of all withdrawal tokens from trade 4
+        # The bot then runs again, this time for 4 trades:
+        # 8. addLiquidity of 11111 base
+        # 9. openLong of 22222 base
+        # 10. openShort of 33333 bonds
+        # 11. removeLiquidity of all LP tokens
+        # The last trade here won't show up in the database, due to data lag of one block
 
         # Test db entries are what we expect
         # We don't coerce to float because we want exact values in decimal
@@ -155,17 +223,14 @@ class TestBotToDb:
 
         # Value comparison
         for key, expected_value in expected_pool_config.items():
-            if isinstance(expected_value, Decimal):
-                assert_val = db_pool_config[key] == expected_value
-            else:
-                assert_val = db_pool_config[key] == expected_value
-
+            assert_val = db_pool_config[key] == expected_value
             assert assert_val, f"Values do not match for {key} ({db_pool_config[key]} != {expected_value})"
 
         # Pool info comparison
         db_pool_info: pd.DataFrame = get_pool_info(db_session, coerce_float=False)
         expected_pool_info_keys = [
             # Keys from contract call
+            "blockNumber",
             "shareReserves",
             "bondReserves",
             "lpTotalSupply",
@@ -180,7 +245,6 @@ class TestBotToDb:
             "lpSharePrice",
             # Added keys
             "timestamp",
-            # blockNumber is the index of the dataframe
             # Calculated keys
             "totalSupplyWithdrawalShares",
         ]
@@ -194,8 +258,8 @@ class TestBotToDb:
         db_wallet_delta: pd.DataFrame = get_wallet_deltas(db_session, coerce_float=False)
 
         # Ensure trades exist in database
-        # Should be 7 total transactions
-        assert len(db_transaction_info) == 7
+        # Should be 10 total transactions
+        assert len(db_transaction_info) == 10
         np.testing.assert_array_equal(
             db_transaction_info["input_method"],
             [
@@ -206,13 +270,16 @@ class TestBotToDb:
                 "closeLong",
                 "closeShort",
                 "redeemWithdrawalShares",
+                "addLiquidity",
+                "openLong",
+                "openShort",
             ],
         )
 
-        # 7 total trades in wallet deltas
-        assert db_wallet_delta["blockNumber"].nunique() == 7
-        # 15 different wallet deltas (2 token deltas per trade except for withdraw shares, which is 3)
-        assert len(db_wallet_delta) == 15
+        # 10 total trades in wallet deltas
+        assert db_wallet_delta["blockNumber"].nunique() == 10
+        # 21 different wallet deltas (2 token deltas per trade except for withdraw shares, which is 3)
+        assert len(db_wallet_delta) == 21
 
         actual_num_longs = Decimal("nan")
         actual_num_shorts = Decimal("nan")
@@ -221,10 +288,14 @@ class TestBotToDb:
         # Go through each trade and ensure wallet deltas are correct
         # The asserts here are equality because they are either int -> Decimal, which is lossless,
         # or they're comparing values after the lossy conversion
-        for block_number, txn in db_transaction_info.iterrows():
+        for _, txn in db_transaction_info.iterrows():
+            # TODO differentiate between the first and second addLiquidity
+            block_number = txn["blockNumber"]
             if txn["input_method"] == "addLiquidity":
                 assert txn["input_params_contribution"] == Decimal(11111)
+                # Filter for all deltas of this trade
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
+                # Ensure number of token deltas
                 assert len(block_wallet_deltas) == 2
                 lp_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LP"]
                 base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
@@ -240,9 +311,12 @@ class TestBotToDb:
 
                 actual_num_lp = lp_delta["delta"]
 
+            # TODO differentiate between the first and second openLong
             if txn["input_method"] == "openLong":
                 assert txn["input_params_baseAmount"] == Decimal(22222)
+                # Filter for all deltas of this trade
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
+                # Ensure number of token deltas
                 assert len(block_wallet_deltas) == 2
                 long_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LONG"]
                 base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
@@ -254,11 +328,12 @@ class TestBotToDb:
                 assert base_delta["delta"] == -Decimal(22222)
                 # TODO check long delta
                 # TODO check maturity time and tokenType
-                # TODO check wallet info matches the deltas
+                # TODO check current wallet matches the deltas
                 # TODO check pool info after this tx
 
                 actual_num_longs = long_delta["delta"]
 
+            # TODO differentiate between the first and second openShort
             if txn["input_method"] == "openShort":
                 assert txn["input_params_bondAmount"] == Decimal(33333)
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
@@ -273,7 +348,6 @@ class TestBotToDb:
                 assert short_delta["delta"] == Decimal(33333)
                 # TODO check base delta
                 # TODO check maturity time and tokenType
-                # TODO check wallet info matches the deltas
                 # TODO check pool info after this tx
 
                 actual_num_shorts = short_delta["delta"]
@@ -352,3 +426,10 @@ class TestBotToDb:
                 # TODO check base delta
                 # TODO check wallet info matches the deltas
                 # TODO check pool info after this tx
+
+        # Check final wallet positions
+        db_current_wallet: pd.DataFrame = get_current_wallet(db_session, coerce_float=False)
+        # TODO currently only shorts are not dependent on poolinfo, so we only check shorts here
+        # Eventually we want to double check all token types
+        short_pos = db_current_wallet[db_current_wallet["baseTokenType"] == "SHORT"]
+        assert short_pos.iloc[0]["value"] == Decimal(33333)

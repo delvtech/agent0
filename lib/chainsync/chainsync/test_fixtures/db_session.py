@@ -28,6 +28,7 @@ def psql_docker() -> Iterator[PostgresConfig]:
     )
 
     container = client.containers.run(
+        # TODO set to latest postgres (what's being used in infra)
         image="postgres:12",
         auto_remove=True,
         environment={
@@ -60,6 +61,7 @@ def database_engine(psql_docker):
         host="localhost",
         port=postgres_config.POSTGRES_PORT,
         dbname=postgres_config.POSTGRES_DB,
+        # TODO set to latest postgres (what's being used in infra)
         version=12,
         password=postgres_config.POSTGRES_PASSWORD,
     ):

@@ -28,15 +28,23 @@ class CycleTradesPolicy(HyperdrivePolicy):
         budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
+        max_trades: int | None = None,
     ):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
+        self.max_trades = max_trades
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
         action_list = []
+
+        # Early stopping based on parameter
+        if (self.max_trades is not None) and (self.counter >= self.max_trades):
+            # We want this bot to exit and crash after it's done the trades it needs to do
+            raise AgentDoneException("Bot done")
+
         if self.counter == 0:
             # Add liquidity
             action_list.append(

@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Union
 
 from chainsync.db.base import Base
-from sqlalchemy import BigInteger, Boolean, DateTime, Integer, Numeric, String
+from sqlalchemy import ARRAY, BigInteger, Boolean, DateTime, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 # pylint: disable=invalid-name
@@ -18,10 +18,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 FIXED_NUMERIC = Numeric(precision=1000, scale=18)
 
 
+## Base schemas for raw data
+
+
 class PoolConfig(Base):
     """Table/dataclass schema for pool config."""
 
-    __tablename__ = "poolconfig"
+    __tablename__ = "pool_config"
 
     contractAddress: Mapped[str] = mapped_column(String, primary_key=True)
     baseToken: Mapped[Union[str, None]] = mapped_column(String, default=None)
@@ -44,10 +47,10 @@ class PoolConfig(Base):
 class CheckpointInfo(Base):
     """Table/dataclass schema for checkpoint information"""
 
-    __tablename__ = "checkpointinfo"
+    __tablename__ = "checkpoint_info"
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime)
     sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     longSharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     shortBaseVolume: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -59,10 +62,10 @@ class PoolInfo(Base):
     Mapped class that is a data class on the python side, and an declarative base on the sql side.
     """
 
-    __tablename__ = "poolinfo"
+    __tablename__ = "pool_info"
 
     blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime)
     shareReserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     bondReserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     lpTotalSupply: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -79,14 +82,14 @@ class PoolInfo(Base):
 
 
 # TODO: Rename this to something more accurate to what is happening, e.g. HyperdriveTransactions
-class WalletInfo(Base):
+# TODO deprecate this schema
+class WalletInfoFromChain(Base):
     """Table/dataclass schema for wallet information."""
 
-    __tablename__ = "walletinfo"
+    __tablename__ = "wallet_info_from_chain"
 
     # Default table primary key
-    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
-
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
     blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
@@ -94,20 +97,19 @@ class WalletInfo(Base):
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
     tokenValue: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    maturityTime: Mapped[Union[int, None]] = mapped_column(
-        Numeric, default=None
-    )  # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+    # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+    maturityTime: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
     sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
 # TODO: either make a more general TokenDelta, or rename this to HyperdriveDelta
 class WalletDelta(Base):
-    """Table/dataclass schema for wallet information."""
+    """Table/dataclass schema for wallet deltas."""
 
-    __tablename__ = "walletdelta"
+    __tablename__ = "wallet_delta"
 
     # Default table primary key
-    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
     transactionHash: Mapped[str] = mapped_column(String, index=True)
     blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
     walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
@@ -116,9 +118,8 @@ class WalletDelta(Base):
     # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
     tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
     delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    maturityTime: Mapped[Union[int, None]] = mapped_column(
-        Numeric, default=None
-    )  # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+    # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+    maturityTime: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
 
 
 class HyperdriveTransaction(Base):
@@ -130,7 +131,7 @@ class HyperdriveTransaction(Base):
     __tablename__ = "transactions"
 
     # Default table primary key
-    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
     transactionHash: Mapped[str] = mapped_column(String, index=True, unique=True)
 
     #### Fields from base transactions ####
@@ -231,3 +232,80 @@ class HyperdriveTransaction(Base):
     # status
     # logsBloom
     # effectiveGasPrice
+
+
+## Analysis schemas
+
+
+class PoolAnalysis(Base):
+    """Table/dataclass schema for pool info analysis.
+
+    Mapped class that is a data class on the python side, and an declarative base on the sql side.
+    """
+
+    __tablename__ = "pool_analysis"
+
+    blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+
+    spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    fixed_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    base_buffer: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+
+
+class CurrentWallet(Base):
+    """Table/dataclass schema for current wallet positions."""
+
+    __tablename__ = "current_wallet"
+
+    # Default table primary key
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
+    walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
+    baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
+    tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    value: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+    maturityTime: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
+
+
+class Ticker(Base):
+    """Table/dataclass schema for the live ticker.
+
+    Mapped class that is a data class on the python side, and an declarative base on the sql side.
+    """
+
+    __tablename__ = "ticker"
+
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime)
+    walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    trade_type: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    token_diffs: Mapped[Union[list[str], None]] = mapped_column(ARRAY(String), default=None)
+
+
+class WalletPNL(Base):
+    """Table/dataclass schema for pnl data
+    This table differs from CurrentWallet by (1) including the PNL, and (2) contains all wallet positions
+    for a given block.
+
+    Mapped class that is a data class on the python side, and an declarative base on the sql side.
+    """
+
+    __tablename__ = "wallet_pnl"
+
+    # Default table primary key
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
+    blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
+    walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
+    baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
+    tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    value: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
+    maturityTime: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
+    latest_block_update: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
+    pnl: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)

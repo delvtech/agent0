@@ -13,6 +13,7 @@ from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engi
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.sql import text
 
 from .schema import Base, UserMap
 
@@ -82,6 +83,7 @@ def initialize_engine(postgres_config: PostgresConfig | None = None) -> Engine:
             connection = engine.connect()
             connection.close()
             exception = None
+            break
         except OperationalError as ex:
             logging.warning("No connection, retrying")
             exception = ex
@@ -91,8 +93,13 @@ def initialize_engine(postgres_config: PostgresConfig | None = None) -> Engine:
     return engine
 
 
-def initialize_session() -> Session:
+def initialize_session(drop: bool = False) -> Session:
     """Initialize the database if not already initialized.
+
+    Arguments
+    ---------
+    drop: bool
+        If true, will drop all tables in the database before doing anything for debugging
 
     Returns
     -------
@@ -101,14 +108,42 @@ def initialize_session() -> Session:
     """
 
     engine = initialize_engine()
+
     # create a configured "Session" class
     session_class = sessionmaker(bind=engine)
     # create a session
     session = session_class()
-    # create tables
-    Base.metadata.create_all(engine)
-    # commit the transaction
-    session.commit()
+    if drop:
+        # Executing raw sql since sqlalchemy can't drop all with cascade
+        metadata = MetaData()
+        metadata.reflect(engine)
+        all_tables = metadata.tables.keys()
+        with engine.connect() as conn:
+            for table in all_tables:
+                drop_query = text(f"DROP TABLE IF EXISTS {table} CASCADE;")
+                conn.execute(drop_query)
+            conn.commit()
+
+    # There sometimes is a race condition here between data and analysis, keep trying until successful
+    exception = None
+    for _ in range(10):
+        try:
+            # create tables
+            Base.metadata.create_all(engine)
+            # commit the transaction
+            session.commit()
+            exception = None
+            break
+        # Catching general exception for retry, will throw if it keeps happening
+        # pylint: disable=broad-except
+        except Exception as ex:
+            logging.warning("Error creating tables, retrying")
+            exception = ex
+            time.sleep(1)
+
+    if exception is not None:
+        raise exception
+
     return session
 
 
