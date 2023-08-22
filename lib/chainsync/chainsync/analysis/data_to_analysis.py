@@ -5,7 +5,14 @@ from typing import Type
 import numpy as np
 import pandas as pd
 from chainsync.db.base import Base
-from chainsync.db.hyperdrive import CurrentWallet, PoolAnalysis, get_current_wallet, get_pool_info, get_wallet_deltas
+from chainsync.db.hyperdrive import (
+    CurrentWallet,
+    PoolAnalysis,
+    get_current_wallet,
+    get_pool_info,
+    get_transactions,
+    get_wallet_deltas,
+)
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
 from web3 import Web3
@@ -15,6 +22,7 @@ from .calc_base_buffer import calc_base_buffer
 from .calc_fixed_rate import calc_fixed_rate
 from .calc_pnl import calc_closeout_pnl
 from .calc_spot_price import calc_spot_price
+from .calc_ticker import calc_ticker
 
 pd.set_option("display.max_columns", None)
 
@@ -154,5 +162,8 @@ def data_to_analysis(
     # TODO add this current_wallet + pnl to the database
 
     # TODO Build ticker from wallet delta
+    transactions = get_transactions(db_session, start_block, end_block, coerce_float=False)
+    ticker_df = calc_ticker(wallet_deltas_df, transactions, pool_info)
+    # TODO add ticker to database
 
     pass
