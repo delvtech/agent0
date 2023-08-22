@@ -653,7 +653,7 @@ def get_current_wallet(session: Session, end_block: int | None = None, coerce_fl
     has_value = current_wallet["value"] > 0
     is_base = current_wallet["tokenType"] == "BASE"
 
-    return current_wallet[has_value | is_base]
+    return current_wallet[has_value | is_base].copy()
 
 
 def get_pool_analysis(

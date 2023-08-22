@@ -43,7 +43,6 @@ main_placeholder = st.empty()
 
 main_fig = mpf.figure(style="mike", figsize=(15, 15))
 ax_ohlcv = main_fig.add_subplot(3, 1, 1)
-ax_vol = main_fig.add_subplot(3, 1, 2)
 ax_fixed_rate = main_fig.add_subplot(3, 1, 3)
 
 while True:
@@ -79,14 +78,12 @@ while True:
     with main_placeholder.container():
         # Clears all axes
         ax_ohlcv.clear()
-        ax_vol.clear()
         ax_fixed_rate.clear()
 
-        plot_ohlcv(ohlcv, ax_ohlcv, ax_vol)
+        plot_ohlcv(ohlcv, ax_ohlcv)
         plot_fixed_rate(fixed_rate, ax_fixed_rate)
 
         ax_ohlcv.tick_params(axis="both", which="both")
-        ax_vol.tick_params(axis="both", which="both")
         ax_fixed_rate.tick_params(axis="both", which="both")
         # Fix axes labels
         main_fig.autofmt_xdate()
