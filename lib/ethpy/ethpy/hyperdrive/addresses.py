@@ -7,6 +7,7 @@ import time
 
 import attr
 import requests
+from eth_typing import Address, ChecksumAddress
 
 
 @attr.s
@@ -15,10 +16,10 @@ class HyperdriveAddresses:
 
     # pylint: disable=too-few-public-methods
 
-    base_token: str = attr.ib()
-    hyperdrive_factory: str = attr.ib()
-    mock_hyperdrive: str = attr.ib()
-    mock_hyperdrive_math: str = attr.ib()
+    base_token: Address | ChecksumAddress = attr.ib()
+    hyperdrive_factory: Address | ChecksumAddress = attr.ib()
+    mock_hyperdrive: Address | ChecksumAddress = attr.ib()
+    mock_hyperdrive_math: Address | ChecksumAddress | None = attr.ib()
 
 
 def fetch_hyperdrive_address_from_url(contracts_url: str) -> HyperdriveAddresses:

@@ -1,7 +1,9 @@
 """System test for end to end testing of elf-simulations"""
+from __future__ import annotations
+
 import logging
 from decimal import Decimal
-from typing import Type
+from typing import Type, cast
 
 import numpy as np
 import pandas as pd
@@ -19,11 +21,14 @@ from chainsync.db.hyperdrive.interface import (
 )
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.signers.local import LocalAccount
+from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.hyperdrive import HyperdriveAddresses
+from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.test_fixtures.deploy_hyperdrive import _calculateTimeStretch
+from ethpy.test_fixtures.local_chain import LocalHyperdriveChain
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
+from web3 import HTTPProvider
 
 
 def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
@@ -37,7 +42,7 @@ class TestBotToDb:
     # pylint: disable=too-many-locals, too-many-statements
     def test_bot_to_db(
         self,
-        local_hyperdrive_chain: dict,
+        local_hyperdrive_chain: LocalHyperdriveChain,
         cycle_trade_policy: Type[BasePolicy],
         db_session: Session,
     ):
@@ -45,9 +50,10 @@ class TestBotToDb:
         All arguments are fixtures.
         """
         # Get hyperdrive chain info
-        rpc_url: str = local_hyperdrive_chain["rpc_url"]
-        deploy_account: LocalAccount = local_hyperdrive_chain["deploy_account"]
-        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain["hyperdrive_contract_addresses"]
+        uri: URI | None = cast(HTTPProvider, local_hyperdrive_chain.web3.provider).endpoint_uri
+        rpc_url = uri if uri else URI("http://localhost:8545")
+        deploy_account: LocalAccount = local_hyperdrive_chain.deploy_account
+        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
 
         # Build environment config
         env_config = EnvironmentConfig(

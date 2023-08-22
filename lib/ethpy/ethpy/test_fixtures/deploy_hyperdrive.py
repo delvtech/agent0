@@ -2,6 +2,7 @@
 
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
+from eth_typing import Address
 from ethpy.base import (
     deploy_contract,
     deploy_contract_and_return,
@@ -158,7 +159,7 @@ def deploy_and_initialize_hyperdrive(
     base_token_contract: Contract,
     factory_contract: Contract,
     deploy_account: LocalAccount,
-) -> str:
+) -> Address:
     """Calls the hyperdrive factory to deploy and initialize new hyperdrive contract
 
     Arguments
