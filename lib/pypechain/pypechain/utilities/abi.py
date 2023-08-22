@@ -137,11 +137,13 @@ class StructValue:
     type: str
 
 
+# This is a recursive function, need to initialize with an empty dict.
+# pylint: disable=dangerous-default-value
 def get_structs(
     function_params: Sequence[ABIFunctionParams] | Sequence[ABIFunctionComponents],
-    structs: dict[str, StructInfo] = {},  # pylint disable=dangerous-default-value
+    structs: dict[str, StructInfo] = {},
 ) -> dict[str, StructInfo]:
-    """Gets all the structs for a contract by walking all function parameters.
+    """Recursively gets all the structs for a contract by walking all function parameters.
 
      Pseudo code of the shape of a Sequence[ABIFunctionParams]:
      [
@@ -174,6 +176,9 @@ def get_structs(
     ----------
     file_path : Path
         the file path to the ABI.
+
+    structs : dict[str, StructInfo]
+        empty initialized return value.
 
     Returns
     -------
@@ -251,7 +256,7 @@ def is_struct(internal_type: str) -> bool:
         If the type is a struct.
     """
     # internal_type looks like 'struct ContractName.StructName' if they are structs
-    return True if internal_type.startswith("struct") else False
+    return bool(internal_type.startswith("struct"))
 
 
 def get_param_name(param_or_component: ABIFunctionParams | ABIFunctionComponents) -> str:
