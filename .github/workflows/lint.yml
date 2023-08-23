@@ -15,29 +15,33 @@ jobs:
         with:
           token: ${{github.token}}
 
-      - name: Set up Python
+      - name: set up python
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
           cache: "pip"
           token: ${{github.token}}
-      - run: |
-          python -m pip install --upgrade pip
+
+      - name: upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: install requirements
+        run: |
           python -m pip install -r requirements.txt
           python -m pip install -r requirements-dev.txt
 
-      - name: Ensure clear Jupyter Notebooks
+      - name: ensure clear Jupyter Notebooks
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
 
-      - name: Run black
+      - name: run black
         run: python -m black --check --diff .
 
-      - name: Get all Python files
+      - name: get all Python files
         id: list_files
         run: |
           echo "files=$(git ls-files '*.py' '*.pyi' | xargs)" >> $GITHUB_OUTPUT
 
-      - name: Run Pylint on files
+      - name: run Pylint on files
         run: |
           files="${{ steps.list_files.outputs.files }}"
           if [ -n "$files" ]; then
