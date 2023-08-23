@@ -65,7 +65,7 @@ def get_click_addresses() -> pd.DataFrame:
     return addresses
 
 
-def get_user_lookup(traders: list[str], user_map: pd.DataFrame) -> pd.DataFrame:
+def get_user_lookup(traders: list[str], user_map: pd.DataFrame, keep_nans=False) -> pd.DataFrame:
     """Generate username to address mapping.
 
     Arguments
@@ -96,11 +96,12 @@ def get_user_lookup(traders: list[str], user_map: pd.DataFrame) -> pd.DataFrame:
     # Reindex looks up agent addresses against user_map, adding nans if it doesn't exist
     options_map = user_map.set_index("address").reindex(traders)
 
-    # Set username as address if agent doesn't exist
-    na_idx = options_map["username"].isna()
-    # If there are any nan usernames, set address itself as username
-    if na_idx.any():
-        options_map.loc[na_idx, "username"] = options_map.index[na_idx].values
+    if not keep_nans:
+        # Set username as address if agent doesn't exist
+        na_idx = options_map["username"].isna()
+        # If there are any nan usernames, set address itself as username
+        if na_idx.any():
+            options_map.loc[na_idx, "username"] = options_map.index[na_idx].values
     return options_map.reset_index()
 
 
