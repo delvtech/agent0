@@ -31,6 +31,12 @@ user_lookup["format_name"] = (
     user_lookup["username"] + " - " + user_lookup["address"].str[:6] + "..." + user_lookup["address"].str[-4:]
 )
 
+# Refresh button
+# Streamlit automatically refreshes when an input widget is changed
+# so just having this button clicked automatically refreshes
+# Magic.
+st.button("Refresh")
+
 # Multiselect box of all available agents
 selected = st.multiselect("Wallet Addresses", user_lookup["format_name"])
 
@@ -119,7 +125,7 @@ for addr in wallet_positions["walletAddress"].unique():
     lp_positions = wallet_positions_over_time[wallet_positions_over_time["baseTokenType"] == "LP"][
         ["timestamp", "value"]
     ]
-    withdraw_positions = wallet_positions_over_time[wallet_positions_over_time["baseTokenType"] == "WITHDRAW"][
+    withdraw_positions = wallet_positions_over_time[wallet_positions_over_time["baseTokenType"] == "WITHDRAWAL_SHARE"][
         ["timestamp", "value"]
     ]
     ax_base.plot(base_positions["timestamp"], base_positions["value"], label=format_name)
@@ -145,4 +151,4 @@ main_fig.tight_layout()
 
 st.write("PnL Over Time")
 # streamlit doesn't play nice with types
-st.pyplot(fig=main_fig, use_container_width=True)  # type: ignore
+st.pyplot(fig=main_fig, clear_figure=True, use_container_width=True)  # type: ignore
