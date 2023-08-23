@@ -89,4 +89,5 @@ ax_pnl.set_title("PnL Over Time")
 ax_pnl.legend()
 
 st.write("PnL Over Time")
-st.pyplot(fig=main_fig)
+# streamlit doesn't play nice with types
+st.pyplot(fig=main_fig)  # type: ignore

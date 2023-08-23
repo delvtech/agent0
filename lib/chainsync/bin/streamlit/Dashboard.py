@@ -102,6 +102,7 @@ while True:
         ax_fixed_rate.tick_params(axis="both", which="both")
         # Fix axes labels
         main_fig.autofmt_xdate()
+        # streamlit doesn't play nice with types
         st.pyplot(fig=main_fig)  # type: ignore
 
     time.sleep(1)
