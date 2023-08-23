@@ -15,16 +15,6 @@ jobs:
         with:
           token: ${{github.token}}
 
-      - name: setup rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-
-      - name: setup foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
-
       - name: set up python
         uses: actions/setup-python@v4
         with:
@@ -34,24 +24,6 @@ jobs:
 
       - name: upgrade pip
         run: python -m pip install --upgrade pip
-
-      - name: check out hyperdrive
-        uses: actions/checkout@master
-        with:
-          repository: delvtech/hyperdrive
-          path: "./hyperdrive"
-          ssh-key: ${{ secrets.HYPERDRIVE_ACCESS_KEY }}
-
-      - name: check out pyperdrive
-        uses: actions/checkout@master
-        with:
-          repository: delvtech/pyperdrive
-          path: "./pyperdrive"
-          ssh-key: ${{ secrets.PYPERDRIVE_ACCESS_KEY }}
-
-      - name: build pyperdrive
-        shell: bash
-        run: source scripts/build_pyperdrive.sh
 
       - name: install requirements
         run: |

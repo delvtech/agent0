@@ -27,8 +27,6 @@ figs
 
 # other Delv packages
 hyperdrive_solidity
-hyperdrive
-pyperdrive
 agent_0
 
 # ape, compiler, pytest cache
