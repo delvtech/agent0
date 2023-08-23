@@ -147,8 +147,9 @@ for ax, y_label, title in zip(all_ax, y_labels, titles):
 main_fig.legend(labels=labels, loc="center left", bbox_to_anchor=(1, 0.5))
 # Fix axes labels
 main_fig.autofmt_xdate()
-main_fig.tight_layout()
+# matplotlib doesn't play nice with types
+main_fig.tight_layout()  # type: ignore
 
 st.write("PnL Over Time")
-# streamlit doesn't play nice with types
+# matplotlib doesn't play nice with types
 st.pyplot(fig=main_fig, clear_figure=True, use_container_width=True)  # type: ignore
