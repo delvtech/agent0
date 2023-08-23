@@ -4,7 +4,7 @@ import pandas as pd
 from .usernames import address_to_username, combine_usernames
 
 
-def build_leaderboard(wallet_pnl: pd.Series, lookup: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+def build_leaderboard(wallet_pnl: pd.DataFrame, lookup: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Rank users by PNL, individually and bomined across their accounts."""
     total_pnl = wallet_pnl.groupby("walletAddress")["pnl"].sum().reset_index()
 
