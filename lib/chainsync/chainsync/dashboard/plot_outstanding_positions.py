@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import matplotlib.pyplot as plt
-from matplotlib import ticker as mpl_ticker
 
 
 def plot_outstanding_positions(data, axes):

@@ -763,6 +763,8 @@ def get_ticker(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
+# Lots of arguments, most are defaults
+# pylint: disable=too-many-arguments
 def get_wallet_pnl(
     session: Session,
     start_block: int | None = None,
