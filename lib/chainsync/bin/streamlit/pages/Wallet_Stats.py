@@ -45,7 +45,7 @@ display_ticker = build_ticker(ticker, user_lookup)
 
 # Get latest wallet pnl and show open positions
 wallet_pnl = wallet_pnl.drop(["id", "baseTokenType", "maturityTime"], axis=1).copy()
-latest_wallet_pnl = wallet_pnl[wallet_pnl["blockNumber"] == wallet_pnl["blockNumber"].max()]
+latest_wallet_pnl = wallet_pnl[wallet_pnl["blockNumber"] == wallet_pnl["blockNumber"].max()].copy()
 # Get usernames
 latest_wallet_pnl["username"] = (
     user_lookup.set_index("address").loc[latest_wallet_pnl["walletAddress"]]["username"].values
