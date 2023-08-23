@@ -1,6 +1,9 @@
 """Utilities to help with Solidity types."""
 
 
+import logging
+
+
 def solidity_to_python_type(solidity_type: str) -> str:
     """Returns the stringfied python type for the gien solidity type.
 
@@ -52,5 +55,8 @@ def solidity_to_python_type(solidity_type: str) -> str:
         # Return a list of 'int' of the given size
         return "list[int]"
 
-    # If the Solidity type isn't recognized, raise an exception or return some default value
-    raise ValueError(f"Unknown Solidity type: {solidity_type}")
+    # If the Solidity type isn't recognized, make a warning.  This can happen when an internal type
+    # is expeected for an input parameter or returned in an output.
+    logging.warning("Unknown Solidity type: %s", solidity_type)
+
+    return solidity_type

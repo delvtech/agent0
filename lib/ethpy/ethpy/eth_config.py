@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
+from eth_typing import URI
 
 
 @dataclass
@@ -24,7 +25,7 @@ class EthConfig:
     # Matching environment variables to search for
     # pylint: disable=invalid-name
     ARTIFACTS_URL: str = "http://localhost:8080"
-    RPC_URL: str = "http://localhost:8545"
+    RPC_URL: URI = URI("http://localhost:8545")
     ABI_DIR: str = "./packages/hyperdrive/src/abis"
 
 

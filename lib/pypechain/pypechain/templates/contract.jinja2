@@ -1,3 +1,4 @@
+#pylint: disable=invalid-name
 """A web3.py Contract class for the {{contract_name}} contract."""
 from __future__ import annotations
 
@@ -7,22 +8,23 @@ from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 
 {% for function in functions %}
-class {{contract_name}}{{function.name}}ContractFunction(ContractFunction):
+class {{contract_name}}{{function.capitalized_name}}ContractFunction(ContractFunction):
     """ContractFunction for the {{function.name}} method."""
 
     # pylint: disable=arguments-differ
-    def __call__(self, {{function.input_names_and_types|join(', ')}}) -> "{{contract_name}}{{function.name}}ContractFunction":
+    def __call__(self, {{function.input_names_and_types|join(', ')}}) -> "{{contract_name}}{{function.capitalized_name}}ContractFunction":
         super().__call__({{function.input_names|join(', ')}})
         return self
-{% endfor %}
-
     # TODO: add call def so we can get return types for the calls
     # def call()
+
+{% endfor %}
+
 
 class {{contract_name}}ContractFunctions(ContractFunctions):
     """ContractFunctions for the {{contract_name}} contract."""
 {% for function in functions %}
-    {{function.name}}: {{contract_name}}{{function.name}}ContractFunction
+    {{function.name}}: {{contract_name}}{{function.capitalized_name}}ContractFunction
 {% endfor %}
 
 class {{contract_name}}Contract(Contract):
@@ -44,4 +46,4 @@ class {{contract_name}}Contract(Contract):
     # TODO: add events
     # events: ERC20ContractEvents
 
-    functions: ERC20ContractFunctions
+    functions: {{contract_name}}ContractFunctions
