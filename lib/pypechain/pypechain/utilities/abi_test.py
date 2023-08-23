@@ -25,4 +25,4 @@ class TestStructs:
         actual = list(structs)
         expected = ["Checkpoint", "MarketState", "Fees", "PoolConfig", "PoolInfo", "WithdrawPool"]
         assert actual == expected
-        assert all([a == b for a, b in zip(actual, expected)])
+        assert all(a == b for a, b in zip(actual, expected))

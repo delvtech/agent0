@@ -2,7 +2,6 @@
 
 
 import logging
-from logging import warn
 
 
 def solidity_to_python_type(solidity_type: str) -> str:
