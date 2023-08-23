@@ -300,6 +300,17 @@ class TestWalletDeltaInterface:
         wallet_delta_df = get_wallet_deltas(db_session, start_block=1, end_block=-1)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.2]))
 
+    def test_get_agents(self, db_session):
+        """Testing helper function to get current wallet values"""
+        wallet_delta_1 = WalletDelta(blockNumber=0, transactionHash="a", walletAddress="addr_1")
+        wallet_delta_2 = WalletDelta(blockNumber=1, transactionHash="b", walletAddress="addr_1")
+        wallet_delta_3 = WalletDelta(blockNumber=2, transactionHash="c", walletAddress="addr_2")
+        add_wallet_deltas([wallet_delta_1, wallet_delta_2, wallet_delta_3], db_session)
+        agents = get_all_traders(db_session)
+        assert len(agents) == 2
+        assert "addr_1" in agents
+        assert "addr_2" in agents
+
 
 class TestWalletInfoFromChainInterface:
     """Testing postgres interface for WalletInfoFromChain table"""
@@ -362,17 +373,6 @@ class TestWalletInfoFromChainInterface:
         wallet_info_df = get_current_wallet_info(db_session).reset_index()
         np.testing.assert_array_equal(wallet_info_df["tokenType"], ["BASE", "LP"])
         np.testing.assert_array_equal(wallet_info_df["tokenValue"], [6.1, 5.1])
-
-    def test_get_agents(self, db_session):
-        """Testing helper function to get current wallet values"""
-        wallet_info_1 = WalletInfoFromChain(blockNumber=0, walletAddress="addr_1")
-        wallet_info_2 = WalletInfoFromChain(blockNumber=1, walletAddress="addr_1")
-        wallet_info_3 = WalletInfoFromChain(blockNumber=2, walletAddress="addr_2")
-        add_wallet_infos([wallet_info_1, wallet_info_2, wallet_info_3], db_session)
-        agents = get_all_traders(db_session)
-        assert len(agents) == 2
-        assert "addr_1" in agents
-        assert "addr_2" in agents
 
 
 class TestCurrentWalletInterface:
