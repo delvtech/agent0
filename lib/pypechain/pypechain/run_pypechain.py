@@ -69,8 +69,9 @@ def render_contract_file(contract_name: str, contract_template: Template, abi_fi
     Returns
     -------
     str
-        _description_
+        A serialized python file.
     """
+
     # TODO:  return types to function calls
     # Extract function names and their input parameters from the ABI
     abi_functions_and_events = get_abi_items(abi_file_path)
@@ -97,8 +98,8 @@ def render_contract_file(contract_name: str, contract_template: Template, abi_fi
 def render_types_file(contract_name: str, types_template: Template, abi_file_path: Path) -> str:
     """Returns a string of the types file to be generated.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     types_template : Template
         A jinja template containging types for all structs within an abi.
     abi_file_path : Path
@@ -107,8 +108,9 @@ def render_types_file(contract_name: str, types_template: Template, abi_file_pat
     Returns
     -------
     str
-        _description_
+        A serialized python file.
     """
+
     abi = load_abi_from_file(abi_file_path)
 
     structs_by_name = get_structs_for_abi(abi)
@@ -188,8 +190,8 @@ def get_outputs(function: ABIFunction) -> list[str]:
     the following list would be returned:
     ['who', 'amount', 'flag', 'extraData']
 
-    ---------
     Arguments
+    ---------
     function : ABIFunction
         A web3 dict of an ABI function description.
 

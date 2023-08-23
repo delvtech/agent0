@@ -75,7 +75,7 @@ def local_hyperdrive_chain(local_chain: str) -> LocalHyperdriveChain:
     LocalHyperdriveChain
         A tuple with the following key - value fields:
 
-        web": Web3
+        web3: Web3
             web3 provider object
         deploy_account: LocalAccount
             The local account that deploys and initializes hyperdrive

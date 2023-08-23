@@ -57,19 +57,6 @@ class AllowanceContractFunction(ContractFunction):
         result = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return result
 
-    # def transact(self, transaction: TxParams | None = None) -> HexBytes:
-    #     setup_transaction = self._transact(transaction)
-    #     return transact_with_contract_function(
-    #         self.address,
-    #         self.w3,
-    #         self.function_identifier,
-    #         setup_transaction,
-    #         self.contract_abi,
-    #         self.abi,
-    #         *self.args,
-    #         **self.kwargs,
-    #     )
-
 
 class ApproveContractFunction(ContractFunction):
     """ContractFunction for the Approve method."""
