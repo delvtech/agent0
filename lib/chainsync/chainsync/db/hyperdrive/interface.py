@@ -259,7 +259,10 @@ def get_pool_info(
 
 
 def get_transactions(
-    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
+    session: Session,
+    start_block: int | None = None,
+    end_block: int | None = None,
+    coerce_float=True,
 ) -> pd.DataFrame:
     """Get all transactions and returns as a pandas dataframe.
 
@@ -551,17 +554,17 @@ def get_all_traders(
     list[str]
         A list of addresses that have made a trade
     """
-    query = session.query(WalletInfoFromChain.walletAddress)
+    query = session.query(WalletDelta.walletAddress)
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(WalletInfoFromChain, session) + start_block + 1
+        start_block = get_latest_block_number_from_table(WalletDelta, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(WalletInfoFromChain, session) + end_block + 1
+        end_block = get_latest_block_number_from_table(WalletDelta, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(WalletInfoFromChain.blockNumber >= start_block)
+        query = query.filter(WalletDelta.blockNumber >= start_block)
     if end_block is not None:
-        query = query.filter(WalletInfoFromChain.blockNumber < end_block)
+        query = query.filter(WalletDelta.blockNumber < end_block)
 
     if query is None:
         return []
@@ -675,6 +678,8 @@ def get_pool_analysis(
     end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    return_timestamp : bool, optional
+        Gets timestamps when looking at pool analysis. Defaults to True
     coerce_float : bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
@@ -713,6 +718,7 @@ def get_ticker(
     session: Session,
     start_block: int | None = None,
     end_block: int | None = None,
+    wallet_address: list[str] | None = None,
     coerce_float=True,
 ) -> pd.DataFrame:
     """Get all pool analysis and returns as a pandas dataframe.
@@ -748,6 +754,9 @@ def get_ticker(
     if end_block is not None:
         query = query.filter(Ticker.blockNumber < end_block)
 
+    if wallet_address is not None:
+        query = query.filter(Ticker.walletAddress.in_(wallet_address))
+
     # Always sort by block in order
     query = query.order_by(Ticker.blockNumber)
 
@@ -758,6 +767,8 @@ def get_wallet_pnl(
     session: Session,
     start_block: int | None = None,
     end_block: int | None = None,
+    wallet_address: list[str] | None = None,
+    return_timestamp: bool = True,
     coerce_float=True,
 ) -> pd.DataFrame:
     """Get all pool analysis and returns as a pandas dataframe.
@@ -780,7 +791,10 @@ def get_wallet_pnl(
     DataFrame
         A DataFrame that consists of the queried pool info data
     """
-    query = session.query(WalletPNL)
+    if return_timestamp:
+        query = session.query(PoolInfo.timestamp, WalletPNL)
+    else:
+        query = session.query(WalletPNL)
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
@@ -792,6 +806,12 @@ def get_wallet_pnl(
         query = query.filter(WalletPNL.blockNumber >= start_block)
     if end_block is not None:
         query = query.filter(WalletPNL.blockNumber < end_block)
+    if wallet_address is not None:
+        query = query.filter(WalletPNL.walletAddress.in_(wallet_address))
+
+    if return_timestamp:
+        # query from PoolInfo the timestamp
+        query = query.join(PoolInfo, WalletPNL.blockNumber == PoolInfo.blockNumber)
 
     # Always sort by block in order
     query = query.order_by(WalletPNL.blockNumber)

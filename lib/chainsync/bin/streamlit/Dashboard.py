@@ -32,6 +32,8 @@ from ethpy import build_eth_config
 st.set_page_config(page_title="Trading Competition Dashboard", layout="wide")
 st.set_option("deprecation.showPyplotGlobalUse", False)
 
+# st.sidebar
+
 # Load and connect to postgres
 session = initialize_session()
 
@@ -42,7 +44,6 @@ eth_config = build_eth_config()
 config_data = get_pool_config(session, coerce_float=False)
 
 config_data = config_data.iloc[0]
-
 
 max_live_blocks = 14400
 # Live ticker
@@ -68,9 +69,8 @@ while True:
     display_ticker = build_ticker(ticker, user_lookup)
 
     # get wallet pnl and calculate leaderboard
-    wallet_pnl = get_wallet_pnl(session, start_block=-max_live_blocks, coerce_float=False)
     # Get the latest updated block
-    latest_wallet_pnl = wallet_pnl[wallet_pnl["blockNumber"] == wallet_pnl["blockNumber"].max()]
+    latest_wallet_pnl = get_wallet_pnl(session, start_block=-1, coerce_float=False)
     comb_rank, ind_rank = build_leaderboard(latest_wallet_pnl, user_lookup)
 
     # build ohlcv and volume
