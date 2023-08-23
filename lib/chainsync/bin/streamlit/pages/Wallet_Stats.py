@@ -1,4 +1,4 @@
-"""Stereamlit wallet stats dashboard"""
+"""Streamlit wallet stats dashboard"""
 
 import mplfinance as mpf
 import streamlit as st
@@ -11,7 +11,7 @@ st.set_option("deprecation.showPyplotGlobalUse", False)
 
 # TODO clean up this script into various functions
 
-max_live_blocks = 14400
+MAX_LIVE_BLOCKS = 14400
 
 # Load and connect to postgres
 session = initialize_session()
@@ -36,7 +36,7 @@ selected_addresses = user_lookup.set_index("format_name").loc[selected]["address
 
 # Get wallet pnls for selected addresses
 wallet_pnl = get_wallet_pnl(
-    session, start_block=-max_live_blocks, coerce_float=False, wallet_address=selected_addresses
+    session, start_block=-MAX_LIVE_BLOCKS, coerce_float=False, wallet_address=selected_addresses
 )
 
 # Get ticker for selected addresses
