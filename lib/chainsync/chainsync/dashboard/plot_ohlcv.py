@@ -12,7 +12,7 @@ def plot_ohlcv(ohlcv, ohlcv_ax):
 
         ohlcv_ax.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(x, "0.6")))
         ohlcv_ax.set_xlabel("block timestamp")
-        ohlcv_ax.set_title("OHLCV")
+        ohlcv_ax.set_title("Spot Price Ohlc")
         ohlcv_ax.yaxis.set_label_position("right")
         ohlcv_ax.yaxis.tick_right()
 
