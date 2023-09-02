@@ -141,8 +141,9 @@ def get_input_names_and_values(function: ABIFunction) -> list[str]:
 
     stringified_function_parameters: list[str] = []
     for _input in function.get("inputs", []):
-        name = _input.get("name")
-        if name is None:
+        if name := get_param_name(_input):
+            python_type = solidity_to_python_type(_input.get("type", "unknown"))
+        else:
             raise ValueError("Solidity function parameter name cannot be None")
         python_type = solidity_to_python_type(_input.get("type", "unknown"))
         stringified_function_parameters.append(f"{avoid_python_keywords(name)}: {python_type}")
@@ -154,7 +155,7 @@ def stringify_parameters(parameters) -> list[str]:
     """Stringifies parameters."""
     stringified_function_parameters: list[str] = []
     for _input in parameters:
-        if name := _input.get("name"):
+        if name := get_param_name(_input):
             stringified_function_parameters.append(avoid_python_keywords(name))
         else:
             raise ValueError("input name cannot be None")
