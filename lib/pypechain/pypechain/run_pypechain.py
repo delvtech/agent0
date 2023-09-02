@@ -150,6 +150,17 @@ def get_input_names_and_values(function: ABIFunction) -> list[str]:
     return stringified_function_parameters
 
 
+def stringify_parameters(parameters) -> list[str]:
+    """Stringifies parameters."""
+    stringified_function_parameters: list[str] = []
+    for _input in parameters:
+        if name := _input.get("name"):
+            stringified_function_parameters.append(avoid_python_keywords(name))
+        else:
+            raise ValueError("input name cannot be None")
+    return stringified_function_parameters
+
+
 def get_input_names(function: ABIFunction) -> list[str]:
     """Returns function input name/type strings for jinja templating.
 
@@ -170,22 +181,14 @@ def get_input_names(function: ABIFunction) -> list[str]:
         A list of function names i.e. ['arg1', 'arg2']
 
     """
-
-    stringified_function_parameters: list[str] = []
-    for _input in function.get("inputs", []):
-        name = _input.get("name")
-        if name is None:
-            raise ValueError("name cannot be None")
-        stringified_function_parameters.append(avoid_python_keywords(name))
-
-    return stringified_function_parameters
+    return stringify_parameters(function.get("inputs", []))
 
 
 def get_outputs(function: ABIFunction) -> list[str]:
-    """Returns function input name/type strings for jinja templating.
+    """Returns function output name/type strings for jinja templating.
 
     i.e. for the solidity function signature:
-    function doThing(address who, uint256 amount, bool flag, bytes extraData)
+    function doThing() returns (address who, uint256 amount, bool flag, bytes extraData)
 
     the following list would be returned:
     ['who', 'amount', 'flag', 'extraData']
@@ -202,17 +205,7 @@ def get_outputs(function: ABIFunction) -> list[str]:
             name: 'from', type: 'str'}, name: '
         }]]
     """
-
-    stringified_function_outputs: list[str] = []
-    for _input in function.get("inputs", []):
-        name = get_param_name(_input)
-        if not name:
-            # TODO: handle empty strings.  Should replace them with 'arg1', 'arg2', and so one.
-            # TODO: recursively handle this too for evil nested tuples with no names.
-            raise ValueError("name cannot be empty")
-        stringified_function_outputs.append(avoid_python_keywords(name))
-
-    return stringified_function_outputs
+    return stringify_parameters(function.get("outputs", []))
 
 
 if __name__ == "__main__":
