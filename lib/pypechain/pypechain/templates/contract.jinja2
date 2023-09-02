@@ -8,11 +8,11 @@ from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 
 {% for function in functions %}
-class {{contract_name}}{{function.capitalized_name}}ContractFunction(ContractFunction):
+class {{function.capitalized_name}}(ContractFunction):
     """ContractFunction for the {{function.name}} method."""
 
     # pylint: disable=arguments-differ
-    def __call__(self, {{function.input_names_and_types|join(', ')}}) -> "{{contract_name}}{{function.capitalized_name}}ContractFunction":
+    def __call__(self, {{function.input_names_and_types|join(', ')}}) -> "{{function.capitalized_name}}":
         super().__call__({{function.input_names|join(', ')}})
         return self
     # TODO: add call def so we can get return types for the calls
@@ -24,7 +24,7 @@ class {{contract_name}}{{function.capitalized_name}}ContractFunction(ContractFun
 class {{contract_name}}ContractFunctions(ContractFunctions):
     """ContractFunctions for the {{contract_name}} contract."""
 {% for function in functions %}
-    {{function.name}}: {{contract_name}}{{function.capitalized_name}}ContractFunction
+    {{function.name}}: {{function.capitalized_name}}
 {% endfor %}
 
 class {{contract_name}}Contract(Contract):

@@ -87,7 +87,7 @@ def is_abi_function(item: ABIElement) -> TypeGuard[ABIFunction]:
     required_keys = ["type", "name", "inputs"]
 
     # Check if the required keys exist
-    if not all(key in item for key in required_keys):
+    if any(key not in item for key in required_keys):
         return False
 
     # Check if the type is "function"
@@ -113,7 +113,7 @@ def is_abi_event(item: ABIElement) -> TypeGuard[ABIEvent]:
     required_keys = ["type", "name", "inputs"]
 
     # Check if the required keys exist
-    if not all(key in item for key in required_keys):
+    if any(key not in item for key in required_keys):
         return False
 
     # Check if the type is "event"

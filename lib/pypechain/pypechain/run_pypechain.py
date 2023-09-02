@@ -107,9 +107,9 @@ def render_contract_file(contract_name: str, contract_template: Template, abi_fi
                 # name is required in the typeguard.  Should be safe to default to empty string.
                 "name": name,
                 "capitalized_name": capitalize_first_letter_only(name),
-                "input_names_and_types": get_input_names_and_values(abi_function),
-                "input_names": get_input_names(abi_function),
-                "outputs": get_outputs(abi_function),
+                "input_names_and_types": get(abi_function, "inputs", include_types=True),
+                "input_names": get(abi_function, "inputs", include_types=False),
+                "outputs": get(abi_function, "outputs", include_types=True),
             }
             function_datas.append(function_data)
     # Render the template
@@ -141,97 +141,24 @@ def render_types_file(contract_name: str, types_template: Template, abi_file_pat
 
     return types_template.render(contract_name=contract_name, structs=structs, events=events)
 
-
-def get_input_names_and_values(function: ABIFunction) -> list[str]:
-    """Returns function input name/type strings for jinja templating.
-
-    i.e. for the solidity function signature: function doThing(address who, uint256 amount, bool
-    flag, bytes extraData)
-
-    the following list would be returned: ['who: str', 'amount: int', 'flag: bool', 'extraData:
-    bytes']
-
-    Arguments
-    ---------
-    function : ABIFunction
-        A web3 dict of an ABI function description.
-
-    Returns
-    -------
-    list[str]
-        A list of function names and corresponding python values, i.e. ['arg1: str', 'arg2: bool']
-    """
-
-    stringified_function_parameters: list[str] = []
-    for _input in function.get("inputs", []):
-        if name := get_param_name(_input):
-            python_type = solidity_to_python_type(_input.get("type", "unknown"))
-        else:
-            raise ValueError("Solidity function parameter name cannot be None")
-        stringified_function_parameters.append(f"{avoid_python_keywords(name)}: {python_type}")
-    return stringified_function_parameters
+def get(function: ABIFunction, param_type, include_types: bool = True) -> list[str] | dict[str, str]:
+    """Returns function inputs or outputs, optionally including types."""
+    params = get_params(param_type, function)
+    return params if include_types else [f"{k}: {v}" for k,v in params.items()]
 
 
-def stringify_parameters(parameters) -> list[str]:
-    # TODO: handle empty strings.  Should replace them with 'arg1', 'arg2', and so one.
-    # TODO: recursively handle this too for evil nested tuples with no names.
+def get_params(param_type, function) -> dict[str, str]:
     """Stringifies parameters."""
-    stringified_function_parameters: list[str] = []
-    arg_counter: int = 1
-    for _input in parameters:
-        if name := get_param_name(_input):
-            stringified_function_parameters.append(avoid_python_keywords(name))
-        else:
-            name = f"arg{arg_counter}"
-            arg_counter += 1
-    return stringified_function_parameters
-
-
-def get_input_names(function: ABIFunction) -> list[str]:
-    """Returns function input name/type strings for jinja templating.
-
-    i.e. for the solidity function signature:
-    function doThing(address who, uint256 amount, bool flag, bytes extraData)
-
-    the following list would be returned:
-    ['who', 'amount', 'flag', 'extraData']
-
-    Arguments
-    ---------
-    function : ABIFunction
-        A web3 dict of an ABI function description.
-
-    Returns
-    -------
-    list[str]
-        A list of function names i.e. ['arg1', 'arg2']
-
-    """
-    return stringify_parameters(function.get("inputs", []))
-
-
-def get_outputs(function: ABIFunction) -> list[str]:
-    """Returns function output name/type strings for jinja templating.
-
-    i.e. for the solidity function signature:
-    function doThing() returns (address who, uint256 amount, bool flag, bytes extraData)
-
-    the following list would be returned:
-    ['who', 'amount', 'flag', 'extraData']
-
-    Arguments
-    ---------
-    function : ABIFunction
-        A web3 dict of an ABI function description.
-
-    Returns
-    -------
-    list[str]
-        A list of function names i.e. [{name: 'arg1', type: 'int'}, { name: 'TransferInfo', components: [{
-            name: 'from', type: 'str'}, name: '
-        }]]
-    """
-    return stringify_parameters(function.get("outputs", []))
+    parameters = function.get(param_type, [])
+    formatted_params, anon_count = {}, 0
+    for param in parameters:
+        name = get_param_name(param)
+        if name is None or name == "":
+            name = f"{param_type[:-1]}{anon_count}"
+            param["name"] = name
+            anon_count += 1
+        formatted_params[avoid_python_keywords(name)] = solidity_to_python_type(param.get("type"))
+    return formatted_params
 
 
 if __name__ == "__main__":
