@@ -9,6 +9,8 @@ from pathlib import Path
 import black
 from black.mode import Mode  # pylint: disable=no-name-in-module
 from jinja2 import Template
+from web3.types import ABIFunction
+
 from pypechain.utilities.abi import (
     get_abi_items,
     get_events_for_abi,
@@ -20,7 +22,6 @@ from pypechain.utilities.abi import (
 from pypechain.utilities.format import avoid_python_keywords, capitalize_first_letter_only
 from pypechain.utilities.templates import setup_templates
 from pypechain.utilities.types import solidity_to_python_type
-from web3.types import ABIFunction
 
 
 def format_code(code):
@@ -35,7 +36,7 @@ def format_code(code):
 
 
 def write_code(path, code):
-    """save to specified path the provided code."""
+    """Save to specified path the provided code."""
     with open(path, "w", encoding="utf-8") as output_file:
         output_file.write(code)
 
@@ -51,7 +52,6 @@ def main(abi_file_path: str, output_dir: str) -> None:
     output_dr: str
         Path to the directory to output the generated files.
     """
-
     # get names
     file_path = Path(abi_file_path)
     filename = file_path.name
@@ -92,7 +92,6 @@ def render_contract_file(contract_name: str, contract_template: Template, abi_fi
     str
         A serialized python file.
     """
-
     # TODO:  return types to function calls
     # Extract function names and their input parameters from the ABI
     abi_functions_and_events = get_abi_items(abi_file_path)
@@ -109,7 +108,7 @@ def render_contract_file(contract_name: str, contract_template: Template, abi_fi
                 "capitalized_name": capitalize_first_letter_only(name),
                 "input_names_and_types": get(abi_function, "inputs", include_types=True),
                 "input_names": get(abi_function, "inputs", include_types=False),
-                "outputs": get(abi_function, "outputs", include_types=True),
+                "outputs": get(abi_function, "outputs", include_types=False),
             }
             function_datas.append(function_data)
     # Render the template
@@ -131,7 +130,6 @@ def render_types_file(contract_name: str, types_template: Template, abi_file_pat
     str
         A serialized python file.
     """
-
     abi = load_abi_from_file(abi_file_path)
 
     structs_by_name = get_structs_for_abi(abi)
@@ -144,7 +142,7 @@ def render_types_file(contract_name: str, types_template: Template, abi_file_pat
 def get(function: ABIFunction, param_type, include_types: bool = True) -> list[str] | dict[str, str]:
     """Returns function inputs or outputs, optionally including types."""
     params = get_params(param_type, function)
-    return params if include_types else [f"{k}: {v}" for k,v in params.items()]
+    return [f"{k}: {v}" for k,v in params.items()] if include_types else list(params.keys())
 
 
 def get_params(param_type, function) -> dict[str, str]:
