@@ -49,9 +49,7 @@ def main(abi_file_path: str, output_dir: str) -> None:
 
     # Write the renders to a file
     types_output_file_path = Path(output_dir).joinpath(f"{contract_name}Types.py")
-    contract_output_file_path = Path(output_dir).joinpath(
-        f"{contract_name}Contract.py"
-    )
+    contract_output_file_path = Path(output_dir).joinpath(f"{contract_name}Contract.py")
     with open(contract_output_file_path, "w", encoding="utf-8") as output_file:
         output_file.write(rendered_contract_code)
     with open(types_output_file_path, "w", encoding="utf-8") as output_file:
