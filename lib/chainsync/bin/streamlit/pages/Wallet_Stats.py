@@ -91,11 +91,11 @@ wallet_positions = wallet_positions.reset_index()
 # Plot pnl over time
 main_fig = mpf.figure(style="mike", figsize=(15, 15))
 ax_pnl = main_fig.add_subplot(6, 1, 1)
-ax_base = main_fig.add_subplot(6, 1, 2)
-ax_long = main_fig.add_subplot(6, 1, 3)
-ax_short = main_fig.add_subplot(6, 1, 4)
-ax_lp = main_fig.add_subplot(6, 1, 5)
-ax_withdraw = main_fig.add_subplot(6, 1, 6)
+ax_base = main_fig.add_subplot(6, 1, 2, sharex=ax_pnl)
+ax_long = main_fig.add_subplot(6, 1, 3, sharex=ax_pnl)
+ax_short = main_fig.add_subplot(6, 1, 4, sharex=ax_pnl)
+ax_lp = main_fig.add_subplot(6, 1, 5, sharex=ax_pnl)
+ax_withdraw = main_fig.add_subplot(6, 1, 6, sharex=ax_pnl)
 
 for addr in pnl_over_time["walletAddress"].unique():
     format_name = user_lookup.set_index("address").loc[addr]["format_name"]
