@@ -1,4 +1,4 @@
-"""Empty accounts for engaging with smart contracts"""
+"""Empty accounts for engaging with smart contracts."""
 from __future__ import annotations
 
 import copy
@@ -6,18 +6,19 @@ import logging
 from dataclasses import dataclass, field
 from typing import Iterable
 
+from fixedpointmath import FixedPoint
+
 from agent0.base.agents import EthWallet
 from elfpy.wallet.wallet import Long, Short
 from elfpy.wallet.wallet_deltas import WalletDeltas
-from fixedpointmath import FixedPoint
 
 
 @dataclass(kw_only=True)
 class HyperdriveWallet(EthWallet):
-    r"""Stateful variable for storing what is in the agent's wallet
+    r"""Stateful variable for storing what is in the agent's wallet.
 
     Arguments
-    ----------
+    ---------
     address : HexBytes
         The associated agent's eth address
     balance : Quantity
@@ -33,6 +34,7 @@ class HyperdriveWallet(EthWallet):
         The short positions held by the trader.
         The dictionary is keyed by the maturity time in seconds.
     """
+
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
     lp_tokens: FixedPoint = FixedPoint(0)
@@ -41,10 +43,10 @@ class HyperdriveWallet(EthWallet):
     shorts: dict[FixedPoint, Short] = field(default_factory=dict)
 
     def _update_longs(self, longs: Iterable[tuple[FixedPoint, Long]]) -> None:
-        """Helper internal function that updates the data about Longs contained in the Agent's Wallet
+        """Helper internal function that updates the data about Longs contained in the Agent's Wallet.
 
         Arguments
-        ----------
+        ---------
         longs : Iterable[tuple[FixedPoint, Long]]
             A list (or other Iterable type) of tuples that contain a Long object
             and its market-relative maturity time
@@ -70,10 +72,10 @@ class HyperdriveWallet(EthWallet):
                 raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.longs[maturity_time]}.")
 
     def _update_shorts(self, shorts: Iterable[tuple[FixedPoint, Short]]) -> None:
-        """Helper internal function that updates the data about Shorts contained in the Agent's Wallet
+        """Helper internal function that updates the data about Shorts contained in the Agent's Wallet.
 
         Arguments
-        ----------
+        ---------
         shorts : Iterable[tuple[FixedPoint, Short]]
             A list (or other Iterable type) of tuples that contain a Short object
             and its market-relative mint time
@@ -88,8 +90,8 @@ class HyperdriveWallet(EthWallet):
                     short,
                 )
                 if maturity_time in self.shorts:  #  entry already exists for this maturity_time, so add to it
-                    self.shorts[maturity_time].balance += short.balance
                     old_balance = self.shorts[maturity_time].balance
+                    self.shorts[maturity_time].balance += short.balance
                     # If the balance is positive, we are opening a short, therefore do a weighted
                     # mean for the open share price.
                     # This covers an edge case where two shorts are opened for the same account in the same block.
@@ -109,14 +111,14 @@ class HyperdriveWallet(EthWallet):
                 raise AssertionError(f"wallet balance should be >= 0, not {self.shorts[maturity_time]}")
 
     def copy(self) -> HyperdriveWallet:
-        """Returns a new copy of self"""
+        """Returns a new copy of self."""
         return HyperdriveWallet(**copy.deepcopy(self.__dict__))
 
     def update(self, wallet_deltas: WalletDeltas) -> None:
-        """Update the agent's wallet in-place
+        """Update the agent's wallet in-place.
 
         Arguments
-        ----------
+        ---------
         wallet_deltas : AgentDeltas
             The agent's wallet that tracks the amount of assets this agent holds
         """
