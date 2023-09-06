@@ -88,8 +88,8 @@ class HyperdriveWallet(EthWallet):
                     short,
                 )
                 if maturity_time in self.shorts:  #  entry already exists for this maturity_time, so add to it
-                    self.shorts[maturity_time].balance += short.balance
                     old_balance = self.shorts[maturity_time].balance
+                    self.shorts[maturity_time].balance += short.balance
                     # If the balance is positive, we are opening a short, therefore do a weighted
                     # mean for the open share price.
                     # This covers an edge case where two shorts are opened for the same account in the same block.
