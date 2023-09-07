@@ -1,25 +1,46 @@
+from typing import Any
 import gymnasium as gym
 from gymnasium import spaces
 
 
-class HyperdriveEnv(gym.Env):
+class FullHyperdriveEnv(gym.Env):
     metadata = {"render_modes": ["ansi"], "render_fps": 4}
 
-    def __init__(self, render_mode: str | None = None):
+    def __init__(self, config: dict[str|Any], render_mode: str | None = None):
         """Initializes the environment"""
 
         # Defines environment attributes
 
+        # Custom configurations for environment
+        # The maximum number of open positions overall
+        self.max_positions = config["max_positions"]
+
         # The space of allowed actions to take
-        # self.action_space = spaces.Discrete(4)
+        # Following https://github.com/AminHP/gym-mtsim
+        # These actions are encoded into a 1d vector of continuous values
+        # This is due to not all algorithms supporting dict or multidimention box actions
+
+        # Here, these actions are for 3 types of trades: longs, shorts, and LP, 
+        # each encoded as an array of length max_positions + 2
+        # For a given type of trade, the elements are interpreted as
+        # [
+        #    probability of closing order 1, 
+        #    probability of closing order 2, 
+        #    ...
+        #    probability of closing order max_positions,
+        #    probability of holding or creating a new order,
+        #    volume of the new order
+        # ]
+        # The last two 
+        self.action_space = spaces.Discrete(4)
 
         # The space of observations from the environment
-        # self.observation_space = spaces.Dict(
-        #    {
-        #        "agent": spaces.Box(0, size=1, shape(2,), dtype=int),
-        #        "target": spaces.Box(0, size=1, shape(2,), dtype=int),
-        #    }
-        # )
+        self.observation_space = spaces.Dict(
+            {
+                "agent_wallet": spaces.Box(0, size=1, shape(2,), dtype=int),
+                "pool_info": spaces.Box(0, size=1, shape(2,), dtype=int),
+            }
+        )
 
         # The range of rewards, defaults to -inf to inf
         # self.reward_range = ...
@@ -27,9 +48,10 @@ class HyperdriveEnv(gym.Env):
         assert render_mode is None or render_mode in self.metadata["render-modes"]
         self.render_mode = render_mode
 
+
         pass
 
-    def step(self, action: ActType) -> typle[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
+    def step(self, action: ActType) -> tuple[ObsType, float, bool, bool, dict[str, Any]]:
         """Resets the environment to an initial internal state.
 
         Arguments
