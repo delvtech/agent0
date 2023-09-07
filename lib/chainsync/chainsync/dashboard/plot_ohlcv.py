@@ -8,7 +8,7 @@ from matplotlib import ticker as mpl_ticker
 def plot_ohlcv(ohlcv, ohlcv_ax):
     """Plots the ohlcv plot"""
     if len(ohlcv > 0):
-        mpf.plot(ohlcv, type="candle", ax=ohlcv_ax)
+        mpf.plot(ohlcv, type="candle", ax=ohlcv_ax, show_nontrading=True)
 
         ohlcv_ax.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(x, "0.6")))
         ohlcv_ax.set_xlabel("block timestamp")
