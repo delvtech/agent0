@@ -1,8 +1,8 @@
-# TODO Ordering might matter here for dependency resolution
 -e lib/elfpy[base]
 -e lib/agent0[base]
 -e lib/chainsync[base]
 -e lib/ethpy[base]
+-e lib/hypergym[base]
 -e lib/pypechain[base]
 -e lib/hyperdrive_types[base]
 --find-links="packages/pyperdrive"
