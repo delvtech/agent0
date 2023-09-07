@@ -145,13 +145,13 @@ def get_input_names_and_values(function: ABIFunction) -> list[str]:
             python_type = solidity_to_python_type(_input.get("type", "unknown"))
         else:
             raise ValueError("Solidity function parameter name cannot be None")
-        python_type = solidity_to_python_type(_input.get("type", "unknown"))
         stringified_function_parameters.append(f"{avoid_python_keywords(name)}: {python_type}")
-
     return stringified_function_parameters
 
 
 def stringify_parameters(parameters) -> list[str]:
+    # TODO: handle empty strings.  Should replace them with 'arg1', 'arg2', and so one.
+    # TODO: recursively handle this too for evil nested tuples with no names.
     """Stringifies parameters."""
     stringified_function_parameters: list[str] = []
     for _input in parameters:
