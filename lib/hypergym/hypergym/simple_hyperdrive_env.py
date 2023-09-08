@@ -21,10 +21,16 @@ class Positions(Enum):
         return Positions.Short if self == Positions.Long else Positions.Long
 
 
+# TODO there's lots of things here that can be abstracted to share code between this and full_hyperdrive_env
 class SimpleHyperdriveEnv(gym.Env):
+    """
+    A simple hyperdrive environment that allows for 2 positions, long and short
+    """
+
+    # Required attribute for environment defining allowed render modes
     metadata = {"render_modes": ["human"], "render_fps": 3}
 
-    def __init__(self, config: dict[str | Any], render_mode: str | None = None):
+    def __init__(self, config: dict[str, Any], render_mode: str | None = None):
         """Initializes the environment"""
 
         assert render_mode is None or render_mode in self.metadata["render-modes"]
@@ -53,12 +59,49 @@ class SimpleHyperdriveEnv(gym.Env):
 
         # The space of observations from the environment
         # This is a timeseries of window_size samples of the spot price and the share price
-        self.observation_space = spaces.Box(low=0, high=1e10, shape=(self.window_size, 2), dtype=np.float32)
+        self.observation_space = spaces.Box(low=0, high=1e10, shape=(self.window_size, 2), dtype=np.float64)
 
         # episode variables
         self._position = Positions.Short
 
+        # For a more complex environment:
+
+        # The space of allowed actions to take
+        # Following https://github.com/AminHP/gym-mtsim
+        # These actions are encoded into a 1d vector of continuous values
+        # This is due to not all algorithms supporting dict or multidimention box actions
+
+        # Here, these actions are for 3 types of trades: longs, shorts, and LP,
+        # each encoded as an array of length max_positions + 2
+        # For a given type of trade, the elements are interpreted as
+        # [
+        #    probability of closing order 1,
+        #    probability of closing order 2,
+        #    ...
+        #    probability of closing order max_positions,
+        #    probability of holding or creating a new order,
+        #    volume of the new order
+        # ]
+        # The last two define the probability of creating a new order (or no op), with the volume of the new order
+        # Probabilities are in logit space to ensure probability values are in range [0, 1]
+
+        # self.action_space.spaces.Box(
+        #    low=-1e2, high=1e2, dtype=np.float64, shape=(3 * (self.max_positions + 2))
+        # )  # (longs, shorts, lp) -> close_order_i(logit), hold(logit), volume)
+        # INF = 1e10
+        # self.observation_space = spaces.Dict({
+        #    'balance': spaces.Box(low=-INF, high=INF, shape=(1,), dtype=np.float64),
+        #    'equity': spaces.Box(low=-INF, high=INF, shape=(1,), dtype=np.float64),
+        #    'margin': spaces.Box(low=-INF, high=INF, shape=(1,), dtype=np.float64),
+        #    'features': spaces.Box(low=-INF, high=INF, shape=self.features_shape, dtype=np.float64),
+        #    'orders': spaces.Box(
+        #        low=-INF, high=INF, dtype=np.float64,
+        #        shape=(len(self.trading_symbols), self.symbol_max_orders, 3)
+        #    )  # symbol, order_i -> [entry_price, volume, profit]
+        # })
+
         # TODO launch local chain here
+        # self.init_env(self)
 
     def reset(
         self, seed: int | None = None, options: dict[str, Any] | None = None
@@ -84,12 +127,13 @@ class SimpleHyperdriveEnv(gym.Env):
 
         self._position = Positions.Short
 
+        # TODO
         observation = self._get_observation()
         info = self._get_info()
 
         return observation, info
 
-    def step(self, action: ActType) -> tuple[ObsType, float, bool, bool, dict[str, Any]]:
+    def step(self, action: Actions) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         """Resets the environment to an initial internal state.
 
         Arguments
@@ -114,6 +158,7 @@ class SimpleHyperdriveEnv(gym.Env):
             Contains auxiliary diagnostic information for debugging, learning, logging.
         """
         step_reward = self._calculate_reward(action)
+
         trade = False
         if (action == Actions.Buy.value and self._position == Positions.Short) or (
             action == Actions.Sell.value and self._position == Positions.Long
@@ -128,8 +173,12 @@ class SimpleHyperdriveEnv(gym.Env):
 
         return observation, step_reward, False, False, info
 
+    def init_env(self) -> None:
+        """Launches the local chain"""
+        pass
+
     def close(self) -> None:
-        """Closes the environment"""
+        """Closes the local environment chain"""
         pass
 
     def _get_info(self) -> dict:
@@ -138,8 +187,8 @@ class SimpleHyperdriveEnv(gym.Env):
 
     def _get_observation(self) -> np.ndarray:
         # TODO get the spot price and share price of hyperdrive
-        pass
+        return np.zeros((self.window_size, 2))
 
-    def _calculate_reward(self, action: Actions) -> np.ndarray:
+    def _calculate_reward(self, action: Actions) -> float:
         # TODO calculate the pnl of closing the current position
-        pass
+        return 0.0
