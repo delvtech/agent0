@@ -26,7 +26,8 @@ base = [
     "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
     "pandas",
     "numpy",
-    "gymnasium"
+    "gymnasium",
+    "stable-baselines3"
 
 ]
 lateral = [

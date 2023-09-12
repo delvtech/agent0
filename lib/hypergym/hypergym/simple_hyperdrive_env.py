@@ -5,6 +5,7 @@ from typing import Any
 
 import gymnasium as gym
 import numpy as np
+from ethpy import EthConfig, build_eth_config
 from gymnasium import spaces
 
 
@@ -30,19 +31,24 @@ class SimpleHyperdriveEnv(gym.Env):
     # Required attribute for environment defining allowed render modes
     metadata = {"render_modes": ["human"], "render_fps": 3}
 
-    def __init__(self, config: dict[str, Any], render_mode: str | None = None):
+    def __init__(self, gym_config: dict[str, Any], eth_config: EthConfig | None = None, render_mode: str | None = None):
         """Initializes the environment"""
+
+        if eth_config is None:
+            # Load parameters from env vars if they exist
+            eth_config = build_eth_config()
+        self.eth_config = eth_config
 
         assert render_mode is None or render_mode in self.metadata["render-modes"]
         self.render_mode = render_mode
 
         # Get config variables
         # The constant base amount to open a long
-        self.long_base_amount = config["long_base_amount"]
+        self.long_base_amount = gym_config["long_base_amount"]
         # The constant bond amount to open a short
-        self.short_bond_amount = config["short_bond_amount"]
+        self.short_bond_amount = gym_config["short_bond_amount"]
         # Number of blocks (current and previous blocks) returned as a gym observation
-        self.window_size = config["window_size"]
+        self.window_size = gym_config["window_size"]
 
         # Defines environment attributes
 
@@ -62,7 +68,7 @@ class SimpleHyperdriveEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=1e10, shape=(self.window_size, 2), dtype=np.float64)
 
         # episode variables
-        self._position = Positions.Short
+        self._position = None
 
         # For a more complex environment:
 
@@ -100,9 +106,6 @@ class SimpleHyperdriveEnv(gym.Env):
         #    )  # symbol, order_i -> [entry_price, volume, profit]
         # })
 
-        # TODO launch local chain here
-        # self.init_env(self)
-
     def reset(
         self, seed: int | None = None, options: dict[str, Any] | None = None
     ) -> tuple[np.ndarray, dict[str, Any]]:
@@ -125,7 +128,7 @@ class SimpleHyperdriveEnv(gym.Env):
         # self.np_random
         self.action_space.seed(int((self.np_random.uniform(0, seed if seed is not None else 1))))
 
-        self._position = Positions.Short
+        self._position = None
 
         # TODO
         observation = self._get_observation()
@@ -159,6 +162,15 @@ class SimpleHyperdriveEnv(gym.Env):
         """
         step_reward = self._calculate_reward(action)
 
+        # Initial condition, ensure first trade always goes through
+        if self._position is None:
+            if action == Actions.Buy.value:
+                self._position = Positions.Short
+            elif action == Actions.Sell.value:
+                self._position = Positions.Long
+            else:
+                raise ValueError
+
         trade = False
         if (action == Actions.Buy.value and self._position == Positions.Short) or (
             action == Actions.Sell.value and self._position == Positions.Long
@@ -167,22 +179,21 @@ class SimpleHyperdriveEnv(gym.Env):
 
         if trade:
             self._position = self._position.opposite()
+            # TODO do trade based on position
+            if self._position == Positions.Long:
+                # Close short position (if exists), open long
+                pass
+            elif self._position == Positions.Short:
+                # Close long position, open short
+                pass
 
         observation = self._get_observation()
         info = self._get_info()
 
         return observation, step_reward, False, False, info
 
-    def init_env(self) -> None:
-        """Launches the local chain"""
-        pass
-
-    def close(self) -> None:
-        """Closes the local environment chain"""
-        pass
-
     def _get_info(self) -> dict:
-        # TODO return reward, profit, and position here
+        # TODO return aux info here
         return {}
 
     def _get_observation(self) -> np.ndarray:

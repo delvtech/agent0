@@ -1,3 +1,4 @@
+import gymnasium as gym
 from stable_baselines3 import PPO
 
 # Stable baselines repo: https://github.com/DLR-RM/stable-baselines3
@@ -11,6 +12,24 @@ from stable_baselines3 import PPO
 # ARS, A2C, DDPG, HER, PPO, RecurrentPPO, SAC, TD3, TQC, TRPO
 
 
-# TODO see how this interacts with hypergym to determine how much of launching the chain
-# we need to implement within the environment
-model = PPO("MlpPolicy", "hypergym/simple_hyperdrive_env").learn(10_000)
+# TODO should we run other training bots here in this script, or keep it separate?
+
+
+# TODO parameterize this call
+env = gym.make("hypergym/simple_hyperdrive_env")
+
+# Training
+model = PPO("MlpPolicy", env, verbose=1)
+model.learn(total_timesteps=10_000)
+
+# Evaluation
+# TODO do we need to implement a vectorized environment?
+vec_env = model.get_env()
+assert vec_env is not None
+obs = vec_env.reset()
+for i in range(1000):
+    action, _states = model.predict(obs)
+    obs, reward, done, info = vec_env.step(action)
+    # TODO visualize
+
+env.close()
