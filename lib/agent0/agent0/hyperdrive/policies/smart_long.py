@@ -54,8 +54,8 @@ class LongLouie(HyperdrivePolicy):
     def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Implement a Long Louie user strategy
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         market : Market
             the trading market
 

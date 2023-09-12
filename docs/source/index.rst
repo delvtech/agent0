@@ -9,11 +9,6 @@ Welcome to the documentation for elf-simulations packages!
    installation
 
 .. toctree::
-   :caption: Examples
-
-   /examples/index
-
-.. toctree::
    :titlesonly:
    :caption: API
 
@@ -21,6 +16,7 @@ Welcome to the documentation for elf-simulations packages!
    /autoapi/chainsync/index
    /autoapi/elfpy/index
    /autoapi/ethpy/index
+   /autoapi/pypechain/index
 
 
 Indices and tables

@@ -59,8 +59,8 @@ def main(abi_file_path: str, output_dir: str) -> None:
 def render_contract_file(contract_name: str, contract_template: Template, abi_file_path: Path) -> str:
     """Returns a string of the contract file to be generated.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     contract_template : Template
         A jinja template containging types for all structs within an abi.
     abi_file_path : Path
@@ -171,8 +171,8 @@ def get_input_names(function: ABIFunction) -> list[str]:
     the following list would be returned:
     ['who', 'amount', 'flag', 'extraData']
 
-    ---------
     Arguments
+    ---------
     function : ABIFunction
         A web3 dict of an ABI function description.
 
