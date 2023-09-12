@@ -171,8 +171,8 @@ def get_input_names(function: ABIFunction) -> list[str]:
     the following list would be returned:
     ['who', 'amount', 'flag', 'extraData']
 
-    ---------
     Arguments
+    ---------
     function : ABIFunction
         A web3 dict of an ABI function description.
 
