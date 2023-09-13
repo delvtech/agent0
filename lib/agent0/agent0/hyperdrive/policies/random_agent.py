@@ -37,6 +37,7 @@ class RandomAgent(HyperdrivePolicy):
     def get_available_actions(
         self,
         wallet: HyperdriveWallet,
+        market: HyperdriveMarketState,
         disallowed_actions: list[HyperdriveActionType] | None = None,
     ) -> list[HyperdriveActionType]:
         """Get all available actions, excluding those listed in disallowed_actions."""
@@ -58,7 +59,7 @@ class RandomAgent(HyperdrivePolicy):
             all_available_actions.append(HyperdriveActionType.CLOSE_SHORT)
         if wallet.lp_tokens:
             all_available_actions.append(HyperdriveActionType.REMOVE_LIQUIDITY)
-        if wallet.withdraw_shares:
+        if wallet.withdraw_shares and market.market_state.withdraw_shares_ready_to_withdraw>0:
             all_available_actions.append(HyperdriveActionType.REDEEM_WITHDRAW_SHARE)
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
@@ -200,11 +201,9 @@ class RandomAgent(HyperdrivePolicy):
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
-
         shares_available_to_withdraw = min(
             wallet.withdraw_shares, market.market_state.withdraw_shares_ready_to_withdraw
         )
-
         # WEI <= trade_amount <= withdraw_shares
         trade_amount = max(WEI, min(shares_available_to_withdraw, initial_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
@@ -247,7 +246,7 @@ class RandomAgent(HyperdrivePolicy):
         if not gonna_trade:
             return []
         # user can always open a trade, and can close a trade if one is open
-        available_actions = self.get_available_actions(wallet)
+        available_actions = self.get_available_actions(wallet, market)
         # randomly choose one of the possible actions
         action_type = available_actions[self.rng.integers(len(available_actions))]
         # trade amount is also randomly chosen to be close to 10% of the agent's budget
