@@ -59,7 +59,7 @@ class RandomAgent(HyperdrivePolicy):
             all_available_actions.append(HyperdriveActionType.CLOSE_SHORT)
         if wallet.lp_tokens:
             all_available_actions.append(HyperdriveActionType.REMOVE_LIQUIDITY)
-        if wallet.withdraw_shares and market.market_state.withdraw_shares_ready_to_withdraw>0:
+        if wallet.withdraw_shares and market.market_state.withdraw_shares_ready_to_withdraw > 0:
             all_available_actions.append(HyperdriveActionType.REDEEM_WITHDRAW_SHARE)
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
