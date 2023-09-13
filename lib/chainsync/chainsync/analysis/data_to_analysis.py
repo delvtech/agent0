@@ -31,7 +31,18 @@ pd.set_option("display.max_columns", None)
 def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
     """Helper function to add a dataframe to a database"""
     table_name = schema_obj.__tablename__
-    insert_df.to_sql(table_name, con=session.connection(), if_exists="append", method="multi", index=False)
+
+    # dataframe to_sql needs data types from the schema object
+    dtype = {c.name: c.type for c in schema_obj.__table__.columns}
+    # Pandas doesn't play nice with types
+    insert_df.to_sql(
+        table_name,
+        con=session.connection(),
+        if_exists="append",
+        method="multi",
+        index=False,
+        dtype=dtype,  # type: ignore
+    )
     # commit the transaction
     try:
         session.commit()
