@@ -105,7 +105,7 @@ async def async_transact_and_parse_logs(
     )
 
     if len(hyperdrive_event_logs) == 0:
-        raise AssertionError("Transaction receipt had no logs")
+        raise AssertionError(f"Transaction receipt had no logs\ntx_receipt=\n{tx_receipt}")
     if len(hyperdrive_event_logs) > 1:
         raise AssertionError("Too many logs found")
     log_args = hyperdrive_event_logs[0]["args"]
