@@ -19,7 +19,7 @@ def trade_if_new_block(
     agent_accounts: list[HyperdriveAgent],
     halt_on_errors: bool,
     last_executed_block: int,
-) -> int:
+) -> tuple[int, bool]:
     """Execute trades if there is a new block.
 
     Arguments
@@ -37,9 +37,12 @@ def trade_if_new_block(
 
     Returns
     -------
-    int
+    last_executed_block : int
         The block number when a trade last happened
+    exit_flag : bool
+        Whether to exit the trade loop
     """
+    exit_flag = False
     latest_block = web3.eth.get_block("latest")
     latest_block_number = latest_block.get("number", None)
     latest_block_timestamp = latest_block.get("timestamp", None)
@@ -63,9 +66,16 @@ def trade_if_new_block(
                 )
             )
             last_executed_block = latest_block_number
+        except IndexError as exc:
+            if any(error_msg in str(exc) for error_msg in ["index out of range", "pop from empty list"]):
+                logging.info("Ran out of trades.")
+                if halt_on_errors:
+                    exit_flag=True  # exit cleanly because we ran out of trades, not due to an unknown error.
+            elif halt_on_errors:
+                raise exc
         # we want to catch all exceptions
         # pylint: disable=broad-exception-caught
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             logging.info("Trade crashed with error: %s", exc)
             # TODO: Crash reporting
             # We don't have all of the variables we need here -- this report needs to be generated at a lower level
@@ -78,8 +88,11 @@ def trade_if_new_block(
             #     pool_config=pool_config,
             # )
             if halt_on_errors:
+                if "0x512095c7" in str(exc):
+                    logging.info("Pool can't open any more longs.")
+                    exit_flag=True  # exit cleanly because we hit the pool capacity, not due to an unknown error.
                 raise exc
-    return last_executed_block
+    return last_executed_block, exit_flag
 
 
 def get_wait_for_new_block(web3: Web3) -> bool:

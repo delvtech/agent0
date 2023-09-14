@@ -85,8 +85,9 @@ def run_agents(
         register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
 
     last_executed_block = BlockNumber(0)
-    while True:
-        last_executed_block = trade_if_new_block(
+    exit_flag = False
+    while exit_flag is False:
+        last_executed_block, exit_flag = trade_if_new_block(
             web3,
             hyperdrive_contract,
             agent_accounts,
