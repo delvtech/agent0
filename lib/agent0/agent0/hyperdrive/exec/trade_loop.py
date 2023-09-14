@@ -70,7 +70,7 @@ def trade_if_new_block(
             if any(error_msg in str(exc) for error_msg in ["index out of range", "pop from empty list"]):
                 logging.info("Ran out of trades.")
                 if halt_on_errors:
-                    exit_flag=True  # exit cleanly because we ran out of trades, not due to an unknown error.
+                    exit_flag = True  # exit cleanly because we ran out of trades, not due to an unknown error.
             elif halt_on_errors:
                 raise exc
         # we want to catch all exceptions
@@ -90,7 +90,7 @@ def trade_if_new_block(
             if halt_on_errors:
                 if "0x512095c7" in str(exc):
                     logging.info("Pool can't open any more longs.")
-                    exit_flag=True  # exit cleanly because we hit the pool capacity, not due to an unknown error.
+                    exit_flag = True  # exit cleanly because we hit the pool capacity, not due to an unknown error.
                 raise exc
     return last_executed_block, exit_flag
 
