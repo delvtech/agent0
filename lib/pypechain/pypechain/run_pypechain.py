@@ -7,6 +7,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 import black
+from black.mode import Mode  # pylint: disable=no-name-in-module
 from jinja2 import Template
 from pypechain.utilities.abi import (
     get_abi_items,
@@ -22,17 +23,21 @@ from pypechain.utilities.types import solidity_to_python_type
 from web3.types import ABIFunction
 
 
-def format_and_write_code(path, code):
-    """save to specified path the provided code after formatting it with Black on default settings."""
+def format_code(code):
+    """Format code with Black on default settings."""
+    while "\n\n" in code:
+        code = code.replace("\n\n", "\n")  # remove all whitespace and let Black sort it out
+    code = code.replace(", )", ")")  # remove trailing comma, it's weird
+    try:
+        return black.format_file_contents(code, fast=False, mode=Mode())
+    except ValueError as exc:
+        raise ValueError(f"cannot format with Black\n code:\n{code}") from exc
+
+
+def write_code(path, code):
+    """save to specified path the provided code."""
     with open(path, "w", encoding="utf-8") as output_file:
-        while '\n\n' in code:
-            code = code.replace('\n\n', '\n')  # remove all whitespace and let Black sort it out
-        code = code.replace(', )', ')')  # remove trailing comma, it's weird
-        try:
-            linted_code = black.format_file_contents(code, fast=False, mode=black.mode.Mode())
-        except ValueError as exc:
-            raise ValueError(f"cannot format with Black\n code:\n{code}") from exc
-        output_file.write(linted_code)
+        output_file.write(code)
 
 
 def main(abi_file_path: str, output_dir: str) -> None:
@@ -63,9 +68,13 @@ def main(abi_file_path: str, output_dir: str) -> None:
     # TODO: Add more features:
     # TODO:  events
 
-    # Write the renders to a file
-    format_and_write_code(f"{contract_path}Contract.py", rendered_contract_code)
-    format_and_write_code(f"{contract_path}Types.py", rendered_types_code)
+    # Format the generated code using Black
+    formatted_contract_code = format_code(rendered_contract_code)
+    formatted_types_code = format_code(rendered_types_code)
+
+    # Write the code to file
+    write_code(f"{contract_path}Contract.py", formatted_contract_code)
+    write_code(f"{contract_path}Types.py", formatted_types_code)
 
 
 def render_contract_file(contract_name: str, contract_template: Template, abi_file_path: Path) -> str:
