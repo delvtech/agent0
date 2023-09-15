@@ -5,7 +5,12 @@ import eth_utils
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI, BlockNumber
 from ethpy import EthConfig
-from ethpy.base import async_smart_contract_transact, smart_contract_preview_transaction
+from ethpy.base import (
+    async_smart_contract_transact,
+    get_account_balance,
+    smart_contract_preview_transaction,
+    smart_contract_read,
+)
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.types import BlockData
@@ -63,10 +68,10 @@ class Hyperdrive:
         return current_block_number
 
     # FIXME:
-    @property
-    def spot_price(self) -> FixedPoint:
-        """Returns the current market spot price"""
-        raise NotImplementedError
+    # @property
+    # def spot_price(self) -> FixedPoint:
+    #     """Returns the current market spot price"""
+    #     # get spot price from pyperdrive
 
     async def async_open_long(
         self, agent: LocalAccount, trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None
@@ -359,10 +364,28 @@ class Hyperdrive:
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "redeemWithdrawalShares")
         return trade_result
 
-    # FIXME: TODO: other async trades
+    def balance_of(self, agent: LocalAccount) -> tuple[FixedPoint]:
+        """Get the agent's balance on the Hyperdrive & base contracts.
 
-    # FIXME: TODO:
-    # def balance_of(agent):
+        Arguments
+        ---------
+        agent: LocalAccount
+            The account for the agent that is executing and signing the trade transaction.
+
+        Returns
+        -------
+        tuple[FixedPoint]
+            A tuple containing the [agent_eth_balance, agent_base_balance]
+
+        """
+        agent_checksum_address = Web3.to_checksum_address(agent.address)
+        agent_eth_balance = get_account_balance(self.web3, agent_checksum_address)
+        agent_base_balance = smart_contract_read(
+            self.base_token_contract,
+            "balanceOf",
+            agent_checksum_address,
+        )["value"]
+        return (FixedPoint(scaled_value=agent_eth_balance), FixedPoint(scaled_value=agent_base_balance))
 
     # FIXME: TODO:
     # def get_max_long(budget):
