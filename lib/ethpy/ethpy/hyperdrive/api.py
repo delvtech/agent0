@@ -213,7 +213,7 @@ class Hyperdrive:
         maturity_time: FixedPoint,
         slippage_tolerance: FixedPoint | None = None,
     ) -> ReceiptBreakdown:
-        """Contract call to open a short position.
+        """Contract call to close a short position.
 
         Arguments
         ---------
@@ -255,6 +255,40 @@ class Hyperdrive:
             self.web3, self.hyperdrive_contract, agent, "closeShort", *fn_args
         )
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "closeShort")
+        return trade_result
+
+    async def async_add_liquidity(
+        self,
+        agent: LocalAccount,
+        trade_amount: FixedPoint,
+        min_apr: FixedPoint,
+        max_apr: FixedPoint,
+    ) -> ReceiptBreakdown:
+        """Contract call to add liquidity to the Hyperdrive pool.
+
+        Arguments
+        ---------
+        agent: LocalAccount
+            The account for the agent that is executing and signing the trade transaction.
+        trade_amount: FixedPoint
+            The size of the position, in base.
+        min_apr: FixedPoint
+            The minimum allowable APR after liquidity is added.
+        max_apr: FixedPoint
+            The maximum allowable APR after liquidity is added.
+
+        Returns
+        -------
+        ReceiptBreakdown
+            A dataclass containing the absolute values for token quantities changed
+        """
+        agent_checksum_address = Web3.to_checksum_address(agent.address)
+        as_underlying = True
+        fn_args = (trade_amount, min_apr, max_apr, agent_checksum_address, as_underlying)
+        tx_receipt = await async_smart_contract_transact(
+            self.web3, self.hyperdrive_contract, agent, "addLiquidity", *fn_args
+        )
+        trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "addLiquidity")
         return trade_result
 
     # FIXME: TODO: other async trades
