@@ -198,19 +198,15 @@ async def async_match_contract_call_to_trade(
                     *fn_args,
                 )
             else:
-<<<<<<< HEAD
                 trade_result = await hyperdrive.async_open_long(trade_amount, agent, trade.slippage_tolerance)
             maturity_time_seconds = trade_result.maturity_time_seconds
             wallet_deltas = HyperdriveWalletDeltas(
-=======
                 trade_result = await hyperdrive.async_open_long(agent, trade.trade_amount, trade.slippage_tolerance)
             wallet_deltas = WalletDeltas(
->>>>>>> 534d2e53 (adds close long)
                 balance=Quantity(
                     amount=-trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-<<<<<<< HEAD
                 longs={maturity_time_seconds: Long(trade_result.bond_amount)},
             )
 
@@ -242,7 +238,6 @@ async def async_match_contract_call_to_trade(
                 *fn_args,
             )
             wallet_deltas = HyperdriveWalletDeltas(
-=======
                 longs={FixedPoint(trade_result.maturity_time_seconds): Long(trade_result.bond_amount)},
             )
 
@@ -279,7 +274,6 @@ async def async_match_contract_call_to_trade(
                     agent, trade.trade_amount, trade.mint_time, trade.slippage_tolerance
                 )
             wallet_deltas = WalletDeltas(
->>>>>>> 534d2e53 (adds close long)
                 balance=Quantity(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
@@ -307,7 +301,6 @@ async def async_match_contract_call_to_trade(
                     "openShort",
                     *fn_args,
                 )
-<<<<<<< HEAD
                 max_deposit = (
                     FixedPoint(scaled_value=preview_result["traderDeposit"])
                     * (FixedPoint(1) + trade.slippage_tolerance)
@@ -322,28 +315,22 @@ async def async_match_contract_call_to_trade(
             )
             maturity_time_seconds = trade_result.maturity_time_seconds
             wallet_deltas = HyperdriveWalletDeltas(
-=======
             else:
                 trade_result = await hyperdrive.async_open_short(agent, trade.trade_amount, trade.slippage_tolerance)
             wallet_deltas = WalletDeltas(
->>>>>>> 6bed08f9 (open short)
                 balance=Quantity(
                     amount=-trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
                 shorts={
-<<<<<<< HEAD
                     maturity_time_seconds: Short(
-=======
                     FixedPoint(trade_result.maturity_time_seconds): Short(
->>>>>>> 6bed08f9 (open short)
                         balance=trade_result.bond_amount,
                     )
                 },
             )
 
         case HyperdriveActionType.CLOSE_SHORT:
-<<<<<<< HEAD
             if not trade.maturity_time:
                 raise ValueError("Maturity time was not provided, can't close long position.")
             maturity_time_seconds = trade.maturity_time
@@ -371,7 +358,6 @@ async def async_match_contract_call_to_trade(
                 *fn_args,
             )
             wallet_deltas = HyperdriveWalletDeltas(
-=======
             if not trade.mint_time:
                 raise ValueError("Mint time was not provided, can't close long position.")
             if hyperdrive is None:  # FIXME: temp until api is finished
@@ -404,7 +390,6 @@ async def async_match_contract_call_to_trade(
                     agent, trade.trade_amount, trade.mint_time, trade.slippage_tolerance
                 )
             wallet_deltas = WalletDeltas(
->>>>>>> e0a7fec6 (close short)
                 balance=Quantity(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
@@ -417,7 +402,6 @@ async def async_match_contract_call_to_trade(
             )
 
         case HyperdriveActionType.ADD_LIQUIDITY:
-<<<<<<< HEAD
             min_output = 0
             fn_args = (trade_amount, min_apr, max_apr, agent.checksum_address, as_underlying)
             trade_result = await async_transact_and_parse_logs(
@@ -428,7 +412,6 @@ async def async_match_contract_call_to_trade(
                 *fn_args,
             )
             wallet_deltas = HyperdriveWalletDeltas(
-=======
             if hyperdrive is None:  # FIXME: temp until api is finished
                 min_output = 0
                 fn_args = (trade_amount, min_apr, max_apr, agent.checksum_address, as_underlying)
@@ -442,7 +425,6 @@ async def async_match_contract_call_to_trade(
             else:
                 trade_result = await hyperdrive.async_add_liquidity(agent, trade.trade_amount, min_apr, max_apr)
             wallet_deltas = WalletDeltas(
->>>>>>> f1eff591 (add liquidity)
                 balance=Quantity(
                     amount=-trade_result.base_amount,
                     unit=TokenType.BASE,
@@ -451,7 +433,6 @@ async def async_match_contract_call_to_trade(
             )
 
         case HyperdriveActionType.REMOVE_LIQUIDITY:
-<<<<<<< HEAD
             min_output = 0
             fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
             trade_result = await async_transact_and_parse_logs(
@@ -462,7 +443,6 @@ async def async_match_contract_call_to_trade(
                 *fn_args,
             )
             wallet_deltas = HyperdriveWalletDeltas(
-=======
             if hyperdrive is None:  # FIXME: temp until api is finished
                 min_output = 0
                 fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
@@ -476,7 +456,6 @@ async def async_match_contract_call_to_trade(
             else:
                 trade_result = await hyperdrive.async_remove_liquidity(agent, trade.trade_amount)
             wallet_deltas = WalletDeltas(
->>>>>>> 18740350 (remove liquidity)
                 balance=Quantity(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
@@ -501,6 +480,24 @@ async def async_match_contract_call_to_trade(
                 *fn_args,
             )
             wallet_deltas = HyperdriveWalletDeltas(
+            if hyperdrive is None:  # FIXME: temp until api is finished
+                # for now, assume an underlying vault share price of at least 1, should be higher by a bit
+                min_output = FixedPoint(1)
+                # NOTE: This is not guaranteed to redeem all shares.  The pool will try to redeem as
+                # many as possible, up to the withdrawPool.readyToRedeem limit, without reverting.  Only
+                # a min_output that is too high will cause a revert here, or trying to withdraw more
+                # shares than the user has obviously.
+                fn_args = (trade_amount, min_output.scaled_value, agent.checksum_address, as_underlying)
+                trade_result = await async_transact_and_parse_logs(
+                    web3,
+                    hyperdrive_contract,
+                    agent,
+                    "redeemWithdrawalShares",
+                    *fn_args,
+                )
+            else:
+                trade_result = await hyperdrive.async_redeem_withdraw_shares(agent, trade.trade_amount)
+            wallet_deltas = WalletDeltas(
                 balance=Quantity(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,

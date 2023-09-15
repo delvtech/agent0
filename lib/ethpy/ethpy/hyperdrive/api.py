@@ -320,6 +320,45 @@ class Hyperdrive:
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "removeLiquidity")
         return trade_result
 
+    async def async_redeem_withdraw_shares(
+        self,
+        agent: LocalAccount,
+        trade_amount: FixedPoint,
+    ) -> ReceiptBreakdown:
+        """Contract call to redeem withdraw shares from Hyperdrive pool.
+
+        This should be done after closing liquidity.
+        .. note::
+            This is not guaranteed to redeem all shares.  The pool will try to redeem as
+            many as possible, up to the withdrawPool.readyToRedeem limit, without reverting.
+            Only a min_output that is too high will cause a revert here, or trying to
+            withdraw more shares than the user has obviously.
+
+        Arguments
+        ---------
+        agent: LocalAccount
+            The account for the agent that is executing and signing the trade transaction.
+        trade_amount: FixedPoint
+            The size of the position, in base.
+        min_output: FixedPoint
+            The minimum output amount
+
+        Returns
+        -------
+        ReceiptBreakdown
+            A dataclass containing the absolute values for token quantities changed
+        """
+        # for now, assume an underlying vault share price of at least 1, should be higher by a bit
+        agent_checksum_address = Web3.to_checksum_address(agent.address)
+        min_output = FixedPoint(1)
+        as_underlying = True
+        fn_args = (trade_amount, min_output.scaled_value, agent_checksum_address, as_underlying)
+        tx_receipt = await async_smart_contract_transact(
+            self.web3, self.hyperdrive_contract, agent, "redeemWithdrawalShares", *fn_args
+        )
+        trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "redeemWithdrawalShares")
+        return trade_result
+
     # FIXME: TODO: other async trades
 
     # FIXME: TODO:
