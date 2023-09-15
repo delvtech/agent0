@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, NoReturn
 
 import eth_utils
@@ -17,7 +16,8 @@ from ethpy.base import (
     get_transaction_logs,
     smart_contract_preview_transaction,
 )
-from ethpy.hyperdrive import get_hyperdrive_market
+from ethpy.hyperdrive import ReceiptBreakdown, get_hyperdrive_market
+from ethpy.hyperdrive.api import Hyperdrive
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -38,30 +38,6 @@ def assert_never(arg: NoReturn) -> NoReturn:
         https://github.com/microsoft/pyright/issues/2569
     """
     assert False, f"Unhandled type: {type(arg).__name__}"
-
-
-@dataclass
-class ReceiptBreakdown:
-    r"""A granular breakdown of important values in a trade receipt."""
-    asset_id: int = 0
-    maturity_time_seconds: int = 0
-    base_amount: FixedPoint = FixedPoint(0)
-    bond_amount: FixedPoint = FixedPoint(0)
-    lp_amount: FixedPoint = FixedPoint(0)
-    withdrawal_share_amount: FixedPoint = FixedPoint(0)
-
-    def __post_init__(self):
-        if (
-            self.base_amount < 0
-            or self.bond_amount < 0
-            or self.maturity_time_seconds < 0
-            or self.lp_amount < 0
-            or self.withdrawal_share_amount < 0
-        ):
-            raise ValueError(
-                "All ReceiptBreakdown arguments must be positive,"
-                " since they are expected to be unsigned integer values from smart contracts."
-            )
 
 
 def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> ReceiptBreakdown:
@@ -214,6 +190,7 @@ async def async_match_contract_call_to_trade(
     hyperdrive_contract: Contract,
     agent: HyperdriveAgent,
     trade_envelope: types.Trade[HyperdriveMarketAction],
+    hyperdrive: Hyperdrive | None = None,  # FIXME: Optional for now, to test out Hyperdrive API
 ) -> HyperdriveWalletDeltas:
     """Match statement that executes the smart contract trade based on the provided type.
 
@@ -250,23 +227,8 @@ async def async_match_contract_call_to_trade(
             raise ValueError(f"{trade.action_type} not supported!")
 
         case HyperdriveActionType.OPEN_LONG:
-            min_output = 0
-            fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
-            if trade.slippage_tolerance:
-                preview_result = smart_contract_preview_transaction(
-                    hyperdrive_contract, agent.checksum_address, "openLong", *fn_args
-                )
-                min_output = (
-                    FixedPoint(scaled_value=preview_result["bondProceeds"]) * (FixedPoint(1) - trade.slippage_tolerance)
-                ).scaled_value
-                fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
-            trade_result = await async_transact_and_parse_logs(
-                web3,
-                hyperdrive_contract,
-                agent,
-                "openLong",
-                *fn_args,
-            )
+            tx_receipt = hyperdrive.async_open_long(trade_amount, agent.checksum_address, trade.slippage_tolerance)
+            trade_result = parse_logs(tx_receipt, hyperdrive.hyperdrive_contract, "openLong")
             maturity_time_seconds = trade_result.maturity_time_seconds
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(

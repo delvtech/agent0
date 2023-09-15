@@ -2,7 +2,6 @@
 from .crash_report import setup_hyperdrive_crash_report_logging
 from .create_and_fund_user_account import create_and_fund_user_account
 from .execute_agent_trades import (
-    ReceiptBreakdown,
     async_execute_agent_trades,
     async_execute_single_agent_trade,
     async_match_contract_call_to_trade,
