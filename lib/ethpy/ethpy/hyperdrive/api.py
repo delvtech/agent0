@@ -13,7 +13,7 @@ from ethpy.base import (
 )
 from fixedpointmath import FixedPoint
 from web3 import Web3
-from web3.types import BlockData
+from web3.types import BlockData, Timestamp
 
 from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
 from .interface import get_hyperdrive_config, get_hyperdrive_pool_info, parse_logs
@@ -56,16 +56,24 @@ class Hyperdrive:
 
     @property
     def current_block(self) -> BlockData:
-        """The current block number, which must be set with a setter method"""
+        """The current block number"""
         return self.web3.eth.get_block("latest")
 
     @property
     def current_block_number(self) -> BlockNumber:
-        """The current block number, which must be set with a setter method"""
+        """The current block number."""
         current_block_number = self.current_block.get("number", None)
         if current_block_number is None:
             raise AssertionError("The current block has no number")
         return current_block_number
+
+    @property
+    def current_block_time(self) -> Timestamp:
+        """The current block timestamp."""
+        current_block_timestamp = self.current_block.get("timestamp", None)
+        if current_block_timestamp is None:
+            raise AssertionError("current_block_timestamp can not be None")
+        return current_block_timestamp
 
     # FIXME:
     # @property
