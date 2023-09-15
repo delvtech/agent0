@@ -1,11 +1,24 @@
 from __future__ import annotations
 
+import asyncio
+import os
 from enum import Enum
 from typing import Any
 
 import gymnasium as gym
 import numpy as np
+from agent0.hyperdrive.agents import HyperdriveAgent
+from agent0.hyperdrive.exec import async_transact_and_parse_logs
+from chainsync.analysis import calc_spot_price
 from ethpy import EthConfig, build_eth_config
+from ethpy.base import smart_contract_preview_transaction
+from ethpy.hyperdrive import (
+    HyperdriveAddresses,
+    fetch_hyperdrive_address_from_url,
+    get_hyperdrive_config,
+    get_hyperdrive_pool_info,
+    get_web3_and_hyperdrive_contracts,
+)
 from gymnasium import spaces
 
 
@@ -31,7 +44,14 @@ class SimpleHyperdriveEnv(gym.Env):
     # Required attribute for environment defining allowed render modes
     metadata = {"render_modes": ["human"], "render_fps": 3}
 
-    def __init__(self, gym_config: dict[str, Any], eth_config: EthConfig | None = None, render_mode: str | None = None):
+    def __init__(
+        self,
+        account: HyperdriveAgent,
+        gym_config: dict[str, Any],
+        eth_config: EthConfig | None = None,
+        contract_addresses: HyperdriveAddresses | None = None,
+        render_mode: str | None = None,
+    ):
         """Initializes the environment"""
 
         if eth_config is None:
@@ -66,9 +86,6 @@ class SimpleHyperdriveEnv(gym.Env):
         # The space of observations from the environment
         # This is a timeseries of window_size samples of the spot price and the share price
         self.observation_space = spaces.Box(low=0, high=1e10, shape=(self.window_size, 2), dtype=np.float64)
-
-        # episode variables
-        self._position = None
 
         # For a more complex environment:
 
@@ -106,6 +123,31 @@ class SimpleHyperdriveEnv(gym.Env):
         #    )  # symbol, order_i -> [entry_price, volume, profit]
         # })
 
+        # Set up connection to the chain
+
+        ## Initialization
+        # eth config
+        if eth_config is None:
+            # Load parameters from env vars if they exist
+            eth_config = build_eth_config()
+
+        # Get addresses either from artifacts url defined in eth_config or from contract_addresses
+        if contract_addresses is None:
+            contract_addresses = fetch_hyperdrive_address_from_url(
+                os.path.join(eth_config.ARTIFACTS_URL, "addresses.json")
+            )
+
+        # Get web3 and contracts
+        self._web3, self._base_contract, self._hyperdrive_contract = get_web3_and_hyperdrive_contracts(
+            eth_config, contract_addresses
+        )
+
+        # episode variables
+        self._position = None
+        self._open_position = None
+        self._obs_buffer = np.zeros((self.window_size, 2), dtype=np.float64)
+        self._account = account
+
     def reset(
         self, seed: int | None = None, options: dict[str, Any] | None = None
     ) -> tuple[np.ndarray, dict[str, Any]]:
@@ -129,6 +171,8 @@ class SimpleHyperdriveEnv(gym.Env):
         self.action_space.seed(int((self.np_random.uniform(0, seed if seed is not None else 1))))
 
         self._position = None
+        self._open_position = None
+        self._obs_buffer = np.zeros((self.window_size, 2), dtype=np.float64)
 
         # TODO
         observation = self._get_observation()
@@ -160,7 +204,6 @@ class SimpleHyperdriveEnv(gym.Env):
         info: dict[str, Any]
             Contains auxiliary diagnostic information for debugging, learning, logging.
         """
-        step_reward = self._calculate_reward(action)
 
         # Initial condition, ensure first trade always goes through
         if self._position is None:
@@ -182,13 +225,65 @@ class SimpleHyperdriveEnv(gym.Env):
             # TODO do trade based on position
             if self._position == Positions.Long:
                 # Close short position (if exists), open long
-                pass
+                if self._open_position is not None:
+                    # Close short
+                    fn_args = (
+                        self._open_position.maturity_time_seconds,
+                        self._open_position.bond_amount.scaled_value,
+                        0,
+                        self._account.checksum_address,
+                        True,
+                    )
+                    trade_result = asyncio.run(
+                        async_transact_and_parse_logs(
+                            self._web3, self._hyperdrive_contract, self._account, "closeShort", *fn_args
+                        )
+                    )
+
+                # Open long
+                fn_args = (
+                    self.long_base_amount,
+                    0,
+                    self._account.checksum_address,
+                    True,
+                )
+                self._open_position = asyncio.run(
+                    async_transact_and_parse_logs(
+                        self._web3, self._hyperdrive_contract, self._account, "openLong", *fn_args
+                    )
+                )
+
             elif self._position == Positions.Short:
-                # Close long position, open short
-                pass
+                # Close long position (if exists), open short
+                if self._open_position is not None:
+                    # Close long
+                    fn_args = (
+                        self._open_position.maturity_time_seconds,
+                        self._open_position.bond_amount.scaled_value,
+                        0,
+                        True,
+                    )
+                    tx_receipt = asyncio.run(
+                        async_transact_and_parse_logs(
+                            self._web3, self._hyperdrive_contract, self._account, "closeLong", *fn_args
+                        )
+                    )
+                # Open short
+                fn_args = (
+                    self.short_bond_amount,
+                    0,
+                    self._account.checksum_address,
+                    True,
+                )
+                self._open_position = asyncio.run(
+                    async_transact_and_parse_logs(
+                        self._web3, self._hyperdrive_contract, self._account, "openShort", *fn_args
+                    )
+                )
 
         observation = self._get_observation()
         info = self._get_info()
+        step_reward = self._calculate_reward()
 
         return observation, step_reward, False, False, info
 
@@ -197,9 +292,60 @@ class SimpleHyperdriveEnv(gym.Env):
         return {}
 
     def _get_observation(self) -> np.ndarray:
-        # TODO get the spot price and share price of hyperdrive
-        return np.zeros((self.window_size, 2))
+        # Get the spot price and share price of hyperdrive
+        current_block = self._web3.eth.get_block_number()
+        pool_info = get_hyperdrive_pool_info(self._web3, self._hyperdrive_contract, current_block)
+        # TODO gather pool config outside of the obs loop
+        pool_config = get_hyperdrive_config(self._hyperdrive_contract)
 
-    def _calculate_reward(self, action: Actions) -> float:
+        # TODO calculate spot price
+        new_spot_price = calc_spot_price(
+            pool_info["shareReserves"],
+            pool_info["bondReserves"],
+            pool_config["initialSharePrice"],
+            pool_config["invTimeStretch"],
+        )
+        new_share_price = pool_info["sharePrice"]
+        # Cycle buffer
+        self._obs_buffer[:-1, :] = self._obs_buffer[1:, :]
+        # Update last entry
+        self._obs_buffer[-1, 0] = new_spot_price
+        self._obs_buffer[-1, 1] = new_share_price
+
+        return self._obs_buffer
+
+    def _calculate_reward(self) -> float:
+        current_block = self._web3.eth.get_block_number()
         # TODO calculate the pnl of closing the current position
+        base_pnl = 0  # TODO
+        # TODO these functions should be in hyperdrive_sdk
+        if self._open_position and self._position == Positions.Long:
+            fn_args = (
+                self._open_position.maturity_time_seconds,
+                self._open_position.bond_amount.scaled_value,
+                0,
+                True,
+            )
+            position_pnl = smart_contract_preview_transaction(
+                self._hyperdrive_contract,
+                self._account.checksum_address,
+                "closeLong",
+                *fn_args,
+                block_identifier=current_block,
+            )
+        elif self._open_position and self._position == Positions.Short:
+            fn_args = (
+                self._open_position.maturity_time_seconds,
+                self._open_position.bond_amount.scaled_value,
+                0,
+                True,
+            )
+            position_pnl = smart_contract_preview_transaction(
+                self._hyperdrive_contract,
+                self._account.checksum_address,
+                "closeShort",
+                *fn_args,
+                block_identifier=current_block,
+            )
+
         return 0.0
