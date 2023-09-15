@@ -1,7 +1,10 @@
 """High-level interface for the Hyperdrive market"""
 from __future__ import annotations
 
+from typing import Any
+
 import eth_utils
+import pyperdrive
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI, BlockNumber
 from ethpy import EthConfig
@@ -12,6 +15,7 @@ from ethpy.base import (
     smart_contract_read,
 )
 from fixedpointmath import FixedPoint
+from pyperdrive.types import Fees, PoolConfig, PoolInfo
 from web3 import Web3
 from web3.types import BlockData, Timestamp
 
@@ -43,16 +47,26 @@ class Hyperdrive:
                 raise AssertionError("if eth_config is not None, then none of the remaining arguments can be set.")
             self.config = eth_config
         self.web3, self.base_token_contract, self.hyperdrive_contract = get_web3_and_hyperdrive_contracts(self.config)
-
-    @property
-    def pool_config(self):
-        """Returns the pool initialization config"""
-        return get_hyperdrive_config(self.hyperdrive_contract)
+        self.pool_config = get_hyperdrive_config(self.hyperdrive_contract)
+        self._pool_info = get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, self.current_block_number)
+        self.last_state_block = self.web3.eth.get_block("latest")
 
     @property
     def pool_info(self):
         """Returns the current pool state info"""
-        return get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, self.current_block_number)
+        if self.current_block > self.last_state_block:
+            self.last_state_block = self.current_block
+            setattr(
+                self,
+                "_pool_info",
+                get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, self.current_block_number),
+            )
+        return self._pool_info
+
+    @_pool_info.setter
+    def _pool_info(self, value: Any) -> None:
+        """Not allowed to set the pool info manually"""
+        raise ValueError("_pool_info is immutable")
 
     @property
     def current_block(self) -> BlockData:
@@ -75,11 +89,49 @@ class Hyperdrive:
             raise AssertionError("current_block_timestamp can not be None")
         return current_block_timestamp
 
-    # FIXME:
-    # @property
-    # def spot_price(self) -> FixedPoint:
-    #     """Returns the current market spot price"""
-    #     # get spot price from pyperdrive
+    @property
+    def spot_price(self) -> FixedPoint:
+        """Get the current Hyperdrive pool spot price.
+
+        Returns
+        -------
+        FixedPoint
+            The current spot price.
+        """
+        pool_config_str = PoolConfig(
+            base_token=str(self.pool_config["base_token"]),
+            initial_share_price=str(self.pool_config["initial_share_price"]),
+            minimum_share_reserves=str(self.pool_config["minimum_share_reserves"]),
+            position_duration=str(self.pool_config["position_duration"]),
+            checkpoint_duration=str(self.pool_config["checkpoint_duration"]),
+            time_stretch=str(self.pool_config["time_stretch"]),
+            governance=str(self.pool_config["governance"]),
+            fee_collector=str(self.pool_config["fee_collector"]),
+            fees=Fees(
+                curve=str(self.pool_config["fees"]["curve"]),
+                flat=str(self.pool_config["fees"]["flat"]),
+                governance=str(self.pool_config["fees"]["governance"]),
+            ),
+            oracle_size=str(self.pool_config["oracle_size"]),
+            update_gap=str(self.pool_config["update_gap"]),
+        )
+        pool_info_str = PoolInfo(
+            share_reserves=str(self.pool_info["share_reserves"]),
+            bond_reserves=str(self.pool_info["bond_reserves"]),
+            lp_total_supply=str(self.pool_info["lp_total_supply"]),
+            share_price=str(self.pool_info["share_price"]),
+            longs_outstanding=str(self.pool_info["longs_outstanding"]),
+            long_average_maturity_time=str(self.pool_info["long_average_maturity_time"]),
+            shorts_outstanding=str(self.pool_info["shorts_outstanding"]),
+            short_average_maturity_time=str(self.pool_info["short_average_maturity_time"]),
+            short_base_volume=str(self.pool_info["short_base_volume"]),
+            withdrawal_shares_ready_to_withdraw=str(self.pool_info["withdrawal_shares_ready_to_withdraw"]),
+            withdrawal_shares_proceeds=str(self.pool_info["withdrawal_shares_proceeds"]),
+            lp_share_price=str(self.pool_info["lp_share_price"]),
+            long_exposure=str(self.pool_info["long_exposure"]),
+        )
+        spot_price = pyperdrive.get_spot_price(pool_config_str, pool_info_str)
+        return FixedPoint(spot_price)
 
     async def async_open_long(
         self, agent: LocalAccount, trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None
@@ -395,10 +447,98 @@ class Hyperdrive:
         )["value"]
         return (FixedPoint(scaled_value=agent_eth_balance), FixedPoint(scaled_value=agent_base_balance))
 
-    # FIXME: TODO:
-    # def get_max_long(budget):
-    #     pyperdrive.get_max_long(...)
+    def get_max_long(self, budget: FixedPoint) -> FixedPoint:
+        """Get the maximum allowable long for the given Hyperdrive pool and agent budget.
 
-    # FIXME: TODO:
-    # def get_max_short(budget):
-    #     pyperdrive.get_max_short(...)
+        Arguments
+        ---------
+        budget: FixedPoint
+            How much money the agent is able to spend
+
+        Returns
+        -------
+        FixedPoint
+            The maximum long as a FixedPoint representation of a Solidity uint256 value.
+        """
+        pool_config_str = PoolConfig(
+            base_token=str(self.pool_config["base_token"]),
+            initial_share_price=str(self.pool_config["initial_share_price"]),
+            minimum_share_reserves=str(self.pool_config["minimum_share_reserves"]),
+            position_duration=str(self.pool_config["position_duration"]),
+            checkpoint_duration=str(self.pool_config["checkpoint_duration"]),
+            time_stretch=str(self.pool_config["time_stretch"]),
+            governance=str(self.pool_config["governance"]),
+            fee_collector=str(self.pool_config["fee_collector"]),
+            fees=Fees(
+                curve=str(self.pool_config["fees"]["curve"]),
+                flat=str(self.pool_config["fees"]["flat"]),
+                governance=str(self.pool_config["fees"]["governance"]),
+            ),
+            oracle_size=str(self.pool_config["oracle_size"]),
+            update_gap=str(self.pool_config["update_gap"]),
+        )
+        pool_info_str = PoolInfo(
+            share_reserves=str(self.pool_info["share_reserves"]),
+            bond_reserves=str(self.pool_info["bond_reserves"]),
+            lp_total_supply=str(self.pool_info["lp_total_supply"]),
+            share_price=str(self.pool_info["share_price"]),
+            longs_outstanding=str(self.pool_info["longs_outstanding"]),
+            long_average_maturity_time=str(self.pool_info["long_average_maturity_time"]),
+            shorts_outstanding=str(self.pool_info["shorts_outstanding"]),
+            short_average_maturity_time=str(self.pool_info["short_average_maturity_time"]),
+            short_base_volume=str(self.pool_info["short_base_volume"]),
+            withdrawal_shares_ready_to_withdraw=str(self.pool_info["withdrawal_shares_ready_to_withdraw"]),
+            withdrawal_shares_proceeds=str(self.pool_info["withdrawal_shares_proceeds"]),
+            lp_share_price=str(self.pool_info["lp_share_price"]),
+            long_exposure=str(self.pool_info["long_exposure"]),
+        )
+        max_long = pyperdrive.get_max_long(pool_config_str, pool_info_str, str(budget) checkpoint_exposure="0")
+        return FixedPoint(max_long)
+
+    def get_max_short(self, budget: FixedPoint) -> FixedPoint:
+        """Get the maximum allowable short for the given Hyperdrive pool and agent budget.
+
+        Arguments
+        ---------
+        budget: FixedPoint
+            How much money the agent is able to spend
+
+        Returns
+        -------
+        FixedPoint
+            The maximum long as a FixedPoint representation of a Solidity uint256 value.
+        """
+        pool_config_str = PoolConfig(
+            base_token=str(self.pool_config["base_token"]),
+            initial_share_price=str(self.pool_config["initial_share_price"]),
+            minimum_share_reserves=str(self.pool_config["minimum_share_reserves"]),
+            position_duration=str(self.pool_config["position_duration"]),
+            checkpoint_duration=str(self.pool_config["checkpoint_duration"]),
+            time_stretch=str(self.pool_config["time_stretch"]),
+            governance=str(self.pool_config["governance"]),
+            fee_collector=str(self.pool_config["fee_collector"]),
+            fees=Fees(
+                curve=str(self.pool_config["fees"]["curve"]),
+                flat=str(self.pool_config["fees"]["flat"]),
+                governance=str(self.pool_config["fees"]["governance"]),
+            ),
+            oracle_size=str(self.pool_config["oracle_size"]),
+            update_gap=str(self.pool_config["update_gap"]),
+        )
+        pool_info_str = PoolInfo(
+            share_reserves=str(self.pool_info["share_reserves"]),
+            bond_reserves=str(self.pool_info["bond_reserves"]),
+            lp_total_supply=str(self.pool_info["lp_total_supply"]),
+            share_price=str(self.pool_info["share_price"]),
+            longs_outstanding=str(self.pool_info["longs_outstanding"]),
+            long_average_maturity_time=str(self.pool_info["long_average_maturity_time"]),
+            shorts_outstanding=str(self.pool_info["shorts_outstanding"]),
+            short_average_maturity_time=str(self.pool_info["short_average_maturity_time"]),
+            short_base_volume=str(self.pool_info["short_base_volume"]),
+            withdrawal_shares_ready_to_withdraw=str(self.pool_info["withdrawal_shares_ready_to_withdraw"]),
+            withdrawal_shares_proceeds=str(self.pool_info["withdrawal_shares_proceeds"]),
+            lp_share_price=str(self.pool_info["lp_share_price"]),
+            long_exposure=str(self.pool_info["long_exposure"]),
+        )
+        max_short = pyperdrive.get_max_short(pool_config_str, pool_info_str, str(budget), pool_info_str.share_price)
+        return FixedPoint(max_short)
