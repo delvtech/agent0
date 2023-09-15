@@ -7,9 +7,19 @@ from typing import Any
 
 import gymnasium as gym
 import numpy as np
+from agent0 import initialize_accounts
+from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
-from agent0.hyperdrive.exec import async_transact_and_parse_logs
+from agent0.hyperdrive.exec import (
+    async_transact_and_parse_logs,
+    create_and_fund_user_account,
+    fund_agents,
+    get_agent_accounts,
+    trade_if_new_block,
+)
 from chainsync.analysis import calc_spot_price
+from eth_account.account import Account
+from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import smart_contract_preview_transaction
 from ethpy.hyperdrive import (
@@ -46,7 +56,8 @@ class SimpleHyperdriveEnv(gym.Env):
 
     def __init__(
         self,
-        account: HyperdriveAgent,
+        env_config: EnvironmentConfig,
+        agent_config: list[AgentConfig],
         gym_config: dict[str, Any],
         eth_config: EthConfig | None = None,
         contract_addresses: HyperdriveAddresses | None = None,
@@ -54,10 +65,28 @@ class SimpleHyperdriveEnv(gym.Env):
     ):
         """Initializes the environment"""
 
+        # Set up connection to the chain
+
         if eth_config is None:
             # Load parameters from env vars if they exist
             eth_config = build_eth_config()
+
+        # Get addresses either from artifacts url defined in eth_config or from contract_addresses
+        if contract_addresses is None:
+            contract_addresses = fetch_hyperdrive_address_from_url(
+                os.path.join(eth_config.ARTIFACTS_URL, "addresses.json")
+            )
+
+        self.env_config = env_config
         self.eth_config = eth_config
+        self.contract_addresses = contract_addresses
+        self.agent_config = agent_config
+        self.agent_env_file = "hyperdrive_env.account.env"
+
+        # Get web3 and contracts
+        self.web3, self.base_contract, self.hyperdrive_contract = get_web3_and_hyperdrive_contracts(
+            eth_config, contract_addresses
+        )
 
         assert render_mode is None or render_mode in self.metadata["render-modes"]
         self.render_mode = render_mode
@@ -123,30 +152,12 @@ class SimpleHyperdriveEnv(gym.Env):
         #    )  # symbol, order_i -> [entry_price, volume, profit]
         # })
 
-        # Set up connection to the chain
-
-        ## Initialization
-        # eth config
-        if eth_config is None:
-            # Load parameters from env vars if they exist
-            eth_config = build_eth_config()
-
-        # Get addresses either from artifacts url defined in eth_config or from contract_addresses
-        if contract_addresses is None:
-            contract_addresses = fetch_hyperdrive_address_from_url(
-                os.path.join(eth_config.ARTIFACTS_URL, "addresses.json")
-            )
-
-        # Get web3 and contracts
-        self._web3, self._base_contract, self._hyperdrive_contract = get_web3_and_hyperdrive_contracts(
-            eth_config, contract_addresses
-        )
-
         # episode variables
         self._position = None
         self._open_position = None
         self._obs_buffer = np.zeros((self.window_size, 2), dtype=np.float64)
-        self._account = account
+        self._account = None
+        self.last_executed_block = 0
 
     def reset(
         self, seed: int | None = None, options: dict[str, Any] | None = None
@@ -166,6 +177,37 @@ class SimpleHyperdriveEnv(gym.Env):
             The observation and info from the environment
         """
         super().reset(seed=seed, options=options)
+
+        # Build accounts env var
+        # This function writes a user defined env file location.
+        # If it doesn't exist, create it based on agent_config
+        # (If develop is False, will clean exit and print instructions on how to fund agent)
+        # If it does exist, read it in and use it
+        account_key_config = initialize_accounts(
+            self.agent_config, env_file=self.agent_env_file, random_seed=self.env_config.random_seed, develop=True
+        )
+
+        # exposing the user account for debugging purposes
+        user_account = create_and_fund_user_account(self.eth_config, account_key_config, self.contract_addresses)
+        fund_agents(
+            user_account, self.eth_config, account_key_config, self.contract_addresses
+        )  # uses env variables created above as inputs
+
+        rng = np.random.default_rng(self.env_config.random_seed)
+        self.agent_accounts = get_agent_accounts(
+            self.web3,
+            self.agent_config,
+            account_key_config,
+            self.base_contract,
+            self.hyperdrive_contract.address,
+            rng,
+        )
+
+        # Look for the no_action agent and bind that account to this env
+        account_idx = [i for i, a in enumerate(self.agent_config) if a.policy.__name__ == "NoActionPolicy"]
+        assert len(account_idx) == 1
+        self._account = self.agent_accounts[account_idx[0]]
+
         # We use the env's random number generator for anything random, i.e.,
         # self.np_random
         self.action_space.seed(int((self.np_random.uniform(0, seed if seed is not None else 1))))
@@ -173,6 +215,7 @@ class SimpleHyperdriveEnv(gym.Env):
         self._position = None
         self._open_position = None
         self._obs_buffer = np.zeros((self.window_size, 2), dtype=np.float64)
+        self._last_executed_block = BlockNumber(0)
 
         # TODO
         observation = self._get_observation()
@@ -205,6 +248,17 @@ class SimpleHyperdriveEnv(gym.Env):
             Contains auxiliary diagnostic information for debugging, learning, logging.
         """
 
+        # Run other bots
+        self.last_executed_block = trade_if_new_block(
+            self.web3,
+            self.hyperdrive_contract,
+            self.agent_accounts,
+            self.env_config.halt_on_errors,
+            self.last_executed_block,
+        )
+
+        assert self._account is not None
+
         # Initial condition, ensure first trade always goes through
         if self._position is None:
             if action == Actions.Buy.value:
@@ -236,7 +290,7 @@ class SimpleHyperdriveEnv(gym.Env):
                     )
                     trade_result = asyncio.run(
                         async_transact_and_parse_logs(
-                            self._web3, self._hyperdrive_contract, self._account, "closeShort", *fn_args
+                            self.web3, self.hyperdrive_contract, self._account, "closeShort", *fn_args
                         )
                     )
 
@@ -247,9 +301,10 @@ class SimpleHyperdriveEnv(gym.Env):
                     self._account.checksum_address,
                     True,
                 )
+
                 self._open_position = asyncio.run(
                     async_transact_and_parse_logs(
-                        self._web3, self._hyperdrive_contract, self._account, "openLong", *fn_args
+                        self.web3, self.hyperdrive_contract, self._account, "openLong", *fn_args
                     )
                 )
 
@@ -265,7 +320,7 @@ class SimpleHyperdriveEnv(gym.Env):
                     )
                     tx_receipt = asyncio.run(
                         async_transact_and_parse_logs(
-                            self._web3, self._hyperdrive_contract, self._account, "closeLong", *fn_args
+                            self.web3, self.hyperdrive_contract, self._account, "closeLong", *fn_args
                         )
                     )
                 # Open short
@@ -277,7 +332,7 @@ class SimpleHyperdriveEnv(gym.Env):
                 )
                 self._open_position = asyncio.run(
                     async_transact_and_parse_logs(
-                        self._web3, self._hyperdrive_contract, self._account, "openShort", *fn_args
+                        self.web3, self.hyperdrive_contract, self._account, "openShort", *fn_args
                     )
                 )
 
@@ -293,10 +348,10 @@ class SimpleHyperdriveEnv(gym.Env):
 
     def _get_observation(self) -> np.ndarray:
         # Get the spot price and share price of hyperdrive
-        current_block = self._web3.eth.get_block_number()
-        pool_info = get_hyperdrive_pool_info(self._web3, self._hyperdrive_contract, current_block)
+        current_block = self.web3.eth.get_block_number()
+        pool_info = get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, current_block)
         # TODO gather pool config outside of the obs loop
-        pool_config = get_hyperdrive_config(self._hyperdrive_contract)
+        pool_config = get_hyperdrive_config(self.hyperdrive_contract)
 
         # TODO calculate spot price
         new_spot_price = calc_spot_price(
@@ -315,7 +370,8 @@ class SimpleHyperdriveEnv(gym.Env):
         return self._obs_buffer
 
     def _calculate_reward(self) -> float:
-        current_block = self._web3.eth.get_block_number()
+        assert self._account is not None
+        current_block = self.web3.eth.get_block_number()
         # TODO calculate the pnl of closing the current position
         base_pnl = 0  # TODO
         # TODO these functions should be in hyperdrive_sdk
@@ -327,7 +383,7 @@ class SimpleHyperdriveEnv(gym.Env):
                 True,
             )
             position_pnl = smart_contract_preview_transaction(
-                self._hyperdrive_contract,
+                self.hyperdrive_contract,
                 self._account.checksum_address,
                 "closeLong",
                 *fn_args,
@@ -341,7 +397,7 @@ class SimpleHyperdriveEnv(gym.Env):
                 True,
             )
             position_pnl = smart_contract_preview_transaction(
-                self._hyperdrive_contract,
+                self.hyperdrive_contract,
                 self._account.checksum_address,
                 "closeShort",
                 *fn_args,

@@ -1,24 +1,86 @@
+import logging
+
 import gymnasium as gym
 import hypergym  # This import is needed since this is what's registering the env
-from agent0.hyperdrive.agents import HyperdriveAgent
-from eth_account.account import Account
+from agent0.base.config import AgentConfig, Budget, EnvironmentConfig
+from agent0.base.policies import BasePolicies
+from agent0.hyperdrive.policies import HyperdrivePolicies
+from fixedpointmath import FixedPoint
 
 gym_config = {
-    "long_base_amount": 100,
-    "short_bond_amount": 100,
+    "long_base_amount": int(1e9),
+    "short_bond_amount": int(1e9),
     "window_size": 10,
 }
 
-# TODO use different account
-# https://github.com/delvtech/elf-simulations/issues/816
-# This is the private key of account 0 of the anvil pre-funded account
-account_private_key = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-account = HyperdriveAgent(Account().from_key(account_private_key), policy=None)
+# Define config for chain env
+# Build environment config
+env_config = EnvironmentConfig(
+    delete_previous_logs=False,
+    halt_on_errors=True,
+    log_filename="rl_random_trade_log",
+    log_level=logging.INFO,
+    log_stdout=True,
+    random_seed=1234,
+    username="rl_random_trade",
+)
 
-# TODO fund this account through some call
+agent_config: list[AgentConfig] = [
+    AgentConfig(
+        policy=HyperdrivePolicies.random_agent,
+        number_of_agents=3,
+        slippage_tolerance=FixedPoint("0.0001"),
+        base_budget_wei=Budget(
+            mean_wei=FixedPoint(5_000).scaled_value,  # 5k base
+            std_wei=FixedPoint(1_000).scaled_value,  # 1k base
+            min_wei=1,  # 1 WEI base
+            max_wei=FixedPoint(100_000).scaled_value,  # 100k base
+        ),
+        eth_budget_wei=Budget(min_wei=FixedPoint(1).scaled_value, max_wei=FixedPoint(1).scaled_value),
+        init_kwargs={"trade_chance": FixedPoint("0.8")},
+    ),
+    AgentConfig(
+        policy=HyperdrivePolicies.long_louie,
+        number_of_agents=0,
+        base_budget_wei=Budget(
+            mean_wei=FixedPoint(5_000).scaled_value,  # 5k base
+            std_wei=FixedPoint(1_000).scaled_value,  # 1k base
+            min_wei=1,  # 1 WEI base
+            max_wei=FixedPoint(100_000).scaled_value,  # 100k base
+        ),
+        eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
+        init_kwargs={"trade_chance": FixedPoint("0.8"), "risk_threshold": FixedPoint("0.9")},
+    ),
+    AgentConfig(
+        policy=HyperdrivePolicies.short_sally,
+        number_of_agents=0,
+        base_budget_wei=Budget(
+            mean_wei=FixedPoint(5_000).scaled_value,  # 5k base
+            std_wei=FixedPoint(1_000).scaled_value,  # 1k base
+            min_wei=1,  # 1 WEI base
+            max_wei=FixedPoint(100_000).scaled_value,  # 100k base
+        ),
+        eth_budget_wei=Budget(min_wei=FixedPoint(1).scaled_value, max_wei=FixedPoint(1).scaled_value),
+        init_kwargs={"trade_chance": FixedPoint("0.8"), "risk_threshold": FixedPoint("0.8")},
+    ),
+    # This policy is the RL bot
+    AgentConfig(
+        policy=BasePolicies.no_action,
+        number_of_agents=1,
+        base_budget_wei=Budget(
+            mean_wei=FixedPoint(5_000).scaled_value,  # 5k base
+            std_wei=FixedPoint(1_000).scaled_value,  # 1k base
+            min_wei=1,  # 1 WEI base
+            max_wei=FixedPoint(100_000).scaled_value,  # 100k base
+        ),
+        eth_budget_wei=Budget(min_wei=FixedPoint(1).scaled_value, max_wei=FixedPoint(1).scaled_value),
+        init_kwargs={},
+    ),
+]
 
-
-env = gym.make("hypergym/simple_hyperdrive_env", account=account, gym_config=gym_config)
+env = gym.make(
+    "hypergym/simple_hyperdrive_env", env_config=env_config, agent_config=agent_config, gym_config=gym_config
+)
 
 observation = env.reset(seed=2023)
 while True:
