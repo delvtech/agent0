@@ -2,13 +2,15 @@
 from __future__ import annotations
 
 from eth_account.signers.local import LocalAccount
-from eth_typing import BlockNumber
+from eth_typing import URI, BlockNumber
+from ethpy import EthConfig
 from ethpy.base import async_smart_contract_transact, smart_contract_preview_transaction
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData
 
+from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
 from .interface import get_hyperdrive_config, get_hyperdrive_pool_info, parse_logs
 from .receipt_breakdown import ReceiptBreakdown
 
@@ -16,10 +18,26 @@ from .receipt_breakdown import ReceiptBreakdown
 class Hyperdrive:
     """End-point api for interfacing with Hyperdrive"""
 
-    def __init__(self, web3: Web3, hyperdrive_contract: Contract, base_contract: Contract):
-        self.web3 = web3
-        self.hyperdrive_contract = hyperdrive_contract
-        self.base_contract = base_contract
+    def __init__(
+        self,
+        eth_config: EthConfig | None = None,
+        *,  # kw-args only from here forward
+        artifacts_uri: str | URI | None = None,
+        rpc_uri: str | URI | None = None,
+        abi_dir: str | None = None,
+    ) -> None:
+        """The Hyperdrive API can be initialized with either an EthConfig,
+        or strings corresponding to the required URIs and directories.
+        """
+        if eth_config is None:
+            if artifacts_uri is None or rpc_uri is None or abi_dir is None:
+                raise AssertionError("if eth_config is None, then all of the remaining arguments must be set.")
+            self.config = EthConfig(artifacts_uri, rpc_uri, abi_dir)
+        if eth_config is not None:
+            if not all([artifacts_uri is None, rpc_uri is None, abi_dir is None]):
+                raise AssertionError("if eth_config is not None, then none of the remaining arguments can be set.")
+            self.config = eth_config
+        self.web3, self.base_token_contract, self.hyperdrive_contract = get_web3_and_hyperdrive_contracts(self.config)
 
     @property
     def pool_config(self):
@@ -43,6 +61,12 @@ class Hyperdrive:
         if current_block_number is None:
             raise AssertionError("The current block has no number")
         return current_block_number
+
+    # FIXME:
+    @property
+    def spot_price(self) -> FixedPoint:
+        """Returns the current market spot price"""
+        raise NotImplementedError
 
     async def async_open_long(
         self, trade_amount: int, agent: LocalAccount, slippage_tolerance: FixedPoint | None = None
