@@ -198,13 +198,19 @@ async def async_match_contract_call_to_trade(
                     *fn_args,
                 )
             else:
+<<<<<<< HEAD
                 trade_result = await hyperdrive.async_open_long(trade_amount, agent, trade.slippage_tolerance)
             maturity_time_seconds = trade_result.maturity_time_seconds
             wallet_deltas = HyperdriveWalletDeltas(
+=======
+                trade_result = await hyperdrive.async_open_long(agent, trade.trade_amount, trade.slippage_tolerance)
+            wallet_deltas = WalletDeltas(
+>>>>>>> 534d2e53 (adds close long)
                 balance=Quantity(
                     amount=-trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
+<<<<<<< HEAD
                 longs={maturity_time_seconds: Long(trade_result.bond_amount)},
             )
 
@@ -236,6 +242,44 @@ async def async_match_contract_call_to_trade(
                 *fn_args,
             )
             wallet_deltas = HyperdriveWalletDeltas(
+=======
+                longs={FixedPoint(trade_result.maturity_time_seconds): Long(trade_result.bond_amount)},
+            )
+
+        case HyperdriveActionType.CLOSE_LONG:
+            if not trade.mint_time:
+                raise ValueError("Mint time was not provided, can't close long position.")
+            if hyperdrive is None:  # FIXME: temp until api is finished
+                maturity_time_seconds = int(trade.mint_time)
+                min_output = 0
+                fn_args = (
+                    maturity_time_seconds,
+                    trade_amount,
+                    min_output,
+                    agent.checksum_address,
+                    as_underlying,
+                )
+                if trade.slippage_tolerance:
+                    preview_result = smart_contract_preview_transaction(
+                        hyperdrive_contract, agent.checksum_address, "closeLong", *fn_args
+                    )
+                    min_output = (
+                        FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.slippage_tolerance)
+                    ).scaled_value
+                    fn_args = (maturity_time_seconds, trade_amount, min_output, agent.checksum_address, as_underlying)
+                trade_result = await async_transact_and_parse_logs(
+                    web3,
+                    hyperdrive_contract,
+                    agent,
+                    "closeLong",
+                    *fn_args,
+                )
+            else:
+                trade_result = await hyperdrive.async_close_long(
+                    agent, trade.trade_amount, trade.mint_time, trade.slippage_tolerance
+                )
+            wallet_deltas = WalletDeltas(
+>>>>>>> 534d2e53 (adds close long)
                 balance=Quantity(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
