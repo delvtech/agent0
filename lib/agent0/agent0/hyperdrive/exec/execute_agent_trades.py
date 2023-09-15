@@ -451,6 +451,7 @@ async def async_match_contract_call_to_trade(
             )
 
         case HyperdriveActionType.REMOVE_LIQUIDITY:
+<<<<<<< HEAD
             min_output = 0
             fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
             trade_result = await async_transact_and_parse_logs(
@@ -461,6 +462,21 @@ async def async_match_contract_call_to_trade(
                 *fn_args,
             )
             wallet_deltas = HyperdriveWalletDeltas(
+=======
+            if hyperdrive is None:  # FIXME: temp until api is finished
+                min_output = 0
+                fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
+                trade_result = await async_transact_and_parse_logs(
+                    web3,
+                    hyperdrive_contract,
+                    agent,
+                    "removeLiquidity",
+                    *fn_args,
+                )
+            else:
+                trade_result = await hyperdrive.async_remove_liquidity(agent, trade.trade_amount)
+            wallet_deltas = WalletDeltas(
+>>>>>>> 18740350 (remove liquidity)
                 balance=Quantity(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,

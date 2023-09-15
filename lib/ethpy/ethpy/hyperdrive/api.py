@@ -291,6 +291,35 @@ class Hyperdrive:
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "addLiquidity")
         return trade_result
 
+    async def async_remove_liquidity(
+        self,
+        agent: LocalAccount,
+        trade_amount: FixedPoint,
+    ) -> ReceiptBreakdown:
+        """Contract call to remove liquidity from the Hyperdrive pool.
+
+        Arguments
+        ---------
+        agent: LocalAccount
+            The account for the agent that is executing and signing the trade transaction.
+        trade_amount: FixedPoint
+            The size of the position, in base.
+
+        Returns
+        -------
+        ReceiptBreakdown
+            A dataclass containing the absolute values for token quantities changed
+        """
+        agent_checksum_address = Web3.to_checksum_address(agent.address)
+        min_output = 0
+        as_underlying = True
+        fn_args = (trade_amount, min_output, agent_checksum_address, as_underlying)
+        tx_receipt = await async_smart_contract_transact(
+            self.web3, self.hyperdrive_contract, agent, "removeLiquidity", *fn_args
+        )
+        trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "removeLiquidity")
+        return trade_result
+
     # FIXME: TODO: other async trades
 
     # FIXME: TODO:
