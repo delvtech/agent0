@@ -8,14 +8,15 @@ from elfpy import time as elftime
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from eth_typing import BlockNumber
 from eth_utils import address
-from ethpy.base import smart_contract_read
+from ethpy.base import UnknownBlockError, get_transaction_logs, smart_contract_read
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
-from web3.types import BlockData
+from web3.types import BlockData, TxReceipt
 
 from .addresses import HyperdriveAddresses
 from .assets import AssetIdPrefix, encode_asset_id
+from .receipt_breakdown import ReceiptBreakdown
 
 
 def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, Any]:
@@ -211,3 +212,54 @@ def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddress
         address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
     )
     return hyperdrive_contract
+
+
+def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> ReceiptBreakdown:
+    """Decode a Hyperdrive contract transaction receipt to get the changes to the agent's funds.
+
+    Arguments
+    ---------
+    TxReceipt
+        a TypedDict; success can be checked via tx_receipt["status"]
+    hyperdrive_contract : Contract
+        Any deployed web3 contract
+    fn_name : str
+        This function must exist in the compiled contract's ABI
+
+    Returns
+    -------
+    ReceiptBreakdown
+        A dataclass containing the maturity time and the absolute values for token quantities changed
+    """
+    # Sometimes, smart contract transact fails with status 0 with no error message
+    # We throw custom error to catch in trades loop, ignore, and move on
+    # TODO need to track down why this call fails and handle better
+    status = tx_receipt.get("status", None)
+    if status is None:
+        raise AssertionError("Receipt did not return status")
+    if status == 0:
+        raise UnknownBlockError(f"Receipt has no status or status is 0 \n {tx_receipt=}")
+    hyperdrive_event_logs = get_transaction_logs(
+        hyperdrive_contract,
+        tx_receipt,
+        event_names=[fn_name[0].capitalize() + fn_name[1:]],
+    )
+    if len(hyperdrive_event_logs) == 0:
+        raise AssertionError(f"Transaction receipt had no logs\ntx_receipt=\n{tx_receipt}")
+    if len(hyperdrive_event_logs) > 1:
+        raise AssertionError("Too many logs found")
+    log_args = hyperdrive_event_logs[0]["args"]
+    trade_result = ReceiptBreakdown()
+    if "assetId" in log_args:
+        trade_result.asset_id = log_args["assetId"]
+    if "maturityTime" in log_args:
+        trade_result.maturity_time_seconds = log_args["maturityTime"]
+    if "baseAmount" in log_args:
+        trade_result.base_amount = FixedPoint(scaled_value=log_args["baseAmount"])
+    if "bondAmount" in log_args:
+        trade_result.bond_amount = FixedPoint(scaled_value=log_args["bondAmount"])
+    if "lpAmount" in log_args:
+        trade_result.lp_amount = FixedPoint(scaled_value=log_args["lpAmount"])
+    if "withdrawalShareAmount" in log_args:
+        trade_result.withdrawal_share_amount = FixedPoint(scaled_value=log_args["withdrawalShareAmount"])
+    return trade_result

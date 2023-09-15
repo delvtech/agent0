@@ -10,18 +10,20 @@ from agent0.base import Quantity, TokenType
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWalletDeltas, Long, Short
 from elfpy import types
 from elfpy.markets.hyperdrive import HyperdriveMarket
+from elfpy.types import Quantity, TokenType
+from elfpy.wallet.wallet import Long, Short
+from elfpy.wallet.wallet_deltas import WalletDeltas
 from ethpy.base import (
     UnknownBlockError,
     async_smart_contract_transact,
     get_transaction_logs,
     smart_contract_preview_transaction,
 )
-from ethpy.hyperdrive import ReceiptBreakdown, get_hyperdrive_market
+from ethpy.hyperdrive import ReceiptBreakdown, get_hyperdrive_market, parse_logs
 from ethpy.hyperdrive.api import Hyperdrive
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
-from web3.types import TxReceipt
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
@@ -38,57 +40,6 @@ def assert_never(arg: NoReturn) -> NoReturn:
         https://github.com/microsoft/pyright/issues/2569
     """
     assert False, f"Unhandled type: {type(arg).__name__}"
-
-
-def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> ReceiptBreakdown:
-    """Decode a Hyperdrive contract transaction receipt to get the changes to the agent's funds.
-
-    Arguments
-    ---------
-    TxReceipt
-        a TypedDict; success can be checked via tx_receipt["status"]
-    hyperdrive_contract : Contract
-        Any deployed web3 contract
-    fn_name : str
-        This function must exist in the compiled contract's ABI
-
-    Returns
-    -------
-    ReceiptBreakdown
-        A dataclass containing the maturity time and the absolute values for token quantities changed
-    """
-    # Sometimes, smart contract transact fails with status 0 with no error message
-    # We throw custom error to catch in trades loop, ignore, and move on
-    # TODO need to track down why this call fails and handle better
-    status = tx_receipt.get("status", None)
-    if status is None:
-        raise AssertionError("Receipt did not return status")
-    if status == 0:
-        raise UnknownBlockError(f"Receipt has no status or status is 0 \n {tx_receipt=}")
-    hyperdrive_event_logs = get_transaction_logs(
-        hyperdrive_contract,
-        tx_receipt,
-        event_names=[fn_name[0].capitalize() + fn_name[1:]],
-    )
-    if len(hyperdrive_event_logs) == 0:
-        raise AssertionError(f"Transaction receipt had no logs\ntx_receipt=\n{tx_receipt}")
-    if len(hyperdrive_event_logs) > 1:
-        raise AssertionError("Too many logs found")
-    log_args = hyperdrive_event_logs[0]["args"]
-    trade_result = ReceiptBreakdown()
-    if "assetId" in log_args:
-        trade_result.asset_id = log_args["assetId"]
-    if "maturityTime" in log_args:
-        trade_result.maturity_time_seconds = log_args["maturityTime"]
-    if "baseAmount" in log_args:
-        trade_result.base_amount = FixedPoint(scaled_value=log_args["baseAmount"])
-    if "bondAmount" in log_args:
-        trade_result.bond_amount = FixedPoint(scaled_value=log_args["bondAmount"])
-    if "lpAmount" in log_args:
-        trade_result.lp_amount = FixedPoint(scaled_value=log_args["lpAmount"])
-    if "withdrawalShareAmount" in log_args:
-        trade_result.withdrawal_share_amount = FixedPoint(scaled_value=log_args["withdrawalShareAmount"])
-    return trade_result
 
 
 async def async_transact_and_parse_logs(
@@ -227,8 +178,27 @@ async def async_match_contract_call_to_trade(
             raise ValueError(f"{trade.action_type} not supported!")
 
         case HyperdriveActionType.OPEN_LONG:
-            tx_receipt = hyperdrive.async_open_long(trade_amount, agent.checksum_address, trade.slippage_tolerance)
-            trade_result = parse_logs(tx_receipt, hyperdrive.hyperdrive_contract, "openLong")
+            if hyperdrive is None:  # FIXME: Temp until api is finalized
+                min_output = 0
+                fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
+                if trade.slippage_tolerance:
+                    preview_result = smart_contract_preview_transaction(
+                        hyperdrive_contract, agent.checksum_address, "openLong", *fn_args
+                    )
+                    min_output = (
+                        FixedPoint(scaled_value=preview_result["bondProceeds"])
+                        * (FixedPoint(1) - trade.slippage_tolerance)
+                    ).scaled_value
+                    fn_args = (trade_amount, min_output, agent.checksum_address, as_underlying)
+                trade_result = await async_transact_and_parse_logs(
+                    web3,
+                    hyperdrive_contract,
+                    agent,
+                    "openLong",
+                    *fn_args,
+                )
+            else:
+                trade_result = await hyperdrive.async_open_long(trade_amount, agent, trade.slippage_tolerance)
             maturity_time_seconds = trade_result.maturity_time_seconds
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(

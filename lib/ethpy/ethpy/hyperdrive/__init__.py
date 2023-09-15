@@ -8,5 +8,6 @@ from .interface import (
     get_hyperdrive_config,
     get_hyperdrive_market,
     get_hyperdrive_pool_info,
+    parse_logs,
 )
 from .receipt_breakdown import ReceiptBreakdown
