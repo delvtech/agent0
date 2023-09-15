@@ -135,11 +135,10 @@ class Hyperdrive:
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
         agent_checksum_address = Web3.to_checksum_address(agent.address)
-        maturity_time_seconds = int(maturity_time)
         min_output = 0
         as_underlying = True
         fn_args = (
-            maturity_time_seconds,
+            int(maturity_time),
             trade_amount.scaled_value,
             min_output,
             agent_checksum_address,
@@ -153,7 +152,7 @@ class Hyperdrive:
                 FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
             ).scaled_value
             fn_args = (
-                maturity_time_seconds,
+                int(maturity_time),
                 trade_amount.scaled_value,
                 min_output,
                 agent_checksum_address,
@@ -205,6 +204,57 @@ class Hyperdrive:
             self.web3, self.hyperdrive_contract, agent, "openShort", *fn_args
         )
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "openShort")
+        return trade_result
+
+    async def async_close_short(
+        self,
+        agent: LocalAccount,
+        trade_amount: FixedPoint,
+        maturity_time: FixedPoint,
+        slippage_tolerance: FixedPoint | None = None,
+    ) -> ReceiptBreakdown:
+        """Contract call to open a short position.
+
+        Arguments
+        ---------
+        agent: LocalAccount
+            The account for the agent that is executing and signing the trade transaction.
+        trade_amount: FixedPoint
+            The size of the position, in base.
+        maturity_time: FixedPoint
+            The token maturity time in seconds.
+        slippage_tolerance: FixedPoint | None
+            Amount of slippage allowed from the trade.
+            If None, then execute the trade regardless of the slippage.
+            If not None, then the trade will not execute unless the slippage is below this value.
+
+        Returns
+        -------
+        ReceiptBreakdown
+            A dataclass containing the maturity time and the absolute values for token quantities changed
+        """
+        agent_checksum_address = Web3.to_checksum_address(agent.address)
+        min_output = 0
+        as_underlying = True
+        fn_args = (
+            int(maturity_time),
+            trade_amount,
+            min_output,
+            agent_checksum_address,
+            as_underlying,
+        )
+        if slippage_tolerance:
+            preview_result = smart_contract_preview_transaction(
+                self.hyperdrive_contract, agent_checksum_address, "closeShort", *fn_args
+            )
+            min_output = (
+                FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
+            ).scaled_value
+            fn_args = (int(maturity_time), trade_amount, min_output, agent_checksum_address, as_underlying)
+        tx_receipt = await async_smart_contract_transact(
+            self.web3, self.hyperdrive_contract, agent, "closeShort", *fn_args
+        )
+        trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "closeShort")
         return trade_result
 
     # FIXME: TODO: other async trades

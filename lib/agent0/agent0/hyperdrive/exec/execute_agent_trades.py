@@ -343,6 +343,7 @@ async def async_match_contract_call_to_trade(
             )
 
         case HyperdriveActionType.CLOSE_SHORT:
+<<<<<<< HEAD
             if not trade.maturity_time:
                 raise ValueError("Maturity time was not provided, can't close long position.")
             maturity_time_seconds = trade.maturity_time
@@ -370,6 +371,40 @@ async def async_match_contract_call_to_trade(
                 *fn_args,
             )
             wallet_deltas = HyperdriveWalletDeltas(
+=======
+            if not trade.mint_time:
+                raise ValueError("Mint time was not provided, can't close long position.")
+            if hyperdrive is None:  # FIXME: temp until api is finished
+                maturity_time_seconds = int(trade.mint_time)
+                min_output = 0
+                fn_args = (
+                    maturity_time_seconds,
+                    trade_amount,
+                    min_output,
+                    agent.checksum_address,
+                    as_underlying,
+                )
+                if trade.slippage_tolerance:
+                    preview_result = smart_contract_preview_transaction(
+                        hyperdrive_contract, agent.checksum_address, "closeShort", *fn_args
+                    )
+                    min_output = (
+                        FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - trade.slippage_tolerance)
+                    ).scaled_value
+                    fn_args = (maturity_time_seconds, trade_amount, min_output, agent.checksum_address, as_underlying)
+                trade_result = await async_transact_and_parse_logs(
+                    web3,
+                    hyperdrive_contract,
+                    agent,
+                    "closeShort",
+                    *fn_args,
+                )
+            else:
+                trade_result = await hyperdrive.async_close_short(
+                    agent, trade.trade_amount, trade.mint_time, trade.slippage_tolerance
+                )
+            wallet_deltas = WalletDeltas(
+>>>>>>> e0a7fec6 (close short)
                 balance=Quantity(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
