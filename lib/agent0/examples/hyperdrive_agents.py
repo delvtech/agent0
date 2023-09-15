@@ -6,7 +6,7 @@ import logging
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import Policies
+from agent0.hyperdrive.policies import HyperdrivePolicies
 from ethpy import EthConfig
 from fixedpointmath import FixedPoint
 
@@ -33,7 +33,7 @@ env_config = EnvironmentConfig(
 
 agent_config: list[AgentConfig] = [
     AgentConfig(
-        policy=Policies.arbitrage_policy,
+        policy=HyperdrivePolicies.arbitrage_policy,
         number_of_agents=1,
         slippage_tolerance=None,  # No slippage tolerance for arb bot
         # Fixed budgets
@@ -46,7 +46,7 @@ agent_config: list[AgentConfig] = [
         },
     ),
     AgentConfig(
-        policy=Policies.random_agent,
+        policy=HyperdrivePolicies.random_agent,
         number_of_agents=0,
         slippage_tolerance=FixedPoint("0.0001"),
         # Fixed budget
