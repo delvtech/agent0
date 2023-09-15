@@ -288,12 +288,26 @@ async def async_match_contract_call_to_trade(
             )
 
         case HyperdriveActionType.OPEN_SHORT:
-            max_deposit = eth_utils.currency.MAX_WEI
-            fn_args = (trade_amount, max_deposit, agent.checksum_address, as_underlying)
-            if trade.slippage_tolerance:
-                preview_result = smart_contract_preview_transaction(
-                    hyperdrive_contract, agent.checksum_address, "openShort", *fn_args
+            if hyperdrive is None:  # FIXME: temp until api is finished
+                max_deposit = eth_utils.currency.MAX_WEI
+                fn_args = (trade_amount, max_deposit, agent.checksum_address, as_underlying)
+                if trade.slippage_tolerance:
+                    preview_result = smart_contract_preview_transaction(
+                        hyperdrive_contract, agent.checksum_address, "openShort", *fn_args
+                    )
+                    max_deposit = (
+                        FixedPoint(scaled_value=preview_result["traderDeposit"])
+                        * (FixedPoint(1) + trade.slippage_tolerance)
+                    ).scaled_value
+                fn_args = (trade_amount, max_deposit, agent.checksum_address, as_underlying)
+                trade_result = await async_transact_and_parse_logs(
+                    web3,
+                    hyperdrive_contract,
+                    agent,
+                    "openShort",
+                    *fn_args,
                 )
+<<<<<<< HEAD
                 max_deposit = (
                     FixedPoint(scaled_value=preview_result["traderDeposit"])
                     * (FixedPoint(1) + trade.slippage_tolerance)
@@ -308,12 +322,21 @@ async def async_match_contract_call_to_trade(
             )
             maturity_time_seconds = trade_result.maturity_time_seconds
             wallet_deltas = HyperdriveWalletDeltas(
+=======
+            else:
+                trade_result = await hyperdrive.async_open_short(agent, trade.trade_amount, trade.slippage_tolerance)
+            wallet_deltas = WalletDeltas(
+>>>>>>> 6bed08f9 (open short)
                 balance=Quantity(
                     amount=-trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
                 shorts={
+<<<<<<< HEAD
                     maturity_time_seconds: Short(
+=======
+                    FixedPoint(trade_result.maturity_time_seconds): Short(
+>>>>>>> 6bed08f9 (open short)
                         balance=trade_result.bond_amount,
                     )
                 },

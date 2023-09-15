@@ -1,13 +1,13 @@
 """High-level interface for the Hyperdrive market"""
 from __future__ import annotations
 
+import eth_utils
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI, BlockNumber
 from ethpy import EthConfig
 from ethpy.base import async_smart_contract_transact, smart_contract_preview_transaction
 from fixedpointmath import FixedPoint
 from web3 import Web3
-from web3.contract.contract import Contract
 from web3.types import BlockData
 
 from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
@@ -165,7 +165,52 @@ class Hyperdrive:
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "closeLong")
         return trade_result
 
+    async def async_open_short(
+        self,
+        agent: LocalAccount,
+        trade_amount: FixedPoint,
+        slippage_tolerance: FixedPoint | None = None,
+    ) -> ReceiptBreakdown:
+        """Contract call to open a short position.
+
+        Arguments
+        ---------
+        agent: LocalAccount
+            The account for the agent that is executing and signing the trade transaction.
+        trade_amount: FixedPoint
+            The size of the position, in base.
+        slippage_tolerance: FixedPoint | None
+            Amount of slippage allowed from the trade.
+            If None, then execute the trade regardless of the slippage.
+            If not None, then the trade will not execute unless the slippage is below this value.
+
+        Returns
+        -------
+        ReceiptBreakdown
+            A dataclass containing the maturity time and the absolute values for token quantities changed
+        """
+        agent_checksum_address = Web3.to_checksum_address(agent.address)
+        as_underlying = True
+        max_deposit = eth_utils.currency.MAX_WEI
+        fn_args = (trade_amount.scaled_value, max_deposit, agent_checksum_address, as_underlying)
+        if slippage_tolerance:
+            preview_result = smart_contract_preview_transaction(
+                self.hyperdrive_contract, agent_checksum_address, "openShort", *fn_args
+            )
+            max_deposit = (
+                FixedPoint(scaled_value=preview_result["traderDeposit"]) * (FixedPoint(1) + slippage_tolerance)
+            ).scaled_value
+        fn_args = (trade_amount.scaled_value, max_deposit, agent_checksum_address, as_underlying)
+        tx_receipt = await async_smart_contract_transact(
+            self.web3, self.hyperdrive_contract, agent, "openShort", *fn_args
+        )
+        trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "openShort")
+        return trade_result
+
     # FIXME: TODO: other async trades
+
+    # FIXME: TODO:
+    # def balance_of(agent):
 
     # FIXME: TODO:
     # def get_max_long(budget):
