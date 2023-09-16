@@ -24,7 +24,7 @@ from .interface import get_hyperdrive_config, get_hyperdrive_pool_info, parse_lo
 from .receipt_breakdown import ReceiptBreakdown
 
 
-class Hyperdrive:
+class HyperdriveInterface:
     """End-point api for interfacing with Hyperdrive"""
 
     def __init__(
@@ -62,11 +62,6 @@ class Hyperdrive:
                 get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, self.current_block_number),
             )
         return self._pool_info
-
-    @_pool_info.setter
-    def _pool_info(self, value: Any) -> None:
-        """Not allowed to set the pool info manually"""
-        raise ValueError("_pool_info is immutable")
 
     @property
     def current_block(self) -> BlockData:
@@ -460,6 +455,8 @@ class Hyperdrive:
         FixedPoint
             The maximum long as a FixedPoint representation of a Solidity uint256 value.
         """
+        # pylint: disable=no-member
+        # TODO: automate acquision of current_exposure inside of pyperdrive
         pool_config_str = PoolConfig(
             base_token=str(self.pool_config["base_token"]),
             initial_share_price=str(self.pool_config["initial_share_price"]),
@@ -492,7 +489,7 @@ class Hyperdrive:
             lp_share_price=str(self.pool_info["lp_share_price"]),
             long_exposure=str(self.pool_info["long_exposure"]),
         )
-        max_long = pyperdrive.get_max_long(pool_config_str, pool_info_str, str(budget) checkpoint_exposure="0")
+        max_long = pyperdrive.get_max_long(pool_config_str, pool_info_str, str(budget), checkpoint_exposure="0")
         return FixedPoint(max_long)
 
     def get_max_short(self, budget: FixedPoint) -> FixedPoint:
@@ -508,6 +505,7 @@ class Hyperdrive:
         FixedPoint
             The maximum long as a FixedPoint representation of a Solidity uint256 value.
         """
+        # pylint: disable=no-member
         pool_config_str = PoolConfig(
             base_token=str(self.pool_config["base_token"]),
             initial_share_price=str(self.pool_config["initial_share_price"]),

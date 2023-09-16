@@ -20,7 +20,7 @@ from ethpy.base import (
     smart_contract_preview_transaction,
 )
 from ethpy.hyperdrive import ReceiptBreakdown, get_hyperdrive_market, parse_logs
-from ethpy.hyperdrive.api import Hyperdrive
+from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -141,8 +141,13 @@ async def async_match_contract_call_to_trade(
     hyperdrive_contract: Contract,
     agent: HyperdriveAgent,
     trade_envelope: types.Trade[HyperdriveMarketAction],
+<<<<<<< HEAD
     hyperdrive: Hyperdrive | None = None,  # FIXME: Optional for now, to test out Hyperdrive API
 ) -> HyperdriveWalletDeltas:
+=======
+    hyperdrive: HyperdriveInterface | None = None,  # FIXME: Optional for now, to test out Hyperdrive API
+) -> WalletDeltas:
+>>>>>>> 9453b16b (first attempt at a test (fails))
     """Match statement that executes the smart contract trade based on the provided type.
 
     Arguments
