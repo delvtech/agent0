@@ -6,7 +6,7 @@ from agent0.base.config import AgentConfig, Budget, EnvironmentConfig
 from agent0.base.policies import BasePolicies
 from agent0.hyperdrive.policies import HyperdrivePolicies
 from fixedpointmath import FixedPoint
-from stable_baselines3 import PPO
+from stable_baselines3 import DQN
 
 # Stable baselines repo: https://github.com/DLR-RM/stable-baselines3
 # The limiting factors of what algorithms you can use depend on the action space
@@ -96,17 +96,14 @@ env = gym.make(
 )
 
 # Training
-model = PPO("MlpPolicy", env, verbose=1)
-model.learn(total_timesteps=10_000)
+model = DQN("MlpPolicy", env, verbose=1)
+model.learn(total_timesteps=10_000, log_interval=10)
+model.save("dqn_simple_hyperdrive")
 
 # Evaluation
-# TODO do we need to implement a vectorized environment?
-vec_env = model.get_env()
-assert vec_env is not None
-obs = vec_env.reset()
-for i in range(1000):
-    action, _states = model.predict(obs)
-    obs, reward, done, info = vec_env.step(action)
-    # TODO visualize
-
-env.close()
+obs, info = env.reset()
+while True:
+    action, _states = model.predict(obs, deterministic=True)
+    obs, reward, terminated, truncated, info = env.step(action)
+    if terminated or truncated:
+        obs, info = env.reset()
