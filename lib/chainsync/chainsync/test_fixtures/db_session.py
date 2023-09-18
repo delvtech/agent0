@@ -23,7 +23,7 @@ def psql_docker() -> Iterator[PostgresConfig]:
         POSTGRES_USER="admin",
         POSTGRES_PASSWORD="password",
         POSTGRES_DB="postgres_db_test",
-        POSTGRES_HOST="localhost",
+        POSTGRES_HOST="127.0.0.1",
         POSTGRES_PORT=5555,
     )
 
@@ -36,7 +36,7 @@ def psql_docker() -> Iterator[PostgresConfig]:
             "POSTGRES_PASSWORD": postgres_config.POSTGRES_PASSWORD,
         },
         name="test_postgres",
-        ports={"5432/tcp": ("localhost", postgres_config.POSTGRES_PORT)},
+        ports={"5432/tcp": ("127.0.0.1", postgres_config.POSTGRES_PORT)},
         detach=True,
         remove=True,
     )
