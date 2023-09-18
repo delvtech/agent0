@@ -90,7 +90,8 @@ wallet_positions = wallet_positions.reset_index()
 
 # Plot pnl over time
 main_fig = mpf.figure(style="mike", figsize=(15, 15))
-(ax_pnl, ax_base, ax_long, ax_short, ax_lp, ax_withdraw) = main_fig.subplots(6, 1, sharex=True)
+# matplotlib doesn't play nice with types
+(ax_pnl, ax_base, ax_long, ax_short, ax_lp, ax_withdraw) = main_fig.subplots(6, 1, sharex=True)  # type: ignore
 
 for addr in pnl_over_time["walletAddress"].unique():
     format_name = user_lookup.set_index("address").loc[addr]["format_name"]
