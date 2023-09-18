@@ -11,17 +11,24 @@ import gymnasium as gym
 import numpy as np
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import (async_transact_and_parse_logs,
-                                    create_and_fund_user_account, fund_agents,
-                                    get_agent_accounts, trade_if_new_block)
+from agent0.hyperdrive.exec import (
+    async_transact_and_parse_logs,
+    create_and_fund_user_account,
+    fund_agents,
+    get_agent_accounts,
+    trade_if_new_block,
+)
 from chainsync.analysis import calc_spot_price
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import smart_contract_preview_transaction
-from ethpy.hyperdrive import (HyperdriveAddresses,
-                              fetch_hyperdrive_address_from_url,
-                              get_hyperdrive_config, get_hyperdrive_pool_info,
-                              get_web3_and_hyperdrive_contracts)
+from ethpy.hyperdrive import (
+    HyperdriveAddresses,
+    fetch_hyperdrive_address_from_url,
+    get_hyperdrive_config,
+    get_hyperdrive_pool_info,
+    get_web3_and_hyperdrive_contracts,
+)
 from gymnasium import spaces
 
 # Global suppression of warnings, TODO fix
@@ -178,6 +185,10 @@ class SimpleHyperdriveEnv(gym.Env):
         tuple[ObsType, dict[str, Any]]
             The observation and info from the environment
         """
+
+        # If there is an open position, close it
+        self.do_trade(close_only=True)
+
         super().reset(seed=seed, options=options)
 
         # Build accounts env var
@@ -225,6 +236,102 @@ class SimpleHyperdriveEnv(gym.Env):
         info = self._get_info()
 
         return observation, info
+
+    def do_trade(self, close_only=False):
+        # Do nothing if no position open and we're doing cleanup
+        if close_only:
+            if self._position is None:
+                return False
+
+        assert self._position is not None
+        assert self._account is not None
+
+        terminated = False
+        self._position = self._position.opposite()
+        if self._position == Positions.Long:
+            # Close short position (if exists), open long
+            if self._open_position is not None:
+                # Close short
+                fn_args = (
+                    self._open_position.maturity_time_seconds,
+                    self._open_position.bond_amount.scaled_value,
+                    0,
+                    self._account.checksum_address,
+                    True,
+                )
+                try:
+                    trade_result = asyncio.run(
+                        async_transact_and_parse_logs(
+                            self.web3, self.hyperdrive_contract, self._account, "closeShort", *fn_args
+                        )
+                    )
+                    self._base_delta += trade_result.base_amount.scaled_value
+                except Exception as err:
+                    print(f"Warning: Failed to close short: {err=}")
+                    terminated = True
+
+            if not close_only:
+                # Open long
+                fn_args = (
+                    self.long_base_amount,
+                    0,
+                    self._account.checksum_address,
+                    True,
+                )
+
+                try:
+                    self._open_position = asyncio.run(
+                        async_transact_and_parse_logs(
+                            self.web3, self.hyperdrive_contract, self._account, "openLong", *fn_args
+                        )
+                    )
+                    self._base_delta -= self._open_position.base_amount.scaled_value
+                except Exception as err:
+                    print(f"Warning: Failed to open long: {err=}")
+                    terminated = True
+
+        elif self._position == Positions.Short:
+            # Close long position (if exists), open short
+            if self._open_position is not None:
+                # Close long
+                fn_args = (
+                    self._open_position.maturity_time_seconds,
+                    self._open_position.bond_amount.scaled_value,
+                    0,
+                    self._account.checksum_address,
+                    True,
+                )
+                try:
+                    trade_result = asyncio.run(
+                        async_transact_and_parse_logs(
+                            self.web3, self.hyperdrive_contract, self._account, "closeLong", *fn_args
+                        )
+                    )
+                    self._base_delta += trade_result.base_amount.scaled_value
+                except Exception as err:
+                    print(f"Warning: Failed to close long: {err=}")
+                    terminated = True
+
+            if not close_only:
+                # Open short
+                max_deposit = eth_utils.currency.MAX_WEI
+                fn_args = (
+                    self.short_bond_amount,
+                    max_deposit,
+                    self._account.checksum_address,
+                    True,
+                )
+                try:
+                    self._open_position = asyncio.run(
+                        async_transact_and_parse_logs(
+                            self.web3, self.hyperdrive_contract, self._account, "openShort", *fn_args
+                        )
+                    )
+                    self._base_delta -= self._open_position.base_amount.scaled_value
+                except Exception as err:
+                    print(f"Warning: Failed to open short: {err=}")
+                    terminated = True
+        return terminated
 
     def step(self, action: Actions) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         """Resets the environment to an initial internal state.
@@ -279,88 +386,7 @@ class SimpleHyperdriveEnv(gym.Env):
 
         terminated = False
         if trade:
-            self._position = self._position.opposite()
-            # TODO do trade based on position
-            if self._position == Positions.Long:
-                # Close short position (if exists), open long
-                if self._open_position is not None:
-                    # Close short
-                    fn_args = (
-                        self._open_position.maturity_time_seconds,
-                        self._open_position.bond_amount.scaled_value,
-                        0,
-                        self._account.checksum_address,
-                        True,
-                    )
-                    try:
-                        trade_result = asyncio.run(
-                            async_transact_and_parse_logs(
-                                self.web3, self.hyperdrive_contract, self._account, "closeShort", *fn_args
-                            )
-                        )
-                        self._base_delta += trade_result.base_amount.scaled_value
-                    except Exception as err:
-                        print(f"Warning: Failed to close short: {err=}")
-                        terminated = True
-
-                # Open long
-                fn_args = (
-                    self.long_base_amount,
-                    0,
-                    self._account.checksum_address,
-                    True,
-                )
-
-                try:
-                    self._open_position = asyncio.run(
-                        async_transact_and_parse_logs(
-                            self.web3, self.hyperdrive_contract, self._account, "openLong", *fn_args
-                        )
-                    )
-                    self._base_delta -= self._open_position.base_amount.scaled_value
-                except Exception as err:
-                    print(f"Warning: Failed to open long: {err=}")
-                    terminated = True
-
-            elif self._position == Positions.Short:
-                # Close long position (if exists), open short
-                if self._open_position is not None:
-                    # Close long
-                    fn_args = (
-                        self._open_position.maturity_time_seconds,
-                        self._open_position.bond_amount.scaled_value,
-                        0,
-                        self._account.checksum_address,
-                        True,
-                    )
-                    try:
-                        trade_result = asyncio.run(
-                            async_transact_and_parse_logs(
-                                self.web3, self.hyperdrive_contract, self._account, "closeLong", *fn_args
-                            )
-                        )
-                        self._base_delta += trade_result.base_amount.scaled_value
-                    except Exception as err:
-                        print(f"Warning: Failed to close long: {err=}")
-                        terminated = True
-                # Open short
-                max_deposit = eth_utils.currency.MAX_WEI
-                fn_args = (
-                    self.short_bond_amount,
-                    max_deposit,
-                    self._account.checksum_address,
-                    True,
-                )
-                try:
-                    self._open_position = asyncio.run(
-                        async_transact_and_parse_logs(
-                            self.web3, self.hyperdrive_contract, self._account, "openShort", *fn_args
-                        )
-                    )
-                    self._base_delta -= self._open_position.base_amount.scaled_value
-                except Exception as err:
-                    print(f"Warning: Failed to open short: {err=}")
-                    terminated = True
+            terminated = self.do_trade()
 
         observation = self._get_observation()
         info = self._get_info()
@@ -368,6 +394,7 @@ class SimpleHyperdriveEnv(gym.Env):
 
         self._step_count += 1
         truncated = False
+
         if self._step_count > self.episode_length:
             truncated = True
 
