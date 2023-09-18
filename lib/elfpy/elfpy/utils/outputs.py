@@ -9,9 +9,9 @@ from matplotlib import gridspec
 
 if TYPE_CHECKING:
     import pandas as pd
+    from matplotlib.axes import Axes
     from matplotlib.figure import Figure
     from matplotlib.gridspec import GridSpec
-    from matplotlib.pyplot import Axes
 
 # pylint: disable=too-many-locals
 # pyright: reportGeneralTypeIssues=false

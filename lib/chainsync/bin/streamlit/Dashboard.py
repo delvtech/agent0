@@ -54,7 +54,8 @@ ticker_placeholder = st.empty()
 main_placeholder = st.empty()
 
 main_fig = mpf.figure(style="mike", figsize=(15, 15))
-(ax_ohlcv, ax_fixed_rate, ax_positions) = main_fig.subplots(3, 1, sharex=True)
+# matplotlib doesn't play nice with types
+(ax_ohlcv, ax_fixed_rate, ax_positions) = main_fig.subplots(3, 1, sharex=True)  # type: ignore
 
 while True:
     # Wallet addr to username mapping
