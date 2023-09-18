@@ -85,4 +85,6 @@ pip install agent0[lateral] # Installs dependent sub-packages from git (e.g., et
 
 You can test against a local testnet node using [Anvil](<[url](https://book.getfoundry.sh/reference/anvil/)>) with `anvil`.
 
-We use [Docker](docs.docker.com/get-docker) for building images.
+We use [Docker](docs.docker.com/get-docker) for building images. Tests also use docker to launch a local postgres server.
+If there are Docker issues when running tests, ensure "Allow the default Docker socket to be used" is set under Advanced settings (typically when running
+Docker Desktop on Macs).
