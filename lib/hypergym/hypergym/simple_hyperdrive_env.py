@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import warnings
 from enum import Enum
 from typing import Any
 
@@ -29,6 +30,9 @@ from ethpy.hyperdrive import (
     get_web3_and_hyperdrive_contracts,
 )
 from gymnasium import spaces
+
+# Global suppression of warnings, TODO fix
+warnings.filterwarnings("ignore")
 
 
 class Actions(Enum):
@@ -95,8 +99,12 @@ class SimpleHyperdriveEnv(gym.Env):
         self.long_base_amount = gym_config["long_base_amount"]
         # The constant bond amount to open a short
         self.short_bond_amount = gym_config["short_bond_amount"]
+        # Scaling for reward
+        self.reward_scale = gym_config["reward_scale"]
         # Number of blocks (current and previous blocks) returned as a gym observation
         self.window_size = gym_config["window_size"]
+        # Length of one episode for RL training
+        self.episode_length = gym_config["episode_length"]
 
         # Defines environment attributes
 
@@ -156,7 +164,9 @@ class SimpleHyperdriveEnv(gym.Env):
         self._open_position = None
         self._obs_buffer = np.zeros((self.window_size, 2), dtype=np.float64)
         self._account = None
-        self.last_executed_block = 0
+        self._base_delta = 0
+        self._last_executed_block = 0
+        self._step_count = 0
 
     def reset(
         self, seed: int | None = None, options: dict[str, Any] | None = None
@@ -215,8 +225,9 @@ class SimpleHyperdriveEnv(gym.Env):
         self._open_position = None
         self._obs_buffer = np.zeros((self.window_size, 2), dtype=np.float64)
         self._last_executed_block = BlockNumber(0)
+        self._base_delta = 0
+        self._step_count = 0
 
-        # TODO
         observation = self._get_observation()
         info = self._get_info()
 
@@ -248,12 +259,12 @@ class SimpleHyperdriveEnv(gym.Env):
         """
 
         # Run other bots
-        self.last_executed_block = trade_if_new_block(
+        self._last_executed_block = trade_if_new_block(
             self.web3,
             self.hyperdrive_contract,
             self.agent_accounts,
             self.env_config.halt_on_errors,
-            self.last_executed_block,
+            self._last_executed_block,
         )
 
         assert self._account is not None
@@ -292,6 +303,7 @@ class SimpleHyperdriveEnv(gym.Env):
                             self.web3, self.hyperdrive_contract, self._account, "closeShort", *fn_args
                         )
                     )
+                    self._base_delta += trade_result.base_amount.scaled_value
 
                 # Open long
                 fn_args = (
@@ -306,6 +318,7 @@ class SimpleHyperdriveEnv(gym.Env):
                         self.web3, self.hyperdrive_contract, self._account, "openLong", *fn_args
                     )
                 )
+                self._base_delta -= self._open_position.base_amount.scaled_value
 
             elif self._position == Positions.Short:
                 # Close long position (if exists), open short
@@ -318,11 +331,12 @@ class SimpleHyperdriveEnv(gym.Env):
                         self._account.checksum_address,
                         True,
                     )
-                    tx_receipt = asyncio.run(
+                    trade_result = asyncio.run(
                         async_transact_and_parse_logs(
                             self.web3, self.hyperdrive_contract, self._account, "closeLong", *fn_args
                         )
                     )
+                    self._base_delta += trade_result.base_amount.scaled_value
                 # Open short
                 max_deposit = eth_utils.currency.MAX_WEI
                 fn_args = (
@@ -336,12 +350,19 @@ class SimpleHyperdriveEnv(gym.Env):
                         self.web3, self.hyperdrive_contract, self._account, "openShort", *fn_args
                     )
                 )
+                self._base_delta -= self._open_position.base_amount.scaled_value
 
         observation = self._get_observation()
         info = self._get_info()
         step_reward = self._calculate_reward()
 
-        return observation, step_reward, False, False, info
+        self._step_count += 1
+        truncated = False
+        if self._step_count > self.episode_length:
+            truncated = True
+
+        # TODO when does the episode stop?
+        return observation, step_reward, False, truncated, info
 
     def _get_info(self) -> dict:
         # TODO return aux info here
@@ -373,8 +394,7 @@ class SimpleHyperdriveEnv(gym.Env):
     def _calculate_reward(self) -> float:
         assert self._account is not None
         current_block = self.web3.eth.get_block_number()
-        # TODO calculate the pnl of closing the current position
-        base_pnl = 0  # TODO
+        raw_reward = self._base_delta
         # TODO these functions should be in hyperdrive_sdk
         if self._open_position and self._position == Positions.Long:
             fn_args = (
@@ -391,6 +411,7 @@ class SimpleHyperdriveEnv(gym.Env):
                 *fn_args,
                 block_identifier=current_block,
             )
+            raw_reward += position_pnl["value"]
         elif self._open_position and self._position == Positions.Short:
             fn_args = (
                 self._open_position.maturity_time_seconds,
@@ -406,5 +427,6 @@ class SimpleHyperdriveEnv(gym.Env):
                 *fn_args,
                 block_identifier=current_block,
             )
+            raw_reward += position_pnl["value"]
 
-        return 0.0
+        return raw_reward * self.reward_scale

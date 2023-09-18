@@ -10,14 +10,16 @@ from fixedpointmath import FixedPoint
 gym_config = {
     "long_base_amount": int(1e12),
     "short_bond_amount": int(1e12),
+    "reward_scale": 1e-12,
     "window_size": 10,
+    "episode_length": 100,
 }
 
 # Define config for chain env
 # Build environment config
 env_config = EnvironmentConfig(
     delete_previous_logs=False,
-    halt_on_errors=True,
+    halt_on_errors=False,
     log_filename="rl_random_trade_log",
     log_level=logging.INFO,
     log_stdout=True,
