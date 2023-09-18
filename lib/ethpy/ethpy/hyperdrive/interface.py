@@ -73,8 +73,8 @@ def get_hyperdrive_checkpoint_info(
 
     Returns
     -------
-    Checkpoint
-        A Checkpoint object ready to be inserted into Postgres
+    dict
+        A dictionary containing all of the Hyperdrive checkpoint info
     """
     current_block: BlockData = web3.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
@@ -86,7 +86,7 @@ def get_hyperdrive_checkpoint_info(
         "timestamp": datetime.fromtimestamp(current_block_timestamp),
         "sharePrice": FixedPoint(scaled_value=checkpoint_data["sharePrice"]),
         "longSharePrice": FixedPoint(scaled_value=checkpoint_data["longSharePrice"]),
-        "shortBaseVolume": FixedPoint(scaled_value=checkpoint_data["shortBaseVolume"]),
+        "longExposure": FixedPoint(scaled_value=checkpoint_data["longExposure"]),
     }
 
 

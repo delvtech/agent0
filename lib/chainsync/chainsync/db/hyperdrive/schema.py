@@ -53,7 +53,7 @@ class CheckpointInfo(Base):
     timestamp: Mapped[datetime] = mapped_column(DateTime)
     sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     longSharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    shortBaseVolume: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    longExposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
 class PoolInfo(Base):
