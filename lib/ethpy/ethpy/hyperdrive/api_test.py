@@ -9,7 +9,6 @@ from ethpy import EthConfig
 from ethpy.base.transactions import smart_contract_read
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.api import HyperdriveInterface
-from ethpy.test_fixtures import local_chain, local_hyperdrive_chain  # pylint: disable=unused-import, ungrouped-imports
 from ethpy.test_fixtures.local_chain import LocalHyperdriveChain
 from web3 import HTTPProvider
 
@@ -28,7 +27,7 @@ class TestHyperdriveInterface:
         rpc_uri = uri if uri else URI("http://localhost:8545")
         deploy_account: LocalAccount = local_hyperdrive_chain.deploy_account
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
-        eth_config = EthConfig(artifacts_uri="http://localhost:8080", rpc_uri=rpc_uri)  # using default abi dir
+        eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri)  # using default abi dir
         hyperdrive = HyperdriveInterface(eth_config)
         pool_config = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolConfig")
         assert pool_config == hyperdrive.pool_config

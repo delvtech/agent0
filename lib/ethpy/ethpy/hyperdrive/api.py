@@ -7,20 +7,21 @@ import eth_utils
 import pyperdrive
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI, BlockNumber
-from ethpy import EthConfig
+from ethpy import EthConfig, build_eth_config
 from ethpy.base import (
     async_smart_contract_transact,
     get_account_balance,
     smart_contract_preview_transaction,
     smart_contract_read,
 )
+from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from fixedpointmath import FixedPoint
 from pyperdrive.types import Fees, PoolConfig, PoolInfo
 from web3 import Web3
 from web3.types import BlockData, Timestamp
 
 from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
-from .interface import get_hyperdrive_config, get_hyperdrive_pool_info, parse_logs
+from .interface import get_hyperdrive_config, get_hyperdrive_pool_info, get_hyperdrive_checkpoint_info, parse_logs
 from .receipt_breakdown import ReceiptBreakdown
 
 
@@ -31,24 +32,40 @@ class HyperdriveInterface:
         self,
         eth_config: EthConfig | None = None,
         *,  # kw-args only from here forward
-        artifacts_uri: str | URI | None = None,
+        artifacts: str | URI | HyperdriveAddresses | None = None,
         rpc_uri: str | URI | None = None,
         abi_dir: str | None = None,
     ) -> None:
         """The Hyperdrive API can be initialized with either an EthConfig,
         or strings corresponding to the required URIs and directories.
+
+        ## TODO: Write out options for initializing HyperdriveInterface
+            ## or: PR to fix this to happen behind the scenes in EthConfig
+            ## or: Make an issue to fix EthConfig so that it handles all of this optional argument bullshit
+        ## TODO: Change pyperdrive interface to take str OR python FixedPoint objs; use FixedPoint here.
+        ## TODO: Add cached checkpoint & use that in get_max_long
         """
+        if all([eth_config is None, artifacts is None, rpc_uri is None, abi_dir is None]):
+            eth_config = build_eth_config()
         if eth_config is None:
-            if artifacts_uri is None or rpc_uri is None or abi_dir is None:
+            if artifacts is None or rpc_uri is None or abi_dir is None:
                 raise AssertionError("if eth_config is None, then all of the remaining arguments must be set.")
-            self.config = EthConfig(artifacts_uri, rpc_uri, abi_dir)
+            if isinstance(artifacts, HyperdriveAddresses):
+                self.config = EthConfig("Not used", rpc_uri, abi_dir)
+                addresses_arg = artifacts
+            else:  # str or URI
+                self.config = EthConfig(artifacts, rpc_uri, abi_dir)
+                addresses_arg = None
         if eth_config is not None:
-            if not all([artifacts_uri is None, rpc_uri is None, abi_dir is None]):
+            if not all([artifacts is None, rpc_uri is None, abi_dir is None]):
                 raise AssertionError("if eth_config is not None, then none of the remaining arguments can be set.")
             self.config = eth_config
-        self.web3, self.base_token_contract, self.hyperdrive_contract = get_web3_and_hyperdrive_contracts(self.config)
+        self.web3, self.base_token_contract, self.hyperdrive_contract = get_web3_and_hyperdrive_contracts(
+            self.config, addresses_arg
+        )
         self.pool_config = get_hyperdrive_config(self.hyperdrive_contract)
         self._pool_info = get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, self.current_block_number)
+        self._latest_checkpoint = get_hyperdrive_checkpoint_info(self.web3, self.hyperdrive_contract, self.current_block_number)
         self.last_state_block = self.web3.eth.get_block("latest")
 
     @property
@@ -62,6 +79,9 @@ class HyperdriveInterface:
                 get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, self.current_block_number),
             )
         return self._pool_info
+    
+    @property
+    def latest_checkpoint(self):
 
     @property
     def current_block(self) -> BlockData:
