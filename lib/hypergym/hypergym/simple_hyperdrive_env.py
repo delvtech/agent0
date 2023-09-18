@@ -5,11 +5,11 @@ import os
 from enum import Enum
 from typing import Any
 
+import eth_utils
 import gymnasium as gym
 import numpy as np
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.exec import (
     async_transact_and_parse_logs,
     create_and_fund_user_account,
@@ -18,7 +18,6 @@ from agent0.hyperdrive.exec import (
     trade_if_new_block,
 )
 from chainsync.analysis import calc_spot_price
-from eth_account.account import Account
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import smart_contract_preview_transaction
@@ -316,6 +315,7 @@ class SimpleHyperdriveEnv(gym.Env):
                         self._open_position.maturity_time_seconds,
                         self._open_position.bond_amount.scaled_value,
                         0,
+                        self._account.checksum_address,
                         True,
                     )
                     tx_receipt = asyncio.run(
@@ -324,9 +324,10 @@ class SimpleHyperdriveEnv(gym.Env):
                         )
                     )
                 # Open short
+                max_deposit = eth_utils.currency.MAX_WEI
                 fn_args = (
                     self.short_bond_amount,
-                    0,
+                    max_deposit,
                     self._account.checksum_address,
                     True,
                 )
@@ -380,6 +381,7 @@ class SimpleHyperdriveEnv(gym.Env):
                 self._open_position.maturity_time_seconds,
                 self._open_position.bond_amount.scaled_value,
                 0,
+                self._account.checksum_address,
                 True,
             )
             position_pnl = smart_contract_preview_transaction(
@@ -394,6 +396,7 @@ class SimpleHyperdriveEnv(gym.Env):
                 self._open_position.maturity_time_seconds,
                 self._open_position.bond_amount.scaled_value,
                 0,
+                self._account.checksum_address,
                 True,
             )
             position_pnl = smart_contract_preview_transaction(

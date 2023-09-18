@@ -8,8 +8,8 @@ from agent0.hyperdrive.policies import HyperdrivePolicies
 from fixedpointmath import FixedPoint
 
 gym_config = {
-    "long_base_amount": int(1e9),
-    "short_bond_amount": int(1e9),
+    "long_base_amount": int(1e12),
+    "short_bond_amount": int(1e12),
     "window_size": 10,
 }
 
