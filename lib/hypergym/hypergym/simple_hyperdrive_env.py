@@ -11,24 +11,17 @@ import gymnasium as gym
 import numpy as np
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import (
-    async_transact_and_parse_logs,
-    create_and_fund_user_account,
-    fund_agents,
-    get_agent_accounts,
-    trade_if_new_block,
-)
+from agent0.hyperdrive.exec import (async_transact_and_parse_logs,
+                                    create_and_fund_user_account, fund_agents,
+                                    get_agent_accounts, trade_if_new_block)
 from chainsync.analysis import calc_spot_price
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import smart_contract_preview_transaction
-from ethpy.hyperdrive import (
-    HyperdriveAddresses,
-    fetch_hyperdrive_address_from_url,
-    get_hyperdrive_config,
-    get_hyperdrive_pool_info,
-    get_web3_and_hyperdrive_contracts,
-)
+from ethpy.hyperdrive import (HyperdriveAddresses,
+                              fetch_hyperdrive_address_from_url,
+                              get_hyperdrive_config, get_hyperdrive_pool_info,
+                              get_web3_and_hyperdrive_contracts)
 from gymnasium import spaces
 
 # Global suppression of warnings, TODO fix
@@ -284,6 +277,7 @@ class SimpleHyperdriveEnv(gym.Env):
         ):
             trade = True
 
+        terminated = False
         if trade:
             self._position = self._position.opposite()
             # TODO do trade based on position
@@ -298,12 +292,16 @@ class SimpleHyperdriveEnv(gym.Env):
                         self._account.checksum_address,
                         True,
                     )
-                    trade_result = asyncio.run(
-                        async_transact_and_parse_logs(
-                            self.web3, self.hyperdrive_contract, self._account, "closeShort", *fn_args
+                    try:
+                        trade_result = asyncio.run(
+                            async_transact_and_parse_logs(
+                                self.web3, self.hyperdrive_contract, self._account, "closeShort", *fn_args
+                            )
                         )
-                    )
-                    self._base_delta += trade_result.base_amount.scaled_value
+                        self._base_delta += trade_result.base_amount.scaled_value
+                    except Exception as err:
+                        print(f"Warning: Failed to close short: {err=}")
+                        terminated = True
 
                 # Open long
                 fn_args = (
@@ -313,12 +311,16 @@ class SimpleHyperdriveEnv(gym.Env):
                     True,
                 )
 
-                self._open_position = asyncio.run(
-                    async_transact_and_parse_logs(
-                        self.web3, self.hyperdrive_contract, self._account, "openLong", *fn_args
+                try:
+                    self._open_position = asyncio.run(
+                        async_transact_and_parse_logs(
+                            self.web3, self.hyperdrive_contract, self._account, "openLong", *fn_args
+                        )
                     )
-                )
-                self._base_delta -= self._open_position.base_amount.scaled_value
+                    self._base_delta -= self._open_position.base_amount.scaled_value
+                except Exception as err:
+                    print(f"Warning: Failed to open long: {err=}")
+                    terminated = True
 
             elif self._position == Positions.Short:
                 # Close long position (if exists), open short
@@ -331,12 +333,16 @@ class SimpleHyperdriveEnv(gym.Env):
                         self._account.checksum_address,
                         True,
                     )
-                    trade_result = asyncio.run(
-                        async_transact_and_parse_logs(
-                            self.web3, self.hyperdrive_contract, self._account, "closeLong", *fn_args
+                    try:
+                        trade_result = asyncio.run(
+                            async_transact_and_parse_logs(
+                                self.web3, self.hyperdrive_contract, self._account, "closeLong", *fn_args
+                            )
                         )
-                    )
-                    self._base_delta += trade_result.base_amount.scaled_value
+                        self._base_delta += trade_result.base_amount.scaled_value
+                    except Exception as err:
+                        print(f"Warning: Failed to close long: {err=}")
+                        terminated = True
                 # Open short
                 max_deposit = eth_utils.currency.MAX_WEI
                 fn_args = (
@@ -345,12 +351,16 @@ class SimpleHyperdriveEnv(gym.Env):
                     self._account.checksum_address,
                     True,
                 )
-                self._open_position = asyncio.run(
-                    async_transact_and_parse_logs(
-                        self.web3, self.hyperdrive_contract, self._account, "openShort", *fn_args
+                try:
+                    self._open_position = asyncio.run(
+                        async_transact_and_parse_logs(
+                            self.web3, self.hyperdrive_contract, self._account, "openShort", *fn_args
+                        )
                     )
-                )
-                self._base_delta -= self._open_position.base_amount.scaled_value
+                    self._base_delta -= self._open_position.base_amount.scaled_value
+                except Exception as err:
+                    print(f"Warning: Failed to open short: {err=}")
+                    terminated = True
 
         observation = self._get_observation()
         info = self._get_info()
@@ -362,7 +372,7 @@ class SimpleHyperdriveEnv(gym.Env):
             truncated = True
 
         # TODO when does the episode stop?
-        return observation, step_reward, False, truncated, info
+        return observation, step_reward, terminated, truncated, info
 
     def _get_info(self) -> dict:
         # TODO return aux info here
@@ -404,14 +414,18 @@ class SimpleHyperdriveEnv(gym.Env):
                 self._account.checksum_address,
                 True,
             )
-            position_pnl = smart_contract_preview_transaction(
-                self.hyperdrive_contract,
-                self._account.checksum_address,
-                "closeLong",
-                *fn_args,
-                block_identifier=current_block,
-            )
-            raw_reward += position_pnl["value"]
+            try:
+                position_pnl = smart_contract_preview_transaction(
+                    self.hyperdrive_contract,
+                    self._account.checksum_address,
+                    "closeLong",
+                    *fn_args,
+                    block_identifier=current_block,
+                )
+                raw_reward += position_pnl["value"]
+            except Exception as err:
+                print(f"Warning: Failed to preview close long: {err=}")
+
         elif self._open_position and self._position == Positions.Short:
             fn_args = (
                 self._open_position.maturity_time_seconds,
@@ -420,13 +434,16 @@ class SimpleHyperdriveEnv(gym.Env):
                 self._account.checksum_address,
                 True,
             )
-            position_pnl = smart_contract_preview_transaction(
-                self.hyperdrive_contract,
-                self._account.checksum_address,
-                "closeShort",
-                *fn_args,
-                block_identifier=current_block,
-            )
-            raw_reward += position_pnl["value"]
+            try:
+                position_pnl = smart_contract_preview_transaction(
+                    self.hyperdrive_contract,
+                    self._account.checksum_address,
+                    "closeShort",
+                    *fn_args,
+                    block_identifier=current_block,
+                )
+                raw_reward += position_pnl["value"]
+            except Exception as err:
+                print(f"Warning: Failed to preview close short: {err=}")
 
         return raw_reward * self.reward_scale
