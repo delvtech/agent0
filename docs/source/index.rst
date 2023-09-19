@@ -3,15 +3,8 @@
 Welcome to the documentation for elf-simulations packages!
 =================================
 
-.. toctree::
-   :caption: Documentation
-
-   installation
-
-.. toctree::
-   :caption: Examples
-
-   /examples/index
+.. include:: ../../README.md
+   :parser: myst_parser.sphinx_
 
 .. toctree::
    :titlesonly:
@@ -21,6 +14,7 @@ Welcome to the documentation for elf-simulations packages!
    /autoapi/chainsync/index
    /autoapi/elfpy/index
    /autoapi/ethpy/index
+   /autoapi/pypechain/index
 
 
 Indices and tables

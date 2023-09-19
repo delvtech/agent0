@@ -23,13 +23,13 @@ def psql_docker() -> Iterator[PostgresConfig]:
         POSTGRES_USER="admin",
         POSTGRES_PASSWORD="password",
         POSTGRES_DB="postgres_db_test",
-        POSTGRES_HOST="localhost",
+        POSTGRES_HOST="127.0.0.1",
         POSTGRES_PORT=5555,
     )
 
     container = client.containers.run(
         # TODO set to latest postgres (what's being used in infra)
-        image="postgres:12",
+        image="postgres",
         auto_remove=True,
         environment={
             "POSTGRES_USER": postgres_config.POSTGRES_USER,
@@ -62,7 +62,7 @@ def database_engine(psql_docker):
         port=postgres_config.POSTGRES_PORT,
         dbname=postgres_config.POSTGRES_DB,
         # TODO set to latest postgres (what's being used in infra)
-        version=12,
+        version="latest",
         password=postgres_config.POSTGRES_PASSWORD,
     ):
         engine = initialize_engine(postgres_config)

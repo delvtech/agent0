@@ -33,7 +33,7 @@ base = [
     "streamlit",
     "flask",
     "flask-expects-json",
-    "psycopg2-binary",
+    "psycopg[binary]",
     "sqlalchemy",
     "pandas-stubs",
 ]

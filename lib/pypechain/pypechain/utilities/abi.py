@@ -196,8 +196,8 @@ def get_structs(
         },
     ]
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     file_path : Path
         the file path to the ABI.
 
@@ -246,8 +246,8 @@ def get_structs(
 def get_structs_for_abi(abi: ABI) -> dict[str, StructInfo]:
     """Gets all the structs for a given abi. These are found by parsing function inputs and outputs for internalType's.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     abi : ABI
         An Application Boundary Interface object.
 
@@ -391,8 +391,8 @@ def load_abi_from_file(file_path: Path) -> ABI:
 def get_abi_items(file_path: Path) -> list[ABIElement]:
     """Gets all the
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     file_path : Path
         the file path to the ABI.
 

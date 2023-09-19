@@ -69,7 +69,7 @@ def initialize_engine(postgres_config: PostgresConfig | None = None) -> Engine:
         postgres_config = build_postgres_config()
 
     url_object = URL.create(
-        drivername="postgresql",
+        drivername="postgresql+psycopg",
         username=postgres_config.POSTGRES_USER,
         password=postgres_config.POSTGRES_PASSWORD,
         host=postgres_config.POSTGRES_HOST,

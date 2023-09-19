@@ -41,7 +41,7 @@ def calc_single_closeout(
     if position["value"] == 0:
         return Decimal(0)
     assert len(position.shape) == 1, "Only one position at a time"
-    amount = FixedPoint(str(position["value"])).scaled_value
+    amount = FixedPoint(f"{position['value']:f}").scaled_value
     address = position["walletAddress"]
     tokentype = position["baseTokenType"]
     sender = ChecksumAddress(HexAddress(HexStr(address)))

@@ -57,9 +57,8 @@ class ShortSally(HyperdrivePolicy):
     def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Implement a Short Sally user strategy
 
-
-        Parameters
-        ----------
+        Arguments
+        ---------
         market : HyperdriveMarket
             the trading market
 

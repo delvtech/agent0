@@ -26,7 +26,7 @@ from ethpy.test_fixtures import local_chain, local_hyperdrive_chain
 #        "type": "python",
 #        "request": "launch",
 #        "module": "pytest",
-#        "args": ["${file}"],
+#        "args": ["${file}", "-vs"],
 #        "console": "integratedTerminal",
 #        "justMyCode": true,
 #        "env": {
