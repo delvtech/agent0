@@ -75,3 +75,6 @@ examples/abi/
 
 # Local artifacts
 artifacts/
+
+# rl logging dir
+hypergym_logs
