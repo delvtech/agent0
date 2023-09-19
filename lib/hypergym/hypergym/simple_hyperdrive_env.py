@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import warnings
 from enum import Enum
@@ -408,9 +409,24 @@ class SimpleHyperdriveEnv(gym.Env):
     def _get_observation(self) -> np.ndarray:
         # Get the spot price and share price of hyperdrive
         current_block = self.web3.eth.get_block_number()
-        pool_info = get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, current_block)
-        # TODO gather pool config outside of the obs loop
-        pool_config = get_hyperdrive_config(self.hyperdrive_contract)
+        pool_info = None
+        pool_config = None
+        retry_err = None
+        for _ in range(10):
+            try:
+                pool_info = get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, current_block)
+                # TODO gather pool config outside of the obs loop
+                pool_config = get_hyperdrive_config(self.hyperdrive_contract)
+                break
+            except Exception as err:
+                retry_err = err
+                logging.warning(f"Warning: Failed to get pool info, retrying: {err=}")
+
+        if ((pool_info is None) or (pool_config is None)) and retry_err is not None:
+            raise retry_err
+
+        assert pool_info is not None
+        assert pool_config is not None
 
         # TODO calculate spot price
         new_spot_price = calc_spot_price(
