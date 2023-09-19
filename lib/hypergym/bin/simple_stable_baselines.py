@@ -8,7 +8,7 @@ from agent0.base.config import AgentConfig, Budget, EnvironmentConfig
 from agent0.base.policies import BasePolicies
 from agent0.hyperdrive.policies import HyperdrivePolicies
 from fixedpointmath import FixedPoint
-from stable_baselines3 import DQN
+from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.results_plotter import load_results, ts2xy
@@ -24,9 +24,9 @@ from stable_baselines3.common.results_plotter import load_results, ts2xy
 # ARS, A2C, DDPG, HER, PPO, RecurrentPPO, SAC, TD3, TQC, TRPO
 
 gym_config = {
-    "long_base_amount": int(1e18),
-    "short_bond_amount": int(1e18),
-    "reward_scale": 1e-12,
+    "long_base_amount": int(1e20),
+    "short_bond_amount": int(1e20),
+    "reward_scale": 1e-18,
     "window_size": 10,
     "episode_length": 100,
 }
@@ -158,13 +158,13 @@ env = Monitor(env, log_dir)
 callback = SaveOnBestTrainingRewardCallback(check_freq=10, log_dir=log_dir)
 
 # Training
-model = DQN("MlpPolicy", env, verbose=1)
+model = PPO("MlpPolicy", env, verbose=1)
 model.learn(total_timesteps=10000, callback=callback)
 
-# Evaluation
-obs, info = env.reset()
-while True:
-    action, _states = model.predict(obs, deterministic=True)
-    obs, reward, terminated, truncated, info = env.step(action)
-    if terminated or truncated:
-        obs, info = env.reset()
+## Evaluation
+# obs, info = env.reset()
+# while True:
+#    action, _states = model.predict(obs, deterministic=True)
+#    obs, reward, terminated, truncated, info = env.step(action)
+#    if terminated or truncated:
+#        obs, info = env.reset()
