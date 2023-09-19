@@ -15,7 +15,7 @@ st.set_option("deprecation.showPyplotGlobalUse", False)
 
 # TODO clean up this script into various functions
 
-MAX_LIVE_BLOCKS = 14400
+MAX_LIVE_BLOCKS = 5000
 
 # Load and connect to postgres
 session = initialize_session()

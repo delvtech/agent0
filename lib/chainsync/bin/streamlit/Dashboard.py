@@ -48,7 +48,7 @@ config_data = get_pool_config(session, coerce_float=False)
 
 config_data = config_data.iloc[0]
 
-max_live_blocks = 14400
+max_live_blocks = 5000
 # Live ticker
 ticker_placeholder = st.empty()
 # OHLCV
