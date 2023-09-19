@@ -165,6 +165,7 @@ class SimpleHyperdriveEnv(gym.Env):
         self._open_position = None
         self._obs_buffer = np.zeros((self.window_size, 2), dtype=np.float64)
         self._account = None
+        # The amount of base lost/gained in one step
         self._base_delta = 0
         self._last_executed_block = 0
         self._step_count = 0
@@ -328,7 +329,7 @@ class SimpleHyperdriveEnv(gym.Env):
                             self.web3, self.hyperdrive_contract, self._account, "openShort", *fn_args
                         )
                     )
-                    self._base_delta -= self._open_position.base_amount.scaled_value
+                    self._base_delta -= -self._open_position.base_amount.scaled_value
                 except Exception as err:
                     print(f"Warning: Failed to open short: {err=}")
                     terminated = True
@@ -379,6 +380,9 @@ class SimpleHyperdriveEnv(gym.Env):
             else:
                 raise ValueError
 
+        # Reset base delta for this step
+        self._base_delta = 0.0
+
         trade = False
         if (action == Actions.Buy.value and self._position == Positions.Short) or (
             action == Actions.Sell.value and self._position == Positions.Long
@@ -387,6 +391,7 @@ class SimpleHyperdriveEnv(gym.Env):
 
         terminated = False
         if trade:
+            # Trading updates self._base_delta variable
             terminated = self.do_trade()
 
         observation = self._get_observation()
@@ -445,48 +450,52 @@ class SimpleHyperdriveEnv(gym.Env):
         return self._obs_buffer
 
     def _calculate_reward(self) -> float:
-        assert self._account is not None
-        current_block = self.web3.eth.get_block_number()
         raw_reward = self._base_delta
-        # TODO these functions should be in hyperdrive_sdk
-        if self._open_position and self._position == Positions.Long:
-            fn_args = (
-                self._open_position.maturity_time_seconds,
-                self._open_position.bond_amount.scaled_value,
-                0,
-                self._account.checksum_address,
-                True,
-            )
-            try:
-                position_pnl = smart_contract_preview_transaction(
-                    self.hyperdrive_contract,
-                    self._account.checksum_address,
-                    "closeLong",
-                    *fn_args,
-                    block_identifier=current_block,
-                )
-                raw_reward += position_pnl["value"]
-            except Exception as err:
-                print(f"Warning: Failed to preview close long: {err=}")
 
-        elif self._open_position and self._position == Positions.Short:
-            fn_args = (
-                self._open_position.maturity_time_seconds,
-                self._open_position.bond_amount.scaled_value,
-                0,
-                self._account.checksum_address,
-                True,
-            )
-            try:
-                position_pnl = smart_contract_preview_transaction(
-                    self.hyperdrive_contract,
-                    self._account.checksum_address,
-                    "closeShort",
-                    *fn_args,
-                    block_identifier=current_block,
-                )
-                raw_reward += position_pnl["value"]
-            except Exception as err:
-                print(f"Warning: Failed to preview close short: {err=}")
+        # Testing only using base difference for reward,
+        # ignoring open positions
+
+        ## TODO these functions should be in hyperdrive_sdk
+        # assert self._account is not None
+        # current_block = self.web3.eth.get_block_number()
+        # if self._open_position and self._position == Positions.Long:
+        #    fn_args = (
+        #        self._open_position.maturity_time_seconds,
+        #        self._open_position.bond_amount.scaled_value,
+        #        0,
+        #        self._account.checksum_address,
+        #        True,
+        #    )
+        #    try:
+        #        position_pnl = smart_contract_preview_transaction(
+        #            self.hyperdrive_contract,
+        #            self._account.checksum_address,
+        #            "closeLong",
+        #            *fn_args,
+        #            block_identifier=current_block,
+        #        )
+        #        raw_reward += position_pnl["value"]
+        #    except Exception as err:
+        #        print(f"Warning: Failed to preview close long: {err=}")
+
+        # elif self._open_position and self._position == Positions.Short:
+        #    fn_args = (
+        #        self._open_position.maturity_time_seconds,
+        #        self._open_position.bond_amount.scaled_value,
+        #        0,
+        #        self._account.checksum_address,
+        #        True,
+        #    )
+        #    try:
+        #        position_pnl = smart_contract_preview_transaction(
+        #            self.hyperdrive_contract,
+        #            self._account.checksum_address,
+        #            "closeShort",
+        #            *fn_args,
+        #            block_identifier=current_block,
+        #        )
+        #        raw_reward += position_pnl["value"]
+        #    except Exception as err:
+        #        print(f"Warning: Failed to preview close short: {err=}")
 
         return raw_reward * self.reward_scale
