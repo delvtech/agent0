@@ -24,8 +24,8 @@ from stable_baselines3.common.results_plotter import load_results, ts2xy
 # ARS, A2C, DDPG, HER, PPO, RecurrentPPO, SAC, TD3, TQC, TRPO
 
 gym_config = {
-    "long_base_amount": int(1e12),
-    "short_bond_amount": int(1e12),
+    "long_base_amount": int(1e18),
+    "short_bond_amount": int(1e18),
     "reward_scale": 1e-12,
     "window_size": 10,
     "episode_length": 100,
