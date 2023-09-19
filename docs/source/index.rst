@@ -3,10 +3,8 @@
 Welcome to the documentation for elf-simulations packages!
 =================================
 
-.. toctree::
-   :caption: Documentation
-
-   installation
+.. include:: ../../README.md
+   :parser: myst_parser.sphinx_
 
 .. toctree::
    :titlesonly:
