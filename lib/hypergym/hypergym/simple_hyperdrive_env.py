@@ -189,7 +189,7 @@ class SimpleHyperdriveEnv(gym.Env):
         # If there is an open position, close it
         self.do_trade(close_only=True)
 
-        super().reset(seed=seed, options=options)
+        # super().reset(seed=seed, options=options)
 
         # Build accounts env var
         # This function writes a user defined env file location.
@@ -206,7 +206,7 @@ class SimpleHyperdriveEnv(gym.Env):
             user_account, self.eth_config, account_key_config, self.contract_addresses
         )  # uses env variables created above as inputs
 
-        rng = np.random.default_rng(self.env_config.random_seed)
+        rng = np.random.default_rng()
         self.agent_accounts = get_agent_accounts(
             self.web3,
             self.agent_config,
@@ -223,7 +223,7 @@ class SimpleHyperdriveEnv(gym.Env):
 
         # We use the env's random number generator for anything random, i.e.,
         # self.np_random
-        self.action_space.seed(int((self.np_random.uniform(0, seed if seed is not None else 1))))
+        # self.action_space.seed(int((self.np_random.uniform(0, seed if seed is not None else 1))))
 
         self._position = None
         self._open_position = None
