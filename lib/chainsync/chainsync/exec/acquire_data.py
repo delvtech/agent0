@@ -23,7 +23,7 @@ _SLEEP_AMOUNT = 1
 # pylint: disable=too-many-arguments
 def acquire_data(
     start_block: int = 0,
-    lookback_block_limit: int = 10000,
+    lookback_block_limit: int = 8000,
     eth_config: EthConfig | None = None,
     db_session: Session | None = None,
     contract_addresses: HyperdriveAddresses | None = None,
@@ -104,6 +104,11 @@ def acquire_data(
             logging.info("Block %s", block_number)
             # Explicit check against loopback block limit
             if (latest_mined_block - block_number) > lookback_block_limit:
+                # NOTE when this case happens, wallet information will no longer
+                # be accurate, as we may have missed deltas on wallets
+                # based on the blocks we skipped
+                # TODO should directly query the chain for open positions
+                # in this case
                 logging.warning(
                     "Querying block_number %s out of %s, unable to keep up with chain block iteration",
                     block_number,
