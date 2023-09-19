@@ -1,4 +1,10 @@
-Pypechain generates web3.py Contract classes for a given solidity contract abi.
+# Pypechain
+
+Static python bindings for ethereum smart contracts.
+
+- Parses JSON ABI's to create typesafe web3.py contract instances
+- Functions have typesafe function parameters and return values
+- Smart Contract internal types are exposed as dataclasses
 
 ### Install
 
