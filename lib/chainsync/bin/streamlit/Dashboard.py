@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import time
 
+import matplotlib.pyplot as plt
 import mplfinance as mpf
 import streamlit as st
 from chainsync.dashboard import (
@@ -53,6 +54,7 @@ ticker_placeholder = st.empty()
 # OHLCV
 main_placeholder = st.empty()
 
+plt.close("all")
 main_fig = mpf.figure(style="mike", figsize=(15, 15))
 # matplotlib doesn't play nice with types
 (ax_ohlcv, ax_fixed_rate, ax_positions) = main_fig.subplots(3, 1, sharex=True)  # type: ignore

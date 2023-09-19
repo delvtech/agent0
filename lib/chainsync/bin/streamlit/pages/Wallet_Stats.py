@@ -3,6 +3,7 @@
 # Streamlit gets the name of the sidebar tab from the name of the file
 # hence, this file is capitalized
 
+import matplotlib.pyplot as plt
 import mplfinance as mpf
 import streamlit as st
 from chainsync.dashboard import build_ticker, get_user_lookup
@@ -49,7 +50,7 @@ wallet_pnl = get_wallet_pnl(
 )
 
 # Get ticker for selected addresses
-ticker = get_ticker(session, coerce_float=False, wallet_address=selected_addresses)
+ticker = get_ticker(session, start_block=-MAX_LIVE_BLOCKS, coerce_float=False, wallet_address=selected_addresses)
 display_ticker = build_ticker(ticker, user_lookup)
 
 # Get latest wallet pnl and show open positions
@@ -89,6 +90,7 @@ wallet_positions = wallet_pnl.groupby(["walletAddress", "blockNumber", "baseToke
 wallet_positions = wallet_positions.reset_index()
 
 # Plot pnl over time
+plt.close("all")
 main_fig = mpf.figure(style="mike", figsize=(15, 15))
 # matplotlib doesn't play nice with types
 (ax_pnl, ax_base, ax_long, ax_short, ax_lp, ax_withdraw) = main_fig.subplots(6, 1, sharex=True)  # type: ignore
