@@ -9,6 +9,7 @@ from pathlib import Path
 from jinja2 import Template
 from pypechain.utilities.abi import (
     get_abi_items,
+    get_events_for_abi,
     get_param_name,
     get_structs_for_abi,
     is_abi_function,
@@ -116,7 +117,9 @@ def render_types_file(contract_name: str, types_template: Template, abi_file_pat
     structs_by_name = get_structs_for_abi(abi)
     structs_list = list(structs_by_name.values())
     structs = [asdict(struct) for struct in structs_list]
-    return types_template.render(contract_name=contract_name, structs=structs)
+    events = [asdict(event) for event in get_events_for_abi(abi)]
+
+    return types_template.render(contract_name=contract_name, structs=structs, events=events)
 
 
 def get_input_names_and_values(function: ABIFunction) -> list[str]:
@@ -154,11 +157,13 @@ def stringify_parameters(parameters) -> list[str]:
     # TODO: recursively handle this too for evil nested tuples with no names.
     """Stringifies parameters."""
     stringified_function_parameters: list[str] = []
+    arg_counter: int = 1
     for _input in parameters:
         if name := get_param_name(_input):
             stringified_function_parameters.append(avoid_python_keywords(name))
         else:
-            raise ValueError("input name cannot be None")
+            name = f"arg{arg_counter}"
+            arg_counter += 1
     return stringified_function_parameters
 
 
@@ -211,7 +216,7 @@ def get_outputs(function: ABIFunction) -> list[str]:
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python script_name.py <path_to_abi_file> <contract_address> <output_file>")
+        print("Usage: python script_name.py <path_to_abi_file> <contract_address> <output_dir>")
     else:
         # TODO: add a bash script to make this easier, i.e. ./pypechain './abis', './build'
         # TODO: make this installable so that other packages can use the command line tool

@@ -1,6 +1,8 @@
 #pylint: disable=invalid-name
 """Dataclasses for all structs in the {{contract_name}} contract."""
 
+from web3.types import ABIEvent, ABIEventParams
+
 from dataclasses import dataclass
 
 {% for struct in structs %}
@@ -11,4 +13,17 @@ class {{struct.name}}:
     {{struct_value.name}}: {{struct_value.python_type}}
 {%- endfor %}
 
+{% endfor %}
+
+{% for event in events %}
+{{event.name}} = ABIEvent(
+    anonymous = {{event.anonymous}},
+    inputs = [
+{%- for event_input in event['inputs'] %}
+        ABIEventParams(indexed={{event_input.indexed}}, name="{{event_input.name}}", type="{{event_input.solidity_type}}"),
+{%- endfor %}
+    ],
+    name = "{{event.name}}",
+    type = "event",
+)
 {% endfor %}

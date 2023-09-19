@@ -142,6 +142,25 @@ class StructValue:
     python_type: str
 
 
+@dataclass
+class EventInfo:
+    """Solidity struct information needed for codegen."""
+
+    name: str
+    anonymous: bool
+    inputs: list[EventParams]
+
+
+@dataclass
+class EventParams:
+    """Solidity struct information needed for codegen."""
+
+    indexed: bool
+    name: str
+    solidity_type: str
+    python_type: str
+
+
 # This is a recursive function, need to initialize with an empty dict.
 # pylint: disable=dangerous-default-value
 def get_structs(
@@ -225,7 +244,7 @@ def get_structs(
 
 
 def get_structs_for_abi(abi: ABI) -> dict[str, StructInfo]:
-    """
+    """Gets all the structs for a given abi. These are found by parsing function inputs and outputs for internalType's.
 
     Arguments
     ---------
@@ -269,6 +288,60 @@ def is_struct(internal_type: str) -> bool:
     """
     # internal_type looks like 'struct ContractName.StructName' if they are structs
     return bool(internal_type.startswith("struct"))
+
+
+def get_events_for_abi(abi: ABI) -> list[EventInfo]:
+    """Gets all the events for a given abi.
+
+    Parameters
+    ----------
+    abi : ABI
+        An Application Boundary Interface object.
+
+    Returns
+    -------
+    list[ABIEvent]
+        A dictionary of StructInfos keyed by name.
+    """
+
+    events: list[EventInfo] = []
+
+    anonymous_event_counter: int = 0
+
+    for item in abi:
+        if is_abi_event(item):
+            event: ABIEvent = item
+            event_inputs = event.get("inputs", [])
+            inputs: list[EventParams] = []
+
+            for i in event_inputs:
+                indexed = i.get("indexed", False)
+                name = i.get("name", "annonymous")
+                solidity_type = i.get("type")
+                if not solidity_type:
+                    raise ValueError("Type not known for event input.")
+
+                python_type = solidity_to_python_type(solidity_type)
+                inputs = [
+                    EventParams(
+                        indexed=indexed,
+                        name=name,
+                        solidity_type=solidity_type,
+                        python_type=python_type,
+                    )
+                ]
+
+            anonymous = item.get("anonymous", False)
+            # TODO add test for multiple anonymous events
+            events.append(
+                EventInfo(
+                    name=item.get("name", f"Annonymous{anonymous_event_counter or None}"),
+                    anonymous=anonymous,
+                    inputs=inputs,
+                )
+            )
+
+    return events
 
 
 def get_param_name(param_or_component: ABIFunctionParams | ABIFunctionComponents) -> str:
