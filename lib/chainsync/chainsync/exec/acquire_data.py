@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+import warnings
 
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
@@ -17,6 +18,8 @@ from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
+
+warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
 
 
 # Lots of arguments
