@@ -24,7 +24,7 @@ def local_chain() -> Iterator[str]:
     Returns
     -------
     Iterator[str]
-        Yields the local anvil chain url
+        Yields the local anvil chain URI
     """
     anvil_port = 9999
     host = "127.0.0.1"  # localhost
@@ -68,7 +68,7 @@ def local_hyperdrive_chain(local_chain: str) -> LocalHyperdriveChain:
     Arguments
     ---------
     local_chain: str
-        The `local_chain` test fixture that binds to the local anvil chain rpc url
+        The `local_chain` test fixture that binds to the local anvil chain rpc URI
 
     Returns
     -------
