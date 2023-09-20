@@ -1,3 +1,6 @@
+# Pypechain
+lib/hyperdrive_types/hyperdrive_types/*.py
+
 # Environment variables
 *.env
 
@@ -19,8 +22,9 @@ __pypackages__/
 # default logging directory
 .logging
 
-# smart contract compile directory
+# build directories
 .build
+*.egg-info
 
 # output directory for saved notebook figures
 figs
@@ -33,6 +37,7 @@ agent_0
 .cache
 __pycache__/
 .pytest_cache
+
 
 # Jupyter Notebook
 .ipynb_checkpoints
