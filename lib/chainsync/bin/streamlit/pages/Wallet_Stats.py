@@ -8,7 +8,13 @@ import mplfinance as mpf
 import streamlit as st
 from chainsync.dashboard import build_ticker, get_user_lookup
 from chainsync.db.base import get_user_map, initialize_session
-from chainsync.db.hyperdrive import get_all_traders, get_ticker, get_wallet_pnl
+from chainsync.db.hyperdrive import (
+    get_all_traders,
+    get_ticker,
+    get_total_wallet_pnl_over_time,
+    get_wallet_pnl,
+    get_wallet_positions_over_time,
+)
 
 st.set_page_config(page_title="Trading Competition Dashboard", layout="wide")
 st.set_option("deprecation.showPyplotGlobalUse", False)
@@ -44,17 +50,13 @@ selected = st.multiselect("Wallet Addresses", user_lookup["format_name"])
 # Map selected_addrs back to actual addresses
 selected_addresses = user_lookup.set_index("format_name").loc[selected]["address"].values.tolist()
 
-# Get wallet pnls for selected addresses
-wallet_pnl = get_wallet_pnl(
-    session, start_block=-MAX_LIVE_BLOCKS, coerce_float=False, wallet_address=selected_addresses
-)
-
 # Get ticker for selected addresses
 ticker = get_ticker(session, start_block=-MAX_LIVE_BLOCKS, coerce_float=False, wallet_address=selected_addresses)
 display_ticker = build_ticker(ticker, user_lookup)
 
-# Get latest wallet pnl and show open positions
-latest_wallet_pnl = wallet_pnl[wallet_pnl["blockNumber"] == wallet_pnl["blockNumber"].max()].copy()
+# Get latest wallet pnls for selected addresses
+latest_wallet_pnl = get_wallet_pnl(session, start_block=-1, coerce_float=False, wallet_address=selected_addresses)
+
 # Get usernames
 latest_wallet_pnl["username"] = (
     user_lookup.set_index("address").loc[latest_wallet_pnl["walletAddress"]]["username"].values
@@ -79,15 +81,20 @@ st.dataframe(latest_wallet_pnl.astype(str), height=300, use_container_width=True
 st.write("Transactions")
 st.dataframe(display_ticker, height=500, use_container_width=True)
 
-# Calculate pnl over time
-pnl_over_time = wallet_pnl.groupby(["walletAddress", "blockNumber"]).agg({"pnl": "sum", "timestamp": "first"})
-pnl_over_time = pnl_over_time.reset_index()
-
-# Calculate open positions
-wallet_positions = wallet_pnl.groupby(["walletAddress", "blockNumber", "baseTokenType"]).agg(
-    {"value": "sum", "timestamp": "first"}
+# Get PNL over time
+pnl_over_time = get_total_wallet_pnl_over_time(
+    session, start_block=-MAX_LIVE_BLOCKS, coerce_float=False, wallet_address=selected_addresses
 )
-wallet_positions = wallet_positions.reset_index()
+# Add username
+pnl_over_time["username"] = user_lookup.set_index("address").loc[pnl_over_time["walletAddress"]]["username"].values
+
+wallet_positions = get_wallet_positions_over_time(
+    session, start_block=-MAX_LIVE_BLOCKS, coerce_float=False, wallet_address=selected_addresses
+)
+wallet_positions["username"] = (
+    user_lookup.set_index("address").loc[wallet_positions["walletAddress"]]["username"].values
+)
+
 
 # Plot pnl over time
 plt.close("all")

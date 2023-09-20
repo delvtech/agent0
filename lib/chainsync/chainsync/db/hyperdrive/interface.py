@@ -5,7 +5,7 @@ import logging
 
 import pandas as pd
 from chainsync.db.base import get_latest_block_number_from_table
-from sqlalchemy import exc
+from sqlalchemy import exc, func
 from sqlalchemy.orm import Session
 
 from .schema import (
@@ -773,7 +773,7 @@ def get_wallet_pnl(
     return_timestamp: bool = True,
     coerce_float=True,
 ) -> pd.DataFrame:
-    """Get all pool analysis and returns as a pandas dataframe.
+    """Get all wallet pnl and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -817,5 +817,125 @@ def get_wallet_pnl(
 
     # Always sort by block in order
     query = query.order_by(WalletPNL.blockNumber)
+
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
+
+
+def get_total_wallet_pnl_over_time(
+    session: Session,
+    start_block: int | None = None,
+    end_block: int | None = None,
+    wallet_address: list[str] | None = None,
+    coerce_float=True,
+) -> pd.DataFrame:
+    """Get all pool analysis and returns as a pandas dataframe.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    start_block : int | None, optional
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block : int | None, optional
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried pool info data
+    """
+    # Do a subquery that groups wallet pnl by address and block
+    # Not sure why func.sum is not callable, but it is
+    subquery = session.query(
+        WalletPNL.walletAddress,
+        WalletPNL.blockNumber,
+        func.sum(WalletPNL.pnl).label("pnl"),  # pylint: disable=not-callable
+    )
+
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = get_latest_block_number_from_table(WalletPNL, session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = get_latest_block_number_from_table(WalletPNL, session) + end_block + 1
+
+    if start_block is not None:
+        subquery = subquery.filter(WalletPNL.blockNumber >= start_block)
+    if end_block is not None:
+        subquery = subquery.filter(WalletPNL.blockNumber < end_block)
+    if wallet_address is not None:
+        subquery = subquery.filter(WalletPNL.walletAddress.in_(wallet_address))
+
+    subquery = subquery.group_by(WalletPNL.walletAddress, WalletPNL.blockNumber)
+
+    # Always sort by block in order
+    subquery = subquery.order_by(WalletPNL.blockNumber).subquery()
+
+    # Additional query to join timestamp to block number
+    query = session.query(PoolInfo.timestamp, subquery)
+    query = query.join(PoolInfo, subquery.c.blockNumber == PoolInfo.blockNumber)
+
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
+
+
+def get_wallet_positions_over_time(
+    session: Session,
+    start_block: int | None = None,
+    end_block: int | None = None,
+    wallet_address: list[str] | None = None,
+    coerce_float=True,
+) -> pd.DataFrame:
+    """Get all pool analysis and returns as a pandas dataframe.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    start_block : int | None, optional
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block : int | None, optional
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    coerce_float : bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried pool info data
+    """
+    # Not sure why func.sum is not callable, but it is
+    subquery = session.query(
+        WalletPNL.walletAddress,
+        WalletPNL.blockNumber,
+        WalletPNL.baseTokenType,
+        func.sum(WalletPNL.value).label("value"),  # pylint: disable=not-callable
+    )
+
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = get_latest_block_number_from_table(WalletPNL, session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = get_latest_block_number_from_table(WalletPNL, session) + end_block + 1
+
+    if start_block is not None:
+        subquery = subquery.filter(WalletPNL.blockNumber >= start_block)
+    if end_block is not None:
+        subquery = subquery.filter(WalletPNL.blockNumber < end_block)
+    if wallet_address is not None:
+        subquery = subquery.filter(WalletPNL.walletAddress.in_(wallet_address))
+
+    subquery = subquery.group_by(WalletPNL.walletAddress, WalletPNL.blockNumber, WalletPNL.baseTokenType)
+
+    # Always sort by block in order
+    subquery = subquery.order_by(WalletPNL.blockNumber).subquery()
+
+    # query from PoolInfo the timestamp
+    query = session.query(PoolInfo.timestamp, subquery)
+    query = query.join(PoolInfo, subquery.c.blockNumber == PoolInfo.blockNumber)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
