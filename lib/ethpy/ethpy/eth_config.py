@@ -22,9 +22,6 @@ class EthConfig:
         The path to the abi directory.
     """
 
-    # default values for local contracts
-    # Matching environment variables to search for
-    # pylint: disable=invalid-name
     artifacts_uri: URI | str = URI("http://localhost:8080")
     rpc_uri: URI | str = URI("http://localhost:8545")
     abi_dir: str = "./packages/hyperdrive/src/abis"
@@ -54,9 +51,9 @@ def build_eth_config() -> EthConfig:
 
     arg_dict = {}
     if artifacts_uri is not None:
-        arg_dict["ARTIFACTS_URI"] = artifacts_uri
+        arg_dict["artifacts_uri"] = artifacts_uri
     if rpc_uri is not None:
-        arg_dict["RPC_URI"] = rpc_uri
+        arg_dict["rpc_uri"] = rpc_uri
     if abi_dir is not None:
-        arg_dict["ABI_DIR"] = abi_dir
+        arg_dict["abi_dir"] = abi_dir
     return EthConfig(**arg_dict)
