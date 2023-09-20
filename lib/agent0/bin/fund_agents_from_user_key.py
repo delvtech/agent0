@@ -9,7 +9,7 @@ from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.exec import fund_agents
 from eth_account.account import Account
 from ethpy import build_eth_config
-from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
+from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         raise ValueError("User key not provided as argument, and was not found in env file")
 
     eth_config = build_eth_config()
-    contract_addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
+    contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
     user_account = HyperdriveAgent(Account().from_key(account_key_config.USER_KEY))
 
     fund_agents(user_account, eth_config, account_key_config, contract_addresses)

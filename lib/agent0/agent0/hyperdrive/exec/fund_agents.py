@@ -31,7 +31,7 @@ def fund_agents(
     user_account : HyperdriveAgent
         The HyperdriveAgent corresponding to the user account to fund the agents.
     eth_config: EthConfig
-        Configuration for urls to the rpc and artifacts.
+        Configuration for URIs to the rpc and artifacts.
     account_key_config: AccountKeyConfig
         Configuration linking to the env file for storing private keys and initial budgets.
         Defines the agents to be funded.
@@ -42,9 +42,9 @@ def fund_agents(
         HyperdriveAgent(Account().from_key(agent_private_key)) for agent_private_key in account_key_config.AGENT_KEYS
     ]
 
-    web3 = initialize_web3_with_http_provider(eth_config.RPC_URL, reset_provider=False)
+    web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
     abi_file_loc = os.path.join(
-        os.path.join(eth_config.ABI_DIR, "ERC20Mintable.sol"),
+        os.path.join(eth_config.abi_dir, "ERC20Mintable.sol"),
         "ERC20Mintable.json",
     )
     base_contract_abi = load_abi_from_file(abi_file_loc)

@@ -22,16 +22,16 @@ class HyperdriveAddresses:
     mock_hyperdrive_math: Address | ChecksumAddress | None = attr.ib()
 
 
-def fetch_hyperdrive_address_from_url(contracts_url: str) -> HyperdriveAddresses:
+def fetch_hyperdrive_address_from_uri(contracts_uri: str) -> HyperdriveAddresses:
     """Fetch addresses for deployed contracts in the Hyperdrive system."""
     response = None
     for _ in range(100):
-        response = requests.get(contracts_url, timeout=60)
+        response = requests.get(contracts_uri, timeout=60)
         # Check the status code and retry the request if it fails
         if response.status_code != 200:
             logging.warning(
-                "Request for contracts_url=%s failed with status code %s @ %s",
-                contracts_url,
+                "Request for contracts_uri=%s failed with status code %s @ %s",
+                contracts_uri,
                 response.status_code,
                 time.ctime(),
             )
