@@ -23,7 +23,7 @@ _SLEEP_AMOUNT = 1
 # pylint: disable=too-many-arguments
 def acquire_data(
     start_block: int = 0,
-    lookback_block_limit: int = 5000,
+    lookback_block_limit: int = 1000,
     eth_config: EthConfig | None = None,
     db_session: Session | None = None,
     contract_addresses: HyperdriveAddresses | None = None,
