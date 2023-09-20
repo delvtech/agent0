@@ -139,10 +139,11 @@ def render_types_file(contract_name: str, types_template: Template, abi_file_pat
 
     return types_template.render(contract_name=contract_name, structs=structs, events=events)
 
+
 def get(function: ABIFunction, param_type, include_types: bool = True) -> list[str] | dict[str, str]:
     """Returns function inputs or outputs, optionally including types."""
     params = get_params(param_type, function)
-    return [f"{k}: {v}" for k,v in params.items()] if include_types else list(params.keys())
+    return [f"{k}: {v}" for k, v in params.items()] if include_types else list(params.keys())
 
 
 def get_params(param_type, function) -> dict[str, str]:
