@@ -5,6 +5,7 @@ import os
 import sys
 from dataclasses import asdict
 from pathlib import Path
+from typing import Literal
 
 import black
 from black.mode import Mode  # pylint: disable=no-name-in-module
@@ -140,24 +141,36 @@ def render_types_file(contract_name: str, types_template: Template, abi_file_pat
     return types_template.render(contract_name=contract_name, structs=structs, events=events)
 
 
-def get(function: ABIFunction, param_type, include_types: bool = True) -> list[str] | dict[str, str]:
-    """Returns function inputs or outputs, optionally including types."""
-    params = get_params(param_type, function)
-    return [f"{k}: {v}" for k, v in params.items()] if include_types else list(params.keys())
+def get(
+    function: ABIFunction, param_type: Literal["inputs", "outputs"], include_types: bool = True
+) -> list[str] | dict[str, str]:
+    """Returns function inputs or outputs, optionally including types.
 
+    Arguments
+    ---------
+    function : ABIFunction
+        The function to parse.
+    param_type : str
+        Choice of "inputs" or "outputs"
+    include_types : bool
+        Whether to include the types of the parameters. Defaults to True.
 
-def get_params(param_type, function) -> dict[str, str]:
-    """Stringifies parameters."""
+    Returns
+    -------
+    list[str] | dict[str, str]
+        The parsed parameters, in a list without types, or a dict with types.
+    """
     parameters = function.get(param_type, [])
-    formatted_params, anon_count = {}, 0
+    params = {}
+    anon_count = 0
     for param in parameters:
         name = get_param_name(param)
         if name is None or name == "":
             name = f"{param_type[:-1]}{anon_count}"
             param["name"] = name
             anon_count += 1
-        formatted_params[avoid_python_keywords(name)] = solidity_to_python_type(param.get("type"))
-    return formatted_params
+        params[avoid_python_keywords(name)] = solidity_to_python_type(param.get("type"))
+    return [f"{k}: {v}" for k, v in params.items()] if include_types else list(params.keys())
 
 
 if __name__ == "__main__":
