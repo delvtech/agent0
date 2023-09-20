@@ -190,7 +190,7 @@ def build_account_config_from_env(env_file: str | None = None, user_key: str | N
         env_file = "account.env"
 
     # Look for and load local config if it exists
-    load_dotenv(env_file)
+    load_dotenv(env_file, override=True)
 
     if user_key is None:
         # USER PRIVATE KEY
