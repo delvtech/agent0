@@ -28,13 +28,10 @@ source .venv/bin/activate
 
 ## 4. Install Elf-simulations
 
-You must generate the Python contract files using Pypechain before installing most of the packages.
-Once this is done, you can install from `requirements.txt`:
+All of the elf-simulations packages can be installed from `requirements.txt`:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install -e lib/pypechain[base]
-sh lib/hyperdrive_types/scripts/build_type_files.sh packages/hyperdrive/src/abis/
 python -m pip install --upgrade -r requirements.txt
 ```
 

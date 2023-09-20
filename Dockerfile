@@ -15,8 +15,6 @@ COPY . ./
 RUN apt-get update && \
   apt-get install -y --no-install-recommends gcc python3-dev libssl-dev git && \
   python -m pip install --no-cache-dir --upgrade pip && \
-  python -m pip install -e lib/pypechain[base] && \
-  sh lib/hyperdrive_types/scripts/build_type_files.sh packages/hyperdrive/src/abis && \
   python -m pip install --no-cache-dir -r requirements.txt && \
   python -m pip install --no-cache-dir -r requirements-dev.txt && \
   apt-get remove -y gcc python3-dev libssl-dev && \
