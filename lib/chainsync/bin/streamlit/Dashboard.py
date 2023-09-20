@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import gc
 import time
 
 import matplotlib.pyplot as plt
@@ -34,6 +35,9 @@ from ethpy import build_eth_config
 
 # pylint: disable=invalid-name
 
+plt.close("all")
+gc.collect()
+
 st.set_page_config(page_title="Trading Competition Dashboard", layout="wide")
 st.set_option("deprecation.showPyplotGlobalUse", False)
 
@@ -54,7 +58,6 @@ ticker_placeholder = st.empty()
 # OHLCV
 main_placeholder = st.empty()
 
-plt.close("all")
 main_fig = mpf.figure(style="mike", figsize=(10, 10))
 # matplotlib doesn't play nice with types
 (ax_ohlcv, ax_fixed_rate, ax_positions) = main_fig.subplots(3, 1, sharex=True)  # type: ignore

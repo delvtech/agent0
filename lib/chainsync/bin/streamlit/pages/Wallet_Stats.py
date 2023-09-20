@@ -3,6 +3,8 @@
 # Streamlit gets the name of the sidebar tab from the name of the file
 # hence, this file is capitalized
 
+import gc
+
 import matplotlib.pyplot as plt
 import mplfinance as mpf
 import streamlit as st
@@ -15,6 +17,9 @@ from chainsync.db.hyperdrive import (
     get_wallet_pnl,
     get_wallet_positions_over_time,
 )
+
+plt.close("all")
+gc.collect()
 
 st.set_page_config(page_title="Trading Competition Dashboard", layout="wide")
 st.set_option("deprecation.showPyplotGlobalUse", False)
@@ -97,7 +102,6 @@ wallet_positions["username"] = (
 
 
 # Plot pnl over time
-plt.close("all")
 main_fig = mpf.figure(style="mike", figsize=(10, 10))
 # matplotlib doesn't play nice with types
 (ax_pnl, ax_base, ax_long, ax_short, ax_lp, ax_withdraw) = main_fig.subplots(6, 1, sharex=True)  # type: ignore
