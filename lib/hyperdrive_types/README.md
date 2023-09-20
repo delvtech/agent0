@@ -1,9 +1,9 @@
-# Type-safe python contract interfaces for the Hyperdrive ecosystem
+# Type-safe Python contract interfaces for the Hyperdrive ecosystem
 
-Generate the requisite python files by running:
+Generate the requisite Python files by running:
 
 ```bash
-python run/build_type_files.py path/to/ABIs
+sh scripts/build_type_files.sh path/to/ABIs
 ```
 
 You can then pip install the package from the project root with
