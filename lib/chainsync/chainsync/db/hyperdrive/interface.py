@@ -8,18 +8,9 @@ from chainsync.db.base import get_latest_block_number_from_table
 from sqlalchemy import exc, func
 from sqlalchemy.orm import Session
 
-from .schema import (
-    CheckpointInfo,
-    CurrentWallet,
-    HyperdriveTransaction,
-    PoolAnalysis,
-    PoolConfig,
-    PoolInfo,
-    Ticker,
-    WalletDelta,
-    WalletInfoFromChain,
-    WalletPNL,
-)
+from .schema import (CheckpointInfo, CurrentWallet, HyperdriveTransaction,
+                     PoolAnalysis, PoolConfig, PoolInfo, Ticker, WalletDelta,
+                     WalletInfoFromChain, WalletPNL)
 
 
 def add_transactions(transactions: list[HyperdriveTransaction], session: Session) -> None:
@@ -733,6 +724,8 @@ def get_ticker(
     end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    wallet_address : list[str] | None, optional
+        The wallet addresses to filter the query on
     coerce_float : bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
@@ -785,6 +778,10 @@ def get_wallet_pnl(
     end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    wallet_address : list[str] | None, optional
+        The wallet addresses to filter the query on. Returns all if None.
+    return_timestamp : bool, optional
+        Returns the timestamp from the pool info table if True. Defaults to True.
     coerce_float : bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
@@ -828,7 +825,7 @@ def get_total_wallet_pnl_over_time(
     wallet_address: list[str] | None = None,
     coerce_float=True,
 ) -> pd.DataFrame:
-    """Get all pool analysis and returns as a pandas dataframe.
+    """Get total pnl across wallets over time and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -840,6 +837,8 @@ def get_total_wallet_pnl_over_time(
     end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    wallet_address : list[str] | None, optional
+        The wallet addresses to filter the query on. Returns all if None.
     coerce_float : bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
@@ -888,7 +887,7 @@ def get_wallet_positions_over_time(
     wallet_address: list[str] | None = None,
     coerce_float=True,
 ) -> pd.DataFrame:
-    """Get all pool analysis and returns as a pandas dataframe.
+    """Get wallet positions over time and returns as a pandas dataframe.
 
     Arguments
     ---------
@@ -900,6 +899,8 @@ def get_wallet_positions_over_time(
     end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    wallet_address : list[str] | None, optional
+        The wallet addresses to filter the query on. Returns all if None.
     coerce_float : bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
