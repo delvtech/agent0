@@ -12,9 +12,11 @@ COPY . ./
 
 # install elfpy in one step, adding build tools, then removing them
 # https://stackoverflow.com/questions/58300046/how-to-make-lightweight-docker-image-for-python-app-with-pipenv
-RUN python -m pip install --no-cache-dir --upgrade pip && \
-  apt-get update && \
+RUN apt-get update && \
   apt-get install -y --no-install-recommends gcc python3-dev libssl-dev git && \
+  python -m pip install --no-cache-dir --upgrade pip && \
+  python -m pip install -e lib/pypechain[base] && \
+  sh lib/hyperdrive_types/scripts/build_type_files.sh packages/hyperdrive/src/abis && \
   python -m pip install --no-cache-dir -r requirements.txt && \
   python -m pip install --no-cache-dir -r requirements-dev.txt && \
   apt-get remove -y gcc python3-dev libssl-dev && \
