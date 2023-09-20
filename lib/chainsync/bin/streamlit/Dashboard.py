@@ -55,7 +55,7 @@ ticker_placeholder = st.empty()
 main_placeholder = st.empty()
 
 plt.close("all")
-main_fig = mpf.figure(style="mike", figsize=(15, 15))
+main_fig = mpf.figure(style="mike", figsize=(10, 10))
 # matplotlib doesn't play nice with types
 (ax_ohlcv, ax_fixed_rate, ax_positions) = main_fig.subplots(3, 1, sharex=True)  # type: ignore
 

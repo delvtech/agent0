@@ -98,7 +98,7 @@ wallet_positions["username"] = (
 
 # Plot pnl over time
 plt.close("all")
-main_fig = mpf.figure(style="mike", figsize=(15, 15))
+main_fig = mpf.figure(style="mike", figsize=(10, 10))
 # matplotlib doesn't play nice with types
 (ax_pnl, ax_base, ax_long, ax_short, ax_lp, ax_withdraw) = main_fig.subplots(6, 1, sharex=True)  # type: ignore
 
