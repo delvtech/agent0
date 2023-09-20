@@ -59,7 +59,8 @@ class LocalHyperdriveChain(NamedTuple):
     hyperdrive_factory_contract: Contract
     base_token_contract: Contract
 
-def create_hyperdrive_chain(rpc_uri: str, contract_addresses = None, initial_liquidity = None) -> LocalHyperdriveChain:
+
+def create_hyperdrive_chain(rpc_uri: str, contract_addresses=None, initial_liquidity=None) -> LocalHyperdriveChain:
     """Initializes hyperdrive on a local anvil chain for testing.
 
     Arguments
@@ -93,11 +94,15 @@ def create_hyperdrive_chain(rpc_uri: str, contract_addresses = None, initial_liq
         base_token_contract, factory_contract = deploy_hyperdrive_factory(rpc_uri, account)
     else:
         base_token_contract = web3.eth.contract(contract_addresses.base_token, abi=abis["ERC20Mintable"])
-        factory_contract = web3.eth.contract(contract_addresses.hyperdrive_factory, abi=abis["ERC4626HyperdriveFactory"])
+        factory_contract = web3.eth.contract(
+            contract_addresses.hyperdrive_factory, abi=abis["ERC4626HyperdriveFactory"]
+        )
     if initial_liquidity is None:
         hyperdrive_addr = deploy_and_initialize_hyperdrive(web3, base_token_contract, factory_contract, account)
     else:
-        hyperdrive_addr = deploy_and_initialize_hyperdrive(web3, base_token_contract, factory_contract, account, initial_liquidity)
+        hyperdrive_addr = deploy_and_initialize_hyperdrive(
+            web3, base_token_contract, factory_contract, account, initial_liquidity
+        )
     hyperdrive_contract = web3.eth.contract(address=hyperdrive_addr, abi=abis["IHyperdrive"])
     return LocalHyperdriveChain(
         web3,
@@ -112,6 +117,7 @@ def create_hyperdrive_chain(rpc_uri: str, contract_addresses = None, initial_liq
         hyperdrive_factory_contract=factory_contract,
         base_token_contract=base_token_contract,
     )
+
 
 @pytest.fixture(scope="function")
 def local_hyperdrive_chain(local_chain: str) -> LocalHyperdriveChain:

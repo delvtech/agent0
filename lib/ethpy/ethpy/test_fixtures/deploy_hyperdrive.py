@@ -159,7 +159,7 @@ def deploy_and_initialize_hyperdrive(
     base_token_contract: Contract,
     factory_contract: Contract,
     deploy_account: LocalAccount,
-    initial_contribution = FixedPoint(100_000_000).scaled_value
+    initial_contribution=FixedPoint(100_000_000).scaled_value,
 ) -> Address:
     """Calls the hyperdrive factory to deploy and initialize new hyperdrive contract
 
