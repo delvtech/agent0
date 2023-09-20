@@ -16,7 +16,7 @@ git clone https://github.com/delvtech/elf-simulations.git <repo_location>
 
 ## 3. Set up virtual environment
 
-You can use any environment, but we recommend [venv](https://docs.python.org/3/library/venv.html) which is part of the standard Python library.
+You can use any environment, but we recommend [venv](https://docs.python.org/3/library/venv.html), which is part of the standard Python library.
 
 ```bash
 cd <repo_location>
@@ -38,8 +38,7 @@ sh lib/hyperdrive_types/scripts/build_type_files.sh packages/hyperdrive/src/abis
 python -m pip install --upgrade -r requirements.txt
 ```
 
-Optionally, you can run `sh install.sh --dev` to include requirements for the continuious-integration tools (tests, linting, type checking) as well as building documentation.
-In this case, the script additionally executes this command:
+If you want to use the CI tools, such as run tests, check linting or types, build containers or documentation, then you must also install the dev packages:
 
 ```bash
 python -m pip install --upgrade -r requirements-dev.txt
