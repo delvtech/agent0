@@ -54,9 +54,9 @@ def build_eth_config() -> EthConfig:
 
     arg_dict = {}
     if artifacts_uri is not None:
-        arg_dict["ARTIFACTS_URL"] = artifacts_uri
+        arg_dict["ARTIFACTS_URI"] = artifacts_uri
     if rpc_uri is not None:
-        arg_dict["RPC_URL"] = rpc_uri
+        arg_dict["RPC_URI"] = rpc_uri
     if abi_dir is not None:
         arg_dict["ABI_DIR"] = abi_dir
     return EthConfig(**arg_dict)
