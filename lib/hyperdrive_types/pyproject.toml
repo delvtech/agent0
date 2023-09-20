@@ -1,0 +1,19 @@
+[project]
+name = "hyperdrive_types"
+version = "0.0.0"
+authors = [{ name = "Codegen"}]
+description = "Contract code generated using Pypechain"
+readme = "README.md"
+requires-python = ">=3.10, <3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache License 2.0",
+    "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+with-dependencies = [
+    "hyperdrive_types[base, lateral]"
+]
+base = []
+lateral = ["pypechain @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/pypechain",]

@@ -4,5 +4,6 @@
 -e lib/chainsync[base]
 -e lib/ethpy[base]
 -e lib/pypechain[base]
+-e lib/hyperdrive_types
 --find-links="packages/pyperdrive"
 pyperdrive
