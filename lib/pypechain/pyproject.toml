@@ -15,6 +15,12 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+[tool.pylint.format]
+max-line-length = "120"
+
+[tool.black]
+line-length = "120"
+
 [project.optional-dependencies]
 # This flag installs all dependencies and should be ran when installing this subpackage in isolation
 with-dependencies = ["pypechain[base]"]
