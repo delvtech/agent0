@@ -17,12 +17,9 @@ classifiers = [
 
 [project.optional-dependencies]
 # This flag installs all dependencies and should be ran when installing this subpackage in isolation
-with-dependencies = ["pypechain[base]"]
-base = ["jinja2", "web3"]
-lateral = [
-    # Lateral dependencies across subpackages are pointing to github
-    "ethpy @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/ethpy",
-]
+with-dependencies = ["pypechain[base, lateral]"]
+base = ["black", "jinja2", "web3"]
+lateral = []
 
 [project.urls]
 "Homepage" = "https://github.com/delvtech/elf-simulations"
