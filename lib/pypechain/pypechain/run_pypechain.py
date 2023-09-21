@@ -137,6 +137,8 @@ def render_types_file(contract_name: str, types_template: Template, abi_file_pat
 
     Arguments
     ---------
+    contract_name : str
+        The name of the contract to be parsed.
     types_template : Template
         A jinja template containging types for all structs within an abi.
     abi_file_path : Path
