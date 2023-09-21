@@ -7,7 +7,6 @@ from dataclasses import asdict
 from pathlib import Path
 
 import black
-from black.mode import Mode  # pylint: disable=no-name-in-module
 from jinja2 import Template
 from pypechain.utilities.abi import (
     get_abi_items,
@@ -23,13 +22,26 @@ from pypechain.utilities.types import solidity_to_python_type
 from web3.types import ABIFunction
 
 
-def format_code(code):
-    """Format code with Black on default settings."""
+def format_code(code: str, line_length: int) -> str:
+    """Format code with Black on default settings.
+
+    Arguments
+    ---------
+    code : str
+        A string containing Python code
+    line_length : int
+        Output file's maximum line length.
+
+    Returns
+    -------
+    str
+        A string containing the Black-formatted code
+    """
     while "\n\n" in code:
         code = code.replace("\n\n", "\n")  # remove all whitespace and let Black sort it out
     code = code.replace(", )", ")")  # remove trailing comma, it's weird
     try:
-        return black.format_file_contents(code, fast=False, mode=Mode())
+        return black.format_file_contents(code, fast=False, mode=black.Mode(line_length=line_length))
     except ValueError as exc:
         raise ValueError(f"cannot format with Black\n code:\n{code}") from exc
 
@@ -40,13 +52,17 @@ def write_code(path, code):
         output_file.write(code)
 
 
-def main(abi_file_path: str, output_dir: str) -> None:
+def main(abi_file_path: str, output_dir: str, line_length: int = 80) -> None:
     """Generates class files for a given abi.
 
     Arguments
     ---------
     abi_file_path : str
-        Path to the abi json file.
+        Path to the abi JSON file.
+    output_dir : str
+        Path to where the Python files should go.
+    line_length : int
+        Optional argument for the output file's maximum line length. Defaults to 80.
 
     output_dr: str
         Path to the directory to output the generated files.
@@ -69,8 +85,8 @@ def main(abi_file_path: str, output_dir: str) -> None:
     # TODO:  events
 
     # Format the generated code using Black
-    formatted_contract_code = format_code(rendered_contract_code)
-    formatted_types_code = format_code(rendered_types_code)
+    formatted_contract_code = format_code(rendered_contract_code, line_length)
+    formatted_types_code = format_code(rendered_types_code, line_length)
 
     # Write the code to file
     write_code(f"{contract_path}Contract.py", formatted_contract_code)
