@@ -96,6 +96,7 @@ def data_analysis(
                 break
             continue
         # Does batch analysis on range(analysis_start_block, latest_data_block_number) blocks
+        # TODO do regular batching to sample for wallet information
         analysis_start_block = block_number + 1
         analysis_end_block = latest_data_block_number + 1
         logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)

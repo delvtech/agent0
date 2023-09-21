@@ -25,10 +25,12 @@ from .interface import (
     get_pool_config,
     get_pool_info,
     get_ticker,
+    get_total_wallet_pnl_over_time,
     get_transactions,
     get_wallet_deltas,
     get_wallet_info_history,
     get_wallet_pnl,
+    get_wallet_positions_over_time,
 )
 from .schema import (
     CheckpointInfo,
