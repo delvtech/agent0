@@ -1,4 +1,5 @@
 """Defines the eth chain connection configuration from env vars."""
+from __future__ import annotations
 
 import os
 from dataclasses import dataclass
@@ -13,20 +14,23 @@ class EthConfig:
 
     Attributes
     ----------
-    ARTIFACTS_URL: str
-        The url of the artifacts server from which we get addresses.
-    RPC_URL: URI | str
-        The url to the ethereum node
-    ABI_DIR: str
-        The path to the abi directory
+    artifacts_uri: URI | str
+        The uri of the artifacts server from which we get addresses.
+    rpc_uri: URI | str
+        The uri to the ethereum node.
+    abi_dir: str
+        The path to the abi directory.
     """
 
-    # default values for local contracts
-    # Matching environment variables to search for
-    # pylint: disable=invalid-name
-    ARTIFACTS_URL: str = "http://localhost:8080"
-    RPC_URL: URI = URI("http://localhost:8545")
-    ABI_DIR: str = "./packages/hyperdrive/src/abis"
+    artifacts_uri: URI | str = URI("http://localhost:8080")
+    rpc_uri: URI | str = URI("http://localhost:8545")
+    abi_dir: str = "./packages/hyperdrive/src/abis"
+
+    def __post_init__(self):
+        if isinstance(self.artifacts_uri, str):
+            self.artifacts_uri = URI(self.artifacts_uri)
+        if isinstance(self.rpc_uri, str):
+            self.rpc_uri = URI(self.rpc_uri)
 
 
 def build_eth_config() -> EthConfig:
@@ -41,15 +45,15 @@ def build_eth_config() -> EthConfig:
     # Look for and load local config if it exists
     load_dotenv("eth.env")
 
-    artifacts_url = os.getenv("ARTIFACTS_URL")
-    rpc_url = os.getenv("RPC_URL")
+    artifacts_uri = os.getenv("ARTIFACTS_URI")
+    rpc_uri = os.getenv("RPC_URI")
     abi_dir = os.getenv("ABI_DIR")
 
     arg_dict = {}
-    if artifacts_url is not None:
-        arg_dict["ARTIFACTS_URL"] = artifacts_url
-    if rpc_url is not None:
-        arg_dict["RPC_URL"] = rpc_url
+    if artifacts_uri is not None:
+        arg_dict["artifacts_uri"] = artifacts_uri
+    if rpc_uri is not None:
+        arg_dict["rpc_uri"] = rpc_uri
     if abi_dir is not None:
-        arg_dict["ABI_DIR"] = abi_dir
+        arg_dict["abi_dir"] = abi_dir
     return EthConfig(**arg_dict)

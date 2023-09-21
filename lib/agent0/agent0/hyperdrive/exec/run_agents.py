@@ -9,7 +9,7 @@ from agent0 import AccountKeyConfig
 from agent0.base.config import DEFAULT_USERNAME, AgentConfig, EnvironmentConfig
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_url
+from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
 
 from .create_and_fund_user_account import create_and_fund_user_account
 from .fund_agents import fund_agents
@@ -41,10 +41,10 @@ def run_agents(
     develop: bool
         Flag for development mode.
     eth_config: EthConfig | None
-        Configuration for urls to the rpc and artifacts. If not set, will look for addresses
+        Configuration for URIs to the rpc and artifacts. If not set, will look for addresses
         in eth.env.
     contract_addresses: HyperdriveAddresses | None
-        If set, will use these addresses instead of querying the artifact url
+        If set, will use these addresses instead of querying the artifact URI
         defined in eth_config.
     """
 
@@ -57,9 +57,9 @@ def run_agents(
     if eth_config is None:
         eth_config = build_eth_config()
 
-    # Get addresses either from artifacts url defined in eth_config or from contract_addresses
+    # Get addresses either from artifacts URI defined in eth_config or from contract_addresses
     if contract_addresses is None:
-        contract_addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
+        contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
 
     if develop:  # setup env automatically & fund the agents
         # exposing the user account for debugging purposes
@@ -82,7 +82,7 @@ def run_agents(
         # Set up postgres to write username to agent wallet addr
         # initialize the postgres session
         wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
-        register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
+        register_username(environment_config.username_register_uri, wallet_addrs, environment_config.username)
 
     last_executed_block = BlockNumber(0)
     while True:

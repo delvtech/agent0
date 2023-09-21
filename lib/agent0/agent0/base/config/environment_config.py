@@ -37,8 +37,8 @@ class EnvironmentConfig(types.FrozenClass):
     max_bytes: int = DEFAULT_LOG_MAXBYTES  # int(2e6) or 2MB
     # int to be used for the random seed
     random_seed: int = 1
-    # username registration url
-    username_register_url: str = "http://localhost:5002"
+    # username registration URI
+    username_register_uri: str = "http://localhost:5002"
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)

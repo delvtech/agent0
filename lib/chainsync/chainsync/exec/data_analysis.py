@@ -13,7 +13,7 @@ from chainsync.db.hyperdrive import (
     get_pool_config,
 )
 from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_url, get_web3_and_hyperdrive_contracts
+from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri, get_web3_and_hyperdrive_contracts
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
@@ -35,13 +35,13 @@ def data_analysis(
     lookback_block_limit : int
         The maximum number of blocks to look back when filling in missing data
     eth_config: EthConfig | None
-        Configuration for urls to the rpc and artifacts. If not set, will look for addresses
+        Configuration for URIs to the rpc and artifacts. If not set, will look for addresses
         in eth.env.
     db_session: Session | None
         Session object for connecting to db. If None, will initialize a new session based on
         postgres.env.
     contract_addresses: HyperdriveAddresses | None
-        If set, will use these addresses instead of querying the artifact url
+        If set, will use these addresses instead of querying the artifact URI
         defined in eth_config.
     exit_on_catch_up: bool
         If True, will exit after catching up to current block
@@ -56,9 +56,9 @@ def data_analysis(
     if db_session is None:
         db_session = initialize_session()
 
-    # Get addresses either from artifacts url defined in eth_config or from contract_addresses
+    # Get addresses either from artifacts URI defined in eth_config or from contract_addresses
     if contract_addresses is None:
-        contract_addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
+        contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
 
     # Get hyperdrive contract
     _, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)

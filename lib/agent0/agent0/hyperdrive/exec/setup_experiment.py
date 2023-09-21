@@ -30,7 +30,7 @@ def setup_experiment(
     Arguments
     ---------
     eth_config: EthConfig
-        Configuration for urls to the rpc and artifacts.
+        Configuration for URIs to the rpc and artifacts.
     environment_config: EnvironmentConfig
         The agent's environment configuration.
     agent_config: list[AgentConfig]
@@ -73,12 +73,12 @@ def setup_experiment(
     return web3, base_token_contract, hyperdrive_contract, agent_accounts
 
 
-def register_username(register_url: str, wallet_addrs: list[str], username: str) -> None:
+def register_username(register_uri: str, wallet_addrs: list[str], username: str) -> None:
     """Registers the username with the flask server.
 
     Arguments
     ---------
-    register_url: str
+    register_uri: str
         The endpoint for the flask server.
     wallet_addrs: list[str]
         The list of wallet addresses to register.
@@ -87,6 +87,6 @@ def register_username(register_url: str, wallet_addrs: list[str], username: str)
     """
     # TODO: use the json schema from the server.
     json_data = {"wallet_addrs": wallet_addrs, "username": username}
-    result = requests.post(f"{register_url}/register_agents", json=json_data, timeout=3)
+    result = requests.post(f"{register_uri}/register_agents", json=json_data, timeout=3)
     if result.status_code != HTTPStatus.OK:
         raise ConnectionError(result)

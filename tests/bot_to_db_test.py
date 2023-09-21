@@ -51,7 +51,7 @@ class TestBotToDb:
         """
         # Get hyperdrive chain info
         uri: URI | None = cast(HTTPProvider, local_hyperdrive_chain.web3.provider).endpoint_uri
-        rpc_url = uri if uri else URI("http://localhost:8545")
+        rpc_uri = uri if uri else URI("http://localhost:8545")
         deploy_account: LocalAccount = local_hyperdrive_chain.deploy_account
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
 
@@ -83,9 +83,9 @@ class TestBotToDb:
 
         # Build custom eth config pointing to local test chain
         eth_config = EthConfig(
-            # Artifacts_url isn't used here, as we explicitly set addresses and passed to run_bots
-            ARTIFACTS_URL="not_used",
-            RPC_URL=rpc_url,
+            # Artifacts_uri isn't used here, as we explicitly set addresses and passed to run_bots
+            artifacts_uri="not_used",
+            rpc_uri=rpc_uri,
             # Using default abi dir
         )
 
