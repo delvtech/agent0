@@ -38,16 +38,24 @@ def format_code(code: str, line_length: int) -> str:
         A string containing the Black-formatted code
     """
     while "\n\n" in code:
-        code = code.replace("\n\n", "\n")  # remove all whitespace and let Black sort it out
-    code = code.replace(", )", ")")  # remove trailing comma, it's weird
+        code = code.replace("\n\n", "\n")  # remove extra newlines and let Black sort it out
+    code = code.replace(", )", ")")  # remove trailing comma
     try:
         return black.format_file_contents(code, fast=False, mode=black.Mode(line_length=line_length))
     except ValueError as exc:
         raise ValueError(f"cannot format with Black\n code:\n{code}") from exc
 
 
-def write_code(path, code):
-    """save to specified path the provided code."""
+def write_code(path: str | os.PathLike, code: str) -> None:
+    """save to specified path the provided code.
+
+    Arguments
+    ---------
+    path : str | os.PathLike
+        The location of the output file.
+    code : str
+        The code to be written, as a single string.
+    """
     with open(path, "w", encoding="utf-8") as output_file:
         output_file.write(code)
 
@@ -59,13 +67,10 @@ def main(abi_file_path: str, output_dir: str, line_length: int = 80) -> None:
     ---------
     abi_file_path : str
         Path to the abi JSON file.
-    output_dir : str
-        Path to where the Python files should go.
+    output_dr: str
+        Path to the directory where files will be generated.
     line_length : int
         Optional argument for the output file's maximum line length. Defaults to 80.
-
-    output_dr: str
-        Path to the directory to output the generated files.
     """
 
     # get names

@@ -263,11 +263,11 @@ def get_structs_for_abi(abi: ABI) -> dict[str, StructInfo]:
             fn_inputs = item.get("inputs")
             fn_outputs = item.get("outputs")
             if fn_inputs:
-                input_structs = get_structs(fn_inputs)
-                structs.update(input_structs, structs)
+                input_structs = get_structs(fn_inputs, structs)
+                structs.update(input_structs)
             if fn_outputs:
-                output_structs = get_structs(fn_outputs)
-                structs.update(output_structs, structs)
+                output_structs = get_structs(fn_outputs, structs)
+                structs.update(output_structs)
     return structs
 
 
