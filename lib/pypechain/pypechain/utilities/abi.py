@@ -165,7 +165,7 @@ class EventParams:
 # pylint: disable=dangerous-default-value
 def get_structs(
     function_params: Sequence[ABIFunctionParams] | Sequence[ABIFunctionComponents],
-    structs: dict[str, StructInfo] = {},
+    structs: dict[str, StructInfo] | None = None,
 ) -> dict[str, StructInfo]:
     """Recursively gets all the structs for a contract by walking all function parameters.
 
@@ -209,7 +209,8 @@ def get_structs(
     List[Union[ABIFunction, ABIEvent]]
         _description_
     """
-
+    if structs is None:
+        structs = {}
     for param in function_params:
         components = param.get("components")
         internal_type = cast(str, param.get("internalType", ""))
@@ -263,11 +264,10 @@ def get_structs_for_abi(abi: ABI) -> dict[str, StructInfo]:
             fn_outputs = item.get("outputs")
             if fn_inputs:
                 input_structs = get_structs(fn_inputs)
-                structs.update(input_structs)
+                structs.update(input_structs, structs)
             if fn_outputs:
                 output_structs = get_structs(fn_outputs)
-                structs.update(output_structs)
-
+                structs.update(output_structs, structs)
     return structs
 
 
