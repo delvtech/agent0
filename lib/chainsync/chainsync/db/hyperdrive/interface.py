@@ -8,9 +8,18 @@ from chainsync.db.base import get_latest_block_number_from_table
 from sqlalchemy import exc, func
 from sqlalchemy.orm import Session
 
-from .schema import (CheckpointInfo, CurrentWallet, HyperdriveTransaction,
-                     PoolAnalysis, PoolConfig, PoolInfo, Ticker, WalletDelta,
-                     WalletInfoFromChain, WalletPNL)
+from .schema import (
+    CheckpointInfo,
+    CurrentWallet,
+    HyperdriveTransaction,
+    PoolAnalysis,
+    PoolConfig,
+    PoolInfo,
+    Ticker,
+    WalletDelta,
+    WalletInfoFromChain,
+    WalletPNL,
+)
 
 
 def add_transactions(transactions: list[HyperdriveTransaction], session: Session) -> None:
