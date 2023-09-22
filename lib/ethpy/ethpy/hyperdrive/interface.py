@@ -87,7 +87,7 @@ def get_hyperdrive_checkpoint_info(
         "timestamp": datetime.fromtimestamp(current_block_timestamp),
         "sharePrice": FixedPoint(scaled_value=checkpoint_data["sharePrice"]),
         "longSharePrice": FixedPoint(scaled_value=checkpoint_data["longSharePrice"]),
-        "shortBaseVolume": FixedPoint(scaled_value=checkpoint_data["shortBaseVolume"]),
+        "longExposure": FixedPoint(scaled_value=checkpoint_data["longExposure"]),
     }
 
 

@@ -24,7 +24,7 @@ from .receipt_breakdown import ReceiptBreakdown
 
 
 class HyperdriveInterface:
-    """End-point api for interfacing with Hyperdrive"""
+    """End-point api for interfacing with Hyperdrive."""
 
     def __init__(
         self,
@@ -41,7 +41,6 @@ class HyperdriveInterface:
             ## or: PR to fix this to happen behind the scenes in EthConfig
             ## or: Make an issue to fix EthConfig so that it handles all of this optional argument bullshit
         ## TODO: Change pyperdrive interface to take str OR python FixedPoint objs; use FixedPoint here.
-        ## TODO: Add cached checkpoint & use that in get_max_long
         """
         if all([eth_config is None, artifacts is None, rpc_uri is None, abi_dir is None]):
             eth_config = build_eth_config()
@@ -70,7 +69,7 @@ class HyperdriveInterface:
 
     @property
     def pool_info(self):
-        """Returns the current pool state info"""
+        """Returns the current pool state info."""
         if self.current_block > self.last_state_block:
             self.last_state_block = self.current_block
             setattr(
@@ -80,12 +79,21 @@ class HyperdriveInterface:
             )
         return self._pool_info
 
-    # @property
-    # def latest_checkpoint(self):
+    @property
+    def latest_checkpoint(self):
+        """Returns the latest checkpoint info."""
+        if self.current_block > self.last_state_block:
+            self.last_state_block = self.current_block
+            setattr(
+                self,
+                "_latest_checkpoint",
+                get_hyperdrive_checkpoint_info(self.web3, self.hyperdrive_contract, self.current_block_number),
+            )
+        return self._latest_checkpoint
 
     @property
     def current_block(self) -> BlockData:
-        """The current block number"""
+        """The current block number."""
         return self.web3.eth.get_block("latest")
 
     @property
@@ -509,7 +517,12 @@ class HyperdriveInterface:
             lp_share_price=str(self.pool_info["lp_share_price"]),
             long_exposure=str(self.pool_info["long_exposure"]),
         )
-        max_long = pyperdrive.get_max_long(pool_config_str, pool_info_str, str(budget), checkpoint_exposure="0")
+        max_long = pyperdrive.get_max_long(
+            pool_config_str,
+            pool_info_str,
+            str(budget),
+            checkpoint_exposure=self.latest_checkpoint["longExposure"],
+        )
         return FixedPoint(max_long)
 
     def get_max_short(self, budget: FixedPoint) -> FixedPoint:
