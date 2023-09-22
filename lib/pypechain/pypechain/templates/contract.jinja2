@@ -11,7 +11,6 @@ from web3.exceptions import FallbackNotFound
 {% for function in functions %}
 class {{contract_name}}{{function.capitalized_name}}ContractFunction(ContractFunction):
     """ContractFunction for the {{function.name}} method."""
-    # pylint: disable=arguments-differ
     {# functions with multiple signatures have a more complicated logic #}
     {% if function.input_names_and_types|length > 1 %} 
     def __call__(self, {{function.required_input_names_and_types|join(', ')}}, {{function.optional_input_names_and_types|join(', ')}}) -> "{{contract_name}}{{function.capitalized_name}}ContractFunction":

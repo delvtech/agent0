@@ -65,8 +65,8 @@ def format_code(code: str, line_length: int) -> str:
     str
         A string containing the Black-formatted code
     """
-    while "\n\n" in code:  # remove extra newlines and let Black sort it out
-        code = re.sub(r"^[\s\t]*\n", "", code, flags=re.MULTILINE)
+    # remove extra newlines and let Black sort it out
+    code = re.sub(r"^[\s\t]*\n\n", "\n", code, flags=re.MULTILINE)
     code = code.replace(", )", ")")  # remove trailing comma
     try:
         return black.format_file_contents(code, fast=False, mode=black.Mode(line_length=line_length))
@@ -305,9 +305,11 @@ def get_outputs(function: ABIFunction) -> list[str]:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python script_name.py <path_to_abi_file> <contract_address> <output_dir>")
-    else:
-        # TODO: add a bash script to make this easier, i.e. ./pypechain './abis', './build'
-        # TODO: make this installable so that other packages can use the command line tool
+    # TODO: add a bash script to make this easier, i.e. ./pypechain './abis', './build'
+    # TODO: make this installable so that other packages can use the command line tool
+    if len(sys.argv) == 3:
         main(sys.argv[1], sys.argv[2])
+    elif len(sys.argv) == 4:
+        main(sys.argv[1], sys.argv[2], int(sys.argv[3]))
+    else:
+        print("Usage: python script_name.py <path_to_abi_file> <output_dir> <line_length>")
