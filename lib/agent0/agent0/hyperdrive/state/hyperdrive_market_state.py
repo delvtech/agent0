@@ -123,10 +123,14 @@ class HyperdriveMarketState(BaseMarketState):
         self.withdraw_capital += delta.withdraw_capital
         self.withdraw_interest += delta.withdraw_interest
         # checkpointing
-        for mint_time, delta_supply in delta.total_supply_longs.items():
-            self.total_supply_longs[mint_time] = self.total_supply_longs.get(mint_time, FixedPoint(0)) + delta_supply
-        for mint_time, delta_supply in delta.total_supply_shorts.items():
-            self.total_supply_shorts[mint_time] = self.total_supply_shorts.get(mint_time, FixedPoint(0)) + delta_supply
+        for maturity_time, delta_supply in delta.total_supply_longs.items():
+            self.total_supply_longs[maturity_time] = (
+                self.total_supply_longs.get(maturity_time, FixedPoint(0)) + delta_supply
+            )
+        for maturity_time, delta_supply in delta.total_supply_shorts.items():
+            self.total_supply_shorts[maturity_time] = (
+                self.total_supply_shorts.get(maturity_time, FixedPoint(0)) + delta_supply
+            )
 
     def copy(self) -> HyperdriveMarketState:
         """Returns a new copy of self"""

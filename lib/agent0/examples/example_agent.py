@@ -107,8 +107,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=wallet,
-                            # TODO is this actually maturity time? Not mint time?
-                            mint_time=long_time,
+                            maturity_time=long_time,
                         ),
                     )
                 )
@@ -124,7 +123,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                             trade_amount=short.balance,
                             wallet=wallet,
                             # TODO is this actually maturity time? Not mint time?
-                            mint_time=short_time,
+                            maturity_time=short_time,
                         ),
                     )
                 )

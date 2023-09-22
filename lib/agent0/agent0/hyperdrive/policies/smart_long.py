@@ -82,7 +82,7 @@ class LongLouie(HyperdrivePolicy):
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
-                            mint_time=long_time,
+                            maturity_time=long_time,
                         ),
                     )
                 ]
@@ -121,7 +121,6 @@ class LongLouie(HyperdrivePolicy):
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
-                            mint_time=market.block_time.time,
                         ),
                     )
                 ]

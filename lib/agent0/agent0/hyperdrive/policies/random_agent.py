@@ -92,7 +92,7 @@ class RandomAgent(HyperdrivePolicy):
     def close_random_short(self, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Fully close the short balance for a random mint time."""
         # choose a random short time to close
-        short_time: FixedPoint = list(wallet.shorts)[self.rng.integers(len(wallet.shorts))]
+        short_time = list(wallet.shorts)[self.rng.integers(len(wallet.shorts))]
         trade_amount = wallet.shorts[short_time].balance  # close the full trade
         return [
             Trade(
@@ -102,7 +102,7 @@ class RandomAgent(HyperdrivePolicy):
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
-                    mint_time=short_time,
+                    maturity_time=short_time,
                 ),
             )
         ]
@@ -136,7 +136,7 @@ class RandomAgent(HyperdrivePolicy):
     def close_random_long(self, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Fully close the long balance for a random mint time."""
         # choose a random long time to close
-        long_time: FixedPoint = list(wallet.longs)[self.rng.integers(len(wallet.longs))]
+        long_time = list(wallet.longs)[self.rng.integers(len(wallet.longs))]
         trade_amount = wallet.longs[long_time].balance  # close the full trade
         return [
             Trade(
@@ -146,7 +146,7 @@ class RandomAgent(HyperdrivePolicy):
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
                     wallet=wallet,
-                    mint_time=long_time,
+                    maturity_time=long_time,
                 ),
             )
         ]

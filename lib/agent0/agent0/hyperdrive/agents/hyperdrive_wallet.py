@@ -37,7 +37,7 @@ class WalletDeltas:
     # TODO: Support multiple typed balances:
     #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
     lp_tokens: FixedPoint = FixedPoint(0)
-    # non-fungible (identified by key=mint_time, stored as dict)
+    # non-fungible (identified by key=maturity_time, stored as dict)
     longs: dict[int, Long] = field(default_factory=dict)
     shorts: dict[int, Short] = field(default_factory=dict)
     withdraw_shares: FixedPoint = FixedPoint(0)

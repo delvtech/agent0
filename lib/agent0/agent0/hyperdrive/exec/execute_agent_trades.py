@@ -7,12 +7,11 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, NoReturn
 
 import eth_utils
-from agent0.hyperdrive.agents import WalletDeltas
+from agent0.base import Quantity, TokenType
+from agent0.hyperdrive.agents import Long, Short, WalletDeltas
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy import types
 from elfpy.markets.hyperdrive import HyperdriveMarket
-from elfpy.types import Quantity, TokenType
-from elfpy.wallet.wallet import Long, Short
 from ethpy.base import (
     UnknownBlockError,
     async_smart_contract_transact,
@@ -259,13 +258,13 @@ async def async_match_contract_call_to_trade(
                     amount=-trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                longs={FixedPoint(maturity_time_seconds): Long(trade_result.bond_amount)},
+                longs={maturity_time_seconds: Long(trade_result.bond_amount)},
             )
 
         case HyperdriveActionType.CLOSE_LONG:
-            if not trade.mint_time:
-                raise ValueError("Mint time was not provided, can't close long position.")
-            maturity_time_seconds = int(trade.mint_time)
+            if not trade.maturity_time:
+                raise ValueError("Maturity time was not provided, can't close long position.")
+            maturity_time_seconds = int(trade.maturity_time)
             min_output = 0
             fn_args = (
                 maturity_time_seconds,
@@ -294,7 +293,7 @@ async def async_match_contract_call_to_trade(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                longs={trade.mint_time: Long(-trade_result.bond_amount)},
+                longs={trade.maturity_time: Long(-trade_result.bond_amount)},
             )
 
         case HyperdriveActionType.OPEN_SHORT:
@@ -323,17 +322,16 @@ async def async_match_contract_call_to_trade(
                     unit=TokenType.BASE,
                 ),
                 shorts={
-                    FixedPoint(maturity_time_seconds): Short(
+                    maturity_time_seconds: Short(
                         balance=trade_result.bond_amount,
-                        open_share_price=hyperdrive_market.market_state.share_price,
                     )
                 },
             )
 
         case HyperdriveActionType.CLOSE_SHORT:
-            if not trade.mint_time:
-                raise ValueError("Mint time was not provided, can't close long position.")
-            maturity_time_seconds = int(trade.mint_time)
+            if not trade.maturity_time:
+                raise ValueError("Maturity time was not provided, can't close long position.")
+            maturity_time_seconds = int(trade.maturity_time)
             min_output = 0
             fn_args = (
                 maturity_time_seconds,
@@ -363,9 +361,8 @@ async def async_match_contract_call_to_trade(
                     unit=TokenType.BASE,
                 ),
                 shorts={
-                    trade.mint_time: Short(
+                    trade.maturity_time: Short(
                         balance=-trade_result.bond_amount,
-                        open_share_price=agent.wallet.shorts[trade.mint_time].open_share_price,
                     )
                 },
             )

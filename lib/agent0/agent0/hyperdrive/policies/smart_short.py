@@ -83,7 +83,7 @@ class ShortSally(HyperdrivePolicy):
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
-                            mint_time=short_time,
+                            maturity_time=short_time,
                         ),
                     )
                 ]
@@ -102,7 +102,6 @@ class ShortSally(HyperdrivePolicy):
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
-                            mint_time=market.block_time.time,
                         ),
                     )
                 ]
