@@ -7,12 +7,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, NoReturn
 
 import eth_utils
+from agent0.hyperdrive.agents import WalletDeltas
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy import types
 from elfpy.markets.hyperdrive import HyperdriveMarket
 from elfpy.types import Quantity, TokenType
 from elfpy.wallet.wallet import Long, Short
-from elfpy.wallet.wallet_deltas import WalletDeltas
 from ethpy.base import (
     UnknownBlockError,
     async_smart_contract_transact,

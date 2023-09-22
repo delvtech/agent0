@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from typing import Generic, TypeVar
 
+from agent0.base import Quantity, TokenType
 from agent0.base.policies import BasePolicy, NoActionPolicy
-from elfpy.types import Quantity, TokenType, Trade
+from elfpy.types import Trade
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes

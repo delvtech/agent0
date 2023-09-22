@@ -4,11 +4,13 @@ from __future__ import annotations
 import logging
 from typing import Generic, TypeVar
 
+from agent0.base import Quantity, TokenType
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketAction, MarketActionType
-from elfpy.types import MarketType, Quantity, TokenType, Trade
+from elfpy.types import MarketType, Trade
 from eth_account.signers.local import LocalAccount
+from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
 from .hyperdrive_wallet import HyperdriveWallet
@@ -92,7 +94,8 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
                             action_type=MarketActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=self.wallet,  # type: ignore
-                            maturity_time=maturity_time,
+                            # TODO this should be in int
+                            maturity_time=FixedPoint(maturity_time),
                         ),
                     )
                 )
@@ -107,7 +110,7 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
                             action_type=MarketActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             wallet=self.wallet,  # type: ignore
-                            maturity_time=maturity_time,
+                            maturity_time=FixedPoint(maturity_time),
                         ),
                     )
                 )

@@ -6,8 +6,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from agent0.base import Quantity, TokenType
 from elfpy import check_non_zero
-from elfpy.types import Quantity, TokenType
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 

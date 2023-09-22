@@ -38,8 +38,8 @@ class WalletDeltas:
     #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
     lp_tokens: FixedPoint = FixedPoint(0)
     # non-fungible (identified by key=mint_time, stored as dict)
-    longs: dict[FixedPoint, Long] = field(default_factory=dict)
-    shorts: dict[FixedPoint, Short] = field(default_factory=dict)
+    longs: dict[int, Long] = field(default_factory=dict)
+    shorts: dict[int, Short] = field(default_factory=dict)
     withdraw_shares: FixedPoint = FixedPoint(0)
 
     def copy(self) -> WalletDeltas:
@@ -103,10 +103,10 @@ class HyperdriveWallet(EthWallet):
     # pylint: disable=too-many-instance-attributes
     lp_tokens: FixedPoint = FixedPoint(0)
     withdraw_shares: FixedPoint = FixedPoint(0)
-    longs: dict[FixedPoint, Long] = field(default_factory=dict)
-    shorts: dict[FixedPoint, Short] = field(default_factory=dict)
+    longs: dict[int, Long] = field(default_factory=dict)
+    shorts: dict[int, Short] = field(default_factory=dict)
 
-    def _update_longs(self, longs: Iterable[tuple[FixedPoint, Long]]) -> None:
+    def _update_longs(self, longs: Iterable[tuple[int, Long]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet.
 
         Arguments
@@ -135,7 +135,7 @@ class HyperdriveWallet(EthWallet):
             if maturity_time in self.longs and self.longs[maturity_time].balance < FixedPoint(0):
                 raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.longs[maturity_time]}.")
 
-    def _update_shorts(self, shorts: Iterable[tuple[FixedPoint, Short]]) -> None:
+    def _update_shorts(self, shorts: Iterable[tuple[int, Short]]) -> None:
         """Helper internal function that updates the data about Shorts contained in the Agent's Wallet.
 
         Arguments
