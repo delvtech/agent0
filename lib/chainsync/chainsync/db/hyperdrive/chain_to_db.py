@@ -4,7 +4,12 @@ import time
 
 from eth_typing import BlockNumber
 from ethpy.base import fetch_contract_transactions_for_block
-from ethpy.hyperdrive import get_hyperdrive_checkpoint_info, get_hyperdrive_pool_config, get_hyperdrive_pool_info
+from ethpy.hyperdrive import (
+    get_hyperdrive_checkpoint_info,
+    get_hyperdrive_pool_config,
+    get_hyperdrive_pool_info,
+    process_hyperdrive_pool_config,
+)
 from sqlalchemy.orm import Session
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -38,7 +43,7 @@ def init_data_chain_to_db(
     pool_config_dict = None
     for _ in range(_RETRY_COUNT):
         try:
-            pool_config_dict = get_hyperdrive_pool_config(hyperdrive_contract)
+            pool_config_dict = process_hyperdrive_pool_config(get_hyperdrive_pool_config(hyperdrive_contract))
             break
         except ValueError:
             logging.warning("Error in getting pool config, retrying")

@@ -20,9 +20,7 @@ from .receipt_breakdown import ReceiptBreakdown
 
 
 def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> dict[str, Any]:
-    """Get the hyperdrive config from a deployed hyperdrive contract. This function converts all contract returns as
-    FixedPoints (i.e., contract call returned a scaled value), integer (i.e., contract call returned an unscaled value),
-    or a string (i.e., contract call returned a string)
+    """Get the hyperdrive config from a deployed hyperdrive contract.
 
     Arguments
     ----------
@@ -31,18 +29,32 @@ def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> dict[str, Any]:
 
     Returns
     -------
-    hyperdrive_config : PoolConfig
-        The hyperdrive config.
+    PoolConfig
+        The hyperdrive pool config.
     """
-    pool_config = smart_contract_read(hyperdrive_contract, "getPoolConfig")
+    return smart_contract_read(hyperdrive_contract, "getPoolConfig")
+
+
+def process_hyperdrive_pool_config(pool_config: dict[str, Any]) -> dict[str, Any]:
+    """Converts pool_config to python-friendly (FixedPoint, integer, str) types and add some computed values.
+
+    Arguments
+    ----------
+    pool_config : dict[str, Any]
+        The hyperdrive pool config.
+
+    Returns
+    -------
+    dict[str, Any]
+        The hyperdrive pool config with modified types.
+    """
     # convert values to FixedPoint
-    non_int_keys = ["baseToken", "governance", "feeCollector", "fees"]
-    pool_config: dict[str, Any] = {
-        str(key): FixedPoint(scaled_value=value) for (key, value) in pool_config.items() if key not in non_int_keys
-    }
+    fixedpoint_keys = ["initialSharePrice", "minimumShareReserves", "timeStretch"]
+    for key in pool_config:
+        if key in fixedpoint_keys:
+            pool_config[key] = FixedPoint(scaled_value=pool_config[key])
     pool_config["fees"] = (FixedPoint(fee) for fee in pool_config["fees"])
     # new attributes
-    pool_config["contractAddress"] = hyperdrive_contract.address
     curve_fee, flat_fee, governance_fee = pool_config["fees"]
     pool_config["curveFee"] = curve_fee
     pool_config["flatFee"] = flat_fee

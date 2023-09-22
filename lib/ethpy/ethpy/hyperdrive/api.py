@@ -19,7 +19,13 @@ from web3 import Web3
 from web3.types import BlockData, Timestamp
 
 from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
-from .interface import get_hyperdrive_checkpoint_info, get_hyperdrive_config, get_hyperdrive_pool_info, parse_logs
+from .interface import (
+    get_hyperdrive_checkpoint_info,
+    get_hyperdrive_pool_config,
+    get_hyperdrive_pool_info,
+    parse_logs,
+    process_hyperdrive_pool_config,
+)
 from .receipt_breakdown import ReceiptBreakdown
 
 
@@ -80,8 +86,11 @@ class HyperdriveInterface:
         self.web3, self.base_token_contract, self.hyperdrive_contract = get_web3_and_hyperdrive_contracts(
             self.config, addresses_arg
         )
-        self.pool_config = get_hyperdrive_config(self.hyperdrive_contract)
-        self._pool_info = get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, self.current_block_number)
+        self._contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
+        self.pool_config = process_hyperdrive_pool_config(self._contract_pool_config)
+        self._contract_pool_info = get_hyperdrive_pool_info(
+            self.web3, self.hyperdrive_contract, self.current_block_number
+        )
         self._latest_checkpoint = get_hyperdrive_checkpoint_info(
             self.web3, self.hyperdrive_contract, self.current_block_number
         )
@@ -94,10 +103,12 @@ class HyperdriveInterface:
             self.last_state_block = self.current_block
             setattr(
                 self,
-                "_pool_info",
+                "_contract_pool_info",
                 get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, self.current_block_number),
             )
-        return self._pool_info
+            # TODO: set _pool_info = post-process(self._contract_pool_info)
+            # return self._pool_info
+        return self._contract_pool_info
 
     @property
     def latest_checkpoint(self):
