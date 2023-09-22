@@ -45,6 +45,7 @@ class TestBotToDb:
         local_hyperdrive_chain: LocalHyperdriveChain,
         cycle_trade_policy: Type[BasePolicy],
         db_session: Session,
+        db_api: str,
     ):
         """Runs the entire pipeline and checks the database at the end.
         All arguments are fixtures.
@@ -63,6 +64,7 @@ class TestBotToDb:
             log_level=logging.INFO,
             log_stdout=True,
             random_seed=1234,
+            database_api_uri=db_api,
             username="test",
         )
 
