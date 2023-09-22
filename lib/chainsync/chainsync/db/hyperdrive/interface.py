@@ -598,19 +598,20 @@ def add_current_wallet(current_wallet: list[CurrentWallet], session: Session) ->
         raise err
 
 
-def get_current_wallet(session: Session, end_block: int | None = None, coerce_float=True) -> pd.DataFrame:
+def get_current_wallet(
+    session: Session, end_block: int | None = None, wallet_address: list[str] | None = None, coerce_float=True
+) -> pd.DataFrame:
     """Get all current wallet data in history and returns as a pandas dataframe.
 
     Arguments
     ---------
     session : Session
         The initialized session object
-    start_block : int | None, optional
-        The starting block to filter the query on. start_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3]
     end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    wallet_address : list[str] | None, optional
+        The wallet addresses to filter the query on
     coerce_float : bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
@@ -639,6 +640,9 @@ def get_current_wallet(session: Session, end_block: int | None = None, coerce_fl
 
     elif end_block < 0:
         end_block = get_latest_block_number_from_table(CurrentWallet, session) + end_block + 1
+
+    if wallet_address is not None:
+        query = query.filter(CurrentWallet.walletAddress.in_(wallet_address))
 
     query = query.filter(CurrentWallet.blockNumber < end_block)
     query = query.distinct(CurrentWallet.walletAddress, CurrentWallet.tokenType)

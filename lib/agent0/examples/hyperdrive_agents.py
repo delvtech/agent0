@@ -25,6 +25,7 @@ env_config = EnvironmentConfig(
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
+    database_api_uri="http://localhost:5002",
     username="changeme",
 )
 
