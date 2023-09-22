@@ -10,17 +10,19 @@ from agent0 import AccountKeyConfig
 from agent0.base import Quantity, TokenType
 from agent0.base.config import DEFAULT_USERNAME, AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.agents import HyperdriveWallet, Long, Short
+from chainsync.db.api import balance_of, register_username
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import smart_contract_read
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from ethpy.hyperdrive import (HyperdriveAddresses,
+                              fetch_hyperdrive_address_from_uri)
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3.contract.contract import Contract
 
 from .create_and_fund_user_account import create_and_fund_user_account
 from .fund_agents import fund_agents
-from .setup_experiment import balance_of, register_username, setup_experiment
+from .setup_experiment import setup_experiment
 from .trade_loop import trade_if_new_block
 
 

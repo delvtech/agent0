@@ -25,7 +25,6 @@ base = [
     # TODO move fixedpointmath to lateral if this package comes back to this monorepo
     "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
     "numpy",
-    "requests",
     "python-dotenv",
     "web3", # will include eth- packages
     "hexbytes",

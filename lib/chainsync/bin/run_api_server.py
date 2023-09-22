@@ -1,7 +1,7 @@
 """A simple Flask server to run python scripts."""
 import argparse
 
-from chainsync.db import launch_flask
+from chainsync.db.api import launch_flask
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
