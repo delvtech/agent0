@@ -1,6 +1,7 @@
 """High-level interface for the Hyperdrive market"""
 from __future__ import annotations
 
+import copy
 from typing import Any
 
 import eth_utils
@@ -93,7 +94,7 @@ class HyperdriveInterface:
             self.config, addresses_arg
         )
         self._contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
-        self.pool_config = process_hyperdrive_pool_config(self._contract_pool_config)
+        self.pool_config = process_hyperdrive_pool_config(copy.deepcopy(self._contract_pool_config))
         self.last_state_block = self.web3.eth.get_block("latest")
         self._contract_pool_info: dict[str, Any] = {}
         self._pool_info: dict[str, Any] = {}
@@ -147,21 +148,21 @@ class HyperdriveInterface:
             The current spot price.
         """
         pool_config_str = PoolConfig(
-            base_token=str(self.pool_config["base_token"]),
-            initial_share_price=str(self.pool_config["initial_share_price"]),
-            minimum_share_reserves=str(self.pool_config["minimum_share_reserves"]),
-            position_duration=str(self.pool_config["position_duration"]),
-            checkpoint_duration=str(self.pool_config["checkpoint_duration"]),
-            time_stretch=str(self.pool_config["time_stretch"]),
-            governance=str(self.pool_config["governance"]),
-            fee_collector=str(self.pool_config["fee_collector"]),
+            base_token=str(self._contract_pool_config["base_token"]),
+            initial_share_price=str(self._contract_pool_config["initial_share_price"]),
+            minimum_share_reserves=str(self._contract_pool_config["minimum_share_reserves"]),
+            position_duration=str(self._contract_pool_config["position_duration"]),
+            checkpoint_duration=str(self._contract_pool_config["checkpoint_duration"]),
+            time_stretch=str(self._contract_pool_config["time_stretch"]),
+            governance=str(self._contract_pool_config["governance"]),
+            fee_collector=str(self._contract_pool_config["fee_collector"]),
             fees=Fees(
-                curve=str(self.pool_config["fees"]["curve"]),
-                flat=str(self.pool_config["fees"]["flat"]),
-                governance=str(self.pool_config["fees"]["governance"]),
+                curve=str(self._contract_pool_config["fees"]["curve"]),
+                flat=str(self._contract_pool_config["fees"]["flat"]),
+                governance=str(self._contract_pool_config["fees"]["governance"]),
             ),
-            oracle_size=str(self.pool_config["oracle_size"]),
-            update_gap=str(self.pool_config["update_gap"]),
+            oracle_size=str(self._contract_pool_config["oracle_size"]),
+            update_gap=str(self._contract_pool_config["update_gap"]),
         )
         pool_info_str = PoolInfo(
             share_reserves=str(self.pool_info["share_reserves"]),
@@ -192,7 +193,7 @@ class HyperdriveInterface:
             self,
             "_pool_info",
             process_hyperdrive_pool_info(
-                self._contract_pool_info,
+                copy.deepcopy(self._contract_pool_info),
                 self.web3,
                 self.hyperdrive_contract,
                 self.pool_config["positionDuration"],

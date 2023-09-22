@@ -5,12 +5,10 @@ from typing import cast
 
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI
-from ethpy import EthConfig
 from ethpy.base.transactions import smart_contract_read
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.api import HyperdriveInterface
 from ethpy.test_fixtures.local_chain import LocalHyperdriveChain
-from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
 
