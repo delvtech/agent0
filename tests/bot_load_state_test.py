@@ -46,7 +46,13 @@ class WalletTestPolicy(HyperdrivePolicy):
         action_list = []
 
         if self.rerun:
-            # TODO assert wallet state is up to date
+            # assert wallet state was loaded from previous run
+            assert len(wallet.longs) == 1
+            assert len(wallet.shorts) == 1
+            # TODO would like to check long and lp value here,
+            # but the units there are in bonds and lp shares respectively,
+            # where the known value of the trade is in units of base.
+            assert wallet.shorts[list(wallet.shorts.keys())[0]].balance == FixedPoint(33333)
 
             # We want this bot to exit and crash after it's done the trades it needs to do
             raise AgentDoneException("Bot done")

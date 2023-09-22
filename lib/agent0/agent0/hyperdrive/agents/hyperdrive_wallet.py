@@ -70,8 +70,6 @@ class Short:
     ----------
     balance : FixedPoint
         The amount of bonds that the position is short.
-    open_share_price : FixedPoint
-        The share price at the time the short was opened.
     """
 
     balance: FixedPoint

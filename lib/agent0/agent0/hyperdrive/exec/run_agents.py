@@ -9,7 +9,7 @@ import pandas as pd
 from agent0 import AccountKeyConfig
 from agent0.base import Quantity, TokenType
 from agent0.base.config import DEFAULT_USERNAME, AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.agents import HyperdriveWallet
+from agent0.hyperdrive.agents import HyperdriveWallet, Long, Short
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import smart_contract_read
@@ -91,9 +91,9 @@ def run_agents(
         # Register wallet addresses to username
         register_username(environment_config.database_api_uri, wallet_addrs, environment_config.username)
 
+    # Load existing balances
     # Get existing open positions from db api server
     balances = balance_of(environment_config.database_api_uri, wallet_addrs)
-
     # Set balances of wallets based on db and chain
     for agent in agent_accounts:
         # TODO is this the right location for this to happen?
@@ -102,7 +102,8 @@ def run_agents(
         # On the other hand, we initialize empty wallets just to overwrite here.
         # Keeping here for now for later discussion
         # TODO maybe this should be optional?
-        build_wallet_positions_from_data(agent.checksum_address, balances, base_contract)
+        wallet = build_wallet_positions_from_data(agent.checksum_address, balances, base_contract)
+        agent.wallet = wallet
 
     last_executed_block = BlockNumber(0)
     while True:
@@ -115,7 +116,25 @@ def run_agents(
         )
 
 
-def build_wallet_positions_from_data(wallet_addr: str, db_balances: pd.DataFrame, base_contract: Contract):
+def build_wallet_positions_from_data(
+    wallet_addr: str, db_balances: pd.DataFrame, base_contract: Contract
+) -> HyperdriveWallet:
+    """Builds a wallet position based on gathered data
+
+    Arguments
+    ---------
+    wallet_addr: str
+        The checksum wallet address
+    db_balances: pd.DataFrame
+        The current positions dataframe gathered from the db (from the `balance_of` api call)
+    base_contract: Contract
+        The base contract to query the base amount from
+
+    Returns
+    -------
+    HyperdriveWallet
+        The wallet object build from the provided data
+    """
     # Contract call to get base balance
     base_amount: dict[str, int] = smart_contract_read(base_contract, "balanceOf", wallet_addr)
     # TODO do we need to do error checking here?
@@ -127,10 +146,14 @@ def build_wallet_positions_from_data(wallet_addr: str, db_balances: pd.DataFrame
 
     # Get longs
     long_balances = wallet_balances[wallet_balances["baseTokenType"] == "LONG"]
-    # TODO iterate through long balances and build wallet object
+    long_obj = {}
+    for _, row in long_balances.iterrows():
+        long_obj[row["maturityTime"]] = Long(balance=FixedPoint(row["value"]))
 
     short_balances = wallet_balances[wallet_balances["baseTokenType"] == "SHORT"]
-    # TODO iterate through short balances and build wallet object
+    short_obj = {}
+    for _, row in short_balances.iterrows():
+        short_obj[row["maturityTime"]] = Short(balance=FixedPoint(row["value"]))
 
     lp_balances = wallet_balances[wallet_balances["baseTokenType"] == "LP"]
     assert len(lp_balances) <= 1
@@ -141,7 +164,7 @@ def build_wallet_positions_from_data(wallet_addr: str, db_balances: pd.DataFrame
 
     withdraw_balances = wallet_balances[wallet_balances["baseTokenType"] == "WITHDRAWAL_SHARE"]
     assert len(withdraw_balances) <= 1
-    if len(lp_balances) == 0:
+    if len(withdraw_balances) == 0:
         withdraw_obj = FixedPoint(0)
     else:
         withdraw_obj = FixedPoint(withdraw_balances.iloc[0]["value"])
@@ -150,4 +173,10 @@ def build_wallet_positions_from_data(wallet_addr: str, db_balances: pd.DataFrame
     wallet = HyperdriveWallet(
         address=HexBytes(wallet_addr),
         balance=base_obj,
+        lp_tokens=lp_obj,
+        withdraw_shares=withdraw_obj,
+        longs=long_obj,
+        shorts=short_obj,
     )
+
+    return wallet
