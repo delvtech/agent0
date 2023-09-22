@@ -106,7 +106,7 @@ def db_api(psql_docker) -> Iterator[str]:
     db_api_host = "127.0.0.1"
     db_api_port = 5005
 
-    api_server_path = Path(__file__).parent.joinpath("../db/api_server")
+    api_server_path = Path(__file__).parent.joinpath("../db/api/api_server")
 
     # Modify an environment to set db credentials
     env = os.environ.copy()
