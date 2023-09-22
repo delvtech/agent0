@@ -1,8 +1,6 @@
 """High-level interface for the Hyperdrive market"""
 from __future__ import annotations
 
-from typing import Any
-
 import eth_utils
 import pyperdrive
 from eth_account.signers.local import LocalAccount
@@ -21,7 +19,7 @@ from web3 import Web3
 from web3.types import BlockData, Timestamp
 
 from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
-from .interface import get_hyperdrive_config, get_hyperdrive_pool_info, get_hyperdrive_checkpoint_info, parse_logs
+from .interface import get_hyperdrive_checkpoint_info, get_hyperdrive_config, get_hyperdrive_pool_info, parse_logs
 from .receipt_breakdown import ReceiptBreakdown
 
 
@@ -65,7 +63,9 @@ class HyperdriveInterface:
         )
         self.pool_config = get_hyperdrive_config(self.hyperdrive_contract)
         self._pool_info = get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, self.current_block_number)
-        self._latest_checkpoint = get_hyperdrive_checkpoint_info(self.web3, self.hyperdrive_contract, self.current_block_number)
+        self._latest_checkpoint = get_hyperdrive_checkpoint_info(
+            self.web3, self.hyperdrive_contract, self.current_block_number
+        )
         self.last_state_block = self.web3.eth.get_block("latest")
 
     @property
@@ -79,9 +79,9 @@ class HyperdriveInterface:
                 get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, self.current_block_number),
             )
         return self._pool_info
-    
-    @property
-    def latest_checkpoint(self):
+
+    # @property
+    # def latest_checkpoint(self):
 
     @property
     def current_block(self) -> BlockData:
@@ -145,7 +145,7 @@ class HyperdriveInterface:
             lp_share_price=str(self.pool_info["lp_share_price"]),
             long_exposure=str(self.pool_info["long_exposure"]),
         )
-        spot_price = pyperdrive.get_spot_price(pool_config_str, pool_info_str)
+        spot_price = pyperdrive.get_spot_price(pool_config_str, pool_info_str)  # pylint: disable=no-member
         return FixedPoint(spot_price)
 
     async def async_open_long(
