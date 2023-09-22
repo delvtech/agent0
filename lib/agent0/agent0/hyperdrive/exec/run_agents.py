@@ -14,8 +14,7 @@ from chainsync.db.api import balance_of, register_username
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import smart_contract_read
-from ethpy.hyperdrive import (HyperdriveAddresses,
-                              fetch_hyperdrive_address_from_uri)
+from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3.contract.contract import Contract
