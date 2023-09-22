@@ -13,7 +13,7 @@ from hexbytes import HexBytes
 
 if TYPE_CHECKING:
     # TODO need a base wallet delta
-    from elfpy.wallet.wallet_deltas import WalletDeltas
+    from agent0.hyperdrive.agents import WalletDeltas
 
 
 @dataclass(kw_only=True)
