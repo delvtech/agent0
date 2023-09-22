@@ -156,7 +156,6 @@ async def async_execute_single_agent_trade(
             wallet_deltas = await async_match_contract_call_to_trade(
                 web3,
                 hyperdrive_contract,
-                hyperdrive_market,
                 agent,
                 trade_object,
             )
@@ -194,7 +193,6 @@ async def async_execute_agent_trades(
 async def async_match_contract_call_to_trade(
     web3: Web3,
     hyperdrive_contract: Contract,
-    hyperdrive_market: HyperdriveMarket,
     agent: HyperdriveAgent,
     trade_envelope: types.Trade[HyperdriveMarketAction],
 ) -> WalletDeltas:

@@ -102,8 +102,7 @@ def run_agents(
         # On the other hand, we initialize empty wallets just to overwrite here.
         # Keeping here for now for later discussion
         # TODO maybe this should be optional?
-        wallet = build_wallet_positions_from_data(agent.checksum_address, balances, base_contract)
-        agent.wallet = wallet
+        agent.wallet = build_wallet_positions_from_data(agent.checksum_address, balances, base_contract)
 
     last_executed_block = BlockNumber(0)
     while True:
@@ -170,7 +169,7 @@ def build_wallet_positions_from_data(
         withdraw_obj = FixedPoint(withdraw_balances.iloc[0]["value"])
     # TODO Build withdraw share object
 
-    wallet = HyperdriveWallet(
+    return HyperdriveWallet(
         address=HexBytes(wallet_addr),
         balance=base_obj,
         lp_tokens=lp_obj,
@@ -178,5 +177,3 @@ def build_wallet_positions_from_data(
         longs=long_obj,
         shorts=short_obj,
     )
-
-    return wallet

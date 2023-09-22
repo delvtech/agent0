@@ -118,6 +118,8 @@ def db_api(psql_docker) -> Iterator[str]:
     env["POSTGRES_PORT"] = str(psql_docker.POSTGRES_PORT)
 
     # Pass db credentials via env vars
+    # Since this is a forever running service, we explicitly kill after the yield returns
+    # pylint: disable=consider-using-with
     api_process = subprocess.Popen(
         ["flask", "--app", api_server_path, "run", "--host", db_api_host, "--port", str(db_api_port)], env=env
     )
