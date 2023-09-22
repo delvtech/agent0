@@ -28,7 +28,8 @@ base = [
     "requests",
     "python-dotenv",
     "web3", # will include eth- packages
-    "hexbytes"
+    "hexbytes",
+    "panads"
 ]
 lateral = [
     # Lateral dependencies across subpackages are pointing to github

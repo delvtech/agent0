@@ -13,7 +13,7 @@ from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_
 
 from .create_and_fund_user_account import create_and_fund_user_account
 from .fund_agents import fund_agents
-from .setup_experiment import register_username, setup_experiment
+from .setup_experiment import balance_of, register_username, setup_experiment
 from .trade_loop import trade_if_new_block
 
 
@@ -72,17 +72,22 @@ def run_agents(
         eth_config, environment_config, agent_config, account_key_config, contract_addresses
     )
 
+    wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
     if not develop:
+        # Ignore this check if not develop
         if environment_config.username == DEFAULT_USERNAME:
             # Check for default name and exit if is default
             raise ValueError(
                 "Default username detected, please update 'username' in "
                 "lib/agent0/agent0/hyperdrive/config/runner_config.py"
             )
-        # Set up postgres to write username to agent wallet addr
-        # initialize the postgres session
-        wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
-        register_username(environment_config.username_register_uri, wallet_addrs, environment_config.username)
+        # Register wallet addresses to username
+        register_username(environment_config.database_api_uri, wallet_addrs, environment_config.username)
+
+    # Get existing open positions from db
+    balances = balance_of(environment_config.database_api_uri, wallet_addrs)
+
+    # TODO Set balances of wallets based on db
 
     last_executed_block = BlockNumber(0)
     while True:
