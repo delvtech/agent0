@@ -34,12 +34,32 @@ class HyperdriveInterface:
         rpc_uri: str | URI | None = None,
         abi_dir: str | None = None,
     ) -> None:
-        """The Hyperdrive API can be initialized with either an EthConfig,
-        or strings corresponding to the required URIs and directories.
+        """The HyperdriveInterface API has multiple valid constructors.
 
-        ## TODO: Write out options for initializing HyperdriveInterface
-            ## or: PR to fix this to happen behind the scenes in EthConfig
-            ## or: Make an issue to fix EthConfig so that it handles all of this optional argument bullshit
+        Different workflows result in different call signatures for initializing this object.
+        You can construct a HyperdriveInterface with an EthConfig object,
+        which takes in URIs that point to the requesite assets:
+
+        .. code-block::
+          eth_config = EthConfig(artifacts_uri, rpc_uri, abi_dir)
+          hyperdrive = HyperdriveInterface(eth_config)
+
+        or you can construct it with the URIs themselves (which requires kwargs):
+
+        .. code-block::
+          hyperdrive = HyperdriveInterface(artifacts=artifacts_uri, rpc_uri=rpc_uri, abi_dir=abi_dir)
+
+        You may also have direct access to the HyperdriveAddresses, instead of a URI for an artifacts server.
+        In this case, you can construct the interface using those addresses and the remaining URIs
+        (also requiring kwargs):
+
+        .. code-block::
+          # acquire addresses from URI, or via some other mechanism
+          addresses = ethpy.hyperdrive.addresses.fetch_hyperdrive_address_from_uri(artifacts_uri)
+          # initialize hyperdrive
+          hyperdrive = HyperdriveInterface(artifacts=addresses, rpc_uri=rpc_uri, abi_dir=abi_dir)
+
+
         ## TODO: Change pyperdrive interface to take str OR python FixedPoint objs; use FixedPoint here.
         """
         if all([eth_config is None, artifacts is None, rpc_uri is None, abi_dir is None]):
@@ -416,6 +436,7 @@ class HyperdriveInterface:
         """Contract call to redeem withdraw shares from Hyperdrive pool.
 
         This should be done after closing liquidity.
+
         .. note::
             This is not guaranteed to redeem all shares.  The pool will try to redeem as
             many as possible, up to the withdrawPool.readyToRedeem limit, without reverting.
