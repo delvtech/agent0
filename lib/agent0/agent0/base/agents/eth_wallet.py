@@ -4,13 +4,16 @@ from __future__ import annotations
 import copy
 import logging
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from elfpy import check_non_zero
 from elfpy.types import Quantity, TokenType
-from elfpy.wallet.wallet_deltas import WalletDeltas
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
+
+if TYPE_CHECKING:
+    # TODO need a base wallet delta
+    from elfpy.wallet.wallet_deltas import WalletDeltas
 
 
 @dataclass(kw_only=True)
