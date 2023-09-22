@@ -36,7 +36,7 @@ def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> dict[str, Any]:
 
 
 def process_hyperdrive_pool_config(pool_config: dict[str, Any]) -> dict[str, Any]:
-    """Converts pool_config to python-friendly (FixedPoint, integer, str) types and add some computed values.
+    """Convert pool_config to python-friendly (FixedPoint, integer, str) types and add some computed values.
 
     Arguments
     ----------
@@ -63,25 +63,52 @@ def process_hyperdrive_pool_config(pool_config: dict[str, Any]) -> dict[str, Any
     return pool_config
 
 
-def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, Any]:
+def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, Any]:
     """Return the block pool info from the Hyperdrive contract.
 
     Arguments
     ---------
-    web3: Web3
-        web3 provider object
     hyperdrive_contract: Contract
-        The contract to query the pool info from
+        The contract to query the pool info from.
     block_number: BlockNumber
-        The block number to query from the chain
+        The block number to query from the chain.
+
+    Returns
+    -------
+    dict[str, Any]
+        The hyperdrive pool info returned from the smart contract.
+    """
+    return smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
+
+
+def process_hyperdrive_pool_info(
+    pool_info: dict[str, Any],
+    web3: Web3,
+    hyperdrive_contract: Contract,
+    position_duration: int,
+    block_number: BlockNumber,
+) -> dict[str, Any]:
+    """Convert pool_info to python-friendly (FixedPoint, integer, str) types and add some computed values.
+
+    Arguments
+    ---------
+    pool_info : dict[str, Any]
+        The hyperdrive pool info.
+    web3: Web3
+        Web3 provider object.
+    hyperdrive_contract: Contract
+        The contract to query the pool info from.
+    position_duration: int
+        The position duration for the hyperdrive pool (supplied by pool_config).
+    block_number: BlockNumber
+        The block number used to query the pool info from the chain.
 
     Returns
     -------
     dict
-        A pool_info dict ready to be inserted into the Postgres PoolInfo schema
+        The hyperdrive pool info with modified types.
+        This output can be inserted into the Postgres PoolInfo schema.
     """
-    # get pool info from smart contract
-    pool_info = smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
     # convert values to fixedpoint
     pool_info: dict[str, Any] = {str(key): FixedPoint(scaled_value=value) for (key, value) in pool_info.items()}
     # get current block information & add to pool info
@@ -93,7 +120,6 @@ def get_hyperdrive_pool_info(web3: Web3, hyperdrive_contract: Contract, block_nu
     pool_info.update({"blockNumber": int(block_number)})
     # add position duration to the data dict
     # TODO get position duration from existing config passed in instead of from the chain
-    position_duration = smart_contract_read(hyperdrive_contract, "getPoolConfig")["positionDuration"]
     asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, position_duration)
     pool_info["totalSupplyWithdrawalShares"] = smart_contract_read(
         hyperdrive_contract, "balanceOf", asset_id, hyperdrive_contract.address
@@ -138,11 +164,17 @@ def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> Hyperdri
     """Constructs an elfpy HyperdriveMarket from the onchain hyperdrive constract state"""
     earliest_block = web3.eth.get_block("earliest")
     current_block = web3.eth.get_block("latest")
-    pool_config = get_hyperdrive_pool_config(hyperdrive_contract)
+    pool_config = process_hyperdrive_pool_config(get_hyperdrive_pool_config(hyperdrive_contract))
     current_block_number = current_block.get("number", None)
     if current_block_number is None:
         raise AssertionError("Current block number should not be None")
-    pool_info = get_hyperdrive_pool_info(web3, hyperdrive_contract, current_block_number)
+    pool_info = process_hyperdrive_pool_info(
+        get_hyperdrive_pool_info(hyperdrive_contract, current_block_number),
+        web3,
+        hyperdrive_contract,
+        pool_config["positionDuration"],
+        current_block_number,
+    )
     market_state = HyperdriveMarketState(
         base_buffer=FixedPoint(pool_info["longsOutstanding"]),
         bond_reserves=FixedPoint(pool_info["bondReserves"]),

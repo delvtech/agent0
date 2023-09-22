@@ -11,5 +11,6 @@ from .interface import (
     get_hyperdrive_pool_info,
     parse_logs,
     process_hyperdrive_pool_config,
+    process_hyperdrive_pool_info,
 )
 from .receipt_breakdown import ReceiptBreakdown

@@ -9,6 +9,7 @@ from ethpy.hyperdrive import (
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
     process_hyperdrive_pool_config,
+    process_hyperdrive_pool_info,
 )
 from sqlalchemy.orm import Session
 from web3 import Web3
@@ -66,7 +67,14 @@ def data_chain_to_db(
     pool_info_dict = None
     for _ in range(_RETRY_COUNT):
         try:
-            pool_info_dict = get_hyperdrive_pool_info(web3, hyperdrive_contract, block_number)
+            position_duration = int(get_hyperdrive_pool_config(hyperdrive_contract)["positionDuration"])
+            pool_info_dict = process_hyperdrive_pool_info(
+                get_hyperdrive_pool_info(hyperdrive_contract, block_number),
+                web3,
+                hyperdrive_contract,
+                position_duration,
+                block_number,
+            )
             break
         except ValueError:
             logging.warning("Error in get_hyperdrive_pool_info, retrying")

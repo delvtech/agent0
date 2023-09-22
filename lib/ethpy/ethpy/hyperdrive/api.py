@@ -1,6 +1,8 @@
 """High-level interface for the Hyperdrive market"""
 from __future__ import annotations
 
+from typing import Any
+
 import eth_utils
 import pyperdrive
 from eth_account.signers.local import LocalAccount
@@ -25,10 +27,14 @@ from .interface import (
     get_hyperdrive_pool_info,
     parse_logs,
     process_hyperdrive_pool_config,
+    process_hyperdrive_pool_info,
 )
 from .receipt_breakdown import ReceiptBreakdown
 
 
+# known issue where class properties aren't recognized as subscriptable
+# https://github.com/pylint-dev/pylint/issues/5699
+# pylint: disable=unsubscriptable-object
 class HyperdriveInterface:
     """End-point api for interfacing with Hyperdrive."""
 
@@ -88,38 +94,26 @@ class HyperdriveInterface:
         )
         self._contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         self.pool_config = process_hyperdrive_pool_config(self._contract_pool_config)
-        self._contract_pool_info = get_hyperdrive_pool_info(
-            self.web3, self.hyperdrive_contract, self.current_block_number
-        )
-        self._latest_checkpoint = get_hyperdrive_checkpoint_info(
-            self.web3, self.hyperdrive_contract, self.current_block_number
-        )
         self.last_state_block = self.web3.eth.get_block("latest")
+        self._contract_pool_info: dict[str, Any] = {}
+        self._pool_info: dict[str, Any] = {}
+        self._latest_checkpoint: dict[str, Any] = {}
+        self.update_pool_info_and_checkpoint()  # fill these in initially
 
     @property
-    def pool_info(self):
+    def pool_info(self) -> dict[str, Any]:
         """Returns the current pool state info."""
         if self.current_block > self.last_state_block:
             self.last_state_block = self.current_block
-            setattr(
-                self,
-                "_contract_pool_info",
-                get_hyperdrive_pool_info(self.web3, self.hyperdrive_contract, self.current_block_number),
-            )
-            # TODO: set _pool_info = post-process(self._contract_pool_info)
-            # return self._pool_info
-        return self._contract_pool_info
+            self.update_pool_info_and_checkpoint()
+        return self._pool_info
 
     @property
-    def latest_checkpoint(self):
+    def latest_checkpoint(self) -> dict[str, Any]:
         """Returns the latest checkpoint info."""
         if self.current_block > self.last_state_block:
             self.last_state_block = self.current_block
-            setattr(
-                self,
-                "_latest_checkpoint",
-                get_hyperdrive_checkpoint_info(self.web3, self.hyperdrive_contract, self.current_block_number),
-            )
+            self.update_pool_info_and_checkpoint()
         return self._latest_checkpoint
 
     @property
@@ -186,6 +180,30 @@ class HyperdriveInterface:
         )
         spot_price = pyperdrive.get_spot_price(pool_config_str, pool_info_str)  # pylint: disable=no-member
         return FixedPoint(spot_price)
+
+    def update_pool_info_and_checkpoint(self) -> None:
+        """Update the cached pool info and latest checkpoint."""
+        setattr(
+            self,
+            "_contract_pool_info",
+            get_hyperdrive_pool_info(self.hyperdrive_contract, self.current_block_number),
+        )
+        setattr(
+            self,
+            "_pool_info",
+            process_hyperdrive_pool_info(
+                self._contract_pool_info,
+                self.web3,
+                self.hyperdrive_contract,
+                self.pool_config["positionDuration"],
+                self.current_block_number,
+            ),
+        )
+        setattr(
+            self,
+            "_latest_checkpoint",
+            get_hyperdrive_checkpoint_info(self.web3, self.hyperdrive_contract, self.current_block_number),
+        )
 
     async def async_open_long(
         self, agent: LocalAccount, trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None

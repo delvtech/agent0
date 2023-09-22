@@ -32,7 +32,7 @@ class TestHyperdriveInterface:
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
         hyperdrive = HyperdriveInterface(artifacts=hyperdrive_contract_addresses, rpc_uri=rpc_uri, abi_dir=abi_dir)
         pool_config = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolConfig")
-        assert pool_config == hyperdrive._contract_pool_config
+        assert pool_config == hyperdrive._contract_pool_config  # pylint: disable=protected-access
 
     def test_pool_info(
         self,
@@ -49,4 +49,4 @@ class TestHyperdriveInterface:
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
         hyperdrive = HyperdriveInterface(artifacts=hyperdrive_contract_addresses, rpc_uri=rpc_uri, abi_dir=abi_dir)
         pool_info = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolInfo")
-        assert pool_info == hyperdrive._contract_pool_info
+        assert pool_info == hyperdrive._contract_pool_info  # pylint: disable=protected-access
