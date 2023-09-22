@@ -4,15 +4,16 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from elfpy import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, types
+from agent0.base import FrozenClass, freezable
+from elfpy import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES
 from elfpy.utils import json as output_utils
 
 DEFAULT_USERNAME = "changeme"
 
 
-@types.freezable(frozen=False, no_new_attribs=True)
+@freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class EnvironmentConfig(types.FrozenClass):
+class EnvironmentConfig(FrozenClass):
     """Parameters that can be set either locally or passed from docker."""
 
     # lots of configs!

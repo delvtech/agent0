@@ -4,12 +4,12 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass, field
 
+from agent0.base import freezable
 from agent0.base.state import BaseMarketState
-from elfpy import types
 from fixedpointmath import FixedPoint
 
 
-@types.freezable(frozen=False, no_new_attribs=False)
+@freezable(frozen=False, no_new_attribs=False)
 @dataclass(kw_only=True)
 class HyperdriveMarketState(BaseMarketState):
     r"""The state of an AMM

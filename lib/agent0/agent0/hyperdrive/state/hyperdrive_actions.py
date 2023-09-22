@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-import elfpy.types as types
+from agent0.base import freezable
 from agent0.hyperdrive.agents import HyperdriveWallet
 from elfpy.markets.base import BaseMarketAction
 from fixedpointmath import FixedPoint
@@ -25,7 +25,7 @@ class HyperdriveActionType(Enum):
     REDEEM_WITHDRAW_SHARE = "redeem_withdraw_share"
 
 
-@types.freezable(frozen=False, no_new_attribs=True)
+@freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class HyperdriveMarketAction(BaseMarketAction):
     r"""Market action specification"""
