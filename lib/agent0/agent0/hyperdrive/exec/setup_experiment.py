@@ -114,6 +114,7 @@ def balance_of(api_uri: str, wallet_addrs: list[str]) -> pd.DataFrame:
     for _ in range(10):
         try:
             result = requests.post(f"{api_uri}/balance_of", json=json_data, timeout=3)
+            break
         except requests.exceptions.RequestException:
             logging.warning("Connection error to db api server, retrying")
             time.sleep(1)
@@ -125,5 +126,7 @@ def balance_of(api_uri: str, wallet_addrs: list[str]) -> pd.DataFrame:
     # Read json and return
     # Since we use pandas write json, we use pandas read json to read, then adjust data
     # before returning
-    data = pd.read_json(result.json()["data"])
+    # We explicitly set dtype to False to keep everything in string format
+    # to avoid loss of precision
+    data = pd.read_json(result.json()["data"], dtype=False)
     return data

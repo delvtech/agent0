@@ -2,34 +2,21 @@
 from __future__ import annotations
 
 import logging
-from decimal import Decimal
-from typing import Type, cast
+from typing import cast
 
-import numpy as np
-import pandas as pd
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.agents import HyperdriveWallet
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from agent0.test_fixtures import AgentDoneException
-from chainsync.db.hyperdrive.interface import (
-    get_current_wallet,
-    get_pool_config,
-    get_pool_info,
-    get_transactions,
-    get_wallet_deltas,
-)
 from chainsync.exec import acquire_data, data_analysis
 from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
 from elfpy.types import MarketType, Trade
-from eth_account.signers.local import LocalAccount
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
-from ethpy.test_fixtures.deploy_hyperdrive import _calculateTimeStretch
 from ethpy.test_fixtures.local_chain import LocalHyperdriveChain
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator

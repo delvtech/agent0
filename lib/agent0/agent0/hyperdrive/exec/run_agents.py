@@ -7,11 +7,15 @@ import warnings
 
 import pandas as pd
 from agent0 import AccountKeyConfig
+from agent0.base import Quantity, TokenType
 from agent0.base.config import DEFAULT_USERNAME, AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.agents import HyperdriveWallet
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import smart_contract_read
 from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from fixedpointmath import FixedPoint
+from hexbytes import HexBytes
 from web3.contract.contract import Contract
 
 from .create_and_fund_user_account import create_and_fund_user_account
@@ -90,8 +94,14 @@ def run_agents(
     # Get existing open positions from db api server
     balances = balance_of(environment_config.database_api_uri, wallet_addrs)
 
-    # TODO Set balances of wallets based on db
+    # Set balances of wallets based on db and chain
     for agent in agent_accounts:
+        # TODO is this the right location for this to happen?
+        # On one hand, doing it here makes sense because parameters such as db uri doesn't have to
+        # be passed in down all the function calls when wallets are initialized.
+        # On the other hand, we initialize empty wallets just to overwrite here.
+        # Keeping here for now for later discussion
+        # TODO maybe this should be optional?
         build_wallet_positions_from_data(agent.checksum_address, balances, base_contract)
 
     last_executed_block = BlockNumber(0)
@@ -107,23 +117,37 @@ def run_agents(
 
 def build_wallet_positions_from_data(wallet_addr: str, db_balances: pd.DataFrame, base_contract: Contract):
     # Contract call to get base balance
-    base_amount = smart_contract_read(base_contract, "balanceOf", wallet_addr)
-    # TODO build base object
+    base_amount: dict[str, int] = smart_contract_read(base_contract, "balanceOf", wallet_addr)
+    # TODO do we need to do error checking here?
+    assert "value" in base_amount
+    base_obj = Quantity(amount=FixedPoint(scaled_value=base_amount["value"]), unit=TokenType.BASE)
 
     # TODO We can also get lp and withdraw shares from chain?
     wallet_balances = db_balances[db_balances["walletAddress"] == wallet_addr]
 
     # Get longs
-    long_balances = wallet_balances[wallet_balances["baseTokenType" == "LONG"]]
+    long_balances = wallet_balances[wallet_balances["baseTokenType"] == "LONG"]
     # TODO iterate through long balances and build wallet object
 
-    short_balances = wallet_balances[wallet_balances["baseTokenType" == "SHORT"]]
+    short_balances = wallet_balances[wallet_balances["baseTokenType"] == "SHORT"]
     # TODO iterate through short balances and build wallet object
 
-    lp_balances = wallet_balances[wallet_balances["baseTokenType" == "LP"]]
+    lp_balances = wallet_balances[wallet_balances["baseTokenType"] == "LP"]
     assert len(lp_balances) <= 1
-    # TODO Build LP balances object
+    if len(lp_balances) == 0:
+        lp_obj = FixedPoint(0)
+    else:
+        lp_obj = FixedPoint(lp_balances.iloc[0]["value"])
 
-    withdraw_balances = wallet_balances[wallet_balances["baseTokenType" == "WITHDRAWAL_SHARE"]]
+    withdraw_balances = wallet_balances[wallet_balances["baseTokenType"] == "WITHDRAWAL_SHARE"]
     assert len(withdraw_balances) <= 1
+    if len(lp_balances) == 0:
+        withdraw_obj = FixedPoint(0)
+    else:
+        withdraw_obj = FixedPoint(withdraw_balances.iloc[0]["value"])
     # TODO Build withdraw share object
+
+    wallet = HyperdriveWallet(
+        address=HexBytes(wallet_addr),
+        balance=base_obj,
+    )

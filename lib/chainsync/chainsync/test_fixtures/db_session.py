@@ -50,7 +50,7 @@ def psql_docker() -> Iterator[PostgresConfig]:
     yield postgres_config
 
     # Docker doesn't play nice with types
-    container.stop()  # type:ignore
+    container.kill()  # type:ignore
 
 
 @pytest.fixture(scope="session")
