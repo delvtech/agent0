@@ -21,5 +21,5 @@ fi
 
 # Loop recursively over all .json files in the provided directory and run the python script for each
 find "$1" -type f -name "*.json" | while read -r json_file; do
-    python lib/pypechain/pypechain/run_pypechain.py "$json_file" "$script_dir/../hyperdrive_types"
+    python lib/pypechain/pypechain/run_pypechain.py "$json_file" "$script_dir/../hyperdrive_types" "120"
 done
