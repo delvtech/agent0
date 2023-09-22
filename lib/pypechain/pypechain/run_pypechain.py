@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 from dataclasses import asdict
 from pathlib import Path
@@ -64,8 +65,8 @@ def format_code(code: str, line_length: int) -> str:
     str
         A string containing the Black-formatted code
     """
-    while "\n\n" in code:
-        code = code.replace("\n\n", "\n")  # remove extra newlines and let Black sort it out
+    while "\n\n" in code:  # remove extra newlines and let Black sort it out
+        code = re.sub(r"^[\s\t]*\n", "", code, flags=re.MULTILINE)
     code = code.replace(", )", ")")  # remove trailing comma
     try:
         return black.format_file_contents(code, fast=False, mode=black.Mode(line_length=line_length))
