@@ -33,12 +33,16 @@ from .interface import (
 )
 from .receipt_breakdown import ReceiptBreakdown
 
-
 # known issue where class properties aren't recognized as subscriptable
 # https://github.com/pylint-dev/pylint/issues/5699
 # pylint: disable=unsubscriptable-object
+
+
 class HyperdriveInterface:
     """End-point api for interfacing with Hyperdrive."""
+
+    # we expect to have many instance attributes since this is a large API
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(
         self,

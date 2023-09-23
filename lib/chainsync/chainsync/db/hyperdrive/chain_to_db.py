@@ -63,18 +63,17 @@ def data_chain_to_db(
     block_number: BlockNumber,
     session: Session,
 ) -> None:
-    """Function to query and insert data to dashboard"""
+    """Function to query and insert data to dashboard."""
     # Query and add block_pool_info
     pool_info_dict = None
     for _ in range(_RETRY_COUNT):
         try:
-            position_duration = int(get_hyperdrive_pool_config(hyperdrive_contract)["positionDuration"])
             pool_info_dict = process_hyperdrive_pool_info(
-                get_hyperdrive_pool_info(hyperdrive_contract, block_number),
-                web3,
-                hyperdrive_contract,
-                position_duration,
-                block_number,
+                pool_info=get_hyperdrive_pool_info(hyperdrive_contract, block_number),
+                web3=web3,
+                hyperdrive_contract=hyperdrive_contract,
+                position_duration=int(get_hyperdrive_pool_config(hyperdrive_contract)["positionDuration"]),
+                block_number=block_number,
             )
             break
         except ValueError:

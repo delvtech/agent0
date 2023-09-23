@@ -178,7 +178,7 @@ def process_hyperdrive_checkpoint(checkpoint: dict[str, int], web3: Web3, block_
 
 
 def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> HyperdriveMarket:
-    """Constructs an elfpy HyperdriveMarket from the onchain hyperdrive constract state"""
+    """Constructs an elfpy HyperdriveMarket from the onchain hyperdrive constract state."""
     earliest_block = web3.eth.get_block("earliest")
     current_block = web3.eth.get_block("latest")
     pool_config = process_hyperdrive_pool_config(get_hyperdrive_pool_config(hyperdrive_contract))

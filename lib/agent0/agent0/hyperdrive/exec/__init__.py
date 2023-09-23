@@ -5,8 +5,6 @@ from .execute_agent_trades import (
     async_execute_agent_trades,
     async_execute_single_agent_trade,
     async_match_contract_call_to_trade,
-    async_smart_contract_transact,
-    async_transact_and_parse_logs,
 )
 from .fund_agents import fund_agents
 from .get_agent_accounts import get_agent_accounts
