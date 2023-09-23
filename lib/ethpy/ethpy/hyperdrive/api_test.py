@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import cast
 
+import pytest
 from eth_typing import URI
 from ethpy.base.transactions import smart_contract_read
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
@@ -12,6 +13,7 @@ from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
 
+@pytest.mark.skip(reason="Can't test this until we update the IHyperdrive.json ABI")
 class TestHyperdriveInterface:
     """Tests for the HyperdriveInterface api class."""
 
