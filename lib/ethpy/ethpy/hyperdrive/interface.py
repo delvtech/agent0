@@ -110,7 +110,7 @@ def process_hyperdrive_pool_info(
         This output can be inserted into the Postgres PoolInfo schema.
     """
     # convert values to fixedpoint
-    pool_info: dict[str, Any] = {str(key): FixedPoint(scaled_value=value) for (key, value) in pool_info.items()}
+    pool_info = {str(key): FixedPoint(scaled_value=value) for (key, value) in pool_info.items()}
     # get current block information & add to pool info
     current_block: BlockData = web3.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
@@ -163,16 +163,18 @@ def process_hyperdrive_checkpoint(checkpoint: dict[str, int], web3: Web3, block_
         A dict containing the checkpoint with some additional fields.
         This is what is expected by the chainsync db conversion function.
     """
+    out_checkpoint: dict[str, Any] = {}
+    out_checkpoint.update(checkpoint)
     current_block: BlockData = web3.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
     if current_block_timestamp is None:
         raise AssertionError("Current block has no timestamp")
-    checkpoint["blockNumber"] = int(block_number)
-    checkpoint["timestamp"] = datetime.fromtimestamp(current_block_timestamp)
-    checkpoint["sharePrice"] = FixedPoint(scaled_value=checkpoint["sharePrice"])
-    checkpoint["longSharePrice"] = FixedPoint(scaled_value=checkpoint["longSharePrice"])
-    checkpoint["longExposure"] = FixedPoint(scaled_value=checkpoint["longExposure"])
-    return checkpoint
+    out_checkpoint["blockNumber"] = int(block_number)
+    out_checkpoint["timestamp"] = datetime.fromtimestamp(int(current_block_timestamp))
+    out_checkpoint["sharePrice"] = FixedPoint(scaled_value=checkpoint["sharePrice"])
+    out_checkpoint["longSharePrice"] = FixedPoint(scaled_value=checkpoint["longSharePrice"])
+    out_checkpoint["longExposure"] = FixedPoint(scaled_value=checkpoint["longExposure"])
+    return out_checkpoint
 
 
 def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> HyperdriveMarket:

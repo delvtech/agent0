@@ -78,6 +78,7 @@ class HyperdriveInterface:
         """
         if all([eth_config is None, artifacts is None, rpc_uri is None, abi_dir is None]):
             eth_config = build_eth_config()
+        addresses_arg = None
         if eth_config is None:
             if artifacts is None or rpc_uri is None or abi_dir is None:
                 raise AssertionError("if eth_config is None, then all of the remaining arguments must be set.")
@@ -86,7 +87,6 @@ class HyperdriveInterface:
                 addresses_arg = artifacts
             else:  # str or URI
                 self.config = EthConfig(artifacts, rpc_uri, abi_dir)
-                addresses_arg = None
         if eth_config is not None:
             if not all([artifacts is None, rpc_uri is None, abi_dir is None]):
                 raise AssertionError("if eth_config is not None, then none of the remaining arguments can be set.")
@@ -94,12 +94,9 @@ class HyperdriveInterface:
         self.web3, self.base_token_contract, self.hyperdrive_contract = get_web3_and_hyperdrive_contracts(
             self.config, addresses_arg
         )
+        self.last_state_block_number = self.get_last_state_block_number()
         self._contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         self.pool_config = process_hyperdrive_pool_config(copy.deepcopy(self._contract_pool_config))
-        self.last_state_block_number = self.web3.eth.get_block("latest").get("number", None)
-        if self.last_state_block_number is None:
-            raise AssertionError("Latest block should not be None.")
-        self.last_state_block_number: BlockNumber = cast(BlockNumber, self.last_state_block_number)
         self._contract_pool_info: dict[str, Any] = {}
         self._pool_info: dict[str, Any] = {}
         self._contract_latest_checkpoint: dict[str, int] = {}
@@ -217,6 +214,19 @@ class HyperdriveInterface:
                 copy.deepcopy(self._contract_latest_checkpoint), self.web3, self.current_block_number
             ),
         )
+
+    def get_last_state_block_number(self) -> BlockNumber:
+        """Get the latest block number.
+
+        Returns
+        -------
+        BlockNumber
+            The verified number from web3.eth.get_block("latest").
+        """
+        last_state_block_number = self.web3.eth.get_block("latest").get("number", None)
+        if last_state_block_number is None:
+            raise AssertionError("Latest block should not be None.")
+        return cast(BlockNumber, self.last_state_block_number)
 
     async def async_open_long(
         self, agent: LocalAccount, trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None
@@ -510,7 +520,7 @@ class HyperdriveInterface:
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "redeemWithdrawalShares")
         return trade_result
 
-    def balance_of(self, agent: LocalAccount) -> tuple[FixedPoint]:
+    def balance_of(self, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
         """Get the agent's balance on the Hyperdrive & base contracts.
 
         Arguments
@@ -584,6 +594,7 @@ class HyperdriveInterface:
             pool_info_str,
             str(budget.scaled_value),
             checkpoint_exposure=str(self.latest_checkpoint["longExposure"].scaled_value),
+            maybe_max_iterations=None,
         )
         return FixedPoint(max_long)
 
@@ -634,6 +645,11 @@ class HyperdriveInterface:
             long_exposure=str(self._contract_pool_info["longExposure"]),
         )
         max_short = pyperdrive.get_max_short(
-            pool_config_str, pool_info_str, str(budget.scaled_value), pool_info_str.share_price
+            pool_config_str,
+            pool_info_str,
+            str(budget.scaled_value),
+            pool_info_str.share_price,
+            maybe_conservative_price=None,
+            maybe_max_iterations=None,
         )
         return FixedPoint(max_short)

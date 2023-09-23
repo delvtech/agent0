@@ -146,6 +146,7 @@ async def async_match_contract_call_to_trade(
     hyperdrive: Hyperdrive | None = None,  # FIXME: Optional for now, to test out Hyperdrive API
 ) -> HyperdriveWalletDeltas:
     hyperdrive: HyperdriveInterface | None = None,  # FIXME: Optional for now, to test out Hyperdrive API
+    hyperdrive: HyperdriveInterface | None = None,  # FIXME: Optional for now, should be required
 ) -> WalletDeltas:
     """Match statement that executes the smart contract trade based on the provided type.
 
@@ -427,7 +428,9 @@ async def async_match_contract_call_to_trade(
                     *fn_args,
                 )
             else:
-                trade_result = await hyperdrive.async_add_liquidity(agent, trade.trade_amount, min_apr, max_apr)
+                trade_result = await hyperdrive.async_add_liquidity(
+                    agent, trade.trade_amount, FixedPoint(min_apr), FixedPoint(max_apr)
+                )
             wallet_deltas = WalletDeltas(
                 balance=Quantity(
                     amount=-trade_result.base_amount,
