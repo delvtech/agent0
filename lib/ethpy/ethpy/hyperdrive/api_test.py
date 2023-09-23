@@ -26,7 +26,6 @@ class TestHyperdriveInterface:
         uri: URI | None = cast(HTTPProvider, local_hyperdrive_chain.web3.provider).endpoint_uri
         rpc_uri = uri if uri else URI("http://localhost:8545")
         abi_dir = "./packages/hyperdrive/src/abis"
-        deploy_account: LocalAccount = local_hyperdrive_chain.deploy_account
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
         hyperdrive = HyperdriveInterface(artifacts=hyperdrive_contract_addresses, rpc_uri=rpc_uri, abi_dir=abi_dir)
         pool_config = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolConfig")
@@ -43,8 +42,25 @@ class TestHyperdriveInterface:
         uri: URI | None = cast(HTTPProvider, local_hyperdrive_chain.web3.provider).endpoint_uri
         rpc_uri = uri if uri else URI("http://localhost:8545")
         abi_dir = "./packages/hyperdrive/src/abis"
-        deploy_account: LocalAccount = local_hyperdrive_chain.deploy_account
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
         hyperdrive = HyperdriveInterface(artifacts=hyperdrive_contract_addresses, rpc_uri=rpc_uri, abi_dir=abi_dir)
         pool_info = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolInfo")
         assert pool_info == hyperdrive._contract_pool_info  # pylint: disable=protected-access
+
+    def test_checkpoint(
+        self,
+        local_hyperdrive_chain: LocalHyperdriveChain,
+    ):
+        """Checks that the Hyperdrive checkpoint matches what is returned from the smart contract.
+
+        All arguments are fixtures.
+        """
+        uri: URI | None = cast(HTTPProvider, local_hyperdrive_chain.web3.provider).endpoint_uri
+        rpc_uri = uri if uri else URI("http://localhost:8545")
+        abi_dir = "./packages/hyperdrive/src/abis"
+        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
+        hyperdrive = HyperdriveInterface(artifacts=hyperdrive_contract_addresses, rpc_uri=rpc_uri, abi_dir=abi_dir)
+        checkpoint = smart_contract_read(
+            hyperdrive.hyperdrive_contract, "getCheckpoint", hyperdrive.current_block_number
+        )
+        assert checkpoint == hyperdrive._contract_latest_checkpoint  # pylint: disable=protected-access

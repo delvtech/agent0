@@ -127,15 +127,11 @@ def process_hyperdrive_pool_info(
     return pool_info
 
 
-def get_hyperdrive_checkpoint_info(
-    web3: Web3, hyperdrive_contract: Contract, block_number: BlockNumber
-) -> dict[str, Any]:
-    """Returns the checkpoint info of Hyperdrive contract for the given block.
+def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, int]:
+    """Returns the checkpoint info for the Hyperdrive contract at a given block.
 
     Arguments
     ---------
-    web3: Web3
-        web3 provider object
     hyperdrive_contract: Contract
         The contract to query the pool info from
     block_number: BlockNumber
@@ -143,21 +139,40 @@ def get_hyperdrive_checkpoint_info(
 
     Returns
     -------
-    Checkpoint
-        A Checkpoint object ready to be inserted into Postgres
+    dict[str, int]
+        A dictionary containing the checkpoint details.
+    """
+    return smart_contract_read(hyperdrive_contract, "getCheckpoint", block_number)
+
+
+def process_hyperdrive_checkpoint(checkpoint: dict[str, int], web3: Web3, block_number: BlockNumber) -> dict[str, Any]:
+    """Returns the checkpoint info of Hyperdrive contract for the given block.
+
+    Arguments
+    ---------
+    checkpoint : dict[str, int]
+        A dictionary containing the checkpoint details.
+    web3 : Web3
+        web3 provider object.
+    block_number : BlockNumber
+        The block number to query from the chain.
+
+    Returns
+    -------
+    dict[str, Any]
+        A dict containing the checkpoint with some additional fields.
+        This is what is expected by the chainsync db conversion function.
     """
     current_block: BlockData = web3.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
     if current_block_timestamp is None:
         raise AssertionError("Current block has no timestamp")
-    checkpoint_data: dict[str, int] = smart_contract_read(hyperdrive_contract, "getCheckpoint", block_number)
-    return {
-        "blockNumber": int(block_number),
-        "timestamp": datetime.fromtimestamp(current_block_timestamp),
-        "sharePrice": FixedPoint(scaled_value=checkpoint_data["sharePrice"]),
-        "longSharePrice": FixedPoint(scaled_value=checkpoint_data["longSharePrice"]),
-        "longExposure": FixedPoint(scaled_value=checkpoint_data["longExposure"]),
-    }
+    checkpoint["blockNumber"] = int(block_number)
+    checkpoint["timestamp"] = datetime.fromtimestamp(current_block_timestamp)
+    checkpoint["sharePrice"] = FixedPoint(scaled_value=checkpoint["sharePrice"])
+    checkpoint["longSharePrice"] = FixedPoint(scaled_value=checkpoint["longSharePrice"])
+    checkpoint["longExposure"] = FixedPoint(scaled_value=checkpoint["longExposure"])
+    return checkpoint
 
 
 def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> HyperdriveMarket:

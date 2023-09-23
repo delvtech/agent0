@@ -5,9 +5,10 @@ import time
 from eth_typing import BlockNumber
 from ethpy.base import fetch_contract_transactions_for_block
 from ethpy.hyperdrive import (
-    get_hyperdrive_checkpoint_info,
+    get_hyperdrive_checkpoint,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
+    process_hyperdrive_checkpoint,
     process_hyperdrive_pool_config,
     process_hyperdrive_pool_info,
 )
@@ -89,7 +90,9 @@ def data_chain_to_db(
     checkpoint_info_dict = None
     for _ in range(_RETRY_COUNT):
         try:
-            checkpoint_info_dict = get_hyperdrive_checkpoint_info(web3, hyperdrive_contract, block_number)
+            checkpoint_info_dict = process_hyperdrive_checkpoint(
+                get_hyperdrive_checkpoint(hyperdrive_contract, block_number), web3, block_number
+            )
             break
         except ValueError:
             logging.warning("Error in get_hyperdrive_checkpoint_info, retrying")

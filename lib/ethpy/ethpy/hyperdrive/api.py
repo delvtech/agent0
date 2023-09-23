@@ -23,10 +23,11 @@ from web3.types import BlockData, Timestamp
 
 from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
 from .interface import (
-    get_hyperdrive_checkpoint_info,
+    get_hyperdrive_checkpoint,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
     parse_logs,
+    process_hyperdrive_checkpoint,
     process_hyperdrive_pool_config,
     process_hyperdrive_pool_info,
 )
@@ -98,6 +99,7 @@ class HyperdriveInterface:
         self.last_state_block = self.web3.eth.get_block("latest")
         self._contract_pool_info: dict[str, Any] = {}
         self._pool_info: dict[str, Any] = {}
+        self._contract_latest_checkpoint: dict[str, int] = {}
         self._latest_checkpoint: dict[str, Any] = {}
         self.update_pool_info_and_checkpoint()  # fill these in initially
 
@@ -202,8 +204,15 @@ class HyperdriveInterface:
         )
         setattr(
             self,
+            "_contract_latest_checkpoint",
+            get_hyperdrive_checkpoint(self.hyperdrive_contract, self.current_block_number),
+        )
+        setattr(
+            self,
             "_latest_checkpoint",
-            get_hyperdrive_checkpoint_info(self.web3, self.hyperdrive_contract, self.current_block_number),
+            process_hyperdrive_checkpoint(
+                copy.deepcopy(self._contract_latest_checkpoint), self.web3, self.current_block_number
+            ),
         )
 
     async def async_open_long(
