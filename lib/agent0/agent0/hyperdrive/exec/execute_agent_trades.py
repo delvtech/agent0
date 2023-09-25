@@ -16,9 +16,6 @@ from fixedpointmath import FixedPoint
 if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
 
-# TODO: Fix these up when we refactor this file
-# pylint: disable=too-many-locals
-
 
 def assert_never(arg: NoReturn) -> NoReturn:
     """Helper function for exhaustive matching on ENUMS.
@@ -106,7 +103,6 @@ async def async_match_contract_call_to_trade(
 
     """
     # TODO: figure out fees paid
-    # pylint: disable=too-many-statements
     trade = trade_envelope.market_action
     match trade.action_type:
         case HyperdriveActionType.INITIALIZE_MARKET:
@@ -124,7 +120,7 @@ async def async_match_contract_call_to_trade(
 
         case HyperdriveActionType.CLOSE_LONG:
             if not trade.maturity_time:
-                raise ValueError("Mint time was not provided, can't close long position.")
+                raise ValueError("Maturity time was not provided, can't close long position.")
             trade_result = await hyperdrive.async_close_long(
                 agent, trade.trade_amount, trade.maturity_time, trade.slippage_tolerance
             )
@@ -148,7 +144,7 @@ async def async_match_contract_call_to_trade(
 
         case HyperdriveActionType.CLOSE_SHORT:
             if not trade.maturity_time:
-                raise ValueError("Mint time was not provided, can't close long position.")
+                raise ValueError("Maturity time was not provided, can't close long position.")
             trade_result = await hyperdrive.async_close_short(
                 agent, trade.trade_amount, trade.maturity_time, trade.slippage_tolerance
             )

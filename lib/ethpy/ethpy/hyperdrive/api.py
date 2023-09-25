@@ -476,7 +476,7 @@ class HyperdriveInterface:
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "redeemWithdrawalShares")
         return trade_result
 
-    def balance_of(self, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
+    def get_eth_base_balances(self, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
         """Get the agent's balance on the Hyperdrive & base contracts.
 
         Arguments
@@ -488,7 +488,6 @@ class HyperdriveInterface:
         -------
         tuple[FixedPoint]
             A tuple containing the [agent_eth_balance, agent_base_balance]
-
         """
         agent_checksum_address = Web3.to_checksum_address(agent.address)
         agent_eth_balance = get_account_balance(self.web3, agent_checksum_address)
