@@ -6,11 +6,67 @@ import logging
 from dataclasses import dataclass, field
 from typing import Iterable
 
+from agent0.base import freezable
+from agent0.base.state import EthWallet, EthWalletDeltas
 from fixedpointmath import FixedPoint
 
-from agent0.base.agents import EthWallet
-from elfpy.wallet.wallet import Long, Short
-from elfpy.wallet.wallet_deltas import WalletDeltas
+
+@freezable()
+@dataclass()
+class HyperdriveWalletDeltas(EthWalletDeltas):
+    r"""Stores changes for an agent's wallet
+
+    Arguments
+    ----------
+    lp_tokens : FixedPoint
+        The LP tokens held by the trader.
+    longs : Dict[int, Long]
+        The long positions held by the trader.
+    shorts : Dict[int, Short]
+        The short positions held by the trader.
+    withdraw_shares: FixedPoint
+        The withdraw shares held by the trader.
+    """
+    # dataclasses can have many attributes
+    # pylint: disable=too-many-instance-attributes
+
+    lp_tokens: FixedPoint = FixedPoint(0)
+    # non-fungible (identified by key=maturity_time, stored as dict)
+    longs: dict[int, Long] = field(default_factory=dict)
+    shorts: dict[int, Short] = field(default_factory=dict)
+    withdraw_shares: FixedPoint = FixedPoint(0)
+
+    def copy(self) -> HyperdriveWalletDeltas:
+        """Returns a new copy of self"""
+        return HyperdriveWalletDeltas(**copy.deepcopy(self.__dict__))
+
+
+@dataclass
+class Long:
+    r"""An open long position.
+
+    Arguments
+    ----------
+    balance : FixedPoint
+        The amount of bonds that the position is long.
+
+    .. todo:: make balance a Quantity to enforce units
+    """
+
+    balance: FixedPoint  # bonds
+
+
+@dataclass
+class Short:
+    r"""An open short position.
+
+    Arguments
+    ----------
+    balance : FixedPoint
+        The amount of bonds that the position is short.
+    """
+
+    balance: FixedPoint
 
 
 @dataclass(kw_only=True)
@@ -27,10 +83,10 @@ class HyperdriveWallet(EthWallet):
         The LP tokens held by the trader.
     withdraw_shares : FixedPoint
         The amount of unclaimed withdraw shares held by the agent.
-    longs : Dict[FixedPoint, Long]
+    longs : Dict[int, Long]
         The long positions held by the trader.
         The dictionary is keyed by the maturity time in seconds.
-    shorts : Dict[FixedPoint, Short]
+    shorts : Dict[int, Short]
         The short positions held by the trader.
         The dictionary is keyed by the maturity time in seconds.
     """
@@ -39,15 +95,15 @@ class HyperdriveWallet(EthWallet):
     # pylint: disable=too-many-instance-attributes
     lp_tokens: FixedPoint = FixedPoint(0)
     withdraw_shares: FixedPoint = FixedPoint(0)
-    longs: dict[FixedPoint, Long] = field(default_factory=dict)
-    shorts: dict[FixedPoint, Short] = field(default_factory=dict)
+    longs: dict[int, Long] = field(default_factory=dict)
+    shorts: dict[int, Short] = field(default_factory=dict)
 
-    def _update_longs(self, longs: Iterable[tuple[FixedPoint, Long]]) -> None:
+    def _update_longs(self, longs: Iterable[tuple[int, Long]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet.
 
         Arguments
         ---------
-        longs : Iterable[tuple[FixedPoint, Long]]
+        longs : Iterable[tuple[int, Long]]
             A list (or other Iterable type) of tuples that contain a Long object
             and its market-relative maturity time
         """
@@ -71,12 +127,12 @@ class HyperdriveWallet(EthWallet):
             if maturity_time in self.longs and self.longs[maturity_time].balance < FixedPoint(0):
                 raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.longs[maturity_time]}.")
 
-    def _update_shorts(self, shorts: Iterable[tuple[FixedPoint, Short]]) -> None:
+    def _update_shorts(self, shorts: Iterable[tuple[int, Short]]) -> None:
         """Helper internal function that updates the data about Shorts contained in the Agent's Wallet.
 
         Arguments
         ---------
-        shorts : Iterable[tuple[FixedPoint, Short]]
+        shorts : Iterable[tuple[int, Short]]
             A list (or other Iterable type) of tuples that contain a Short object
             and its market-relative mint time
         """
@@ -90,17 +146,7 @@ class HyperdriveWallet(EthWallet):
                     short,
                 )
                 if maturity_time in self.shorts:  #  entry already exists for this maturity_time, so add to it
-                    old_balance = self.shorts[maturity_time].balance
                     self.shorts[maturity_time].balance += short.balance
-                    # If the balance is positive, we are opening a short, therefore do a weighted
-                    # mean for the open share price.
-                    # This covers an edge case where two shorts are opened for the same account in the same block.
-                    # If the balance is negative, we don't want to update the open_short_price.
-                    if short.balance > FixedPoint(0):
-                        old_share_price = self.shorts[maturity_time].open_share_price
-                        self.shorts[maturity_time].open_share_price = (
-                            short.open_share_price * short.balance + old_share_price * old_balance
-                        ) / (short.balance + old_balance)
                 else:
                     self.shorts.update({maturity_time: short})
             if self.shorts[maturity_time].balance == FixedPoint(0):
@@ -114,7 +160,7 @@ class HyperdriveWallet(EthWallet):
         """Returns a new copy of self."""
         return HyperdriveWallet(**copy.deepcopy(self.__dict__))
 
-    def update(self, wallet_deltas: WalletDeltas) -> None:
+    def update(self, wallet_deltas: HyperdriveWalletDeltas) -> None:
         """Update the agent's wallet in-place.
 
         Arguments

@@ -5,10 +5,10 @@ import copy
 from dataclasses import dataclass
 
 import elfpy
-from elfpy import types
+from agent0.base import freezable
 
 
-@types.freezable(frozen=False, no_new_attribs=False)
+@freezable(frozen=False, no_new_attribs=False)
 @dataclass(kw_only=True)
 class BaseMarketState:
     r"""The state of an AMM."""

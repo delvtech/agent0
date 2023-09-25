@@ -8,7 +8,7 @@ from fixedpointmath import FixedPoint
 from numpy.random import default_rng
 
 if TYPE_CHECKING:
-    from agent0.base.agents import EthWallet
+    from agent0.base.state import EthWallet
 
     # from agent0.base.state import BaseMarketState # TODO: don't rely on elfpy base market
     from elfpy.markets.base import BaseMarket as BaseMarketState

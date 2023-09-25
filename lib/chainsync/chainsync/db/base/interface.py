@@ -85,7 +85,7 @@ def initialize_engine(postgres_config: PostgresConfig | None = None) -> Engine:
             exception = None
             break
         except OperationalError as ex:
-            logging.warning("No connection, retrying")
+            logging.warning("No postgres connection, retrying")
             exception = ex
             time.sleep(1)
     if exception is not None:

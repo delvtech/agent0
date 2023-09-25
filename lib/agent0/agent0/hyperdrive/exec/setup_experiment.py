@@ -1,10 +1,7 @@
 """Setup helper function for running eth agent experiments."""
 from __future__ import annotations
 
-from http import HTTPStatus
-
 import numpy as np
-import requests
 from agent0 import AccountKeyConfig
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
@@ -70,23 +67,5 @@ def setup_experiment(
     agent_accounts = get_agent_accounts(
         web3, agent_config, account_key_config, base_token_contract, hyperdrive_contract.address, rng
     )
+
     return web3, base_token_contract, hyperdrive_contract, agent_accounts
-
-
-def register_username(register_uri: str, wallet_addrs: list[str], username: str) -> None:
-    """Registers the username with the flask server.
-
-    Arguments
-    ---------
-    register_uri: str
-        The endpoint for the flask server.
-    wallet_addrs: list[str]
-        The list of wallet addresses to register.
-    username: str
-        The username to register the wallet addresses under.
-    """
-    # TODO: use the json schema from the server.
-    json_data = {"wallet_addrs": wallet_addrs, "username": username}
-    result = requests.post(f"{register_uri}/register_agents", json=json_data, timeout=3)
-    if result.status_code != HTTPStatus.OK:
-        raise ConnectionError(result)

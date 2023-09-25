@@ -4,10 +4,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-import elfpy.types as types
-from agent0.hyperdrive.agents import HyperdriveWallet
+from agent0.base import freezable
 from elfpy.markets.base import BaseMarketAction
 from fixedpointmath import FixedPoint
+
+from .hyperdrive_wallet import HyperdriveWallet
 
 
 class HyperdriveActionType(Enum):
@@ -25,7 +26,7 @@ class HyperdriveActionType(Enum):
     REDEEM_WITHDRAW_SHARE = "redeem_withdraw_share"
 
 
-@types.freezable(frozen=False, no_new_attribs=True)
+@freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class HyperdriveMarketAction(BaseMarketAction):
     r"""Market action specification"""
@@ -37,7 +38,5 @@ class HyperdriveMarketAction(BaseMarketAction):
     wallet: HyperdriveWallet
     # slippage tolerance percent where 0.01 would be a 1% tolerance
     slippage_tolerance: FixedPoint | None = None
-    # mint time is set only for trades that act on existing positions (close long or close short)
-    mint_time: FixedPoint | None = None
     # maturity time is set only for trades that act on existing positions (close long or close short)
-    maturity_time: FixedPoint | None = None
+    maturity_time: int | None = None
