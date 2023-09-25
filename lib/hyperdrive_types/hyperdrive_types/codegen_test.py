@@ -53,6 +53,7 @@ class CodegenTest(unittest.TestCase):
                     with open(os.path.join(test_location, file), mode="r", encoding="utf-8") as original_file:
                         temp_contents = temp_file.read()
                         original_contents = original_file.read()
-                        assert (
-                            temp_contents == original_contents
-                        ), f"\n{temp_file.name=}\n\n{temp_contents=}\n\n!=\n\n{original_file.name=}\n\n{original_contents=}"
+                        assert temp_contents == original_contents, (
+                            f"\n{temp_file.name=}\n\n{temp_contents=}\n\n"
+                            f"!=\n\n{original_file.name=}\n\n{original_contents=}"
+                        )
