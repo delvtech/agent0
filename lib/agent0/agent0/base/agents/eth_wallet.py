@@ -12,8 +12,8 @@ from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
 
-@dataclass(kw_only=True)
 @freezable()
+@dataclass()
 class EthWalletDeltas:
     r"""Stores changes for an agent's wallet
 
