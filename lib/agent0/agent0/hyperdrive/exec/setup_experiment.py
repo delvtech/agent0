@@ -8,7 +8,7 @@ from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.exec.crash_report import setup_hyperdrive_crash_report_logging
 from elfpy.utils import logs
 from ethpy import EthConfig
-from ethpy.hyperdrive import HyperdriveInterface
+from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveInterface
 
 from .get_agent_accounts import get_agent_accounts
 
@@ -18,6 +18,7 @@ def setup_experiment(
     environment_config: EnvironmentConfig,
     agent_config: list[AgentConfig],
     account_key_config: AccountKeyConfig,
+    contract_addresses: HyperdriveAddresses | None,
 ) -> tuple[HyperdriveInterface, list[HyperdriveAgent]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
@@ -31,6 +32,8 @@ def setup_experiment(
         The list of agent configurations.
     account_key_config: AccountKeyConfig
         Configuration linking to the env file for storing private keys and initial budgets.
+    contract_addresses: HyperdriveAddresses, optional
+        Configuration for defining various contract addresses.
 
     Returns
     -------
@@ -53,7 +56,7 @@ def setup_experiment(
     )
     setup_hyperdrive_crash_report_logging()
     # create hyperdrive interface object
-    hyperdrive = HyperdriveInterface(eth_config)
+    hyperdrive = HyperdriveInterface(eth_config, contract_addresses)
     # load agent policies
     # rng is shared by the agents and can be accessed via `agent_accounts[idx].policy.rng`
     agent_accounts = get_agent_accounts(

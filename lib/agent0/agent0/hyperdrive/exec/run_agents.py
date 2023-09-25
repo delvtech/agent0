@@ -78,7 +78,9 @@ def run_agents(
 
     wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
     # get hyperdrive interface object and agents
-    hyperdrive, agent_accounts = setup_experiment(eth_config, environment_config, agent_config, account_key_config)
+    hyperdrive, agent_accounts = setup_experiment(
+        eth_config, environment_config, agent_config, account_key_config, contract_addresses
+    )
     # set up database
     if not develop:
         # Ignore this check if not develop

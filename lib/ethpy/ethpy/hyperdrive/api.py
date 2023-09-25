@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, cast
+import os
+from typing import Any
 
 import eth_utils
 import pyperdrive
 from eth_account.signers.local import LocalAccount
-from eth_typing import URI, BlockNumber
+from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import (
     async_smart_contract_transact,
@@ -21,6 +22,7 @@ from pyperdrive.types import Fees, PoolConfig, PoolInfo
 from web3 import Web3
 from web3.types import BlockData, Timestamp
 
+from .addresses import fetch_hyperdrive_address_from_uri
 from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
 from .interface import (
     get_hyperdrive_checkpoint,
@@ -47,58 +49,27 @@ class HyperdriveInterface:
     def __init__(
         self,
         eth_config: EthConfig | None = None,
-        *,  # kw-args only from here forward
-        artifacts: str | URI | HyperdriveAddresses | None = None,
-        rpc_uri: str | URI | None = None,
-        abi_dir: str | None = None,
+        addresses: HyperdriveAddresses | None = None,
     ) -> None:
-        """The HyperdriveInterface API has multiple valid constructors.
+        """The HyperdriveInterface API.
 
-        Different workflows result in different call signatures for initializing this object.
-        You can construct a HyperdriveInterface with an EthConfig object,
-        which takes in URIs that point to the requesite assets:
-
-        .. code-block::
-          eth_config = EthConfig(artifacts_uri, rpc_uri, abi_dir)
-          hyperdrive = HyperdriveInterface(eth_config)
-
-        or you can construct it with the URIs themselves (which requires kwargs):
-
-        .. code-block::
-          hyperdrive = HyperdriveInterface(artifacts=artifacts_uri, rpc_uri=rpc_uri, abi_dir=abi_dir)
-
-        You may also have direct access to the HyperdriveAddresses, instead of a URI for an artifacts server.
-        In this case, you can construct the interface using those addresses and the remaining URIs
-        (also requiring kwargs):
-
-        .. code-block::
-          # acquire addresses from URI, or via some other mechanism
-          addresses = ethpy.hyperdrive.addresses.fetch_hyperdrive_address_from_uri(artifacts_uri)
-          # initialize hyperdrive
-          hyperdrive = HyperdriveInterface(artifacts=addresses, rpc_uri=rpc_uri, abi_dir=abi_dir)
-
+        HyperdriveInterface requires an EthConfig to initialize.
+        If the user does not provide one, then it is constructed from environment variables.
+        The user can optionally include an `artifacts` HyperdriveAddresses object.
+        In this case, the `eth_config.artifacts_uri` variable is not used,
+        and these Addresses are used instead.
 
         ## TODO: Change pyperdrive interface to take str OR python FixedPoint objs; use FixedPoint here.
         """
-        if all([eth_config is None, artifacts is None, rpc_uri is None, abi_dir is None]):
-            eth_config = build_eth_config()
-        addresses_arg = None
         if eth_config is None:
-            if artifacts is None or rpc_uri is None or abi_dir is None:
-                raise AssertionError("if eth_config is None, then all of the remaining arguments must be set.")
-            if isinstance(artifacts, HyperdriveAddresses):
-                self.config = EthConfig("Not used", rpc_uri, abi_dir)
-                addresses_arg = artifacts
-            else:  # str or URI
-                self.config = EthConfig(artifacts, rpc_uri, abi_dir)
-        if eth_config is not None:
-            if not all([artifacts is None, rpc_uri is None, abi_dir is None]):
-                raise AssertionError("if eth_config is not None, then none of the remaining arguments can be set.")
-            self.config = eth_config
+            eth_config = build_eth_config()
+        self.config = eth_config
+        if addresses is None:
+            addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
         self.web3, self.base_token_contract, self.hyperdrive_contract = get_web3_and_hyperdrive_contracts(
-            self.config, addresses_arg
+            self.config, addresses
         )
-        self.last_state_block_number = self.get_last_state_block_number()
+        self.last_state_block_number = copy.copy(self.current_block_number)
         self._contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         self.pool_config = process_hyperdrive_pool_config(copy.deepcopy(self._contract_pool_config))
         self._contract_pool_info: dict[str, Any] = {}
@@ -111,7 +82,7 @@ class HyperdriveInterface:
     def pool_info(self) -> dict[str, Any]:
         """Returns the current pool state info."""
         if self.current_block_number > self.last_state_block_number:
-            self.last_state_block_number = self.current_block_number
+            self.last_state_block_number = copy.copy(self.current_block_number)
             self.update_pool_info_and_checkpoint()
         return self._pool_info
 
@@ -119,7 +90,7 @@ class HyperdriveInterface:
     def latest_checkpoint(self) -> dict[str, Any]:
         """Returns the latest checkpoint info."""
         if self.current_block_number > self.last_state_block_number:
-            self.last_state_block_number = self.current_block_number
+            self.last_state_block_number = copy.copy(self.current_block_number)
             self.update_pool_info_and_checkpoint()
         return self._latest_checkpoint
 
@@ -218,19 +189,6 @@ class HyperdriveInterface:
                 copy.deepcopy(self._contract_latest_checkpoint), self.web3, self.current_block_number
             ),
         )
-
-    def get_last_state_block_number(self) -> BlockNumber:
-        """Get the latest block number.
-
-        Returns
-        -------
-        BlockNumber
-            The verified number from web3.eth.get_block("latest").
-        """
-        last_state_block_number = self.web3.eth.get_block("latest").get("number", None)
-        if last_state_block_number is None:
-            raise AssertionError("Latest block should not be None.")
-        return cast(BlockNumber, self.last_state_block_number)
 
     async def async_open_long(
         self, agent: LocalAccount, trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None

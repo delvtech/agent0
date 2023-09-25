@@ -5,6 +5,7 @@ from typing import cast
 
 import pytest
 from eth_typing import URI
+from ethpy import EthConfig
 from ethpy.base.transactions import smart_contract_read
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.api import HyperdriveInterface
@@ -26,7 +27,8 @@ class TestHyperdriveInterface:
         rpc_uri = uri if uri else URI("http://localhost:8545")
         abi_dir = "./packages/hyperdrive/src/abis"
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
-        hyperdrive = HyperdriveInterface(artifacts=hyperdrive_contract_addresses, rpc_uri=rpc_uri, abi_dir=abi_dir)
+        eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
+        hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
         pool_config = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolConfig")
         assert pool_config == hyperdrive._contract_pool_config  # pylint: disable=protected-access
 
@@ -39,7 +41,8 @@ class TestHyperdriveInterface:
         rpc_uri = uri if uri else URI("http://localhost:8545")
         abi_dir = "./packages/hyperdrive/src/abis"
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
-        hyperdrive = HyperdriveInterface(artifacts=hyperdrive_contract_addresses, rpc_uri=rpc_uri, abi_dir=abi_dir)
+        eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
+        hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
         pool_info = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolInfo")
         assert pool_info == hyperdrive._contract_pool_info  # pylint: disable=protected-access
 
@@ -52,7 +55,8 @@ class TestHyperdriveInterface:
         rpc_uri = uri if uri else URI("http://localhost:8545")
         abi_dir = "./packages/hyperdrive/src/abis"
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
-        hyperdrive = HyperdriveInterface(artifacts=hyperdrive_contract_addresses, rpc_uri=rpc_uri, abi_dir=abi_dir)
+        eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
+        hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
         checkpoint = smart_contract_read(
             hyperdrive.hyperdrive_contract, "getCheckpoint", hyperdrive.current_block_number
         )
@@ -68,7 +72,8 @@ class TestHyperdriveInterface:
         rpc_uri = uri if uri else URI("http://localhost:8545")
         abi_dir = "./packages/hyperdrive/src/abis"
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
-        hyperdrive = HyperdriveInterface(artifacts=hyperdrive_contract_addresses, rpc_uri=rpc_uri, abi_dir=abi_dir)
+        eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
+        hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
         _ = hyperdrive.pool_config
         _ = hyperdrive.pool_info
         _ = hyperdrive.latest_checkpoint
