@@ -13,9 +13,16 @@
 # pylint: disable=no-else-return
 from __future__ import annotations
 
+{% if structs %}
 from dataclasses import dataclass
+{% endif %}
 
-from web3.types import ABIEvent, ABIEventParams
+{%- if has_events %}
+from web3.types import ABIEvent
+{% endif %}
+{%- if has_event_params %}
+from web3.types import ABIEventParams
+{% endif %}
 
 {% for struct in structs %}
 @dataclass
@@ -31,7 +38,7 @@ class {{struct.name}}:
 {{event.name}} = ABIEvent(
     anonymous = {{event.anonymous}},
     inputs = [
-{%- for event_input in event['inputs'] %}
+{%- for event_input in event.inputs %}
         ABIEventParams(indexed={{event_input.indexed}}, name="{{event_input.name}}", type="{{event_input.solidity_type}}"),
 {%- endfor %}
     ],

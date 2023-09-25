@@ -207,8 +207,16 @@ def render_types_file(contract_name: str, types_template: Template, abi_file_pat
     structs_list = list(structs_by_name.values())
     structs = [asdict(struct) for struct in structs_list]
     events = [asdict(event) for event in get_events_for_abi(abi)]
+    has_events = bool(events)
+    has_event_params = any(len(event["inputs"]) > 0 for event in events)
 
-    return types_template.render(contract_name=contract_name, structs=structs, events=events)
+    return types_template.render(
+        contract_name=contract_name,
+        structs=structs,
+        events=events,
+        has_events=has_events,
+        has_event_params=has_event_params,
+    )
 
 
 def get_input_names_and_values(function: ABIFunction) -> list[str]:

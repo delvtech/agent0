@@ -321,14 +321,14 @@ def get_events_for_abi(abi: ABI) -> list[EventInfo]:
                     raise ValueError("Type not known for event input.")
 
                 python_type = solidity_to_python_type(solidity_type)
-                inputs = [
-                    EventParams(
-                        indexed=indexed,
-                        name=name,
-                        solidity_type=solidity_type,
-                        python_type=python_type,
-                    )
-                ]
+                event_input = EventParams(
+                    indexed=indexed,
+                    name=name,
+                    solidity_type=solidity_type,
+                    python_type=python_type,
+                )
+
+                inputs.append(event_input)
 
             anonymous = item.get("anonymous", False)
             # TODO add test for multiple anonymous events
