@@ -19,7 +19,7 @@ from ethpy.base import (
     smart_contract_read,
     smart_contract_transact,
 )
-from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri, get_hyperdrive_config
+from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri, get_hyperdrive_pool_config
 from fixedpointmath import FixedPoint
 from web3.contract.contract import Contract
 
@@ -86,7 +86,7 @@ def main() -> None:
     # Run the checkpoint bot. This bot will attempt to mint a new checkpoint
     # every checkpoint after a waiting period. It will poll very infrequently
     # to reduce the probability of needing to mint a checkpoint.
-    config = get_hyperdrive_config(hyperdrive_contract)
+    config = get_hyperdrive_pool_config(hyperdrive_contract)
     checkpoint_duration = config["checkpointDuration"]
     while True:
         # Get the latest block time and check to see if a new checkpoint should

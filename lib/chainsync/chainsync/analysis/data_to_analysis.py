@@ -127,7 +127,7 @@ def data_to_analysis(
         pool_info["shareReserves"],
         pool_info["bondReserves"],
         pool_config["initialSharePrice"],
-        pool_config["invTimeStretch"],
+        pool_config["timeStretch"],
     )
 
     # Calculate fixed rate

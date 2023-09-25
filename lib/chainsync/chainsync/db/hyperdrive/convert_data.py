@@ -233,7 +233,7 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> PoolConfig:
     Arguments
     ---------
     pool_config_dict: dict[str, Any]
-        The dictionary returned from hyperdrive_instance.get_hyperdrive_config
+        A dicitonary containing the required pool_config keys.
 
     Returns
     -------
