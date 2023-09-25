@@ -3,8 +3,11 @@
 # pylint: disable=arguments-differ
 # contracts have PascalCase names
 # pylint: disable=invalid-name
-# unable to control how many instance attributes we have in generated code
+# contracts control how many attributes and arguments we have in generated code
 # pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
+# unable to determine which imports will be used in the generated code
+# pylint: disable=unused-import
 from __future__ import annotations
 
 from typing import Any, cast
@@ -55,7 +58,8 @@ class ERC20MintableBurnContractFunction(ContractFunction):
             super().__call__(amount)
             return self
 
-        else:
+        # we dont _need_ this else condition, but it is easier to always generate it
+        else:  # pylint: disable=no-else-return
             super().__call__(destination, amount)
             return self
 
@@ -104,7 +108,8 @@ class ERC20MintableMintContractFunction(ContractFunction):
             super().__call__(destination, amount)
             return self
 
-        else:
+        # we dont _need_ this else condition, but it is easier to always generate it
+        else:  # pylint: disable=no-else-return
             super().__call__(amount)
             return self
 

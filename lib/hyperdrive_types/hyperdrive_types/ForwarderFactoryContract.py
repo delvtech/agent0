@@ -3,8 +3,11 @@
 # pylint: disable=arguments-differ
 # contracts have PascalCase names
 # pylint: disable=invalid-name
-# unable to control how many instance attributes we have in generated code
+# contracts control how many attributes and arguments we have in generated code
 # pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
+# unable to determine which imports will be used in the generated code
+# pylint: disable=unused-import
 from __future__ import annotations
 
 from typing import Any, cast
