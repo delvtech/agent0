@@ -12,7 +12,7 @@ def register_username(api_uri: str, wallet_addrs: list[str], username: str) -> N
 
     Arguments
     ---------
-    register_uri: str
+    api_uri: str
         The endpoint for the flask server.
     wallet_addrs: list[str]
         The list of wallet addresses to register.
@@ -35,8 +35,6 @@ def balance_of(api_uri: str, wallet_addrs: list[str]) -> pd.DataFrame:
         The endpoint for the flask server.
     wallet_addrs: list[str]
         The list of wallet addresses to register.
-    username: str
-        The username to register the wallet addresses under.
     """
     # TODO: use the json schema from the server.
     json_data = {"wallet_addrs": wallet_addrs}
