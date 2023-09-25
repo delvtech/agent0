@@ -5,12 +5,10 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, NoReturn
 
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
+from agent0.base import Quantity, TokenType
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWalletDeltas, Long, Short
 from elfpy import types
 from elfpy.markets.hyperdrive import HyperdriveMarket
-from elfpy.types import Quantity, TokenType
-from elfpy.wallet.wallet import Long, Short
-from elfpy.wallet.wallet_deltas import WalletDeltas
 from ethpy.base import UnknownBlockError
 from ethpy.hyperdrive import HyperdriveInterface, get_hyperdrive_market
 from fixedpointmath import FixedPoint
@@ -58,12 +56,7 @@ async def async_execute_single_agent_trade(
             float(trade_object.market_action.trade_amount),
         )
         try:
-            wallet_deltas = await async_match_contract_call_to_trade(
-                agent,
-                hyperdrive,
-                hyperdrive_market,
-                trade_object,
-            )
+            wallet_deltas = await async_match_contract_call_to_trade(agent, hyperdrive, trade_object)
             agent.wallet.update(wallet_deltas)
         except UnknownBlockError as exc:
             logging.error(exc)
@@ -93,9 +86,8 @@ async def async_execute_agent_trades(
 async def async_match_contract_call_to_trade(
     agent: HyperdriveAgent,
     hyperdrive: HyperdriveInterface,
-    hyperdrive_market: HyperdriveMarket,
     trade_envelope: types.Trade[HyperdriveMarketAction],
-) -> WalletDeltas:
+) -> HyperdriveWalletDeltas:
     """Match statement that executes the smart contract trade based on the provided type.
 
     Arguments
@@ -104,14 +96,12 @@ async def async_match_contract_call_to_trade(
         Object containing a wallet address and Elfpy Agent for determining trades
     hyperdrive : HyperdriveInterface
         The Hyperdrive API interface object
-    hyperdrive_market : HyperdriveMarket
-        The elfpy trading market
     trade_object : Trade
         A specific trade requested by the given agent
 
     Returns
     -------
-    WalletDeltas
+    HyperdriveWalletDeltas
         Deltas to be applied to the agent's wallet
 
     """
@@ -127,67 +117,57 @@ async def async_match_contract_call_to_trade(
 
         case HyperdriveActionType.OPEN_LONG:
             trade_result = await hyperdrive.async_open_long(agent, trade.trade_amount, trade.slippage_tolerance)
-            wallet_deltas = WalletDeltas(
+            wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=-trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                longs={FixedPoint(trade_result.maturity_time_seconds): Long(trade_result.bond_amount)},
+                longs={trade_result.maturity_time_seconds: Long(trade_result.bond_amount)},
             )
 
         case HyperdriveActionType.CLOSE_LONG:
-            if not trade.mint_time:
+            if not trade.maturity_time:
                 raise ValueError("Mint time was not provided, can't close long position.")
             trade_result = await hyperdrive.async_close_long(
-                agent, trade.trade_amount, trade.mint_time, trade.slippage_tolerance
+                agent, trade.trade_amount, trade.maturity_time, trade.slippage_tolerance
             )
-            wallet_deltas = WalletDeltas(
+            wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                longs={trade.mint_time: Long(-trade_result.bond_amount)},
+                longs={trade.maturity_time: Long(-trade_result.bond_amount)},
             )
 
         case HyperdriveActionType.OPEN_SHORT:
             trade_result = await hyperdrive.async_open_short(agent, trade.trade_amount, trade.slippage_tolerance)
-            wallet_deltas = WalletDeltas(
+            wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=-trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                shorts={
-                    FixedPoint(trade_result.maturity_time_seconds): Short(
-                        balance=trade_result.bond_amount,
-                        open_share_price=hyperdrive_market.market_state.share_price,
-                    )
-                },
+                shorts={trade_result.maturity_time_seconds: Short(balance=trade_result.bond_amount)},
             )
 
         case HyperdriveActionType.CLOSE_SHORT:
-            if not trade.mint_time:
+            if not trade.maturity_time:
                 raise ValueError("Mint time was not provided, can't close long position.")
             trade_result = await hyperdrive.async_close_short(
-                agent, trade.trade_amount, trade.mint_time, trade.slippage_tolerance
+                agent, trade.trade_amount, trade.maturity_time, trade.slippage_tolerance
             )
-            wallet_deltas = WalletDeltas(
+            wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                shorts={
-                    trade.mint_time: Short(
-                        balance=-trade_result.bond_amount,
-                        open_share_price=agent.wallet.shorts[trade.mint_time].open_share_price,
-                    )
-                },
+                shorts={trade.maturity_time: Short(balance=-trade_result.bond_amount)},
             )
 
         case HyperdriveActionType.ADD_LIQUIDITY:
             trade_result = await hyperdrive.async_add_liquidity(
                 agent, trade.trade_amount, FixedPoint(min_apr), FixedPoint(max_apr)
             )
-            wallet_deltas = WalletDeltas(
+            wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=-trade_result.base_amount,
                     unit=TokenType.BASE,
@@ -197,7 +177,7 @@ async def async_match_contract_call_to_trade(
 
         case HyperdriveActionType.REMOVE_LIQUIDITY:
             trade_result = await hyperdrive.async_remove_liquidity(agent, trade.trade_amount)
-            wallet_deltas = WalletDeltas(
+            wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
@@ -208,7 +188,7 @@ async def async_match_contract_call_to_trade(
 
         case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
             trade_result = await hyperdrive.async_redeem_withdraw_shares(agent, trade.trade_amount)
-            wallet_deltas = WalletDeltas(
+            wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,

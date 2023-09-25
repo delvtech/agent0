@@ -233,7 +233,7 @@ class HyperdriveInterface:
         self,
         agent: LocalAccount,
         trade_amount: FixedPoint,
-        maturity_time: FixedPoint,
+        maturity_time: int,
         slippage_tolerance: FixedPoint | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to close a long position.
@@ -244,7 +244,7 @@ class HyperdriveInterface:
             The account for the agent that is executing and signing the trade transaction.
         trade_amount: FixedPoint
             The size of the position, in base.
-        maturity_time: FixedPoint
+        maturity_time: int
             The token maturity time in seconds.
         slippage_tolerance: FixedPoint | None
             Amount of slippage allowed from the trade.
@@ -260,7 +260,7 @@ class HyperdriveInterface:
         min_output = 0
         as_underlying = True
         fn_args = (
-            int(maturity_time),
+            maturity_time,
             trade_amount.scaled_value,
             min_output,
             agent_checksum_address,
@@ -274,7 +274,7 @@ class HyperdriveInterface:
                 FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
             ).scaled_value
             fn_args = (
-                int(maturity_time),
+                maturity_time,
                 trade_amount.scaled_value,
                 min_output,
                 agent_checksum_address,
@@ -332,7 +332,7 @@ class HyperdriveInterface:
         self,
         agent: LocalAccount,
         trade_amount: FixedPoint,
-        maturity_time: FixedPoint,
+        maturity_time: int,
         slippage_tolerance: FixedPoint | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to close a short position.
@@ -343,7 +343,7 @@ class HyperdriveInterface:
             The account for the agent that is executing and signing the trade transaction.
         trade_amount: FixedPoint
             The size of the position, in base.
-        maturity_time: FixedPoint
+        maturity_time: int
             The token maturity time in seconds.
         slippage_tolerance: FixedPoint | None
             Amount of slippage allowed from the trade.
@@ -359,7 +359,7 @@ class HyperdriveInterface:
         min_output = 0
         as_underlying = True
         fn_args = (
-            int(maturity_time),
+            maturity_time,
             trade_amount.scaled_value,
             min_output,
             agent_checksum_address,
@@ -372,7 +372,7 @@ class HyperdriveInterface:
             min_output = (
                 FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
             ).scaled_value
-            fn_args = (int(maturity_time), trade_amount.scaled_value, min_output, agent_checksum_address, as_underlying)
+            fn_args = (maturity_time, trade_amount.scaled_value, min_output, agent_checksum_address, as_underlying)
         tx_receipt = await async_smart_contract_transact(
             self.web3, self.hyperdrive_contract, agent, "closeShort", *fn_args
         )
