@@ -8,6 +8,9 @@
 # pylint: disable=too-many-arguments
 # unable to determine which imports will be used in the generated code
 # pylint: disable=unused-import
+# we don't need else statement if the other conditionals all have return,
+# but it's easier to generate
+# pylint: disable=no-else-return
 from __future__ import annotations
 
 from typing import Any, cast
@@ -61,8 +64,7 @@ class {{contract_name}}{{function.capitalized_name}}ContractFunction(ContractFun
         {% endif %}
         {# if we are the "else" python condition, don't check any values in python #}
         {% else %}
-        # we dont _need_ this else condition, but it is easier to always generate it
-        {{conditional_string}}: # pylint: disable=no-else-return
+        {{conditional_string}}: 
         {% endif %}
             super().__call__({{signature_names|join(', ')}})
             return self
