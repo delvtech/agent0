@@ -13,7 +13,7 @@ from fixedpointmath import FixedPoint
 
 @freezable()
 @dataclass()
-class WalletDeltas:
+class HyperdriveWalletDeltas:
     r"""Stores changes for an agent's wallet
 
     Arguments
@@ -42,9 +42,9 @@ class WalletDeltas:
     shorts: dict[int, Short] = field(default_factory=dict)
     withdraw_shares: FixedPoint = FixedPoint(0)
 
-    def copy(self) -> WalletDeltas:
+    def copy(self) -> HyperdriveWalletDeltas:
         """Returns a new copy of self"""
-        return WalletDeltas(**copy.deepcopy(self.__dict__))
+        return HyperdriveWalletDeltas(**copy.deepcopy(self.__dict__))
 
 
 @dataclass
@@ -166,7 +166,7 @@ class HyperdriveWallet(EthWallet):
         """Returns a new copy of self."""
         return HyperdriveWallet(**copy.deepcopy(self.__dict__))
 
-    def update(self, wallet_deltas: WalletDeltas) -> None:
+    def update(self, wallet_deltas: HyperdriveWalletDeltas) -> None:
         """Update the agent's wallet in-place.
 
         Arguments

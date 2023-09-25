@@ -13,7 +13,7 @@ from hexbytes import HexBytes
 
 if TYPE_CHECKING:
     # TODO need a base wallet delta
-    from agent0.hyperdrive.agents import WalletDeltas
+    from agent0.hyperdrive.agents import HyperdriveWalletDeltas
 
 
 @dataclass(kw_only=True)
@@ -44,7 +44,7 @@ class EthWallet:
         """Returns a new copy of self"""
         return EthWallet(**copy.deepcopy(self.__dict__))
 
-    def update(self, wallet_deltas: WalletDeltas) -> None:
+    def update(self, wallet_deltas: HyperdriveWalletDeltas) -> None:
         """Update the agent's wallet in-place
 
         Arguments
