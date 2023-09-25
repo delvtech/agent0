@@ -312,7 +312,7 @@ class HyperdriveInterface:
         """
         agent_checksum_address = Web3.to_checksum_address(agent.address)
         as_underlying = True
-        max_deposit = eth_utils.currency.MAX_WEI
+        max_deposit = int(eth_utils.currency.MAX_WEI)
         fn_args = (trade_amount.scaled_value, max_deposit, agent_checksum_address, as_underlying)
         if slippage_tolerance:
             preview_result = smart_contract_preview_transaction(
@@ -360,7 +360,7 @@ class HyperdriveInterface:
         as_underlying = True
         fn_args = (
             int(maturity_time),
-            trade_amount,
+            trade_amount.scaled_value,
             min_output,
             agent_checksum_address,
             as_underlying,
@@ -372,7 +372,7 @@ class HyperdriveInterface:
             min_output = (
                 FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
             ).scaled_value
-            fn_args = (int(maturity_time), trade_amount, min_output, agent_checksum_address, as_underlying)
+            fn_args = (int(maturity_time), trade_amount.scaled_value, min_output, agent_checksum_address, as_underlying)
         tx_receipt = await async_smart_contract_transact(
             self.web3, self.hyperdrive_contract, agent, "closeShort", *fn_args
         )
@@ -406,7 +406,13 @@ class HyperdriveInterface:
         """
         agent_checksum_address = Web3.to_checksum_address(agent.address)
         as_underlying = True
-        fn_args = (trade_amount, min_apr, max_apr, agent_checksum_address, as_underlying)
+        fn_args = (
+            trade_amount.scaled_value,
+            min_apr.scaled_value,
+            max_apr.scaled_value,
+            agent_checksum_address,
+            as_underlying,
+        )
         tx_receipt = await async_smart_contract_transact(
             self.web3, self.hyperdrive_contract, agent, "addLiquidity", *fn_args
         )
@@ -435,7 +441,7 @@ class HyperdriveInterface:
         agent_checksum_address = Web3.to_checksum_address(agent.address)
         min_output = 0
         as_underlying = True
-        fn_args = (trade_amount, min_output, agent_checksum_address, as_underlying)
+        fn_args = (trade_amount.scaled_value, min_output, agent_checksum_address, as_underlying)
         tx_receipt = await async_smart_contract_transact(
             self.web3, self.hyperdrive_contract, agent, "removeLiquidity", *fn_args
         )
