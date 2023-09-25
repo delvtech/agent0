@@ -19,8 +19,9 @@ __pypackages__/
 # default logging directory
 .logging
 
-# smart contract compile directory
+# build directories
 .build
+*.egg-info
 
 # output directory for saved notebook figures
 figs

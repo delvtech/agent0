@@ -1,4 +1,4 @@
-"""Dataclasses for all structs in the {{contract_name}} contract."""
+"""Dataclasses for all structs in the ForwarderFactory contract."""
 # super() call methods are generic, while our version adds values & types
 # pylint: disable=arguments-differ
 # contracts have PascalCase names
@@ -16,26 +16,3 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from web3.types import ABIEvent, ABIEventParams
-
-{% for struct in structs %}
-@dataclass
-class {{struct.name}}:
-    """{{struct.name}} struct."""
-{% for struct_value in struct['values'] %}
-    {{struct_value.name}}: {{struct_value.python_type}}
-{%- endfor %}
-
-{% endfor %}
-
-{% for event in events %}
-{{event.name}} = ABIEvent(
-    anonymous = {{event.anonymous}},
-    inputs = [
-{%- for event_input in event['inputs'] %}
-        ABIEventParams(indexed={{event_input.indexed}}, name="{{event_input.name}}", type="{{event_input.solidity_type}}"),
-{%- endfor %}
-    ],
-    name = "{{event.name}}",
-    type = "event",
-)
-{% endfor %}
