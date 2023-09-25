@@ -143,13 +143,15 @@ def build_wallet_positions_from_data(
     # Get longs
     long_balances = wallet_balances[wallet_balances["baseTokenType"] == "LONG"]
     long_obj = {}
+    # Casting maturityTime to int due to values getting encoded as strings
     for _, row in long_balances.iterrows():
-        long_obj[row["maturityTime"]] = Long(balance=FixedPoint(row["value"]))
+        long_obj[int(row["maturityTime"])] = Long(balance=FixedPoint(row["value"]))
 
     short_balances = wallet_balances[wallet_balances["baseTokenType"] == "SHORT"]
     short_obj = {}
+    # Casting maturityTime to int due to values getting encoded as strings
     for _, row in short_balances.iterrows():
-        short_obj[row["maturityTime"]] = Short(balance=FixedPoint(row["value"]))
+        short_obj[int(row["maturityTime"])] = Short(balance=FixedPoint(row["value"]))
 
     lp_balances = wallet_balances[wallet_balances["baseTokenType"] == "LP"]
     assert len(lp_balances) <= 1
