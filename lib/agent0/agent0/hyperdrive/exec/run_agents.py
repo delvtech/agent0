@@ -55,32 +55,28 @@ def run_agents(
         If set, will use these addresses instead of querying the artifact URI
         defined in eth_config.
     """
-
-    # Set sane logging defaults to avoid spam from dependencies
+    # set sane logging defaults to avoid spam from dependencies
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("web3").setLevel(logging.WARNING)
     warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
-
-    # Defaults to looking for eth_config env
+    # defaults to looking for eth_config env
     if eth_config is None:
         eth_config = build_eth_config()
-
-    # Get addresses either from artifacts URI defined in eth_config or from contract_addresses
     if contract_addresses is None:
         contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
-
-    if develop:  # setup env automatically & fund the agents
+    # setup env automatically & fund the agents
+    if develop:
         # exposing the user account for debugging purposes
         user_account = create_and_fund_user_account(eth_config, account_key_config, contract_addresses)
         fund_agents(
             user_account, eth_config, account_key_config, contract_addresses
         )  # uses env variables created above as inputs
-
-    web3, base_contract, hyperdrive_contract, agent_accounts = setup_experiment(
+    # get hyperdrive interface object and agents
+    hyperdrive, agent_accounts = setup_experiment(
         eth_config, environment_config, agent_config, account_key_config, contract_addresses
     )
-
     wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
+    # set up database
     if not develop:
         # Ignore this check if not develop
         if environment_config.username == DEFAULT_USERNAME:
@@ -91,7 +87,6 @@ def run_agents(
             )
         # Register wallet addresses to username
         register_username(environment_config.database_api_uri, wallet_addrs, environment_config.username)
-
     # Load existing balances
     # Get existing open positions from db api server
     balances = balance_of(environment_config.database_api_uri, wallet_addrs)
@@ -103,13 +98,14 @@ def run_agents(
         # On the other hand, we initialize empty wallets just to overwrite here.
         # Keeping here for now for later discussion
         # TODO maybe this should be optional?
-        agent.wallet = build_wallet_positions_from_data(agent.checksum_address, balances, base_contract)
-
+        agent.wallet = build_wallet_positions_from_data(
+            agent.checksum_address, balances, hyperdrive.base_token_contract
+        )
+    # run the trades
     last_executed_block = BlockNumber(0)
     while True:
         last_executed_block = trade_if_new_block(
-            web3,
-            hyperdrive_contract,
+            hyperdrive,
             agent_accounts,
             environment_config.halt_on_errors,
             last_executed_block,
@@ -119,7 +115,7 @@ def run_agents(
 def build_wallet_positions_from_data(
     wallet_addr: str, db_balances: pd.DataFrame, base_contract: Contract
 ) -> HyperdriveWallet:
-    """Builds a wallet position based on gathered data
+    """Builds a wallet position based on gathered data.
 
     Arguments
     ---------

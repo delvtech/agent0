@@ -196,9 +196,8 @@ class TestBotToDb:
         # TODO these expected values are defined in lib/ethpy/ethpy/test_fixtures/deploy_hyperdrive.py
         # Eventually, we want to parameterize these values to pass into deploying hyperdrive
         expected_timestretch_fp = FixedPoint(scaled_value=_calculateTimeStretch(FixedPoint("0.05").scaled_value))
-        # TODO this is actually inv of solidity time stretch, fix
-        expected_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
-        expected_inv_timestretch = _to_unscaled_decimal(expected_timestretch_fp)
+        expected_timestretch = _to_unscaled_decimal(expected_timestretch_fp)
+        expected_inv_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
 
         expected_pool_config = {
             "contractAddress": hyperdrive_contract_addresses.mock_hyperdrive,
@@ -207,7 +206,6 @@ class TestBotToDb:
             "minimumShareReserves": _to_unscaled_decimal(FixedPoint("10")),
             "positionDuration": 604800,  # 1 week
             "checkpointDuration": 3600,  # 1 hour
-            # TODO this is actually inv of solidity time stretch, fix
             "timeStretch": expected_timestretch,
             "governance": deploy_account.address,
             "feeCollector": deploy_account.address,
