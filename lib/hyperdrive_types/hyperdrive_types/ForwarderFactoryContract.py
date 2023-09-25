@@ -8,6 +8,9 @@
 # pylint: disable=too-many-arguments
 # unable to determine which imports will be used in the generated code
 # pylint: disable=unused-import
+# we don't need else statement if the other conditionals all have return,
+# but it's easier to generate
+# pylint: disable=no-else-return
 from __future__ import annotations
 
 from typing import Any, cast

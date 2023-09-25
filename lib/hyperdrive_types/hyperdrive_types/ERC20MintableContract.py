@@ -8,6 +8,9 @@
 # pylint: disable=too-many-arguments
 # unable to determine which imports will be used in the generated code
 # pylint: disable=unused-import
+# we don't need else statement if the other conditionals all have return,
+# but it's easier to generate
+# pylint: disable=no-else-return
 from __future__ import annotations
 
 from typing import Any, cast
@@ -58,8 +61,7 @@ class ERC20MintableBurnContractFunction(ContractFunction):
             super().__call__(amount)
             return self
 
-        # we dont _need_ this else condition, but it is easier to always generate it
-        else:  # pylint: disable=no-else-return
+        else:
             super().__call__(destination, amount)
             return self
 
@@ -108,8 +110,7 @@ class ERC20MintableMintContractFunction(ContractFunction):
             super().__call__(destination, amount)
             return self
 
-        # we dont _need_ this else condition, but it is easier to always generate it
-        else:  # pylint: disable=no-else-return
+        else:
             super().__call__(amount)
             return self
 
