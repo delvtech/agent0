@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Iterable
 
 from agent0.base import freezable
-from agent0.base.agents import EthWallet, EthWalletDeltas
+from agent0.base.state import EthWallet, EthWalletDeltas
 from fixedpointmath import FixedPoint
 
 
