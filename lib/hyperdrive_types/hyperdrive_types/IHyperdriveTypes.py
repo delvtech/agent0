@@ -15,7 +15,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from web3.types import ABIEvent, ABIEventParams
+from web3.types import ABIEvent
+
+from web3.types import ABIEventParams
 
 
 @dataclass
@@ -24,7 +26,7 @@ class Checkpoint:
 
     sharePrice: int
     longSharePrice: int
-    longExposure: int
+    shortBaseVolume: int
 
 
 @dataclass
@@ -38,7 +40,7 @@ class MarketState:
     longAverageMaturityTime: int
     longOpenSharePrice: int
     shortAverageMaturityTime: int
-    longExposure: int
+    shortBaseVolume: int
     isInitialized: bool
     isPaused: bool
 
@@ -81,10 +83,10 @@ class PoolInfo:
     longAverageMaturityTime: int
     shortsOutstanding: int
     shortAverageMaturityTime: int
+    shortBaseVolume: int
     withdrawalSharesReadyToWithdraw: int
     withdrawalSharesProceeds: int
     lpSharePrice: int
-    longExposure: int
 
 
 @dataclass
@@ -98,6 +100,8 @@ class WithdrawPool:
 AddLiquidity = ABIEvent(
     anonymous=False,
     inputs=[
+        ABIEventParams(indexed=True, name="provider", type="address"),
+        ABIEventParams(indexed=False, name="lpAmount", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
     ],
     name="AddLiquidity",
@@ -107,6 +111,8 @@ AddLiquidity = ABIEvent(
 Approval = ABIEvent(
     anonymous=False,
     inputs=[
+        ABIEventParams(indexed=True, name="owner", type="address"),
+        ABIEventParams(indexed=True, name="spender", type="address"),
         ABIEventParams(indexed=False, name="value", type="uint256"),
     ],
     name="Approval",
@@ -116,6 +122,8 @@ Approval = ABIEvent(
 ApprovalForAll = ABIEvent(
     anonymous=False,
     inputs=[
+        ABIEventParams(indexed=True, name="account", type="address"),
+        ABIEventParams(indexed=True, name="operator", type="address"),
         ABIEventParams(indexed=False, name="approved", type="bool"),
     ],
     name="ApprovalForAll",
@@ -125,6 +133,10 @@ ApprovalForAll = ABIEvent(
 CloseLong = ABIEvent(
     anonymous=False,
     inputs=[
+        ABIEventParams(indexed=True, name="trader", type="address"),
+        ABIEventParams(indexed=True, name="assetId", type="uint256"),
+        ABIEventParams(indexed=False, name="maturityTime", type="uint256"),
+        ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
         ABIEventParams(indexed=False, name="bondAmount", type="uint256"),
     ],
     name="CloseLong",
@@ -134,6 +146,10 @@ CloseLong = ABIEvent(
 CloseShort = ABIEvent(
     anonymous=False,
     inputs=[
+        ABIEventParams(indexed=True, name="trader", type="address"),
+        ABIEventParams(indexed=True, name="assetId", type="uint256"),
+        ABIEventParams(indexed=False, name="maturityTime", type="uint256"),
+        ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
         ABIEventParams(indexed=False, name="bondAmount", type="uint256"),
     ],
     name="CloseShort",
@@ -143,6 +159,9 @@ CloseShort = ABIEvent(
 Initialize = ABIEvent(
     anonymous=False,
     inputs=[
+        ABIEventParams(indexed=True, name="provider", type="address"),
+        ABIEventParams(indexed=False, name="lpAmount", type="uint256"),
+        ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
         ABIEventParams(indexed=False, name="apr", type="uint256"),
     ],
     name="Initialize",
@@ -152,6 +171,10 @@ Initialize = ABIEvent(
 OpenLong = ABIEvent(
     anonymous=False,
     inputs=[
+        ABIEventParams(indexed=True, name="trader", type="address"),
+        ABIEventParams(indexed=True, name="assetId", type="uint256"),
+        ABIEventParams(indexed=False, name="maturityTime", type="uint256"),
+        ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
         ABIEventParams(indexed=False, name="bondAmount", type="uint256"),
     ],
     name="OpenLong",
@@ -161,6 +184,10 @@ OpenLong = ABIEvent(
 OpenShort = ABIEvent(
     anonymous=False,
     inputs=[
+        ABIEventParams(indexed=True, name="trader", type="address"),
+        ABIEventParams(indexed=True, name="assetId", type="uint256"),
+        ABIEventParams(indexed=False, name="maturityTime", type="uint256"),
+        ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
         ABIEventParams(indexed=False, name="bondAmount", type="uint256"),
     ],
     name="OpenShort",
@@ -170,6 +197,8 @@ OpenShort = ABIEvent(
 RedeemWithdrawalShares = ABIEvent(
     anonymous=False,
     inputs=[
+        ABIEventParams(indexed=True, name="provider", type="address"),
+        ABIEventParams(indexed=False, name="withdrawalShareAmount", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
     ],
     name="RedeemWithdrawalShares",
@@ -179,6 +208,9 @@ RedeemWithdrawalShares = ABIEvent(
 RemoveLiquidity = ABIEvent(
     anonymous=False,
     inputs=[
+        ABIEventParams(indexed=True, name="provider", type="address"),
+        ABIEventParams(indexed=False, name="lpAmount", type="uint256"),
+        ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
         ABIEventParams(indexed=False, name="withdrawalShareAmount", type="uint256"),
     ],
     name="RemoveLiquidity",
@@ -188,6 +220,10 @@ RemoveLiquidity = ABIEvent(
 TransferSingle = ABIEvent(
     anonymous=False,
     inputs=[
+        ABIEventParams(indexed=True, name="operator", type="address"),
+        ABIEventParams(indexed=True, name="from", type="address"),
+        ABIEventParams(indexed=True, name="to", type="address"),
+        ABIEventParams(indexed=False, name="id", type="uint256"),
         ABIEventParams(indexed=False, name="value", type="uint256"),
     ],
     name="TransferSingle",

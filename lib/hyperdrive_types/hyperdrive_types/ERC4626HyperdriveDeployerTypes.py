@@ -15,8 +15,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from web3.types import ABIEvent, ABIEventParams
-
 
 @dataclass
 class Fees:

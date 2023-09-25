@@ -1,13 +1,9 @@
 """A web3.py Contract class for the {{contract_name}} contract."""
-# super() call methods are generic, while our version adds values & types
-# pylint: disable=arguments-differ
 # contracts have PascalCase names
 # pylint: disable=invalid-name
 # contracts control how many attributes and arguments we have in generated code
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
-# unable to determine which imports will be used in the generated code
-# pylint: disable=unused-import
 # we don't need else statement if the other conditionals all have return,
 # but it's easier to generate
 # pylint: disable=no-else-return
@@ -23,8 +19,10 @@ from web3.exceptions import FallbackNotFound
 {% for function in functions %}
 class {{contract_name}}{{function.capitalized_name}}ContractFunction(ContractFunction):
     """ContractFunction for the {{function.name}} method."""
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     {# functions with multiple signatures have a more complicated logic #}
-    {% if function.input_names_and_types|length > 1 %} 
+    {%- if function.input_names_and_types|length > 1 %}
     def __call__(self, {{function.required_input_names_and_types|join(', ')}}, {{function.optional_input_names_and_types|join(', ')}}) -> "{{contract_name}}{{function.capitalized_name}}ContractFunction":
         {# loop over the signatures for this function #}
         {% for signature_names in function.input_names %}
@@ -64,7 +62,7 @@ class {{contract_name}}{{function.capitalized_name}}ContractFunction(ContractFun
         {% endif %}
         {# if we are the "else" python condition, don't check any values in python #}
         {% else %}
-        {{conditional_string}}: 
+        {{conditional_string}}:
         {% endif %}
             super().__call__({{signature_names|join(', ')}})
             return self

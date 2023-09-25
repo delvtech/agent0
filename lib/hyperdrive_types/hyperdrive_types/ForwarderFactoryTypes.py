@@ -12,7 +12,3 @@
 # but it's easier to generate
 # pylint: disable=no-else-return
 from __future__ import annotations
-
-from dataclasses import dataclass
-
-from web3.types import ABIEvent, ABIEventParams

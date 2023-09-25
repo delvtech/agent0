@@ -13,13 +13,15 @@
 # pylint: disable=no-else-return
 from __future__ import annotations
 
-from dataclasses import dataclass
+from web3.types import ABIEvent
 
-from web3.types import ABIEvent, ABIEventParams
+from web3.types import ABIEventParams
 
 Approval = ABIEvent(
     anonymous=False,
     inputs=[
+        ABIEventParams(indexed=True, name="owner", type="address"),
+        ABIEventParams(indexed=True, name="spender", type="address"),
         ABIEventParams(indexed=False, name="value", type="uint256"),
     ],
     name="Approval",
@@ -29,6 +31,8 @@ Approval = ABIEvent(
 Transfer = ABIEvent(
     anonymous=False,
     inputs=[
+        ABIEventParams(indexed=True, name="from", type="address"),
+        ABIEventParams(indexed=True, name="to", type="address"),
         ABIEventParams(indexed=False, name="value", type="uint256"),
     ],
     name="Transfer",
