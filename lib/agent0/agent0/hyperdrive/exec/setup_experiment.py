@@ -1,7 +1,10 @@
 """Setup helper function for running eth agent experiments."""
 from __future__ import annotations
 
+from http import HTTPStatus
+
 import numpy as np
+import requests
 from agent0 import AccountKeyConfig
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
@@ -67,8 +70,6 @@ def setup_experiment(
         hyperdrive.hyperdrive_contract.address,
         rng,
     )
-
-    return web3, base_token_contract, hyperdrive_contract, agent_accounts
     return hyperdrive, agent_accounts
 
 
