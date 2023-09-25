@@ -1,13 +1,9 @@
 """A web3.py Contract class for the IHyperdrive contract."""
-# super() call methods are generic, while our version adds values & types
-# pylint: disable=arguments-differ
 # contracts have PascalCase names
 # pylint: disable=invalid-name
 # contracts control how many attributes and arguments we have in generated code
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
-# unable to determine which imports will be used in the generated code
-# pylint: disable=unused-import
 # we don't need else statement if the other conditionals all have return,
 # but it's easier to generate
 # pylint: disable=no-else-return
@@ -23,6 +19,8 @@ from web3.exceptions import FallbackNotFound
 class IHyperdriveDOMAIN_SEPARATORContractFunction(ContractFunction):
     """ContractFunction for the DOMAIN_SEPARATOR method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self) -> "IHyperdriveDOMAIN_SEPARATORContractFunction":
         super().__call__()
         return self
@@ -34,6 +32,8 @@ class IHyperdriveDOMAIN_SEPARATORContractFunction(ContractFunction):
 class IHyperdriveAddLiquidityContractFunction(ContractFunction):
     """ContractFunction for the addLiquidity method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(
         self, _contribution: int, _minApr: int, _maxApr: int, _destination: str, _asUnderlying: bool
     ) -> "IHyperdriveAddLiquidityContractFunction":
@@ -47,6 +47,8 @@ class IHyperdriveAddLiquidityContractFunction(ContractFunction):
 class IHyperdriveBalanceOfContractFunction(ContractFunction):
     """ContractFunction for the balanceOf method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, tokenId: int, owner: str) -> "IHyperdriveBalanceOfContractFunction":
         super().__call__(tokenId, owner)
         return self
@@ -58,6 +60,8 @@ class IHyperdriveBalanceOfContractFunction(ContractFunction):
 class IHyperdriveBaseTokenContractFunction(ContractFunction):
     """ContractFunction for the baseToken method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self) -> "IHyperdriveBaseTokenContractFunction":
         super().__call__()
         return self
@@ -69,6 +73,8 @@ class IHyperdriveBaseTokenContractFunction(ContractFunction):
 class IHyperdriveBatchTransferFromContractFunction(ContractFunction):
     """ContractFunction for the batchTransferFrom method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(
         self, _from: str, to: str, ids: list[int], values: list[int]
     ) -> "IHyperdriveBatchTransferFromContractFunction":
@@ -82,6 +88,8 @@ class IHyperdriveBatchTransferFromContractFunction(ContractFunction):
 class IHyperdriveCheckpointContractFunction(ContractFunction):
     """ContractFunction for the checkpoint method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, _checkpointTime: int) -> "IHyperdriveCheckpointContractFunction":
         super().__call__(_checkpointTime)
         return self
@@ -93,6 +101,8 @@ class IHyperdriveCheckpointContractFunction(ContractFunction):
 class IHyperdriveCloseLongContractFunction(ContractFunction):
     """ContractFunction for the closeLong method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(
         self, _maturityTime: int, _bondAmount: int, _minOutput: int, _destination: str, _asUnderlying: bool
     ) -> "IHyperdriveCloseLongContractFunction":
@@ -106,6 +116,8 @@ class IHyperdriveCloseLongContractFunction(ContractFunction):
 class IHyperdriveCloseShortContractFunction(ContractFunction):
     """ContractFunction for the closeShort method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(
         self, _maturityTime: int, _bondAmount: int, _minOutput: int, _destination: str, _asUnderlying: bool
     ) -> "IHyperdriveCloseShortContractFunction":
@@ -116,20 +128,11 @@ class IHyperdriveCloseShortContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveCollectGovernanceFeeContractFunction(ContractFunction):
-    """ContractFunction for the collectGovernanceFee method."""
-
-    def __call__(self, asUnderlying: bool) -> "IHyperdriveCollectGovernanceFeeContractFunction":
-        super().__call__(asUnderlying)
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
 class IHyperdriveFactoryContractFunction(ContractFunction):
     """ContractFunction for the factory method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self) -> "IHyperdriveFactoryContractFunction":
         super().__call__()
         return self
@@ -141,6 +144,8 @@ class IHyperdriveFactoryContractFunction(ContractFunction):
 class IHyperdriveGetCheckpointContractFunction(ContractFunction):
     """ContractFunction for the getCheckpoint method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, _checkpointId: int) -> "IHyperdriveGetCheckpointContractFunction":
         super().__call__(_checkpointId)
         return self
@@ -152,6 +157,8 @@ class IHyperdriveGetCheckpointContractFunction(ContractFunction):
 class IHyperdriveGetMarketStateContractFunction(ContractFunction):
     """ContractFunction for the getMarketState method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self) -> "IHyperdriveGetMarketStateContractFunction":
         super().__call__()
         return self
@@ -163,6 +170,8 @@ class IHyperdriveGetMarketStateContractFunction(ContractFunction):
 class IHyperdriveGetPoolConfigContractFunction(ContractFunction):
     """ContractFunction for the getPoolConfig method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self) -> "IHyperdriveGetPoolConfigContractFunction":
         super().__call__()
         return self
@@ -174,6 +183,8 @@ class IHyperdriveGetPoolConfigContractFunction(ContractFunction):
 class IHyperdriveGetPoolInfoContractFunction(ContractFunction):
     """ContractFunction for the getPoolInfo method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self) -> "IHyperdriveGetPoolInfoContractFunction":
         super().__call__()
         return self
@@ -185,18 +196,9 @@ class IHyperdriveGetPoolInfoContractFunction(ContractFunction):
 class IHyperdriveGetUncollectedGovernanceFeesContractFunction(ContractFunction):
     """ContractFunction for the getUncollectedGovernanceFees method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self) -> "IHyperdriveGetUncollectedGovernanceFeesContractFunction":
-        super().__call__()
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdriveGetWithdrawPoolContractFunction(ContractFunction):
-    """ContractFunction for the getWithdrawPool method."""
-
-    def __call__(self) -> "IHyperdriveGetWithdrawPoolContractFunction":
         super().__call__()
         return self
 
@@ -207,6 +209,8 @@ class IHyperdriveGetWithdrawPoolContractFunction(ContractFunction):
 class IHyperdriveInitializeContractFunction(ContractFunction):
     """ContractFunction for the initialize method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(
         self, _contribution: int, _apr: int, _destination: str, _asUnderlying: bool
     ) -> "IHyperdriveInitializeContractFunction":
@@ -220,6 +224,8 @@ class IHyperdriveInitializeContractFunction(ContractFunction):
 class IHyperdriveIsApprovedForAllContractFunction(ContractFunction):
     """ContractFunction for the isApprovedForAll method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, owner: str, spender: str) -> "IHyperdriveIsApprovedForAllContractFunction":
         super().__call__(owner, spender)
         return self
@@ -231,6 +237,8 @@ class IHyperdriveIsApprovedForAllContractFunction(ContractFunction):
 class IHyperdriveLinkerCodeHashContractFunction(ContractFunction):
     """ContractFunction for the linkerCodeHash method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self) -> "IHyperdriveLinkerCodeHashContractFunction":
         super().__call__()
         return self
@@ -242,6 +250,8 @@ class IHyperdriveLinkerCodeHashContractFunction(ContractFunction):
 class IHyperdriveLoadContractFunction(ContractFunction):
     """ContractFunction for the load method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, _slots: list[int]) -> "IHyperdriveLoadContractFunction":
         super().__call__(_slots)
         return self
@@ -253,6 +263,8 @@ class IHyperdriveLoadContractFunction(ContractFunction):
 class IHyperdriveNameContractFunction(ContractFunction):
     """ContractFunction for the name method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, _id: int) -> "IHyperdriveNameContractFunction":
         super().__call__(_id)
         return self
@@ -264,6 +276,8 @@ class IHyperdriveNameContractFunction(ContractFunction):
 class IHyperdriveNoncesContractFunction(ContractFunction):
     """ContractFunction for the nonces method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, owner: str) -> "IHyperdriveNoncesContractFunction":
         super().__call__(owner)
         return self
@@ -275,6 +289,8 @@ class IHyperdriveNoncesContractFunction(ContractFunction):
 class IHyperdriveOpenLongContractFunction(ContractFunction):
     """ContractFunction for the openLong method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(
         self, _baseAmount: int, _minOutput: int, _destination: str, _asUnderlying: bool
     ) -> "IHyperdriveOpenLongContractFunction":
@@ -288,6 +304,8 @@ class IHyperdriveOpenLongContractFunction(ContractFunction):
 class IHyperdriveOpenShortContractFunction(ContractFunction):
     """ContractFunction for the openShort method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(
         self, _bondAmount: int, _maxDeposit: int, _destination: str, _asUnderlying: bool
     ) -> "IHyperdriveOpenShortContractFunction":
@@ -301,6 +319,8 @@ class IHyperdriveOpenShortContractFunction(ContractFunction):
 class IHyperdrivePauseContractFunction(ContractFunction):
     """ContractFunction for the pause method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, status: bool) -> "IHyperdrivePauseContractFunction":
         super().__call__(status)
         return self
@@ -312,6 +332,8 @@ class IHyperdrivePauseContractFunction(ContractFunction):
 class IHyperdrivePerTokenApprovalsContractFunction(ContractFunction):
     """ContractFunction for the perTokenApprovals method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, tokenId: int, owner: str, spender: str) -> "IHyperdrivePerTokenApprovalsContractFunction":
         super().__call__(tokenId, owner, spender)
         return self
@@ -323,6 +345,8 @@ class IHyperdrivePerTokenApprovalsContractFunction(ContractFunction):
 class IHyperdrivePermitForAllContractFunction(ContractFunction):
     """ContractFunction for the permitForAll method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(
         self, owner: str, spender: str, _approved: bool, deadline: int, v: int, r: bytes, s: bytes
     ) -> "IHyperdrivePermitForAllContractFunction":
@@ -336,6 +360,8 @@ class IHyperdrivePermitForAllContractFunction(ContractFunction):
 class IHyperdriveRedeemWithdrawalSharesContractFunction(ContractFunction):
     """ContractFunction for the redeemWithdrawalShares method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(
         self, _shares: int, _minOutput: int, _destination: str, _asUnderlying: bool
     ) -> "IHyperdriveRedeemWithdrawalSharesContractFunction":
@@ -349,6 +375,8 @@ class IHyperdriveRedeemWithdrawalSharesContractFunction(ContractFunction):
 class IHyperdriveRemoveLiquidityContractFunction(ContractFunction):
     """ContractFunction for the removeLiquidity method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(
         self, _shares: int, _minOutput: int, _destination: str, _asUnderlying: bool
     ) -> "IHyperdriveRemoveLiquidityContractFunction":
@@ -362,6 +390,8 @@ class IHyperdriveRemoveLiquidityContractFunction(ContractFunction):
 class IHyperdriveSetApprovalContractFunction(ContractFunction):
     """ContractFunction for the setApproval method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, tokenID: int, operator: str, amount: int) -> "IHyperdriveSetApprovalContractFunction":
         super().__call__(tokenID, operator, amount)
         return self
@@ -373,6 +403,8 @@ class IHyperdriveSetApprovalContractFunction(ContractFunction):
 class IHyperdriveSetApprovalBridgeContractFunction(ContractFunction):
     """ContractFunction for the setApprovalBridge method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(
         self, tokenID: int, operator: str, amount: int, caller: str
     ) -> "IHyperdriveSetApprovalBridgeContractFunction":
@@ -386,6 +418,8 @@ class IHyperdriveSetApprovalBridgeContractFunction(ContractFunction):
 class IHyperdriveSetApprovalForAllContractFunction(ContractFunction):
     """ContractFunction for the setApprovalForAll method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, operator: str, approved: bool) -> "IHyperdriveSetApprovalForAllContractFunction":
         super().__call__(operator, approved)
         return self
@@ -397,6 +431,8 @@ class IHyperdriveSetApprovalForAllContractFunction(ContractFunction):
 class IHyperdriveSetGovernanceContractFunction(ContractFunction):
     """ContractFunction for the setGovernance method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, who: str) -> "IHyperdriveSetGovernanceContractFunction":
         super().__call__(who)
         return self
@@ -408,6 +444,8 @@ class IHyperdriveSetGovernanceContractFunction(ContractFunction):
 class IHyperdriveSetPauserContractFunction(ContractFunction):
     """ContractFunction for the setPauser method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, who: str, status: bool) -> "IHyperdriveSetPauserContractFunction":
         super().__call__(who, status)
         return self
@@ -419,6 +457,8 @@ class IHyperdriveSetPauserContractFunction(ContractFunction):
 class IHyperdriveSymbolContractFunction(ContractFunction):
     """ContractFunction for the symbol method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, _id: int) -> "IHyperdriveSymbolContractFunction":
         super().__call__(_id)
         return self
@@ -430,6 +470,8 @@ class IHyperdriveSymbolContractFunction(ContractFunction):
 class IHyperdriveTotalSupplyContractFunction(ContractFunction):
     """ContractFunction for the totalSupply method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, _id: int) -> "IHyperdriveTotalSupplyContractFunction":
         super().__call__(_id)
         return self
@@ -441,6 +483,8 @@ class IHyperdriveTotalSupplyContractFunction(ContractFunction):
 class IHyperdriveTransferFromContractFunction(ContractFunction):
     """ContractFunction for the transferFrom method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, tokenID: int, _from: str, to: str, amount: int) -> "IHyperdriveTransferFromContractFunction":
         super().__call__(tokenID, _from, to, amount)
         return self
@@ -452,10 +496,25 @@ class IHyperdriveTransferFromContractFunction(ContractFunction):
 class IHyperdriveTransferFromBridgeContractFunction(ContractFunction):
     """ContractFunction for the transferFromBridge method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(
         self, tokenID: int, _from: str, to: str, amount: int, caller: str
     ) -> "IHyperdriveTransferFromBridgeContractFunction":
         super().__call__(tokenID, _from, to, amount, caller)
+        return self
+
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
+
+class IHyperdriveWithdrawPoolContractFunction(ContractFunction):
+    """ContractFunction for the withdrawPool method."""
+
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+    def __call__(self) -> "IHyperdriveWithdrawPoolContractFunction":
+        super().__call__()
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -481,8 +540,6 @@ class IHyperdriveContractFunctions(ContractFunctions):
 
     closeShort: IHyperdriveCloseShortContractFunction
 
-    collectGovernanceFee: IHyperdriveCollectGovernanceFeeContractFunction
-
     factory: IHyperdriveFactoryContractFunction
 
     getCheckpoint: IHyperdriveGetCheckpointContractFunction
@@ -494,8 +551,6 @@ class IHyperdriveContractFunctions(ContractFunctions):
     getPoolInfo: IHyperdriveGetPoolInfoContractFunction
 
     getUncollectedGovernanceFees: IHyperdriveGetUncollectedGovernanceFeesContractFunction
-
-    getWithdrawPool: IHyperdriveGetWithdrawPoolContractFunction
 
     initialize: IHyperdriveInitializeContractFunction
 
@@ -540,6 +595,8 @@ class IHyperdriveContractFunctions(ContractFunctions):
     transferFrom: IHyperdriveTransferFromContractFunction
 
     transferFromBridge: IHyperdriveTransferFromBridgeContractFunction
+
+    withdrawPool: IHyperdriveWithdrawPoolContractFunction
 
 
 class IHyperdriveContract(Contract):

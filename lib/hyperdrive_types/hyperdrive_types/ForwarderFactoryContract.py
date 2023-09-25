@@ -1,13 +1,9 @@
 """A web3.py Contract class for the ForwarderFactory contract."""
-# super() call methods are generic, while our version adds values & types
-# pylint: disable=arguments-differ
 # contracts have PascalCase names
 # pylint: disable=invalid-name
 # contracts control how many attributes and arguments we have in generated code
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
-# unable to determine which imports will be used in the generated code
-# pylint: disable=unused-import
 # we don't need else statement if the other conditionals all have return,
 # but it's easier to generate
 # pylint: disable=no-else-return
@@ -23,6 +19,8 @@ from web3.exceptions import FallbackNotFound
 class ForwarderFactoryERC20LINK_HASHContractFunction(ContractFunction):
     """ContractFunction for the ERC20LINK_HASH method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self) -> "ForwarderFactoryERC20LINK_HASHContractFunction":
         super().__call__()
         return self
@@ -34,6 +32,8 @@ class ForwarderFactoryERC20LINK_HASHContractFunction(ContractFunction):
 class ForwarderFactoryCreateContractFunction(ContractFunction):
     """ContractFunction for the create method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, token: str, tokenId: int) -> "ForwarderFactoryCreateContractFunction":
         super().__call__(token, tokenId)
         return self
@@ -45,6 +45,8 @@ class ForwarderFactoryCreateContractFunction(ContractFunction):
 class ForwarderFactoryGetDeployDetailsContractFunction(ContractFunction):
     """ContractFunction for the getDeployDetails method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self) -> "ForwarderFactoryGetDeployDetailsContractFunction":
         super().__call__()
         return self
@@ -56,6 +58,8 @@ class ForwarderFactoryGetDeployDetailsContractFunction(ContractFunction):
 class ForwarderFactoryGetForwarderContractFunction(ContractFunction):
     """ContractFunction for the getForwarder method."""
 
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
     def __call__(self, token: str, tokenId: int) -> "ForwarderFactoryGetForwarderContractFunction":
         super().__call__(token, tokenId)
         return self
