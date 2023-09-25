@@ -3,8 +3,11 @@
 # pylint: disable=arguments-differ
 # contracts have PascalCase names
 # pylint: disable=invalid-name
-# unable to control how many instance attributes we have in generated code
+# contracts control how many attributes and arguments we have in generated code
 # pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
+# unable to determine which imports will be used in the generated code
+# pylint: disable=unused-import
 from __future__ import annotations
 
 from typing import Any, cast
@@ -58,7 +61,8 @@ class {{contract_name}}{{function.capitalized_name}}ContractFunction(ContractFun
         {% endif %}
         {# if we are the "else" python condition, don't check any values in python #}
         {% else %}
-        {{conditional_string}}:
+        # we dont _need_ this else condition, but it is easier to always generate it
+        {{conditional_string}}: # pylint: disable=no-else-return
         {% endif %}
             super().__call__({{signature_names|join(', ')}})
             return self
