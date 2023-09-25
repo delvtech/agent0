@@ -18,16 +18,14 @@ class HyperdriveWalletDeltas(EthWalletDeltas):
 
     Arguments
     ----------
-    balance : Quantity
-        The base assets that held by the trader.
     lp_tokens : FixedPoint
         The LP tokens held by the trader.
-    longs : Dict[FixedPoint, Long]
+    longs : Dict[int, Long]
         The long positions held by the trader.
-    shorts : Dict[FixedPoint, Short]
+    shorts : Dict[int, Short]
         The short positions held by the trader.
-    borrows : Dict[FixedPoint, Borrow]
-        The borrow positions held by the trader.
+    withdraw_shares: FixedPoint
+        The withdraw shares held by the trader.
     """
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
@@ -85,10 +83,10 @@ class HyperdriveWallet(EthWallet):
         The LP tokens held by the trader.
     withdraw_shares : FixedPoint
         The amount of unclaimed withdraw shares held by the agent.
-    longs : Dict[FixedPoint, Long]
+    longs : Dict[int, Long]
         The long positions held by the trader.
         The dictionary is keyed by the maturity time in seconds.
-    shorts : Dict[FixedPoint, Short]
+    shorts : Dict[int, Short]
         The short positions held by the trader.
         The dictionary is keyed by the maturity time in seconds.
     """
@@ -105,7 +103,7 @@ class HyperdriveWallet(EthWallet):
 
         Arguments
         ---------
-        longs : Iterable[tuple[FixedPoint, Long]]
+        longs : Iterable[tuple[int, Long]]
             A list (or other Iterable type) of tuples that contain a Long object
             and its market-relative maturity time
         """
@@ -134,7 +132,7 @@ class HyperdriveWallet(EthWallet):
 
         Arguments
         ---------
-        shorts : Iterable[tuple[FixedPoint, Short]]
+        shorts : Iterable[tuple[int, Short]]
             A list (or other Iterable type) of tuples that contain a Short object
             and its market-relative mint time
         """
