@@ -260,7 +260,7 @@ async def async_match_contract_call_to_trade(
         case HyperdriveActionType.CLOSE_LONG:
             if not trade.maturity_time:
                 raise ValueError("Maturity time was not provided, can't close long position.")
-            maturity_time_seconds = int(trade.maturity_time)
+            maturity_time_seconds = trade.maturity_time
             min_output = 0
             fn_args = (
                 maturity_time_seconds,
