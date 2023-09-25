@@ -5,9 +5,10 @@ from dataclasses import dataclass
 from enum import Enum
 
 from agent0.base import freezable
-from agent0.hyperdrive.agents import HyperdriveWallet
 from elfpy.markets.base import BaseMarketAction
 from fixedpointmath import FixedPoint
+
+from .hyperdrive_wallet import HyperdriveWallet
 
 
 class HyperdriveActionType(Enum):
