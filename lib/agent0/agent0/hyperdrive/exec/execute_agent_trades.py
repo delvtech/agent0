@@ -8,8 +8,7 @@ from typing import TYPE_CHECKING, NoReturn
 
 import eth_utils
 from agent0.base import Quantity, TokenType
-from agent0.hyperdrive.agents import HyperdriveWalletDeltas, Long, Short
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWalletDeltas, Long, Short
 from elfpy import types
 from elfpy.markets.hyperdrive import HyperdriveMarket
 from ethpy.base import (

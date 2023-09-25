@@ -11,7 +11,7 @@ from agent0.hyperdrive.policies import Policies
 from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.agents import HyperdriveWallet
+    from agent0.hyperdrive.state import HyperdriveWallet
     from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
     from numpy.random._generator import Generator as NumpyGenerator
 

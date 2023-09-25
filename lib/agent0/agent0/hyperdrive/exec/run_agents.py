@@ -9,7 +9,7 @@ import pandas as pd
 from agent0 import AccountKeyConfig
 from agent0.base import Quantity, TokenType
 from agent0.base.config import DEFAULT_USERNAME, AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.agents import HyperdriveWallet, Long, Short
+from agent0.hyperdrive.state import HyperdriveWallet, Long, Short
 from chainsync.db.api import balance_of, register_username
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
