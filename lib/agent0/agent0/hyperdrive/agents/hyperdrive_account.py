@@ -145,7 +145,10 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
         # edit each action in place
         for action in actions:
             if action.market_type == MarketType.HYPERDRIVE and action.market_action.maturity_time is None:
-                action.market_action.maturity_time = market.latest_checkpoint_time + market.position_duration.seconds
+                # TODO market latest_checkpoint_time and position_duration should be in ints
+                action.market_action.maturity_time = int(market.latest_checkpoint_time) + int(
+                    market.position_duration.seconds
+                )
                 if action.market_action.trade_amount <= 0:
                     raise ValueError("Trade amount cannot be zero or negative.")
         return actions
