@@ -4,16 +4,32 @@ from __future__ import annotations
 import copy
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from agent0.base import Quantity, TokenType
+from agent0.base import Quantity, TokenType, freezable
 from elfpy import check_non_zero
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
-if TYPE_CHECKING:
-    # TODO need a base wallet delta
-    from agent0.hyperdrive.agents import HyperdriveWalletDeltas
+
+@dataclass(kw_only=True)
+@freezable()
+class EthWalletDeltas:
+    r"""Stores changes for an agent's wallet
+
+    Arguments
+    ----------
+    balance : Quantity
+        The base assets that held by the trader.
+    """
+    # fungible
+    balance: Quantity = field(default_factory=lambda: Quantity(amount=FixedPoint(0), unit=TokenType.BASE))
+
+    # TODO: Support multiple typed balances:
+    #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
+    def copy(self) -> EthWalletDeltas:
+        """Returns a new copy of self"""
+        return EthWalletDeltas(**copy.deepcopy(self.__dict__))
 
 
 @dataclass(kw_only=True)
@@ -44,7 +60,7 @@ class EthWallet:
         """Returns a new copy of self"""
         return EthWallet(**copy.deepcopy(self.__dict__))
 
-    def update(self, wallet_deltas: HyperdriveWalletDeltas) -> None:
+    def update(self, wallet_deltas: EthWalletDeltas) -> None:
         """Update the agent's wallet in-place
 
         Arguments

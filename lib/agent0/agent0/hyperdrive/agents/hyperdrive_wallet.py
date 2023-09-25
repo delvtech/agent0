@@ -6,14 +6,14 @@ import logging
 from dataclasses import dataclass, field
 from typing import Iterable
 
-from agent0.base import Quantity, TokenType, freezable
-from agent0.base.agents import EthWallet
+from agent0.base import freezable
+from agent0.base.agents import EthWallet, EthWalletDeltas
 from fixedpointmath import FixedPoint
 
 
 @freezable()
 @dataclass()
-class HyperdriveWalletDeltas:
+class HyperdriveWalletDeltas(EthWalletDeltas):
     r"""Stores changes for an agent's wallet
 
     Arguments
@@ -32,10 +32,6 @@ class HyperdriveWalletDeltas:
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
 
-    # fungible
-    balance: Quantity = field(default_factory=lambda: Quantity(amount=FixedPoint(0), unit=TokenType.BASE))
-    # TODO: Support multiple typed balances:
-    #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
     lp_tokens: FixedPoint = FixedPoint(0)
     # non-fungible (identified by key=maturity_time, stored as dict)
     longs: dict[int, Long] = field(default_factory=dict)
