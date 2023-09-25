@@ -7,10 +7,10 @@ from typing import Generic, TypeVar
 from agent0.base import Quantity, TokenType
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
-from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketAction, MarketActionType
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
+from elfpy.markets.hyperdrive import HyperdriveMarket
 from elfpy.types import MarketType, Trade
 from eth_account.signers.local import LocalAccount
-from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
 from .hyperdrive_wallet import HyperdriveWallet
@@ -91,11 +91,10 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
-                            action_type=MarketActionType.CLOSE_LONG,
+                            action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=self.wallet,  # type: ignore
-                            # TODO this should be in int
-                            maturity_time=FixedPoint(maturity_time),
+                            maturity_time=maturity_time,
                         ),
                     )
                 )
@@ -107,10 +106,10 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
-                            action_type=MarketActionType.CLOSE_SHORT,
+                            action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             wallet=self.wallet,  # type: ignore
-                            maturity_time=FixedPoint(maturity_time),
+                            maturity_time=maturity_time,
                         ),
                     )
                 )
@@ -121,7 +120,7 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
                 Trade(
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
-                        action_type=MarketActionType.REMOVE_LIQUIDITY,
+                        action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
                         wallet=self.wallet,  # type: ignore
                     ),
