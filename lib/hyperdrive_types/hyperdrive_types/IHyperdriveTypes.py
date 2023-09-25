@@ -1,9 +1,10 @@
 # pylint: disable=invalid-name
 """Dataclasses for all structs in the IHyperdrive contract."""
-
-from web3.types import ABIEvent, ABIEventParams
+from __future__ import annotations
 
 from dataclasses import dataclass
+
+from web3.types import ABIEvent, ABIEventParams
 
 
 @dataclass
@@ -12,7 +13,7 @@ class Checkpoint:
 
     sharePrice: int
     longSharePrice: int
-    shortBaseVolume: int
+    longExposure: int
 
 
 @dataclass
@@ -26,7 +27,7 @@ class MarketState:
     longAverageMaturityTime: int
     longOpenSharePrice: int
     shortAverageMaturityTime: int
-    shortBaseVolume: int
+    longExposure: int
     isInitialized: bool
     isPaused: bool
 
@@ -69,10 +70,10 @@ class PoolInfo:
     longAverageMaturityTime: int
     shortsOutstanding: int
     shortAverageMaturityTime: int
-    shortBaseVolume: int
     withdrawalSharesReadyToWithdraw: int
     withdrawalSharesProceeds: int
     lpSharePrice: int
+    longExposure: int
 
 
 @dataclass

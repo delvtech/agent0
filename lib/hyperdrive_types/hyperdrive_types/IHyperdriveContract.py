@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, cast
+
 from eth_typing import ChecksumAddress
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
@@ -104,6 +105,17 @@ class IHyperdriveCloseShortContractFunction(ContractFunction):
     # def call()
 
 
+class IHyperdriveCollectGovernanceFeeContractFunction(ContractFunction):
+    """ContractFunction for the collectGovernanceFee method."""
+
+    def __call__(self, asUnderlying: bool) -> "IHyperdriveCollectGovernanceFeeContractFunction":
+        super().__call__(asUnderlying)
+        return self
+
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
+
 class IHyperdriveFactoryContractFunction(ContractFunction):
     """ContractFunction for the factory method."""
 
@@ -163,6 +175,17 @@ class IHyperdriveGetUncollectedGovernanceFeesContractFunction(ContractFunction):
     """ContractFunction for the getUncollectedGovernanceFees method."""
 
     def __call__(self) -> "IHyperdriveGetUncollectedGovernanceFeesContractFunction":
+        super().__call__()
+        return self
+
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
+
+class IHyperdriveGetWithdrawPoolContractFunction(ContractFunction):
+    """ContractFunction for the getWithdrawPool method."""
+
+    def __call__(self) -> "IHyperdriveGetWithdrawPoolContractFunction":
         super().__call__()
         return self
 
@@ -428,17 +451,6 @@ class IHyperdriveTransferFromBridgeContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveWithdrawPoolContractFunction(ContractFunction):
-    """ContractFunction for the withdrawPool method."""
-
-    def __call__(self) -> "IHyperdriveWithdrawPoolContractFunction":
-        super().__call__()
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
 class IHyperdriveContractFunctions(ContractFunctions):
     """ContractFunctions for the IHyperdrive contract."""
 
@@ -458,6 +470,8 @@ class IHyperdriveContractFunctions(ContractFunctions):
 
     closeShort: IHyperdriveCloseShortContractFunction
 
+    collectGovernanceFee: IHyperdriveCollectGovernanceFeeContractFunction
+
     factory: IHyperdriveFactoryContractFunction
 
     getCheckpoint: IHyperdriveGetCheckpointContractFunction
@@ -469,6 +483,8 @@ class IHyperdriveContractFunctions(ContractFunctions):
     getPoolInfo: IHyperdriveGetPoolInfoContractFunction
 
     getUncollectedGovernanceFees: IHyperdriveGetUncollectedGovernanceFeesContractFunction
+
+    getWithdrawPool: IHyperdriveGetWithdrawPoolContractFunction
 
     initialize: IHyperdriveInitializeContractFunction
 
@@ -513,8 +529,6 @@ class IHyperdriveContractFunctions(ContractFunctions):
     transferFrom: IHyperdriveTransferFromContractFunction
 
     transferFromBridge: IHyperdriveTransferFromBridgeContractFunction
-
-    withdrawPool: IHyperdriveWithdrawPoolContractFunction
 
 
 class IHyperdriveContract(Contract):

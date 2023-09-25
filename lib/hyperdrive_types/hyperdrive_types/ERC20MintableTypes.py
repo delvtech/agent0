@@ -1,9 +1,10 @@
 # pylint: disable=invalid-name
 """Dataclasses for all structs in the ERC20Mintable contract."""
-
-from web3.types import ABIEvent, ABIEventParams
+from __future__ import annotations
 
 from dataclasses import dataclass
+
+from web3.types import ABIEvent, ABIEventParams
 
 Approval = ABIEvent(
     anonymous=False,
