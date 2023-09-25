@@ -85,7 +85,7 @@ def balance_of():
     return out
 
 
-def launch_flask(host: str = "0.0.0.0", port: int = 5002):
+def launch_flask(host: str | None = None, port: int | None = None):
     """Launches the flask server
 
     Arguments
@@ -94,4 +94,10 @@ def launch_flask(host: str = "0.0.0.0", port: int = 5002):
         Session object for connecting to db. If None, will initialize a new session based on
         postgres.env.
     """
+
+    if host is None:
+        host = "0.0.0.0"
+    if port is None:
+        port = 5002
+
     app.run(host=host, port=port)
