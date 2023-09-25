@@ -6,7 +6,7 @@ from typing import Any
 
 from elfpy import time as elftime
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
-from eth_typing import BlockNumber
+from eth_typing import BlockNumber, ChecksumAddress
 from eth_utils import address
 from ethpy.base import UnknownBlockError, get_transaction_logs, smart_contract_read
 from fixedpointmath import FixedPoint
@@ -29,19 +29,21 @@ def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> dict[str, Any]:
 
     Returns
     -------
-    PoolConfig
+    dict[str, Any]
         The hyperdrive pool config.
     """
     return smart_contract_read(hyperdrive_contract, "getPoolConfig")
 
 
-def process_hyperdrive_pool_config(pool_config: dict[str, Any]) -> dict[str, Any]:
+def process_hyperdrive_pool_config(pool_config: dict[str, Any], hyperdrive_address: ChecksumAddress) -> dict[str, Any]:
     """Convert pool_config to python-friendly (FixedPoint, integer, str) types and add some computed values.
 
     Arguments
     ----------
     pool_config : dict[str, Any]
         The hyperdrive pool config.
+    hyperdrive_address : ChecksumAddress
+        The deployed hyperdrive contract instance address.
 
     Returns
     -------
@@ -53,8 +55,9 @@ def process_hyperdrive_pool_config(pool_config: dict[str, Any]) -> dict[str, Any
     for key in pool_config:
         if key in fixedpoint_keys:
             pool_config[key] = FixedPoint(scaled_value=pool_config[key])
-    pool_config["fees"] = (FixedPoint(fee) for fee in pool_config["fees"])
+    pool_config["fees"] = (FixedPoint(scaled_value=fee) for fee in pool_config["fees"])
     # new attributes
+    pool_config["contractAddress"] = hyperdrive_address
     curve_fee, flat_fee, governance_fee = pool_config["fees"]
     pool_config["curveFee"] = curve_fee
     pool_config["flatFee"] = flat_fee
@@ -183,7 +186,9 @@ def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> Hyperdri
     """Constructs an elfpy HyperdriveMarket from the onchain hyperdrive constract state."""
     earliest_block = web3.eth.get_block("earliest")
     current_block = web3.eth.get_block("latest")
-    pool_config = process_hyperdrive_pool_config(get_hyperdrive_pool_config(hyperdrive_contract))
+    pool_config = process_hyperdrive_pool_config(
+        get_hyperdrive_pool_config(hyperdrive_contract), hyperdrive_contract.address
+    )
     current_block_number = current_block.get("number", None)
     if current_block_number is None:
         raise AssertionError("Current block number should not be None")

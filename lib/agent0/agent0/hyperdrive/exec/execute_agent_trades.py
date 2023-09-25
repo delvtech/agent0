@@ -108,9 +108,6 @@ async def async_match_contract_call_to_trade(
     # TODO: figure out fees paid
     # pylint: disable=too-many-statements
     trade = trade_envelope.market_action
-    # TODO: The following variables are hard coded for now, but should be specified in the trade spec
-    min_apr = int(1)
-    max_apr = FixedPoint(1).scaled_value
     match trade.action_type:
         case HyperdriveActionType.INITIALIZE_MARKET:
             raise ValueError(f"{trade.action_type} not supported!")
@@ -164,9 +161,10 @@ async def async_match_contract_call_to_trade(
             )
 
         case HyperdriveActionType.ADD_LIQUIDITY:
-            trade_result = await hyperdrive.async_add_liquidity(
-                agent, trade.trade_amount, FixedPoint(min_apr), FixedPoint(max_apr)
-            )
+            # TODO: The following variables are hard coded for now, but should be specified in the trade spec
+            min_apr = FixedPoint(scaled_value=1)  # 1e-18
+            max_apr = FixedPoint(1)  # 1.0
+            trade_result = await hyperdrive.async_add_liquidity(agent, trade.trade_amount, min_apr, max_apr)
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=-trade_result.base_amount,

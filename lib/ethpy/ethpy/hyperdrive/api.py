@@ -71,7 +71,9 @@ class HyperdriveInterface:
         )
         self.last_state_block_number = copy.copy(self.current_block_number)
         self._contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
-        self.pool_config = process_hyperdrive_pool_config(copy.deepcopy(self._contract_pool_config))
+        self.pool_config = process_hyperdrive_pool_config(
+            copy.deepcopy(self._contract_pool_config), self.hyperdrive_contract.address
+        )
         self._contract_pool_info: dict[str, Any] = {}
         self._pool_info: dict[str, Any] = {}
         self._contract_latest_checkpoint: dict[str, int] = {}
@@ -96,7 +98,7 @@ class HyperdriveInterface:
 
     @property
     def current_block(self) -> BlockData:
-        """The current block number."""
+        """The current block."""
         return self.web3.eth.get_block("latest")
 
     @property
@@ -161,33 +163,19 @@ class HyperdriveInterface:
 
     def update_pool_info_and_checkpoint(self) -> None:
         """Update the cached pool info and latest checkpoint."""
-        setattr(
-            self,
-            "_contract_pool_info",
-            get_hyperdrive_pool_info(self.hyperdrive_contract, self.current_block_number),
+        self._contract_pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, self.current_block_number)
+        self._pool_info = process_hyperdrive_pool_info(
+            copy.deepcopy(self._contract_pool_info),
+            self.web3,
+            self.hyperdrive_contract,
+            self.pool_config["positionDuration"],
+            self.current_block_number,
         )
-        setattr(
-            self,
-            "_pool_info",
-            process_hyperdrive_pool_info(
-                copy.deepcopy(self._contract_pool_info),
-                self.web3,
-                self.hyperdrive_contract,
-                self.pool_config["positionDuration"],
-                self.current_block_number,
-            ),
+        self._contract_latest_checkpoint = get_hyperdrive_checkpoint(
+            self.hyperdrive_contract, self.current_block_number
         )
-        setattr(
-            self,
-            "_contract_latest_checkpoint",
-            get_hyperdrive_checkpoint(self.hyperdrive_contract, self.current_block_number),
-        )
-        setattr(
-            self,
-            "_latest_checkpoint",
-            process_hyperdrive_checkpoint(
-                copy.deepcopy(self._contract_latest_checkpoint), self.web3, self.current_block_number
-            ),
+        self._latest_checkpoint = process_hyperdrive_checkpoint(
+            copy.deepcopy(self._contract_latest_checkpoint), self.web3, self.current_block_number
         )
 
     async def async_open_long(
@@ -481,7 +469,7 @@ class HyperdriveInterface:
         agent_checksum_address = Web3.to_checksum_address(agent.address)
         min_output = FixedPoint(1)
         as_underlying = True
-        fn_args = (trade_amount, min_output.scaled_value, agent_checksum_address, as_underlying)
+        fn_args = (trade_amount.scaled_value, min_output.scaled_value, agent_checksum_address, as_underlying)
         tx_receipt = await async_smart_contract_transact(
             self.web3, self.hyperdrive_contract, agent, "redeemWithdrawalShares", *fn_args
         )

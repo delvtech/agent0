@@ -45,7 +45,12 @@ def init_data_chain_to_db(
     pool_config_dict = None
     for _ in range(_RETRY_COUNT):
         try:
-            pool_config_dict = process_hyperdrive_pool_config(get_hyperdrive_pool_config(hyperdrive_contract))
+            # TODO: Use the hyperdrive API here
+            pool_config_dict = convert_pool_config(
+                process_hyperdrive_pool_config(
+                    get_hyperdrive_pool_config(hyperdrive_contract), hyperdrive_contract.address
+                )
+            )
             break
         except ValueError:
             logging.warning("Error in getting pool config, retrying")
@@ -53,7 +58,7 @@ def init_data_chain_to_db(
             continue
     if pool_config_dict is None:
         raise ValueError("Error in getting pool config")
-    add_pool_config(convert_pool_config(pool_config_dict), session)
+    add_pool_config(pool_config_dict, session)
 
 
 def data_chain_to_db(
