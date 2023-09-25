@@ -204,8 +204,6 @@ async def async_match_contract_call_to_trade(
         web3 provider object
     hyperdrive_contract : Contract
         Any deployed web3 contract
-    hyperdrive_market : HyperdriveMarket
-        The elfpy trading market
     agent : HyperdriveAgent
         Object containing a wallet address and Elfpy Agent for determining trades
     trade_object : Trade
@@ -213,7 +211,7 @@ async def async_match_contract_call_to_trade(
 
     Returns
     -------
-    WalletDeltas
+    HyperdriveWalletDeltas
         Deltas to be applied to the agent's wallet
 
     """
