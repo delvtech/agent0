@@ -214,7 +214,6 @@ def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> Hyperdri
         share_reserves=FixedPoint(pool_info["shareReserves"]),
         minimum_share_reserves=FixedPoint(pool_config["minimumShareReserves"]),
         short_average_maturity_time=FixedPoint(pool_info["shortAverageMaturityTime"]),
-        short_base_volume=FixedPoint(pool_info["shortBaseVolume"]),
         shorts_outstanding=FixedPoint(pool_info["shortsOutstanding"]),
         # TODO: We don't have checkpoint information, so the next two fields are indexed by 0
         total_supply_longs={FixedPoint(0): FixedPoint(pool_info["longsOutstanding"])},

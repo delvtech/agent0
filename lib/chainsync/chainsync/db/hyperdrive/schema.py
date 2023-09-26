@@ -53,7 +53,7 @@ class CheckpointInfo(Base):
     timestamp: Mapped[datetime] = mapped_column(DateTime)
     sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     longSharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    shortBaseVolume: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    longExposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
 class PoolInfo(Base):
@@ -71,11 +71,11 @@ class PoolInfo(Base):
     lpTotalSupply: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     lpSharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    longExposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     longsOutstanding: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     longAverageMaturityTime: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     shortsOutstanding: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     shortAverageMaturityTime: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    shortBaseVolume: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     withdrawalSharesReadyToWithdraw: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     withdrawalSharesProceeds: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     totalSupplyWithdrawalShares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
