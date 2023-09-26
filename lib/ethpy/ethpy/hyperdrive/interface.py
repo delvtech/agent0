@@ -355,6 +355,8 @@ def get_event_history_from_chain(
         "closeShort": list[Unknown]
         "total_events": int
     """
+    # TODO clean up this function
+    # pylint: disable=too-many-locals
 
     # Build arguments
     lp_addr_filter = {}
