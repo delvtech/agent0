@@ -8,8 +8,11 @@ import time
 from chainsync.analysis import data_to_analysis
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
+    HyperdriveTransaction,
+    PoolInfo,
+    WalletDelta,
     get_latest_block_number_from_analysis_table,
-    get_latest_block_number_from_pool_info_table,
+    get_latest_block_number_from_table,
     get_pool_config,
 )
 from ethpy import EthConfig, build_eth_config
@@ -79,6 +82,8 @@ def data_analysis(
         pool_config_len = len(pool_config_df)
         if pool_config_len == 0:
             time.sleep(_SLEEP_AMOUNT)
+        else:
+            break
     if pool_config_df is None:
         raise ValueError("Error in getting pool config from db")
     assert len(pool_config_df) == 1
@@ -88,7 +93,7 @@ def data_analysis(
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring database for updates...")
     while True:
-        latest_data_block_number = get_latest_block_number_from_pool_info_table(db_session)
+        latest_data_block_number = get_latest_data_block(db_session)
         # Only execute if we are on a new block
         if latest_data_block_number <= block_number:
             time.sleep(_SLEEP_AMOUNT)
@@ -103,3 +108,22 @@ def data_analysis(
         data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
         block_number = latest_data_block_number
         time.sleep(_SLEEP_AMOUNT)
+
+
+def get_latest_data_block(db_session: Session):
+    """Gets the latest block the data pipeline has written
+    Since there are multiple tables that analysis reads from,
+    we query the latest block from all read tables and select the minimum
+    block from the list
+
+    Arguments
+    ---------
+    db_session: Session
+        Session object for connecting to db.
+    """
+
+    latest_pool_info = get_latest_block_number_from_table(PoolInfo, db_session)
+    latest_wallet_delta = get_latest_block_number_from_table(WalletDelta, db_session)
+    latest_transactions = get_latest_block_number_from_table(HyperdriveTransaction, db_session)
+
+    return min(latest_pool_info, latest_wallet_delta, latest_transactions)

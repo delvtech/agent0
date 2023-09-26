@@ -467,7 +467,7 @@ class HyperdriveInterface:
         """
         # for now, assume an underlying vault share price of at least 1, should be higher by a bit
         agent_checksum_address = Web3.to_checksum_address(agent.address)
-        min_output = FixedPoint(1)
+        min_output = FixedPoint(scaled_value=1)
         as_underlying = True
         fn_args = (trade_amount.scaled_value, min_output.scaled_value, agent_checksum_address, as_underlying)
         tx_receipt = await async_smart_contract_transact(
