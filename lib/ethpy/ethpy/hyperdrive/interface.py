@@ -322,3 +322,90 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
     if "withdrawalShareAmount" in log_args:
         trade_result.withdrawal_share_amount = FixedPoint(scaled_value=log_args["withdrawalShareAmount"])
     return trade_result
+
+
+def get_event_history_from_chain(
+    hyperdrive_contract: Contract, from_block: int, to_block: int, wallet_addr: str | None = None
+) -> dict:
+    """Helper function to query event logs directly from the chain.
+    Useful for debugging open positions of wallet addresses.
+    This might be creating unnecessary filters if ran, so only use for debugging
+
+    Arguments
+    ---------
+    hyperdrive_contract : Contract
+        The deployed hyperdrive contract instance.
+    from_block: int
+        The starting block to query
+    to_block: int
+        The end block to query. If from_block == to_block, will query the specified block number
+    wallet_addr: str | None
+        The wallet address to filter events on. If None, will return all.
+
+    Returns
+    -------
+    A dictionary of event logs, keyed by the event name. Specifically:
+        # TODO figure out return type of web3 call
+        "addLiquidity": list[Unknown]
+        "removeLiquidity": list[Unknown]
+        "redeemWithdrawalShares": list[Unknown]
+        "openLong": list[Unknown]
+        "closeLong": list[Unknown]
+        "openShort": list[Unknown]
+        "closeShort": list[Unknown]
+        "total_events": int
+    """
+    # TODO clean up this function
+    # pylint: disable=too-many-locals
+
+    # Build arguments
+    lp_addr_filter = {}
+    trade_addr_filter = {}
+    if wallet_addr is not None:
+        lp_addr_filter = {"provider": wallet_addr}
+        trade_addr_filter = {"trader": wallet_addr}
+    lp_filter_args = {"fromBlock": from_block, "toBlock": to_block, "argument_filters": lp_addr_filter}
+    trade_filter_args = {"fromBlock": from_block, "toBlock": to_block, "argument_filters": trade_addr_filter}
+
+    # Create filter on events
+    # Typing doesn't know about create_filter function with various events
+    add_lp_event_filter = hyperdrive_contract.events.AddLiquidity.create_filter(**lp_filter_args)  # type: ignore
+    remove_lp_event_filter = hyperdrive_contract.events.RemoveLiquidity.create_filter(**lp_filter_args)  # type:ignore
+    withdraw_event_filter = hyperdrive_contract.events.RedeemWithdrawalShares.create_filter(  # type:ignore
+        **lp_filter_args
+    )
+    open_long_event_filter = hyperdrive_contract.events.OpenLong.create_filter(**trade_filter_args)  # type:ignore
+    close_long_event_filter = hyperdrive_contract.events.CloseLong.create_filter(**trade_filter_args)  # type:ignore
+    open_short_event_filter = hyperdrive_contract.events.OpenShort.create_filter(**trade_filter_args)  # type:ignore
+    close_short_event_filter = hyperdrive_contract.events.CloseShort.create_filter(**trade_filter_args)  # type:ignore
+
+    # Retrieve all entries
+    add_lp_events = add_lp_event_filter.get_all_entries()
+    remove_lp_events = remove_lp_event_filter.get_all_entries()
+    withdraw_events = withdraw_event_filter.get_all_entries()
+    open_long_events = open_long_event_filter.get_all_entries()
+    close_long_events = close_long_event_filter.get_all_entries()
+    open_short_events = open_short_event_filter.get_all_entries()
+    close_short_events = close_short_event_filter.get_all_entries()
+
+    # Calculate total events on chain
+    total_events = (
+        len(add_lp_events)
+        + len(remove_lp_events)
+        + len(withdraw_events)
+        + len(open_long_events)
+        + len(close_long_events)
+        + len(open_short_events)
+        + len(close_short_events)
+    )
+
+    return {
+        "addLiquidity": add_lp_events,
+        "removeLiquidity": remove_lp_events,
+        "redeemWithdrawalShares": withdraw_events,
+        "openLong": open_long_events,
+        "closeLong": close_long_events,
+        "openShort": open_short_events,
+        "closeShort": close_short_events,
+        "total_events": total_events,
+    }

@@ -166,7 +166,6 @@ def build_wallet_positions_from_data(
         withdraw_obj = FixedPoint(0)
     else:
         withdraw_obj = FixedPoint(withdraw_balances.iloc[0]["value"])
-    # TODO Build withdraw share object
 
     return HyperdriveWallet(
         address=HexBytes(wallet_addr),

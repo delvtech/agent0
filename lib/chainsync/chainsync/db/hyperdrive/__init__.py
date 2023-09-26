@@ -21,6 +21,7 @@ from .interface import (
     get_current_wallet_info,
     get_latest_block_number_from_analysis_table,
     get_latest_block_number_from_pool_info_table,
+    get_latest_block_number_from_table,
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
