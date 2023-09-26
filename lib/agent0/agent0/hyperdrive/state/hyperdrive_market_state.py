@@ -51,8 +51,8 @@ class HyperdriveMarketState(BaseMarketState):
         The average maturity time of short positions.
     long_base_volume: FixedPoint
         The amount of base paid by outstanding longs.
-    short_base_volume: FixedPoint
-        The amount of base paid to outstanding shorts.
+    longExposure: FixedPoint
+        The amount open longs - open shorts
     checkpoints: dict[FixedPoint, elfpy.markets.hyperdrive.checkpoint.Checkpoint]
         Time delimited checkpoints
     checkpoint_duration: FixedPoint
@@ -88,10 +88,10 @@ class HyperdriveMarketState(BaseMarketState):
     gov_fees_accrued: FixedPoint = FixedPoint(0)
     longs_outstanding: FixedPoint = FixedPoint(0)
     shorts_outstanding: FixedPoint = FixedPoint(0)
+    long_exposure: FixedPoint = FixedPoint(0)
     long_average_maturity_time: FixedPoint = FixedPoint(0)
     short_average_maturity_time: FixedPoint = FixedPoint(0)
     long_base_volume: FixedPoint = FixedPoint(0)
-    short_base_volume: FixedPoint = FixedPoint(0)
     checkpoint_duration: FixedPoint = FixedPoint("1.0").div_up(FixedPoint("365.0"))
     checkpoint_duration_days: FixedPoint = FixedPoint("1.0")
     total_supply_longs: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
@@ -116,7 +116,7 @@ class HyperdriveMarketState(BaseMarketState):
         self.long_average_maturity_time += delta.long_average_maturity_time
         self.short_average_maturity_time += delta.short_average_maturity_time
         self.long_base_volume += delta.long_base_volume
-        self.short_base_volume += delta.short_base_volume
+        self.long_exposure += delta.long_exposure
         # tracking shares after closing positions
         self.total_supply_withdraw_shares += delta.total_supply_withdraw_shares
         self.withdraw_shares_ready_to_withdraw += delta.withdraw_shares_ready_to_withdraw

@@ -308,7 +308,7 @@ def get_checkpoint_info(
     This includes
     - `sharePrice` : The share price of the first transaction in the checkpoint.
     - `longSharePrice` : The weighted average of the share prices that all longs in the checkpoint were opened at.
-    - `shortBaseVolume` : The aggregate amount of base committed by LPs to pay for bonds sold short in the checkpoint.
+    - `longExposure` : The amount of open longs for that checkpoint.
 
     Arguments
     ---------
