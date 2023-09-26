@@ -112,7 +112,6 @@ def initialize_accounts(
     else:
         logging.info("Loading %s", env_file)
         # Ensure account_config matches up with env_file
-        # TODO this is where we would read state of agent from chain
         account_key_config = build_account_config_from_env(env_file)
         num_total_agents = sum(agent.number_of_agents for agent in agent_config)
         if num_total_agents != len(account_key_config.AGENT_KEYS):
