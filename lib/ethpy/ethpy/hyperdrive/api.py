@@ -1,4 +1,4 @@
-"""High-level interface for the Hyperdrive market"""
+"""High-level interface for the Hyperdrive market."""
 from __future__ import annotations
 
 import copy

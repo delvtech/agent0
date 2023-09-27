@@ -12,9 +12,7 @@ from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.state import HyperdriveWallet
-
-    # from agent0.hyperdrive import HyperdriveMarketState # TODO: use agent0 market state instead of elfpy market
-    from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
+    from ethpy.hyperdrive import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
 # pylint: disable=too-few-public-methods
@@ -54,13 +52,15 @@ class ShortSally(HyperdrivePolicy):
         self.risk_threshold = risk_threshold
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Implement a Short Sally user strategy
 
         Arguments
         ---------
-        market : HyperdriveMarket
-            the trading market
+        interface : HyperdriveInterface
+            The trading market.
+        wallet : HyperdriveWallet
+            The agent's wallet.
 
         Returns
         -------
@@ -73,7 +73,7 @@ class ShortSally(HyperdrivePolicy):
         action_list = []
         for short_time in wallet.shorts:  # loop over shorts # pylint: disable=consider-using-dict-items
             # if any short is mature
-            if (market.block_time.time - FixedPoint(short_time)) >= market.annualized_position_duration:
+            if (interface.current_block_time - FixedPoint(short_time)) >= interface.pool_config["positionDuration"]:
                 trade_amount = wallet.shorts[short_time].balance  # close the whole thing
                 action_list += [
                     Trade(
@@ -90,9 +90,9 @@ class ShortSally(HyperdrivePolicy):
         short_balances = [short.balance for short in wallet.shorts.values()]
         has_opened_short = bool(any(short_balance > FixedPoint(0) for short_balance in short_balances))
         # only open a short if the fixed rate is 0.02 or more lower than variable rate
-        if market.fixed_apr - market.market_state.variable_apr < self.risk_threshold and not has_opened_short:
+        if interface.fixed_apr - interface.market_state.variable_apr < self.risk_threshold and not has_opened_short:
             # maximum amount the agent can short given the market and the agent's wallet
-            trade_amount = market.get_max_short_for_account(wallet.balance.amount)
+            trade_amount = interface.get_max_short(wallet.balance.amount)
             if trade_amount > WEI and wallet.balance.amount > WEI:
                 action_list += [
                     Trade(

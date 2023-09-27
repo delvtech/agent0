@@ -9,17 +9,14 @@ from numpy.random import default_rng
 
 if TYPE_CHECKING:
     from agent0.base.state import EthWallet
-
-    # from agent0.base.state import BaseMarketState # TODO: don't rely on elfpy base market
-    from elfpy.markets.base import BaseMarket as BaseMarketState
     from elfpy.types import Trade
+    from ethpy.hyperdrive import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
 Wallet = TypeVar("Wallet", bound="EthWallet")
-MarketState = TypeVar("MarketState", bound="BaseMarketState")
 
 
-class BasePolicy(Generic[MarketState, Wallet]):
+class BasePolicy(Generic[Wallet]):
     """Base class policy."""
 
     def __init__(
@@ -42,6 +39,6 @@ class BasePolicy(Generic[MarketState, Wallet]):
         """Return the class name"""
         return self.__class__.__name__
 
-    def action(self, market: MarketState, wallet: Wallet) -> list[Trade]:
+    def action(self, interface: HyperdriveInterface, wallet: Wallet) -> list[Trade]:
         """Returns an empty list, indicating no action"""
         raise NotImplementedError
