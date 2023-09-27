@@ -10,6 +10,7 @@ from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy.types import MarketType, Trade
+from ethpy import EthConfig
 from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
 
 # Define the unique env filename to use for this script
 ENV_FILE = "example_agent.account.env"
+HOST = "localhost"
 
 
 # Build custom policy
@@ -144,6 +146,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
         return action_list
 
 
+eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http://" + HOST + ":8545")
 # Build environment config
 env_config = EnvironmentConfig(
     delete_previous_logs=False,
@@ -152,7 +155,7 @@ env_config = EnvironmentConfig(
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
-    database_api_uri="http://localhost:5002",
+    database_api_uri="http://" + HOST + ":5002",
     username="changeme",
 )
 
@@ -176,4 +179,4 @@ agent_config: list[AgentConfig] = [
 account_key_config = initialize_accounts(agent_config, ENV_FILE, random_seed=env_config.random_seed)
 
 # Run agents
-run_agents(env_config, agent_config, account_key_config)
+run_agents(env_config, agent_config, account_key_config, eth_config=eth_config)
