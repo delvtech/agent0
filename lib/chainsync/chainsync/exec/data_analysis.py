@@ -8,12 +8,15 @@ import time
 from chainsync.analysis import data_to_analysis
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
+    HyperdriveTransaction,
+    PoolInfo,
+    WalletDelta,
     get_latest_block_number_from_analysis_table,
-    get_latest_block_number_from_pool_info_table,
+    get_latest_block_number_from_table,
     get_pool_config,
 )
 from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_url, get_web3_and_hyperdrive_contracts
+from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri, get_web3_and_hyperdrive_contracts
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
@@ -35,13 +38,13 @@ def data_analysis(
     lookback_block_limit : int
         The maximum number of blocks to look back when filling in missing data
     eth_config: EthConfig | None
-        Configuration for urls to the rpc and artifacts. If not set, will look for addresses
+        Configuration for URIs to the rpc and artifacts. If not set, will look for addresses
         in eth.env.
     db_session: Session | None
         Session object for connecting to db. If None, will initialize a new session based on
         postgres.env.
     contract_addresses: HyperdriveAddresses | None
-        If set, will use these addresses instead of querying the artifact url
+        If set, will use these addresses instead of querying the artifact URI
         defined in eth_config.
     exit_on_catch_up: bool
         If True, will exit after catching up to current block
@@ -56,9 +59,9 @@ def data_analysis(
     if db_session is None:
         db_session = initialize_session()
 
-    # Get addresses either from artifacts url defined in eth_config or from contract_addresses
+    # Get addresses either from artifacts URI defined in eth_config or from contract_addresses
     if contract_addresses is None:
-        contract_addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
+        contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
 
     # Get hyperdrive contract
     _, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
@@ -79,6 +82,8 @@ def data_analysis(
         pool_config_len = len(pool_config_df)
         if pool_config_len == 0:
             time.sleep(_SLEEP_AMOUNT)
+        else:
+            break
     if pool_config_df is None:
         raise ValueError("Error in getting pool config from db")
     assert len(pool_config_df) == 1
@@ -88,7 +93,7 @@ def data_analysis(
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring database for updates...")
     while True:
-        latest_data_block_number = get_latest_block_number_from_pool_info_table(db_session)
+        latest_data_block_number = get_latest_data_block(db_session)
         # Only execute if we are on a new block
         if latest_data_block_number <= block_number:
             time.sleep(_SLEEP_AMOUNT)
@@ -96,9 +101,29 @@ def data_analysis(
                 break
             continue
         # Does batch analysis on range(analysis_start_block, latest_data_block_number) blocks
+        # TODO do regular batching to sample for wallet information
         analysis_start_block = block_number + 1
         analysis_end_block = latest_data_block_number + 1
         logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
         data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
         block_number = latest_data_block_number
         time.sleep(_SLEEP_AMOUNT)
+
+
+def get_latest_data_block(db_session: Session):
+    """Gets the latest block the data pipeline has written
+    Since there are multiple tables that analysis reads from,
+    we query the latest block from all read tables and select the minimum
+    block from the list
+
+    Arguments
+    ---------
+    db_session: Session
+        Session object for connecting to db.
+    """
+
+    latest_pool_info = get_latest_block_number_from_table(PoolInfo, db_session)
+    latest_wallet_delta = get_latest_block_number_from_table(WalletDelta, db_session)
+    latest_transactions = get_latest_block_number_from_table(HyperdriveTransaction, db_session)
+
+    return min(latest_pool_info, latest_wallet_delta, latest_transactions)

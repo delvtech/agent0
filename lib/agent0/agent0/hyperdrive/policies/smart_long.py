@@ -11,7 +11,7 @@ from fixedpointmath import FixedPoint, FixedPointMath
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.agents import HyperdriveWallet
+    from agent0.hyperdrive.state import HyperdriveWallet
 
     # from agent0.hyperdrive import HyperdriveMarketState # TODO: use agent0 market state instead of elfpy market
     from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
@@ -82,7 +82,7 @@ class LongLouie(HyperdrivePolicy):
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
-                            mint_time=long_time,
+                            maturity_time=long_time,
                         ),
                     )
                 ]
@@ -121,7 +121,6 @@ class LongLouie(HyperdrivePolicy):
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
-                            mint_time=market.block_time.time,
                         ),
                     )
                 ]

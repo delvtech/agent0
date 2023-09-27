@@ -4,9 +4,8 @@ from __future__ import annotations
 from typing import Type
 
 import pytest
-from agent0.hyperdrive.agents import HyperdriveWallet
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint
@@ -104,8 +103,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=wallet,
-                            # TODO is this actually maturity time? Not mint time?
-                            mint_time=long_time,
+                            maturity_time=long_time,
                         ),
                     )
                 )
@@ -121,7 +119,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                             trade_amount=short.balance,
                             wallet=wallet,
                             # TODO is this actually maturity time? Not mint time?
-                            mint_time=short_time,
+                            maturity_time=short_time,
                         ),
                     )
                 )

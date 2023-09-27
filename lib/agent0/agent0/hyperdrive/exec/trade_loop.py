@@ -6,16 +6,15 @@ import logging
 from datetime import datetime
 
 from agent0.hyperdrive.agents import HyperdriveAgent
+from ethpy.hyperdrive import HyperdriveInterface
 from web3 import Web3
-from web3.contract.contract import Contract
 from web3.types import RPCEndpoint
 
 from .execute_agent_trades import async_execute_agent_trades
 
 
 def trade_if_new_block(
-    web3: Web3,
-    hyperdrive_contract: Contract,
+    hyperdrive: HyperdriveInterface,
     agent_accounts: list[HyperdriveAgent],
     halt_on_errors: bool,
     last_executed_block: int,
@@ -24,10 +23,8 @@ def trade_if_new_block(
 
     Arguments
     ---------
-    web3 : Web3
-        Web3 provider object
-    hyperdrive_contract : Contract
-        The deployed hyperdrive contract
+    hyperdrive : HyperdriveInterface
+        The Hyperdrive API interface object
     agent_accounts : list[HyperdriveAgent]]
         A list of HyperdriveAgent objects that contain a wallet address and Elfpy Agent for determining trades
     halt_on_errors : bool
@@ -40,12 +37,12 @@ def trade_if_new_block(
     int
         The block number when a trade last happened
     """
-    latest_block = web3.eth.get_block("latest")
+    latest_block = hyperdrive.web3.eth.get_block("latest")
     latest_block_number = latest_block.get("number", None)
     latest_block_timestamp = latest_block.get("timestamp", None)
     if latest_block_number is None or latest_block_timestamp is None:
         raise AssertionError("latest_block_number and latest_block_timestamp can not be None")
-    wait_for_new_block = get_wait_for_new_block(web3)
+    wait_for_new_block = get_wait_for_new_block(hyperdrive.web3)
     # do trades if we don't need to wait for new block.  otherwise, wait and check for a new block
     if not wait_for_new_block or latest_block_number > last_executed_block:
         # log and show block info
@@ -55,13 +52,7 @@ def trade_if_new_block(
             str(datetime.fromtimestamp(float(latest_block_timestamp))),
         )
         try:
-            asyncio.run(
-                async_execute_agent_trades(
-                    web3,
-                    hyperdrive_contract,
-                    agent_accounts,
-                )
-            )
+            asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts))
             last_executed_block = latest_block_number
         # we want to catch all exceptions
         # pylint: disable=broad-exception-caught

@@ -6,11 +6,30 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
+from agent0.base import Quantity, TokenType, freezable
 from elfpy import check_non_zero
-from elfpy.types import Quantity, TokenType
-from elfpy.wallet.wallet_deltas import WalletDeltas
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
+
+
+@freezable()
+@dataclass()
+class EthWalletDeltas:
+    r"""Stores changes for an agent's wallet
+
+    Arguments
+    ----------
+    balance : Quantity
+        The base assets that held by the trader.
+    """
+    # fungible
+    balance: Quantity = field(default_factory=lambda: Quantity(amount=FixedPoint(0), unit=TokenType.BASE))
+
+    # TODO: Support multiple typed balances:
+    #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
+    def copy(self) -> EthWalletDeltas:
+        """Returns a new copy of self"""
+        return EthWalletDeltas(**copy.deepcopy(self.__dict__))
 
 
 @dataclass(kw_only=True)
@@ -41,7 +60,7 @@ class EthWallet:
         """Returns a new copy of self"""
         return EthWallet(**copy.deepcopy(self.__dict__))
 
-    def update(self, wallet_deltas: WalletDeltas) -> None:
+    def update(self, wallet_deltas: EthWalletDeltas) -> None:
         """Update the agent's wallet in-place
 
         Arguments

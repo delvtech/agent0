@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+import warnings
 
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
@@ -13,17 +14,19 @@ from chainsync.db.hyperdrive import (
 )
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_url, get_web3_and_hyperdrive_contracts
+from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri, get_web3_and_hyperdrive_contracts
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
+
+warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
 
 
 # Lots of arguments
 # pylint: disable=too-many-arguments
 def acquire_data(
     start_block: int = 0,
-    lookback_block_limit: int = 10000,
+    lookback_block_limit: int = 1000,
     eth_config: EthConfig | None = None,
     db_session: Session | None = None,
     contract_addresses: HyperdriveAddresses | None = None,
@@ -38,13 +41,13 @@ def acquire_data(
     lookback_block_limit : int
         The maximum number of blocks to look back when filling in missing data
     eth_config: EthConfig | None
-        Configuration for urls to the rpc and artifacts. If not set, will look for addresses
+        Configuration for URIs to the rpc and artifacts. If not set, will look for addresses
         in eth.env.
     db_session: Session | None
         Session object for connecting to db. If None, will initialize a new session based on
         postgres.env.
     contract_addresses: HyperdriveAddresses | None
-        If set, will use these addresses instead of querying the artifact url
+        If set, will use these addresses instead of querying the artifact URI
         defined in eth_config.
     exit_on_catch_up: bool
         If True, will exit after catching up to current block
@@ -59,9 +62,9 @@ def acquire_data(
     if db_session is None:
         db_session = initialize_session()
 
-    # Get addresses either from artifacts url defined in eth_config or from contract_addresses
+    # Get addresses either from artifacts URI defined in eth_config or from contract_addresses
     if contract_addresses is None:
-        contract_addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
+        contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
 
     # Get web3 and contracts
     web3, base_contract, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
@@ -104,6 +107,11 @@ def acquire_data(
             logging.info("Block %s", block_number)
             # Explicit check against loopback block limit
             if (latest_mined_block - block_number) > lookback_block_limit:
+                # NOTE when this case happens, wallet information will no longer
+                # be accurate, as we may have missed deltas on wallets
+                # based on the blocks we skipped
+                # TODO should directly query the chain for open positions
+                # in this case
                 logging.warning(
                     "Querying block_number %s out of %s, unable to keep up with chain block iteration",
                     block_number,

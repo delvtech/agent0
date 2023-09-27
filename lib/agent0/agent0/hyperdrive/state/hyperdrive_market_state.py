@@ -4,12 +4,12 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass, field
 
+from agent0.base import freezable
 from agent0.base.state import BaseMarketState
-from elfpy import types
 from fixedpointmath import FixedPoint
 
 
-@types.freezable(frozen=False, no_new_attribs=False)
+@freezable(frozen=False, no_new_attribs=False)
 @dataclass(kw_only=True)
 class HyperdriveMarketState(BaseMarketState):
     r"""The state of an AMM
@@ -51,8 +51,8 @@ class HyperdriveMarketState(BaseMarketState):
         The average maturity time of short positions.
     long_base_volume: FixedPoint
         The amount of base paid by outstanding longs.
-    short_base_volume: FixedPoint
-        The amount of base paid to outstanding shorts.
+    longExposure: FixedPoint
+        The amount open longs - open shorts
     checkpoints: dict[FixedPoint, elfpy.markets.hyperdrive.checkpoint.Checkpoint]
         Time delimited checkpoints
     checkpoint_duration: FixedPoint
@@ -88,10 +88,10 @@ class HyperdriveMarketState(BaseMarketState):
     gov_fees_accrued: FixedPoint = FixedPoint(0)
     longs_outstanding: FixedPoint = FixedPoint(0)
     shorts_outstanding: FixedPoint = FixedPoint(0)
+    long_exposure: FixedPoint = FixedPoint(0)
     long_average_maturity_time: FixedPoint = FixedPoint(0)
     short_average_maturity_time: FixedPoint = FixedPoint(0)
     long_base_volume: FixedPoint = FixedPoint(0)
-    short_base_volume: FixedPoint = FixedPoint(0)
     checkpoint_duration: FixedPoint = FixedPoint("1.0").div_up(FixedPoint("365.0"))
     checkpoint_duration_days: FixedPoint = FixedPoint("1.0")
     total_supply_longs: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
@@ -116,17 +116,21 @@ class HyperdriveMarketState(BaseMarketState):
         self.long_average_maturity_time += delta.long_average_maturity_time
         self.short_average_maturity_time += delta.short_average_maturity_time
         self.long_base_volume += delta.long_base_volume
-        self.short_base_volume += delta.short_base_volume
+        self.long_exposure += delta.long_exposure
         # tracking shares after closing positions
         self.total_supply_withdraw_shares += delta.total_supply_withdraw_shares
         self.withdraw_shares_ready_to_withdraw += delta.withdraw_shares_ready_to_withdraw
         self.withdraw_capital += delta.withdraw_capital
         self.withdraw_interest += delta.withdraw_interest
         # checkpointing
-        for mint_time, delta_supply in delta.total_supply_longs.items():
-            self.total_supply_longs[mint_time] = self.total_supply_longs.get(mint_time, FixedPoint(0)) + delta_supply
-        for mint_time, delta_supply in delta.total_supply_shorts.items():
-            self.total_supply_shorts[mint_time] = self.total_supply_shorts.get(mint_time, FixedPoint(0)) + delta_supply
+        for maturity_time, delta_supply in delta.total_supply_longs.items():
+            self.total_supply_longs[maturity_time] = (
+                self.total_supply_longs.get(maturity_time, FixedPoint(0)) + delta_supply
+            )
+        for maturity_time, delta_supply in delta.total_supply_shorts.items():
+            self.total_supply_shorts[maturity_time] = (
+                self.total_supply_shorts.get(maturity_time, FixedPoint(0)) + delta_supply
+            )
 
     def copy(self) -> HyperdriveMarketState:
         """Returns a new copy of self"""

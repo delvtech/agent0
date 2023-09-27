@@ -19,7 +19,7 @@ from ethpy.base import (
     smart_contract_read,
     smart_contract_transact,
 )
-from ethpy.hyperdrive import fetch_hyperdrive_address_from_url, get_hyperdrive_config
+from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri, get_hyperdrive_pool_config
 from fixedpointmath import FixedPoint
 from web3.contract.contract import Contract
 
@@ -57,7 +57,7 @@ def main() -> None:
     # pylint: disable=too-many-locals
     eth_config, env_config = get_config()
 
-    web3 = initialize_web3_with_http_provider(eth_config.RPC_URL, reset_provider=False)
+    web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
 
     # Setup logging
     logs.setup_logging(
@@ -76,8 +76,8 @@ def main() -> None:
     logging.info("Successfully funded the sender=%s.", sender.address)
 
     # Get the Hyperdrive contract.
-    hyperdrive_abis = load_all_abis(eth_config.ABI_DIR)
-    addresses = fetch_hyperdrive_address_from_url(os.path.join(eth_config.ARTIFACTS_URL, "addresses.json"))
+    hyperdrive_abis = load_all_abis(eth_config.abi_dir)
+    addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
     hyperdrive_contract: Contract = web3.eth.contract(
         abi=hyperdrive_abis["IHyperdrive"],
         address=web3.to_checksum_address(addresses.mock_hyperdrive),
@@ -86,7 +86,7 @@ def main() -> None:
     # Run the checkpoint bot. This bot will attempt to mint a new checkpoint
     # every checkpoint after a waiting period. It will poll very infrequently
     # to reduce the probability of needing to mint a checkpoint.
-    config = get_hyperdrive_config(hyperdrive_contract)
+    config = get_hyperdrive_pool_config(hyperdrive_contract)
     checkpoint_duration = config["checkpointDuration"]
     while True:
         # Get the latest block time and check to see if a new checkpoint should

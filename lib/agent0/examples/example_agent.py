@@ -13,7 +13,7 @@ from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.agents import HyperdriveWallet
+    from agent0.hyperdrive.state import HyperdriveWallet
     from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
     from numpy.random._generator import Generator as NumpyGenerator
 
@@ -107,8 +107,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=wallet,
-                            # TODO is this actually maturity time? Not mint time?
-                            mint_time=long_time,
+                            maturity_time=long_time,
                         ),
                     )
                 )
@@ -124,7 +123,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                             trade_amount=short.balance,
                             wallet=wallet,
                             # TODO is this actually maturity time? Not mint time?
-                            mint_time=short_time,
+                            maturity_time=short_time,
                         ),
                     )
                 )
@@ -153,7 +152,8 @@ env_config = EnvironmentConfig(
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
-    username="tmp",
+    database_api_uri="http://localhost:5002",
+    username="changeme",
 )
 
 # Build agent config

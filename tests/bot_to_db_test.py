@@ -45,13 +45,14 @@ class TestBotToDb:
         local_hyperdrive_chain: LocalHyperdriveChain,
         cycle_trade_policy: Type[BasePolicy],
         db_session: Session,
+        db_api: str,
     ):
         """Runs the entire pipeline and checks the database at the end.
         All arguments are fixtures.
         """
         # Get hyperdrive chain info
         uri: URI | None = cast(HTTPProvider, local_hyperdrive_chain.web3.provider).endpoint_uri
-        rpc_url = uri if uri else URI("http://localhost:8545")
+        rpc_uri = uri if uri else URI("http://localhost:8545")
         deploy_account: LocalAccount = local_hyperdrive_chain.deploy_account
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
 
@@ -63,6 +64,7 @@ class TestBotToDb:
             log_level=logging.INFO,
             log_stdout=True,
             random_seed=1234,
+            database_api_uri=db_api,
             username="test",
         )
 
@@ -83,9 +85,9 @@ class TestBotToDb:
 
         # Build custom eth config pointing to local test chain
         eth_config = EthConfig(
-            # Artifacts_url isn't used here, as we explicitly set addresses and passed to run_bots
-            ARTIFACTS_URL="not_used",
-            RPC_URL=rpc_url,
+            # Artifacts_uri isn't used here, as we explicitly set addresses and passed to run_bots
+            artifacts_uri="not_used",
+            rpc_uri=rpc_uri,
             # Using default abi dir
         )
 
@@ -194,9 +196,8 @@ class TestBotToDb:
         # TODO these expected values are defined in lib/ethpy/ethpy/test_fixtures/deploy_hyperdrive.py
         # Eventually, we want to parameterize these values to pass into deploying hyperdrive
         expected_timestretch_fp = FixedPoint(scaled_value=_calculateTimeStretch(FixedPoint("0.05").scaled_value))
-        # TODO this is actually inv of solidity time stretch, fix
-        expected_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
-        expected_inv_timestretch = _to_unscaled_decimal(expected_timestretch_fp)
+        expected_timestretch = _to_unscaled_decimal(expected_timestretch_fp)
+        expected_inv_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
 
         expected_pool_config = {
             "contractAddress": hyperdrive_contract_addresses.mock_hyperdrive,
@@ -205,7 +206,6 @@ class TestBotToDb:
             "minimumShareReserves": _to_unscaled_decimal(FixedPoint("10")),
             "positionDuration": 604800,  # 1 week
             "checkpointDuration": 3600,  # 1 hour
-            # TODO this is actually inv of solidity time stretch, fix
             "timeStretch": expected_timestretch,
             "governance": deploy_account.address,
             "feeCollector": deploy_account.address,
@@ -241,11 +241,11 @@ class TestBotToDb:
             "bondReserves",
             "lpTotalSupply",
             "sharePrice",
+            "longExposure",
             "longsOutstanding",
             "longAverageMaturityTime",
             "shortsOutstanding",
             "shortAverageMaturityTime",
-            "shortBaseVolume",
             "withdrawalSharesReadyToWithdraw",
             "withdrawalSharesProceeds",
             "lpSharePrice",

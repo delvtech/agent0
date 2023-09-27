@@ -62,13 +62,13 @@ def initialize_deploy_account(web3: Web3) -> LocalAccount:
     return account
 
 
-def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tuple[Contract, Contract]:
-    """Deploys the hyperdrive factory contract on the rpc_url chain
+def deploy_hyperdrive_factory(rpc_uri: str, deploy_account: LocalAccount) -> tuple[Contract, Contract]:
+    """Deploys the hyperdrive factory contract on the rpc_uri chain.
 
     Arguments
     ---------
-    rpc_url: str
-        The RPC URL of the chain
+    rpc_uri: str
+        The RPC URI of the chain
     deploy_account: LocalAccount
         The account that deploys the contracts
 
@@ -92,7 +92,7 @@ def deploy_hyperdrive_factory(rpc_url: str, deploy_account: LocalAccount) -> tup
 
     # Load compiled objects
     abis, bytecodes = load_all_abis(abi_folder, return_bytecode=True)
-    web3 = initialize_web3_with_http_provider(rpc_url, reset_provider=False)
+    web3 = initialize_web3_with_http_provider(rpc_uri, reset_provider=False)
     # Convert deploy address to checksum address
     deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
 

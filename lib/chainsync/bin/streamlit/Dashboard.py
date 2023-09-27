@@ -5,8 +5,10 @@
 
 from __future__ import annotations
 
+import gc
 import time
 
+import matplotlib.pyplot as plt
 import mplfinance as mpf
 import streamlit as st
 from chainsync.dashboard import (
@@ -33,6 +35,9 @@ from ethpy import build_eth_config
 
 # pylint: disable=invalid-name
 
+plt.close("all")
+gc.collect()
+
 st.set_page_config(page_title="Trading Competition Dashboard", layout="wide")
 st.set_option("deprecation.showPyplotGlobalUse", False)
 
@@ -47,13 +52,13 @@ config_data = get_pool_config(session, coerce_float=False)
 
 config_data = config_data.iloc[0]
 
-max_live_blocks = 14400
+max_live_blocks = 5000
 # Live ticker
 ticker_placeholder = st.empty()
 # OHLCV
 main_placeholder = st.empty()
 
-main_fig = mpf.figure(style="mike", figsize=(15, 15))
+main_fig = mpf.figure(style="mike", figsize=(10, 10))
 # matplotlib doesn't play nice with types
 (ax_ohlcv, ax_fixed_rate, ax_positions) = main_fig.subplots(3, 1, sharex=True)  # type: ignore
 

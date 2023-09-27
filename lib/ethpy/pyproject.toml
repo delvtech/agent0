@@ -17,7 +17,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-# This flag installs all dependencies and should be ran when installing this subpackage in isolation
+# This flag installs all dependencies and should be run when installing this subpackage in isolation
 with-dependencies = [
     "ethpy[base, lateral]"
 ]

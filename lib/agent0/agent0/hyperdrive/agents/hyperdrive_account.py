@@ -4,14 +4,14 @@ from __future__ import annotations
 import logging
 from typing import Generic, TypeVar
 
+from agent0.base import Quantity, TokenType
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
-from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketAction, MarketActionType
-from elfpy.types import MarketType, Quantity, TokenType, Trade
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
+from elfpy.markets.hyperdrive import HyperdriveMarket
+from elfpy.types import MarketType, Trade
 from eth_account.signers.local import LocalAccount
 from hexbytes import HexBytes
-
-from .hyperdrive_wallet import HyperdriveWallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 Market = TypeVar(
@@ -89,7 +89,7 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
-                            action_type=MarketActionType.CLOSE_LONG,
+                            action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=self.wallet,  # type: ignore
                             maturity_time=maturity_time,
@@ -104,7 +104,7 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
-                            action_type=MarketActionType.CLOSE_SHORT,
+                            action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             wallet=self.wallet,  # type: ignore
                             maturity_time=maturity_time,
@@ -118,7 +118,7 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
                 Trade(
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
-                        action_type=MarketActionType.REMOVE_LIQUIDITY,
+                        action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
                         wallet=self.wallet,  # type: ignore
                     ),
@@ -145,7 +145,10 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
         # edit each action in place
         for action in actions:
             if action.market_type == MarketType.HYPERDRIVE and action.market_action.maturity_time is None:
-                action.market_action.maturity_time = market.latest_checkpoint_time + market.position_duration.seconds
+                # TODO market latest_checkpoint_time and position_duration should be in ints
+                action.market_action.maturity_time = int(market.latest_checkpoint_time) + int(
+                    market.position_duration.seconds
+                )
                 if action.market_action.trade_amount <= 0:
                     raise ValueError("Trade amount cannot be zero or negative.")
         return actions

@@ -36,6 +36,7 @@ base = [
     "psycopg[binary]",
     "sqlalchemy",
     "pandas-stubs",
+    "requests",
 ]
 lateral = [
     # Lateral dependencies across subpackages are pointing to github

@@ -1,9 +1,28 @@
-#pylint: disable=invalid-name
 """Dataclasses for all structs in the {{contract_name}} contract."""
+# super() call methods are generic, while our version adds values & types
+# pylint: disable=arguments-differ
+# contracts have PascalCase names
+# pylint: disable=invalid-name
+# contracts control how many attributes and arguments we have in generated code
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
+# unable to determine which imports will be used in the generated code
+# pylint: disable=unused-import
+# we don't need else statement if the other conditionals all have return,
+# but it's easier to generate
+# pylint: disable=no-else-return
+from __future__ import annotations
 
-from web3.types import ABIEvent, ABIEventParams
-
+{% if structs %}
 from dataclasses import dataclass
+{% endif %}
+
+{%- if has_events %}
+from web3.types import ABIEvent
+{% endif %}
+{%- if has_event_params %}
+from web3.types import ABIEventParams
+{% endif %}
 
 {% for struct in structs %}
 @dataclass
@@ -19,7 +38,7 @@ class {{struct.name}}:
 {{event.name}} = ABIEvent(
     anonymous = {{event.anonymous}},
     inputs = [
-{%- for event_input in event['inputs'] %}
+{%- for event_input in event.inputs %}
         ABIEventParams(indexed={{event_input.indexed}}, name="{{event_input.name}}", type="{{event_input.solidity_type}}"),
 {%- endfor %}
     ],

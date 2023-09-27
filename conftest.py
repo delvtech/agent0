@@ -6,7 +6,7 @@ import os
 
 import pytest
 from agent0.test_fixtures import cycle_trade_policy
-from chainsync.test_fixtures import database_engine, db_session, dummy_session, psql_docker
+from chainsync.test_fixtures import database_engine, db_api, db_session, dummy_session, psql_docker
 from ethpy.test_fixtures import local_chain, local_hyperdrive_chain
 
 # Hack to allow for vscode debugger to throw exception immediately
@@ -49,6 +49,7 @@ if os.getenv("_PYTEST_RAISE", "0") != "0":
 # TODO this means pytest can only be ran from this directory
 __all__ = [
     "database_engine",
+    "db_api",
     "db_session",
     "dummy_session",
     "psql_docker",

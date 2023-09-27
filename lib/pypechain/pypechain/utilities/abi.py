@@ -161,11 +161,9 @@ class EventParams:
     python_type: str
 
 
-# This is a recursive function, need to initialize with an empty dict.
-# pylint: disable=dangerous-default-value
 def get_structs(
     function_params: Sequence[ABIFunctionParams] | Sequence[ABIFunctionComponents],
-    structs: dict[str, StructInfo] = {},
+    structs: dict[str, StructInfo] | None = None,
 ) -> dict[str, StructInfo]:
     """Recursively gets all the structs for a contract by walking all function parameters.
 
@@ -209,7 +207,8 @@ def get_structs(
     List[Union[ABIFunction, ABIEvent]]
         _description_
     """
-
+    if structs is None:
+        structs = {}
     for param in function_params:
         components = param.get("components")
         internal_type = cast(str, param.get("internalType", ""))
@@ -244,7 +243,8 @@ def get_structs(
 
 
 def get_structs_for_abi(abi: ABI) -> dict[str, StructInfo]:
-    """Gets all the structs for a given abi. These are found by parsing function inputs and outputs for internalType's.
+    """Gets all the structs for a given abi.
+    These are found by parsing function inputs and outputs for internalType's.
 
     Arguments
     ---------
@@ -262,12 +262,11 @@ def get_structs_for_abi(abi: ABI) -> dict[str, StructInfo]:
             fn_inputs = item.get("inputs")
             fn_outputs = item.get("outputs")
             if fn_inputs:
-                input_structs = get_structs(fn_inputs)
+                input_structs = get_structs(fn_inputs, structs)
                 structs.update(input_structs)
             if fn_outputs:
-                output_structs = get_structs(fn_outputs)
+                output_structs = get_structs(fn_outputs, structs)
                 structs.update(output_structs)
-
     return structs
 
 
@@ -322,14 +321,14 @@ def get_events_for_abi(abi: ABI) -> list[EventInfo]:
                     raise ValueError("Type not known for event input.")
 
                 python_type = solidity_to_python_type(solidity_type)
-                inputs = [
-                    EventParams(
-                        indexed=indexed,
-                        name=name,
-                        solidity_type=solidity_type,
-                        python_type=python_type,
-                    )
-                ]
+                event_input = EventParams(
+                    indexed=indexed,
+                    name=name,
+                    solidity_type=solidity_type,
+                    python_type=python_type,
+                )
+
+                inputs.append(event_input)
 
             anonymous = item.get("anonymous", False)
             # TODO add test for multiple anonymous events
@@ -389,7 +388,7 @@ def load_abi_from_file(file_path: Path) -> ABI:
 
 
 def get_abi_items(file_path: Path) -> list[ABIElement]:
-    """Gets all the
+    """Gets all of the functions and events in the ABI.
 
     Arguments
     ---------
@@ -402,8 +401,8 @@ def get_abi_items(file_path: Path) -> list[ABIElement]:
         _description_
     """
 
-    web3 = Web3()
     abi = load_abi_from_file(file_path)
+    web3 = Web3()
     contract = web3.eth.contract(abi=abi)
 
     # leverage the private list of ABIFunction's
