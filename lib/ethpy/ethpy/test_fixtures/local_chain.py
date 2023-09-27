@@ -1,15 +1,16 @@
-"""Test fixture for deploying local anvil chain and initializing hyperdrive"""
+"""Test fixture for deploying local anvil chain and initializing hyperdrive."""
 import subprocess
 import time
 from typing import Iterator, NamedTuple
 
 import pytest
 from eth_account.signers.local import LocalAccount
+from web3 import Web3
+from web3.contract.contract import Contract
+
 from ethpy.base import initialize_web3_with_http_provider
 from ethpy.base.abi.load_abis import load_all_abis
 from ethpy.hyperdrive import HyperdriveAddresses
-from web3 import Web3
-from web3.contract.contract import Contract
 
 from .deploy_hyperdrive import deploy_and_initialize_hyperdrive, deploy_hyperdrive_factory, initialize_deploy_account
 
@@ -60,6 +61,61 @@ class LocalHyperdriveChain(NamedTuple):
     base_token_contract: Contract
 
 
+def create_hyperdrive_chain(rpc_uri: str, initial_liquidity=None) -> LocalHyperdriveChain:
+    """Initializes hyperdrive on a local anvil chain for testing.
+
+    Arguments
+    ---------
+    rpc_uri: str
+        The URI of the local RPC node
+    initial_liquidity: int | None, optional
+        The initial liquidity for the hyperdrive. Defaults to None.
+
+    Returns
+    -------
+    LocalHyperdriveChain
+        A tuple with the following key - value fields:
+
+        web3: Web3
+            web3 provider object
+        deploy_account: LocalAccount
+            The local account that deploys and initializes hyperdrive
+        hyperdrive_contract_addresses: HyperdriveAddresses
+            The hyperdrive contract addresses
+        hyperdrive_contract : Contract
+            web3.py contract instance for the hyperdrive contract
+        hyperdrive_factory_contract : Contract
+            web3.py contract instance for the hyperdrive factory contract
+        base_token_contract : Contract
+            web3.py contract instance for the base token contract
+    """
+    web3 = initialize_web3_with_http_provider(rpc_uri, reset_provider=False)
+    account = initialize_deploy_account(web3)
+    abi_folder = "packages/hyperdrive/src/abis/"
+    abis, _ = load_all_abis(abi_folder, return_bytecode=True)
+    base_token_contract, factory_contract = deploy_hyperdrive_factory(rpc_uri, account)
+    if initial_liquidity is None:
+        hyperdrive_addr = deploy_and_initialize_hyperdrive(web3, base_token_contract, factory_contract, account)
+    else:
+        hyperdrive_addr = deploy_and_initialize_hyperdrive(
+            web3, base_token_contract, factory_contract, account, initial_liquidity
+        )
+    hyperdrive_contract = web3.eth.contract(address=hyperdrive_addr, abi=abis["IHyperdrive"])
+    return LocalHyperdriveChain(
+        web3,
+        deploy_account=account,
+        hyperdrive_contract_addresses=HyperdriveAddresses(
+            base_token=Web3.to_checksum_address(base_token_contract.address),
+            hyperdrive_factory=Web3.to_checksum_address(factory_contract.address),
+            mock_hyperdrive=Web3.to_checksum_address(hyperdrive_addr),
+            mock_hyperdrive_math=None,
+        ),
+        hyperdrive_contract=hyperdrive_contract,
+        hyperdrive_factory_contract=factory_contract,
+        base_token_contract=base_token_contract,
+    )
+
+
 @pytest.fixture(scope="function")
 def local_hyperdrive_chain(local_chain: str) -> LocalHyperdriveChain:
     """Initializes hyperdrive on a local anvil chain for testing.
@@ -88,25 +144,4 @@ def local_hyperdrive_chain(local_chain: str) -> LocalHyperdriveChain:
         base_token_contract : Contract
             web3.py contract instance for the base token contract
     """
-
-    web3 = initialize_web3_with_http_provider(local_chain, reset_provider=False)
-    account = initialize_deploy_account(web3)
-    base_token_contract, factory_contract = deploy_hyperdrive_factory(local_chain, account)
-    hyperdrive_addr = deploy_and_initialize_hyperdrive(web3, base_token_contract, factory_contract, account)
-    abi_folder = "packages/hyperdrive/src/abis/"
-    abis, _ = load_all_abis(abi_folder, return_bytecode=True)
-    hyperdrive_contract = web3.eth.contract(address=hyperdrive_addr, abi=abis["IHyperdrive"])
-
-    return LocalHyperdriveChain(
-        web3,
-        deploy_account=account,
-        hyperdrive_contract_addresses=HyperdriveAddresses(
-            base_token=Web3.to_checksum_address(base_token_contract.address),
-            hyperdrive_factory=Web3.to_checksum_address(factory_contract.address),
-            mock_hyperdrive=Web3.to_checksum_address(hyperdrive_addr),
-            mock_hyperdrive_math=None,
-        ),
-        hyperdrive_contract=hyperdrive_contract,
-        hyperdrive_factory_contract=factory_contract,
-        base_token_contract=base_token_contract,
-    )
+    return create_hyperdrive_chain(local_chain)

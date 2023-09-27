@@ -159,6 +159,7 @@ def deploy_and_initialize_hyperdrive(
     base_token_contract: Contract,
     factory_contract: Contract,
     deploy_account: LocalAccount,
+    initial_contribution=FixedPoint(100_000_000).scaled_value,
 ) -> Address:
     """Calls the hyperdrive factory to deploy and initialize new hyperdrive contract
 
@@ -181,7 +182,6 @@ def deploy_and_initialize_hyperdrive(
     # TODO parameterize these parameters
     # pylint: disable=too-many-locals
     # Initial hyperdrive settings
-    initial_contribution = FixedPoint(100_000_000).scaled_value
     initial_share_price = FixedPoint(1).scaled_value
     minimum_share_reserves = FixedPoint(10).scaled_value
     position_duration = 604800  # 1 week
@@ -217,16 +217,19 @@ def deploy_and_initialize_hyperdrive(
         oracle_size,  # oracleSize
         update_gap,
     )
-    tx_receipt = smart_contract_transact(
-        web3,
-        factory_contract,
-        deploy_account,
-        "deployAndInitialize",
-        # Function arguments
+    # Function arguments
+    fn_args = (
         pool_config,
         [],  # new bytes[](0)
         initial_contribution,
         initial_fixed_rate,  # fixedRate
+    )
+    tx_receipt = smart_contract_transact(
+        web3,  # web3
+        factory_contract,  # contract
+        deploy_account,  # signer
+        "deployAndInitialize",  # function_name_or_signature
+        *fn_args,
     )
 
     logs = get_transaction_logs(factory_contract, tx_receipt)
