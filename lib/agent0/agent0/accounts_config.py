@@ -104,9 +104,11 @@ def initialize_accounts(
             )
             # Different commands depending on if default env file is used
             if env_file == "account.env":
-                print("python lib/agent0/bin/fund_agents_from_user_key.py -u <user_private_key>")
+                print("python lib/agent0/bin/fund_agents_from_user_key.py -u <user_private_key> --host <host>")
             else:
-                print(f"python lib/agent0/bin/fund_agents_from_user_key.py -u <user_private_key> -f {env_file}")
+                print(
+                    f"python lib/agent0/bin/fund_agents_from_user_key.py -u <user_private_key> --host <host> -f {env_file}"
+                )
             # Clean exit
             sys.exit(0)
     else:
