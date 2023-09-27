@@ -20,7 +20,10 @@ if TYPE_CHECKING:
 
 # Define the unique env filename to use for this script
 ENV_FILE = "example_agent.account.env"
+# Host of docker services
 HOST = "localhost"
+# Username binding of bots
+USERNAME = "changeme"
 
 
 # Build custom policy
@@ -156,7 +159,7 @@ env_config = EnvironmentConfig(
     log_stdout=True,
     random_seed=1234,
     database_api_uri="http://" + HOST + ":5002",
-    username="changeme",
+    username=USERNAME,
 )
 
 # Build agent config

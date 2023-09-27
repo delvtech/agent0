@@ -10,8 +10,12 @@ from agent0.hyperdrive.policies import Policies
 from ethpy import EthConfig
 from fixedpointmath import FixedPoint
 
+# Define the unique env filename to use for this script
 ENV_FILE = "hyperdrive_agents.account.env"
+# Host of docker services
 HOST = "localhost"
+# Username binding of bots
+USERNAME = "changeme"
 
 eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http://" + HOST + ":8545")
 
@@ -23,7 +27,7 @@ env_config = EnvironmentConfig(
     log_stdout=True,
     random_seed=1234,
     database_api_uri="http://" + HOST + ":5002",
-    username="changeme",
+    username=USERNAME,
 )
 
 agent_config: list[AgentConfig] = [
