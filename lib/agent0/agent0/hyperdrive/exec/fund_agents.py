@@ -56,6 +56,7 @@ def fund_agents(
     for agent_account, agent_eth_budget, agent_base_budget in zip(
         agent_accounts, account_key_config.AGENT_ETH_BUDGETS, account_key_config.AGENT_BASE_BUDGETS
     ):
+        print(f"Funding account {agent_account.checksum_address}")
         # fund Ethereum
         user_eth_balance = get_account_balance(web3, user_account.checksum_address)
         if user_eth_balance is None:
