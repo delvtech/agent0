@@ -18,11 +18,11 @@ if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
-# Define the unique env filename to use for this script
+# Define the unique agent env filename to use for this script
 ENV_FILE = "example_agent.account.env"
-# Host of docker services
+# Host of chain services
 HOST = "localhost"
-# Username binding of bots
+# Username binding for bots
 USERNAME = "changeme"
 
 
@@ -149,7 +149,9 @@ class CycleTradesPolicy(HyperdrivePolicy):
         return action_list
 
 
+# Build configuration
 eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http://" + HOST + ":8545")
+
 # Build environment config
 env_config = EnvironmentConfig(
     delete_previous_logs=False,
