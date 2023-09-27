@@ -1,15 +1,16 @@
-"""Test fixture for deploying local anvil chain and initializing hyperdrive"""
+"""Test fixture for deploying local anvil chain and initializing hyperdrive."""
 import subprocess
 import time
 from typing import Iterator, NamedTuple
 
 import pytest
 from eth_account.signers.local import LocalAccount
+from web3 import Web3
+from web3.contract.contract import Contract
+
 from ethpy.base import initialize_web3_with_http_provider
 from ethpy.base.abi.load_abis import load_all_abis
 from ethpy.hyperdrive import HyperdriveAddresses
-from web3 import Web3
-from web3.contract.contract import Contract
 
 from .deploy_hyperdrive import deploy_and_initialize_hyperdrive, deploy_hyperdrive_factory, initialize_deploy_account
 
@@ -60,13 +61,15 @@ class LocalHyperdriveChain(NamedTuple):
     base_token_contract: Contract
 
 
-def create_hyperdrive_chain(rpc_uri: str, contract_addresses=None, initial_liquidity=None) -> LocalHyperdriveChain:
+def create_hyperdrive_chain(rpc_uri: str, initial_liquidity=None) -> LocalHyperdriveChain:
     """Initializes hyperdrive on a local anvil chain for testing.
 
     Arguments
     ---------
     rpc_uri: str
         The URI of the local RPC node
+    initial_liquidity: int | None, optional
+        The initial liquidity for the hyperdrive. Defaults to None.
 
     Returns
     -------
@@ -90,13 +93,7 @@ def create_hyperdrive_chain(rpc_uri: str, contract_addresses=None, initial_liqui
     account = initialize_deploy_account(web3)
     abi_folder = "packages/hyperdrive/src/abis/"
     abis, _ = load_all_abis(abi_folder, return_bytecode=True)
-    if contract_addresses is None:
-        base_token_contract, factory_contract = deploy_hyperdrive_factory(rpc_uri, account)
-    else:
-        base_token_contract = web3.eth.contract(contract_addresses.base_token, abi=abis["ERC20Mintable"])
-        factory_contract = web3.eth.contract(
-            contract_addresses.hyperdrive_factory, abi=abis["ERC4626HyperdriveFactory"]
-        )
+    base_token_contract, factory_contract = deploy_hyperdrive_factory(rpc_uri, account)
     if initial_liquidity is None:
         hyperdrive_addr = deploy_and_initialize_hyperdrive(web3, base_token_contract, factory_contract, account)
     else:
