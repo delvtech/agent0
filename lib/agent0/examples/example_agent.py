@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
-DEVELOP = True
 # Define the unique env filename to use for this script
 ENV_FILE = "example_agent.account.env"
 
@@ -174,7 +173,7 @@ agent_config: list[AgentConfig] = [
 # If it doesn't exist, create it based on agent_config
 # (If develop is False, will clean exit and print instructions on how to fund agent)
 # If it does exist, read it in and use it
-account_key_config = initialize_accounts(agent_config, ENV_FILE, random_seed=env_config.random_seed, develop=DEVELOP)
+account_key_config = initialize_accounts(agent_config, ENV_FILE, random_seed=env_config.random_seed)
 
 # Run agents
-run_agents(env_config, agent_config, account_key_config, develop=DEVELOP)
+run_agents(env_config, agent_config, account_key_config)
