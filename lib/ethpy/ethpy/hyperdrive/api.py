@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import os
+from datetime import datetime
 from typing import Any
 
 import eth_utils
@@ -43,8 +44,10 @@ from .receipt_breakdown import ReceiptBreakdown
 class HyperdriveInterface:
     """End-point api for interfacing with Hyperdrive."""
 
-    # we expect to have many instance attributes since this is a large API
+    # TODO: we expect to have many instance attributes & methods since this is a large API
+    # although we should still break this up into a folder of files
     # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-public-methods
 
     def __init__(
         self,
@@ -150,6 +153,15 @@ class HyperdriveInterface:
         - then should be able to do a contract read call (e.g. getRate)
         """
         return None
+
+    @property
+    def seconds_since_latest_checkpoint(self) -> int:
+        """Return the amount of seconds that have passed since the latest checkpoint.
+        The time is rounded to the nearest second.
+        """
+        latest_checkpoint_datetime: datetime = self.latest_checkpoint["timestamp"]
+        current_block_datetime = datetime.fromtimestamp(int(self.current_block_time))
+        return int(round((current_block_datetime - latest_checkpoint_datetime).total_seconds()))
 
     @property
     def spot_price(self) -> FixedPoint:

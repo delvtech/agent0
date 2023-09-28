@@ -8,9 +8,8 @@ from typing import TYPE_CHECKING, NoReturn
 from agent0.base import Quantity, TokenType
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWalletDeltas, Long, Short
 from elfpy import types
-from elfpy.markets.hyperdrive import HyperdriveMarket
 from ethpy.base import UnknownBlockError
-from ethpy.hyperdrive import HyperdriveInterface, get_hyperdrive_market
+from ethpy.hyperdrive import HyperdriveInterface
 from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
@@ -30,7 +29,6 @@ def assert_never(arg: NoReturn) -> NoReturn:
 async def async_execute_single_agent_trade(
     agent: HyperdriveAgent,
     hyperdrive: HyperdriveInterface,
-    hyperdrive_market: HyperdriveMarket,
 ) -> None:
     """Executes a single agent's trade. This function is async as
     `match_contract_call_to_trade` waits for a transaction receipt.
@@ -41,10 +39,8 @@ async def async_execute_single_agent_trade(
         The HyperdriveAgent that is conducting the trade
     hyperdrive : HyperdriveInterface
         The Hyperdrive API interface object
-    hyperdrive_market: HyperdriveMarket:
-        The hyperdrive market state
     """
-    trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(market=hyperdrive_market)
+    trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(interface=hyperdrive)
     for trade_object in trades:
         logging.info(
             "AGENT %s to perform %s for %g",
@@ -72,12 +68,9 @@ async def async_execute_agent_trades(
     agents : list[HyperdriveAgent]
         A list of HyperdriveAgent that are conducting the trades
     """
-    # NOTE: This might _not_ be the latest market, due to async
-    # get latest market
-    hyperdrive_market = get_hyperdrive_market(hyperdrive.web3, hyperdrive.hyperdrive_contract)
     # Make calls per agent to execute_single_agent_trade
     # Await all trades to finish before continuing
-    await asyncio.gather(*[async_execute_single_agent_trade(agent, hyperdrive, hyperdrive_market) for agent in agents])
+    await asyncio.gather(*[async_execute_single_agent_trade(agent, hyperdrive) for agent in agents])
 
 
 async def async_match_contract_call_to_trade(

@@ -173,6 +173,8 @@ def process_hyperdrive_checkpoint(checkpoint: dict[str, int], web3: Web3, block_
     if current_block_timestamp is None:
         raise AssertionError("Current block has no timestamp")
     out_checkpoint["blockNumber"] = int(block_number)
+    # TODO: change "timestamp" to use exact current_block_timestamp,
+    # and anytime we need the datetime we do it there
     out_checkpoint["timestamp"] = datetime.fromtimestamp(int(current_block_timestamp))
     out_checkpoint["sharePrice"] = FixedPoint(scaled_value=checkpoint["sharePrice"])
     out_checkpoint["longSharePrice"] = FixedPoint(scaled_value=checkpoint["longSharePrice"])

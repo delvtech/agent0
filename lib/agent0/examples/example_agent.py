@@ -14,7 +14,7 @@ from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.state import HyperdriveWallet
-    from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
+    from ethpy.hyperdrive import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
 DEVELOP = True
@@ -45,8 +45,9 @@ class CycleTradesPolicy(HyperdrivePolicy):
         self.counter = 0
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
+        # pylint: disable=unused-argument
         action_list = []
         if self.counter == 0:
             # Add liquidity
