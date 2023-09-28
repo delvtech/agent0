@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 
 from agent0 import initialize_accounts
-from agent0.base.config import AgentConfig, Budget, EnvironmentConfig
+from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import Policies
 from ethpy import EthConfig
@@ -17,6 +17,7 @@ HOST = "localhost"
 # Username binding of bots
 USERNAME = "changeme"
 
+# Build configuration
 eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http://" + HOST + ":8545")
 
 env_config = EnvironmentConfig(
@@ -32,16 +33,24 @@ env_config = EnvironmentConfig(
 
 agent_config: list[AgentConfig] = [
     AgentConfig(
+        policy=Policies.arbitrage_policy,
+        number_of_agents=1,
+        # Fixed budgets
+        base_budget_wei=FixedPoint(50_000).scaled_value,  # 50k base
+        eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
+        init_kwargs={
+            "trade_amount": FixedPoint(1000),  # Open 1k in base or short 1k bonds
+            "high_fixed_rate_thresh": FixedPoint(0.1),  # Upper fixed rate threshold
+            "low_fixed_rate_thresh": FixedPoint(0.05),  # Lower fixed rate threshold
+        },
+    ),
+    AgentConfig(
         policy=Policies.random_agent,
-        number_of_agents=3,
+        number_of_agents=0,
         slippage_tolerance=FixedPoint("0.0001"),
-        base_budget_wei=Budget(
-            mean_wei=FixedPoint(5_000).scaled_value,  # 5k base
-            std_wei=FixedPoint(1_000).scaled_value,  # 1k base
-            min_wei=1,  # 1 WEI base
-            max_wei=FixedPoint(100_000).scaled_value,  # 100k base
-        ),
-        eth_budget_wei=Budget(min_wei=FixedPoint(1).scaled_value, max_wei=FixedPoint(1).scaled_value),
+        # Fixed budget
+        base_budget_wei=FixedPoint(5_000).scaled_value,  # 5k base
+        eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
         init_kwargs={"trade_chance": FixedPoint("0.8")},
     ),
 ]

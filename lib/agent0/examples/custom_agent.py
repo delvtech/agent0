@@ -18,11 +18,11 @@ if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
-# Define the unique env filename to use for this script
+# Define the unique agent env filename to use for this script
 ENV_FILE = "example_agent.account.env"
-# Host of docker services
+# Host of chain services
 HOST = "localhost"
-# Username binding of bots
+# Username binding for bots
 USERNAME = "changeme"
 
 
@@ -31,7 +31,7 @@ USERNAME = "changeme"
 # TODO this bot is almost identical to the one defined in test_fixtures for system tests
 # On one hand, this bot is nice for an example since it shows all trades
 # On the other, duplicated code between the two bots
-class CycleTradesPolicy(HyperdrivePolicy):
+class CustomCycleTradesPolicy(HyperdrivePolicy):
     """An agent that simply cycles through all trades"""
 
     # Using default parameters
@@ -127,7 +127,6 @@ class CycleTradesPolicy(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             wallet=wallet,
-                            # TODO is this actually maturity time? Not mint time?
                             maturity_time=short_time,
                         ),
                     )
@@ -149,7 +148,9 @@ class CycleTradesPolicy(HyperdrivePolicy):
         return action_list
 
 
+# Build configuration
 eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http://" + HOST + ":8545")
+
 # Build environment config
 env_config = EnvironmentConfig(
     delete_previous_logs=False,
@@ -165,7 +166,7 @@ env_config = EnvironmentConfig(
 # Build agent config
 agent_config: list[AgentConfig] = [
     AgentConfig(
-        policy=CycleTradesPolicy,
+        policy=CustomCycleTradesPolicy,
         number_of_agents=1,
         slippage_tolerance=FixedPoint("0.0001"),
         base_budget_wei=FixedPoint(10_000).scaled_value,  # 10k base
