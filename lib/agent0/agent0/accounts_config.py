@@ -103,10 +103,10 @@ def initialize_accounts(
                 "Run the following command to fund the accounts, then rerun this script."
             )
             # Different commands depending on if default env file is used
-            if env_file == "account.env":
-                print("python lib/agent0/bin/fund_agents_from_user_key.py -u <user_private_key>")
-            else:
-                print(f"python lib/agent0/bin/fund_agents_from_user_key.py -u <user_private_key> -f {env_file}")
+            command_str = "python lib/agent0/bin/fund_agents_from_user_key.py -u <user_private_key> --host <host>"
+            if env_file != "account.env":
+                command_str += f" -f {env_file}"
+            print(command_str)
             # Clean exit
             sys.exit(0)
     else:

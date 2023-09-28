@@ -46,14 +46,19 @@ These instructions can likely be followed for other unix/linux setups, however.
 
 ## Step 2: Set your configuration
 
-1. [optional] If you need to connect to a remote chain, copy `eth.env.sample` to `eth.env` and edit the host.
-
-2. Copy (or edit) one of the template scripts found in `lib/agent0/examples`:
+1. Copy (or edit) one of the template scripts found in `lib/agent0/examples`:
 
     - `hyperdrive_agents.py` for an example running existing policies.
     - `example_agent.py` for an example of writing and running a custom agent.
 
    This will be the main script to run your agent.
+
+2. Update the parameters in the script. For example:
+
+    ```
+    HOST = "<host>"
+    USERNAME = "<agent_username>"
+    ```
 
 ## Step 3: Fund your agents (if you wish to fund the agents from your own wallet key):
 
@@ -77,9 +82,9 @@ These instructions can likely be followed for other unix/linux setups, however.
 
 2. Run the funding script. The output of the script should print the fund command. For example,
    ```bash
-       python lib/agent0/bin/fund_agents_from_user_key.py -u 0xUSER_PRIVATE_KEY -f example_agents.accounts.env
+       python lib/agent0/bin/fund_agents_from_user_key.py -u 0xUSER_PRIVATE_KEY -f example_agents.accounts.env --host <host>
    ```
-   Replace the `0xUSER_PRIVATE_KEY` in the above command with your private key for the chain (e.g., from Anvil). This is the account that will fund the agents. The script will automatically update the specified `ENV_FILE` to contain your user key, which is needed by the script.
+   Replace the `0xUSER_PRIVATE_KEY` in the above command with your private key for the chain (e.g., from Anvil), and the `<host>` to the host of the chain. This is the account that will fund the agents. The script will automatically update the specified `ENV_FILE` to contain your user key, which is needed by the script.
 
 
 ## Step 4: Start trading!

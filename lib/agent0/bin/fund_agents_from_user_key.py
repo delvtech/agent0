@@ -8,7 +8,7 @@ from agent0 import build_account_config_from_env
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.exec import fund_agents
 from eth_account.account import Account
-from ethpy import build_eth_config
+from ethpy import EthConfig
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
 
 if __name__ == "__main__":
@@ -31,10 +31,14 @@ if __name__ == "__main__":
         default=[None],
     )
     parser.add_argument("-f", "--file", nargs=1, help="The env file to use.", action="store", default=["account.env"])
+    parser.add_argument(
+        "--host", nargs=1, help="The host to connect to the chain.", action="store", default=["localhost"]
+    )
     args = parser.parse_args()
 
     env_file = args.file[0]
     user_key = args.user_key[0]
+    host = args.host[0]
     if user_key is None:
         logging.warning("User key not provided, looking in environment file")
 
@@ -44,7 +48,8 @@ if __name__ == "__main__":
     if account_key_config.USER_KEY == "":
         raise ValueError("User key not provided as argument, and was not found in env file")
 
-    eth_config = build_eth_config()
+    eth_config = EthConfig(artifacts_uri="http://" + host + ":8080", rpc_uri="http://" + host + ":8545")
+
     contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
     user_account = HyperdriveAgent(Account().from_key(account_key_config.USER_KEY))
 
