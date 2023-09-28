@@ -9,7 +9,6 @@ from .base import BasePolicy, MarketInterface, Wallet
 
 if TYPE_CHECKING:
     from elfpy.types import Trade
-    from ethpy.hyperdrive import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
 

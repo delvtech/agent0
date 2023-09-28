@@ -147,10 +147,12 @@ class HyperdriveInterface:
 
     @property
     def variable_rate(self) -> None:
-        """TODO: Returns the market variable rate.
+        """Returns the market variable rate.
 
-        - Need the address for the yield source (e.g. MockERC4626)
-        - then should be able to do a contract read call (e.g. getRate)
+        .. todo::
+            - Need the address for the yield source (e.g. MockERC4626)
+            - then should be able to do a contract read call (e.g. getRate)
+            issue #913
         """
         return None
 

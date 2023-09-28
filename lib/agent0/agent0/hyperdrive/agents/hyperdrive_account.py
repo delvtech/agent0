@@ -20,7 +20,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
     r"""Enact policies on smart contracts and tracks wallet state
 
     .. todo::
-        should be able to infer the market action type from the market interface
+        should be able to get the HyperdriveMarketAction type from the HyperdriveInterface
     """
 
     def __init__(self, account: LocalAccount, policy: Policy | None = None):

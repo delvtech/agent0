@@ -2,18 +2,12 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
 
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, Budget, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import Policies
 from fixedpointmath import FixedPoint
-
-if TYPE_CHECKING:
-    from agent0.hyperdrive.state import HyperdriveWallet
-    from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
-    from numpy.random._generator import Generator as NumpyGenerator
 
 DEVELOP = True
 ENV_FILE = "hyperdrive_agents.account.env"
