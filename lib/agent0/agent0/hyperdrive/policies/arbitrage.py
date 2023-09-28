@@ -86,10 +86,6 @@ class ArbitragePolicy(HyperdrivePolicy):
         list[Trade]
             list of actions
         """
-        # If no base, do no trades
-        if wallet.balance.amount <= WEI:
-            return []
-
         # Calculate fixed rate
         # TODO this should be in the market
         init_share_price = market.market_state.init_share_price
