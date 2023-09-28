@@ -145,7 +145,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
             if action.market_type == MarketType.HYPERDRIVE and action.market_action.maturity_time is None:
                 # TODO market latest_checkpoint_time and position_duration should be in ints
                 action.market_action.maturity_time = (
-                    interface.seconds_since_latest_checkpoint + interface.pool_info["positionDuration"]
+                    interface.seconds_since_latest_checkpoint + interface.pool_config["positionDuration"]
                 )
                 if action.market_action.trade_amount <= 0:
                     raise ValueError("Trade amount cannot be zero or negative.")
