@@ -2,28 +2,26 @@
 from __future__ import annotations
 
 import logging
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from agent0.base import Quantity, TokenType
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
-from elfpy.markets.hyperdrive import HyperdriveMarket
 from elfpy.types import MarketType, Trade
 from eth_account.signers.local import LocalAccount
+from ethpy.hyperdrive import HyperdriveInterface
 from hexbytes import HexBytes
 
 Policy = TypeVar("Policy", bound=BasePolicy)
-Market = TypeVar(
-    "Market", bound=HyperdriveMarket
-)  # TODO: I don't know how to impose that this is a HyperdriveMarket at times, but BaseMarket in general
-MarketAction = TypeVar(
-    "MarketAction", bound=HyperdriveMarketAction
-)  # TODO: should be able to infer this from the market
 
 
-class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
-    r"""Enact policies on smart contracts and tracks wallet state"""
+class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketAction]):
+    r"""Enact policies on smart contracts and tracks wallet state
+
+    .. todo::
+        should be able to get the HyperdriveMarketAction type from the HyperdriveInterface
+    """
 
     def __init__(self, account: LocalAccount, policy: Policy | None = None):
         """Initialize an agent and wallet account
@@ -72,7 +70,7 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
         )
 
     @property
-    def liquidation_trades(self) -> list[Trade[MarketAction]]:
+    def liquidation_trades(self) -> list[Trade[HyperdriveMarketAction]]:
         """List of trades that liquidate all open positions
 
         Returns
@@ -126,12 +124,12 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
             )
         return action_list
 
-    def get_trades(self, market: Market) -> list[Trade[MarketAction]]:
+    def get_trades(self, interface: HyperdriveInterface) -> list[Trade[HyperdriveMarketAction]]:
         """Helper function for computing a agent trade
 
         Arguments
         ----------
-        market : Market
+        interface : HyperdriveInterface
             The market on which this agent will be executing trades (MarketActions)
 
         Returns
@@ -141,13 +139,13 @@ class HyperdriveAgent(EthAgent, Generic[Policy, Market, MarketAction]):
         """
         # get the action list from the policy
         # TODO: Deprecate the old wallet in favor of this new one
-        actions: list[Trade[MarketAction]] = self.policy.action(market, self.wallet)
+        actions: list[Trade[HyperdriveMarketAction]] = self.policy.action(interface, self.wallet)
         # edit each action in place
         for action in actions:
             if action.market_type == MarketType.HYPERDRIVE and action.market_action.maturity_time is None:
                 # TODO market latest_checkpoint_time and position_duration should be in ints
-                action.market_action.maturity_time = int(market.latest_checkpoint_time) + int(
-                    market.position_duration.seconds
+                action.market_action.maturity_time = (
+                    interface.seconds_since_latest_checkpoint + interface.pool_config["positionDuration"]
                 )
                 if action.market_action.trade_amount <= 0:
                     raise ValueError("Trade amount cannot be zero or negative.")

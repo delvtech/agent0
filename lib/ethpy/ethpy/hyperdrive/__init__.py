@@ -7,7 +7,6 @@ from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
 from .interface import (
     get_event_history_from_chain,
     get_hyperdrive_checkpoint,
-    get_hyperdrive_market,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
     parse_logs,

@@ -1,11 +1,9 @@
-"""Helper functions for interfacing with hyperdrive"""
+"""Helper functions for interfacing with hyperdrive."""
 from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
 
-from elfpy import time as elftime
-from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
 from eth_typing import BlockNumber, ChecksumAddress
 from eth_utils import address
 from ethpy.base import UnknownBlockError, get_transaction_logs, smart_contract_read
@@ -173,6 +171,8 @@ def process_hyperdrive_checkpoint(checkpoint: dict[str, int], web3: Web3, block_
     if current_block_timestamp is None:
         raise AssertionError("Current block has no timestamp")
     out_checkpoint["blockNumber"] = int(block_number)
+    # TODO: change "timestamp" to use exact current_block_timestamp,
+    # and anytime we need the datetime we do it there
     out_checkpoint["timestamp"] = datetime.fromtimestamp(int(current_block_timestamp))
     out_checkpoint["sharePrice"] = FixedPoint(scaled_value=checkpoint["sharePrice"])
     out_checkpoint["longSharePrice"] = FixedPoint(scaled_value=checkpoint["longSharePrice"])
@@ -180,70 +180,6 @@ def process_hyperdrive_checkpoint(checkpoint: dict[str, int], web3: Web3, block_
     if "longExposure" in checkpoint:
         out_checkpoint["longExposure"] = FixedPoint(scaled_value=checkpoint["longExposure"])
     return out_checkpoint
-
-
-def get_hyperdrive_market(web3: Web3, hyperdrive_contract: Contract) -> HyperdriveMarket:
-    """Constructs an elfpy HyperdriveMarket from the onchain hyperdrive constract state."""
-    earliest_block = web3.eth.get_block("earliest")
-    current_block = web3.eth.get_block("latest")
-    pool_config = process_hyperdrive_pool_config(
-        get_hyperdrive_pool_config(hyperdrive_contract), hyperdrive_contract.address
-    )
-    current_block_number = current_block.get("number", None)
-    if current_block_number is None:
-        raise AssertionError("Current block number should not be None")
-    pool_info = process_hyperdrive_pool_info(
-        get_hyperdrive_pool_info(hyperdrive_contract, current_block_number),
-        web3,
-        hyperdrive_contract,
-        pool_config["positionDuration"],
-        current_block_number,
-    )
-    market_state = HyperdriveMarketState(
-        base_buffer=FixedPoint(pool_info["longsOutstanding"]),
-        bond_reserves=FixedPoint(pool_info["bondReserves"]),
-        checkpoint_duration=FixedPoint(pool_config["checkpointDuration"]),
-        curve_fee_multiple=FixedPoint(pool_config["curveFee"]),
-        flat_fee_multiple=FixedPoint(pool_config["flatFee"]),
-        governance_fee_multiple=FixedPoint(pool_config["governanceFee"]),
-        init_share_price=FixedPoint(pool_config["initialSharePrice"]),
-        long_average_maturity_time=FixedPoint(pool_info["longAverageMaturityTime"]),
-        longs_outstanding=FixedPoint(pool_info["longsOutstanding"]),
-        lp_total_supply=FixedPoint(pool_info["lpTotalSupply"]),
-        share_price=FixedPoint(pool_info["sharePrice"]),
-        share_reserves=FixedPoint(pool_info["shareReserves"]),
-        minimum_share_reserves=FixedPoint(pool_config["minimumShareReserves"]),
-        short_average_maturity_time=FixedPoint(pool_info["shortAverageMaturityTime"]),
-        shorts_outstanding=FixedPoint(pool_info["shortsOutstanding"]),
-        # TODO: We don't have checkpoint information, so the next two fields are indexed by 0
-        total_supply_longs={FixedPoint(0): FixedPoint(pool_info["longsOutstanding"])},
-        total_supply_shorts={FixedPoint(0): FixedPoint(pool_info["shortsOutstanding"])},
-        total_supply_withdraw_shares=FixedPoint(pool_info["totalSupplyWithdrawalShares"]),
-        variable_apr=FixedPoint("0.01"),  # TODO: insert real value
-        withdraw_shares_ready_to_withdraw=FixedPoint(pool_info["withdrawalSharesReadyToWithdraw"]),
-        withdraw_capital=FixedPoint(0),
-        withdraw_interest=FixedPoint(0),
-    )
-    # TODO: Would it be safe to assume that earliest_block.timestamp always equals zero?
-    time_elapsed = (
-        datetime.utcfromtimestamp(current_block.get("timestamp", None))
-        - datetime.utcfromtimestamp(earliest_block.get("timestamp", None))
-    ).total_seconds()
-    years_elapsed = FixedPoint(time_elapsed) / 60 / 60 / 24 / 365
-    return HyperdriveMarket(
-        pricing_model=HyperdrivePricingModel(),
-        market_state=market_state,
-        position_duration=elftime.StretchedTime(
-            days=FixedPoint(pool_config["positionDuration"]) / FixedPoint(86_400),
-            time_stretch=FixedPoint(pool_config["invTimeStretch"]),  # inverted from what solidity returns
-            normalizing_constant=FixedPoint(pool_config["positionDuration"]) / FixedPoint(86_400),
-        ),
-        block_time=elftime.BlockTime(
-            _time=years_elapsed,
-            _block_number=FixedPoint(current_block.get("number", None)),
-            _step_size=FixedPoint(1) / FixedPoint(365),  # TODO: Should get the anvil increment time
-        ),
-    )
 
 
 def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses) -> Contract:

@@ -1,8 +1,9 @@
-"""High-level interface for the Hyperdrive market"""
+"""High-level interface for the Hyperdrive market."""
 from __future__ import annotations
 
 import copy
 import os
+from datetime import datetime
 from typing import Any
 
 import eth_utils
@@ -11,6 +12,7 @@ from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import (
+    BaseInterface,
     async_smart_contract_transact,
     get_account_balance,
     smart_contract_preview_transaction,
@@ -40,11 +42,13 @@ from .receipt_breakdown import ReceiptBreakdown
 # pylint: disable=unsubscriptable-object
 
 
-class HyperdriveInterface:
+class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
     """End-point api for interfacing with Hyperdrive."""
 
-    # we expect to have many instance attributes since this is a large API
+    # TODO: we expect to have many instance attributes & methods since this is a large API
+    # although we should still break this up into a folder of files
     # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-public-methods
 
     def __init__(
         self,
@@ -79,6 +83,7 @@ class HyperdriveInterface:
         self._contract_latest_checkpoint: dict[str, int] = {}
         self._latest_checkpoint: dict[str, Any] = {}
         self.update_pool_info_and_checkpoint()  # fill these in initially
+        super().__init__(eth_config, addresses)
 
     @property
     def pool_info(self) -> dict[str, Any]:
@@ -116,6 +121,51 @@ class HyperdriveInterface:
         if current_block_timestamp is None:
             raise AssertionError("current_block_timestamp can not be None")
         return current_block_timestamp
+
+    @property
+    def position_duration_in_years(self) -> FixedPoint:
+        """Returns the pool config position duration as a fraction of a year.
+
+        This "annualized" time value is used in some calculations, such as the Fixed APR.
+        """
+        return (
+            FixedPoint(self.pool_config["positionDuration"])
+            / FixedPoint(60)
+            / FixedPoint(60)
+            / FixedPoint(24)
+            / FixedPoint(365)
+        )
+
+    @property
+    def fixed_rate(self) -> FixedPoint:
+        """Returns the market fixed rate.
+
+        Follows the formula:
+
+        .. math::
+            r = ((1/p)-1)/t = (1-p)/(pt)
+        """
+        return (FixedPoint(1) - self.spot_price) / (self.spot_price * self.position_duration_in_years)
+
+    @property
+    def variable_rate(self) -> None:
+        """Returns the market variable rate.
+
+        .. todo::
+            - Need the address for the yield source (e.g. MockERC4626)
+            - then should be able to do a contract read call (e.g. getRate)
+            issue #913
+        """
+        return None
+
+    @property
+    def seconds_since_latest_checkpoint(self) -> int:
+        """Return the amount of seconds that have passed since the latest checkpoint.
+        The time is rounded to the nearest second.
+        """
+        latest_checkpoint_datetime: datetime = self.latest_checkpoint["timestamp"]
+        current_block_datetime = datetime.fromtimestamp(int(self.current_block_time))
+        return int(round((current_block_datetime - latest_checkpoint_datetime).total_seconds()))
 
     @property
     def spot_price(self) -> FixedPoint:
@@ -176,6 +226,21 @@ class HyperdriveInterface:
         )
         self._latest_checkpoint = process_hyperdrive_checkpoint(
             copy.deepcopy(self._contract_latest_checkpoint), self.web3, self.current_block_number
+        )
+
+    def bonds_given_shares_and_rate(self, target_rate: FixedPoint) -> FixedPoint:
+        r"""Returns the bond reserves for the market share reserves
+        and a given fixed rate.
+
+        .. math::
+            r = ((1/p)-1)/t //
+            p = ((\mu z) / y)**(t) //
+            y = \mu z p**((p r)/(p - 1))
+        """
+        return (
+            self.pool_config["initialSharePrice"]
+            * self.pool_info["shareReserves"]
+            * self.spot_price ** ((self.spot_price * target_rate) / (self.spot_price - 1))
         )
 
     async def async_open_long(

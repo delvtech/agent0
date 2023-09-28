@@ -11,10 +11,10 @@ from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from agent0.test_fixtures import AgentDoneException
 from chainsync.exec import acquire_data, data_analysis
-from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
 from elfpy.types import MarketType, Trade
 from eth_typing import URI
 from ethpy import EthConfig
+from ethpy.hyperdrive import HyperdriveInterface
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.test_fixtures.local_chain import LocalHyperdriveChain
 from fixedpointmath import FixedPoint
@@ -40,8 +40,9 @@ class WalletTestPolicy(HyperdrivePolicy):
         self.rerun = rerun
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
+        # pylint: disable=unused-argument
         action_list = []
 
         if self.rerun:

@@ -1,15 +1,14 @@
 """Base class for hyperdrive policies"""
 
-# from agent0.hyperdrive import HyperdriveMarketState # TODO: use agent0 market state instead of elfpy market
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
-from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
 from elfpy.types import Trade
+from ethpy.hyperdrive import HyperdriveInterface
 
 
-class HyperdrivePolicy(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
+class HyperdrivePolicy(BasePolicy[HyperdriveInterface, HyperdriveWallet]):
     """Hyperdrive policy."""
 
-    def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
-        """Returns an empty list, indicating no action"""
+    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+        """Returns an empty list, indicating no action."""
         raise NotImplementedError

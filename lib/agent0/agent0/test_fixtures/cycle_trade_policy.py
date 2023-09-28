@@ -6,8 +6,8 @@ from typing import Type
 import pytest
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
-from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
 from elfpy.types import MarketType, Trade
+from ethpy.hyperdrive import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 
@@ -35,8 +35,9 @@ class CycleTradesPolicy(HyperdrivePolicy):
         self.max_trades = max_trades
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
+        # pylint: disable=unused-argument
         action_list = []
 
         # Early stopping based on parameter

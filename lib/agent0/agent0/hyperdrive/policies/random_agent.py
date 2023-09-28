@@ -12,9 +12,7 @@ from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.state import HyperdriveWallet
-
-    # from agent0.hyperdrive import HyperdriveMarketState # TODO: use agent0 market state instead of elfpy market
-    from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
+    from ethpy.hyperdrive import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
 
@@ -37,7 +35,7 @@ class RandomAgent(HyperdrivePolicy):
     def get_available_actions(
         self,
         wallet: HyperdriveWallet,
-        market: HyperdriveMarketState,
+        interface: HyperdriveInterface,
         disallowed_actions: list[HyperdriveActionType] | None = None,
     ) -> list[HyperdriveActionType]:
         """Get all available actions, excluding those listed in disallowed_actions."""
@@ -59,14 +57,14 @@ class RandomAgent(HyperdrivePolicy):
             all_available_actions.append(HyperdriveActionType.CLOSE_SHORT)
         if wallet.lp_tokens:
             all_available_actions.append(HyperdriveActionType.REMOVE_LIQUIDITY)
-        if wallet.withdraw_shares and market.market_state.withdraw_shares_ready_to_withdraw > 0:
+        if wallet.withdraw_shares and interface.pool_info["withdrawSharesReadyToWithdraw"] > 0:
             all_available_actions.append(HyperdriveActionType.REDEEM_WITHDRAW_SHARE)
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
 
-    def open_short_with_random_amount(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade]:
+    def open_short_with_random_amount(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade]:
         """Open a short with a random allowable amount."""
-        maximum_trade_amount = market.get_max_short_for_account(wallet.balance.amount)
+        maximum_trade_amount = interface.get_max_short(wallet.balance.amount)
         if maximum_trade_amount <= WEI:
             return []
 
@@ -108,10 +106,10 @@ class RandomAgent(HyperdrivePolicy):
         ]
 
     def open_long_with_random_amount(
-        self, market: HyperdriveMarketState, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> list[Trade[HyperdriveMarketAction]]:
         """Open a long with a random allowable amount."""
-        maximum_trade_amount = market.get_max_long_for_account(wallet.balance.amount)
+        maximum_trade_amount = interface.get_max_long(wallet.balance.amount)
         if maximum_trade_amount <= WEI:
             return []
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
@@ -194,16 +192,14 @@ class RandomAgent(HyperdrivePolicy):
         ]
 
     def redeem_withdraw_shares_with_random_amount(
-        self, market: HyperdriveMarketState, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> list[Trade[HyperdriveMarketAction]]:
         """Redeem withdraw shares with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
-        shares_available_to_withdraw = min(
-            wallet.withdraw_shares, market.market_state.withdraw_shares_ready_to_withdraw
-        )
+        shares_available_to_withdraw = min(wallet.withdraw_shares, interface.pool_info["withdrawSharesReadyToWithdraw"])
         # WEI <= trade_amount <= withdraw_shares
         trade_amount = max(WEI, min(shares_available_to_withdraw, initial_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
@@ -219,7 +215,7 @@ class RandomAgent(HyperdrivePolicy):
             )
         ]
 
-    def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Implement a random user strategy.
 
         The agent performs one of four possible trades:
@@ -230,10 +226,10 @@ class RandomAgent(HyperdrivePolicy):
 
         Arguments
         ---------
-        market : Market
-            the trading market
+        interface : HyperdriveInterface
+            The trading market.
         wallet : HyperdriveWallet
-            agent's wallet
+            The agent's wallet.
 
         Returns
         -------
@@ -246,16 +242,16 @@ class RandomAgent(HyperdrivePolicy):
         if not gonna_trade:
             return []
         # user can always open a trade, and can close a trade if one is open
-        available_actions = self.get_available_actions(wallet, market)
+        available_actions = self.get_available_actions(wallet, interface)
         # randomly choose one of the possible actions
         action_type = available_actions[self.rng.integers(len(available_actions))]
         # trade amount is also randomly chosen to be close to 10% of the agent's budget
         if action_type == HyperdriveActionType.OPEN_SHORT:
-            return self.open_short_with_random_amount(market, wallet)
+            return self.open_short_with_random_amount(interface, wallet)
         if action_type == HyperdriveActionType.CLOSE_SHORT:
             return self.close_random_short(wallet)
         if action_type == HyperdriveActionType.OPEN_LONG:
-            return self.open_long_with_random_amount(market, wallet)
+            return self.open_long_with_random_amount(interface, wallet)
         if action_type == HyperdriveActionType.CLOSE_LONG:
             return self.close_random_long(wallet)
         if action_type == HyperdriveActionType.ADD_LIQUIDITY:
@@ -263,5 +259,5 @@ class RandomAgent(HyperdrivePolicy):
         if action_type == HyperdriveActionType.REMOVE_LIQUIDITY:
             return self.remove_liquidity_with_random_amount(wallet)
         if action_type == HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
-            return self.redeem_withdraw_shares_with_random_amount(market, wallet)
+            return self.redeem_withdraw_shares_with_random_amount(interface, wallet)
         return []
