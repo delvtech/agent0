@@ -85,17 +85,7 @@ class ArbitragePolicy(HyperdrivePolicy):
             list of actions
         """
         # Get fixed rate
-        # TODO currently calculating fixed rate, but we should be getting it from the interface
-        # fixed_rate = interface.fixed_rate
-        pool_config = interface.pool_config
-        pool_info = interface.pool_info
-        init_share_price = pool_config["initialSharePrice"]
-        share_reserves = pool_info["shareReserves"]
-        bond_reserves = pool_info["bondReserves"]
-        time_stretch = pool_config["timeStretch"]
-        annualized_time = interface.position_duration_in_years
-        spot_price = ((init_share_price * share_reserves) / bond_reserves) ** time_stretch
-        fixed_rate = (1 - spot_price) / (spot_price * annualized_time)
+        fixed_rate = interface.fixed_rate
 
         action_list = []
 

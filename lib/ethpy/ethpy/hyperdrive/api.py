@@ -209,7 +209,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             long_exposure=str(self._contract_pool_info["longExposure"]),
         )
         spot_price = pyperdrive.get_spot_price(pool_config_str, pool_info_str)  # pylint: disable=no-member
-        return FixedPoint(spot_price)
+        return FixedPoint(scaled_value=int(spot_price))
 
     def update_pool_info_and_checkpoint(self) -> None:
         """Update the cached pool info and latest checkpoint."""
@@ -616,7 +616,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             checkpoint_exposure=str(self.latest_checkpoint["longExposure"].scaled_value),
             maybe_max_iterations=None,
         )
-        return FixedPoint(max_long)
+        return FixedPoint(scaled_value=int(max_long))
 
     def get_max_short(self, budget: FixedPoint) -> FixedPoint:
         """Get the maximum allowable short for the given Hyperdrive pool and agent budget.
@@ -672,4 +672,4 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             maybe_conservative_price=None,
             maybe_max_iterations=None,
         )
-        return FixedPoint(max_short)
+        return FixedPoint(scaled_value=int(max_short))
