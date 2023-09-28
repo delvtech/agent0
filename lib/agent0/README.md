@@ -55,9 +55,7 @@ These instructions can likely be followed for other unix/linux setups, however.
 
    This will be the main script to run your agent.
 
-3. Set `DEVLEOP=True` flag to automatically fund your agents, or set `DEVELOP=False` and go to step 3 to fund your agents from your own wallet key.
-
-## [optional] Step 3: Fund your agents (if you wish to fund the agents from your own wallet key):
+## Step 3: Fund your agents (if you wish to fund the agents from your own wallet key):
 
 1. Run the script once to generate the `ENV_FILE` as defined in the script. For example, the script will generate `example_agents.account.env`
 
@@ -87,3 +85,9 @@ These instructions can likely be followed for other unix/linux setups, however.
 ## Step 4: Start trading!
 
 1. run your trading script to start trading!
+
+    >**💡NOTE:**
+    >For development, you may pass in an environment variable `DEVELOP` to skip step 3 above. E.g.,
+    > ```bash
+    > DEVELOP=true python lib/agent0/examples/hyperdrive_agents.py
+    > ```
