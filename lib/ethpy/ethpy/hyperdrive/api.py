@@ -83,7 +83,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         self._contract_latest_checkpoint: dict[str, int] = {}
         self._latest_checkpoint: dict[str, Any] = {}
         self.update_pool_info_and_checkpoint()  # fill these in initially
-        super().__init__(self)
+        super().__init__(eth_config, addresses)
 
     @property
     def pool_info(self) -> dict[str, Any]:
