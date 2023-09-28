@@ -44,14 +44,6 @@ agent_config: list[AgentConfig] = [
         init_kwargs={"trade_chance": FixedPoint("0.8")},
     ),
     AgentConfig(
-        policy=Policies.long_louie,
-        number_of_agents=0,
-        # Fixed budgets
-        base_budget_wei=FixedPoint(5_000).scaled_value,  # 5k base
-        eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
-        init_kwargs={"trade_chance": FixedPoint("0.8"), "risk_threshold": FixedPoint("0.9")},
-    ),
-    AgentConfig(
         policy=Policies.short_sally,
         number_of_agents=0,
         base_budget_wei=Budget(
