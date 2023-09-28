@@ -90,7 +90,7 @@ class ShortSally(HyperdrivePolicy):
         short_balances = [short.balance for short in wallet.shorts.values()]
         has_opened_short = bool(any(short_balance > FixedPoint(0) for short_balance in short_balances))
         # only open a short if the fixed rate is 0.02 or more lower than variable rate
-        if interface.fixed_apr - interface.market_state.variable_apr < self.risk_threshold and not has_opened_short:
+        if interface.fixed_rate - interface.variable_rate < self.risk_threshold and not has_opened_short:
             # maximum amount the agent can short given the market and the agent's wallet
             trade_amount = interface.get_max_short(wallet.balance.amount)
             if trade_amount > WEI and wallet.balance.amount > WEI:

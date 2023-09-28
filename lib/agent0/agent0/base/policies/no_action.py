@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from .base import BasePolicy, Wallet
+from .base import BasePolicy, MarketInterface, Wallet
 
 if TYPE_CHECKING:
     from elfpy.types import Trade
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 # pylint: disable=too-few-public-methods
 
 
-class NoActionPolicy(BasePolicy[Wallet]):
+class NoActionPolicy(BasePolicy[MarketInterface, Wallet]):
     """NoOp class policy"""
 
     def __init__(self, budget: FixedPoint | None = None, rng: NumpyGenerator | None = None):
@@ -25,7 +25,7 @@ class NoActionPolicy(BasePolicy[Wallet]):
         else:
             super().__init__(budget, rng)
 
-    def action(self, interface: HyperdriveInterface, wallet: Wallet) -> list[Trade]:
+    def action(self, interface: MarketInterface, wallet: Wallet) -> list[Trade]:
         """Returns an empty list, indicating no action"""
         # pylint: disable=unused-argument
         return []

@@ -14,9 +14,10 @@ if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
 Wallet = TypeVar("Wallet", bound="EthWallet")
+MarketInterface = TypeVar("MarketInterface", bound="HyperdriveInterface")
 
 
-class BasePolicy(Generic[Wallet]):
+class BasePolicy(Generic[MarketInterface, Wallet]):
     """Base class policy."""
 
     def __init__(
@@ -39,6 +40,6 @@ class BasePolicy(Generic[Wallet]):
         """Return the class name"""
         return self.__class__.__name__
 
-    def action(self, interface: HyperdriveInterface, wallet: Wallet) -> list[Trade]:
+    def action(self, interface: MarketInterface, wallet: Wallet) -> list[Trade]:
         """Returns an empty list, indicating no action"""
         raise NotImplementedError

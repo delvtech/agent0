@@ -13,11 +13,11 @@ from hexbytes import HexBytes
 from web3 import Web3
 
 Policy = TypeVar("Policy", bound=BasePolicy)
-Market = TypeVar("Market")
+MarketInterface = TypeVar("MarketInterface")
 MarketAction = TypeVar("MarketAction")
 
 
-class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
+class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
     r"""Enact policies on smart contracts and tracks wallet state"""
 
     def __init__(self, account: LocalAccount, policy: Policy | None = None):
@@ -75,17 +75,17 @@ class EthAgent(LocalAccount, Generic[Policy, Market, MarketAction]):
         """Return the checksum address of the account"""
         return Web3.to_checksum_address(self.address)
 
-    def get_trades(self, market: Market) -> list[Trade[MarketAction]]:
+    def get_trades(self, interface: MarketInterface) -> list[Trade[MarketAction]]:
         """Helper function for computing a agent trade
 
         Arguments
         ----------
-        market : Market
-            The market on which this agent will be executing trades (MarketActions)
+        interface : MarketInterface
+            Interface for the market on which this agent will be executing trades (MarketActions)
 
         Returns
         -------
         list[Trade]
             List of Trade type objects that represent the trades to be made by this agent
         """
-        return self.policy.action(market, self.wallet)
+        return self.policy.action(interface, self.wallet)

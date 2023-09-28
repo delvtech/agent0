@@ -6,7 +6,7 @@ from elfpy.types import Trade
 from ethpy.hyperdrive import HyperdriveInterface
 
 
-class HyperdrivePolicy(BasePolicy[HyperdriveWallet]):
+class HyperdrivePolicy(BasePolicy[HyperdriveInterface, HyperdriveWallet]):
     """Hyperdrive policy."""
 
     def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
