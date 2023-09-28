@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from decimal import Decimal
 from typing import Type, cast
 
@@ -50,6 +51,8 @@ class TestBotToDb:
         """Runs the entire pipeline and checks the database at the end.
         All arguments are fixtures.
         """
+        # Run this test with develop mode on
+        os.environ["DEVELOP"] = "true"
         # Get hyperdrive chain info
         uri: URI | None = cast(HTTPProvider, local_hyperdrive_chain.web3.provider).endpoint_uri
         rpc_uri = uri if uri else URI("http://localhost:8545")
@@ -97,7 +100,6 @@ class TestBotToDb:
                 env_config,
                 agent_config,
                 account_key_config,
-                develop=True,
                 eth_config=eth_config,
                 contract_addresses=hyperdrive_contract_addresses,
             )
@@ -145,7 +147,6 @@ class TestBotToDb:
                 env_config,
                 agent_config,
                 account_key_config,
-                develop=True,
                 eth_config=eth_config,
                 contract_addresses=hyperdrive_contract_addresses,
             )
