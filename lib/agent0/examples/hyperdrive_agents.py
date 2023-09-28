@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 
 from agent0 import initialize_accounts
-from agent0.base.config import AgentConfig, Budget, EnvironmentConfig
+from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import Policies
 from ethpy import EthConfig

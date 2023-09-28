@@ -1,11 +1,9 @@
 """Agent policy for smart short positions"""
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING
 
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
-from elfpy import WEI
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint
 
@@ -13,22 +11,21 @@ from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.state import HyperdriveWallet
-
-    # from agent0.hyperdrive import HyperdriveMarketState # TODO: use agent0 market state instead of elfpy market
-    from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
+    from ethpy.hyperdrive import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
-
-# pylint: disable=too-few-public-methods
 
 
 class ArbitragePolicy(HyperdrivePolicy):
-    """Agent that paints & opens fixed rate borrow positions
+    """Agent that arbitrages based on the fixed rate
 
     .. note::
         My strategy:
             - I arbitrage the fixed rate percentage based on thresholds
-
-
+            - I always close any matured open positions
+            - If the fixed rate is higher than `high_fixed_rate_thresh`,
+                I close all open shorts an open a new long for `trade_amount` base
+            - If the fixed rate is lower than `low_fixed_rate_thresh`,
+                I close all open longs and open a new short for `trade_amount` bonds
     """
 
     def __init__(
@@ -71,7 +68,7 @@ class ArbitragePolicy(HyperdrivePolicy):
 
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade]:
+    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Specify actions.
 
         Arguments
@@ -86,37 +83,51 @@ class ArbitragePolicy(HyperdrivePolicy):
         list[Trade]
             list of actions
         """
-        # Calculate fixed rate
-        # TODO this should be in the market
-        init_share_price = market.market_state.init_share_price
-        share_reserves = market.market_state.share_reserves
-        bond_reserves = market.market_state.bond_reserves
-        time_stretch = FixedPoint(1) / market.time_stretch_constant
-        annualized_time = market.position_duration.days / (365)
+        # Get fixed rate
+        # TODO currently calculating fixed rate, but we should be getting it from the interface
+        # fixed_rate = interface.fixed_rate
+        pool_config = interface.pool_config
+        pool_info = interface.pool_info
+        init_share_price = pool_config["initialSharePrice"]
+        share_reserves = pool_info["shareReserves"]
+        bond_reserves = pool_info["bondReserves"]
+        time_stretch = pool_config["timeStretch"]
+        annualized_time = interface.position_duration_in_years
         spot_price = ((init_share_price * share_reserves) / bond_reserves) ** time_stretch
         fixed_rate = (1 - spot_price) / (spot_price * annualized_time)
 
         action_list = []
 
-        # Close longs if it's matured, one at a time
-        # TODO figure out how to determine if position has matured
-        # longs = list(wallet.longs.values())
-        # has_opened_long = len(longs) > 0
-        # if has_opened_long:
-        #    maturity_time = list(wallet.longs)[0]  # get the maturity time of the open long
-        #    # If matured
-        #    if market.block_time.time - mint_time >= market.position_duration.years:
-        #        action_list.append(
-        #            Trade(
-        #                market_type=MarketType.HYPERDRIVE,
-        #                market_action=HyperdriveMarketAction(
-        #                    action_type=HyperdriveMarketAction.CLOSE_LONG,
-        #                    trade_amount=longs[0].balance,
-        #                    wallet=wallet,
-        #                    maturity_time=maturity_time,
-        #                ),
-        #            )
-        #        )
+        # Close longs if matured
+        for maturity_time, long in wallet.longs.items():
+            # If matured
+            if maturity_time >= interface.current_block_time:
+                action_list.append(
+                    Trade(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
+                            action_type=HyperdriveActionType.CLOSE_LONG,
+                            trade_amount=long.balance,
+                            wallet=wallet,
+                            maturity_time=maturity_time,
+                        ),
+                    )
+                )
+        # Close shorts if matured
+        for maturity_time, short in wallet.shorts.items():
+            # If matured
+            if maturity_time >= interface.current_block_time:
+                action_list.append(
+                    Trade(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
+                            action_type=HyperdriveActionType.CLOSE_LONG,
+                            trade_amount=short.balance,
+                            wallet=wallet,
+                            maturity_time=maturity_time,
+                        ),
+                    )
+                )
 
         # High fixed rate detected
         if fixed_rate >= self.high_fixed_rate_thresh:
