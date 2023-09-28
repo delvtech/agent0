@@ -118,6 +118,40 @@ class HyperdriveInterface:
         return current_block_timestamp
 
     @property
+    def position_duration_in_years(self) -> FixedPoint:
+        """Returns the pool config position duration as a fraction of a year.
+
+        This "annualized" time value is used in some calculations, such as the Fixed APR.
+        """
+        return (
+            FixedPoint(self.pool_config["positionDuration"])
+            / FixedPoint(60)
+            / FixedPoint(60)
+            / FixedPoint(24)
+            / FixedPoint(365)
+        )
+
+    @property
+    def fixed_rate(self) -> FixedPoint:
+        """Returns the market fixed rate.
+
+        Follows the formula:
+
+        .. math::
+            r = ((1/p)-1)/t = (1-p)/(pt)
+        """
+        return (FixedPoint(1) - self.spot_price) / (self.spot_price * self.position_duration_in_years)
+
+    @property
+    def variable_rate(self) -> None:
+        """TODO: Returns the market variable rate.
+
+        - Need the address for the yield source (e.g. MockERC4626)
+        - then should be able to do a contract read call (e.g. getRate)
+        """
+        return None
+
+    @property
     def spot_price(self) -> FixedPoint:
         """Get the current Hyperdrive pool spot price.
 
@@ -176,6 +210,21 @@ class HyperdriveInterface:
         )
         self._latest_checkpoint = process_hyperdrive_checkpoint(
             copy.deepcopy(self._contract_latest_checkpoint), self.web3, self.current_block_number
+        )
+
+    def bonds_given_shares_and_rate(self, target_rate: FixedPoint) -> FixedPoint:
+        r"""Returns the bond reserves for the market share reserves
+        and a given fixed rate.
+
+        .. math::
+            r = ((1/p)-1)/t //
+            p = ((\mu z) / y)**(t) //
+            y = \mu z p**((p r)/(p - 1))
+        """
+        return (
+            self.pool_config["initialSharePrice"]
+            * self.pool_info["shareReserves"]
+            * self.spot_price ** ((self.spot_price * target_rate) / (self.spot_price - 1))
         )
 
     async def async_open_long(

@@ -89,24 +89,14 @@ class LongLouie(HyperdrivePolicy):
         long_balances = [long.balance for long in wallet.longs.values()]
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
-        if (interface.fixed_apr - interface.market_state.variable_apr) > self.risk_threshold and not has_opened_long:
-            total_bonds_to_match_variable_apr = interface.pricing_model.calc_bond_reserves(
-                target_apr=interface.market_state.variable_apr,  # fixed rate targets the variable rate
-                time_remaining=interface.pool_config["positionDuration"],
-                market_state=interface.market_state,
-            )
+        if (interface.fixed_rate - interface.variable_rate) > self.risk_threshold and not has_opened_long:
+            total_bonds_to_match_variable_apr = interface.bonds_given_shares_and_rate(target_rate=self.variable_rate)
             # get the delta bond amount & convert units
             new_bonds_to_match_variable_apr = (
-                interface.market_state.bond_reserves - total_bonds_to_match_variable_apr
+                interface.pool_info["bondReserves"] - total_bonds_to_match_variable_apr
             ) * interface.spot_price
-            new_base_to_match_variable_apr = interface.pricing_model.calc_shares_out_given_bonds_in(
-                share_reserves=interface.pool_info["shareReserves"],
-                bond_reserves=interface.pool_info["bondReserves"],
-                lp_total_supply=interface.pool_info["lpTotalSupply"],
-                d_bonds=new_bonds_to_match_variable_apr,
-                time_elapsed=FixedPoint(1),  # opening a short, so no time has elapsed
-                share_price=interface.pool_info["sharePrice"],
-                init_share_price=interface.pool_config["initSharePrice"],
+            new_base_to_match_variable_apr = interface.calc_shares_out_given_bonds_in(
+                d_bonds=new_bonds_to_match_variable_apr
             )
             # get the maximum amount the agent can long given the market and the agent's wallet
             max_base = interface.get_max_long(wallet.balance.amount)
