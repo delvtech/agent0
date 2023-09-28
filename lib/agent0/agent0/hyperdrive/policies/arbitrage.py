@@ -1,4 +1,4 @@
-"""Agent policy for smart short positions"""
+"""Agent policy for arbitrade trading on the fixed rate"""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -60,9 +60,9 @@ class ArbitragePolicy(HyperdrivePolicy):
         if trade_amount is None:
             trade_amount = FixedPoint(100)
         if high_fixed_rate_thresh is None:
-            high_fixed_rate_thresh = FixedPoint(0.1)
+            high_fixed_rate_thresh = FixedPoint("0.1")
         if low_fixed_rate_thresh is None:
-            low_fixed_rate_thresh = FixedPoint(0.02)
+            low_fixed_rate_thresh = FixedPoint("0.02")
         self.trade_amount = trade_amount
         self.high_fixed_rate_thresh = high_fixed_rate_thresh
         self.low_fixed_rate_thresh = low_fixed_rate_thresh
