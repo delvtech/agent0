@@ -28,7 +28,8 @@ class ArbitragePolicy(HyperdrivePolicy):
                 I close all open longs and open a new short for `trade_amount` bonds
     """
 
-    def __init__(
+    # Lots of arguments in arbitrage bot
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         budget: FixedPoint,
         rng: NumpyGenerator | None = None,
