@@ -1,5 +1,6 @@
 """Base utilities for working with contracts via web3"""
 from .abi import load_abi_from_file, load_all_abis
+from .api import BaseInterface
 from .contract import deploy_contract, deploy_contract_and_return, get_token_balance
 from .errors import ABIError, UnknownBlockError, decode_error_selector_for_contract
 from .receipts import get_event_object, get_transaction_logs

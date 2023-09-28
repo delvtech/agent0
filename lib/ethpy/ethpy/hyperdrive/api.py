@@ -12,6 +12,7 @@ from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import (
+    BaseInterface,
     async_smart_contract_transact,
     get_account_balance,
     smart_contract_preview_transaction,
@@ -41,7 +42,7 @@ from .receipt_breakdown import ReceiptBreakdown
 # pylint: disable=unsubscriptable-object
 
 
-class HyperdriveInterface:
+class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
     """End-point api for interfacing with Hyperdrive."""
 
     # TODO: we expect to have many instance attributes & methods since this is a large API
@@ -82,6 +83,7 @@ class HyperdriveInterface:
         self._contract_latest_checkpoint: dict[str, int] = {}
         self._latest_checkpoint: dict[str, Any] = {}
         self.update_pool_info_and_checkpoint()  # fill these in initially
+        super().__init__(self)
 
     @property
     def pool_info(self) -> dict[str, Any]:
