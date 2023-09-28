@@ -57,7 +57,7 @@ class RandomAgent(HyperdrivePolicy):
             all_available_actions.append(HyperdriveActionType.CLOSE_SHORT)
         if wallet.lp_tokens:
             all_available_actions.append(HyperdriveActionType.REMOVE_LIQUIDITY)
-        if wallet.withdraw_shares and interface.pool_info["withdrawSharesReadyToWithdraw"] > 0:
+        if wallet.withdraw_shares and interface.pool_info["withdrawalSharesReadyToWithdraw"] > 0:
             all_available_actions.append(HyperdriveActionType.REDEEM_WITHDRAW_SHARE)
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
@@ -199,7 +199,9 @@ class RandomAgent(HyperdrivePolicy):
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
-        shares_available_to_withdraw = min(wallet.withdraw_shares, interface.pool_info["withdrawSharesReadyToWithdraw"])
+        shares_available_to_withdraw = min(
+            wallet.withdraw_shares, interface.pool_info["withdrawalSharesReadyToWithdraw"]
+        )
         # WEI <= trade_amount <= withdraw_shares
         trade_amount = max(WEI, min(shares_available_to_withdraw, initial_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
