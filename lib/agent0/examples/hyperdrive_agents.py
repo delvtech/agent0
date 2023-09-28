@@ -9,7 +9,6 @@ from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import Policies
 from fixedpointmath import FixedPoint
 
-DEVELOP = True
 ENV_FILE = "hyperdrive_agents.account.env"
 
 env_config = EnvironmentConfig(
@@ -45,9 +44,7 @@ agent_config: list[AgentConfig] = [
 # If it doesn't exist, create it based on agent_config
 # (If develop is False, will clean exit and print instructions on how to fund agent)
 # If it does exist, read it in and use it
-account_key_config = initialize_accounts(
-    agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed, develop=DEVELOP
-)
+account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed)
 
 # Run agents
-run_agents(env_config, agent_config, account_key_config, develop=DEVELOP)
+run_agents(env_config, agent_config, account_key_config)

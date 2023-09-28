@@ -32,7 +32,6 @@ def run_agents(
     environment_config: EnvironmentConfig,
     agent_config: list[AgentConfig],
     account_key_config: AccountKeyConfig,
-    develop: bool = False,
     eth_config: EthConfig | None = None,
     contract_addresses: HyperdriveAddresses | None = None,
 ) -> None:
@@ -55,6 +54,10 @@ def run_agents(
         If set, will use these addresses instead of querying the artifact URI
         defined in eth_config.
     """
+    # See if develop flag is set
+    develop_env = os.environ.get("DEVELOP")
+    develop = (develop_env is not None) and (develop_env.lower() == "true")
+
     # set sane logging defaults to avoid spam from dependencies
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("web3").setLevel(logging.WARNING)

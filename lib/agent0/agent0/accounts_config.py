@@ -61,7 +61,6 @@ def initialize_accounts(
     agent_config: list[AgentConfig],
     env_file: str | None = None,
     random_seed: int = 1,
-    develop: bool = False,
 ) -> AccountKeyConfig:
     """
     Build or load an accounts environment file.
@@ -77,15 +76,16 @@ def initialize_accounts(
         The path to the env file to write/load from. Defaults to `accounts.env`.
     random_seed: int
         Random seed to use for initializing budgets.
-    develop: bool
-        Flag for development mode. If False, will exit if env_file doesn't exist and print instructions
-        on how to fund bot.
 
     Returns
     -------
     AccountKeyConfig
         The account config object linked to the env file.
     """
+    # See if develop flag is set
+    develop_env = os.environ.get("DEVELOP")
+    develop = (develop_env is not None) and (develop_env.lower() == "true")
+
     # Default location
     if env_file is None:
         env_file = "account.env"
