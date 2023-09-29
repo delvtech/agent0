@@ -1,18 +1,19 @@
-"""Pytest fixture that creates an in memory db session and creates the base db schema"""
+"""Pytest fixture that creates an in memory db session and creates the base db schema."""
+import logging
 import os
 import subprocess
 import time
 from pathlib import Path
 from typing import Iterator
-import logging
 
 import docker
 import pytest
-from chainsync import PostgresConfig
-from chainsync.db.base import Base, initialize_engine
 from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
+
+from chainsync import PostgresConfig
+from chainsync.db.base import Base, initialize_engine
 
 # fixture arguments in test function have to be the same as the fixture name
 # pylint: disable=redefined-outer-name
@@ -20,7 +21,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 @pytest.fixture(scope="session")
 def psql_docker() -> Iterator[PostgresConfig]:
-    """Test fixture for running postgres in docker
+    """Test fixture for running postgres in docker.
 
     Returns
     -------
@@ -28,7 +29,7 @@ def psql_docker() -> Iterator[PostgresConfig]:
         An iterator that yields a PostgresConfig
     """
     home_dir = os.path.expanduser("~")
-    socket_path = Path(f"{home_dir}/.docker/desktop/docker.sock")
+    socket_path = Path(home_dir) / ".docker" / "desktop" / "docker.sock"
     if socket_path.exists():
         logging.debug("The socket exists at %s.. using it to connect to docker", socket_path)
         client = docker.DockerClient(base_url=f"unix://{socket_path}")
@@ -69,7 +70,7 @@ def psql_docker() -> Iterator[PostgresConfig]:
 
 @pytest.fixture(scope="session")
 def database_engine(psql_docker: PostgresConfig) -> Iterator[Engine]:
-    """Test fixture creating psql engine on local postgres container
+    """Test fixture creating psql engine on local postgres container.
 
     Arguments
     ---------
@@ -98,7 +99,7 @@ def database_engine(psql_docker: PostgresConfig) -> Iterator[Engine]:
 
 @pytest.fixture(scope="function")
 def db_session(database_engine: Engine) -> Iterator[Session]:
-    """Initializes the in memory db session and creates the db schema
+    """Initializes the in memory db session and creates the db schema.
 
     Arguments
     ---------
@@ -110,7 +111,6 @@ def db_session(database_engine: Engine) -> Iterator[Session]:
     Iterator[Session]
         Yields the sqlalchemy session object
     """
-
     session = sessionmaker(bind=database_engine)
 
     Base.metadata.create_all(database_engine)  # create tables
@@ -124,7 +124,7 @@ def db_session(database_engine: Engine) -> Iterator[Session]:
 
 @pytest.fixture(scope="function")
 def db_api(psql_docker: PostgresConfig) -> Iterator[str]:
-    """Launches a process for the db api
+    """Launches a process for the db api.
 
     Arguments
     ---------
