@@ -1,6 +1,7 @@
 """Python api interface for calling the flask server"""
 import logging
 import time
+from io import StringIO
 from http import HTTPStatus
 
 import pandas as pd
@@ -56,5 +57,5 @@ def balance_of(api_uri: str, wallet_addrs: list[str]) -> pd.DataFrame:
     # before returning
     # We explicitly set dtype to False to keep everything in string format
     # to avoid loss of precision
-    data = pd.read_json(result.json()["data"], dtype=False)
+    data = pd.read_json(StringIO(result.json()["data"]), dtype=False)
     return data
