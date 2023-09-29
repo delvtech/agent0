@@ -8,9 +8,7 @@ import time
 from chainsync.analysis import data_to_analysis
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
-    HyperdriveTransaction,
     PoolInfo,
-    WalletDelta,
     get_latest_block_number_from_analysis_table,
     get_latest_block_number_from_table,
     get_pool_config,
