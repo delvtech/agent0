@@ -99,7 +99,7 @@ def database_engine(psql_docker: PostgresConfig) -> Iterator[Engine]:
 
 @pytest.fixture(scope="function")
 def db_session(database_engine: Engine) -> Iterator[Session]:
-    """Initializes the in memory db session and creates the db schema.
+    """Initialize in-memory db session and create the db schema.
 
     Arguments
     ---------
@@ -124,7 +124,7 @@ def db_session(database_engine: Engine) -> Iterator[Session]:
 
 @pytest.fixture(scope="function")
 def db_api(psql_docker: PostgresConfig) -> Iterator[str]:
-    """Launches a process for the db api.
+    """Launch a process for the db api.
 
     Arguments
     ---------
