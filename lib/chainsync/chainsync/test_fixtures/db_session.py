@@ -1,4 +1,5 @@
 """Pytest fixture that creates an in memory db session and creates the base db schema"""
+import logging
 import os
 import subprocess
 import time
@@ -7,25 +8,38 @@ from typing import Iterator
 
 import docker
 import pytest
-from chainsync import PostgresConfig
-from chainsync.db.base import Base, initialize_engine
 from docker.errors import DockerException
 from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from chainsync import PostgresConfig
+from chainsync.db.base import Base, initialize_engine
+
 
 @pytest.fixture(scope="session")
 def psql_docker() -> Iterator[PostgresConfig]:
-    """Test fixture for running postgres in docker
+    """Test fixture for running postgres in docker.
 
     Returns
     -------
     Iterator[PostgresConfig]
         An iterator that yields a PostgresConfig
     """
+    # Attempt to use the default socket if it exists
     try:
         client = docker.from_env()
+        try:
+            client.ping()
+        except:  # pylint: disable=bare-except
+            home_dir = os.path.expanduser("~")
+            socket_path = Path(f"{home_dir}") / ".docker" / "desktop" / "docker.sock"
+            if socket_path.exists():
+                logging.debug("Docker not found at default socket, using %s..", socket_path)
+                client = docker.DockerClient(base_url=f"unix://{socket_path}")
+            else:
+                logging.debug("Docker not found.")
+                client = docker.from_env()
     # Skip this test if docker isn't installed
     except DockerException as exc:
         # This env variable gets set when running tests in CI
