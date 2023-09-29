@@ -122,8 +122,7 @@ def get_latest_data_block(db_session: Session):
         Session object for connecting to db.
     """
 
+    # Note to avoid race condition, we add pool info as the last update for the block
     latest_pool_info = get_latest_block_number_from_table(PoolInfo, db_session)
-    latest_wallet_delta = get_latest_block_number_from_table(WalletDelta, db_session)
-    latest_transactions = get_latest_block_number_from_table(HyperdriveTransaction, db_session)
 
-    return min(latest_pool_info, latest_wallet_delta, latest_transactions)
+    return latest_pool_info

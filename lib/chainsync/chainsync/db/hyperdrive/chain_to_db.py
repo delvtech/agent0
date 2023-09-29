@@ -60,27 +60,6 @@ def data_chain_to_db(
     session: Session,
 ) -> None:
     """Function to query and insert data to dashboard."""
-    # Query and add block_pool_info
-    pool_info_dict = None
-    for _ in range(_RETRY_COUNT):
-        try:
-            pool_info_dict = process_hyperdrive_pool_info(
-                pool_info=get_hyperdrive_pool_info(hyperdrive_contract, block_number),
-                web3=web3,
-                hyperdrive_contract=hyperdrive_contract,
-                position_duration=int(get_hyperdrive_pool_config(hyperdrive_contract)["positionDuration"]),
-                block_number=block_number,
-            )
-            break
-        except ValueError:
-            logging.warning("Error in get_hyperdrive_pool_info, retrying")
-            time.sleep(_RETRY_SLEEP_SECONDS)
-            continue
-    if pool_info_dict is None:
-        raise ValueError("Error in getting pool info")
-    block_pool_info = convert_pool_info(pool_info_dict)
-    add_pool_infos([block_pool_info], session)
-
     # Query and add block_checkpoint_info
     checkpoint_info_dict = None
     for _ in range(_RETRY_COUNT):
@@ -121,3 +100,25 @@ def data_chain_to_db(
         raise ValueError("Error in getting transactions")
     add_transactions(block_transactions, session)
     add_wallet_deltas(wallet_deltas, session)
+
+    # Query and add block_pool_info
+    # Adding this last as pool info is what we use to determine if this block is in the db for analysis
+    pool_info_dict = None
+    for _ in range(_RETRY_COUNT):
+        try:
+            pool_info_dict = process_hyperdrive_pool_info(
+                pool_info=get_hyperdrive_pool_info(hyperdrive_contract, block_number),
+                web3=web3,
+                hyperdrive_contract=hyperdrive_contract,
+                position_duration=int(get_hyperdrive_pool_config(hyperdrive_contract)["positionDuration"]),
+                block_number=block_number,
+            )
+            break
+        except ValueError:
+            logging.warning("Error in get_hyperdrive_pool_info, retrying")
+            time.sleep(_RETRY_SLEEP_SECONDS)
+            continue
+    if pool_info_dict is None:
+        raise ValueError("Error in getting pool info")
+    block_pool_info = convert_pool_info(pool_info_dict)
+    add_pool_infos([block_pool_info], session)
