@@ -55,7 +55,6 @@ def init_data_chain_to_db(
 
 def data_chain_to_db(
     web3: Web3,
-    base_contract: Contract,
     hyperdrive_contract: Contract,
     block_number: BlockNumber,
     session: Session,
