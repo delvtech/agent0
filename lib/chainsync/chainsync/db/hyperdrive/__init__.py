@@ -5,7 +5,6 @@ from .convert_data import (
     convert_hyperdrive_transactions_for_block,
     convert_pool_config,
     convert_pool_info,
-    get_wallet_info,
 )
 from .interface import (
     add_checkpoint_infos,
@@ -13,12 +12,9 @@ from .interface import (
     add_pool_infos,
     add_transactions,
     add_wallet_deltas,
-    add_wallet_infos,
     get_all_traders,
-    get_all_wallet_info,
     get_checkpoint_info,
     get_current_wallet,
-    get_current_wallet_info,
     get_latest_block_number_from_analysis_table,
     get_latest_block_number_from_pool_info_table,
     get_latest_block_number_from_table,
@@ -29,7 +25,6 @@ from .interface import (
     get_total_wallet_pnl_over_time,
     get_transactions,
     get_wallet_deltas,
-    get_wallet_info_history,
     get_wallet_pnl,
     get_wallet_positions_over_time,
 )
@@ -42,6 +37,5 @@ from .schema import (
     PoolInfo,
     Ticker,
     WalletDelta,
-    WalletInfoFromChain,
     WalletPNL,
 )

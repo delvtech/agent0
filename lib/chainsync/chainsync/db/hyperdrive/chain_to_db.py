@@ -21,16 +21,8 @@ from .convert_data import (
     convert_hyperdrive_transactions_for_block,
     convert_pool_config,
     convert_pool_info,
-    get_wallet_info,
 )
-from .interface import (
-    add_checkpoint_infos,
-    add_pool_config,
-    add_pool_infos,
-    add_transactions,
-    add_wallet_deltas,
-    add_wallet_infos,
-)
+from .interface import add_checkpoint_infos, add_pool_config, add_pool_infos, add_transactions, add_wallet_deltas
 
 _RETRY_COUNT = 10
 _RETRY_SLEEP_SECONDS = 1
@@ -130,21 +122,3 @@ def data_chain_to_db(
         raise ValueError("Error in getting transactions")
     add_transactions(block_transactions, session)
     add_wallet_deltas(wallet_deltas, session)
-
-    # Query and add wallet info
-    # TODO put the wallet info query as an optional block,
-    # and check these wallet values with what we get from the deltas
-    wallet_info_for_transactions = None
-    for _ in range(_RETRY_COUNT):
-        try:
-            wallet_info_for_transactions = get_wallet_info(
-                hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
-            )
-            break
-        except ValueError:
-            logging.warning("Error in fetch_contract_transactions_for_block, retrying")
-            time.sleep(_RETRY_SLEEP_SECONDS)
-            continue
-    if wallet_info_for_transactions is None:
-        raise ValueError("Error in getting wallet_info")
-    add_wallet_infos(wallet_info_for_transactions, session)

@@ -81,27 +81,6 @@ class PoolInfo(Base):
     totalSupplyWithdrawalShares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
-# TODO: Rename this to something more accurate to what is happening, e.g. HyperdriveTransactions
-# TODO deprecate this schema
-class WalletInfoFromChain(Base):
-    """Table/dataclass schema for wallet information."""
-
-    __tablename__ = "wallet_info_from_chain"
-
-    # Default table primary key
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
-    blockNumber: Mapped[int] = mapped_column(BigInteger, index=True)
-    walletAddress: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
-    # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
-    baseTokenType: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
-    # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
-    tokenType: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    tokenValue: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
-    maturityTime: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
-    sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-
-
 # TODO: either make a more general TokenDelta, or rename this to HyperdriveDelta
 class WalletDelta(Base):
     """Table/dataclass schema for wallet deltas."""

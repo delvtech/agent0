@@ -17,7 +17,6 @@ from .schema import (
     PoolInfo,
     Ticker,
     WalletDelta,
-    WalletInfoFromChain,
     WalletPNL,
 )
 
@@ -39,26 +38,6 @@ def add_transactions(transactions: list[HyperdriveTransaction], session: Session
     except exc.DataError as err:
         session.rollback()
         logging.error("Error adding transaction: %s", err)
-        raise err
-
-
-def add_wallet_infos(wallet_infos: list[WalletInfoFromChain], session: Session) -> None:
-    """Add wallet info to the walletinfo table.
-
-    Arguments
-    ---------
-    wallet_infos: list[WalletInfo]
-        A list of WalletInfo objects to insert into postgres
-    session: Session
-        The initialized session object
-    """
-    for wallet_info in wallet_infos:
-        session.add(wallet_info)
-    try:
-        session.commit()
-    except exc.DataError as err:
-        session.rollback()
-        logging.error("Error on adding wallet_infos: %s", err)
         raise err
 
 
@@ -345,151 +324,6 @@ def get_checkpoint_info(
     query = query.order_by(CheckpointInfo.timestamp)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
-
-
-def get_all_wallet_info(
-    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float: bool = True
-) -> pd.DataFrame:
-    """Get all of the wallet_info data in history and returns as a pandas dataframe.
-
-    Arguments
-    ---------
-    session : Session
-        The initialized session object
-    start_block : int | None, optional
-        The starting block to filter the query on. start_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block : int | None, optional
-        The ending block to filter the query on. end_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3]
-    coerce_float : bool
-        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
-
-    Returns
-    -------
-    DataFrame
-        A DataFrame that consists of the queried wallet info data
-    """
-    query = session.query(WalletInfoFromChain)
-
-    # Support for negative indices
-    if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(WalletInfoFromChain, session) + start_block + 1
-    if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(WalletInfoFromChain, session) + end_block + 1
-
-    if start_block is not None:
-        query = query.filter(WalletInfoFromChain.blockNumber >= start_block)
-    if end_block is not None:
-        query = query.filter(WalletInfoFromChain.blockNumber < end_block)
-
-    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
-
-
-def get_wallet_info_history(session: Session, coerce_float=True) -> dict[str, pd.DataFrame]:
-    """Get the history of all wallet info over block time.
-
-    Arguments
-    ---------
-    session : Session
-        The initialized session object
-    coerce_float : bool
-        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
-
-    Returns
-    -------
-    dict[str, DataFrame]
-        A dictionary keyed by the wallet address, where the values is a DataFrame
-        where the index is the block number, and the columns is the number of each
-        token the address has at that block number, plus a timestamp and the share price of the block
-    """
-    # Get data
-    all_wallet_info = get_all_wallet_info(session, coerce_float=coerce_float)
-    pool_info_lookup = get_pool_info(session, coerce_float=coerce_float)[["timestamp", "sharePrice"]]
-
-    # Pivot tokenType to columns, keeping walletAddress and blockNumber
-    all_wallet_info = all_wallet_info.pivot(
-        values="tokenValue", index=["walletAddress", "blockNumber"], columns=["tokenType"]
-    )
-    # Forward fill nan here, as no data means no change
-    all_wallet_info = all_wallet_info.fillna(method="ffill")
-
-    # Convert walletAddress to outer dictionary
-    wallet_info_dict = {}
-    for addr in all_wallet_info.index.get_level_values(0).unique():
-        addr_wallet_info = all_wallet_info.loc[addr]
-        # Reindex block number to be continuous, filling values with the last entry
-        addr_wallet_info = addr_wallet_info.reindex(pool_info_lookup.index, method="ffill")
-        addr_wallet_info["timestamp"] = pool_info_lookup.loc[addr_wallet_info.index, "timestamp"]
-        addr_wallet_info["sharePrice"] = pool_info_lookup.loc[addr_wallet_info.index, "sharePrice"]
-        # Drop all rows where BASE tokens are nan
-        addr_wallet_info = addr_wallet_info.dropna(subset="BASE")
-        # Fill the rest with 0 values
-        addr_wallet_info = addr_wallet_info.fillna(0)
-        # Remove name from column index
-        addr_wallet_info.columns.name = None
-        wallet_info_dict[addr] = addr_wallet_info
-
-    return wallet_info_dict
-
-
-def get_current_wallet_info(
-    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float: bool = True
-) -> pd.DataFrame:
-    """Get the balance of a wallet and a given end_block.
-
-    Note
-    ----
-    Here, you can specify a start_block for performance reasons,
-    but if a trade happens before the start_block,
-    that token won't show up in the result.
-
-    Arguments
-    ---------
-    session : Session
-        The initialized session object
-    start_block : int | None, optional
-        The starting block to filter the query on. start_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block : int | None, optional
-        The ending block to filter the query on. end_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3]
-    coerce_float : bool
-        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
-
-    Returns
-    -------
-    DataFrame
-        A DataFrame that consists of the queried wallet info data
-    """
-    all_wallet_info = get_all_wallet_info(
-        session, start_block=start_block, end_block=end_block, coerce_float=coerce_float
-    )
-    # Get last entry in the table of each wallet address and token type
-    # This should always return a dataframe
-    # Pandas doesn't play nice with types
-    result = (
-        all_wallet_info.sort_values("blockNumber", ascending=False)
-        .groupby(["walletAddress", "tokenType"])
-        .agg(
-            {
-                "tokenValue": "first",
-                "baseTokenType": "first",
-                "maturityTime": "first",
-                "blockNumber": "first",
-                "sharePrice": "first",
-            }
-        )
-    )
-    assert isinstance(result, pd.DataFrame), "result is not a dataframe"
-    current_wallet_info: pd.DataFrame = result
-
-    # Rename blockNumber column
-    current_wallet_info = current_wallet_info.rename({"blockNumber": "latestUpdateBlock"}, axis=1)
-    # Filter current_wallet_info to remove 0 balance tokens
-    current_wallet_info = current_wallet_info[current_wallet_info["tokenValue"] > 0]
-
-    return current_wallet_info
 
 
 def get_wallet_deltas(

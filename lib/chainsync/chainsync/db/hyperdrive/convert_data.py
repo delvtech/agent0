@@ -6,16 +6,15 @@ import logging
 from decimal import Decimal
 from typing import Any
 
-from eth_typing import BlockNumber
-from ethpy.base import get_token_balance, get_transaction_logs
-from ethpy.hyperdrive import AssetIdPrefix, decode_asset_id, encode_asset_id
+from ethpy.base import get_transaction_logs
+from ethpy.hyperdrive import decode_asset_id
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxData
 
-from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta, WalletInfoFromChain
+from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta
 
 
 def convert_hyperdrive_transactions_for_block(
@@ -107,124 +106,6 @@ def _convert_scaled_value_to_decimal(input_val: int | None) -> Decimal | None:
         str_val = str(fp_val)
         return Decimal(str_val)
     return None
-
-
-# TODO move this function to hyperdrive_interface and return a list of dictionaries
-def get_wallet_info(
-    hyperdrive_contract: Contract,
-    base_contract: Contract,
-    block_number: BlockNumber,
-    transactions: list[HyperdriveTransaction],
-    pool_info: PoolInfo,
-) -> list[WalletInfoFromChain]:
-    """Retrieve wallet information at a given block given a transaction.
-
-    HyperdriveTransactions are needed here to get
-    (1) the wallet address of a transaction, and
-    (2) the token id of the transaction
-
-    Arguments
-    ---------
-    hyperdrive_contract : Contract
-        The deployed hyperdrive contract instance.
-    base_contract : Contract
-        The deployed base contract instance
-    block_number : BlockNumber
-        The block number to query
-    transactions : list[HyperdriveTransaction]
-        The list of transactions to get events from
-    pool_info : PoolInfo
-        The associated pool info, used to extract share price
-
-    Returns
-    -------
-    list[WalletInfo]
-        The list of WalletInfo objects ready to be inserted into postgres
-    """
-    # pylint: disable=too-many-locals
-    out_wallet_info = []
-    for transaction in transactions:
-        wallet_addr = transaction.event_operator
-        if wallet_addr is None:
-            continue
-
-        # Query and add base tokens to walletinfo
-        num_base_token = get_token_balance(base_contract, wallet_addr, block_number, None)
-        if num_base_token is not None:
-            out_wallet_info.append(
-                WalletInfoFromChain(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="BASE",
-                    tokenType="BASE",
-                    tokenValue=_convert_scaled_value_to_decimal(num_base_token),
-                )
-            )
-
-        # Query and add LP tokens to wallet info
-        lp_token_prefix = AssetIdPrefix.LP.value
-        # LP tokens always have 0 maturity
-        lp_token_id = encode_asset_id(lp_token_prefix, timestamp=0)
-        num_lp_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, lp_token_id)
-        if num_lp_token is not None:
-            out_wallet_info.append(
-                WalletInfoFromChain(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="LP",
-                    tokenType="LP",
-                    tokenValue=_convert_scaled_value_to_decimal(num_lp_token),
-                    maturityTime=None,
-                    sharePrice=None,
-                )
-            )
-
-        # Query and add withdraw tokens to wallet info
-        withdrawal_token_prefix = AssetIdPrefix.WITHDRAWAL_SHARE.value
-        # Withdrawal tokens always have 0 maturity
-        withdrawal_token_id = encode_asset_id(withdrawal_token_prefix, timestamp=0)
-        num_withdrawal_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, withdrawal_token_id)
-        if num_withdrawal_token is not None:
-            out_wallet_info.append(
-                WalletInfoFromChain(
-                    blockNumber=block_number,
-                    walletAddress=wallet_addr,
-                    baseTokenType="WITHDRAWAL_SHARE",
-                    tokenType="WITHDRAWAL_SHARE",
-                    tokenValue=_convert_scaled_value_to_decimal(num_withdrawal_token),
-                    maturityTime=None,
-                    sharePrice=None,
-                )
-            )
-
-        # Query and add shorts and/or longs if they exist in transaction
-        token_id = transaction.event_id
-        token_prefix = transaction.event_prefix
-        token_maturity_time = transaction.event_maturity_time
-        if (token_id is not None) and (token_prefix is not None):
-            base_token_type = AssetIdPrefix(token_prefix).name
-            if base_token_type in ("LONG", "SHORT"):
-                token_type = base_token_type + "-" + str(token_maturity_time)
-                # Check here if token is short
-                # If so, add share price from pool info to data
-                share_price = None
-                if (base_token_type) == "SHORT":
-                    share_price = pool_info.sharePrice
-
-                num_custom_token = get_token_balance(hyperdrive_contract, wallet_addr, block_number, int(token_id))
-                if num_custom_token is not None:
-                    out_wallet_info.append(
-                        WalletInfoFromChain(
-                            blockNumber=block_number,
-                            walletAddress=wallet_addr,
-                            baseTokenType=base_token_type,
-                            tokenType=token_type,
-                            tokenValue=_convert_scaled_value_to_decimal(num_custom_token),
-                            maturityTime=token_maturity_time,
-                            sharePrice=share_price,
-                        )
-                    )
-    return out_wallet_info
 
 
 def convert_pool_config(pool_config_dict: dict[str, Any]) -> PoolConfig:
