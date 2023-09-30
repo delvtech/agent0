@@ -41,7 +41,7 @@ agent_config: list[AgentConfig] = [
         init_kwargs={
             "trade_amount": FixedPoint(1000),  # Open 1k in base or short 1k bonds
             "high_fixed_rate_thresh": FixedPoint(0.1),  # Upper fixed rate threshold
-            "low_fixed_rate_thresh": FixedPoint(0.05),  # Lower fixed rate threshold
+            "low_fixed_rate_thresh": FixedPoint(0.02),  # Lower fixed rate threshold
         },
     ),
     AgentConfig(
