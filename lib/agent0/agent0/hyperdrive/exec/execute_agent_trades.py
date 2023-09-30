@@ -42,9 +42,11 @@ async def async_execute_single_agent_trade(
     """
     trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(interface=hyperdrive)
     for trade_object in trades:
+        policy_name = agent.policy.__class__.__name__
         logging.info(
-            "AGENT %s to perform %s for %g",
+            "AGENT %s (%s) to perform %s for %g",
             str(agent.checksum_address),
+            policy_name,
             trade_object.market_action.action_type,
             float(trade_object.market_action.trade_amount),
         )
