@@ -74,31 +74,30 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             self.config, addresses
         )
         self.last_state_block_number = copy.copy(self.current_block_number)
+        # static
         self._contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         self.pool_config = process_hyperdrive_pool_config(
             copy.deepcopy(self._contract_pool_config), self.hyperdrive_contract.address
         )
+        # will update with trades
         self._contract_pool_info: dict[str, Any] = {}
         self._pool_info: dict[str, Any] = {}
         self._contract_latest_checkpoint: dict[str, int] = {}
         self._latest_checkpoint: dict[str, Any] = {}
-        self.update_pool_info_and_checkpoint()  # fill these in initially
+        # fill in initial cache
+        self._ensure_current_state(override=True)
         super().__init__(eth_config, addresses)
 
     @property
     def pool_info(self) -> dict[str, Any]:
         """Returns the current pool state info."""
-        if self.current_block_number > self.last_state_block_number:
-            self.last_state_block_number = copy.copy(self.current_block_number)
-            self.update_pool_info_and_checkpoint()
+        self._ensure_current_state()
         return self._pool_info
 
     @property
     def latest_checkpoint(self) -> dict[str, Any]:
         """Returns the latest checkpoint info."""
-        if self.current_block_number > self.last_state_block_number:
-            self.last_state_block_number = copy.copy(self.current_block_number)
-            self.update_pool_info_and_checkpoint()
+        self._ensure_current_state()
         return self._latest_checkpoint
 
     @property
@@ -163,6 +162,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         """Return the amount of seconds that have passed since the latest checkpoint.
         The time is rounded to the nearest second.
         """
+        self._ensure_current_state()
         latest_checkpoint_datetime: datetime = self.latest_checkpoint["timestamp"]
         current_block_datetime = datetime.fromtimestamp(int(self.current_block_time))
         return int(round((current_block_datetime - latest_checkpoint_datetime).total_seconds()))
@@ -176,6 +176,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         FixedPoint
             The current spot price.
         """
+        self._ensure_current_state()
         pool_config_str = PoolConfig(
             base_token=self._contract_pool_config["baseToken"],
             initial_share_price=str(self._contract_pool_config["initialSharePrice"]),
@@ -211,22 +212,31 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         spot_price = pyperdrive.get_spot_price(pool_config_str, pool_info_str)  # pylint: disable=no-member
         return FixedPoint(scaled_value=int(spot_price))
 
-    def update_pool_info_and_checkpoint(self) -> None:
-        """Update the cached pool info and latest checkpoint."""
-        self._contract_pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, self.current_block_number)
-        self._pool_info = process_hyperdrive_pool_info(
-            copy.deepcopy(self._contract_pool_info),
-            self.web3,
-            self.hyperdrive_contract,
-            self.pool_config["positionDuration"],
-            self.current_block_number,
-        )
-        self._contract_latest_checkpoint = get_hyperdrive_checkpoint(
-            self.hyperdrive_contract, self.current_block_number
-        )
-        self._latest_checkpoint = process_hyperdrive_checkpoint(
-            copy.deepcopy(self._contract_latest_checkpoint), self.web3, self.current_block_number
-        )
+    def _ensure_current_state(self, override: bool = False) -> None:
+        """Update the cached pool info and latest checkpoint if needed.
+
+        Attributes
+        ----------
+        override : bool
+            If True, then reset the variables even if it is not needed.
+
+        """
+        if self.current_block_number > self.last_state_block_number or override:
+            self.last_state_block_number = copy.copy(self.current_block_number)
+            self._contract_pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, self.current_block_number)
+            self._pool_info = process_hyperdrive_pool_info(
+                copy.deepcopy(self._contract_pool_info),
+                self.web3,
+                self.hyperdrive_contract,
+                self.pool_config["positionDuration"],
+                self.current_block_number,
+            )
+            self._contract_latest_checkpoint = get_hyperdrive_checkpoint(
+                self.hyperdrive_contract, self.current_block_number
+            )
+            self._latest_checkpoint = process_hyperdrive_checkpoint(
+                copy.deepcopy(self._contract_latest_checkpoint), self.web3, self.current_block_number
+            )
 
     def bonds_given_shares_and_rate(self, target_rate: FixedPoint) -> FixedPoint:
         r"""Returns the bond reserves for the market share reserves
@@ -576,6 +586,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         FixedPoint
             The maximum long as a FixedPoint representation of a Solidity uint256 value.
         """
+        self._ensure_current_state()
         # pylint: disable=no-member
         pool_config_str = PoolConfig(
             base_token=self._contract_pool_config["baseToken"],
@@ -631,6 +642,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         FixedPoint
             The maximum long as a FixedPoint representation of a Solidity uint256 value.
         """
+        self._ensure_current_state()
         # pylint: disable=no-member
         pool_config_str = PoolConfig(
             base_token=self._contract_pool_config["baseToken"],
