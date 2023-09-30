@@ -11,10 +11,13 @@ import pyperdrive
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
-from ethpy.base import (BaseInterface, async_smart_contract_transact,
-                        get_account_balance,
-                        smart_contract_preview_transaction,
-                        smart_contract_read)
+from ethpy.base import (
+    BaseInterface,
+    async_smart_contract_transact,
+    get_account_balance,
+    smart_contract_preview_transaction,
+    smart_contract_read,
+)
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from fixedpointmath import FixedPoint
 from pyperdrive.types import Fees, PoolConfig, PoolInfo
@@ -22,13 +25,16 @@ from web3 import Web3
 from web3.types import BlockData, Timestamp
 
 from .addresses import fetch_hyperdrive_address_from_uri
-from .get_web3_and_hyperdrive_contracts import \
-    get_web3_and_hyperdrive_contracts
-from .interface import (get_hyperdrive_checkpoint, get_hyperdrive_pool_config,
-                        get_hyperdrive_pool_info, parse_logs,
-                        process_hyperdrive_checkpoint,
-                        process_hyperdrive_pool_config,
-                        process_hyperdrive_pool_info)
+from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
+from .interface import (
+    get_hyperdrive_checkpoint,
+    get_hyperdrive_pool_config,
+    get_hyperdrive_pool_info,
+    parse_logs,
+    process_hyperdrive_checkpoint,
+    process_hyperdrive_pool_config,
+    process_hyperdrive_pool_info,
+)
 from .receipt_breakdown import ReceiptBreakdown
 
 # known issue where class properties aren't recognized as subscriptable
