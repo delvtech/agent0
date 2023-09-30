@@ -35,6 +35,7 @@ agent_config: list[AgentConfig] = [
     AgentConfig(
         policy=Policies.arbitrage_policy,
         number_of_agents=1,
+        slippage_tolerance=None,  # No slippage tolerance for arb bot
         # Fixed budgets
         base_budget_wei=FixedPoint(50_000).scaled_value,  # 50k base
         eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
