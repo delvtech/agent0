@@ -85,7 +85,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         self._contract_latest_checkpoint: dict[str, int] = {}
         self._latest_checkpoint: dict[str, Any] = {}
         # fill in initial cache
-        self._ensure_current_state()
+        self._ensure_current_state(override=True)
         super().__init__(eth_config, addresses)
 
     @property
@@ -212,9 +212,16 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         spot_price = pyperdrive.get_spot_price(pool_config_str, pool_info_str)  # pylint: disable=no-member
         return FixedPoint(scaled_value=int(spot_price))
 
-    def _ensure_current_state(self) -> None:
-        """Update the cached pool info and latest checkpoint if needed."""
-        if self.current_block_number > self.last_state_block_number:
+    def _ensure_current_state(self, override: bool = False) -> None:
+        """Update the cached pool info and latest checkpoint if needed.
+
+        Attributes
+        ----------
+        override : bool
+            If True, then reset the variables even if it is not needed.
+
+        """
+        if self.current_block_number > self.last_state_block_number or override:
             self.last_state_block_number = copy.copy(self.current_block_number)
             self._contract_pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, self.current_block_number)
             self._pool_info = process_hyperdrive_pool_info(
