@@ -21,16 +21,8 @@ from .convert_data import (
     convert_hyperdrive_transactions_for_block,
     convert_pool_config,
     convert_pool_info,
-    get_wallet_info,
 )
-from .interface import (
-    add_checkpoint_infos,
-    add_pool_config,
-    add_pool_infos,
-    add_transactions,
-    add_wallet_deltas,
-    add_wallet_infos,
-)
+from .interface import add_checkpoint_infos, add_pool_config, add_pool_infos, add_transactions, add_wallet_deltas
 
 _RETRY_COUNT = 10
 _RETRY_SLEEP_SECONDS = 1
@@ -63,33 +55,11 @@ def init_data_chain_to_db(
 
 def data_chain_to_db(
     web3: Web3,
-    base_contract: Contract,
     hyperdrive_contract: Contract,
     block_number: BlockNumber,
     session: Session,
 ) -> None:
     """Function to query and insert data to dashboard."""
-    # Query and add block_pool_info
-    pool_info_dict = None
-    for _ in range(_RETRY_COUNT):
-        try:
-            pool_info_dict = process_hyperdrive_pool_info(
-                pool_info=get_hyperdrive_pool_info(hyperdrive_contract, block_number),
-                web3=web3,
-                hyperdrive_contract=hyperdrive_contract,
-                position_duration=int(get_hyperdrive_pool_config(hyperdrive_contract)["positionDuration"]),
-                block_number=block_number,
-            )
-            break
-        except ValueError:
-            logging.warning("Error in get_hyperdrive_pool_info, retrying")
-            time.sleep(_RETRY_SLEEP_SECONDS)
-            continue
-    if pool_info_dict is None:
-        raise ValueError("Error in getting pool info")
-    block_pool_info = convert_pool_info(pool_info_dict)
-    add_pool_infos([block_pool_info], session)
-
     # Query and add block_checkpoint_info
     checkpoint_info_dict = None
     for _ in range(_RETRY_COUNT):
@@ -131,20 +101,24 @@ def data_chain_to_db(
     add_transactions(block_transactions, session)
     add_wallet_deltas(wallet_deltas, session)
 
-    # Query and add wallet info
-    # TODO put the wallet info query as an optional block,
-    # and check these wallet values with what we get from the deltas
-    wallet_info_for_transactions = None
+    # Query and add block_pool_info
+    # Adding this last as pool info is what we use to determine if this block is in the db for analysis
+    pool_info_dict = None
     for _ in range(_RETRY_COUNT):
         try:
-            wallet_info_for_transactions = get_wallet_info(
-                hyperdrive_contract, base_contract, block_number, block_transactions, block_pool_info
+            pool_info_dict = process_hyperdrive_pool_info(
+                pool_info=get_hyperdrive_pool_info(hyperdrive_contract, block_number),
+                web3=web3,
+                hyperdrive_contract=hyperdrive_contract,
+                position_duration=int(get_hyperdrive_pool_config(hyperdrive_contract)["positionDuration"]),
+                block_number=block_number,
             )
             break
         except ValueError:
-            logging.warning("Error in fetch_contract_transactions_for_block, retrying")
+            logging.warning("Error in get_hyperdrive_pool_info, retrying")
             time.sleep(_RETRY_SLEEP_SECONDS)
             continue
-    if wallet_info_for_transactions is None:
-        raise ValueError("Error in getting wallet_info")
-    add_wallet_infos(wallet_info_for_transactions, session)
+    if pool_info_dict is None:
+        raise ValueError("Error in getting pool info")
+    block_pool_info = convert_pool_info(pool_info_dict)
+    add_pool_infos([block_pool_info], session)
