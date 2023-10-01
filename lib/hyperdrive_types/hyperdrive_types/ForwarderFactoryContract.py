@@ -21,6 +21,7 @@ class ForwarderFactoryERC20LINK_HASHContractFunction(ContractFunction):
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
+
     def __call__(self) -> "ForwarderFactoryERC20LINK_HASHContractFunction":
         super().__call__()
         return self
@@ -34,6 +35,7 @@ class ForwarderFactoryCreateContractFunction(ContractFunction):
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
+
     def __call__(self, token: str, tokenId: int) -> "ForwarderFactoryCreateContractFunction":
         super().__call__(token, tokenId)
         return self
@@ -47,6 +49,7 @@ class ForwarderFactoryGetDeployDetailsContractFunction(ContractFunction):
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
+
     def __call__(self) -> "ForwarderFactoryGetDeployDetailsContractFunction":
         super().__call__()
         return self
@@ -60,6 +63,7 @@ class ForwarderFactoryGetForwarderContractFunction(ContractFunction):
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
+
     def __call__(self, token: str, tokenId: int) -> "ForwarderFactoryGetForwarderContractFunction":
         super().__call__(token, tokenId)
         return self

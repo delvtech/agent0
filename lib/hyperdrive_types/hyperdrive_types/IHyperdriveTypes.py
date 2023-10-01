@@ -26,7 +26,7 @@ class Checkpoint:
 
     sharePrice: int
     longSharePrice: int
-    shortBaseVolume: int
+    longExposure: int
 
 
 @dataclass
@@ -40,7 +40,8 @@ class MarketState:
     longAverageMaturityTime: int
     longOpenSharePrice: int
     shortAverageMaturityTime: int
-    shortBaseVolume: int
+    shareAdjustment: int
+    longExposure: int
     isInitialized: bool
     isPaused: bool
 
@@ -61,6 +62,7 @@ class PoolConfig:
     baseToken: str
     initialSharePrice: int
     minimumShareReserves: int
+    minimumTransactionAmount: int
     positionDuration: int
     checkpointDuration: int
     timeStretch: int
@@ -76,6 +78,7 @@ class PoolInfo:
     """PoolInfo struct."""
 
     shareReserves: int
+    shareAdjustment: int
     bondReserves: int
     lpTotalSupply: int
     sharePrice: int
@@ -83,10 +86,10 @@ class PoolInfo:
     longAverageMaturityTime: int
     shortsOutstanding: int
     shortAverageMaturityTime: int
-    shortBaseVolume: int
     withdrawalSharesReadyToWithdraw: int
     withdrawalSharesProceeds: int
     lpSharePrice: int
+    longExposure: int
 
 
 @dataclass
