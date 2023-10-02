@@ -66,7 +66,6 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
     )
 
 
-# TODO: don't use ape's TransactionError, use web3's InvalidTransaction when we switch
 def log_hyperdrive_crash_report(
     trade_type: str,
     error: Exception,
@@ -78,6 +77,7 @@ def log_hyperdrive_crash_report(
 ):
     # pylint: disable=too-many-arguments
     """Log a crash report for a hyperdrive transaction.
+
     Arguments
     ---------
     trade_type : str
@@ -94,6 +94,7 @@ def log_hyperdrive_crash_report(
         Information about the pool involved in the transaction. Gathered from HyperdriveInterface.
     pool_config : dict[str, Any]
         Configuration of the pool involved in the transaction. Gathered from HyperdriveInterface.
+
     Returns
     -------
     None

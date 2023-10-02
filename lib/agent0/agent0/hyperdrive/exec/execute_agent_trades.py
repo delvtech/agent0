@@ -48,12 +48,13 @@ async def async_execute_single_agent_trade(
 
     Returns
     -------
+    list[TradeResult]
+        Returns a list of TradeResult objects, one for each trade made by the agent
+        TradeResult handles any information about the trade, as well as any errors that the trade resulted in
     """
     trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(interface=hyperdrive)
 
     # Make trades async for this agent. This way, an agent can submit multiple trades for a single block
-    # This unblocks any other agents running here as well, as previously, an agent would take one block per trade
-    # which blocks all other agents from making trades until all trades are finished.
 
     # TODO preliminary search shows async tasks has very low overhead:
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
@@ -69,7 +70,11 @@ async def async_execute_single_agent_trade(
     # to see order?
 
     # Sanity check
-    assert len(wallet_deltas_or_exception) == len(trades)
+    if len(wallet_deltas_or_exception) != len(trades):
+        raise AssertionError(
+            "The number of wallet deltas should match the number of trades, but does not."
+            f"\n{wallet_deltas_or_exception=}\n{trades=}"
+        )
 
     # The wallet update after should be fine, since we can see what trades went through
     # and only apply those wallet deltas. Wallet deltas are also invariant to order
