@@ -5,7 +5,7 @@ import numpy as np
 from agent0 import AccountKeyConfig
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
-from agent0.hyperdrive.exec.crash_report import setup_hyperdrive_crash_report_logging
+from agent0.hyperdrive.crash_report import setup_hyperdrive_crash_report_logging
 from elfpy.utils import logs
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveInterface

@@ -1,5 +1,4 @@
 """Utilities for executing agents on Hyperdrive devnet."""
-from .crash_report import setup_hyperdrive_crash_report_logging
 from .create_and_fund_user_account import create_and_fund_user_account
 from .execute_agent_trades import (
     async_execute_agent_trades,
