@@ -168,7 +168,6 @@ class TestMultiTradePerBlock:
             # Using default abi dir
         )
 
-        # TODO ensure other 3 trades went through
         try:
             run_agents(
                 env_config,
@@ -178,7 +177,10 @@ class TestMultiTradePerBlock:
                 contract_addresses=hyperdrive_contract_addresses,
                 load_wallet_state=False,
             )
-        except AgentDoneException:
-            # Using this exception to stop the agents,
-            # so this exception is expected on test pass
-            pass
+        except AssertionError as exc:
+            # Expected error due to illegal trade
+            # TODO currently, the illegal trade is throwing an assertion error
+            # due to a lack of a trx receipt. Ideally, this error should be more informative
+            assert exc.args[0] == "Transaction receipt had no logs"
+
+        # TODO ensure other 3 trades went through

@@ -233,14 +233,14 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
     if status is None:
         raise AssertionError("Receipt did not return status")
     if status == 0:
-        raise UnknownBlockError(f"Receipt has no status or status is 0 \n {tx_receipt=}")
+        raise UnknownBlockError("Receipt has no status or status is 0", f"{tx_receipt=}")
     hyperdrive_event_logs = get_transaction_logs(
         hyperdrive_contract,
         tx_receipt,
         event_names=[fn_name[0].capitalize() + fn_name[1:]],
     )
     if len(hyperdrive_event_logs) == 0:
-        raise AssertionError(f"Transaction receipt had no logs\ntx_receipt=\n{tx_receipt}")
+        raise AssertionError("Transaction receipt had no logs", f"{tx_receipt=}")
     if len(hyperdrive_event_logs) > 1:
         raise AssertionError("Too many logs found")
     log_args = hyperdrive_event_logs[0]["args"]
