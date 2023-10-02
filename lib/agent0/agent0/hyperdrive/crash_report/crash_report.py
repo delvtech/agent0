@@ -38,8 +38,6 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return "NumpyGenerator"
         if isinstance(o, datetime):
             return str(o)
-        if isinstance(o, Generator):
-            return
         try:
             return o.__dict__
         except AttributeError:
