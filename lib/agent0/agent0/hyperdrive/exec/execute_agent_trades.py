@@ -121,6 +121,12 @@ async def async_execute_agent_trades(
         The Hyperdrive API interface object
     agents : list[HyperdriveAgent]
         A list of HyperdriveAgent that are conducting the trades
+
+    Returns
+    -------
+    list[TradeResult]
+        Returns a list of TradeResult objects, one for each trade made by the agent
+        TradeResult handles any information about the trade, as well as any errors that the trade resulted in
     """
     # Make calls per agent to execute_single_agent_trade
     # Await all trades to finish before continuing
@@ -152,7 +158,6 @@ async def async_match_contract_call_to_trade(
     -------
     HyperdriveWalletDeltas
         Deltas to be applied to the agent's wallet
-
     """
     # TODO: figure out fees paid
     trade = trade_envelope.market_action
