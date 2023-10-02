@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
-from agent0.hyperdrive.agents import HyperdriveAgent
-from agent0.hyperdrive.state import HyperdriveMarketAction
-from elfpy import types
+if TYPE_CHECKING:
+    from agent0.hyperdrive.agents import HyperdriveAgent
+    from agent0.hyperdrive.state import HyperdriveMarketAction
+    from elfpy import types
 
 
 class TradeStatus(Enum):
