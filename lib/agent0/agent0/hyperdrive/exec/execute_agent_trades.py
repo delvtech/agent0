@@ -78,9 +78,22 @@ async def async_execute_single_agent_trade(
     for result, trade_object in zip(wallet_deltas_or_exception, trades):
         if isinstance(result, HyperdriveWalletDeltas):
             agent.wallet.update(result)
-            trade_result = TradeResult(status=TradeStatus.SUCCESS, exception=None, agent=agent, trade=trade_object)
+            trade_result = TradeResult(status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object)
         elif isinstance(result, Exception):
-            trade_result = TradeResult(status=TradeStatus.FAIL, exception=result, agent=agent, trade=trade_object)
+            # We log pool config and pool info here
+            # However, this is a best effort attempt to get this information
+            # due to async conditions. If debugging this crash, ensure the agent is running
+            # in isolation and doing one trade per call.
+            pool_config = hyperdrive.pool_config
+            pool_info = hyperdrive.pool_info
+            trade_result = TradeResult(
+                status=TradeStatus.FAIL,
+                agent=agent,
+                trade_object=trade_object,
+                exception=result,
+                pool_config=pool_config,
+                pool_info=pool_info,
+            )
         else:
             # Should never get here
             # TODO this function was originally used for types

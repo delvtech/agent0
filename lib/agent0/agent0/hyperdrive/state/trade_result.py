@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.state import HyperdriveMarketAction
@@ -33,7 +33,9 @@ class TradeResult(NamedTuple):
     """
 
     status: TradeStatus
-    exception: Exception | None
     agent: HyperdriveAgent
-    trade: types.Trade[HyperdriveMarketAction]
-    # TODO we might want to add information such as pool info, pool config, etc.
+    trade_object: types.Trade[HyperdriveMarketAction]
+    # Optional fields for crash reporting
+    exception: Exception | None | None = None
+    pool_config: dict[str, Any] | None = None
+    pool_info: dict[str, Any] | None = None

@@ -6,6 +6,7 @@ import logging
 from datetime import datetime
 
 from agent0.hyperdrive.agents import HyperdriveAgent
+from agent0.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.hyperdrive.state import TradeResult, TradeStatus
 from ethpy.hyperdrive import HyperdriveInterface
 from web3 import Web3
@@ -64,33 +65,38 @@ def trade_if_new_block(
                     "AGENT %s (%s) performed %s for %g",
                     str(trade_result.agent.checksum_address),
                     trade_result.agent.policy.__class__.__name__,
-                    trade_result.trade.market_action.action_type,
-                    float(trade_result.trade.market_action.trade_amount),
+                    trade_result.trade_object.market_action.action_type,
+                    float(trade_result.trade_object.market_action.trade_amount),
                 )
             elif trade_result.status == TradeStatus.FAIL:
                 logging.info(
                     "AGENT %s (%s) attempted %s for %g\nCrashed with error: %s",
                     str(trade_result.agent.checksum_address),
                     trade_result.agent.policy.__class__.__name__,
-                    trade_result.trade.market_action.action_type,
-                    float(trade_result.trade.market_action.trade_amount),
+                    trade_result.trade_object.market_action.action_type,
+                    float(trade_result.trade_object.market_action.trade_amount),
                     trade_result.exception,
                 )
-                # Exception should not be none if trade failed
+                # Sanity check: exception should not be none if trade failed
+                # Additionally, crash reporting information should exist
                 assert trade_result.exception is not None
+                assert trade_result.pool_config is not None
+                assert trade_result.pool_info is not None
+
+                # Crash reporting
+                log_hyperdrive_crash_report(
+                    amount=trade_result.trade_object.market_action.trade_amount.scaled_value,
+                    trade_type=trade_result.trade_object.market_action.action_type.value,
+                    error=trade_result.exception,
+                    agent_address=trade_result.agent.address,
+                    pool_info=trade_result.pool_info,
+                    pool_config=trade_result.pool_config,
+                )
+
                 if halt_on_errors:
                     # TODO do individual handeling of crash reporting
                     # e.g., don't crash if slippage is too high
                     raise trade_result.exception
-                # TODO: Crash reporting
-                # logs.log_hyperdrive_crash_report(
-                #     amount=trade_object.trade.trade_amount.scaled_value,
-                #     trade_type=trade_object.trade.action_type,
-                #     error=err,
-                #     agent_address=agent.address,
-                #     pool_info=pool_info,
-                #     pool_config=pool_config,
-                # )
             else:
                 # Should never get here
                 assert False
