@@ -5,12 +5,15 @@ import logging
 import os
 from typing import cast
 
+import pandas as pd
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from agent0.test_fixtures import AgentDoneException
+from chainsync.db.hyperdrive.interface import get_ticker, get_transactions, get_wallet_deltas
+from chainsync.exec import acquire_data, data_analysis
 from elfpy.types import MarketType, Trade
 from eth_typing import URI
 from ethpy import EthConfig
@@ -19,6 +22,7 @@ from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.test_fixtures.local_chain import LocalHyperdriveChain
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
+from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
 
@@ -31,12 +35,11 @@ class MultiTradePolicy(HyperdrivePolicy):
         budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
-        rerun: bool = False,
     ):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
-        self.rerun = rerun
+        self.made_trade = False
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
@@ -44,17 +47,12 @@ class MultiTradePolicy(HyperdrivePolicy):
         # pylint: disable=unused-argument
         action_list = []
 
-        if self.rerun:
-            # assert wallet state was loaded from previous run
-            assert len(wallet.longs) == 1
-            assert len(wallet.shorts) == 1
-            # TODO would like to check long and lp value here,
-            # but the units there are in bonds and lp shares respectively,
-            # where the known value of the trade is in units of base.
-            assert wallet.shorts[list(wallet.shorts.keys())[0]].balance == FixedPoint(33333)
-
+        if self.made_trade:
             # We want this bot to exit and crash after it's done the trades it needs to do
+            # In this case, if this exception gets thrown, this means an invalid trade went through
             raise AgentDoneException("Bot done")
+
+        # Adding in 4 trades at the same time:
 
         # Add liquidity
         action_list.append(
@@ -105,6 +103,8 @@ class MultiTradePolicy(HyperdrivePolicy):
             )
         )
 
+        self.made_trade = True
+
         return action_list
 
 
@@ -116,6 +116,8 @@ class TestMultiTradePerBlock:
     def test_bot_to_db(
         self,
         local_hyperdrive_chain: LocalHyperdriveChain,
+        db_session: Session,
+        db_api: str,
     ):
         """Runs the entire pipeline and checks the database at the end.
         All arguments are fixtures.
@@ -141,7 +143,7 @@ class TestMultiTradePerBlock:
             log_level=logging.INFO,
             log_stdout=True,
             random_seed=1234,
-            database_api_uri="not_used",
+            database_api_uri=db_api,
             username="test",
         )
 
@@ -153,7 +155,7 @@ class TestMultiTradePerBlock:
                 slippage_tolerance=None,
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                init_kwargs={"rerun": False},
+                init_kwargs={},
             ),
         ]
 
@@ -175,7 +177,6 @@ class TestMultiTradePerBlock:
                 account_key_config,
                 eth_config=eth_config,
                 contract_addresses=hyperdrive_contract_addresses,
-                load_wallet_state=False,
             )
         except AssertionError as exc:
             # Expected error due to illegal trade
@@ -183,4 +184,49 @@ class TestMultiTradePerBlock:
             # due to a lack of a trx receipt. Ideally, this error should be more informative
             assert exc.args[0] == "Transaction receipt had no logs"
 
-        # TODO ensure other 3 trades went through
+        # Run acquire data to get data from chain to db
+        acquire_data(
+            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            eth_config=eth_config,
+            db_session=db_session,
+            contract_addresses=hyperdrive_contract_addresses,
+            # Exit the script after catching up to the chain
+            exit_on_catch_up=True,
+        )
+
+        # Run data analysis to calculate various analysis values
+        data_analysis(
+            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            eth_config=eth_config,
+            db_session=db_session,
+            contract_addresses=hyperdrive_contract_addresses,
+            # Exit the script after catching up to the chain
+            exit_on_catch_up=True,
+        )
+
+        # Ensure other 3 trades went through
+        # 1. addLiquidity of 11111 base
+        # 2. openLong of 22222 base
+        # 3. openShort of 33333 bonds
+
+        db_transaction_info: pd.DataFrame = get_transactions(db_session, coerce_float=False)
+        # TODO transactions is logging the failed trade? Is this desired?
+        assert len(db_transaction_info == 4)
+        # Checking without order
+        trxs = db_transaction_info["input_method"].to_list()
+        assert "addLiquidity" in trxs
+        assert "openLong" in trxs
+        assert "openShort" in trxs
+        assert "redeemWithdrawalShares" in trxs
+
+        db_ticker: pd.DataFrame = get_ticker(db_session, coerce_float=False)
+        assert len(db_ticker == 3)
+        ticker_ops = db_ticker["trade_type"].to_list()
+        assert "addLiquidity" in ticker_ops
+        assert "openLong" in ticker_ops
+        assert "openShort" in ticker_ops
+
+        wallet_deltas: pd.DataFrame = get_wallet_deltas(db_session, coerce_float=False)
+        # Ensure deltas only exist for valid trades
+        # 2 for each trade
+        assert len(wallet_deltas) == 6
