@@ -6,6 +6,7 @@ import logging
 from datetime import datetime
 
 from agent0.hyperdrive.agents import HyperdriveAgent
+from agent0.hyperdrive.state import TradeResult, TradeStatus
 from ethpy.hyperdrive import HyperdriveInterface
 from web3 import Web3
 from web3.types import RPCEndpoint
@@ -51,25 +52,48 @@ def trade_if_new_block(
             latest_block_number,
             str(datetime.fromtimestamp(float(latest_block_timestamp))),
         )
-        try:
-            asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts))
-            last_executed_block = latest_block_number
-        # we want to catch all exceptions
-        # pylint: disable=broad-exception-caught
-        except Exception as exc:
-            logging.info("Trade crashed with error: %s", exc)
-            # TODO: Crash reporting
-            # We don't have all of the variables we need here -- this report needs to be generated at a lower level
-            # logs.log_hyperdrive_crash_report(
-            #     amount=trade_object.trade.trade_amount.scaled_value,
-            #     trade_type=trade_object.trade.action_type,
-            #     error=err,
-            #     agent_address=agent.address,
-            #     pool_info=pool_info,
-            #     pool_config=pool_config,
-            # )
-            if halt_on_errors:
-                raise exc
+        # To avoid jumbled print statements due to asyncio, we handle all logging and crash reporting
+        # here, with inner functions returning trade results.
+        trade_results: list[TradeResult] = asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts))
+        last_executed_block = latest_block_number
+
+        for trade_result in trade_results:
+            # If successful, log the successful trade
+            if trade_result.status == TradeStatus.SUCCESS:
+                logging.info(
+                    "AGENT %s (%s) performed %s for %g",
+                    str(trade_result.agent.checksum_address),
+                    trade_result.agent.policy.__class__.__name__,
+                    trade_result.trade.market_action.action_type,
+                    float(trade_result.trade.market_action.trade_amount),
+                )
+            elif trade_result.status == TradeStatus.FAIL:
+                logging.info(
+                    "AGENT %s (%s) attempted %s for %g\nCrashed with error: %s",
+                    str(trade_result.agent.checksum_address),
+                    trade_result.agent.policy.__class__.__name__,
+                    trade_result.trade.market_action.action_type,
+                    float(trade_result.trade.market_action.trade_amount),
+                    trade_result.exception,
+                )
+                # Exception should not be none if trade failed
+                assert trade_result.exception is not None
+                if halt_on_errors:
+                    # TODO do individual handeling of crash reporting
+                    # e.g., don't crash if slippage is too high
+                    raise trade_result.exception
+                # TODO: Crash reporting
+                # logs.log_hyperdrive_crash_report(
+                #     amount=trade_object.trade.trade_amount.scaled_value,
+                #     trade_type=trade_object.trade.action_type,
+                #     error=err,
+                #     agent_address=agent.address,
+                #     pool_info=pool_info,
+                #     pool_config=pool_config,
+                # )
+            else:
+                # Should never get here
+                assert False
     return last_executed_block
 
 

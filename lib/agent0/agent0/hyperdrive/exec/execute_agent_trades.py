@@ -94,7 +94,7 @@ async def async_execute_single_agent_trade(
 async def async_execute_agent_trades(
     hyperdrive: HyperdriveInterface,
     agents: list[HyperdriveAgent],
-) -> None:
+) -> list[TradeResult]:
     """Hyperdrive forever into the sunset.
 
     Arguments
@@ -106,7 +106,12 @@ async def async_execute_agent_trades(
     """
     # Make calls per agent to execute_single_agent_trade
     # Await all trades to finish before continuing
-    await asyncio.gather(*[async_execute_single_agent_trade(agent, hyperdrive) for agent in agents])
+    gathered_trade_results: list[list[TradeResult]] = await asyncio.gather(
+        *[async_execute_single_agent_trade(agent, hyperdrive) for agent in agents]
+    )
+    # Flatten list of lists, since agent information is already in TradeResult
+    trade_results = [item for sublist in gathered_trade_results for item in sublist]
+    return trade_results
 
 
 async def async_match_contract_call_to_trade(
