@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any
 
 import numpy as np
+from agent0.hyperdrive.state import HyperdriveWallet
 from elfpy.utils import logs
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
@@ -69,8 +70,9 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
 def log_hyperdrive_crash_report(
     trade_type: str,
     error: Exception,
-    amount: int,
+    amount: FixedPoint,
     agent_address: str,
+    agent_wallet: HyperdriveWallet,
     pool_info: dict[str, Any],
     pool_config: dict[str, Any],
 ):
@@ -86,10 +88,12 @@ def log_hyperdrive_crash_report(
         The amount of the transaction.
     agent_address : str
         The address of the agent executing the transaction.
-    pool_info : PoolInfo
-        Information about the pool involved in the transaction.
-    pool_config : PoolConfig
-        Configuration of the pool involved in the transaction.
+    agent_wallet: HyperdriveWallet
+        The agent's current open positions
+    pool_info : dict[str, Any]
+        Information about the pool involved in the transaction. Gathered from HyperdriveInterface.
+    pool_config : dict[str, Any]
+        Configuration of the pool involved in the transaction. Gathered from HyperdriveInterface.
     Returns
     -------
     None
@@ -97,18 +101,54 @@ def log_hyperdrive_crash_report(
     """
 
     # We remove the 'fees' object since the tuple is already expanded from the api
+    # TODO these should be objects instead of dicts here, i.e., returned from HyperdriveInterface
     pool_config = pool_config.copy()
     pool_config.pop("fees")
     formatted_pool_info = json.dumps(pool_info, indent=4, cls=ExtendedJSONEncoder)
     formatted_pool_config = json.dumps(pool_config, indent=4, cls=ExtendedJSONEncoder)
 
+    wallet_dict = _hyperdrive_wallet_to_dict(agent_wallet)
+    formatted_agent_wallet = json.dumps(wallet_dict, indent=4, cls=ExtendedJSONEncoder)
+
     # TODO set up logging in file handler
     logging.critical(
-        """Failed to execute %s: %s\n Amount: %s\n Agent: %s\n PoolInfo: %s\n PoolConfig: %s\n""",
+        """Failed to execute %s: %s\n Amount: %s\n Agent: %s\n Agent Wallet: %s\n PoolInfo: %s\n PoolConfig: %s\n""",
         trade_type,
         error,
         amount,
         agent_address,
+        formatted_agent_wallet,
         formatted_pool_info,
         formatted_pool_config,
     )
+
+
+def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
+    """Helper function to convert hyperdrive wallet object to a dict keyed by token, valued by amount
+
+    Arguments
+    ---------
+    wallet : HyperdriveWallet
+        The HyperdriveWallet object to convert
+
+    Returns
+    -------
+    dict[str, Any]
+        A dict keyed by token, valued by amount
+        In the case of longs and shorts, valued by a dictionary keyed by maturity_time and balance
+    """
+
+    # Keeping amounts here as FixedPoints for json to handle
+    return {
+        wallet.balance.unit.value: wallet.balance.amount,
+        "longs": [
+            {"maturity_time": maturity_time, "balance": amount.balance}
+            for maturity_time, amount in wallet.longs.items()
+        ],
+        "shorts": [
+            {"maturity_time": maturity_time, "balance": amount.balance}
+            for maturity_time, amount in wallet.shorts.items()
+        ],
+        "lp_tokens": wallet.lp_tokens,
+        "withdraw_shares": wallet.withdraw_shares,
+    }

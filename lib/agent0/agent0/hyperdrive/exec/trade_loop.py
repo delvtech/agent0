@@ -85,10 +85,11 @@ def trade_if_new_block(
 
                 # Crash reporting
                 log_hyperdrive_crash_report(
-                    amount=trade_result.trade_object.market_action.trade_amount.scaled_value,
+                    amount=trade_result.trade_object.market_action.trade_amount,
                     trade_type=trade_result.trade_object.market_action.action_type.value,
                     error=trade_result.exception,
                     agent_address=trade_result.agent.address,
+                    agent_wallet=trade_result.agent.wallet,
                     pool_info=trade_result.pool_info,
                     pool_config=trade_result.pool_config,
                 )
