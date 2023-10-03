@@ -84,15 +84,7 @@ def trade_if_new_block(
                 assert trade_result.pool_info is not None
 
                 # Crash reporting
-                log_hyperdrive_crash_report(
-                    amount=trade_result.trade_object.market_action.trade_amount,
-                    trade_type=trade_result.trade_object.market_action.action_type.value,
-                    error=trade_result.exception,
-                    agent_address=trade_result.agent.address,
-                    agent_wallet=trade_result.agent.wallet,
-                    pool_info=trade_result.pool_info,
-                    pool_config=trade_result.pool_config,
-                )
+                log_hyperdrive_crash_report(trade_result)
 
                 if halt_on_errors:
                     # TODO do individual handeling of crash reporting

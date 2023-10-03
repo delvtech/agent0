@@ -4,15 +4,20 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from agent0.hyperdrive.state import HyperdriveWallet
+from agent0.hyperdrive.state import HyperdriveWallet, TradeResult
 from elfpy.utils import logs
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from numpy.random._generator import Generator as NumpyGenerator
 from web3.datastructures import AttributeDict, MutableAttributeDict
+
+if TYPE_CHECKING:
+    from agent0.hyperdrive.agents import HyperdriveAgent
+    from agent0.hyperdrive.state import HyperdriveMarketAction
+    from elfpy import types
 
 
 class ExtendedJSONEncoder(json.JSONEncoder):
@@ -66,34 +71,14 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
     )
 
 
-def log_hyperdrive_crash_report(
-    trade_type: str,
-    error: Exception,
-    amount: FixedPoint,
-    agent_address: str,
-    agent_wallet: HyperdriveWallet,
-    pool_info: dict[str, Any],
-    pool_config: dict[str, Any],
-):
+def log_hyperdrive_crash_report(trade_result: TradeResult) -> None:
     # pylint: disable=too-many-arguments
     """Log a crash report for a hyperdrive transaction.
 
     Arguments
     ---------
-    trade_type : str
-        The type of trade being executed.
-    error : TransactionError
-        The transaction error that occurred.
-    amount : float
-        The amount of the transaction.
-    agent_address : str
-        The address of the agent executing the transaction.
-    agent_wallet: HyperdriveWallet
-        The agent's current open positions
-    pool_info : dict[str, Any]
-        Information about the pool involved in the transaction. Gathered from HyperdriveInterface.
-    pool_config : dict[str, Any]
-        Configuration of the pool involved in the transaction. Gathered from HyperdriveInterface.
+    trade_result: TradeResult
+        The trade result object that stores all crash information
 
     Returns
     -------
@@ -101,23 +86,29 @@ def log_hyperdrive_crash_report(
         This function does not return any value.
     """
 
-    # We remove the 'fees' object since the tuple is already expanded from the api
-    # TODO these should be objects instead of dicts here, i.e., returned from HyperdriveInterface
-    pool_config = pool_config.copy()
-    pool_config.pop("fees")
-    formatted_pool_info = json.dumps(pool_info, indent=4, cls=ExtendedJSONEncoder)
-    formatted_pool_config = json.dumps(pool_config, indent=4, cls=ExtendedJSONEncoder)
+    exception = trade_result.exception
+    formatted_exception = str(exception)
 
-    wallet_dict = _hyperdrive_wallet_to_dict(agent_wallet)
+    formatted_trade_obj = _hyperdrive_trade_obj_to_dict(trade_result.trade_object)
+    formatted_trade_obj = json.dumps(formatted_trade_obj, indent=4, cls=ExtendedJSONEncoder)
+
+    # Handle wallet outside of agents
+    wallet_dict = _hyperdrive_wallet_to_dict(trade_result.agent.wallet)
     formatted_agent_wallet = json.dumps(wallet_dict, indent=4, cls=ExtendedJSONEncoder)
+
+    # TODO Once pool_info and pool_config are objects, we need to add a conversion function
+    # to convert to dict
+    formatted_pool_info = json.dumps(trade_result.pool_info, indent=4, cls=ExtendedJSONEncoder)
+    formatted_pool_config = json.dumps(trade_result.pool_config, indent=4, cls=ExtendedJSONEncoder)
+
+    formatted_agent_info = _hyperdrive_agent_to_dict(trade_result.agent)
+    formatted_agent_info = json.dumps(formatted_agent_info, indent=4, cls=ExtendedJSONEncoder)
 
     # TODO set up logging in file handler
     logging.critical(
-        """Failed to execute %s: %s\n Amount: %s\n Agent: %s\n Agent Wallet: %s\n PoolInfo: %s\n PoolConfig: %s\n""",
-        trade_type,
-        error,
-        amount,
-        agent_address,
+        """Exception: %s\nTrade: %s\nWallet: %s\nPoolInfo: %s\nPoolConfig: %s\n""",
+        formatted_exception,
+        formatted_trade_obj,
         formatted_agent_wallet,
         formatted_pool_info,
         formatted_pool_config,
@@ -153,3 +144,29 @@ def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
         "lp_tokens": wallet.lp_tokens,
         "withdraw_shares": wallet.withdraw_shares,
     }
+
+
+def _hyperdrive_trade_obj_to_dict(trade_obj: types.Trade[HyperdriveMarketAction]) -> dict[str, Any]:
+    """Helper function to convert hyperdrive trade object to a dict
+
+    Arguments
+    ---------
+    trade_obj: types.Trade[HyperdriveMarketAction]
+        The trade object to convert
+
+    Returns
+    -------
+    dict[str, Any]
+        A dict ready to be converted to json
+    """
+    return {
+        "market_type": trade_obj.market_type.name,
+        "action_type": trade_obj.market_action.action_type.name,
+        "trade_amount": trade_obj.market_action.trade_amount,
+        "slippage_tolerance": trade_obj.market_action.slippage_tolerance,
+        "maturity_time": trade_obj.market_action.maturity_time,
+    }
+
+
+def _hyperdrive_agent_to_dict(agent: HyperdriveAgent):
+    return {"address": agent.checksum_address, "policy": agent.policy.name}

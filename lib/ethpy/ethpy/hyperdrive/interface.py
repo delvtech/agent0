@@ -53,7 +53,7 @@ def process_hyperdrive_pool_config(pool_config: dict[str, Any], hyperdrive_addre
     for key in pool_config:
         if key in fixedpoint_keys:
             pool_config[key] = FixedPoint(scaled_value=pool_config[key])
-    pool_config["fees"] = (FixedPoint(scaled_value=fee) for fee in pool_config["fees"])
+    pool_config["fees"] = [FixedPoint(scaled_value=fee) for fee in pool_config["fees"]]
     # new attributes
     pool_config["contractAddress"] = hyperdrive_address
     curve_fee, flat_fee, governance_fee = pool_config["fees"]
