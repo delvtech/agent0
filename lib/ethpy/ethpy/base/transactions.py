@@ -108,7 +108,15 @@ def smart_contract_preview_transaction(
         function = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
     else:
         function = contract.get_function_by_name(function_name_or_signature)(*fn_args)
-    return_values = function.call({"from": signer_address}, **fn_kwargs)
+
+    try:
+        return_values = function.call({"from": signer_address}, **fn_kwargs)
+    # TODO should we catch ContractCustomError and ContractLogicError here?
+    except Exception as err:
+        # Add function call information to exception args
+        err.args += (f"Error in preview transaction {function=}",)
+        raise err
+
     if not isinstance(return_values, Sequence):  # could be list or tuple
         return_values = [return_values]
     if contract.abi:  # not all contracts have an associated ABI
@@ -221,11 +229,10 @@ async def async_smart_contract_transact(
             function_name_or_signature,
             fn_args,
         )
-
-        err.message = (
+        err.args += (
             f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.\n"
             + f"function name: {function_name_or_signature}"
-            + f"\nfunction args: {fn_args}"
+            + f"\nfunction args: {fn_args}",
         )
 
         raise err
@@ -235,6 +242,11 @@ async def async_smart_contract_transact(
             err.message,
             function_name_or_signature,
             fn_args,
+        )
+        err.args += (
+            "ContractLogicError raised.\n"
+            + f"function name: {function_name_or_signature}"
+            + f"\nfunction args: {fn_args}",
         )
         raise err
 
