@@ -34,6 +34,7 @@ def run_agents(
     account_key_config: AccountKeyConfig,
     eth_config: EthConfig | None = None,
     contract_addresses: HyperdriveAddresses | None = None,
+    load_wallet_state: bool = True,
 ) -> None:
     """Entrypoint to run agents.
 
@@ -53,6 +54,8 @@ def run_agents(
     contract_addresses: HyperdriveAddresses | None
         If set, will use these addresses instead of querying the artifact URI
         defined in eth_config.
+    load_wallet_state: bool
+        If set, will connect to the db api to load wallet states from the current chain
     """
     # See if develop flag is set
     develop_env = os.environ.get("DEVELOP")
@@ -90,20 +93,22 @@ def run_agents(
             )
         # Register wallet addresses to username
         register_username(environment_config.database_api_uri, wallet_addrs, environment_config.username)
-    # Load existing balances
-    # Get existing open positions from db api server
-    balances = balance_of(environment_config.database_api_uri, wallet_addrs)
-    # Set balances of wallets based on db and chain
-    for agent in agent_accounts:
-        # TODO is this the right location for this to happen?
-        # On one hand, doing it here makes sense because parameters such as db uri doesn't have to
-        # be passed in down all the function calls when wallets are initialized.
-        # On the other hand, we initialize empty wallets just to overwrite here.
-        # Keeping here for now for later discussion
-        # TODO maybe this should be optional?
-        agent.wallet = build_wallet_positions_from_data(
-            agent.checksum_address, balances, hyperdrive.base_token_contract
-        )
+
+    if load_wallet_state:
+        # Load existing balances
+        # Get existing open positions from db api server
+        balances = balance_of(environment_config.database_api_uri, wallet_addrs)
+        # Set balances of wallets based on db and chain
+        for agent in agent_accounts:
+            # TODO is this the right location for this to happen?
+            # On one hand, doing it here makes sense because parameters such as db uri doesn't have to
+            # be passed in down all the function calls when wallets are initialized.
+            # On the other hand, we initialize empty wallets just to overwrite here.
+            # Keeping here for now for later discussion
+            agent.wallet = build_wallet_positions_from_data(
+                agent.checksum_address, balances, hyperdrive.base_token_contract
+            )
+
     # run the trades
     last_executed_block = BlockNumber(0)
     while True:

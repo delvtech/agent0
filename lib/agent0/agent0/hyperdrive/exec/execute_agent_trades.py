@@ -2,13 +2,19 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from typing import TYPE_CHECKING, NoReturn
 
 from agent0.base import Quantity, TokenType
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWalletDeltas, Long, Short
+from agent0.hyperdrive.state import (
+    HyperdriveActionType,
+    HyperdriveMarketAction,
+    HyperdriveWalletDeltas,
+    Long,
+    Short,
+    TradeResult,
+    TradeStatus,
+)
 from elfpy import types
-from ethpy.base import UnknownBlockError
 from ethpy.hyperdrive import HyperdriveInterface
 from fixedpointmath import FixedPoint
 
@@ -29,7 +35,7 @@ def assert_never(arg: NoReturn) -> NoReturn:
 async def async_execute_single_agent_trade(
     agent: HyperdriveAgent,
     hyperdrive: HyperdriveInterface,
-) -> None:
+) -> list[TradeResult]:
     """Executes a single agent's trade. This function is async as
     `match_contract_call_to_trade` waits for a transaction receipt.
 
@@ -39,28 +45,74 @@ async def async_execute_single_agent_trade(
         The HyperdriveAgent that is conducting the trade
     hyperdrive : HyperdriveInterface
         The Hyperdrive API interface object
+
+    Returns
+    -------
+    list[TradeResult]
+        Returns a list of TradeResult objects, one for each trade made by the agent
+        TradeResult handles any information about the trade, as well as any errors that the trade resulted in
     """
     trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(interface=hyperdrive)
-    for trade_object in trades:
-        policy_name = agent.policy.__class__.__name__
-        logging.info(
-            "AGENT %s (%s) to perform %s for %g",
-            str(agent.checksum_address),
-            policy_name,
-            trade_object.market_action.action_type,
-            float(trade_object.market_action.trade_amount),
+
+    # Make trades async for this agent. This way, an agent can submit multiple trades for a single block
+
+    # TODO preliminary search shows async tasks has very low overhead:
+    # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
+    # However, should probably test what the limit number of trades an agent can make in one block
+    wallet_deltas_or_exception: list[HyperdriveWalletDeltas | Exception] = await asyncio.gather(
+        *[async_match_contract_call_to_trade(agent, hyperdrive, trade_object) for trade_object in trades],
+        # Instead of throwing exception, return the exception to the caller here
+        return_exceptions=True,
+    )
+
+    # TODO Here, gather returns results based on original order of trades, but this order isn't guaranteed
+    # because of async. Ideally, we should return results based on the order of trades. Can we use nonce here
+    # to see order?
+
+    # Sanity check
+    if len(wallet_deltas_or_exception) != len(trades):
+        raise AssertionError(
+            "The number of wallet deltas should match the number of trades, but does not."
+            f"\n{wallet_deltas_or_exception=}\n{trades=}"
         )
-        try:
-            wallet_deltas = await async_match_contract_call_to_trade(agent, hyperdrive, trade_object)
-            agent.wallet.update(wallet_deltas)
-        except UnknownBlockError as exc:
-            logging.error(exc)
+
+    # The wallet update after should be fine, since we can see what trades went through
+    # and only apply those wallet deltas. Wallet deltas are also invariant to order
+    # as long as the transaction went through.
+    trade_results = []
+    for result, trade_object in zip(wallet_deltas_or_exception, trades):
+        if isinstance(result, HyperdriveWalletDeltas):
+            agent.wallet.update(result)
+            trade_result = TradeResult(status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object)
+        elif isinstance(result, Exception):
+            # We log pool config and pool info here
+            # However, this is a best effort attempt to get this information
+            # due to async conditions. If debugging this crash, ensure the agent is running
+            # in isolation and doing one trade per call.
+            pool_config = hyperdrive.pool_config
+            pool_info = hyperdrive.pool_info
+            trade_result = TradeResult(
+                status=TradeStatus.FAIL,
+                agent=agent,
+                trade_object=trade_object,
+                exception=result,
+                pool_config=pool_config,
+                pool_info=pool_info,
+            )
+        else:
+            # Should never get here
+            # TODO this function was originally used for types
+            # Is this okay to use here?
+            assert_never(result)
+        trade_results.append(trade_result)
+
+    return trade_results
 
 
 async def async_execute_agent_trades(
     hyperdrive: HyperdriveInterface,
     agents: list[HyperdriveAgent],
-) -> None:
+) -> list[TradeResult]:
     """Hyperdrive forever into the sunset.
 
     Arguments
@@ -69,10 +121,21 @@ async def async_execute_agent_trades(
         The Hyperdrive API interface object
     agents : list[HyperdriveAgent]
         A list of HyperdriveAgent that are conducting the trades
+
+    Returns
+    -------
+    list[TradeResult]
+        Returns a list of TradeResult objects, one for each trade made by the agent
+        TradeResult handles any information about the trade, as well as any errors that the trade resulted in
     """
     # Make calls per agent to execute_single_agent_trade
     # Await all trades to finish before continuing
-    await asyncio.gather(*[async_execute_single_agent_trade(agent, hyperdrive) for agent in agents])
+    gathered_trade_results: list[list[TradeResult]] = await asyncio.gather(
+        *[async_execute_single_agent_trade(agent, hyperdrive) for agent in agents]
+    )
+    # Flatten list of lists, since agent information is already in TradeResult
+    trade_results = [item for sublist in gathered_trade_results for item in sublist]
+    return trade_results
 
 
 async def async_match_contract_call_to_trade(
@@ -95,7 +158,6 @@ async def async_match_contract_call_to_trade(
     -------
     HyperdriveWalletDeltas
         Deltas to be applied to the agent's wallet
-
     """
     # TODO: figure out fees paid
     trade = trade_envelope.market_action

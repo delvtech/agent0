@@ -4,10 +4,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field, make_dataclass
 from typing import TYPE_CHECKING, Optional
 
-import pandas as pd
-
 import elfpy.time as time
 import elfpy.types as types
+import pandas as pd
 from elfpy.markets.hyperdrive import HyperdriveMarketDeltas, HyperdriveMarketState
 from elfpy.simulators.smulation_config import SimulationConfig
 
@@ -219,6 +218,7 @@ class NewSimulationState:
 def _simulation_state_aggreagator(constructor):
     """Returns a dataclass that aggregates simulation state attributes"""
     # Wrap the type from the constructor in a list, but keep the name
+    # pylint: disable=invalid-field-call
     attribs = [(str(key), list[val], field(default_factory=list)) for key, val in constructor.__annotations__.items()]
 
     # Make a new dataclass that has helper functions for appending to the list
