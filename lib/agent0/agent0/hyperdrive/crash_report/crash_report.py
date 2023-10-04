@@ -104,7 +104,6 @@ def log_hyperdrive_crash_report(trade_result: TradeResult) -> None:
     formatted_agent_info = _hyperdrive_agent_to_dict(trade_result.agent)
     formatted_agent_info = json.dumps(formatted_agent_info, indent=4, cls=ExtendedJSONEncoder)
 
-    # TODO set up logging in file handler
     logging.critical(
         """Exception: %s\nTrade: %s\nWallet: %s\nPoolInfo: %s\nPoolConfig: %s\n""",
         formatted_exception,

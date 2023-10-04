@@ -24,7 +24,6 @@ class TradeResult(NamedTuple):
 
     Attributes
     ----------
-
     exception: Exception | None
         The exception that was thrown
     agent: HyperdriveAgent
