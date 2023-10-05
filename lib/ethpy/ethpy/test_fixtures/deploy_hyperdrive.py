@@ -1,5 +1,7 @@
 """Functions to initialize hyperdrive using web3"""
 
+from dataclasses import asdict
+
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import Address
@@ -12,6 +14,7 @@ from ethpy.base import (
     smart_contract_transact,
 )
 from fixedpointmath import FixedPoint
+from hyperdrive_types.IHyperdriveTypes import PoolConfig
 from web3 import Web3
 from web3.contract.contract import Contract
 
@@ -205,7 +208,8 @@ def deploy_and_initialize_hyperdrive(
 
     # Call factory to make hyperdrive market
     # Some of these pool info configurations don't do anything, as the factory is overwriting them
-    pool_config = (
+    # Using the Pypechain generated HyperdriveTypes for PoolConfig to ensure the ordering & type safety
+    pool_config = PoolConfig(
         base_token_contract.address,
         initial_share_price,
         minimum_share_reserves,
@@ -220,8 +224,11 @@ def deploy_and_initialize_hyperdrive(
         update_gap,
     )
     # Function arguments
+    # for the first argument, asdict should return a dictionary with the
+    # same attribute ordering as the dataclass we then convert it to a
+    # tuple of values for web3
     fn_args = (
-        pool_config,
+        tuple(asdict(pool_config).values()),
         [],  # new bytes[](0)
         initial_contribution,
         initial_fixed_rate,  # fixedRate
