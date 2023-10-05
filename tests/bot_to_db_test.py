@@ -243,6 +243,8 @@ class TestBotToDb:
             "bondReserves",
             "lpTotalSupply",
             "sharePrice",
+            "shareAdjustment",
+            "lpSharePrice",
             "longExposure",
             "longsOutstanding",
             "longAverageMaturityTime",
@@ -250,7 +252,6 @@ class TestBotToDb:
             "shortAverageMaturityTime",
             "withdrawalSharesReadyToWithdraw",
             "withdrawalSharesProceeds",
-            "lpSharePrice",
             # Added keys
             "timestamp",
             # Calculated keys
