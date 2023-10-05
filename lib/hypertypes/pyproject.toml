@@ -1,5 +1,5 @@
 [project]
-name = "hyperdrive_types"
+name = "hypertypes"
 version = "0.0.0"
 authors = [{ name = "Codegen"}]
 description = "Contract code generated using Pypechain"
@@ -13,7 +13,11 @@ classifiers = [
 
 [project.optional-dependencies]
 with-dependencies = [
-    "hyperdrive_types[base, lateral]"
+    "hypertypes[base, lateral]"
 ]
-base = []
+base = ["web3"]
 lateral = ["pypechain @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/pypechain",]
+
+[build-system]
+requires = ["flit_core>=3.2"]
+build-backend = "flit_core.buildapi"

@@ -49,7 +49,7 @@ def process_hyperdrive_pool_config(pool_config: dict[str, Any], hyperdrive_addre
         The hyperdrive pool config with modified types.
     """
     # convert values to FixedPoint
-    fixedpoint_keys = ["initialSharePrice", "minimumShareReserves", "timeStretch"]
+    fixedpoint_keys = ["initialSharePrice", "minimumShareReserves", "timeStretch", "minimumTransactionAmount"]
     for key in pool_config:
         if key in fixedpoint_keys:
             pool_config[key] = FixedPoint(scaled_value=pool_config[key])

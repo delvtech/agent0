@@ -205,6 +205,7 @@ class TestBotToDb:
             "baseToken": hyperdrive_contract_addresses.base_token,
             "initialSharePrice": _to_unscaled_decimal(FixedPoint("1")),
             "minimumShareReserves": _to_unscaled_decimal(FixedPoint("10")),
+            "minimumTransactionAmount": _to_unscaled_decimal(FixedPoint("0.001")),
             "positionDuration": 604800,  # 1 week
             "checkpointDuration": 3600,  # 1 hour
             "timeStretch": expected_timestretch,
@@ -242,6 +243,8 @@ class TestBotToDb:
             "bondReserves",
             "lpTotalSupply",
             "sharePrice",
+            "shareAdjustment",
+            "lpSharePrice",
             "longExposure",
             "longsOutstanding",
             "longAverageMaturityTime",
@@ -249,7 +252,6 @@ class TestBotToDb:
             "shortAverageMaturityTime",
             "withdrawalSharesReadyToWithdraw",
             "withdrawalSharesProceeds",
-            "lpSharePrice",
             # Added keys
             "timestamp",
             # Calculated keys

@@ -9,5 +9,5 @@ sh scripts/build_type_files.sh path/to/ABIs num_chars_per_line
 You can then pip install the package from the project root with
 
 ```bash
-pip install -e lib/hyperdrive_types
+pip install -e lib/hypertypes[base]
 ```

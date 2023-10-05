@@ -1,4 +1,8 @@
 """Functions to initialize hyperdrive using web3"""
+from __future__ import annotations
+
+from dataclasses import fields, is_dataclass
+from typing import Any
 
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
@@ -12,6 +16,7 @@ from ethpy.base import (
     smart_contract_transact,
 )
 from fixedpointmath import FixedPoint
+from hypertypes.IHyperdriveTypes import Fees, PoolConfig
 from web3 import Web3
 from web3.contract.contract import Contract
 
@@ -20,13 +25,35 @@ from web3.contract.contract import Contract
 # initial hyperdrive conditions
 
 
+def _dataclass_to_tuple(instance: Any) -> tuple:
+    """Resursively convert the input Dataclass to a tuple.
+
+    Iterate over the fields of the dataclass and compiles them into a tuple.
+    Check if the type of a field is also a dataclass, and if so, recursively convert it to a tuple.
+    This method preserves the attribute ordering.
+
+    Arguments
+    ---------
+    instance : dataclass
+        A dataclass, whose fields could contain other dataclasses.
+
+    Returns
+    -------
+    tuple
+        A nested tuple of all dataclass fields.
+    """
+    if not is_dataclass(instance):
+        return instance
+    return tuple(_dataclass_to_tuple(getattr(instance, field.name)) for field in fields(instance))
+
+
 # Following solidity implementation here, so matching function name
 def _calculateTimeStretch(apr: int) -> int:  # pylint: disable=invalid-name
     """Helper function mirroring solidity calculateTimeStretch
 
     Arguments
     ---------
-    apr: int
+    apr : int
         The scaled input apr
 
     Returns
@@ -184,6 +211,7 @@ def deploy_and_initialize_hyperdrive(
     # Initial hyperdrive settings
     initial_share_price = FixedPoint(1).scaled_value
     minimum_share_reserves = FixedPoint(10).scaled_value
+    minimum_transaction_amount = FixedPoint("0.001").scaled_value
     position_duration = 604800  # 1 week
     checkpoint_duration = 3600  # 1 hour
     time_stretch = _calculateTimeStretch(FixedPoint("0.05").scaled_value)
@@ -204,22 +232,24 @@ def deploy_and_initialize_hyperdrive(
 
     # Call factory to make hyperdrive market
     # Some of these pool info configurations don't do anything, as the factory is overwriting them
-    pool_config = (
+    # Using the Pypechain generated HyperdriveTypes for PoolConfig to ensure the ordering & type safety
+    pool_config = PoolConfig(
         base_token_contract.address,
         initial_share_price,
         minimum_share_reserves,
+        minimum_transaction_amount,
         position_duration,
         checkpoint_duration,
         time_stretch,
         deploy_account_addr,  # governance, overwritten by factory
         deploy_account_addr,  # feeCollector, overwritten by factory
-        (0, 0, 0),  # fees, overwritten by factory
+        Fees(0, 0, 0),  # fees, overwritten by factory
         oracle_size,  # oracleSize
         update_gap,
     )
     # Function arguments
     fn_args = (
-        pool_config,
+        _dataclass_to_tuple(pool_config),
         [],  # new bytes[](0)
         initial_contribution,
         initial_fixed_rate,  # fixedRate

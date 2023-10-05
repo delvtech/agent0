@@ -19,7 +19,14 @@ if [ "$#" -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     exit 0
 fi
 
+# Create the hypertypes folder if it does not already exist
+target_dir="$script_dir/../hypertypes"
+if [ ! -d "$target_dir" ]; then
+    mkdir -p "$target_dir"
+    touch "$target_dir/__init__.py"
+fi
+
 # Loop recursively over all .json files in the provided directory and run the python script for each
 find "$1" -type f -name "*.json" | while read -r json_file; do
-    python lib/pypechain/pypechain/run_pypechain.py "$json_file" "$script_dir/../hyperdrive_types" "120"
+    python lib/pypechain/pypechain/run_pypechain.py "$json_file" "$target_dir" "120"
 done

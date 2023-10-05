@@ -21,6 +21,7 @@ class ERC4626HyperdriveDeployerDeployContractFunction(ContractFunction):
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
+
     def __call__(
         self, PoolConfig: tuple, _dataProvider: str, _linkerCodeHash: bytes, _linkerFactory: str, _extraData: bytes
     ) -> "ERC4626HyperdriveDeployerDeployContractFunction":
