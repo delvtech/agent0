@@ -1,5 +1,6 @@
 """Functions to gather data from postgres, do analysis, and add back into postgres"""
 import logging
+from decimal import Decimal
 from typing import Type
 
 import numpy as np
@@ -107,6 +108,14 @@ def calc_current_wallet(wallet_deltas_df: pd.DataFrame, latest_wallet: pd.DataFr
     return wallet_deltas_df
 
 
+def _decimal_to_str_scaled_value(in_val: Decimal):
+    return str(int(in_val * 10**18))
+
+
+def _pd_decimal_to_str_scaled_value(in_pd: pd.Series):
+    return (in_pd * 10**18).astype(int).astype(str)
+
+
 # TODO this function shouldn't need hyperdrive_contract eventually
 # instead, should call rust implementation
 # TODO clean up this function
@@ -122,9 +131,13 @@ def data_to_analysis(
     # Get data
     pool_info = get_pool_info(db_session, start_block, end_block, coerce_float=False)
 
-    # Calculate spot prices
+    # Calculate spot price
+    # TODO ideally we would call hyperdrive interface directly to get the spot price and fixed rate.
+    # However, we need to be able to query e.g., pool_info for a specific block. Hence here, we use the
+    # pool info from the db and directly call pyperdrive to get the spot price.
     spot_price = calc_spot_price(
         pool_info["shareReserves"],
+        pool_info["shareAdjustment"],
         pool_info["bondReserves"],
         pool_config["initialSharePrice"],
         pool_config["timeStretch"],

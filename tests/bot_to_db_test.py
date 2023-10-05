@@ -442,3 +442,5 @@ class TestBotToDb:
         # Eventually we want to double check all token types
         short_pos = db_current_wallet[db_current_wallet["baseTokenType"] == "SHORT"]
         assert short_pos.iloc[0]["value"] == Decimal(33333)
+
+        # TODO check spot price and fixed rate
