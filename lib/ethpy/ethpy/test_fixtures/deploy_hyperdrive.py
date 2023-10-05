@@ -1,6 +1,6 @@
 """Functions to initialize hyperdrive using web3"""
 
-from dataclasses import asdict
+from dataclasses import fields, is_dataclass
 
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
@@ -14,13 +14,19 @@ from ethpy.base import (
     smart_contract_transact,
 )
 from fixedpointmath import FixedPoint
-from hypertypes.IHyperdriveTypes import PoolConfig
+from hypertypes.IHyperdriveTypes import Fees, PoolConfig
 from web3 import Web3
 from web3.contract.contract import Contract
 
 # TODO these functions should eventually be moved to `ethpy/hyperdrive`, but leaving
 # these here for now to be used by tests while we figure out how to parameterize
 # initial hyperdrive conditions
+
+
+def _dataclass_to_tuple(instance):
+    if not is_dataclass(instance):
+        return instance
+    return tuple(_dataclass_to_tuple(getattr(instance, field.name)) for field in fields(instance))
 
 
 # Following solidity implementation here, so matching function name
@@ -228,7 +234,7 @@ def deploy_and_initialize_hyperdrive(
     # same attribute ordering as the dataclass we then convert it to a
     # tuple of values for web3
     fn_args = (
-        tuple(asdict(pool_config).values()),
+        _dataclass_to_tuple(pool_config),
         [],  # new bytes[](0)
         initial_contribution,
         initial_fixed_rate,  # fixedRate
