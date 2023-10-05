@@ -1,7 +1,8 @@
 """Functions to initialize hyperdrive using web3"""
 from __future__ import annotations
 
-from dataclasses import dataclass, fields, is_dataclass
+from dataclasses import fields, is_dataclass
+from typing import Any
 
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
@@ -24,7 +25,7 @@ from web3.contract.contract import Contract
 # initial hyperdrive conditions
 
 
-def _dataclass_to_tuple(instance: dataclass) -> tuple:
+def _dataclass_to_tuple(instance: Any) -> tuple:
     """Resursively convert the input Dataclass to a tuple.
 
     Iterate over the fields of the dataclass and compiles them into a tuple.
