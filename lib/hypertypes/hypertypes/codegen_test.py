@@ -39,7 +39,8 @@ class CodegenTest(unittest.TestCase):
                             print(f"{exc=}; skipping file")
                             continue
             # ensure that the number of files is the same
-            assert count_files(path_to_this_file) - 1 == count_files(test_dir)
+            # this file (codegen_test.py) and __init__.py would not be included
+            assert count_files(path_to_this_file) - 2 == count_files(test_dir)
             # ensure that the file names are the same
             for file in os.listdir(test_dir):
                 assert file in os.listdir(path_to_this_file)
