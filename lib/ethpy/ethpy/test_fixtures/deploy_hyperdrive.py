@@ -29,7 +29,7 @@ def _calculateTimeStretch(apr: int) -> int:  # pylint: disable=invalid-name
 
     Arguments
     ---------
-    apr: int
+    apr : int
         The scaled input apr
 
     Returns
