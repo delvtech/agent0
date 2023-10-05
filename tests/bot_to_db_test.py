@@ -15,6 +15,7 @@ from agent0.hyperdrive.exec import run_agents
 from agent0.test_fixtures import AgentDoneException
 from chainsync.db.hyperdrive.interface import (
     get_current_wallet,
+    get_pool_analysis,
     get_pool_config,
     get_pool_info,
     get_transactions,
@@ -24,6 +25,7 @@ from chainsync.exec import acquire_data, data_analysis
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI
 from ethpy import EthConfig
+from ethpy.hyperdrive import HyperdriveInterface
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.test_fixtures.deploy_hyperdrive import _calculateTimeStretch
 from ethpy.test_fixtures.local_chain import LocalHyperdriveChain
@@ -443,4 +445,22 @@ class TestBotToDb:
         short_pos = db_current_wallet[db_current_wallet["baseTokenType"] == "SHORT"]
         assert short_pos.iloc[0]["value"] == Decimal(33333)
 
-        # TODO check spot price and fixed rate
+        # Check spot price and fixed rate
+        db_pool_analysis: pd.DataFrame = get_pool_analysis(db_session, coerce_float=False)
+        # Compare last value to what hyperdrive interface is reporting
+        hyperdrive_interface = HyperdriveInterface(
+            eth_config=eth_config,
+            addresses=hyperdrive_contract_addresses,
+        )
+        latest_pool_analysis = db_pool_analysis.iloc[-1]
+
+        latest_spot_price = FixedPoint(str(latest_pool_analysis["spot_price"]))
+        expected_spot_price = hyperdrive_interface.spot_price
+
+        latest_fixed_rate = FixedPoint(str(latest_pool_analysis["fixed_rate"]))
+        expected_fixed_rate = hyperdrive_interface.fixed_rate
+
+        assert latest_pool_analysis["blockNumber"] == hyperdrive_interface.current_block_number
+        # TODO there's rounding errors between db spot price and fixed rates
+        assert abs(latest_spot_price - expected_spot_price) <= FixedPoint(1e-16)
+        assert abs(latest_fixed_rate - expected_fixed_rate) <= FixedPoint(1e-16)

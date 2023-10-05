@@ -1,6 +1,6 @@
 """Calculate the spot price."""
 
-from decimal import Decimal
+from decimal import ROUND_DOWN, Decimal, localcontext
 
 import pandas as pd
 
@@ -15,8 +15,13 @@ def calc_spot_price(
     time_stretch: Decimal,
 ):
     """Calculate the spot price."""
-    # Pandas is smart enough to be able to broadcast with internal Decimal types at runtime
-    effective_share_reserves = share_reserves - share_adjustment
-    # Sanity check
-    assert (effective_share_reserves >= 0).all()
-    return ((initial_share_price * effective_share_reserves) / bond_reserves) ** time_stretch  # type: ignore
+    # Keep decimal places to 18 decimal places
+    with localcontext() as ctx:
+        ctx.prec = 18
+        ctx.rounding = ROUND_DOWN
+        effective_share_reserves = share_reserves - share_adjustment
+        # Sanity check
+        assert (effective_share_reserves >= 0).all()
+        # Pandas is smart enough to be able to broadcast with internal Decimal types at runtime
+        spot_price = ((initial_share_price * effective_share_reserves) / bond_reserves) ** time_stretch  # type: ignore
+    return spot_price
