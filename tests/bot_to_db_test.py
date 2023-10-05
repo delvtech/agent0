@@ -205,6 +205,7 @@ class TestBotToDb:
             "baseToken": hyperdrive_contract_addresses.base_token,
             "initialSharePrice": _to_unscaled_decimal(FixedPoint("1")),
             "minimumShareReserves": _to_unscaled_decimal(FixedPoint("10")),
+            "minimumTransactionAmount": _to_unscaled_decimal(FixedPoint("0.001")),
             "positionDuration": 604800,  # 1 week
             "checkpointDuration": 3600,  # 1 hour
             "timeStretch": expected_timestretch,

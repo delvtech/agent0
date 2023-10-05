@@ -211,7 +211,7 @@ def deploy_and_initialize_hyperdrive(
     # Initial hyperdrive settings
     initial_share_price = FixedPoint(1).scaled_value
     minimum_share_reserves = FixedPoint(10).scaled_value
-    minimum_transaction_amount = FixedPoint(1 * 10**15).scaled_value
+    minimum_transaction_amount = FixedPoint("0.001").scaled_value
     position_duration = 604800  # 1 week
     checkpoint_duration = 3600  # 1 hour
     time_stretch = _calculateTimeStretch(FixedPoint("0.05").scaled_value)
