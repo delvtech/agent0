@@ -14,7 +14,7 @@ from ethpy.base import (
     smart_contract_transact,
 )
 from fixedpointmath import FixedPoint
-from hyperdrive_types.IHyperdriveTypes import PoolConfig
+from hypertypes.IHyperdriveTypes import PoolConfig
 from web3 import Web3
 from web3.contract.contract import Contract
 
