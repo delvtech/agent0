@@ -1,6 +1,7 @@
 """Functions to initialize hyperdrive using web3"""
+from __future__ import annotations
 
-from dataclasses import fields, is_dataclass
+from dataclasses import dataclass, fields, is_dataclass
 
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
@@ -23,7 +24,23 @@ from web3.contract.contract import Contract
 # initial hyperdrive conditions
 
 
-def _dataclass_to_tuple(instance):
+def _dataclass_to_tuple(instance: dataclass) -> tuple:
+    """Resursively convert the input Dataclass to a tuple.
+
+    Iterate over the fields of the dataclass and compiles them into a tuple.
+    Check if the type of a field is also a dataclass, and if so, recursively convert it to a tuple.
+    This method preserves the attribute ordering.
+
+    Arguments
+    ---------
+    instance : dataclass
+        A dataclass, whose fields could contain other dataclasses.
+
+    Returns
+    -------
+    tuple
+        A nested tuple of all dataclass fields.
+    """
     if not is_dataclass(instance):
         return instance
     return tuple(_dataclass_to_tuple(getattr(instance, field.name)) for field in fields(instance))
@@ -230,9 +247,6 @@ def deploy_and_initialize_hyperdrive(
         update_gap,
     )
     # Function arguments
-    # for the first argument, asdict should return a dictionary with the
-    # same attribute ordering as the dataclass we then convert it to a
-    # tuple of values for web3
     fn_args = (
         _dataclass_to_tuple(pool_config),
         [],  # new bytes[](0)
