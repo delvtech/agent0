@@ -112,6 +112,12 @@ def run_agents(
     # run the trades
     last_executed_block = BlockNumber(0)
     while True:
+        # Check if all agents done trading
+        # If so, exit cleanly
+        # The done trading state variable gets set internally
+        if all(agent.done_trading for agent in agent_accounts):
+            break
+
         last_executed_block = trade_if_new_block(
             hyperdrive,
             agent_accounts,

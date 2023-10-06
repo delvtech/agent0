@@ -1,6 +1,5 @@
 """Hyperdrive AssetId classes and methods"""
 from enum import IntEnum
-from typing import Tuple
 
 
 class AssetIdPrefix(IntEnum):
@@ -38,7 +37,7 @@ def encode_asset_id(prefix: int, timestamp: int) -> int:
     return (prefix << 248) | timestamp
 
 
-def decode_asset_id(asset_id: int) -> Tuple[int, int]:
+def decode_asset_id(asset_id: int) -> tuple[int, int]:
     r"""Decodes a transaction asset ID into its constituent parts of an identifier, data, and a timestamp.
 
     First calculate the prefix mask by left-shifting 1 by 248 bits and subtracting 1 from the result.

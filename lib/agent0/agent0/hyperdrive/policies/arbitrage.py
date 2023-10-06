@@ -69,7 +69,9 @@ class ArbitragePolicy(HyperdrivePolicy):
 
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Specify actions.
 
         Arguments
@@ -81,8 +83,9 @@ class ArbitragePolicy(HyperdrivePolicy):
 
         Returns
         -------
-        list[Trade]
-            list of actions
+        tuple[list[MarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
         """
         # Get fixed rate
         fixed_rate = interface.fixed_rate
@@ -176,4 +179,4 @@ class ArbitragePolicy(HyperdrivePolicy):
                 )
             )
 
-        return action_list
+        return action_list, False
