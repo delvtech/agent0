@@ -93,5 +93,5 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
         actions = list[Trade[MarketAction]]
         done_trading: bool
         (actions, done_trading) = self.policy.action(interface, self.wallet)
-        self._done_trading = done_trading
+        self.done_trading = done_trading
         return actions
