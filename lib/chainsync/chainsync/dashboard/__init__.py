@@ -5,7 +5,6 @@ from .build_leaderboard import build_leaderboard
 from .build_ohlcv import build_ohlcv
 from .build_outstanding_positions import build_outstanding_positions
 from .build_ticker import build_ticker
-from .extract_data_logs import get_combined_data, read_json_to_pd
 from .plot_fixed_rate import plot_fixed_rate
 from .plot_ohlcv import plot_ohlcv
 from .plot_outstanding_positions import plot_outstanding_positions
