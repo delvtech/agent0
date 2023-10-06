@@ -217,7 +217,9 @@ class RandomAgent(HyperdrivePolicy):
             )
         ]
 
-    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Implement a random user strategy.
 
         The agent performs one of four possible trades:
@@ -235,31 +237,32 @@ class RandomAgent(HyperdrivePolicy):
 
         Returns
         -------
-        list[MarketAction]
-            list of actions
+        tuple[list[MarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second tuple defines if the agent is done trading
         """
         # pylint: disable=too-many-return-statements
         # check if the agent will trade this block or not
         gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
         if not gonna_trade:
-            return []
+            return [], False
         # user can always open a trade, and can close a trade if one is open
         available_actions = self.get_available_actions(wallet, interface)
         # randomly choose one of the possible actions
         action_type = available_actions[self.rng.integers(len(available_actions))]
         # trade amount is also randomly chosen to be close to 10% of the agent's budget
         if action_type == HyperdriveActionType.OPEN_SHORT:
-            return self.open_short_with_random_amount(interface, wallet)
+            return self.open_short_with_random_amount(interface, wallet), False
         if action_type == HyperdriveActionType.CLOSE_SHORT:
-            return self.close_random_short(wallet)
+            return self.close_random_short(wallet), False
         if action_type == HyperdriveActionType.OPEN_LONG:
-            return self.open_long_with_random_amount(interface, wallet)
+            return self.open_long_with_random_amount(interface, wallet), False
         if action_type == HyperdriveActionType.CLOSE_LONG:
-            return self.close_random_long(wallet)
+            return self.close_random_long(wallet), False
         if action_type == HyperdriveActionType.ADD_LIQUIDITY:
-            return self.add_liquidity_with_random_amount(wallet)
+            return self.add_liquidity_with_random_amount(wallet), False
         if action_type == HyperdriveActionType.REMOVE_LIQUIDITY:
-            return self.remove_liquidity_with_random_amount(wallet)
+            return self.remove_liquidity_with_random_amount(wallet), False
         if action_type == HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
-            return self.redeem_withdraw_shares_with_random_amount(interface, wallet)
-        return []
+            return self.redeem_withdraw_shares_with_random_amount(interface, wallet), False
+        return [], False

@@ -35,10 +35,13 @@ class CycleTradesPolicy(HyperdrivePolicy):
         self.max_trades = max_trades
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
         # pylint: disable=unused-argument
         action_list = []
+        done_trading = False
 
         # Early stopping based on parameter
         if (self.max_trades is not None) and (self.counter >= self.max_trades):
@@ -137,10 +140,9 @@ class CycleTradesPolicy(HyperdrivePolicy):
                 )
             )
         else:
-            # We want this bot to exit and crash after it's done the trades it needs to do
-            raise AgentDoneException("Bot done")
+            done_trading = True
         self.counter += 1
-        return action_list
+        return action_list, done_trading
 
 
 @pytest.fixture(scope="function")

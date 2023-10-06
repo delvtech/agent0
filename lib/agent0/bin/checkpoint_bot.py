@@ -5,7 +5,6 @@ import datetime
 import logging
 import os
 import time
-from typing import Tuple
 
 from agent0.base.agents import EthAgent
 from agent0.base.config import EnvironmentConfig
@@ -34,7 +33,7 @@ def does_checkpoint_exist(hyperdrive_contract: Contract, checkpoint_time: int) -
     return smart_contract_read(hyperdrive_contract, "getCheckpoint", int(checkpoint_time))["sharePrice"] > 0
 
 
-def get_config() -> Tuple[EthConfig, EnvironmentConfig]:
+def get_config() -> tuple[EthConfig, EnvironmentConfig]:
     """Gets the hyperdrive configuration."""
 
     # Get the configuration and initialize the web3 provider.

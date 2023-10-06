@@ -49,7 +49,9 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
         self.counter = 0
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
         # pylint: disable=unused-argument
         action_list = []
@@ -145,7 +147,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
             )
 
         self.counter += 1
-        return action_list
+        return action_list, False
 
 
 # Build configuration

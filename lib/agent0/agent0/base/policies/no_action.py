@@ -24,7 +24,7 @@ class NoActionPolicy(BasePolicy[MarketInterface, Wallet]):
         else:
             super().__init__(budget, rng)
 
-    def action(self, interface: MarketInterface, wallet: Wallet) -> list[Trade]:
+    def action(self, interface: MarketInterface, wallet: Wallet) -> tuple[list[Trade], bool]:
         """Returns an empty list, indicating no action"""
         # pylint: disable=unused-argument
-        return []
+        return [], False

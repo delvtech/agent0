@@ -9,6 +9,8 @@ from ethpy.hyperdrive import HyperdriveInterface
 class HyperdrivePolicy(BasePolicy[HyperdriveInterface, HyperdriveWallet]):
     """Hyperdrive policy."""
 
-    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Returns an empty list, indicating no action."""
         raise NotImplementedError

@@ -69,7 +69,9 @@ class ArbitragePolicy(HyperdrivePolicy):
 
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Specify actions.
 
         Arguments
@@ -176,4 +178,4 @@ class ArbitragePolicy(HyperdrivePolicy):
                 )
             )
 
-        return action_list
+        return action_list, False

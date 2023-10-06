@@ -2,14 +2,13 @@
 import unittest
 from typing import Optional, Tuple
 
-import pytest
-from fixedpointmath import FixedPoint
-
 import elfpy.time as time
 import elfpy.types as types
+import pytest
 from elfpy.agents.agent import Agent
 from elfpy.agents.policies import NoActionPolicy
 from elfpy.markets.hyperdrive import HyperdriveMarket, HyperdriveMarketState, HyperdrivePricingModel
+from fixedpointmath import FixedPoint
 
 # pylint: disable=too-many-instance-attributes
 
