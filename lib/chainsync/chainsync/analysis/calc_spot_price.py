@@ -1,7 +1,6 @@
 """Calculate the spot price."""
 
-import logging
-from decimal import Decimal
+from decimal import ROUND_DOWN, Decimal, localcontext
 
 import pandas as pd
 
@@ -10,55 +9,19 @@ import pandas as pd
 # Keeping share_reserves and bond_reserves as pd.Series in case we want to batch process spot prices
 def calc_spot_price(
     share_reserves: pd.Series,
+    share_adjustment: pd.Series,
     bond_reserves: pd.Series,
     initial_share_price: Decimal,
     time_stretch: Decimal,
 ):
     """Calculate the spot price."""
-    # Pandas is smart enough to be able to broadcast with internal Decimal types at runtime
-    return ((initial_share_price * share_reserves) / bond_reserves) ** time_stretch  # type: ignore
-
-
-def calculate_spot_price_for_position(
-    share_reserves: pd.Series,
-    bond_reserves: pd.Series,
-    time_stretch: Decimal,
-    initial_share_price: Decimal,
-    position_duration: pd.Series,
-    maturity_timestamp: pd.Series,
-    block_timestamp: Decimal,
-):
-    """Calculate the spot price given the pool info data.
-
-    This is calculated in a vectorized way, with every input being a scalar except for maturity_timestamp.
-
-    Arguments
-    ---------
-    share_reserves : pd.Series
-        The share reserves
-    bond_reserves : pd.Series
-        The bond reserves
-    time_stretch : pd.Series
-        The time stretch
-    initial_share_price : pd.Series
-        The initial share price
-    position_duration : pd.Series
-        The position duration
-    maturity_timestamp : pd.Series
-        The maturity timestamp
-    block_timestamp : Decimal
-        The block timestamp
-    """
-    # pylint: disable=too-many-arguments
-    full_term_spot_price = calc_spot_price(share_reserves, bond_reserves, initial_share_price, time_stretch)
-    time_left_seconds = maturity_timestamp - block_timestamp  # type: ignore
-    if isinstance(time_left_seconds, pd.Timedelta):
-        time_left_seconds = time_left_seconds.total_seconds()
-    time_left_in_years = time_left_seconds / position_duration
-    logging.info(
-        " spot price is weighted average of %s(%s) and 1 (%s)",
-        full_term_spot_price,
-        time_left_in_years,
-        1 - time_left_in_years,
-    )
-    return full_term_spot_price * time_left_in_years + 1 * (1 - time_left_in_years)
+    # Keep decimal places to 18 decimal places
+    with localcontext() as ctx:
+        ctx.prec = 18
+        ctx.rounding = ROUND_DOWN
+        effective_share_reserves = share_reserves - share_adjustment
+        # Sanity check
+        assert (effective_share_reserves >= 0).all()
+        # Pandas is smart enough to be able to broadcast with internal Decimal types at runtime
+        spot_price = ((initial_share_price * effective_share_reserves) / bond_reserves) ** time_stretch  # type: ignore
+    return spot_price
