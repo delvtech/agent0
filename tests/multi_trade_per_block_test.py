@@ -11,7 +11,6 @@ from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
-from agent0.test_fixtures import AgentDoneException
 from chainsync.db.hyperdrive.interface import get_ticker, get_transactions, get_wallet_deltas
 from chainsync.exec import acquire_data, data_analysis
 from elfpy.types import MarketType, Trade
@@ -42,7 +41,9 @@ class MultiTradePolicy(HyperdrivePolicy):
         self.made_trade = False
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
         # pylint: disable=unused-argument
         action_list = []
@@ -50,7 +51,7 @@ class MultiTradePolicy(HyperdrivePolicy):
         if self.made_trade:
             # We want this bot to exit and crash after it's done the trades it needs to do
             # In this case, if this exception gets thrown, this means an invalid trade went through
-            raise AgentDoneException("Bot done")
+            raise AssertionError("This policy's action shouldn't get called again after failure")
 
         # Adding in 4 trades at the same time:
 
@@ -105,7 +106,7 @@ class MultiTradePolicy(HyperdrivePolicy):
 
         self.made_trade = True
 
-        return action_list
+        return action_list, True
 
 
 class TestMultiTradePerBlock:
@@ -178,6 +179,8 @@ class TestMultiTradePerBlock:
                 eth_config=eth_config,
                 contract_addresses=hyperdrive_contract_addresses,
             )
+            # If this reaches this point, the agent was successful, which means this test should fail
+            assert False, "Agent was successful with known invalid trade"
         except AssertionError as exc:
             # Expected error due to illegal trade
             # TODO currently, the illegal trade is throwing an assertion error

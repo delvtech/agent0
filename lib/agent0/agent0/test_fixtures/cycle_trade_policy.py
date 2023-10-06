@@ -12,10 +12,6 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 
 
-class AgentDoneException(Exception):
-    """Custom exception for signaling the bot is done"""
-
-
 # Build custom policy
 # Simple agent, opens a set of all trades for a fixed amount and closes them after
 class CycleTradesPolicy(HyperdrivePolicy):
@@ -46,7 +42,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
         # Early stopping based on parameter
         if (self.max_trades is not None) and (self.counter >= self.max_trades):
             # We want this bot to exit and crash after it's done the trades it needs to do
-            raise AgentDoneException("Bot done")
+            return [], True
 
         if self.counter == 0:
             # Add liquidity

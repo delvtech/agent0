@@ -12,7 +12,6 @@ from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.exec import run_agents
-from agent0.test_fixtures import AgentDoneException
 from chainsync.db.hyperdrive.interface import (
     get_current_wallet,
     get_pool_analysis,
@@ -97,18 +96,13 @@ class TestBotToDb:
         )
 
         # Run bots
-        try:
-            run_agents(
-                env_config,
-                agent_config,
-                account_key_config,
-                eth_config=eth_config,
-                contract_addresses=hyperdrive_contract_addresses,
-            )
-        except AgentDoneException:
-            # Using this exception to stop the agents,
-            # so this exception is expected on test pass
-            pass
+        run_agents(
+            env_config,
+            agent_config,
+            account_key_config,
+            eth_config=eth_config,
+            contract_addresses=hyperdrive_contract_addresses,
+        )
 
         # Run acquire data to get data from chain to db
         acquire_data(
@@ -144,18 +138,13 @@ class TestBotToDb:
             ),
         ]
 
-        try:
-            run_agents(
-                env_config,
-                agent_config,
-                account_key_config,
-                eth_config=eth_config,
-                contract_addresses=hyperdrive_contract_addresses,
-            )
-        except AgentDoneException:
-            # Using this exception to stop the agents,
-            # so this exception is expected on test pass
-            pass
+        run_agents(
+            env_config,
+            agent_config,
+            account_key_config,
+            eth_config=eth_config,
+            contract_addresses=hyperdrive_contract_addresses,
+        )
 
         # Run acquire data to get data from chain to db
         acquire_data(

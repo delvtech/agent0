@@ -10,7 +10,6 @@ from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
-from agent0.test_fixtures import AgentDoneException
 from chainsync.exec import acquire_data, data_analysis
 from elfpy.types import MarketType, Trade
 from eth_typing import URI
@@ -41,10 +40,13 @@ class WalletTestPolicy(HyperdrivePolicy):
         self.rerun = rerun
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
         # pylint: disable=unused-argument
         action_list = []
+        done_trading = False
 
         if self.rerun:
             # assert wallet state was loaded from previous run
@@ -56,7 +58,7 @@ class WalletTestPolicy(HyperdrivePolicy):
             assert wallet.shorts[list(wallet.shorts.keys())[0]].balance == FixedPoint(33333)
 
             # We want this bot to exit and crash after it's done the trades it needs to do
-            raise AgentDoneException("Bot done")
+            done_trading = True
 
         if self.counter == 0:
             # Add liquidity
@@ -95,10 +97,9 @@ class WalletTestPolicy(HyperdrivePolicy):
                 )
             )
         else:
-            # We want this bot to exit and crash after it's done the trades it needs to do
-            raise AgentDoneException("Bot done")
+            done_trading = True
         self.counter += 1
-        return action_list
+        return action_list, done_trading
 
 
 class TestBotToDb:
@@ -158,18 +159,13 @@ class TestBotToDb:
             # Using default abi dir
         )
 
-        try:
-            run_agents(
-                env_config,
-                agent_config,
-                account_key_config,
-                eth_config=eth_config,
-                contract_addresses=hyperdrive_contract_addresses,
-            )
-        except AgentDoneException:
-            # Using this exception to stop the agents,
-            # so this exception is expected on test pass
-            pass
+        run_agents(
+            env_config,
+            agent_config,
+            account_key_config,
+            eth_config=eth_config,
+            contract_addresses=hyperdrive_contract_addresses,
+        )
 
         # Run acquire data to get data from chain to db
         acquire_data(
@@ -205,15 +201,10 @@ class TestBotToDb:
             ),
         ]
 
-        try:
-            run_agents(
-                env_config,
-                agent_config,
-                account_key_config,
-                eth_config=eth_config,
-                contract_addresses=hyperdrive_contract_addresses,
-            )
-        except AgentDoneException:
-            # Using this exception to stop the agents,
-            # so this exception is expected on test pass
-            pass
+        run_agents(
+            env_config,
+            agent_config,
+            account_key_config,
+            eth_config=eth_config,
+            contract_addresses=hyperdrive_contract_addresses,
+        )
