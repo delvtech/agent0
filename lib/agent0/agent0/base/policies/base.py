@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Generic, Tuple, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from fixedpointmath import FixedPoint
 from numpy.random import default_rng
@@ -40,6 +40,6 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         """Return the class name"""
         return self.__class__.__name__
 
-    def action(self, interface: MarketInterface, wallet: Wallet) -> Tuple[list[Trade], bool]:
+    def action(self, interface: MarketInterface, wallet: Wallet) -> tuple[list[Trade], bool]:
         """Returns an empty list, indicating no action"""
         raise NotImplementedError

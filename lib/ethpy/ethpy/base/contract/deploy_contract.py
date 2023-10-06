@@ -32,7 +32,7 @@ def deploy_contract_and_return(
 
     Returns
     -------
-    Tuple[ChecksumAddress, Contract]
+    tuple[ChecksumAddress, Contract]
         The deployed contract address and Contract object
 
     """
