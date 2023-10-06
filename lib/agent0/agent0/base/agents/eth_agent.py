@@ -91,7 +91,5 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
             List of Trade type objects that represent the trades to be made by this agent
         """
         actions = list[Trade[MarketAction]]
-        done_trading: bool
-        (actions, done_trading) = self.policy.action(interface, self.wallet)
-        self.done_trading = done_trading
+        (actions, self.done_trading) = self.policy.action(interface, self.wallet)
         return actions

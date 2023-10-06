@@ -140,9 +140,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         # get the action list from the policy
         # TODO: Deprecate the old wallet in favor of this new one
         actions: list[Trade[HyperdriveMarketAction]]
-        done_trading: bool
-        actions, done_trading = self.policy.action(interface, self.wallet)
-        self.done_trading = done_trading
+        actions, self.done_trading = self.policy.action(interface, self.wallet)
 
         # edit each action in place
         for action in actions:

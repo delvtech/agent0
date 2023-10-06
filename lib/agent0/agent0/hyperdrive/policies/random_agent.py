@@ -239,7 +239,7 @@ class RandomAgent(HyperdrivePolicy):
         -------
         tuple[list[MarketAction], bool]
             A tuple where the first element is a list of actions,
-            and the second tuple defines if the agent is done trading
+            and the second element defines if the agent is done trading
         """
         # pylint: disable=too-many-return-statements
         # check if the agent will trade this block or not

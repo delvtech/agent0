@@ -41,5 +41,19 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         return self.__class__.__name__
 
     def action(self, interface: MarketInterface, wallet: Wallet) -> tuple[list[Trade], bool]:
-        """Returns an empty list, indicating no action"""
+        """Specify actions.
+
+        Arguments
+        ---------
+        market : HyperdriveMarketState
+            the trading market
+        wallet : HyperdriveWallet
+            agent's wallet
+
+        Returns
+        -------
+        tuple[list[MarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         raise NotImplementedError

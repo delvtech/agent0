@@ -83,8 +83,9 @@ class ArbitragePolicy(HyperdrivePolicy):
 
         Returns
         -------
-        list[Trade]
-            list of actions
+        tuple[list[MarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
         """
         # Get fixed rate
         fixed_rate = interface.fixed_rate

@@ -52,7 +52,21 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
+        """This agent simply opens all trades for a fixed amount and closes them after, one at a time
+
+        Arguments
+        ---------
+        market : HyperdriveMarketState
+            the trading market
+        wallet : HyperdriveWallet
+            agent's wallet
+
+        Returns
+        -------
+        tuple[list[MarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         if self.counter == 0:
