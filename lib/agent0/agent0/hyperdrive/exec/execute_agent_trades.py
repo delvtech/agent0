@@ -131,7 +131,7 @@ async def async_execute_agent_trades(
     # Make calls per agent to execute_single_agent_trade
     # Await all trades to finish before continuing
     gathered_trade_results: list[list[TradeResult]] = await asyncio.gather(
-        *[async_execute_single_agent_trade(agent, hyperdrive) for agent in agents]
+        *[async_execute_single_agent_trade(agent, hyperdrive) for agent in agents if not agent.done_trading]
     )
     # Flatten list of lists, since agent information is already in TradeResult
     trade_results = [item for sublist in gathered_trade_results for item in sublist]

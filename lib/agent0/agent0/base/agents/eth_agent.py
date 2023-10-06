@@ -64,6 +64,8 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
             self.policy = NoActionPolicy()
         else:
             self.policy = policy
+        # State variable defining if this agent is done trading
+        self.done_trading = False
         super().__init__(account._key_obj, account._publicapi)  # pylint: disable=protected-access
         self.wallet = EthWallet(
             address=HexBytes(self.address),
@@ -88,4 +90,8 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
         list[Trade]
             List of Trade type objects that represent the trades to be made by this agent
         """
-        return self.policy.action(interface, self.wallet)
+        actions = list[Trade[MarketAction]]
+        done_trading: bool
+        (actions, done_trading) = self.policy.action(interface, self.wallet)
+        self._done_trading = done_trading
+        return actions
