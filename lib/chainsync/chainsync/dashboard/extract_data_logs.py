@@ -47,6 +47,7 @@ def get_combined_data(txn_data, pool_info_data):
         "lpTotalSupply": "lp_total_supply",
         "sharePrice": "share_price",
         "shareReserves": "share_reserves",
+        "shareAdjustment": "share_adjustment",
         "shortAverageMaturityTime": "short_average_maturity_time",
         "shortsOutstanding": "shorts_outstanding",
         "timestamp": "block_timestamp",
