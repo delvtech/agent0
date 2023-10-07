@@ -9,6 +9,7 @@ import docker
 import pytest
 from chainsync import PostgresConfig
 from chainsync.db.base import Base, initialize_engine
+from docker.errors import DockerException
 from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -26,7 +27,17 @@ def psql_docker() -> Iterator[PostgresConfig]:
     Iterator[PostgresConfig]
         An iterator that yields a PostgresConfig
     """
-    client = docker.from_env()
+    try:
+        client = docker.from_env()
+    # Skip this test if docker isn't installed
+    except DockerException as exc:
+        # This env variable gets set when running tests in CI
+        # Hence, we don't want to skip this test if we're in CI
+        in_ci = os.getenv("IN_CI")
+        if in_ci is None:
+            pytest.skip("Docker engine not found, skipping")
+        else:
+            raise exc
 
     # Using these config for tests
     postgres_config = PostgresConfig(

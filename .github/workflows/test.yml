@@ -51,7 +51,7 @@ jobs:
 
       - name: run pytest with coverage
         run: |
-          coverage run -m pytest
+          IN_CI=true coverage run -m pytest
 
       - name: generate coverage report
         run: |
