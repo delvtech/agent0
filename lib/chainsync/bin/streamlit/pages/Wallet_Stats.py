@@ -77,7 +77,11 @@ latest_wallet_pnl = latest_wallet_pnl[
 
 # Show all dataframes
 st.write("Total PnL")
-latest_pnl = latest_wallet_pnl.groupby("walletAddress").agg({"username": "first", "pnl": "sum"})
+latest_pnl = (
+    latest_wallet_pnl.groupby("walletAddress")
+    .agg({"username": "first", "pnl": "sum"})
+    .sort_values("pnl", ascending=False)
+)
 st.dataframe(latest_pnl.astype(str), use_container_width=True)
 
 st.write("Current Open Positions")
