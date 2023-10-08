@@ -28,8 +28,8 @@ class AgentConfig:
         The number of agents of this type to spin up
     private_keys : list[str] | None
         list of strings, where each key contains
-    init_kwargs : dict
-        A dictionary of keyword arguments for the policy constructor
+    policy_config: BasePolicy.Config | None
+        The policy's config object for custom policy configuration
     """
 
     # lots of configs!
