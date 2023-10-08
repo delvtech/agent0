@@ -10,15 +10,19 @@ from agent0.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.hyperdrive.state import TradeResult, TradeStatus
 from ethpy.hyperdrive import HyperdriveInterface
 from web3 import Web3
+from web3.exceptions import ContractCustomError
 from web3.types import RPCEndpoint
 
 from .execute_agent_trades import async_execute_agent_trades
+
+# TODO: Suppress logging from ethpy here as agent0 handles logging
 
 
 def trade_if_new_block(
     hyperdrive: HyperdriveInterface,
     agent_accounts: list[HyperdriveAgent],
     halt_on_errors: bool,
+    halt_on_slippage: bool,
     last_executed_block: int,
 ) -> int:
     """Execute trades if there is a new block.
@@ -31,6 +35,9 @@ def trade_if_new_block(
         A list of HyperdriveAgent objects that contain a wallet address and Elfpy Agent for determining trades
     halt_on_errors : bool
         If true, raise an exception if a trade reverts. Otherwise, log a warning and move on.
+    halt_on_slippage: bool
+        If halt_on_errors is true and halt_on_slippage is false,
+        don't raise an exception if slippage happens.
     last_executed_block : int
         The block number when a trade last happened
 
@@ -69,14 +76,28 @@ def trade_if_new_block(
                     float(trade_result.trade_object.market_action.trade_amount),
                 )
             elif trade_result.status == TradeStatus.FAIL:
-                logging.info(
-                    "AGENT %s (%s) attempted %s for %g\nCrashed with error: %s",
-                    str(trade_result.agent.checksum_address),
-                    trade_result.agent.policy.__class__.__name__,
-                    trade_result.trade_object.market_action.action_type,
-                    float(trade_result.trade_object.market_action.trade_amount),
-                    trade_result.exception,
+                is_slippage = isinstance(trade_result.exception, ContractCustomError) and (
+                    "OutputLimit raised" in trade_result.exception.args[1]
                 )
+                if is_slippage:
+                    logging.info(
+                        "AGENT %s (%s) attempted %s for %g\nSlippage detected: %s",
+                        str(trade_result.agent.checksum_address),
+                        trade_result.agent.policy.__class__.__name__,
+                        trade_result.trade_object.market_action.action_type,
+                        float(trade_result.trade_object.market_action.trade_amount),
+                        trade_result.exception,
+                    )
+                else:
+                    logging.info(
+                        "AGENT %s (%s) attempted %s for %g\nCrashed with error: %s",
+                        str(trade_result.agent.checksum_address),
+                        trade_result.agent.policy.__class__.__name__,
+                        trade_result.trade_object.market_action.action_type,
+                        float(trade_result.trade_object.market_action.trade_amount),
+                        trade_result.exception,
+                    )
+
                 # Sanity check: exception should not be none if trade failed
                 # Additionally, crash reporting information should exist
                 assert trade_result.exception is not None
@@ -87,9 +108,9 @@ def trade_if_new_block(
                 log_hyperdrive_crash_report(trade_result)
 
                 if halt_on_errors:
-                    # TODO do individual handeling of crash reporting
-                    # e.g., don't crash if slippage is too high
-                    raise trade_result.exception
+                    # Don't halt if slippage detected and halt_on_slippage is false
+                    if not is_slippage or halt_on_slippage:
+                        raise trade_result.exception
             else:
                 # Should never get here
                 assert False

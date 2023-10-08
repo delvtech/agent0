@@ -23,6 +23,8 @@ class EnvironmentConfig(FrozenClass):
     username: str = DEFAULT_USERNAME
     # if true, stop executing when trade errors occur
     halt_on_errors: bool = False
+    # if halt_on_errors is True, halt_on_slippage controls if we halt when slippage happens
+    halt_on_slippage: bool = False
     # optional output filename for logging
     log_filename: str = "agent0-logs"
     # log level; should be in [logging.DEBUG, logging.INFO, logging.WARNING]
