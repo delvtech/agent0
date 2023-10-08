@@ -89,6 +89,9 @@ def log_hyperdrive_crash_report(trade_result: TradeResult) -> None:
     exception = trade_result.exception
     formatted_exception = str(exception)
 
+    assert exception is not None
+    formatted_traceback = str(exception.__traceback__)
+
     formatted_trade_obj = _hyperdrive_trade_obj_to_dict(trade_result.trade_object)
     formatted_trade_obj = json.dumps(formatted_trade_obj, indent=4, cls=ExtendedJSONEncoder)
 
@@ -105,8 +108,9 @@ def log_hyperdrive_crash_report(trade_result: TradeResult) -> None:
     formatted_agent_info = json.dumps(formatted_agent_info, indent=4, cls=ExtendedJSONEncoder)
 
     logging.critical(
-        """Exception: %s\nTrade: %s\nWallet: %s\nPoolInfo: %s\nPoolConfig: %s\n""",
+        """Exception: %s\nTraceback: %s\nTrade: %s\nWallet: %s\nPoolInfo: %s\nPoolConfig: %s\n""",
         formatted_exception,
+        formatted_traceback,
         formatted_trade_obj,
         formatted_agent_wallet,
         formatted_pool_info,
