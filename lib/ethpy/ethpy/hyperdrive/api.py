@@ -15,6 +15,8 @@ from ethpy.base import (
     BaseInterface,
     async_smart_contract_transact,
     get_account_balance,
+    initialize_web3_with_http_provider,
+    load_all_abis,
     smart_contract_preview_transaction,
     smart_contract_read,
 )
@@ -22,10 +24,10 @@ from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from fixedpointmath import FixedPoint
 from pyperdrive.types import Fees, PoolConfig, PoolInfo
 from web3 import Web3
+from web3.contract.contract import Contract
 from web3.types import BlockData, Timestamp
 
 from .addresses import fetch_hyperdrive_address_from_uri
-from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
 from .interface import (
     get_hyperdrive_checkpoint,
     get_hyperdrive_pool_config,
@@ -54,6 +56,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         self,
         eth_config: EthConfig | None = None,
         addresses: HyperdriveAddresses | None = None,
+        web3: Web3 | None = None,
     ) -> None:
         """The HyperdriveInterface API.
 
@@ -63,23 +66,34 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         In this case, the `eth_config.artifacts_uri` variable is not used,
         and these Addresses are used instead.
 
-        ## TODO: Change pyperdrive interface to take str OR python FixedPoint objs; use FixedPoint here.
+        .. todo::
+            Change pyperdrive interface to take str OR python FixedPoint objs;
+            use FixedPoint here.
         """
         if eth_config is None:
             eth_config = build_eth_config()
         self.config = eth_config
         if addresses is None:
             addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
-        self.web3, self.base_token_contract, self.hyperdrive_contract = get_web3_and_hyperdrive_contracts(
-            self.config, addresses
+        if web3 is None:
+            web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
+        self.web3 = web3
+        abis = load_all_abis(eth_config.abi_dir)
+        # set up the ERC20 contract for minting base tokens
+        self.base_token_contract: Contract = web3.eth.contract(
+            abi=abis["ERC20Mintable"], address=web3.to_checksum_address(addresses.base_token)
+        )
+        # set up hyperdrive contract
+        self.hyperdrive_contract: Contract = web3.eth.contract(
+            abi=abis["IHyperdrive"], address=web3.to_checksum_address(addresses.mock_hyperdrive)
         )
         self.last_state_block_number = copy.copy(self.current_block_number)
-        # static
+        # pool config is static
         self._contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         self.pool_config = process_hyperdrive_pool_config(
             copy.deepcopy(self._contract_pool_config), self.hyperdrive_contract.address
         )
-        # will update with trades
+        # the following attributes will change when trades occur
         self._contract_pool_info: dict[str, Any] = {}
         self._pool_info: dict[str, Any] = {}
         self._contract_latest_checkpoint: dict[str, int] = {}
@@ -236,7 +250,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 self.hyperdrive_contract, self.current_block_number
             )
             self._latest_checkpoint = process_hyperdrive_checkpoint(
-                copy.deepcopy(self._contract_latest_checkpoint), self.web3, self.current_block_number
+                copy.deepcopy(self._contract_latest_checkpoint),
+                self.web3,
+                self.current_block_number,
             )
 
     def bonds_given_shares_and_rate(self, target_rate: FixedPoint) -> FixedPoint:
@@ -255,7 +271,10 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         )
 
     async def async_open_long(
-        self, agent: LocalAccount, trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None
+        self,
+        agent: LocalAccount,
+        trade_amount: FixedPoint,
+        slippage_tolerance: FixedPoint | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to open a long position.
 
@@ -278,7 +297,12 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         agent_checksum_address = Web3.to_checksum_address(agent.address)
         min_output = 0
         as_underlying = True
-        fn_args = (trade_amount.scaled_value, min_output, agent_checksum_address, as_underlying)
+        fn_args = (
+            trade_amount.scaled_value,
+            min_output,
+            agent_checksum_address,
+            as_underlying,
+        )
         if slippage_tolerance is not None:
             preview_result = smart_contract_preview_transaction(
                 self.hyperdrive_contract, agent_checksum_address, "openLong", *fn_args
@@ -286,7 +310,12 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             min_output = (
                 FixedPoint(scaled_value=preview_result["bondProceeds"]) * (FixedPoint(1) - slippage_tolerance)
             ).scaled_value
-            fn_args = (trade_amount.scaled_value, min_output, agent_checksum_address, as_underlying)
+            fn_args = (
+                trade_amount.scaled_value,
+                min_output,
+                agent_checksum_address,
+                as_underlying,
+            )
         tx_receipt = await async_smart_contract_transact(
             self.web3, self.hyperdrive_contract, agent, "openLong", *fn_args
         )
@@ -377,7 +406,12 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         agent_checksum_address = Web3.to_checksum_address(agent.address)
         as_underlying = True
         max_deposit = int(eth_utils.currency.MAX_WEI)
-        fn_args = (trade_amount.scaled_value, max_deposit, agent_checksum_address, as_underlying)
+        fn_args = (
+            trade_amount.scaled_value,
+            max_deposit,
+            agent_checksum_address,
+            as_underlying,
+        )
         if slippage_tolerance:
             preview_result = smart_contract_preview_transaction(
                 self.hyperdrive_contract, agent_checksum_address, "openShort", *fn_args
@@ -385,7 +419,12 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             max_deposit = (
                 FixedPoint(scaled_value=preview_result["traderDeposit"]) * (FixedPoint(1) + slippage_tolerance)
             ).scaled_value
-        fn_args = (trade_amount.scaled_value, max_deposit, agent_checksum_address, as_underlying)
+        fn_args = (
+            trade_amount.scaled_value,
+            max_deposit,
+            agent_checksum_address,
+            as_underlying,
+        )
         tx_receipt = await async_smart_contract_transact(
             self.web3, self.hyperdrive_contract, agent, "openShort", *fn_args
         )
@@ -436,7 +475,13 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             min_output = (
                 FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
             ).scaled_value
-            fn_args = (maturity_time, trade_amount.scaled_value, min_output, agent_checksum_address, as_underlying)
+            fn_args = (
+                maturity_time,
+                trade_amount.scaled_value,
+                min_output,
+                agent_checksum_address,
+                as_underlying,
+            )
         tx_receipt = await async_smart_contract_transact(
             self.web3, self.hyperdrive_contract, agent, "closeShort", *fn_args
         )
@@ -505,7 +550,12 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         agent_checksum_address = Web3.to_checksum_address(agent.address)
         min_output = 0
         as_underlying = True
-        fn_args = (trade_amount.scaled_value, min_output, agent_checksum_address, as_underlying)
+        fn_args = (
+            trade_amount.scaled_value,
+            min_output,
+            agent_checksum_address,
+            as_underlying,
+        )
         tx_receipt = await async_smart_contract_transact(
             self.web3, self.hyperdrive_contract, agent, "removeLiquidity", *fn_args
         )
@@ -545,9 +595,18 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         agent_checksum_address = Web3.to_checksum_address(agent.address)
         min_output = FixedPoint(scaled_value=1)
         as_underlying = True
-        fn_args = (trade_amount.scaled_value, min_output.scaled_value, agent_checksum_address, as_underlying)
+        fn_args = (
+            trade_amount.scaled_value,
+            min_output.scaled_value,
+            agent_checksum_address,
+            as_underlying,
+        )
         tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "redeemWithdrawalShares", *fn_args
+            self.web3,
+            self.hyperdrive_contract,
+            agent,
+            "redeemWithdrawalShares",
+            *fn_args,
         )
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "redeemWithdrawalShares")
         return trade_result
@@ -572,7 +631,10 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             "balanceOf",
             agent_checksum_address,
         )["value"]
-        return (FixedPoint(scaled_value=agent_eth_balance), FixedPoint(scaled_value=agent_base_balance))
+        return (
+            FixedPoint(scaled_value=agent_eth_balance),
+            FixedPoint(scaled_value=agent_base_balance),
+        )
 
     def get_max_long(self, budget: FixedPoint) -> FixedPoint:
         """Get the maximum allowable long for the given Hyperdrive pool and agent budget.
