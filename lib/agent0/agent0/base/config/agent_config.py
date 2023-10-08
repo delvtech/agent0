@@ -1,7 +1,7 @@
 """Information for creating an agent"""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Type
 
 from agent0.base.policies import BasePolicy
@@ -42,7 +42,10 @@ class AgentConfig:
     slippage_tolerance: FixedPoint | None = FixedPoint("0.0001")  # default to 0.01%
     number_of_agents: int = 1
     private_keys: list[str] | None = None
-    init_kwargs: dict = field(default_factory=dict)
+    # TODO might be able to use default factory for this object for default
+    # instead of dong this in the constructor of every policy
+    # However, we may just want to explicitly say this field is required
+    policy_config: BasePolicy.Config | None = None
 
     def __post_init__(self):
         if self.private_keys is not None and len(self.private_keys) != self.number_of_agents:

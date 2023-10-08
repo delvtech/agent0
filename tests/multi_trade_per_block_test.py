@@ -156,7 +156,7 @@ class TestMultiTradePerBlock:
                 slippage_tolerance=None,
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                init_kwargs={},
+                policy_config=MultiTradePolicy.Config(),
             ),
         ]
 

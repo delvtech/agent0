@@ -54,7 +54,7 @@ def get_agent_accounts(
 
     # each agent_info object specifies one agent type and a variable number of agents of that type
     for agent_info in agent_config:
-        kwargs = agent_info.init_kwargs
+        kwargs = {}
         kwargs["rng"] = rng
         for policy_instance_index in range(agent_info.number_of_agents):  # instantiate one agent per policy
             agent_count = policy_instance_index + sum(num_agents_so_far)
@@ -65,6 +65,7 @@ def get_agent_accounts(
             # Get the budget from the env file
             kwargs["budget"] = FixedPoint(scaled_value=agent_base_budgets[agent_count])
             kwargs["slippage_tolerance"] = agent_info.slippage_tolerance
+            kwargs["policy_config"] = agent_info.policy_config
             eth_agent = HyperdriveAgent(
                 Account().from_key(account_key_config.AGENT_KEYS[agent_count]), policy=agent_info.policy(**kwargs)
             )

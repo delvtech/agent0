@@ -1,6 +1,7 @@
 """User strategy that opens or closes a random position with a random allowed amount."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
@@ -19,17 +20,43 @@ if TYPE_CHECKING:
 class RandomAgent(HyperdrivePolicy):
     """Random agent."""
 
+    @dataclass
+    class Config(HyperdrivePolicy.Config):
+        """Custom config arguments for this policy
+
+        Attributes
+        ----------
+        trade_chance: FixedPoint
+            The probability of this bot to make a trade on an actio call
+        """
+
+        trade_chance: FixedPoint = FixedPoint("1.0")
+
     def __init__(
         self,
         budget: FixedPoint = FixedPoint("10_000.0"),
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
-        trade_chance: FixedPoint = FixedPoint("1.0"),
+        policy_config: Config | None = None,
     ) -> None:
-        """Adds custom attributes."""
-        if not isinstance(trade_chance, FixedPoint):
-            raise TypeError(f"{trade_chance=} must be of type `FixedPoint`")
-        self.trade_chance = trade_chance
+        """Initializes the bot
+
+        Arguments
+        ---------
+        budget: FixedPoint
+            The budget of this policy
+        rng: NumpyGenerator | None
+            Random number generator
+        slippage_tolerance: FixedPoint | None
+            Slippage tolerance of trades
+        policy_config: Config | None
+            The custom arguments for this policy
+        """
+
+        if policy_config is None:
+            policy_config = self.Config()
+
+        self.trade_chance = policy_config.trade_chance
         super().__init__(budget, rng, slippage_tolerance)
 
     def get_available_actions(

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from agent0 import initialize_accounts
@@ -34,16 +35,32 @@ USERNAME = "changeme"
 class CustomCycleTradesPolicy(HyperdrivePolicy):
     """An agent that simply cycles through all trades"""
 
+    @dataclass
+    class Config(HyperdrivePolicy.Config):
+        """Custom config arguments for this policy
+
+        Attributes
+        ----------
+        static_trade_amount_wei: int
+            The probability of this bot to make a trade on an actio call
+        """
+
+        # Add additional parameters for custom policy here
+        # Setting defaults for this parameter here
+        static_trade_amount_wei: int = FixedPoint(100).scaled_value  # 100 base
+
     # Using default parameters
     def __init__(
         self,
         budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
-        # Add additional parameters for custom policy here
-        static_trade_amount_wei: int = FixedPoint(100).scaled_value,  # 100 base
+        policy_config: Config | None = None,
     ):
-        self.static_trade_amount_wei = static_trade_amount_wei
+        # Set defaults
+        if policy_config is None:
+            policy_config = self.Config()
+        self.static_trade_amount_wei = policy_config.static_trade_amount_wei
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
@@ -187,7 +204,9 @@ agent_config: list[AgentConfig] = [
         slippage_tolerance=FixedPoint("0.0001"),
         base_budget_wei=FixedPoint(10_000).scaled_value,  # 10k base
         eth_budget_wei=FixedPoint(10).scaled_value,  # 10 base
-        init_kwargs={"static_trade_amount_wei": FixedPoint(100).scaled_value},  # 100 base static trades
+        policy_config=CustomCycleTradesPolicy.Config(
+            static_trade_amount_wei=FixedPoint(100).scaled_value,  # 100 base static trades
+        ),
     ),
 ]
 
