@@ -6,7 +6,7 @@ import time
 from typing import Iterator
 
 import pytest
-from ethpy.hyperdrive import LocalHyperdriveChain, deploy_hyperdrive_from_factory
+from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig
 
@@ -47,7 +47,7 @@ def local_chain() -> Iterator[str]:
 
 
 @pytest.fixture(scope="function")
-def local_hyperdrive_chain(local_chain: str) -> LocalHyperdriveChain:
+def local_hyperdrive_pool(local_chain: str) -> DeployedHyperdrivePool:
     """Initializes hyperdrive on a local anvil chain for testing.
 
     Arguments
