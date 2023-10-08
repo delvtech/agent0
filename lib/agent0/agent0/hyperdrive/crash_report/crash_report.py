@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime
+from traceback import format_tb
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -89,9 +90,6 @@ def log_hyperdrive_crash_report(trade_result: TradeResult) -> None:
     exception = trade_result.exception
     formatted_exception = str(exception)
 
-    assert exception is not None
-    formatted_traceback = str(exception.__traceback__)
-
     formatted_trade_obj = _hyperdrive_trade_obj_to_dict(trade_result.trade_object)
     formatted_trade_obj = json.dumps(formatted_trade_obj, indent=4, cls=ExtendedJSONEncoder)
 
@@ -107,14 +105,17 @@ def log_hyperdrive_crash_report(trade_result: TradeResult) -> None:
     formatted_agent_info = _hyperdrive_agent_to_dict(trade_result.agent)
     formatted_agent_info = json.dumps(formatted_agent_info, indent=4, cls=ExtendedJSONEncoder)
 
+    assert exception is not None
+    formatted_traceback = "".join(format_tb(exception.__traceback__))
+
     logging.critical(
-        """Exception: %s\nTraceback: %s\nTrade: %s\nWallet: %s\nPoolInfo: %s\nPoolConfig: %s\n""",
+        """Exception: %s\nTrade: %s\nWallet: %s\nPoolInfo: %s\nPoolConfig: %s\nTraceback: %s\n""",
         formatted_exception,
-        formatted_traceback,
         formatted_trade_obj,
         formatted_agent_wallet,
         formatted_pool_info,
         formatted_pool_config,
+        formatted_traceback,
     )
 
 
