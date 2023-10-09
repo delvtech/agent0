@@ -26,8 +26,7 @@ from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveInterface
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
-from ethpy.test_fixtures.deploy_hyperdrive import _calculateTimeStretch
-from ethpy.test_fixtures.local_chain import LocalHyperdriveChain
+from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
@@ -44,7 +43,7 @@ class TestBotToDb:
     # pylint: disable=too-many-locals, too-many-statements
     def test_bot_to_db(
         self,
-        local_hyperdrive_chain: LocalHyperdriveChain,
+        local_hyperdrive_pool: DeployedHyperdrivePool,
         cycle_trade_policy: Type[CycleTradesPolicy],
         db_session: Session,
         db_api: str,
@@ -55,10 +54,10 @@ class TestBotToDb:
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
         # Get hyperdrive chain info
-        uri: URI | None = cast(HTTPProvider, local_hyperdrive_chain.web3.provider).endpoint_uri
+        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
         rpc_uri = uri if uri else URI("http://localhost:8545")
-        deploy_account: LocalAccount = local_hyperdrive_chain.deploy_account
-        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
+        deploy_account: LocalAccount = local_hyperdrive_pool.deploy_account
+        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
 
         # Build environment config
         env_config = EnvironmentConfig(
@@ -187,7 +186,10 @@ class TestBotToDb:
 
         # TODO these expected values are defined in lib/ethpy/ethpy/test_fixtures/deploy_hyperdrive.py
         # Eventually, we want to parameterize these values to pass into deploying hyperdrive
-        expected_timestretch_fp = FixedPoint(scaled_value=_calculateTimeStretch(FixedPoint("0.05").scaled_value))
+        initial_fixed_rate = FixedPoint("0.05")
+        expected_timestretch_fp = FixedPoint(1) / (
+            FixedPoint("5.24592") / (FixedPoint("0.04665") * (initial_fixed_rate * FixedPoint(100)))
+        )
         expected_timestretch = _to_unscaled_decimal(expected_timestretch_fp)
         expected_inv_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
 

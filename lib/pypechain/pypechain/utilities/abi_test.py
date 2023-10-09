@@ -1,12 +1,7 @@
 """Tests for ABI utilities."""
-
-from ethpy.test_fixtures import local_chain, local_hyperdrive_chain  # pylint: disable=unused-import, ungrouped-imports
-from ethpy.test_fixtures.local_chain import LocalHyperdriveChain
+from ethpy.hyperdrive import DeployedHyperdrivePool
 
 from .abi import get_structs_for_abi
-
-# using pytest fixtures necessitates this.
-# pylint: disable=redefined-outer-name
 
 
 class TestStructs:
@@ -14,13 +9,13 @@ class TestStructs:
 
     def test_hyperdrive_structs(
         self,
-        local_hyperdrive_chain: LocalHyperdriveChain,
+        local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
         """Runs the entire pipeline and checks the database at the end.
         All arguments are fixtures.
         """
 
-        structs = get_structs_for_abi(local_hyperdrive_chain.hyperdrive_contract.abi)
+        structs = get_structs_for_abi(local_hyperdrive_pool.hyperdrive_contract.abi)
 
         actual = list(structs)
         expected = ["Checkpoint", "MarketState", "Fees", "PoolConfig", "PoolInfo", "WithdrawPool"]

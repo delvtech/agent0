@@ -14,9 +14,6 @@ from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-# fixture arguments in test function have to be the same as the fixture name
-# pylint: disable=redefined-outer-name
-
 
 @pytest.fixture(scope="session")
 def psql_docker() -> Iterator[PostgresConfig]:
@@ -71,7 +68,7 @@ def psql_docker() -> Iterator[PostgresConfig]:
 
 
 @pytest.fixture(scope="session")
-def database_engine(psql_docker: PostgresConfig) -> Iterator[Engine]:
+def database_engine(psql_docker: PostgresConfig) -> Iterator[Engine]:  # pylint: disable=redefined-outer-name
     """Test fixture creating psql engine on local postgres container
 
     Arguments
@@ -100,7 +97,7 @@ def database_engine(psql_docker: PostgresConfig) -> Iterator[Engine]:
 
 
 @pytest.fixture(scope="function")
-def db_session(database_engine: Engine) -> Iterator[Session]:
+def db_session(database_engine: Engine) -> Iterator[Session]:  # pylint: disable=redefined-outer-name
     """Initializes the in memory db session and creates the db schema
 
     Arguments
@@ -126,7 +123,7 @@ def db_session(database_engine: Engine) -> Iterator[Session]:
 
 
 @pytest.fixture(scope="function")
-def db_api(psql_docker: PostgresConfig) -> Iterator[str]:
+def db_api(psql_docker: PostgresConfig) -> Iterator[str]:  # pylint: disable=redefined-outer-name
     """Launches a process for the db api
 
     Arguments

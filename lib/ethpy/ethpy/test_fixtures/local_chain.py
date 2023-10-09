@@ -1,26 +1,19 @@
 """Test fixture for deploying local anvil chain and initializing hyperdrive."""
+from __future__ import annotations
+
 import subprocess
 import time
-from typing import Iterator, NamedTuple
+from typing import Iterator
 
 import pytest
-from eth_account.signers.local import LocalAccount
-from web3 import Web3
-from web3.contract.contract import Contract
-
-from ethpy.base import initialize_web3_with_http_provider
-from ethpy.base.abi.load_abis import load_all_abis
-from ethpy.hyperdrive import HyperdriveAddresses
-
-from .deploy_hyperdrive import deploy_and_initialize_hyperdrive, deploy_hyperdrive_factory, initialize_deploy_account
-
-# fixture arguments in test function have to be the same as the fixture name
-# pylint: disable=redefined-outer-name
+from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
+from fixedpointmath import FixedPoint
+from hypertypes.IHyperdriveTypes import Fees, PoolConfig
 
 
 @pytest.fixture(scope="function")
 def local_chain() -> Iterator[str]:
-    """Launches a local anvil chain for testing. Kills the anvil chain after.
+    """Launch a local anvil chain for testing and kill the anvil chain after.
 
     Returns
     -------
@@ -50,76 +43,9 @@ def local_chain() -> Iterator[str]:
     anvil_process.kill()
 
 
-class LocalHyperdriveChain(NamedTuple):
-    """Return value from the local_hyperdrive_chain fixture."""
-
-    web3: Web3
-    deploy_account: LocalAccount
-    hyperdrive_contract_addresses: HyperdriveAddresses
-    hyperdrive_contract: Contract
-    hyperdrive_factory_contract: Contract
-    base_token_contract: Contract
-
-
-def create_hyperdrive_chain(rpc_uri: str, initial_liquidity=None) -> LocalHyperdriveChain:
-    """Initializes hyperdrive on a local anvil chain for testing.
-
-    Arguments
-    ---------
-    rpc_uri: str
-        The URI of the local RPC node
-    initial_liquidity: int | None, optional
-        The initial liquidity for the hyperdrive. Defaults to None.
-
-    Returns
-    -------
-    LocalHyperdriveChain
-        A tuple with the following key - value fields:
-
-        web3: Web3
-            web3 provider object
-        deploy_account: LocalAccount
-            The local account that deploys and initializes hyperdrive
-        hyperdrive_contract_addresses: HyperdriveAddresses
-            The hyperdrive contract addresses
-        hyperdrive_contract : Contract
-            web3.py contract instance for the hyperdrive contract
-        hyperdrive_factory_contract : Contract
-            web3.py contract instance for the hyperdrive factory contract
-        base_token_contract : Contract
-            web3.py contract instance for the base token contract
-    """
-    web3 = initialize_web3_with_http_provider(rpc_uri, reset_provider=False)
-    account = initialize_deploy_account(web3)
-    abi_folder = "packages/hyperdrive/src/abis/"
-    abis, _ = load_all_abis(abi_folder, return_bytecode=True)
-    base_token_contract, factory_contract = deploy_hyperdrive_factory(rpc_uri, account)
-    if initial_liquidity is None:
-        hyperdrive_addr = deploy_and_initialize_hyperdrive(web3, base_token_contract, factory_contract, account)
-    else:
-        hyperdrive_addr = deploy_and_initialize_hyperdrive(
-            web3, base_token_contract, factory_contract, account, initial_liquidity
-        )
-    hyperdrive_contract = web3.eth.contract(address=hyperdrive_addr, abi=abis["IHyperdrive"])
-    return LocalHyperdriveChain(
-        web3,
-        deploy_account=account,
-        hyperdrive_contract_addresses=HyperdriveAddresses(
-            base_token=Web3.to_checksum_address(base_token_contract.address),
-            hyperdrive_factory=Web3.to_checksum_address(factory_contract.address),
-            mock_hyperdrive=Web3.to_checksum_address(hyperdrive_addr),
-            mock_hyperdrive_math=None,
-        ),
-        hyperdrive_contract=hyperdrive_contract,
-        hyperdrive_factory_contract=factory_contract,
-        base_token_contract=base_token_contract,
-    )
-
-
 @pytest.fixture(scope="function")
-def local_hyperdrive_chain(local_chain: str) -> LocalHyperdriveChain:
+def local_hyperdrive_pool(local_chain: str) -> DeployedHyperdrivePool:  # pylint: disable=redefined-outer-name
     """Initializes hyperdrive on a local anvil chain for testing.
-    Returns the hyperdrive contract address.
 
     Arguments
     ---------
@@ -144,4 +70,57 @@ def local_hyperdrive_chain(local_chain: str) -> LocalHyperdriveChain:
         base_token_contract : Contract
             web3.py contract instance for the base token contract
     """
-    return create_hyperdrive_chain(local_chain)
+    # Lots of local  variables for the tests
+    # pylint: disable=too-many-locals
+    # Deployer is the pre-funded account on the Delv devnet
+    deployer_private_key: str = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+    # ABI folder should contain JSON and Bytecode files for the following contracts:
+    # ERC20Mintable, MockERC4626, ForwarderFactory, ERC4626HyperdriveDeployer, ERC4626HyperdriveFactory
+    abi_folder = "packages/hyperdrive/src/abis/"
+    # Factory initializaiton parameters
+    initial_variable_rate = FixedPoint("0.05")
+    curve_fee = FixedPoint("0.1")  # 10%
+    flat_fee = FixedPoint("0.0005")  # 0.05%
+    governance_fee = FixedPoint("0.15")  # 15%
+    max_curve_fee = FixedPoint("0.3")  # 30%
+    max_flat_fee = FixedPoint("0.0015")  # 0.15%
+    max_governance_fee = FixedPoint("0.30")  # 30%
+    fees = Fees(curve_fee.scaled_value, flat_fee.scaled_value, governance_fee.scaled_value)
+    max_fees = Fees(max_curve_fee.scaled_value, max_flat_fee.scaled_value, max_governance_fee.scaled_value)
+    # Pool initialization parameters
+    initial_fixed_rate = FixedPoint("0.05")  # 5%
+    initial_liquidity = FixedPoint(100_000_000)
+    initial_share_price = FixedPoint(1)
+    minimum_share_reserves = FixedPoint(10)
+    minimum_transaction_amount = FixedPoint("0.001")
+    position_duration = 604800  # 1 week
+    checkpoint_duration = 3600  # 1 hour
+    time_stretch = FixedPoint(1) / (
+        FixedPoint("5.24592") / (FixedPoint("0.04665") * (initial_fixed_rate * FixedPoint(100)))
+    )
+    oracle_size = 10
+    update_gap = 3600  # 1 hour
+    pool_config = PoolConfig(
+        "",  # will be determined in the deploy function
+        initial_share_price.scaled_value,
+        minimum_share_reserves.scaled_value,
+        minimum_transaction_amount.scaled_value,
+        position_duration,
+        checkpoint_duration,
+        time_stretch.scaled_value,
+        "",  # will be determined in the deploy function
+        "",  # will be determined in the deploy function
+        fees,
+        oracle_size,
+        update_gap,
+    )
+    return deploy_hyperdrive_from_factory(
+        local_chain,
+        abi_folder,
+        deployer_private_key,
+        initial_liquidity,
+        initial_variable_rate,
+        initial_fixed_rate,
+        pool_config,
+        max_fees,
+    )

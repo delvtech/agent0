@@ -16,9 +16,8 @@ from chainsync.exec import acquire_data, data_analysis
 from elfpy.types import MarketType, Trade
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.hyperdrive import HyperdriveInterface
-from ethpy.hyperdrive.addresses import HyperdriveAddresses
-from ethpy.test_fixtures.local_chain import LocalHyperdriveChain
+from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveInterface
+from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from sqlalchemy.orm import Session
@@ -119,14 +118,14 @@ class TestMultiTradePerBlock:
     # pylint: disable=too-many-locals, too-many-statements
     def test_multi_trade_per_block(
         self,
-        local_hyperdrive_chain: LocalHyperdriveChain,
+        local_hyperdrive_pool: DeployedHyperdrivePool,
         db_session: Session,
         db_api: str,
     ):
         """Runs the entire pipeline and checks the database at the end.
         All arguments are fixtures.
         """
-        # TODO local_hyperdrive_chain is currently being run with automining. Hence, multiple trades
+        # TODO local_hyperdrive_pool is currently being run with automining. Hence, multiple trades
         # per block can't be tested until we can parameterize anvil running without automining.
         # For now, this is simply testing that the introduction of async trades doesn't break
         # when automining.
@@ -135,9 +134,9 @@ class TestMultiTradePerBlock:
         os.environ["DEVELOP"] = "true"
 
         # Get hyperdrive chain info
-        uri: URI | None = cast(HTTPProvider, local_hyperdrive_chain.web3.provider).endpoint_uri
+        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
         rpc_uri = uri if uri else URI("http://localhost:8545")
-        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_chain.hyperdrive_contract_addresses
+        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
 
         # Build environment config
         env_config = EnvironmentConfig(
