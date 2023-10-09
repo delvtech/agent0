@@ -32,6 +32,7 @@ class PoolConfig:
     baseToken: str
     initialSharePrice: int
     minimumShareReserves: int
+    minimumTransactionAmount: int
     positionDuration: int
     checkpointDuration: int
     timeStretch: int

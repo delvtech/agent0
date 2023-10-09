@@ -25,7 +25,6 @@ class Checkpoint:
     """Checkpoint struct."""
 
     sharePrice: int
-    longSharePrice: int
     longExposure: int
 
 
@@ -35,13 +34,12 @@ class MarketState:
 
     shareReserves: int
     bondReserves: int
+    shareAdjustment: int
+    longExposure: int
     longsOutstanding: int
     shortsOutstanding: int
     longAverageMaturityTime: int
-    longOpenSharePrice: int
     shortAverageMaturityTime: int
-    shareAdjustment: int
-    longExposure: int
     isInitialized: bool
     isPaused: bool
 
