@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.exec import run_agents
+from agent0.test_fixtures import CycleTradesPolicy
 from chainsync.db.hyperdrive.interface import (
     get_current_wallet,
     get_pool_analysis,
@@ -45,7 +45,7 @@ class TestBotToDb:
     def test_bot_to_db(
         self,
         local_hyperdrive_chain: LocalHyperdriveChain,
-        cycle_trade_policy: Type[BasePolicy],
+        cycle_trade_policy: Type[CycleTradesPolicy],
         db_session: Session,
         db_api: str,
     ):
@@ -80,7 +80,7 @@ class TestBotToDb:
                 slippage_tolerance=FixedPoint("0.0001"),
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                init_kwargs={},
+                policy_config=cycle_trade_policy.Config(),
             ),
         ]
 
@@ -134,7 +134,7 @@ class TestBotToDb:
                 slippage_tolerance=FixedPoint("0.0001"),
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                init_kwargs={"max_trades": 3},
+                policy_config=cycle_trade_policy.Config(max_trades=3),
             ),
         ]
 

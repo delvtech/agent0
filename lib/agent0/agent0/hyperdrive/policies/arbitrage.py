@@ -1,6 +1,7 @@
 """Agent policy for arbitrade trading on the fixed rate"""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
@@ -28,15 +29,30 @@ class ArbitragePolicy(HyperdrivePolicy):
                 I close all open longs and open a new short for `trade_amount` bonds
     """
 
-    # Lots of arguments in arbitrage bot
-    def __init__(  # pylint: disable=too-many-arguments
+    @dataclass
+    class Config(HyperdrivePolicy.Config):
+        """Custom config arguments for this policy
+
+        Attributes
+        ----------
+        trade_amount: FixedPoint
+            The static amount to trade when opening a position
+        high_fixed_rate_thresh: FixedPoint
+            The upper threshold of the fixed rate to open a position
+        low_fixed_rate_thresh: FixedPoint
+            The lower threshold of the fixed rate to open a position
+        """
+
+        trade_amount: FixedPoint = FixedPoint(100)
+        high_fixed_rate_thresh: FixedPoint = FixedPoint("0.1")
+        low_fixed_rate_thresh: FixedPoint = FixedPoint("0.02")
+
+    def __init__(
         self,
         budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
-        trade_amount: FixedPoint | None = None,
-        high_fixed_rate_thresh: FixedPoint | None = None,
-        low_fixed_rate_thresh: FixedPoint | None = None,
+        policy_config: Config | None = None,
     ):
         """Initializes the bot
 
@@ -48,24 +64,14 @@ class ArbitragePolicy(HyperdrivePolicy):
             Random number generator
         slippage_tolerance: FixedPoint | None
             Slippage tolerance of trades
-        trade_amount: FixedPoint | None
-            The static amount to trade when opening a position
-        high_fixed_rate_thresh: FixedPoint | None
-            The upper threshold of the fixed rate to open a position
-        low_fixed_rate_thresh: FixedPoint | None
-            The lower threshold of the fixed rate to open a position
+        policy_config: Config | None
+            The custom arguments for this policy
         """
 
         # Defaults
-        if trade_amount is None:
-            trade_amount = FixedPoint(100)
-        if high_fixed_rate_thresh is None:
-            high_fixed_rate_thresh = FixedPoint("0.1")
-        if low_fixed_rate_thresh is None:
-            low_fixed_rate_thresh = FixedPoint("0.02")
-        self.trade_amount = trade_amount
-        self.high_fixed_rate_thresh = high_fixed_rate_thresh
-        self.low_fixed_rate_thresh = low_fixed_rate_thresh
+        if policy_config is None:
+            policy_config = self.Config()
+        self.policy_config = policy_config
 
         super().__init__(budget, rng, slippage_tolerance)
 
@@ -124,7 +130,7 @@ class ArbitragePolicy(HyperdrivePolicy):
                 )
 
         # High fixed rate detected
-        if fixed_rate >= self.high_fixed_rate_thresh:
+        if fixed_rate >= self.policy_config.high_fixed_rate_thresh:
             # Close all open shorts
             if len(wallet.shorts) > 0:
                 for maturity_time, short in wallet.shorts.items():
@@ -145,14 +151,14 @@ class ArbitragePolicy(HyperdrivePolicy):
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=self.trade_amount,
+                        trade_amount=self.policy_config.trade_amount,
                         wallet=wallet,
                     ),
                 )
             )
 
         # Low fixed rate detected
-        if fixed_rate <= self.low_fixed_rate_thresh:
+        if fixed_rate <= self.policy_config.low_fixed_rate_thresh:
             # Close all open longs
             if len(wallet.longs) > 0:
                 for maturity_time, long in wallet.longs.items():
@@ -173,7 +179,7 @@ class ArbitragePolicy(HyperdrivePolicy):
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_SHORT,
-                        trade_amount=self.trade_amount,
+                        trade_amount=self.policy_config.trade_amount,
                         wallet=wallet,
                     ),
                 )

@@ -34,6 +34,9 @@ class MultiTradePolicy(HyperdrivePolicy):
         budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
+        # When this policy doesn't have a config and doesn't define a custom config object
+        # we still need it in the constructor since the object factory still calls with this arg
+        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
@@ -114,7 +117,7 @@ class TestMultiTradePerBlock:
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
-    def test_bot_to_db(
+    def test_multi_trade_per_block(
         self,
         local_hyperdrive_chain: LocalHyperdriveChain,
         db_session: Session,
@@ -156,7 +159,7 @@ class TestMultiTradePerBlock:
                 slippage_tolerance=None,
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                init_kwargs={},
+                policy_config=MultiTradePolicy.Config(),
             ),
         ]
 

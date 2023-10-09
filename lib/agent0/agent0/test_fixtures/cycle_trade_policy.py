@@ -1,6 +1,7 @@
 """Pytest fixture that creates an in memory db session and creates dummy db schemas"""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Type
 
 import pytest
@@ -17,18 +18,32 @@ from numpy.random._generator import Generator as NumpyGenerator
 class CycleTradesPolicy(HyperdrivePolicy):
     """A agent that simply cycles through all trades"""
 
+    @dataclass
+    class Config(HyperdrivePolicy.Config):
+        """Custom config arguments for this policy
+
+        Attributes
+        ----------
+        trade_chance: FixedPoint
+            The probability of this bot to make a trade on an actio call
+        """
+
+        max_trades: int | None = None
+
     # Using default parameters
     def __init__(
         self,
         budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
-        max_trades: int | None = None,
+        policy_config: Config | None = None,
     ):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
+        if policy_config is None:
+            policy_config = self.Config()
         self.counter = 0
-        self.max_trades = max_trades
+        self.max_trades = policy_config.max_trades
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(

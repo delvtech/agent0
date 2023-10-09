@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
+from dataclasses import dataclass
 from typing import cast
 
 from agent0 import build_account_key_config_from_agent_config
@@ -26,18 +27,34 @@ from web3 import HTTPProvider
 class WalletTestPolicy(HyperdrivePolicy):
     """A agent that simply cycles through all trades"""
 
+    @dataclass
+    class Config(HyperdrivePolicy.Config):
+        """Custom config arguments for this policy
+
+        Attributes
+        ----------
+        rerun: bool
+            Determines if this policy is being reran
+            The second run should be doing assertions for this test
+        """
+
+        rerun: bool = False
+
     # Using default parameters
     def __init__(
         self,
         budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
-        rerun: bool = False,
+        policy_config: Config | None = None,
     ):
+        if policy_config is None:
+            policy_config = self.Config()
+
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
-        self.rerun = rerun
+        self.rerun = policy_config.rerun
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
@@ -144,7 +161,7 @@ class TestBotToDb:
                 slippage_tolerance=FixedPoint("0.0001"),
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                init_kwargs={"rerun": False},
+                policy_config=WalletTestPolicy.Config(rerun=False),
             ),
         ]
 
@@ -197,7 +214,7 @@ class TestBotToDb:
                 slippage_tolerance=FixedPoint("0.0001"),
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                init_kwargs={"rerun": True},
+                policy_config=WalletTestPolicy.Config(rerun=False),
             ),
         ]
 

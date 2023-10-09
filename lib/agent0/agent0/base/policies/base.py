@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from fixedpointmath import FixedPoint
@@ -20,8 +21,16 @@ MarketInterface = TypeVar("MarketInterface", bound="BaseInterface")
 class BasePolicy(Generic[MarketInterface, Wallet]):
     """Base class policy."""
 
+    @dataclass
+    class Config:
+        """Config data class for policy specific configuration"""
+
     def __init__(
-        self, budget: FixedPoint, rng: NumpyGenerator | None = None, slippage_tolerance: FixedPoint | None = None
+        self,
+        budget: FixedPoint,
+        rng: NumpyGenerator | None = None,
+        slippage_tolerance: FixedPoint | None = None,
+        # TODO should we pass in policy_config here in the base class constructor?
     ):
         # TODO budget should have a flag to allow for "the budget is however much this wallet has"
         # https://github.com/delvtech/elf-simulations/issues/827

@@ -39,11 +39,11 @@ agent_config: list[AgentConfig] = [
         # Fixed budgets
         base_budget_wei=FixedPoint(50_000).scaled_value,  # 50k base
         eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
-        init_kwargs={
-            "trade_amount": FixedPoint(1000),  # Open 1k in base or short 1k bonds
-            "high_fixed_rate_thresh": FixedPoint(0.1),  # Upper fixed rate threshold
-            "low_fixed_rate_thresh": FixedPoint(0.02),  # Lower fixed rate threshold
-        },
+        policy_config=Policies.arbitrage_policy.Config(
+            trade_amount=FixedPoint(1000),  # Open 1k in base or short 1k bonds
+            high_fixed_rate_thresh=FixedPoint(0.1),  # Upper fixed rate threshold
+            low_fixed_rate_thresh=FixedPoint(0.02),  # Lower fixed rate threshold
+        ),
     ),
     AgentConfig(
         policy=Policies.random_agent,
@@ -52,7 +52,7 @@ agent_config: list[AgentConfig] = [
         # Fixed budget
         base_budget_wei=FixedPoint(5_000).scaled_value,  # 5k base
         eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
-        init_kwargs={"trade_chance": FixedPoint("0.8")},
+        policy_config=Policies.random_agent.Config(trade_chance=FixedPoint("0.8")),
     ),
 ]
 
