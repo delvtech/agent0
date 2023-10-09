@@ -175,10 +175,7 @@ def process_hyperdrive_checkpoint(checkpoint: dict[str, int], web3: Web3, block_
     # and anytime we need the datetime we do it there
     out_checkpoint["timestamp"] = datetime.fromtimestamp(int(current_block_timestamp))
     out_checkpoint["sharePrice"] = FixedPoint(scaled_value=checkpoint["sharePrice"])
-    out_checkpoint["longSharePrice"] = FixedPoint(scaled_value=checkpoint["longSharePrice"])
-    # TODO: Pull this out when you update the hyperdrive abi
-    if "longExposure" in checkpoint:
-        out_checkpoint["longExposure"] = FixedPoint(scaled_value=checkpoint["longExposure"])
+    out_checkpoint["longExposure"] = FixedPoint(scaled_value=checkpoint["longExposure"])
     return out_checkpoint
 
 

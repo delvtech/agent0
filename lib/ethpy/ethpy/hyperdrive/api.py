@@ -294,11 +294,17 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
         agent_checksum_address = Web3.to_checksum_address(agent.address)
-        min_output = 0
+        # min_share_price : int
+        #   Minium share price at which to open the long.
+        #   This allows traders to protect themselves from opening a long in
+        #   a checkpoint where negative interest has accrued.
+        min_share_price = 0  # TODO: give the user access to this parameter
+        min_output = 0  # TODO: give the user access to this parameter
         as_underlying = True
         fn_args = (
             trade_amount.scaled_value,
             min_output,
+            min_share_price,
             agent_checksum_address,
             as_underlying,
         )
@@ -312,6 +318,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             fn_args = (
                 trade_amount.scaled_value,
                 min_output,
+                min_share_price,
                 agent_checksum_address,
                 as_underlying,
             )
@@ -405,9 +412,15 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         agent_checksum_address = Web3.to_checksum_address(agent.address)
         as_underlying = True
         max_deposit = int(eth_utils.currency.MAX_WEI)
+        # min_share_price : int
+        #   Minium share price at which to open the short.
+        #   This allows traders to protect themselves from opening a long in
+        #   a checkpoint where negative interest has accrued.
+        min_share_price = 0  # TODO: give the user access to this parameter
         fn_args = (
             trade_amount.scaled_value,
             max_deposit,
+            min_share_price,
             agent_checksum_address,
             as_underlying,
         )
@@ -421,6 +434,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         fn_args = (
             trade_amount.scaled_value,
             max_deposit,
+            min_share_price,
             agent_checksum_address,
             as_underlying,
         )
