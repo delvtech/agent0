@@ -80,12 +80,11 @@ def trade_if_new_block(
                 # Since this exception is used elsewhere (e.g., in redeem withdraw shares), we also explicitly check
                 # that the trade here is open/close long/short.
                 # TODO this error is not guaranteed to be exclusive for slippage in the future.
-                trade_action = trade_result.trade_object.market_action.action_type
                 is_slippage = (
                     isinstance(trade_result.exception, ContractCustomError)
                     and ("OutputLimit raised" in trade_result.exception.args[1])
                     and (
-                        trade_action
+                        trade_result.trade_object.market_action.action_type
                         in (
                             HyperdriveActionType.OPEN_LONG,
                             HyperdriveActionType.CLOSE_LONG,
