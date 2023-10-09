@@ -16,8 +16,7 @@ from chainsync.exec import acquire_data, data_analysis
 from elfpy.types import MarketType, Trade
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.hyperdrive import HyperdriveInterface
-from ethpy.hyperdrive.addresses import HyperdriveAddresses
+from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator

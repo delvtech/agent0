@@ -14,12 +14,13 @@ from ethpy.base import (
     load_all_abis,
     smart_contract_transact,
 )
-from ethpy.hyperdrive import HyperdriveAddresses
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxReceipt
+
+from .addresses import HyperdriveAddresses
 
 # Deploying a Hyperdrive pool requires a long sequence of contract and RPC calls,
 # resulting in long functions with many parameter arguments.

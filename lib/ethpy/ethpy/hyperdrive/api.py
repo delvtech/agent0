@@ -20,14 +20,13 @@ from ethpy.base import (
     smart_contract_preview_transaction,
     smart_contract_read,
 )
-from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from fixedpointmath import FixedPoint
 from pyperdrive.types import Fees, PoolConfig, PoolInfo
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData, Timestamp
 
-from .addresses import fetch_hyperdrive_address_from_uri
+from .addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
 from .interface import (
     get_hyperdrive_checkpoint,
     get_hyperdrive_pool_config,

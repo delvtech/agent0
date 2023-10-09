@@ -6,9 +6,10 @@ from typing import cast
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base.transactions import smart_contract_read
-from ethpy.hyperdrive import DeployedHyperdrivePool, HyperdriveAddresses
 from web3 import HTTPProvider
 
+from .addresses import HyperdriveAddresses
+from .deploy import DeployedHyperdrivePool
 from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
 
 # pylint: disable=too-many-locals
