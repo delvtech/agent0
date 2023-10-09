@@ -1,13 +1,19 @@
 # Running Agents
 
-We have set up agents to run on a dedicated AWS EC2 instance.
-These instructions can likely be followed for other unix/linux setups, however.
+Bots for the trading competition run on a dedicated AWS EC2 instance.
+Each user must provide an SSH key to log in to the EC2 and deploy their bot.
+
+Alternatively, you’re welcome to run bots on your own server, where you can skip directly to step 3.
 
 ## Step 1: Install elf-simulations
 
-1. make a fork of the [delvtech/elf-simulations repo](https://github.com/delvtech/elf-simulations) ([GitHub fork instructions](https://docs.github.com/en/get-started/quickstart/fork-a-repo?tool=webui&platform=mac)).
+1.1.
+**Optional**, if you want the ability to PR new bots into our repo:
 
-2. Install elf-simulations packages by following the installation instructions found [on github](https://github.com/delvtech/elf-simulations/blob/main/INSTALL.md).
+Make a fork of the delvtech/elf-simulations repo. ([repo link](https://github.com/delvtech/elf-simulations), [GitHub fork instructions](https://docs.github.com/en/get-started/quickstart/fork-a-repo?tool=webui&platform=mac)).
+
+1.2.
+Install elf-simulations packages by following the installation instructions found [on github](https://github.com/delvtech/elf-simulations/blob/main/INSTALL.md).
 
     >**💡NOTE:**
     >
@@ -40,29 +46,45 @@ These instructions can likely be followed for other unix/linux setups, however.
     >You don’t need to do any of the optional install Hyperdrive steps for eth_agents to work.
     >
 
-3. navigate to the `elf-simulations` folder: `cd elf-simulations/`
+1.3.
+Navigate to the `elf-simulations` folder: `cd elf-simulations/`
 
-4. run the elf-simulations tests to verify that everything installed correctly by executing `python -m pytest`. Make sure you have enabled the correct Python environment!
+1.4.
+Run the elf-simulations tests to verify that everything installed correctly by executing `python -m pytest`. Make sure you have enabled the correct Python environment, and installed the `requirements-dev.txt` file first.
 
 ## Step 2: Set your configuration
 
-1. Copy (or edit) one of the template scripts found in `lib/agent0/examples`:
+2.1.
+Copy (or edit) one of the template scripts found in `lib/agent0/examples`:
 
     - `hyperdrive_agents.py` for an example running existing policies.
-    - `example_agent.py` for an example of writing and running a custom agent.
+    - `custom_agent.py` for an example of writing and running a custom agent.
 
    This will be the main script to run your agent.
 
-2. Update the parameters in the script. For example:
+2.2.
+Update the parameters in the script. For example:
 
-    ```
+    ```python
+    # option to customize the env file name,
+    # leave unchanged for default behavior
+    ENV_FILE = "hyperdrive_agents.account.env"
     HOST = "<host>"
     USERNAME = "<agent_username>"
     ```
 
+2.3.
+**Optional**: Change various bot arguments to your liking by adjusting the `AgentConfig` parameters.
+
 ## Step 3: Fund your agents (if you wish to fund the agents from your own wallet key):
 
-1. Run the script once to generate the `ENV_FILE` as defined in the script. For example, the script will generate `example_agents.account.env`
+3.1.
+
+    ```bash
+   python lib/agent0/examples/hyperdrive_agents.py
+    ```
+Run the script once to generate environment file, with filename set to `ENV_FILE` in the script.
+
 
     >**💡NOTE:**
     >This will generate new environment variables for the agents and write them to the specified `ENV_FILE`.
@@ -80,16 +102,20 @@ These instructions can likely be followed for other unix/linux setups, however.
     >Hang on to those keys!
     >
 
-2. Run the funding script. The output of the script should print the fund command. For example,
+3.2. The output will tell you to run the funding script to fund your bots. For example,
+
    ```bash
-       python lib/agent0/bin/fund_agents_from_user_key.py -u 0xUSER_PRIVATE_KEY -f example_agents.accounts.env --host <host>
+   python lib/agent0/bin/fund_agents_from_user_key.py -u 0xUSER_PRIVATE_KEY --host <host> -f example_agents.accounts.env
    ```
-   Replace the `0xUSER_PRIVATE_KEY` in the above command with your private key for the chain (e.g., from Anvil), and the `<host>` to the host of the chain. This is the account that will fund the agents. The script will automatically update the specified `ENV_FILE` to contain your user key, which is needed by the script.
+
+   Replace the `0xUSER_PRIVATE_KEY` in the above command with your private key for the chain (e.g., from Anvil), and the `<host>` to the host address for the chain.
+   This is the account that will fund the agents.
+   The script will automatically update the specified `ENV_FILE` to contain your user key, which is needed by the script.
 
 
 ## Step 4: Start trading!
 
-1. run your trading script to start trading!
+4.1. Run the trading script again to start trading.
 
     >**💡NOTE:**
     >For development, you may pass in an environment variable `DEVELOP` to skip step 3 above. E.g.,
