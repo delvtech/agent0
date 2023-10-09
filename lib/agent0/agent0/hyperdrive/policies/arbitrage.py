@@ -69,9 +69,6 @@ class ArbitragePolicy(HyperdrivePolicy):
         """
 
         # Defaults
-        # TODO the init function could probably just be the base class
-        # However, the parent would be setting policy_config in the base class
-        # which is hidden from this class
         if policy_config is None:
             policy_config = self.Config()
         self.policy_config = policy_config
