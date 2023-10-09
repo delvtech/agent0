@@ -7,7 +7,7 @@ from datetime import datetime
 
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.crash_report import log_hyperdrive_crash_report
-from agent0.hyperdrive.state import TradeResult, TradeStatus
+from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
 from ethpy.hyperdrive import HyperdriveInterface
 from web3 import Web3
 from web3.exceptions import ContractCustomError
@@ -76,9 +76,25 @@ def trade_if_new_block(
                     float(trade_result.trade_object.market_action.trade_amount),
                 )
             elif trade_result.status == TradeStatus.FAIL:
-                is_slippage = isinstance(trade_result.exception, ContractCustomError) and (
-                    "OutputLimit raised" in trade_result.exception.args[1]
+                # To detect slippage, we look for the `OutputLimit` exception thrown from the smart contract.
+                # Since this exception is used elsewhere (e.g., in redeem withdraw shares), we also explicitly check
+                # that the trade here is open/close long/short.
+                # TODO this error is not guaranteed to be exclusive for slippage in the future.
+                trade_action = trade_result.trade_object.market_action.action_type
+                is_slippage = (
+                    isinstance(trade_result.exception, ContractCustomError)
+                    and ("OutputLimit raised" in trade_result.exception.args[1])
+                    and (
+                        trade_action
+                        in (
+                            HyperdriveActionType.OPEN_LONG,
+                            HyperdriveActionType.CLOSE_LONG,
+                            HyperdriveActionType.OPEN_SHORT,
+                            HyperdriveActionType.CLOSE_SHORT,
+                        )
+                    )
                 )
+
                 if is_slippage:
                     logging.warning(
                         "AGENT %s (%s) attempted %s for %g\nSlippage detected: %s",
