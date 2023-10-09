@@ -10,9 +10,6 @@ from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_fact
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig
 
-# fixture arguments in test function have to be the same as the fixture name
-# pylint: disable=redefined-outer-name
-
 
 @pytest.fixture(scope="function")
 def local_chain() -> Iterator[str]:
@@ -47,7 +44,7 @@ def local_chain() -> Iterator[str]:
 
 
 @pytest.fixture(scope="function")
-def local_hyperdrive_pool(local_chain: str) -> DeployedHyperdrivePool:
+def local_hyperdrive_pool(local_chain: str) -> DeployedHyperdrivePool:  # pylint: disable=redefined-outer-name
     """Initializes hyperdrive on a local anvil chain for testing.
 
     Arguments

@@ -2,13 +2,7 @@
 import numpy as np
 import pytest
 
-# Ignoring unsued import warning, fixtures are used through variable name
-from chainsync.test_fixtures import db_session, dummy_session  # pylint: disable=unused-import
-
 from .interface import add_user_map, drop_table, get_user_map, query_tables
-
-# fixture arguments in test function have to be the same as the fixture name
-# pylint: disable=redefined-outer-name
 
 
 def test_query_tables(dummy_session):

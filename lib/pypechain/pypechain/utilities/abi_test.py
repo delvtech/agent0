@@ -1,12 +1,7 @@
 """Tests for ABI utilities."""
-
 from ethpy.hyperdrive import DeployedHyperdrivePool
-from ethpy.test_fixtures import local_chain, local_hyperdrive_pool  # pylint: disable=unused-import, ungrouped-imports
 
 from .abi import get_structs_for_abi
-
-# using pytest fixtures necessitates this.
-# pylint: disable=redefined-outer-name
 
 
 class TestStructs:

@@ -1,7 +1,4 @@
 """Tests for hyperdrive/api.py"""
-# fixtures require redefining the import name and unused import
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-import
 from __future__ import annotations
 
 from typing import cast
@@ -10,7 +7,6 @@ from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base.transactions import smart_contract_read
 from ethpy.hyperdrive import DeployedHyperdrivePool, HyperdriveAddresses, HyperdriveInterface
-from ethpy.test_fixtures.local_chain import local_hyperdrive_pool
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
