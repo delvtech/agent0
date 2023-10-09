@@ -80,7 +80,7 @@ def trade_if_new_block(
                     "OutputLimit raised" in trade_result.exception.args[1]
                 )
                 if is_slippage:
-                    logging.info(
+                    logging.warning(
                         "AGENT %s (%s) attempted %s for %g\nSlippage detected: %s",
                         str(trade_result.agent.checksum_address),
                         trade_result.agent.policy.__class__.__name__,
@@ -89,7 +89,7 @@ def trade_if_new_block(
                         trade_result.exception,
                     )
                 else:
-                    logging.info(
+                    logging.error(
                         "AGENT %s (%s) attempted %s for %g\nCrashed with error: %s",
                         str(trade_result.agent.checksum_address),
                         trade_result.agent.policy.__class__.__name__,
