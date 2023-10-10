@@ -7,7 +7,8 @@ from datetime import datetime
 
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.crash_report import log_hyperdrive_crash_report
-from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
+from agent0.hyperdrive.state import (HyperdriveActionType, TradeResult,
+                                     TradeStatus)
 from ethpy.hyperdrive import HyperdriveInterface
 from web3 import Web3
 from web3.exceptions import ContractCustomError, ContractLogicError
@@ -78,30 +79,12 @@ def trade_if_new_block(
             elif trade_result.status == TradeStatus.FAIL:
                 # Here, we check for common errors and allow for custom handling of various errors
 
-                # Detecting invalid balance issues here
+                # These functions adjust the trade_result.exception object to add
+                # additional arguments describing these detected errors for crash reporting
+                # These functions also return a boolean to determine if they detected
+                # these issues
                 _, trade_result = check_for_invalid_balance(trade_result)
                 is_slippage, trade_result = check_for_slippage(trade_result)
-
-                # TODO clean up logging below, the exception arguments should already
-                # give the slippage warning
-                if is_slippage:
-                    logging.warning(
-                        "AGENT %s (%s) attempted %s for %g\nSlippage detected: %s",
-                        str(trade_result.agent.checksum_address),
-                        trade_result.agent.policy.__class__.__name__,
-                        trade_result.trade_object.market_action.action_type,
-                        float(trade_result.trade_object.market_action.trade_amount),
-                        repr(trade_result.exception),
-                    )
-                else:
-                    logging.error(
-                        "AGENT %s (%s) attempted %s for %g\nCrashed with error: %s",
-                        str(trade_result.agent.checksum_address),
-                        trade_result.agent.policy.__class__.__name__,
-                        trade_result.trade_object.market_action.action_type,
-                        float(trade_result.trade_object.market_action.trade_amount),
-                        repr(trade_result.exception),
-                    )
 
                 # Sanity check: exception should not be none if trade failed
                 # Additionally, crash reporting information should exist
@@ -110,6 +93,8 @@ def trade_if_new_block(
                 assert trade_result.pool_info is not None
 
                 # Crash reporting
+                # TODO add optional argument to crash reporting for logging level
+                # https://github.com/delvtech/elf-simulations/issues/967
                 log_hyperdrive_crash_report(trade_result)
 
                 if halt_on_errors:
