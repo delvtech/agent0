@@ -28,5 +28,6 @@ fi
 
 # Loop recursively over all .json files in the provided directory and run the python script for each
 find "$1" -type f -name "*.json" | while read -r json_file; do
+    echo $json_file
     python lib/pypechain/pypechain/run_pypechain.py "$json_file" "$target_dir" "120"
 done
