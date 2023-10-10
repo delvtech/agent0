@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
 # Define the unique agent env filename to use for this script
-ENV_FILE = "example_agent.account.env"
+ENV_FILE = "custom_agent.account.env"
 # Host of chain services
 HOST = "localhost"
 # Username binding for bots

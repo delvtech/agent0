@@ -88,7 +88,7 @@ def log_hyperdrive_crash_report(trade_result: TradeResult) -> None:
     """
 
     exception = trade_result.exception
-    formatted_exception = str(exception)
+    formatted_exception = repr(exception)
 
     formatted_trade_obj = _hyperdrive_trade_obj_to_dict(trade_result.trade_object)
     formatted_trade_obj = json.dumps(formatted_trade_obj, indent=4, cls=ExtendedJSONEncoder)
