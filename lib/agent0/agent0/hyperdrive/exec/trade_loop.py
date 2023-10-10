@@ -257,7 +257,6 @@ def check_for_invalid_balance(trade_result: TradeResult) -> tuple[bool, TradeRes
                     f"Invalid balance: {trade_type.name} for {trade_amount} LP tokens, "
                     f"balance of {wallet.lp_tokens} LP tokens."
                 )
-            pass
 
         case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
             # If we're crash reporting, pool_info should exist
@@ -276,6 +275,7 @@ def check_for_invalid_balance(trade_result: TradeResult) -> tuple[bool, TradeRes
                     f"Invalid balance: {trade_type.name} for {trade_amount} withdraw shares, "
                     f"not enough ready to withdraw shares in pool ({ready_to_withdraw})."
                 )
+
         case _:
             assert_never(trade_type)
 
