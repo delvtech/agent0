@@ -7,8 +7,7 @@ from datetime import datetime
 
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.crash_report import log_hyperdrive_crash_report
-from agent0.hyperdrive.state import (HyperdriveActionType, TradeResult,
-                                     TradeStatus)
+from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
 from ethpy.hyperdrive import HyperdriveInterface
 from web3 import Web3
 from web3.exceptions import ContractCustomError, ContractLogicError
