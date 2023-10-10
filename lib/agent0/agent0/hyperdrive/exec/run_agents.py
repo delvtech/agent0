@@ -122,6 +122,7 @@ def run_agents(
             hyperdrive,
             agent_accounts,
             environment_config.halt_on_errors,
+            environment_config.halt_on_slippage,
             last_executed_block,
         )
 
