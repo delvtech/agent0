@@ -187,7 +187,8 @@ class TestMultiTradePerBlock:
             # Expected error due to illegal trade
             # TODO currently, the illegal trade is throwing an assertion error
             # due to a lack of a trx receipt. Ideally, this error should be more informative
-            assert exc.args[0] == "Transaction receipt had no logs"
+            # We do add an argument for invalid balance to the args, so check for that here
+            assert "Invalid balance:" in exc.args[0]
 
         # Run acquire data to get data from chain to db
         acquire_data(
