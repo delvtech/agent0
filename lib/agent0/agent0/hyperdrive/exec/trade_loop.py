@@ -281,7 +281,8 @@ def check_for_invalid_balance(trade_result: TradeResult) -> tuple[bool, TradeRes
 
     assert trade_result.exception is not None
     # Prepend balance error argument to exception args
-    trade_result.exception.args = (add_arg,) + trade_result.exception.args
+    if add_arg is not None:
+        trade_result.exception.args = (add_arg,) + trade_result.exception.args
     return invalid_balance, trade_result
 
 
