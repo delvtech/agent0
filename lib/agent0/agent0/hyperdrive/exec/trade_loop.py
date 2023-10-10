@@ -91,7 +91,7 @@ def trade_if_new_block(
                         trade_result.agent.policy.__class__.__name__,
                         trade_result.trade_object.market_action.action_type,
                         float(trade_result.trade_object.market_action.trade_amount),
-                        trade_result.exception,
+                        repr(trade_result.exception),
                     )
                 else:
                     logging.error(
@@ -100,7 +100,7 @@ def trade_if_new_block(
                         trade_result.agent.policy.__class__.__name__,
                         trade_result.trade_object.market_action.action_type,
                         float(trade_result.trade_object.market_action.trade_amount),
-                        trade_result.exception,
+                        repr(trade_result.exception),
                     )
 
                 # Sanity check: exception should not be none if trade failed
