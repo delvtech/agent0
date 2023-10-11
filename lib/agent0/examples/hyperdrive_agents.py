@@ -33,26 +33,26 @@ env_config = EnvironmentConfig(
 
 agent_config: list[AgentConfig] = [
     AgentConfig(
-        policy=Zoo.arbitrage_policy,
+        policy=Zoo.arbitrage,
         number_of_agents=1,
         slippage_tolerance=None,  # No slippage tolerance for arb bot
         # Fixed budgets
         base_budget_wei=FixedPoint(50_000).scaled_value,  # 50k base
         eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
-        policy_config=Zoo.arbitrage_policy.Config(
+        policy_config=Zoo.arbitrage.Config(
             trade_amount=FixedPoint(1000),  # Open 1k in base or short 1k bonds
             high_fixed_rate_thresh=FixedPoint(0.1),  # Upper fixed rate threshold
             low_fixed_rate_thresh=FixedPoint(0.02),  # Lower fixed rate threshold
         ),
     ),
     AgentConfig(
-        policy=Zoo.random_agent,
+        policy=Zoo.random,
         number_of_agents=0,
         slippage_tolerance=FixedPoint("0.0001"),
         # Fixed budget
         base_budget_wei=FixedPoint(5_000).scaled_value,  # 5k base
         eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
-        policy_config=Zoo.random_agent.Config(trade_chance=FixedPoint("0.8")),
+        policy_config=Zoo.random.Config(trade_chance=FixedPoint("0.8")),
     ),
 ]
 

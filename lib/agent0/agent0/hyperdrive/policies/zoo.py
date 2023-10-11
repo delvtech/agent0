@@ -4,16 +4,16 @@ from __future__ import annotations
 from typing import NamedTuple
 
 # Actual policies
-from .random_agent import RandomAgent
-from .arbitrage import ArbitragePolicy
+from .random import Random
+from .arbitrage import Arbitrage
 
 
 # Container for all the policies
 class Zoo(NamedTuple):
     """All policies in agent0."""
 
-    random_agent = RandomAgent
-    arbitrage_policy = ArbitragePolicy
+    random = Random
+    arbitrage = Arbitrage
 
     def describe(self, policies: list | str | None = None) -> str:
         """Describe policies, either specific ones provided, or all of them."""

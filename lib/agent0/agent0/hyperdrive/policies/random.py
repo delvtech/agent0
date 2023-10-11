@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
 
-class RandomAgent(HyperdrivePolicy):
+class Random(HyperdrivePolicy):
     """Random agent."""
 
     @classmethod

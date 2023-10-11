@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
 
-class ArbitragePolicy(HyperdrivePolicy):
+class Arbitrage(HyperdrivePolicy):
     """Agent that arbitrages based on the fixed rate
 
     .. note::
