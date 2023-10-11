@@ -67,6 +67,6 @@ for addr, username in addr_to_username.items():
     add_addr_to_username(username=username, addresses=addr, session=db_session, force_update=FORCE_UPDATE)
 
 # Add to database
-for username, user in addr_to_username.items():
+for username, user in username_to_user.items():
     logging.info("Registering username %s to user %s", username, user)
     add_username_to_user(user=user, username=username, session=db_session, force_update=FORCE_UPDATE)
