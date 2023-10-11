@@ -6,6 +6,7 @@ e.g., new wallets being added.
 import logging
 
 from chainsync.db.base import add_addr_to_username, add_username_to_user, initialize_session
+from elfpy.utils import logs as log_utils
 
 # Force row updates if key conflicts
 FORCE_UPDATE = False
@@ -60,6 +61,8 @@ username_to_user = {
 # Get session object
 # This reads the .env file for database credentials
 db_session = initialize_session()
+
+log_utils.setup_logging(".logging/update_usernames.log", log_stdout=True)
 
 # Add to database
 for addr, username in addr_to_username.items():
