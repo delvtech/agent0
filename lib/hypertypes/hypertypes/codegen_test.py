@@ -5,12 +5,16 @@ import os
 import unittest
 from tempfile import TemporaryDirectory
 
-from pypechain import run_pypechain
+from pypechain import pypechain_cli
 
 
 def count_files(directory) -> int:
     """Return the number of files in the given directory."""
-    return sum(1 for entry in os.listdir(directory) if os.path.isfile(os.path.join(directory, entry)))
+    return sum(
+        1
+        for entry in os.listdir(directory)
+        if os.path.isfile(os.path.join(directory, entry))
+    )
 
 
 class CodegenTest(unittest.TestCase):
@@ -22,7 +26,9 @@ class CodegenTest(unittest.TestCase):
         path_to_this_file = os.path.dirname(os.path.abspath(__file__))
         # <package_dir>/packages/hyperdrive/src/abis
         abis_location = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(path_to_this_file))),  # package root
+            os.path.dirname(
+                os.path.dirname(os.path.dirname(path_to_this_file))
+            ),  # package root
             "packages",
             "hyperdrive",
             "src",
@@ -34,8 +40,11 @@ class CodegenTest(unittest.TestCase):
                     if file.endswith(".json"):
                         json_file_path = os.path.join(root, file)
                         try:
-                            run_pypechain.main(json_file_path, test_dir)
-                        except Exception as exc:  # pylint: disable=broad-exception-caught
+                            args = [json_file_path, "--output_dir", test_dir]
+                            pypechain_cli(args)
+                        except (
+                            Exception
+                        ) as exc:  # pylint: disable=broad-exception-caught
                             print(f"{exc=}; skipping file")
                             continue
             # ensure that the number of files is the same
@@ -47,8 +56,14 @@ class CodegenTest(unittest.TestCase):
             # ensure that the file contents are the same
             for file in os.listdir(path_to_this_file):
                 if os.path.isfile(file) and file != "test_codegen.py":
-                    with open(os.path.join(test_dir, file), mode="r", encoding="utf-8") as temp_file:
-                        with open(os.path.join(path_to_this_file, file), mode="r", encoding="utf-8") as original_file:
+                    with open(
+                        os.path.join(test_dir, file), mode="r", encoding="utf-8"
+                    ) as temp_file:
+                        with open(
+                            os.path.join(path_to_this_file, file),
+                            mode="r",
+                            encoding="utf-8",
+                        ) as original_file:
                             temp_contents = temp_file.read()
                             original_contents = original_file.read()
                             assert temp_contents == original_contents, (
