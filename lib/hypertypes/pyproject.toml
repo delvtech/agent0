@@ -1,7 +1,7 @@
 [project]
 name = "hypertypes"
 version = "0.0.0"
-authors = [{ name = "Codegen"}]
+authors = [{ name = "Codegen" }]
 description = "Contract code generated using Pypechain"
 readme = "README.md"
 requires-python = ">=3.10, <3.11"
@@ -12,11 +12,8 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-with-dependencies = [
-    "hypertypes[base, lateral]"
-]
-base = ["web3"]
-lateral = ["pypechain @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/pypechain",]
+with-dependencies = ["hypertypes[base, lateral]"]
+base = ["web3, pypechain"]
 
 [build-system]
 requires = ["flit_core>=3.2"]
