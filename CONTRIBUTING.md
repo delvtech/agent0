@@ -4,7 +4,7 @@ We strive for verbose and readable comments and docstrings.
 Our documentation follows the [Numpy format](https://numpydoc.readthedocs.io/en/latest/format.html).
 The hosted docs are automatically generated using [Sphinx](https://www.sphinx-doc.org/en/master/tutorial/automatic-doc-generation.html).
 
-# Contributor git workflow:
+# Contributor git workflow
 
 We follow a standard [feature branch rebase workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow) that prioritizes short PRs with isolated improvements.
 Commits to `main` should **only** be made in the form of squash-merges from pull requests.
@@ -29,3 +29,14 @@ Once the PR is approved, we perform a final rebase, if necessary, and then a _sq
 
 If two people are working in a branch then you should `git pull --rebase origin feature-branch` _before_ `git push origin feature-branch`.
 We also recommend that you start each working session with a `pull` and end it with a `push`, so that your colleagues can work asynchronously while you are not.
+
+# Contributing a new bot policy
+
+We welcome contributions of new bot policies, alongside those in `lib/agent0/agent0/hyperdrive/policies`.
+
+Submit a pull request that meets the following criteria:
+
+1. Do something an existing policy doesn't already accomplish
+2. Be well-documented and follow our existing [STYLEGUIDE.md](STYLEGUIDE.md).
+3. Pass all linting checks, including `black` and `pylint`.
+4. Describe the bot's behavior in a `describe` [classmethod](https://docs.python.org/3/library/functions.html#classmethod) similarly to existing bots, ending in a `super().describe()` call.
