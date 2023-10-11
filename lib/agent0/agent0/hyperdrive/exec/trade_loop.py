@@ -24,6 +24,7 @@ def trade_if_new_block(
     halt_on_errors: bool,
     halt_on_slippage: bool,
     last_executed_block: int,
+    liquidate: bool,
 ) -> int:
     """Execute trades if there is a new block.
 
@@ -40,6 +41,8 @@ def trade_if_new_block(
         don't raise an exception if slippage happens.
     last_executed_block : int
         The block number when a trade last happened
+    liquidate: bool
+        If set, will ignore all policy settings and liquidate all open positions
 
     Returns
     -------
@@ -62,7 +65,9 @@ def trade_if_new_block(
         )
         # To avoid jumbled print statements due to asyncio, we handle all logging and crash reporting
         # here, with inner functions returning trade results.
-        trade_results: list[TradeResult] = asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts))
+        trade_results: list[TradeResult] = asyncio.run(
+            async_execute_agent_trades(hyperdrive, agent_accounts, liquidate)
+        )
         last_executed_block = latest_block_number
 
         for trade_result in trade_results:

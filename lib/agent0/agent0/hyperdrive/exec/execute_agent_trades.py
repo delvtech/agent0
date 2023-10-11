@@ -33,8 +33,7 @@ def assert_never(arg: NoReturn) -> NoReturn:
 
 
 async def async_execute_single_agent_trade(
-    agent: HyperdriveAgent,
-    hyperdrive: HyperdriveInterface,
+    agent: HyperdriveAgent, hyperdrive: HyperdriveInterface, liquidate: bool
 ) -> list[TradeResult]:
     """Executes a single agent's trade. This function is async as
     `match_contract_call_to_trade` waits for a transaction receipt.
@@ -45,6 +44,8 @@ async def async_execute_single_agent_trade(
         The HyperdriveAgent that is conducting the trade
     hyperdrive : HyperdriveInterface
         The Hyperdrive API interface object
+    liquidate: bool
+        If set, will ignore all policy settings and liquidate all open positions
 
     Returns
     -------
@@ -52,7 +53,10 @@ async def async_execute_single_agent_trade(
         Returns a list of TradeResult objects, one for each trade made by the agent
         TradeResult handles any information about the trade, as well as any errors that the trade resulted in
     """
-    trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(interface=hyperdrive)
+    if liquidate:
+        trades: list[types.Trade[HyperdriveMarketAction]] = agent.liquidation_trades()
+    else:
+        trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(interface=hyperdrive)
 
     # Make trades async for this agent. This way, an agent can submit multiple trades for a single block
 
@@ -112,6 +116,7 @@ async def async_execute_single_agent_trade(
 async def async_execute_agent_trades(
     hyperdrive: HyperdriveInterface,
     agents: list[HyperdriveAgent],
+    liquidate: bool,
 ) -> list[TradeResult]:
     """Hyperdrive forever into the sunset.
 
@@ -121,6 +126,8 @@ async def async_execute_agent_trades(
         The Hyperdrive API interface object
     agents : list[HyperdriveAgent]
         A list of HyperdriveAgent that are conducting the trades
+    liquidate: bool
+        If set, will ignore all policy settings and liquidate all open positions
 
     Returns
     -------
@@ -131,7 +138,7 @@ async def async_execute_agent_trades(
     # Make calls per agent to execute_single_agent_trade
     # Await all trades to finish before continuing
     gathered_trade_results: list[list[TradeResult]] = await asyncio.gather(
-        *[async_execute_single_agent_trade(agent, hyperdrive) for agent in agents if not agent.done_trading]
+        *[async_execute_single_agent_trade(agent, hyperdrive, liquidate) for agent in agents if not agent.done_trading]
     )
     # Flatten list of lists, since agent information is already in TradeResult
     trade_results = [item for sublist in gathered_trade_results for item in sublist]

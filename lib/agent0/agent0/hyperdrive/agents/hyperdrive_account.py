@@ -69,7 +69,6 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
             balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE),
         )
 
-    @property
     def liquidation_trades(self) -> list[Trade[HyperdriveMarketAction]]:
         """List of trades that liquidate all open positions
 
@@ -88,7 +87,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
-                            wallet=self.wallet,  # type: ignore
+                            wallet=self.wallet,
                             maturity_time=maturity_time,
                         ),
                     )
@@ -102,7 +101,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
-                            wallet=self.wallet,  # type: ignore
+                            wallet=self.wallet,
                             maturity_time=maturity_time,
                         ),
                     )
@@ -115,7 +114,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
-                        wallet=self.wallet,  # type: ignore
+                        wallet=self.wallet,
                     ),
                 )
             )
@@ -127,10 +126,15 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
                         trade_amount=self.wallet.withdraw_shares,
-                        wallet=self.wallet,  # type: ignore
+                        wallet=self.wallet,
                     ),
                 )
             )
+
+        # If no more trades in wallet, set the done trading flag
+        if len(action_list) == 0:
+            self.done_trading = True
+
         return action_list
 
     def get_trades(self, interface: HyperdriveInterface) -> list[Trade[HyperdriveMarketAction]]:
