@@ -1,4 +1,4 @@
-"""System test for end to end testing of elf-simulations."""
+"""Test the agent0 model zoo."""
 from __future__ import annotations
 
 import logging
