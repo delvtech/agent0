@@ -18,6 +18,8 @@ from .execute_agent_trades import assert_never, async_execute_agent_trades
 # TODO: Suppress logging from ethpy here as agent0 handles logging
 
 
+# TODO cleanup this function
+# pylint: disable=too-many-arguments
 def trade_if_new_block(
     hyperdrive: HyperdriveInterface,
     agent_accounts: list[HyperdriveAgent],
