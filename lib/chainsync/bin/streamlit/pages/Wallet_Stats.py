@@ -8,8 +8,8 @@ import gc
 import matplotlib.pyplot as plt
 import mplfinance as mpf
 import streamlit as st
-from chainsync.dashboard import build_ticker, get_user_lookup
-from chainsync.db.base import get_user_map, initialize_session
+from chainsync.dashboard import build_ticker, build_user_mapping, map_addresses
+from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
     get_all_traders,
     get_ticker,
@@ -31,45 +31,34 @@ MAX_LIVE_BLOCKS = 5000
 # Load and connect to postgres
 session = initialize_session()
 
-# Get username lookup
-agents = get_all_traders(session)
-user_map = get_user_map(session)
-user_lookup = get_user_lookup(agents, user_map, keep_nans=True).copy()
-
-# Format user lookup as a combination of address + username (if username exists)
-na_username = user_lookup["username"].isna()
-user_lookup.loc[na_username, "username"] = ""
-user_lookup["format_name"] = (
-    user_lookup["username"] + " - " + user_lookup["address"].str[:6] + "..." + user_lookup["address"].str[-4:]
-)
-
 # Refresh button
 # Streamlit automatically refreshes when an input widget is changed
 # so just having this button clicked automatically refreshes
 # Magic.
 st.button("Refresh")
 
-# Multiselect box of all available agents
-selected = st.multiselect("Wallet Addresses", user_lookup["format_name"])
 
+# Multiselect box of all available agents
+# Get all addresses that have made a trade
+trader_addrs = get_all_traders(session)
+# Get corresponding usernames
+user_map = build_user_mapping(session, trader_addrs)
+
+# TODO does this take series? Or do I need to cast this as a list
+selected = st.multiselect("Wallet Addresses", user_map["format_name"])
 # Map selected_addrs back to actual addresses
-selected_addresses = user_lookup.set_index("format_name").loc[selected]["address"].values.tolist()
+selected_addresses = map_addresses(selected, user_map, "format_name")["address"].to_list()
 
 # Get ticker for selected addresses
 ticker = get_ticker(session, start_block=-MAX_LIVE_BLOCKS, coerce_float=False, wallet_address=selected_addresses)
-display_ticker = build_ticker(ticker, user_lookup)
+display_ticker = build_ticker(ticker, user_map)
 
 # Get latest wallet pnls for selected addresses
 latest_wallet_pnl = get_wallet_pnl(session, start_block=-1, coerce_float=False, wallet_address=selected_addresses)
-
-# Get usernames
-latest_wallet_pnl["username"] = (
-    user_lookup.set_index("address").loc[latest_wallet_pnl["walletAddress"]]["username"].values
-)
-# Shorten wallet address
-latest_wallet_pnl["walletAddress"] = (
-    latest_wallet_pnl["walletAddress"].str[:6] + "..." + latest_wallet_pnl["walletAddress"].str[-4:]
-)
+# Do lookup of addresses and (1) add username column, and (2) replace walletAddress with abbr address
+mapped = map_addresses(latest_wallet_pnl["walletAddress"], user_map)
+latest_wallet_pnl["username"] = mapped["username"]
+latest_wallet_pnl["walletAddress"] = mapped["abbr_address"]
 # Reorder and get subset of dataframe
 latest_wallet_pnl = latest_wallet_pnl[
     ["timestamp", "blockNumber", "username", "walletAddress", "tokenType", "value", "pnl"]
@@ -95,15 +84,11 @@ pnl_over_time = get_total_wallet_pnl_over_time(
     session, start_block=-MAX_LIVE_BLOCKS, coerce_float=False, wallet_address=selected_addresses
 )
 # Add username
-pnl_over_time["username"] = user_lookup.set_index("address").loc[pnl_over_time["walletAddress"]]["username"].values
-
+pnl_over_time["username"] = map_addresses(pnl_over_time["walletAddress"], user_map)["username"]
 wallet_positions = get_wallet_positions_over_time(
     session, start_block=-MAX_LIVE_BLOCKS, coerce_float=False, wallet_address=selected_addresses
 )
-wallet_positions["username"] = (
-    user_lookup.set_index("address").loc[wallet_positions["walletAddress"]]["username"].values
-)
-
+wallet_positions["username"] = map_addresses(wallet_positions["walletAddress"], user_map)["username"]
 
 # Plot pnl over time
 main_fig = mpf.figure(style="mike", figsize=(10, 10))
@@ -111,7 +96,7 @@ main_fig = mpf.figure(style="mike", figsize=(10, 10))
 (ax_pnl, ax_base, ax_long, ax_short, ax_lp, ax_withdraw) = main_fig.subplots(6, 1, sharex=True)  # type: ignore
 
 for addr in pnl_over_time["walletAddress"].unique():
-    format_name = user_lookup.set_index("address").loc[addr]["format_name"]
+    format_name = map_addresses(addr, user_map)["format_name"]
     wallet_pnl_over_time = pnl_over_time[pnl_over_time["walletAddress"] == addr]
     ax_pnl.plot(wallet_pnl_over_time["timestamp"], wallet_pnl_over_time["pnl"], label=format_name)
 ax_pnl.yaxis.set_label_position("right")
@@ -123,7 +108,7 @@ ax_pnl.set_title("PnL Over Time")
 # Plot open positions over time
 labels = []
 for addr in wallet_positions["walletAddress"].unique():
-    format_name = user_lookup.set_index("address").loc[addr]["format_name"]
+    format_name = map_addresses(addr, user_map)["format_name"]
     labels.append(format_name)
     wallet_positions_over_time = wallet_positions[wallet_positions["walletAddress"] == addr]
     base_positions = wallet_positions_over_time[wallet_positions_over_time["baseTokenType"] == "BASE"][

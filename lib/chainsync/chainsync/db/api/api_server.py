@@ -34,7 +34,8 @@ def register_agents():
     # This function gets env variables for db credentials
     session = initialize_session()
     try:
-        add_user_map(username, wallet_addrs, session)
+        # Adding suffix since this api is used by bot runners
+        add_user_map(username, wallet_addrs, session, user_suffix=" (bots)")
         logging.debug("Registered wallet_addrs=%s to username=%s}", wallet_addrs, username)
         out = (jsonify({"data": data, "error": ""}), 200)
     except Exception as exc:  # pylint: disable=broad-exception-caught

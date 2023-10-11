@@ -158,7 +158,7 @@ def close_session(session: Session) -> None:
     session.close()
 
 
-def add_user_map(username: str, addresses: list[str], session: Session) -> None:
+def add_user_map(username: str, addresses: list[str], session: Session, user_suffix: str = "") -> None:
     """Add username mapping to postgres during agent initialization.
 
     Arguments
@@ -170,12 +170,15 @@ def add_user_map(username: str, addresses: list[str], session: Session) -> None:
     session : Session
         The initialized session object
     """
+
+    username = username + user_suffix
+
     for address in addresses:
         # Below is a best effort check against the database to see if the address is registered to another username
         # This is best effort because there's a race condition here, e.g.,
         # I read (address_1, user_1), someone else writes (address_1, user_2), I write (address_1, user_1)
         # Because the call below is a `merge`, the final entry in the db is (address_1, user_1).
-        existing_user_map = get_user_map(session, address)
+        existing_user_map = get_addr_to_username(session, address)
         if len(existing_user_map) == 0:
             # Address doesn't exist, all good
             pass
@@ -197,7 +200,7 @@ def add_user_map(username: str, addresses: list[str], session: Session) -> None:
         raise err
 
 
-def get_user_map(session: Session, address: str | None = None) -> pd.DataFrame:
+def get_addr_to_username(session: Session, address: str | None = None) -> pd.DataFrame:
     """Get all usermapping and returns as a pandas dataframe.
 
     Arguments

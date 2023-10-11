@@ -1,20 +1,18 @@
 """Builds the leaderboard for the dashboard."""
 import pandas as pd
 
-from .usernames import address_to_username, combine_usernames
+from .usernames import map_addresses
 
 
-def build_leaderboard(wallet_pnl: pd.DataFrame, lookup: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+def build_leaderboard(wallet_pnl: pd.DataFrame, user_map: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Rank users by PNL, individually and bomined across their accounts."""
     total_pnl = wallet_pnl.groupby("walletAddress")["pnl"].sum().reset_index()
 
-    usernames = address_to_username(lookup, total_pnl["walletAddress"])
-    total_pnl.insert(1, "username", usernames.values.tolist())
+    mapped_addrs = map_addresses(total_pnl["walletAddress"], user_map)
+    total_pnl.insert(1, "username", mapped_addrs["usernames"])
+    total_pnl["user"] = mapped_addrs["user"]
 
     # Rank based on pnl
-    user = combine_usernames(total_pnl["username"])
-    total_pnl["user"] = user["user"].values
-
     ind_leaderboard = (
         total_pnl[["username", "walletAddress", "pnl"]]
         .sort_values("pnl", ascending=False)  # type: ignore

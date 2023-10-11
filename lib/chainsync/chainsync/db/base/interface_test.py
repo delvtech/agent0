@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-from .interface import add_user_map, drop_table, get_user_map, query_tables
+from .interface import add_user_map, drop_table, get_addr_to_username, query_tables
 
 
 def test_query_tables(dummy_session):
@@ -35,7 +35,7 @@ class TestUserMapInterface:
         add_user_map(username=username_2, addresses=addresses_2, session=db_session)
 
         # This is in order of insertion
-        user_map_df = get_user_map(db_session)
+        user_map_df = get_addr_to_username(db_session)
         assert len(user_map_df) == 5
         np.testing.assert_array_equal(user_map_df["username"], ["a", "a", "a", "b", "b"])
         np.testing.assert_array_equal(user_map_df["address"], ["1", "2", "3", "4", "5"])
@@ -49,15 +49,15 @@ class TestUserMapInterface:
         addresses_2 = ["4", "5"]
         add_user_map(username=username_2, addresses=addresses_2, session=db_session)
 
-        user_map_df = get_user_map(db_session, address="1")
+        user_map_df = get_addr_to_username(db_session, address="1")
         np.testing.assert_array_equal(user_map_df["username"], ["a"])
-        user_map_df = get_user_map(db_session, address="2")
+        user_map_df = get_addr_to_username(db_session, address="2")
         np.testing.assert_array_equal(user_map_df["username"], ["a"])
-        user_map_df = get_user_map(db_session, address="3")
+        user_map_df = get_addr_to_username(db_session, address="3")
         np.testing.assert_array_equal(user_map_df["username"], ["a"])
-        user_map_df = get_user_map(db_session, address="4")
+        user_map_df = get_addr_to_username(db_session, address="4")
         np.testing.assert_array_equal(user_map_df["username"], ["b"])
-        user_map_df = get_user_map(db_session, address="5")
+        user_map_df = get_addr_to_username(db_session, address="5")
         np.testing.assert_array_equal(user_map_df["username"], ["b"])
 
     def test_user_map_insertion_error(self, db_session):
@@ -71,7 +71,7 @@ class TestUserMapInterface:
         addresses_2 = ["1", "2", "5"]
         add_user_map(username=username_2, addresses=addresses_2, session=db_session)
 
-        user_map_df = get_user_map(db_session)
+        user_map_df = get_addr_to_username(db_session)
         assert len(user_map_df) == 4
         np.testing.assert_array_equal(user_map_df["username"], ["a", "a", "a", "a"])
         np.testing.assert_array_equal(user_map_df["address"], ["1", "2", "3", "5"])
@@ -83,8 +83,8 @@ class TestUserMapInterface:
             add_user_map(username=username_3, addresses=addresses_3, session=db_session)
 
         # Final db values shouldn't change
-        user_map_df = get_user_map(db_session)
-        user_map_df = get_user_map(db_session)
+        user_map_df = get_addr_to_username(db_session)
+        user_map_df = get_addr_to_username(db_session)
         assert len(user_map_df) == 4
         np.testing.assert_array_equal(user_map_df["username"], ["a", "a", "a", "a"])
         np.testing.assert_array_equal(user_map_df["address"], ["1", "2", "3", "5"])
