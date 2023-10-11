@@ -45,6 +45,7 @@ trader_addrs = get_all_traders(session)
 user_map = build_user_mapping(session, trader_addrs)
 
 # TODO does this take series? Or do I need to cast this as a list
+# TODO there is a case that format_name is not unique, where we should use the wallet addresses
 selected = st.multiselect("Wallet Addresses", user_map["format_name"])
 # Map selected_addrs back to actual addresses
 selected_addresses = map_addresses(selected, user_map, "format_name")["address"].to_list()

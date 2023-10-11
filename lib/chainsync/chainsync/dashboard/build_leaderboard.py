@@ -9,7 +9,7 @@ def build_leaderboard(wallet_pnl: pd.DataFrame, user_map: pd.DataFrame) -> tuple
     total_pnl = wallet_pnl.groupby("walletAddress")["pnl"].sum().reset_index()
 
     mapped_addrs = map_addresses(total_pnl["walletAddress"], user_map)
-    total_pnl.insert(1, "username", mapped_addrs["usernames"])
+    total_pnl.insert(1, "username", mapped_addrs["username"])
     total_pnl["user"] = mapped_addrs["user"]
 
     # Rank based on pnl
