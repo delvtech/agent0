@@ -20,6 +20,23 @@ if TYPE_CHECKING:
 class RandomAgent(HyperdrivePolicy):
     """Random agent."""
 
+    @classmethod
+    def describe(cls) -> str:
+        """Describe the policy in a user friendly manner that allows newcomers to decide whether to use it.
+
+        Returns
+        -------
+        str
+            A description of the policy"""
+        raw_description = """
+        A simple demonstration agent that chooses its actions randomly.
+        It can take 7 actions: open/close longs and shorts, add/remove liquidity, and redeem withdraw shares.
+        Trade size is randomly drawn from a normal distribution with mean of 10% of budget and standard deviation of 1% of budget.
+        A close action picks a random open position of the given type (long or short) and attempts to close its entire size.
+        Withdrawals of liquidity and redemption of withdrawal shares is sized the same as an open position: N(0.1, 0.01) * budget.
+        """
+        return super().describe(raw_description)
+
     @dataclass
     class Config(HyperdrivePolicy.Config):
         """Custom config arguments for this policy

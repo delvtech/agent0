@@ -29,6 +29,24 @@ class ArbitragePolicy(HyperdrivePolicy):
                 I close all open longs and open a new short for `trade_amount` bonds
     """
 
+    @classmethod
+    def describe(cls) -> str:
+        """Describe the policy in a user friendly manner that allows newcomers to decide whether to use it.
+
+        Returns
+        -------
+        str
+            A description of the policy"""
+        raw_description = """
+        Take advantage of deviations in the fixed rate from specified parameters.
+        The following 3 parameters in Config define its operation:
+        - When `high_fixed_rate_thresh`, open shorts are closed, and a long is opened.
+        - When `low_fixed_rate_thresh`, open longs are closed, and a short is opened.
+        - Trade size is fixed by `trade_amount`.
+        Additionally, longs and shorts are closed if they are matured.
+        """
+        return super().describe(raw_description)
+
     @dataclass
     class Config(HyperdrivePolicy.Config):
         """Custom config arguments for this policy
