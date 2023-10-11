@@ -401,7 +401,7 @@ def get_all_traders(
         query = query.filter(WalletDelta.blockNumber < end_block)
 
     if query is None:
-        return []
+        return pd.Series([])
     query = query.distinct()
 
     results = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)

@@ -20,7 +20,7 @@ class Base(MappedAsDataclass, DeclarativeBase):
 
 
 class AddrToUsername(Base):
-    """Maps an address to a username. This mapping should be one to one."""
+    """Maps an address to a username. This mapping should be many addresses to one username."""
 
     __tablename__ = "addr_to_username"
 
@@ -29,7 +29,10 @@ class AddrToUsername(Base):
 
 
 class UsernameToUser(Base):
-    """Maps a per wallet username to a user. This mapping should be many usernames to one user."""
+    """Maps a per wallet username to a user. This mapping should be many usernames to one user.
+    The primary usecase is to map multiple usernames to one user,
+    e.g., Sheng Lundquist (click) and slundquist (bots) -> Sheng Lundquist
+    """
 
     __tablename__ = "username_to_user"
 

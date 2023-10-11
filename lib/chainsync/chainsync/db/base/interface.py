@@ -15,7 +15,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql import text
 
-from .schema import AddrToUsername, Base
+from .schema import AddrToUsername, Base, UsernameToUser
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -158,19 +158,26 @@ def close_session(session: Session) -> None:
     session.close()
 
 
-def add_user_map(username: str, addresses: list[str], session: Session, user_suffix: str = "") -> None:
+def add_addr_to_username(
+    username: str, addresses: list[str] | str, session: Session, user_suffix: str = "", force_update: bool = False
+) -> None:
     """Add username mapping to postgres during agent initialization.
 
     Arguments
     ---------
     username : str
         The logical username to attach to the wallet address
-    addresses : list[str]
-        A list of wallet addresses to map to the username
+    addresses : list[str] | str
+        A single or list of wallet addresses to map to the username
     session : Session
         The initialized session object
+    user_suffix : str
+        An optional suffix to add to the username mapping
+    force_update: bool
+        If true and an existing username is found, will overwrite
     """
-
+    if isinstance(addresses, str):
+        addresses = [addresses]
     username = username + user_suffix
 
     for address in addresses:
@@ -184,7 +191,7 @@ def add_user_map(username: str, addresses: list[str], session: Session, user_suf
             pass
         elif len(existing_user_map) == 1:
             existing_username = existing_user_map.iloc[0]["username"]
-            if existing_username != username:
+            if existing_username != username and not force_update:
                 raise ValueError(f"Wallet {address=} already registered to {existing_username}")
         else:
             # Should never be more than one address in table
@@ -192,6 +199,49 @@ def add_user_map(username: str, addresses: list[str], session: Session, user_suf
 
         # This merge adds the row if not exist (keyed by address), otherwise will overwrite with this entry
         session.merge(AddrToUsername(address=address, username=username))
+
+    try:
+        session.commit()
+    except exc.DataError as err:
+        logging.error("DB Error adding user: %s", err)
+        raise err
+
+
+def add_username_to_user(user: str, username: str, session: Session, force_update: bool = False) -> None:
+    """Add username mapping to postgres during agent initialization.
+
+    Arguments
+    ---------
+    user : str
+        The single user to attach a username to
+    username: str
+        A single or list of wallet addresses to map to the username
+    session : Session
+        The initialized session object
+    user_suffix : str
+        An optional suffix to add to the username mapping
+    force_update: bool
+        If true and an existing username is found, will overwrite
+    """
+
+    # Below is a best effort check against the database to see if the address is registered to another username
+    # This is best effort because there's a race condition here, e.g.,
+    # I read (address_1, user_1), someone else writes (address_1, user_2), I write (address_1, user_1)
+    # Because the call below is a `merge`, the final entry in the db is (address_1, user_1).
+    existing_user = get_username_to_user(session, username)
+    if len(existing_user) == 0:
+        # user doesn't exist, all good
+        pass
+    elif len(existing_user) == 1:
+        existing_user = existing_user.iloc[0]["user"]
+        if existing_user != user and not force_update:
+            raise ValueError(f"{username=} already registered to {existing_user}")
+    else:
+        # Should never be more than one address in table
+        raise ValueError("Fatal error: postgres returning multiple entries for primary key")
+
+    # This merge adds the row if not exist (keyed by address), otherwise will overwrite with this entry
+    session.merge(UsernameToUser(username=username, user=user))
 
     try:
         session.commit()
@@ -218,6 +268,27 @@ def get_addr_to_username(session: Session, address: str | None = None) -> pd.Dat
     query = session.query(AddrToUsername)
     if address is not None:
         query = query.filter(AddrToUsername.address == address)
+    return pd.read_sql(query.statement, con=session.connection())
+
+
+def get_username_to_user(session: Session, username: str | None = None) -> pd.DataFrame:
+    """Get all usermapping and returns as a pandas dataframe.
+
+    Arguments
+    ---------
+    session : Session
+        The initialized session object
+    address : str | None, optional
+        The wallet address to filter the results on. Return all if None
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried pool config data
+    """
+    query = session.query(UsernameToUser)
+    if username is not None:
+        query = query.filter(UsernameToUser.username == username)
     return pd.read_sql(query.statement, con=session.connection())
 
 

@@ -2,7 +2,7 @@
 
 from .interface import (
     TableWithBlockNumber,
-    add_user_map,
+    add_addr_to_username,
     close_session,
     drop_table,
     get_addr_to_username,

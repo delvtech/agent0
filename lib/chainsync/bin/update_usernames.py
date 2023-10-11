@@ -21,6 +21,7 @@ username_to_user = {
     "Jack Burrus (click)": "Jack Burrus",
     "Jordan J (click)": "Jordan J",
     # Bot accounts
+    # NOTE register username from bots automatically appends " (bots)" to the username
     "slundquist (bots)": "Sheng Lundquist",
 }
 

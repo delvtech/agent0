@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 
-from chainsync.db.base import add_user_map, close_session, initialize_session
+from chainsync.db.base import add_addr_to_username, close_session, initialize_session
 from chainsync.db.hyperdrive import get_current_wallet
 from flask import Flask, jsonify, request
 from flask_expects_json import expects_json
@@ -35,7 +35,7 @@ def register_agents():
     session = initialize_session()
     try:
         # Adding suffix since this api is used by bot runners
-        add_user_map(username, wallet_addrs, session, user_suffix=" (bots)")
+        add_addr_to_username(username, wallet_addrs, session, user_suffix=" (bots)")
         logging.debug("Registered wallet_addrs=%s to username=%s}", wallet_addrs, username)
         out = (jsonify({"data": data, "error": ""}), 200)
     except Exception as exc:  # pylint: disable=broad-exception-caught
