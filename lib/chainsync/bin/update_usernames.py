@@ -3,6 +3,8 @@ This script is meant to run once at docker initialization.
 The script can then be ran at any time to update the database in the case of
 e.g., new wallets being added.
 """
+import logging
+
 from chainsync.db.base import add_addr_to_username, add_username_to_user, initialize_session
 
 # Force row updates if key conflicts
@@ -61,8 +63,10 @@ db_session = initialize_session()
 
 # Add to database
 for addr, username in addr_to_username.items():
+    logging.info("Registering address %s to username %s", addr, username)
     add_addr_to_username(username=username, addresses=addr, session=db_session, force_update=FORCE_UPDATE)
 
 # Add to database
 for username, user in addr_to_username.items():
+    logging.info("Registering username %s to user %s", username, user)
     add_username_to_user(user=user, username=username, session=db_session, force_update=FORCE_UPDATE)
