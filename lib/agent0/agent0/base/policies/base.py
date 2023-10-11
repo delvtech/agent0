@@ -77,7 +77,9 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         str
             A description of the policy"""
         if raw_description is None:
-            raise NotImplementedError("This is a base policy. Subclasses should provide their own descriptions.")
+            raise NotImplementedError(
+                "This method is meant to be called only by subclasses which provide a `raw_description`."
+            )
         dedented_text = dedent(raw_description).strip()
         indented_text = indent(dedented_text, "  ")  # Adding 2-space indent
         return indented_text

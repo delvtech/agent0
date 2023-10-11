@@ -30,7 +30,7 @@ class ArbitragePolicy(HyperdrivePolicy):
     """
 
     @classmethod
-    def describe(cls) -> str:
+    def description(cls) -> str:
         """Describe the policy in a user friendly manner that allows newcomers to decide whether to use it.
 
         Returns

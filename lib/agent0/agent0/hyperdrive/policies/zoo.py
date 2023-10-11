@@ -30,4 +30,4 @@ class Zoo(NamedTuple):
             if policy not in existing_policies:
                 raise ValueError(f"Unknown policy: {policy}")
 
-        return "\n".join([f"=== {policy} ===\n{getattr(self, policy).describe()}" for policy in policies])
+        return "\n".join([f"=== {policy} ===\n{getattr(self, policy).description()}" for policy in policies])
