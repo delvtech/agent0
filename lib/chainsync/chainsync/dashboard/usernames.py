@@ -44,7 +44,7 @@ def build_user_mapping(session: Session, addresses: pd.Series) -> pd.DataFrame:
     out = out.merge(username_to_user, how="left", left_on="username", right_on="username")
     # Fill user/username with abbr_username if address doesn't exist in the lookup
     out["username"] = out["username"].fillna(out["abbr_address"])
-    out["user"] = out["user"].fillna(out["abbr_address"])
+    out["user"] = out["user"].fillna(out["username"])
 
     # Generate formatted name
     # TODO there is a case where the format name is not unique
