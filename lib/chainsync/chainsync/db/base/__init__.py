@@ -11,4 +11,4 @@ from .interface import (
     initialize_session,
     query_tables,
 )
-from .schema import Base, UserMap
+from .schema import AddrToUsername, Base, UsernameToUser

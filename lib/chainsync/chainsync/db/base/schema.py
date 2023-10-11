@@ -19,10 +19,19 @@ class Base(MappedAsDataclass, DeclarativeBase):
     """Base class to subclass from to define the schema"""
 
 
-class UserMap(Base):
-    """Table/dataclass schema for pool config."""
+class AddrToUsername(Base):
+    """Maps an address to a username. This mapping should be one to one."""
 
-    __tablename__ = "usermap"
+    __tablename__ = "addr_to_username"
 
     address: Mapped[str] = mapped_column(String, primary_key=True)
     username: Mapped[str] = mapped_column(String, index=True)
+
+
+class UsernameToUser(Base):
+    """Maps a per wallet username to a user. This mapping should be many usernames to one user."""
+
+    __tablename__ = "username_to_user"
+
+    username: Mapped[str] = mapped_column(String, primary_key=True)
+    user: Mapped[str] = mapped_column(String, index=True)

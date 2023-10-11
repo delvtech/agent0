@@ -15,7 +15,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql import text
 
-from .schema import Base, UserMap
+from .schema import AddrToUsername, Base
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -188,7 +188,7 @@ def add_user_map(username: str, addresses: list[str], session: Session) -> None:
             raise ValueError("Fatal error: postgres returning multiple entries for primary key")
 
         # This merge adds the row if not exist (keyed by address), otherwise will overwrite with this entry
-        session.merge(UserMap(address=address, username=username))
+        session.merge(AddrToUsername(address=address, username=username))
 
     try:
         session.commit()
@@ -212,9 +212,9 @@ def get_user_map(session: Session, address: str | None = None) -> pd.DataFrame:
     DataFrame
         A DataFrame that consists of the queried pool config data
     """
-    query = session.query(UserMap)
+    query = session.query(AddrToUsername)
     if address is not None:
-        query = query.filter(UserMap.address == address)
+        query = query.filter(AddrToUsername.address == address)
     return pd.read_sql(query.statement, con=session.connection())
 
 
