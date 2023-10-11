@@ -82,7 +82,6 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         for maturity_time, long in self.wallet.longs.items():
             logging.debug("closing long: maturity_time=%g, balance=%s", maturity_time, long)
             if long.balance > 0:
-                # TODO: Deprecate the old wallet in favor of this new one
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
@@ -97,7 +96,6 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         for maturity_time, short in self.wallet.shorts.items():
             logging.debug("closing short: maturity_time=%g, balance=%s", maturity_time, short.balance)
             if short.balance > 0:
-                # TODO: Deprecate the old wallet in favor of this new one
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
@@ -111,13 +109,24 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
                 )
         if self.wallet.lp_tokens > 0:
             logging.debug("closing lp: lp_tokens=%s", self.wallet.lp_tokens)
-            # TODO: Deprecate the old wallet in favor of this new one
             action_list.append(
                 Trade(
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
+                        wallet=self.wallet,  # type: ignore
+                    ),
+                )
+            )
+        if self.wallet.withdraw_shares > 0:
+            logging.debug("closing lp: lp_tokens=%s", self.wallet.lp_tokens)
+            action_list.append(
+                Trade(
+                    market_type=MarketType.HYPERDRIVE,
+                    market_action=HyperdriveMarketAction(
+                        action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
+                        trade_amount=self.wallet.withdraw_shares,
                         wallet=self.wallet,  # type: ignore
                     ),
                 )
