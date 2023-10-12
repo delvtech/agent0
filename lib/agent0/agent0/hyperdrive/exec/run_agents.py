@@ -114,6 +114,7 @@ def run_agents(
             )
 
     # If we're in liquidation mode, we explicitly set halt on errors to false
+    # This is due to an expected error when redeeming withdrawal shares
     if liquidate:
         environment_config.halt_on_errors = False
 
