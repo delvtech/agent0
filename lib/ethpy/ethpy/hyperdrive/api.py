@@ -92,9 +92,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         data_provider_contract: Contract = web3.eth.contract(
             abi=abis["ERC4626DataProvider"], address=web3.to_checksum_address(addresses.mock_hyperdrive)
         )
-        yeild_address = smart_contract_read(data_provider_contract, "pool")["value"]
+        yield_address = smart_contract_read(data_provider_contract, "pool")["value"]
         self.yield_contract: Contract = web3.eth.contract(
-            abi=abis["MockERC4626"], address=web3.to_checksum_address(yeild_address)
+            abi=abis["MockERC4626"], address=web3.to_checksum_address(yield_address)
         )
         # pool config is static
         self._contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
