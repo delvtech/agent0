@@ -17,7 +17,7 @@ HOST = "localhost"
 # Username binding of bots
 USERNAME = "changeme"
 # Run this file with this flag set to true to close out all open positions
-LIQUIDATE = True
+LIQUIDATE = False
 
 # Build configuration
 eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http://" + HOST + ":8545")

@@ -26,7 +26,7 @@ HOST = "localhost"
 # Username binding for bots
 USERNAME = "changeme"
 # Run this file with this flag set to true to close out all open positions
-LIQUIDATE = True
+LIQUIDATE = False
 
 
 # Build custom policy
