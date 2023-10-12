@@ -1,7 +1,7 @@
 """Test the hyperdrive interface."""
 from typing import cast
 
-from chainsync.analysis import calc_fixed_rate_fp, calc_spot_price
+from chainsync.analysis import calc_fixed_rate, calc_spot_price
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.hyperdrive.api import HyperdriveInterface
@@ -107,10 +107,7 @@ def test_pool_info(local_hyperdrive_pool: DeployedHyperdrivePool):
     )
 
     api_fixed_rate = interface.fixed_rate
-    expected_fixed_rate = calc_fixed_rate_fp(
-        expected_spot_price,
-        api_pool_config["positionDuration"],
-    )
+    expected_fixed_rate = calc_fixed_rate(expected_spot_price,api_pool_config["positionDuration"])
 
     # TODO there's rounding errors between api spot price and fixed rates
     print(f"{abs(api_spot_price - expected_spot_price)=}")
