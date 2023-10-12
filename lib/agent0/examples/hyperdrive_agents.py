@@ -1,4 +1,4 @@
-"""Script to showcase running default implemented agents"""
+"""Script to showcase running default implemented agents."""
 from __future__ import annotations
 
 import logging
@@ -6,7 +6,7 @@ import logging
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import Policies
+from agent0.hyperdrive.policies import Zoo
 from ethpy import EthConfig
 from fixedpointmath import FixedPoint
 
@@ -33,26 +33,26 @@ env_config = EnvironmentConfig(
 
 agent_config: list[AgentConfig] = [
     AgentConfig(
-        policy=Policies.arbitrage_policy,
+        policy=Zoo.arbitrage,
         number_of_agents=1,
         slippage_tolerance=None,  # No slippage tolerance for arb bot
         # Fixed budgets
         base_budget_wei=FixedPoint(50_000).scaled_value,  # 50k base
         eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
-        policy_config=Policies.arbitrage_policy.Config(
+        policy_config=Zoo.arbitrage.Config(
             trade_amount=FixedPoint(1000),  # Open 1k in base or short 1k bonds
             high_fixed_rate_thresh=FixedPoint(0.1),  # Upper fixed rate threshold
             low_fixed_rate_thresh=FixedPoint(0.02),  # Lower fixed rate threshold
         ),
     ),
     AgentConfig(
-        policy=Policies.random_agent,
+        policy=Zoo.random,
         number_of_agents=0,
         slippage_tolerance=FixedPoint("0.0001"),
         # Fixed budget
         base_budget_wei=FixedPoint(5_000).scaled_value,  # 5k base
         eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
-        policy_config=Policies.random_agent.Config(trade_chance=FixedPoint("0.8")),
+        policy_config=Zoo.random.Config(trade_chance=FixedPoint("0.8")),
     ),
 ]
 

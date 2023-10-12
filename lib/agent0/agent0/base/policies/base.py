@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from textwrap import dedent, indent
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, TypeVar
 
@@ -66,3 +67,19 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
             and the second element defines if the agent is done trading
         """
         raise NotImplementedError
+
+    @classmethod
+    def describe(cls, raw_description: str | None = None) -> str:
+        """Describe the policy in a user friendly manner that allows newcomers to decide whether to use it.
+
+        Returns
+        -------
+        str
+            A description of the policy"""
+        if raw_description is None:
+            raise NotImplementedError(
+                "This method is meant to be called only by subclasses which provide a `raw_description`."
+            )
+        dedented_text = dedent(raw_description).strip()
+        indented_text = indent(dedented_text, "  ")  # Adding 2-space indent
+        return indented_text

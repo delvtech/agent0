@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from numpy.random._generator import Generator as NumpyGenerator
 
 
-class ArbitragePolicy(HyperdrivePolicy):
+class Arbitrage(HyperdrivePolicy):
     """Agent that arbitrages based on the fixed rate
 
     .. note::
@@ -28,6 +28,24 @@ class ArbitragePolicy(HyperdrivePolicy):
             - If the fixed rate is lower than `low_fixed_rate_thresh`,
                 I close all open longs and open a new short for `trade_amount` bonds
     """
+
+    @classmethod
+    def description(cls) -> str:
+        """Describe the policy in a user friendly manner that allows newcomers to decide whether to use it.
+
+        Returns
+        -------
+        str
+            A description of the policy"""
+        raw_description = """
+        Take advantage of deviations in the fixed rate from specified parameters.
+        The following 3 parameters in Config define its operation:
+        - When `high_fixed_rate_thresh`, open shorts are closed, and a long is opened.
+        - When `low_fixed_rate_thresh`, open longs are closed, and a short is opened.
+        - Trade size is fixed by `trade_amount`.
+        Additionally, longs and shorts are closed if they are matured.
+        """
+        return super().describe(raw_description)
 
     @dataclass
     class Config(HyperdrivePolicy.Config):
