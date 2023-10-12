@@ -36,9 +36,7 @@ class ForwarderFactoryCreateContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, token: str, tokenId: int
-    ) -> "ForwarderFactoryCreateContractFunction":
+    def __call__(self, token: str, tokenId: int) -> "ForwarderFactoryCreateContractFunction":
         super().__call__(token, tokenId)
         return self
 
@@ -66,9 +64,7 @@ class ForwarderFactoryGetForwarderContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, token: str, tokenId: int
-    ) -> "ForwarderFactoryGetForwarderContractFunction":
+    def __call__(self, token: str, tokenId: int) -> "ForwarderFactoryGetForwarderContractFunction":
         super().__call__(token, tokenId)
         return self
 
@@ -95,11 +91,7 @@ class ForwarderFactoryContract(Contract):
         self.abi = abi
         # TODO: make this better, shouldn't initialize to the zero address, but the Contract's init
         # function requires an address.
-        self.address = (
-            address
-            if address
-            else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
-        )
+        self.address = address if address else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
 
         try:
             # Initialize parent Contract class

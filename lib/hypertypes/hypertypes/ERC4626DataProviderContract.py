@@ -120,7 +120,9 @@ class ERC4626DataProviderGetUncollectedGovernanceFeesContractFunction(ContractFu
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self) -> "ERC4626DataProviderGetUncollectedGovernanceFeesContractFunction":
+    def __call__(
+        self,
+    ) -> "ERC4626DataProviderGetUncollectedGovernanceFeesContractFunction":
         super().__call__()
         return self
 

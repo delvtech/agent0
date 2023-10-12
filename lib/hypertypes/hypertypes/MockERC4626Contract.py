@@ -50,9 +50,7 @@ class MockERC4626ApproveContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, spender: str, amount: int
-    ) -> "MockERC4626ApproveContractFunction":
+    def __call__(self, spender: str, amount: int) -> "MockERC4626ApproveContractFunction":
         super().__call__(spender, amount)
         return self
 
@@ -136,9 +134,7 @@ class MockERC4626DepositContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _assets: int, _receiver: str
-    ) -> "MockERC4626DepositContractFunction":
+    def __call__(self, _assets: int, _receiver: str) -> "MockERC4626DepositContractFunction":
         super().__call__(_assets, _receiver)
         return self
 
@@ -222,9 +218,7 @@ class MockERC4626MintContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _shares: int, _receiver: str
-    ) -> "MockERC4626MintContractFunction":
+    def __call__(self, _shares: int, _receiver: str) -> "MockERC4626MintContractFunction":
         super().__call__(_shares, _receiver)
         return self
 
@@ -345,9 +339,7 @@ class MockERC4626RedeemContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _shares: int, _receiver: str, _owner: str
-    ) -> "MockERC4626RedeemContractFunction":
+    def __call__(self, _shares: int, _receiver: str, _owner: str) -> "MockERC4626RedeemContractFunction":
         super().__call__(_shares, _receiver, _owner)
         return self
 
@@ -431,9 +423,7 @@ class MockERC4626TransferFromContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _from: str, to: str, amount: int
-    ) -> "MockERC4626TransferFromContractFunction":
+    def __call__(self, _from: str, to: str, amount: int) -> "MockERC4626TransferFromContractFunction":
         super().__call__(_from, to, amount)
         return self
 
@@ -447,9 +437,7 @@ class MockERC4626WithdrawContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _assets: int, _receiver: str, _owner: str
-    ) -> "MockERC4626WithdrawContractFunction":
+    def __call__(self, _assets: int, _receiver: str, _owner: str) -> "MockERC4626WithdrawContractFunction":
         super().__call__(_assets, _receiver, _owner)
         return self
 
@@ -528,11 +516,7 @@ class MockERC4626Contract(Contract):
         self.abi = abi
         # TODO: make this better, shouldn't initialize to the zero address, but the Contract's init
         # function requires an address.
-        self.address = (
-            address
-            if address
-            else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
-        )
+        self.address = address if address else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
 
         try:
             # Initialize parent Contract class

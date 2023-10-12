@@ -30,9 +30,7 @@ class ERC4626HyperdriveDeployerDeployContractFunction(ContractFunction):
         _linkerFactory: str,
         _extraData: list[bytes],
     ) -> "ERC4626HyperdriveDeployerDeployContractFunction":
-        super().__call__(
-            _config, _dataProvider, _linkerCodeHash, _linkerFactory, _extraData
-        )
+        super().__call__(_config, _dataProvider, _linkerCodeHash, _linkerFactory, _extraData)
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -52,11 +50,7 @@ class ERC4626HyperdriveDeployerContract(Contract):
         self.abi = abi
         # TODO: make this better, shouldn't initialize to the zero address, but the Contract's init
         # function requires an address.
-        self.address = (
-            address
-            if address
-            else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
-        )
+        self.address = address if address else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
 
         try:
             # Initialize parent Contract class
