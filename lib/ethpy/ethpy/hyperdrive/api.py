@@ -87,6 +87,15 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             abi=abis["IHyperdrive"], address=web3.to_checksum_address(addresses.mock_hyperdrive)
         )
         self.last_state_block_number = copy.copy(self.current_block_number)
+        # get yield (variable rate) pool contract
+        # TODO: In the future we want to switch to a single IERC4626Hyperdrive ABI
+        data_provider_contract: Contract = web3.eth.contract(
+            abi=abis["ERC4626DataProvider"], address=web3.to_checksum_address(addresses.mock_hyperdrive)
+        )
+        yield_address = smart_contract_read(data_provider_contract, "pool")["value"]
+        self.yield_contract: Contract = web3.eth.contract(
+            abi=abis["MockERC4626"], address=web3.to_checksum_address(yield_address)
+        )
         # pool config is static
         self._contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         self.pool_config = process_hyperdrive_pool_config(
@@ -160,15 +169,10 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         return (FixedPoint(1) - self.spot_price) / (self.spot_price * self.position_duration_in_years)
 
     @property
-    def variable_rate(self) -> None:
-        """Returns the market variable rate.
-
-        .. todo::
-            - Need the address for the yield source (e.g. MockERC4626)
-            - then should be able to do a contract read call (e.g. getRate)
-            issue #913
-        """
-        return None
+    def variable_rate(self) -> FixedPoint:
+        """Returns the market variable rate."""
+        rate = smart_contract_read(self.yield_contract, "getRate")["value"]
+        return FixedPoint(scaled_value=rate)
 
     @property
     def seconds_since_latest_checkpoint(self) -> int:

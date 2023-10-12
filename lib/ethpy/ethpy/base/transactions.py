@@ -42,13 +42,13 @@ def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn
             would be cool if this also put stuff into FixedPoint
     """
     # get the callable contract function from function_name & call it
-
     if "(" in function_name_or_signature:
         function = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
     else:
         function = contract.get_function_by_name(function_name_or_signature)(*fn_args)
     return_values = function.call(**fn_kwargs)
-    if not isinstance(return_values, Sequence):  # could be list or tuple
+    # If there is a single value returned, we want to put it in a list of length 1
+    if not isinstance(return_values, Sequence) or isinstance(return_values, str):
         return_values = [return_values]
     if contract.abi:  # not all contracts have an associated ABI
         # NOTE: this will break if a function signature is passed.  need to update this helper
