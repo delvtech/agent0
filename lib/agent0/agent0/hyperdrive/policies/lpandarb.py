@@ -1,40 +1,51 @@
-"""Agent policy for LP trading that also arbitrage on the fixed rate"""
+"""Agent policy for LP trading that also arbitrage on the fixed rate."""
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from fixedpointmath import FixedPoint
+
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy.types import MarketType, Trade
-from fixedpointmath import FixedPoint
 
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.state import HyperdriveWallet
     from ethpy.hyperdrive import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
+    from agent0.hyperdrive.state import HyperdriveWallet
+
 
 # TODO this should maybe subclass from arbitrage policy, but perhaps making it swappable
-class LPBot(HyperdrivePolicy):
-    """LP Agent that opens an LP position and arbitrages based on the fixed rate
+class LPandArb(HyperdrivePolicy):
+    """LP and Arbitrage in a fixed proportion."""
 
-    .. note::
-        My strategy:
-            - I use a portion of my budget to open an LP position
-            - I use the other portion of my budget to arbitrage the fixed rate
-            - If nothing to arbitrage, the other portion is an additional LP position
-            - I always close any withdrawal shares I have open
-            - If the fixed rate is higher than `high_fixed_rate_thresh`,
-                I close my short and open a new long for `trade_amount` base
-            - If the fixed rate is lower than `low_fixed_rate_thresh`,
-                I close my long and open a new short for `trade_amount` bonds
-    """
+    @classmethod
+    def description(cls) -> str:
+        """Describe the policy in a user friendly manner that allows newcomers to decide whether to use it.
+
+        Returns
+        -------
+        str
+        A description of the policy
+        """
+        raw_description = """
+        LP and arbitrage in a fixed proportion.
+        If no arb opportunity, that portion is LPed. In the future this could go into the yield source.
+        Try to redeem withdrawal shares right away.
+        Arbitrage logic is as follows:
+        - If the fixed rate is higher than `high_fixed_rate_thresh`:
+            - Close entire short and open a new long for `trade_amount` base.
+        - If the fixed rate is lower than `low_fixed_rate_thresh`:
+            - Close entire long and open a new short for `trade_amount` bonds.
+        """
+        return super().describe(raw_description)
 
     @dataclass
     class Config(HyperdrivePolicy.Config):
-        """Custom config arguments for this policy
+        """Custom config arguments for this policy.
 
         Attributes
         ----------
@@ -57,7 +68,7 @@ class LPBot(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
     ):
-        """Initializes the bot
+        """Initialize the bot.
 
         Arguments
         ---------
@@ -70,7 +81,6 @@ class LPBot(HyperdrivePolicy):
         policy_config: Config | None
             The custom arguments for this policy
         """
-
         # Defaults
         if policy_config is None:
             policy_config = self.Config()
@@ -90,6 +100,8 @@ class LPBot(HyperdrivePolicy):
         ---------
         market : HyperdriveMarketState
             the trading market
+        interface : MarketInterface
+            Interface for the market on which this agent will be executing trades (MarketActions)
         wallet : HyperdriveWallet
             agent's wallet
 

@@ -6,7 +6,7 @@ from typing import NamedTuple
 from .arbitrage import Arbitrage
 from .random import Random
 from .smart_long import SmartLong
-
+from .lpandarb import LPandArb
 
 # Container for all the policies
 class Zoo(NamedTuple):
@@ -15,6 +15,7 @@ class Zoo(NamedTuple):
     random = Random
     arbitrage = Arbitrage
     smart_long = SmartLong
+    LPandArb = LPandArb
 
     def describe(self, policies: list | str | None = None) -> str:
         """Describe policies, either specific ones provided, or all of them."""
