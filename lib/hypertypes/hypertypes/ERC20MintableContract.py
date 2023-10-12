@@ -66,11 +66,11 @@ class ERC20MintableBurnContractFunction(ContractFunction):
 
     def __call__(self, amount: int, destination: str | None = None) -> "ERC20MintableBurnContractFunction":
         if all([destination is None]):
-            super().__call__(amount)
+            super().__call__()
             return self
 
         else:
-            super().__call__(destination, amount)
+            super().__call__()
             return self
 
     # TODO: add call def so we can get return types for the calls
@@ -127,11 +127,11 @@ class ERC20MintableMintContractFunction(ContractFunction):
 
     def __call__(self, amount: int, destination: str | None = None) -> "ERC20MintableMintContractFunction":
         if all([destination is not None]):
-            super().__call__(destination, amount)
+            super().__call__()
             return self
 
         else:
-            super().__call__(amount)
+            super().__call__()
             return self
 
     # TODO: add call def so we can get return types for the calls

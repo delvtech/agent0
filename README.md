@@ -18,7 +18,6 @@ Our current supported packages are:
 - chainsync ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/chainsync/README.md))
 - elfpy ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/elfpy/README.md))
 - ethpy ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/ethpy/README.md))
-- pypechain ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/pypechain/README.md))
 
 ## Install
 
@@ -75,11 +74,13 @@ In that example, the internal representation is `8`, so casting it to a float wo
 
 To understand more, we recommend that you study the fixed point tests and source implementation in `elfpy/math/`.
 
-Warning! Using floating point as a constructor to FixedPoint can cause loss of precision. For example, 
+Warning! Using floating point as a constructor to FixedPoint can cause loss of precision. For example,
+
 ```
 >>> FixedPoint(1e18)
 FixedPoint("1000000000000000042.420637374017961984")
 ```
+
 Allowing floating point in the constructor of FixedPoint will be removed in a future version of `fixedpointmath`.
 
 ## Modifying configuration for agent deployment

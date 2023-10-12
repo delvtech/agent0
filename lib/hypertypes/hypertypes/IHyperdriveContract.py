@@ -37,7 +37,12 @@ class IHyperdriveAddLiquidityContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, _contribution: int, _minApr: int, _maxApr: int, _destination: str, _asUnderlying: bool
+        self,
+        _contribution: int,
+        _minApr: int,
+        _maxApr: int,
+        _destination: str,
+        _asUnderlying: bool,
     ) -> "IHyperdriveAddLiquidityContractFunction":
         super().__call__(_contribution, _minApr, _maxApr, _destination, _asUnderlying)
         return self
@@ -111,7 +116,12 @@ class IHyperdriveCloseLongContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, _maturityTime: int, _bondAmount: int, _minOutput: int, _destination: str, _asUnderlying: bool
+        self,
+        _maturityTime: int,
+        _bondAmount: int,
+        _minOutput: int,
+        _destination: str,
+        _asUnderlying: bool,
     ) -> "IHyperdriveCloseLongContractFunction":
         super().__call__(_maturityTime, _bondAmount, _minOutput, _destination, _asUnderlying)
         return self
@@ -127,7 +137,12 @@ class IHyperdriveCloseShortContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, _maturityTime: int, _bondAmount: int, _minOutput: int, _destination: str, _asUnderlying: bool
+        self,
+        _maturityTime: int,
+        _bondAmount: int,
+        _minOutput: int,
+        _destination: str,
+        _asUnderlying: bool,
     ) -> "IHyperdriveCloseShortContractFunction":
         super().__call__(_maturityTime, _bondAmount, _minOutput, _destination, _asUnderlying)
         return self
@@ -226,7 +241,9 @@ class IHyperdriveGetUncollectedGovernanceFeesContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self) -> "IHyperdriveGetUncollectedGovernanceFeesContractFunction":
+    def __call__(
+        self,
+    ) -> "IHyperdriveGetUncollectedGovernanceFeesContractFunction":
         super().__call__()
         return self
 
@@ -255,7 +272,11 @@ class IHyperdriveInitializeContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, _contribution: int, _apr: int, _destination: str, _asUnderlying: bool
+        self,
+        _contribution: int,
+        _apr: int,
+        _destination: str,
+        _asUnderlying: bool,
     ) -> "IHyperdriveInitializeContractFunction":
         super().__call__(_contribution, _apr, _destination, _asUnderlying)
         return self
@@ -341,7 +362,12 @@ class IHyperdriveOpenLongContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, _baseAmount: int, _minOutput: int, _minSharePrice: int, _destination: str, _asUnderlying: bool
+        self,
+        _baseAmount: int,
+        _minOutput: int,
+        _minSharePrice: int,
+        _destination: str,
+        _asUnderlying: bool,
     ) -> "IHyperdriveOpenLongContractFunction":
         super().__call__(_baseAmount, _minOutput, _minSharePrice, _destination, _asUnderlying)
         return self
@@ -357,9 +383,20 @@ class IHyperdriveOpenShortContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, _bondAmount: int, _maxDeposit: int, _minSharePrice: int, _destination: str, _asUnderlying: bool
+        self,
+        _bondAmount: int,
+        _maxDeposit: int,
+        _minSharePrice: int,
+        _destination: str,
+        _asUnderlying: bool,
     ) -> "IHyperdriveOpenShortContractFunction":
-        super().__call__(_bondAmount, _maxDeposit, _minSharePrice, _destination, _asUnderlying)
+        super().__call__(
+            _bondAmount,
+            _maxDeposit,
+            _minSharePrice,
+            _destination,
+            _asUnderlying,
+        )
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -401,7 +438,14 @@ class IHyperdrivePermitForAllContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, owner: str, spender: str, _approved: bool, deadline: int, v: int, r: bytes, s: bytes
+        self,
+        owner: str,
+        spender: str,
+        _approved: bool,
+        deadline: int,
+        v: int,
+        r: bytes,
+        s: bytes,
     ) -> "IHyperdrivePermitForAllContractFunction":
         super().__call__(owner, spender, _approved, deadline, v, r, s)
         return self
@@ -417,7 +461,11 @@ class IHyperdriveRedeemWithdrawalSharesContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, _shares: int, _minOutput: int, _destination: str, _asUnderlying: bool
+        self,
+        _shares: int,
+        _minOutput: int,
+        _destination: str,
+        _asUnderlying: bool,
     ) -> "IHyperdriveRedeemWithdrawalSharesContractFunction":
         super().__call__(_shares, _minOutput, _destination, _asUnderlying)
         return self
@@ -433,7 +481,11 @@ class IHyperdriveRemoveLiquidityContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, _shares: int, _minOutput: int, _destination: str, _asUnderlying: bool
+        self,
+        _shares: int,
+        _minOutput: int,
+        _destination: str,
+        _asUnderlying: bool,
     ) -> "IHyperdriveRemoveLiquidityContractFunction":
         super().__call__(_shares, _minOutput, _destination, _asUnderlying)
         return self

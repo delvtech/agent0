@@ -3,8 +3,10 @@
 Generate the requisite Python files by running:
 
 ```bash
-sh scripts/build_type_files.sh path/to/ABIs num_chars_per_line
+sh pypechain path/to/ABIs --output_dir path/to/temp_dir
 ```
+
+and then moving the generated files to lib/hypertypes/hypertypes
 
 You can then pip install the package from the project root with
 

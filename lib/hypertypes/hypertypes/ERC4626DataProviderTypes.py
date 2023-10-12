@@ -13,31 +13,8 @@
 # pylint: disable=no-else-return
 from __future__ import annotations
 
+
 from dataclasses import dataclass
-
-
-@dataclass
-class Checkpoint:
-    """Checkpoint struct."""
-
-    sharePrice: int
-    longExposure: int
-
-
-@dataclass
-class MarketState:
-    """MarketState struct."""
-
-    shareReserves: int
-    bondReserves: int
-    shareAdjustment: int
-    longExposure: int
-    longsOutstanding: int
-    shortsOutstanding: int
-    longAverageMaturityTime: int
-    shortAverageMaturityTime: int
-    isInitialized: bool
-    isPaused: bool
 
 
 @dataclass
@@ -62,9 +39,33 @@ class PoolConfig:
     timeStretch: int
     governance: str
     feeCollector: str
-    Fees: Fees
+    fees: Fees
     oracleSize: int
     updateGap: int
+
+
+@dataclass
+class Checkpoint:
+    """Checkpoint struct."""
+
+    sharePrice: int
+    longExposure: int
+
+
+@dataclass
+class MarketState:
+    """MarketState struct."""
+
+    shareReserves: int
+    bondReserves: int
+    shareAdjustment: int
+    longExposure: int
+    longsOutstanding: int
+    shortsOutstanding: int
+    longAverageMaturityTime: int
+    shortAverageMaturityTime: int
+    isInitialized: bool
+    isPaused: bool
 
 
 @dataclass

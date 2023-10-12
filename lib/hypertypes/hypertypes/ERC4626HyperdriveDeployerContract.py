@@ -23,9 +23,14 @@ class ERC4626HyperdriveDeployerDeployContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, PoolConfig: tuple, _dataProvider: str, _linkerCodeHash: bytes, _linkerFactory: str, _extraData: bytes
+        self,
+        _config: tuple,
+        _dataProvider: str,
+        _linkerCodeHash: bytes,
+        _linkerFactory: str,
+        _extraData: list[bytes],
     ) -> "ERC4626HyperdriveDeployerDeployContractFunction":
-        super().__call__(PoolConfig, _dataProvider, _linkerCodeHash, _linkerFactory, _extraData)
+        super().__call__(_config, _dataProvider, _linkerCodeHash, _linkerFactory, _extraData)
         return self
 
     # TODO: add call def so we can get return types for the calls
