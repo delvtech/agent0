@@ -24,32 +24,16 @@ from .convert_data import (
 )
 from .interface import add_checkpoint_infos, add_pool_config, add_pool_infos, add_transactions, add_wallet_deltas
 
-_RETRY_COUNT = 10
-_RETRY_SLEEP_SECONDS = 1
-
 
 def init_data_chain_to_db(
     hyperdrive_contract: Contract,
     session: Session,
 ) -> None:
     """Function to query and insert pool config to dashboard"""
-    # get pool config from hyperdrive contract
-    pool_config_dict = None
-    for _ in range(_RETRY_COUNT):
-        try:
-            # TODO: Use the hyperdrive API here
-            pool_config_dict = convert_pool_config(
-                process_hyperdrive_pool_config(
-                    get_hyperdrive_pool_config(hyperdrive_contract), hyperdrive_contract.address
-                )
-            )
-            break
-        except ValueError:
-            logging.warning("Error in getting pool config, retrying")
-            time.sleep(_RETRY_SLEEP_SECONDS)
-            continue
-    if pool_config_dict is None:
-        raise ValueError("Error in getting pool config")
+    # TODO: Use the hyperdrive API here
+    pool_config_dict = convert_pool_config(
+        process_hyperdrive_pool_config(get_hyperdrive_pool_config(hyperdrive_contract), hyperdrive_contract.address)
+    )
     add_pool_config(pool_config_dict, session)
 
 
@@ -61,64 +45,32 @@ def data_chain_to_db(
 ) -> None:
     """Function to query and insert data to dashboard."""
     # Query and add block_checkpoint_info
-    checkpoint_info_dict = None
-    for _ in range(_RETRY_COUNT):
-        try:
-            checkpoint_info_dict = process_hyperdrive_checkpoint(
-                get_hyperdrive_checkpoint(hyperdrive_contract, block_number), web3, block_number
-            )
-            break
-        except ValueError:
-            logging.warning("Error in get_hyperdrive_checkpoint_info, retrying")
-            time.sleep(_RETRY_SLEEP_SECONDS)
-            continue
-    if checkpoint_info_dict is None:
-        raise ValueError("Error in getting checkpoint info")
+    checkpoint_info_dict = process_hyperdrive_checkpoint(
+        get_hyperdrive_checkpoint(hyperdrive_contract, block_number), web3, block_number
+    )
     block_checkpoint_info = convert_checkpoint_info(checkpoint_info_dict)
     add_checkpoint_infos([block_checkpoint_info], session)
 
     # Query and add block_transactions and wallet deltas
     block_transactions = None
     wallet_deltas = None
-    for _ in range(_RETRY_COUNT):
-        try:
-            transactions = fetch_contract_transactions_for_block(web3, hyperdrive_contract, block_number)
-            (
-                block_transactions,
-                wallet_deltas,
-            ) = convert_hyperdrive_transactions_for_block(web3, hyperdrive_contract, transactions)
-            break
-        except ValueError:
-            logging.warning("Error in fetch_contract_transactions_for_block, retrying")
-            time.sleep(_RETRY_SLEEP_SECONDS)
-            continue
-    # This case only happens if fetch_contract_transactions throws an exception
-    # e.g., the web3 call fails. fetch_contract_transactions_for_block will return
-    # empty lists (which doesn't execute the if statement below) if there are no hyperdrive
-    # transactions for the block
-    if block_transactions is None or wallet_deltas is None:
-        raise ValueError("Error in getting transactions")
+    transactions = fetch_contract_transactions_for_block(web3, hyperdrive_contract, block_number)
+    (
+        block_transactions,
+        wallet_deltas,
+    ) = convert_hyperdrive_transactions_for_block(web3, hyperdrive_contract, transactions)
     add_transactions(block_transactions, session)
     add_wallet_deltas(wallet_deltas, session)
 
     # Query and add block_pool_info
     # Adding this last as pool info is what we use to determine if this block is in the db for analysis
     pool_info_dict = None
-    for _ in range(_RETRY_COUNT):
-        try:
-            pool_info_dict = process_hyperdrive_pool_info(
-                pool_info=get_hyperdrive_pool_info(hyperdrive_contract, block_number),
-                web3=web3,
-                hyperdrive_contract=hyperdrive_contract,
-                position_duration=int(get_hyperdrive_pool_config(hyperdrive_contract)["positionDuration"]),
-                block_number=block_number,
-            )
-            break
-        except ValueError:
-            logging.warning("Error in get_hyperdrive_pool_info, retrying")
-            time.sleep(_RETRY_SLEEP_SECONDS)
-            continue
-    if pool_info_dict is None:
-        raise ValueError("Error in getting pool info")
+    pool_info_dict = process_hyperdrive_pool_info(
+        pool_info=get_hyperdrive_pool_info(hyperdrive_contract, block_number),
+        web3=web3,
+        hyperdrive_contract=hyperdrive_contract,
+        position_duration=int(get_hyperdrive_pool_config(hyperdrive_contract)["positionDuration"]),
+        block_number=block_number,
+    )
     block_pool_info = convert_pool_info(pool_info_dict)
     add_pool_infos([block_pool_info], session)
