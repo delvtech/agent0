@@ -263,7 +263,7 @@ def _deploy_hyperdrive_factory(
                 deploy_account_addr,  # governance
                 deploy_account_addr,  # hyperdriveGovernance
                 deploy_account_addr,  # feeCollector
-                _dataclass_to_tuple(pool_config.Fees),  # curve, flat, governance
+                _dataclass_to_tuple(pool_config.fees),  # curve, flat, governance
                 _dataclass_to_tuple(max_fees),  # max_curve, max_flat, max_governance
                 [],  # defaultPausers (new address[](1))
             ),
