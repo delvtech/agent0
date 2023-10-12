@@ -73,8 +73,7 @@ def data_analysis(
     # Get pool config
     # TODO this likely should return a pd.Series, not dataframe
     pool_config_df = None
-    # Wait for pool config to exist to ensure acquire_data is up and running
-    # Retry 10 times
+    # Wait for pool config on queries to db to exist to ensure acquire_data is up and running
     for _ in range(10):
         pool_config_df = get_pool_config(db_session, coerce_float=False)
         pool_config_len = len(pool_config_df)

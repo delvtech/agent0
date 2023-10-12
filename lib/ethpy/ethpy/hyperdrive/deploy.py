@@ -7,13 +7,8 @@ from typing import Any, NamedTuple
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
-from ethpy.base import (
-    deploy_contract,
-    get_transaction_logs,
-    initialize_web3_with_http_provider,
-    load_all_abis,
-    smart_contract_transact,
-)
+from ethpy.base import get_transaction_logs, initialize_web3_with_http_provider, load_all_abis, smart_contract_transact
+from ethpy.base.contract import deploy_contract
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig
 from web3 import Web3
