@@ -192,41 +192,47 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The current spot price.
         """
         self._ensure_current_state()
-        pool_config_str = PoolConfig(
-            base_token=self._contract_pool_config["baseToken"],
-            initial_share_price=str(self._contract_pool_config["initialSharePrice"]),
-            minimum_share_reserves=str(self._contract_pool_config["minimumShareReserves"]),
-            minimum_transaction_amount=str(self._contract_pool_config["minimumTransactionAmount"]),
-            position_duration=str(self._contract_pool_config["positionDuration"]),
-            checkpoint_duration=str(self._contract_pool_config["checkpointDuration"]),
-            time_stretch=str(self._contract_pool_config["timeStretch"]),
-            governance=self._contract_pool_config["governance"],
-            fee_collector=self._contract_pool_config["feeCollector"],
-            fees=Fees(
-                curve=str(self._contract_pool_config["fees"][0]),
-                flat=str(self._contract_pool_config["fees"][1]),
-                governance=str(self._contract_pool_config["fees"][2]),
-            ),
-            oracle_size=str(self._contract_pool_config["oracleSize"]),
-            update_gap=str(self._contract_pool_config["updateGap"]),
-        )
-        pool_info_str = PoolInfo(
-            share_reserves=str(self._contract_pool_info["shareReserves"]),
-            share_adjustment=str(self._contract_pool_info["shareAdjustment"]),
-            bond_reserves=str(self._contract_pool_info["bondReserves"]),
-            lp_total_supply=str(self._contract_pool_info["lpTotalSupply"]),
-            share_price=str(self._contract_pool_info["sharePrice"]),
-            longs_outstanding=str(self._contract_pool_info["longsOutstanding"]),
-            long_average_maturity_time=str(self._contract_pool_info["longAverageMaturityTime"]),
-            shorts_outstanding=str(self._contract_pool_info["shortsOutstanding"]),
-            short_average_maturity_time=str(self._contract_pool_info["shortAverageMaturityTime"]),
-            withdrawal_shares_ready_to_withdraw=str(self._contract_pool_info["withdrawalSharesReadyToWithdraw"]),
-            withdrawal_shares_proceeds=str(self._contract_pool_info["withdrawalSharesProceeds"]),
-            lp_share_price=str(self._contract_pool_info["lpSharePrice"]),
-            long_exposure=str(self._contract_pool_info["longExposure"]),
-        )
+        pool_config_str = self._stringify_pool_config(self._contract_pool_config)
+        pool_info_str = self._stringify_pool_info(self._contract_pool_info)
         spot_price = pyperdrive.get_spot_price(pool_config_str, pool_info_str)  # pylint: disable=no-member
         return FixedPoint(scaled_value=int(spot_price))
+
+    def _stringify_pool_config(self, pool_config_dict: dict[str, Any]) -> PoolConfig:
+        return PoolConfig(
+            base_token=pool_config_dict["baseToken"],
+            initial_share_price=str(pool_config_dict["initialSharePrice"]),
+            minimum_share_reserves=str(pool_config_dict["minimumShareReserves"]),
+            minimum_transaction_amount=str(pool_config_dict["minimumTransactionAmount"]),
+            position_duration=str(pool_config_dict["positionDuration"]),
+            checkpoint_duration=str(pool_config_dict["checkpointDuration"]),
+            time_stretch=str(pool_config_dict["timeStretch"]),
+            governance=pool_config_dict["governance"],
+            fee_collector=pool_config_dict["feeCollector"],
+            fees=Fees(
+                curve=str(pool_config_dict["fees"][0]),
+                flat=str(pool_config_dict["fees"][1]),
+                governance=str(pool_config_dict["fees"][2]),
+            ),
+            oracle_size=str(pool_config_dict["oracleSize"]),
+            update_gap=str(pool_config_dict["updateGap"]),
+        )
+
+    def _stringify_pool_info(self, pool_info_dict: dict[str, Any]) -> PoolInfo:
+        return PoolInfo(
+            share_reserves=str(pool_info_dict["shareReserves"]),
+            share_adjustment=str(pool_info_dict["shareAdjustment"]),
+            bond_reserves=str(pool_info_dict["bondReserves"]),
+            lp_total_supply=str(pool_info_dict["lpTotalSupply"]),
+            share_price=str(pool_info_dict["sharePrice"]),
+            longs_outstanding=str(pool_info_dict["longsOutstanding"]),
+            long_average_maturity_time=str(pool_info_dict["longAverageMaturityTime"]),
+            shorts_outstanding=str(pool_info_dict["shortsOutstanding"]),
+            short_average_maturity_time=str(pool_info_dict["shortAverageMaturityTime"]),
+            withdrawal_shares_ready_to_withdraw=str(pool_info_dict["withdrawalSharesReadyToWithdraw"]),
+            withdrawal_shares_proceeds=str(pool_info_dict["withdrawalSharesProceeds"]),
+            lp_share_price=str(pool_info_dict["lpSharePrice"]),
+            long_exposure=str(pool_info_dict["longExposure"]),
+        )
 
     def _ensure_current_state(self, override: bool = False) -> None:
         """Update the cached pool info and latest checkpoint if needed.
@@ -664,39 +670,8 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The maximum long as a FixedPoint representation of a Solidity uint256 value.
         """
         self._ensure_current_state()
-        pool_config_str = PoolConfig(
-            baseToken=self._contract_pool_config["baseToken"],
-            initialSharePrice=str(self._contract_pool_config["initialSharePrice"]),
-            minimumShareReserves=str(self._contract_pool_config["minimumShareReserves"]),
-            minimumTransactionAmount=str(self._contract_pool_config["minimumTransactionAmount"]),
-            positionDuration=str(self._contract_pool_config["positionDuration"]),
-            checkpointDuration=str(self._contract_pool_config["checkpointDuration"]),
-            timeStretch=str(self._contract_pool_config["timeStretch"]),
-            governance=self._contract_pool_config["governance"],
-            feeCollector=self._contract_pool_config["feeCollector"],
-            Fees=Fees(
-                curve=str(self._contract_pool_config["fees"][0]),
-                flat=str(self._contract_pool_config["fees"][1]),
-                governance=str(self._contract_pool_config["fees"][2]),
-            ),
-            oracleSize=str(self._contract_pool_config["oracleSize"]),
-            updateGap=str(self._contract_pool_config["updateGap"]),
-        )
-        pool_info_str = PoolInfo(
-            shareReserves=str(self._contract_pool_info["shareReserves"]),
-            shareAdjustment=str(self._contract_pool_info["shareAdjustment"]),
-            bondReserves=str(self._contract_pool_info["bondReserves"]),
-            lpTotalSupply=str(self._contract_pool_info["lpTotalSupply"]),
-            sharePrice=str(self._contract_pool_info["sharePrice"]),
-            longsOutstanding=str(self._contract_pool_info["longsOutstanding"]),
-            longAverageMaturityTime=str(self._contract_pool_info["longAverageMaturityTime"]),
-            shortsOutstanding=str(self._contract_pool_info["shortsOutstanding"]),
-            shortAverageMaturityTime=str(self._contract_pool_info["shortAverageMaturityTime"]),
-            withdrawalSharesReadyToWithdraw=str(self._contract_pool_info["withdrawalSharesReadyToWithdraw"]),
-            withdrawalSharesProceeds=str(self._contract_pool_info["withdrawalSharesProceeds"]),
-            lpSharePrice=str(self._contract_pool_info["lpSharePrice"]),
-            longExposure=str(self._contract_pool_info["longExposure"]),
-        )
+        pool_config_str = self._stringify_pool_config(self._contract_pool_config)
+        pool_info_str = self._stringify_pool_info(self._contract_pool_info)
         # pylint: disable=no-member
         max_long = pyperdrive.get_max_long(
             pool_config_str,
@@ -721,45 +696,14 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The maximum long as a FixedPoint representation of a Solidity uint256 value.
         """
         self._ensure_current_state()
-        pool_config_str = PoolConfig(
-            baseToken=self._contract_pool_config["baseToken"],
-            initialSharePrice=str(self._contract_pool_config["initialSharePrice"]),
-            minimumShareReserves=str(self._contract_pool_config["minimumShareReserves"]),
-            minimumTransactionAmount=str(self._contract_pool_config["minimumTransactionAmount"]),
-            positionDuration=str(self._contract_pool_config["positionDuration"]),
-            checkpointDuration=str(self._contract_pool_config["checkpointDuration"]),
-            timeStretch=str(self._contract_pool_config["timeStretch"]),
-            governance=self._contract_pool_config["governance"],
-            feeCollector=self._contract_pool_config["feeCollector"],
-            Fees=Fees(
-                curve=str(self._contract_pool_config["fees"][0]),
-                flat=str(self._contract_pool_config["fees"][1]),
-                governance=str(self._contract_pool_config["fees"][2]),
-            ),
-            oracleSize=str(self._contract_pool_config["oracleSize"]),
-            updateGap=str(self._contract_pool_config["updateGap"]),
-        )
-        pool_info_str = PoolInfo(
-            shareReserves=str(self._contract_pool_info["shareReserves"]),
-            shareAdjustment=str(self._contract_pool_info["shareAdjustment"]),
-            bondReserves=str(self._contract_pool_info["bondReserves"]),
-            lpTotalSupply=str(self._contract_pool_info["lpTotalSupply"]),
-            sharePrice=str(self._contract_pool_info["sharePrice"]),
-            longsOutstanding=str(self._contract_pool_info["longsOutstanding"]),
-            longAverageMaturityTime=str(self._contract_pool_info["longAverageMaturityTime"]),
-            shortsOutstanding=str(self._contract_pool_info["shortsOutstanding"]),
-            shortAverageMaturityTime=str(self._contract_pool_info["shortAverageMaturityTime"]),
-            withdrawalSharesReadyToWithdraw=str(self._contract_pool_info["withdrawalSharesReadyToWithdraw"]),
-            withdrawalSharesProceeds=str(self._contract_pool_info["withdrawalSharesProceeds"]),
-            lpSharePrice=str(self._contract_pool_info["lpSharePrice"]),
-            longExposure=str(self._contract_pool_info["longExposure"]),
-        )
+        pool_config_str = self._stringify_pool_config(self._contract_pool_config)
+        pool_info_str = self._stringify_pool_info(self._contract_pool_info)
         # pylint: disable=no-member
         max_short = pyperdrive.get_max_short(
             pool_config_str,
             pool_info_str,
             str(budget.scaled_value),
-            pool_info_str.sharePrice,
+            pool_info_str.share_price,
             checkpoint_exposure=str(self.latest_checkpoint["longExposure"].scaled_value),
             maybe_conservative_price=None,
             maybe_max_iterations=None,
