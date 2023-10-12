@@ -28,6 +28,7 @@ from .trade_loop import trade_if_new_block
 # TODO consolidate various configs into one config?
 # Unsure if above is necessary, as long as key agent0 interface is concise.
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
 def run_agents(
     environment_config: EnvironmentConfig,
     agent_config: list[AgentConfig],
@@ -35,6 +36,7 @@ def run_agents(
     eth_config: EthConfig | None = None,
     contract_addresses: HyperdriveAddresses | None = None,
     load_wallet_state: bool = True,
+    liquidate: bool = False,
 ) -> None:
     """Entrypoint to run agents.
 
@@ -56,6 +58,8 @@ def run_agents(
         defined in eth_config.
     load_wallet_state: bool
         If set, will connect to the db api to load wallet states from the current chain
+    liquidate: bool
+        If set, will ignore all policy settings and liquidate all open positions
     """
     # See if develop flag is set
     develop_env = os.environ.get("DEVELOP")
@@ -109,6 +113,11 @@ def run_agents(
                 agent.checksum_address, balances, hyperdrive.base_token_contract
             )
 
+    # If we're in liquidation mode, we explicitly set halt on errors to false
+    # This is due to an expected error when redeeming withdrawal shares
+    if liquidate:
+        environment_config.halt_on_errors = False
+
     # run the trades
     last_executed_block = BlockNumber(0)
     while True:
@@ -124,6 +133,7 @@ def run_agents(
             environment_config.halt_on_errors,
             environment_config.halt_on_slippage,
             last_executed_block,
+            liquidate,
         )
 
 

@@ -25,6 +25,8 @@ ENV_FILE = "custom_agent.account.env"
 HOST = "localhost"
 # Username binding for bots
 USERNAME = "changeme"
+# Run this file with this flag set to true to close out all open positions
+LIQUIDATE = False
 
 
 # Build custom policy
@@ -218,4 +220,4 @@ agent_config: list[AgentConfig] = [
 account_key_config = initialize_accounts(agent_config, ENV_FILE, random_seed=env_config.random_seed)
 
 # Run agents
-run_agents(env_config, agent_config, account_key_config, eth_config=eth_config)
+run_agents(env_config, agent_config, account_key_config, eth_config=eth_config, liquidate=LIQUIDATE)

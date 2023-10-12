@@ -69,8 +69,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
             balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE),
         )
 
-    @property
-    def liquidation_trades(self) -> list[Trade[HyperdriveMarketAction]]:
+    def get_liquidation_trades(self) -> list[Trade[HyperdriveMarketAction]]:
         """List of trades that liquidate all open positions
 
         Returns
@@ -82,14 +81,13 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         for maturity_time, long in self.wallet.longs.items():
             logging.debug("closing long: maturity_time=%g, balance=%s", maturity_time, long)
             if long.balance > 0:
-                # TODO: Deprecate the old wallet in favor of this new one
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
-                            wallet=self.wallet,  # type: ignore
+                            wallet=self.wallet,
                             maturity_time=maturity_time,
                         ),
                     )
@@ -97,31 +95,46 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         for maturity_time, short in self.wallet.shorts.items():
             logging.debug("closing short: maturity_time=%g, balance=%s", maturity_time, short.balance)
             if short.balance > 0:
-                # TODO: Deprecate the old wallet in favor of this new one
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
-                            wallet=self.wallet,  # type: ignore
+                            wallet=self.wallet,
                             maturity_time=maturity_time,
                         ),
                     )
                 )
         if self.wallet.lp_tokens > 0:
             logging.debug("closing lp: lp_tokens=%s", self.wallet.lp_tokens)
-            # TODO: Deprecate the old wallet in favor of this new one
             action_list.append(
                 Trade(
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
-                        wallet=self.wallet,  # type: ignore
+                        wallet=self.wallet,
                     ),
                 )
             )
+        if self.wallet.withdraw_shares > 0:
+            logging.debug("closing lp: lp_tokens=%s", self.wallet.lp_tokens)
+            action_list.append(
+                Trade(
+                    market_type=MarketType.HYPERDRIVE,
+                    market_action=HyperdriveMarketAction(
+                        action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
+                        trade_amount=self.wallet.withdraw_shares,
+                        wallet=self.wallet,
+                    ),
+                )
+            )
+
+        # If no more trades in wallet, set the done trading flag
+        if len(action_list) == 0:
+            self.done_trading = True
+
         return action_list
 
     def get_trades(self, interface: HyperdriveInterface) -> list[Trade[HyperdriveMarketAction]]:

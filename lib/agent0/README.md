@@ -122,3 +122,14 @@ Run the script once to generate environment file, with filename set to `ENV_FILE
     > ```bash
     > DEVELOP=true python lib/agent0/examples/hyperdrive_agents.py
     > ```
+
+## Liquidating bots
+
+The `LIQUIDATION` flag allows you to run your bots in liquidation mode. When this flag is true,
+the bots will attempt to close out all open positions. The script will exit when this is complete.
+
+    >**💡NOTE:**
+    >If your bot has an LP position open, it's very likely your bot will repeatedly throw an error
+    >when in liquidation mode. This is due to attempting to close out withdrawal shares that are currently
+    >not available to withdraw. You can keep your script running in this case; the script will exit when all
+    >trades are successful.

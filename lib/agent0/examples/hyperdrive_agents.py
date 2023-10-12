@@ -16,6 +16,8 @@ ENV_FILE = "hyperdrive_agents.account.env"
 HOST = "localhost"
 # Username binding of bots
 USERNAME = "changeme"
+# Run this file with this flag set to true to close out all open positions
+LIQUIDATE = False
 
 # Build configuration
 eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http://" + HOST + ":8545")
@@ -65,4 +67,4 @@ agent_config: list[AgentConfig] = [
 account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed)
 
 # Run agents
-run_agents(env_config, agent_config, account_key_config, eth_config=eth_config)
+run_agents(env_config, agent_config, account_key_config, eth_config=eth_config, liquidate=LIQUIDATE)
