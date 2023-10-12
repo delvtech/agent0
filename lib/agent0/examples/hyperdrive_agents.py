@@ -63,7 +63,7 @@ agent_config: list[AgentConfig] = [
 # Build accounts env var
 # This function writes a user defined env file location.
 # If it doesn't exist, create it based on agent_config
-# (If develop is False, will clean exit and print instructions on how to fund agent)
+# (If os.environ["DEVELOP"] is False, will clean exit and print instructions on how to fund agent)
 # If it does exist, read it in and use it
 account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed)
 

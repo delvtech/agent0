@@ -29,8 +29,7 @@ class LPandArb(HyperdrivePolicy):
         Returns
         -------
         str
-        A description of the policy
-        """
+            A description of the policy"""
         raw_description = """
         LP and arbitrage in a fixed proportion.
         If no arb opportunity, that portion is LPed. In the future this could go into the yield source.
@@ -49,17 +48,22 @@ class LPandArb(HyperdrivePolicy):
 
         Attributes
         ----------
-        trade_amount: FixedPoint
-            The static amount to trade when opening a position
         high_fixed_rate_thresh: FixedPoint
             The upper threshold of the fixed rate to open a position
         low_fixed_rate_thresh: FixedPoint
             The lower threshold of the fixed rate to open a position
+        lp_portion: FixedPoint
+            The portion of capital assigned to LP
         """
 
+        lp_portion: FixedPoint = FixedPoint("0.5")
         high_fixed_rate_thresh: FixedPoint = FixedPoint("0.1")
         low_fixed_rate_thresh: FixedPoint = FixedPoint("0.02")
-        lp_percent: FixedPoint = FixedPoint("0.8")
+
+        @property
+        def arb_portion(self) -> FixedPoint:
+            """The portion of capital assigned to arbitrage."""
+            return FixedPoint(1) - self.lp_portion
 
     def __init__(
         self,
@@ -84,8 +88,9 @@ class LPandArb(HyperdrivePolicy):
         # Defaults
         if policy_config is None:
             policy_config = self.Config()
-        self.trade_amount = (1 - policy_config.lp_percent) * budget
-        self.lp_amount = (policy_config.lp_percent) * budget
+        self.policy_config = policy_config
+        self.arb_amount = self.policy_config.arb_portion * budget
+        self.lp_amount = (self.policy_config.lp_portion) * budget
         self.high_fixed_rate_thresh = policy_config.high_fixed_rate_thresh
         self.low_fixed_rate_thresh = policy_config.low_fixed_rate_thresh
 
@@ -113,6 +118,9 @@ class LPandArb(HyperdrivePolicy):
         """
         # Get fixed rate
         fixed_rate = interface.fixed_rate
+        variable_rate = interface.variable_rate
+        print(f"{fixed_rate=}")
+        print(f"{variable_rate=}")
 
         action_list = []
 
