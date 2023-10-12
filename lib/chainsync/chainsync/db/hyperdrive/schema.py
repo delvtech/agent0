@@ -53,7 +53,6 @@ class CheckpointInfo(Base):
     blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime)
     sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    longSharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     longExposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
