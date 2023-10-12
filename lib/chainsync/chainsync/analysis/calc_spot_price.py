@@ -21,7 +21,10 @@ def calc_spot_price(
         ctx.rounding = ROUND_DOWN
         effective_share_reserves = share_reserves - share_adjustment
         # Sanity check
-        assert (effective_share_reserves >= 0).all()
+        if isinstance(effective_share_reserves, pd.Series):
+            assert (effective_share_reserves >= 0).all()
+        else:
+            assert effective_share_reserves >= 0  # When it's a scalar or other type
         # Pandas is smart enough to be able to broadcast with internal Decimal types at runtime
         spot_price = ((initial_share_price * effective_share_reserves) / bond_reserves) ** time_stretch  # type: ignore
     return spot_price

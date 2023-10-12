@@ -1,5 +1,5 @@
 """Analysis for trading."""
-from .calc_fixed_rate import calc_fixed_rate
+from .calc_fixed_rate import calc_fixed_rate, calc_fixed_rate_fp
 from .calc_pnl import calc_closeout_pnl, calc_single_closeout
 from .calc_spot_price import calc_spot_price
 from .calc_ticker import calc_ticker
