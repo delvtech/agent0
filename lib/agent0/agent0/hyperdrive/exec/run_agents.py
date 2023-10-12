@@ -1,6 +1,7 @@
 """Runner script for agents"""
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import warnings
@@ -20,7 +21,7 @@ from hexbytes import HexBytes
 from web3.contract.contract import Contract
 
 from .create_and_fund_user_account import create_and_fund_user_account
-from .fund_agents import fund_agents
+from .fund_agents import async_fund_agents
 from .setup_experiment import setup_experiment
 from .trade_loop import trade_if_new_block
 
@@ -78,8 +79,8 @@ def run_agents(
     if develop:
         # exposing the user account for debugging purposes
         user_account = create_and_fund_user_account(eth_config, account_key_config, contract_addresses)
-        fund_agents(
-            user_account, eth_config, account_key_config, contract_addresses
+        asyncio.run(
+            async_fund_agents(user_account, eth_config, account_key_config, contract_addresses)
         )  # uses env variables created above as inputs
     # get hyperdrive interface object and agents
     hyperdrive, agent_accounts = setup_experiment(

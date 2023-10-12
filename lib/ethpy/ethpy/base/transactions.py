@@ -553,6 +553,56 @@ def smart_contract_transact(
         raise err
 
 
+async def async_eth_transfer(
+    web3: Web3,
+    signer: LocalAccount,
+    to_address: ChecksumAddress,
+    amount_wei: int,
+    max_priority_fee: int | None = None,
+) -> TxReceipt:
+    """Execute a generic Ethereum transaction to move ETH from one account to another.
+
+    Arguments
+    ---------
+    web3 : Web3
+        web3 container object
+    signer : LocalAccount
+        The LocalAccount that will be used to pay for the gas & sign the transaction
+    to_address : ChecksumAddress
+        Address for where the Ethereum is going to
+    amount_wei : int
+        Amount to transfer, in WEI
+    max_priority_fee : int
+        Amount of tip to provide to the miner when a block is mined
+
+    Returns
+    -------
+    TxReceipt
+        a TypedDict; success can be checked via tx_receipt["status"]
+    """
+    signer_checksum_address = Web3.to_checksum_address(signer.address)
+    unsent_txn: TxParams = {
+        "from": signer_checksum_address,
+        "to": to_address,
+        "value": Wei(amount_wei),
+        "nonce": web3.eth.get_transaction_count(signer_checksum_address),
+        "chainId": web3.eth.chain_id,
+    }
+    if max_priority_fee is None:
+        max_priority_fee = web3.eth.max_priority_fee
+    pending_block = web3.eth.get_block("pending")
+    base_fee = pending_block.get("baseFeePerGas", None)
+    if base_fee is None:
+        raise AssertionError("The latest block does not have a baseFeePerGas")
+    max_fee_per_gas = max_priority_fee + base_fee
+    unsent_txn["gas"] = web3.eth.estimate_gas(unsent_txn)
+    unsent_txn["maxFeePerGas"] = Wei(max_fee_per_gas)
+    unsent_txn["maxPriorityFeePerGas"] = Wei(max_priority_fee)
+    signed_txn = signer.sign_transaction(unsent_txn)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    return await async_wait_for_transaction_receipt(web3, tx_hash)
+
+
 def eth_transfer(
     web3: Web3,
     signer: LocalAccount,
