@@ -104,7 +104,9 @@ def acquire_data(
         # Backfilling for blocks that need updating
         for block_int in range(block_number + 1, latest_mined_block + 1):
             block_number: BlockNumber = BlockNumber(block_int)
-            logging.info("Block %s", block_number)
+            # Only print every 10 blocks
+            if (block_number % 10) == 0:
+                logging.info("Block %s", block_number)
             # Explicit check against loopback block limit
             if (latest_mined_block - block_number) > lookback_block_limit:
                 # NOTE when this case happens, wallet information will no longer

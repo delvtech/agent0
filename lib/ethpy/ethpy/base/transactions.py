@@ -1,19 +1,154 @@
 """Web3 powered functions for interfacing with smart contracts"""
 from __future__ import annotations
 
+import asyncio
+import inspect
 import logging
-from typing import Any, Sequence
+import time
+from typing import Any, Awaitable, Callable, ParamSpec, Sequence, TypeVar
 
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
+from ethpy.base import UnknownBlockError
 from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout
-from web3.contract.contract import Contract
-from web3.exceptions import ContractCustomError, ContractLogicError, TimeExhausted, TransactionNotFound
+from web3.contract.contract import Contract, ContractFunction
+from web3.exceptions import (
+    ContractCustomError,
+    ContractLogicError,
+    ContractPanicError,
+    TimeExhausted,
+    TransactionNotFound,
+)
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, BlockData, TxData, TxParams, TxReceipt, Wei
 
 from .errors.errors import decode_error_selector_for_contract
+
+# TODO these should be parameterized so the caller controls how many times to retry
+READ_RETRY_COUNT = 5
+# Not retrying on write counts
+# TODO need to figure out exactly which error is due to an anvil error
+# Currently catching write when status=0, but ideally this would be a specific
+# "anvil is breaking" error. We're currently disabling by setting WRITE_RETRY_COUNT to 1.
+WRITE_RETRY_COUNT = 1
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+async def async_retry_call(
+    retry_count: int,
+    retry_exception_check: Callable[[Exception], bool] | None,
+    func: Callable[P, Awaitable[R]],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> R:
+    """Helper function to retry an async function call
+
+    Arguments
+    ---------
+    retry_count: int
+        The number of times to retry the function
+    retry_exception_check: Callable[[type[Exception]], bool] | None
+        A function that takes as an argument an exception and returns True if we want to retry on that exception
+        If None, will retry for all exceptions
+    func: Callable[P, Awaitable[R]]
+        The function to call.
+    *args: P.args
+        The positional arguments to call func with
+    **kwargs: P.kwargs
+        The keyword arguments to call the func with
+
+    Returns
+    -------
+    R
+        Returns the value of the called function
+    """
+    # TODO can't make a default for `retry_exception_check` due to *args and **kwargs,
+    # so we need to explicitly pass in this parameter
+    exception = None
+    for attempt_number in range(retry_count):
+        try:
+            out = await func(*args, **kwargs)
+            return out
+        # Catching general exception but throwing if fails
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            # Raise exception immediately if exception check fails
+            if retry_exception_check is not None and not retry_exception_check(exc):
+                raise exc
+            # Get caller of this function's name
+            caller = inspect.stack()[1][3]
+            logging.warning(
+                "Retry attempt %s out of %s: Function %s called from %s failed with %s",
+                attempt_number,
+                retry_count,
+                func,
+                caller,
+                exc,
+            )
+            exception = exc
+            # TODO implement smarter wait here
+            await asyncio.sleep(0.1)
+    assert exception is not None
+    raise exception
+
+
+def retry_call(
+    retry_count: int,
+    retry_exception_check: Callable[[Exception], bool] | None,
+    func: Callable[P, R],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> R:
+    """Helper function to retry a function call
+
+    Arguments
+    ---------
+    retry_count: int
+        The number of times to retry the function
+    retry_exception_check: Callable[[type[Exception]], bool] | None
+        A function that takes as an argument an exception and returns True if we want to retry on that exception
+        If None, will retry for all exceptions
+    func: Callable[P, Awaitable[R]]
+        The function to call
+    *args: P.args
+        The positional arguments to call func with
+    **kwargs: P.kwargs
+        The keyword arguments to call the func with
+
+    Returns
+    -------
+    R
+        Returns the value of the called function
+    """
+    # TODO can't make a default for `retry_exception_check` due to *args and **kwargs,
+    # so we need to explicitly pass in this parameter
+    exception = None
+    for attempt_number in range(retry_count):
+        try:
+            out = func(*args, **kwargs)
+            return out
+        # Catching general exception but throwing if fails
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            # Raise exception immediately if exception check fails
+            if retry_exception_check is not None and not retry_exception_check(exc):
+                raise exc
+            # Get caller of this function's name
+            caller = inspect.stack()[1][3]
+            logging.warning(
+                "Retry attempt %s out of %s: Function %s called from %s failed with %s",
+                attempt_number,
+                retry_count,
+                func,
+                caller,
+                exc,
+            )
+            exception = exc
+            # TODO implement smarter wait here
+            time.sleep(0.1)
+    assert exception is not None
+    raise exception
 
 
 def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
@@ -46,10 +181,18 @@ def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn
         function = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
     else:
         function = contract.get_function_by_name(function_name_or_signature)(*fn_args)
-    return_values = function.call(**fn_kwargs)
+    try:
+        # Call function with retries
+        return_values = retry_call(READ_RETRY_COUNT, None, function.call, **fn_kwargs)
+    except Exception as err:
+        # Add additional information to the exception
+        err.args += (f"Error in smart contract read {function=}",)
+        raise err
+
     # If there is a single value returned, we want to put it in a list of length 1
     if not isinstance(return_values, Sequence) or isinstance(return_values, str):
         return_values = [return_values]
+
     if contract.abi:  # not all contracts have an associated ABI
         # NOTE: this will break if a function signature is passed.  need to update this helper
         return_names_and_types = _contract_function_abi_outputs(contract.abi, function_name_or_signature)
@@ -109,9 +252,22 @@ def smart_contract_preview_transaction(
     else:
         function = contract.get_function_by_name(function_name_or_signature)(*fn_args)
 
+    # We define the function to check the exception to retry on
+    # This is the error we get when preview fails due to anvil
+    def retry_preview_check(exc: Exception) -> bool:
+        return (
+            isinstance(exc, ContractPanicError)
+            and exc.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
+        )
+
     try:
-        return_values = function.call({"from": signer_address}, **fn_kwargs)
-    # TODO should we catch ContractCustomError and ContractLogicError here?
+        return_values = retry_call(
+            READ_RETRY_COUNT,
+            retry_preview_check,
+            function.call,
+            {"from": signer_address},
+            **fn_kwargs,
+        )
     except Exception as err:
         # Add function call information to exception args
         err.args += (f"Error in preview transaction {function=}",)
@@ -181,6 +337,50 @@ async def async_wait_for_transaction_receipt(
         ) from exc
 
 
+async def _async_send_transaction_and_wait_for_receipt(
+    func_handle: ContractFunction,
+    signer: LocalAccount,
+    web3: Web3,
+) -> TxReceipt:
+    """
+    Sends a transaction and waits for the receipt asynchronously.
+
+    Arguments
+    ---------
+    func_handle: ContractFunction
+        The function to call
+    signer: LocalAccount
+        The LocalAccount that will be used to pay for the gas & sign the transaction
+    web3 : Web3
+        web3 provider object
+
+    Returns
+    -------
+    TxReceipt
+        a TypedDict; success can be checked via tx_receipt["status"]
+    """
+    signer_checksum_address = Web3.to_checksum_address(signer.address)
+    # We need to update the nonce when retrying a transaction
+    unsent_txn = func_handle.build_transaction(
+        {
+            "from": signer_checksum_address,
+            # TODO figure out which exception here to retry on
+            "nonce": retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address),
+        }
+    )
+    signed_txn = signer.sign_transaction(unsent_txn)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    # TODO set poll time as a parameter
+    tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash)
+    # Check status here
+    status = tx_receipt.get("status", None)
+    if status is None:
+        raise UnknownBlockError("Receipt did not return status")
+    if status == 0:
+        raise UnknownBlockError("Receipt has status of 0", f"{tx_receipt=}")
+    return tx_receipt
+
+
 async def async_smart_contract_transact(
     web3: Web3, contract: Contract, signer: LocalAccount, function_name_or_signature: str, *fn_args
 ) -> TxReceipt:
@@ -205,23 +405,22 @@ async def async_smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    signer_checksum_address = Web3.to_checksum_address(signer.address)
+
+    # Retry function to catch unknown block error with status = 0
+    def retry_trx_check(exc: Exception) -> bool:
+        # TODO need to figure out exactly which error is due to an anvil error
+        # Currently catching when status=0, but ideally this would be a specific
+        # "anvil is breaking" error. We're currently disabling by setting WRITE_RETRY_COUNT to 1.
+        return isinstance(exc, UnknownBlockError) and exc.args[0] == "Receipt has status of 0"
+
     try:
         if "(" in function_name_or_signature:
             func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
         else:
             func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
-        unsent_txn = func_handle.build_transaction(
-            {
-                "from": signer_checksum_address,
-                "nonce": web3.eth.get_transaction_count(signer_checksum_address),
-            }
+        return await async_retry_call(
+            WRITE_RETRY_COUNT, retry_trx_check, _async_send_transaction_and_wait_for_receipt, func_handle, signer, web3
         )
-        signed_txn = signer.sign_transaction(unsent_txn)
-        tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-        # TODO set poll time as a parameter
-        tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash)
-        return tx_receipt
     except ContractCustomError as err:
         logging.error(
             "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",
@@ -251,6 +450,50 @@ async def async_smart_contract_transact(
         raise err
 
 
+def _send_transaction_and_wait_for_receipt(
+    func_handle: ContractFunction,
+    signer: LocalAccount,
+    web3: Web3,
+) -> TxReceipt:
+    """
+    Sends a transaction and waits for the receipt.
+
+    Arguments
+    ---------
+    func_handle: ContractFunction
+        The function to call
+    signer: LocalAccount
+        The LocalAccount that will be used to pay for the gas & sign the transaction
+    web3 : Web3
+        web3 provider object
+
+    Returns
+    -------
+    TxReceipt
+        a TypedDict; success can be checked via tx_receipt["status"]
+    """
+    signer_checksum_address = Web3.to_checksum_address(signer.address)
+    # We need to update the nonce when retrying a transaction
+    unsent_txn = func_handle.build_transaction(
+        {
+            "from": signer_checksum_address,
+            # TODO figure out which exception here to retry on
+            "nonce": retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address),
+        }
+    )
+    signed_txn = signer.sign_transaction(unsent_txn)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    # TODO set poll time as a parameter
+    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    # Check status here
+    status = tx_receipt.get("status", None)
+    if status is None:
+        raise UnknownBlockError("Receipt did not return status")
+    if status == 0:
+        raise UnknownBlockError("Receipt has status of 0", f"{tx_receipt=}")
+    return tx_receipt
+
+
 def smart_contract_transact(
     web3: Web3, contract: Contract, signer: LocalAccount, function_name_or_signature: str, *fn_args
 ) -> TxReceipt:
@@ -274,22 +517,23 @@ def smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    signer_checksum_address = Web3.to_checksum_address(signer.address)
+
+    # Retry function to catch unknown block error with status = 0
+    def retry_trx_check(exc: Exception) -> bool:
+        # TODO need to figure out exactly which error is due to an anvil error
+        # Currently catching write when status=0, but ideally this would be a specific
+        # "anvil is breaking" error. We're currently disabling by setting WRITE_RETRY_COUNT to 1.
+        return isinstance(exc, UnknownBlockError) and exc.args[0] == "Receipt has status of 0"
+
     try:
         if "(" in function_name_or_signature:
             func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
         else:
             func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
-        unsent_txn = func_handle.build_transaction(
-            {
-                "from": signer_checksum_address,
-                "nonce": web3.eth.get_transaction_count(signer_checksum_address),
-            }
+
+        return retry_call(
+            WRITE_RETRY_COUNT, retry_trx_check, _send_transaction_and_wait_for_receipt, func_handle, signer, web3
         )
-        signed_txn = signer.sign_transaction(unsent_txn)
-        tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-        # TODO set poll time as parameter
-        return web3.eth.wait_for_transaction_receipt(tx_hash)
     except ContractCustomError as err:
         error_selector = decode_error_selector_for_contract(err.args[0], contract)
         logging.error(
@@ -341,7 +585,8 @@ def eth_transfer(
         "from": signer_checksum_address,
         "to": to_address,
         "value": Wei(amount_wei),
-        "nonce": web3.eth.get_transaction_count(signer_checksum_address),
+        # TODO figure out which exception here to retry on
+        "nonce": retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address),
         "chainId": web3.eth.chain_id,
     }
     if max_priority_fee is None:
@@ -355,6 +600,10 @@ def eth_transfer(
     unsent_txn["maxFeePerGas"] = Wei(max_fee_per_gas)
     unsent_txn["maxPriorityFeePerGas"] = Wei(max_priority_fee)
     signed_txn = signer.sign_transaction(unsent_txn)
+
+    # TODO how do we want to handle retries here?
+    # While this is fine for exceptions thrown, we may need to handle the case where the log status
+    # return fail
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
     return web3.eth.wait_for_transaction_receipt(tx_hash)
 
@@ -377,8 +626,10 @@ def fetch_contract_transactions_for_block(web3: Web3, contract: Contract, block_
         A list of Transaction objects ready to be inserted into Postgres, and
         a list of wallet delta objects ready to be inserted into Postgres
     """
-    block: BlockData = web3.eth.get_block(block_number, full_transactions=True)
+    # TODO figure out which exception here to retry on
+    block: BlockData = retry_call(READ_RETRY_COUNT, None, web3.eth.get_block, block_number, full_transactions=True)
     all_transactions = block.get("transactions")
+
     if not all_transactions:
         logging.info("no transactions in block %s", block.get("number"))
         return []

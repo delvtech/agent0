@@ -230,7 +230,7 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
     if status is None:
         raise AssertionError("Receipt did not return status")
     if status == 0:
-        raise UnknownBlockError("Receipt has no status or status is 0", f"{tx_receipt=}")
+        raise UnknownBlockError("Receipt has status of 0", f"{tx_receipt=}")
     hyperdrive_event_logs = get_transaction_logs(
         hyperdrive_contract,
         tx_receipt,
