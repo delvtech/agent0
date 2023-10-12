@@ -28,7 +28,9 @@ def calc_fixed_rate(
         return calc_fixed_rate_decimal(spot_price, position_duration)
     if isinstance(spot_price, FixedPoint) and isinstance(position_duration, FixedPoint | int):
         return calc_fixed_rate_fp(spot_price, position_duration)
-    raise TypeError("spot_price and position_duration must be either (pd.Series, Decimal) or (FixedPoint | int, FixedPoint | int)")
+    raise TypeError(
+        "spot_price and position_duration must be either (pd.Series, Decimal) or (FixedPoint | int, FixedPoint | int)"
+    )
 
 
 def calc_fixed_rate_decimal(spot_price: pd.Series, position_duration: Decimal) -> pd.Series:
