@@ -1,7 +1,4 @@
 """Functions for gathering data from the chain and adding it to the db"""
-import logging
-import time
-
 from eth_typing import BlockNumber
 from ethpy.base import fetch_contract_transactions_for_block
 from ethpy.hyperdrive import (
