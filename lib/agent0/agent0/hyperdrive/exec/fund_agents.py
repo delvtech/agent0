@@ -21,9 +21,6 @@ from ethpy.hyperdrive import HyperdriveAddresses
 
 RETRY_COUNT = 5
 
-# TODO async_retry_call should really be a generic util function, not something in
-# ethpy to be used here.
-
 
 async def async_fund_agents(
     user_account: HyperdriveAgent,
@@ -88,8 +85,8 @@ async def async_fund_agents(
     print("Funding accounts")
 
     # Sanity check for zip function
-    assert len(agent_accounts) == account_key_config.AGENT_ETH_BUDGETS
-    assert len(agent_accounts) == account_key_config.AGENT_BASE_BUDGETS
+    assert len(agent_accounts) == len(account_key_config.AGENT_ETH_BUDGETS)
+    assert len(agent_accounts) == len(account_key_config.AGENT_BASE_BUDGETS)
 
     # Gather all async function calls in a list
     # Running with retries
