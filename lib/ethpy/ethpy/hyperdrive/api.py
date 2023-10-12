@@ -7,7 +7,6 @@ from datetime import datetime
 from typing import Any
 
 import eth_utils
-from numpy import minimum
 import pyperdrive
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber
@@ -43,6 +42,9 @@ from .receipt_breakdown import ReceiptBreakdown
 # known issue where class properties aren't recognized as subscriptable
 # https://github.com/pylint-dev/pylint/issues/5699
 # pylint: disable=unsubscriptable-object
+
+# need lots of lcoals
+# pylint: disable=too-many-locals
 
 
 class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
@@ -704,7 +706,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             pool_config_str,
             pool_info_str,
             str(budget.scaled_value),
-            pool_info_str.share_price,
+            pool_info_str.sharePrice,
             checkpoint_exposure=str(self.latest_checkpoint["longExposure"].scaled_value),
             maybe_conservative_price=None,
             maybe_max_iterations=None,
