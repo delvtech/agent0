@@ -54,7 +54,7 @@ async def async_execute_single_agent_trade(
         TradeResult handles any information about the trade, as well as any errors that the trade resulted in
     """
     if liquidate:
-        trades: list[types.Trade[HyperdriveMarketAction]] = agent.liquidation_trades()
+        trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_liquidation_trades()
     else:
         trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(interface=hyperdrive)
 

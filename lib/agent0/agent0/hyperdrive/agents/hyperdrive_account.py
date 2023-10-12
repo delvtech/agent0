@@ -69,7 +69,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
             balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE),
         )
 
-    def liquidation_trades(self) -> list[Trade[HyperdriveMarketAction]]:
+    def get_liquidation_trades(self) -> list[Trade[HyperdriveMarketAction]]:
         """List of trades that liquidate all open positions
 
         Returns
