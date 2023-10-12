@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any
 
 import eth_utils
+from numpy import minimum
 import pyperdrive
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber
@@ -199,39 +200,39 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
 
     def _stringify_pool_config(self, pool_config_dict: dict[str, Any]) -> PoolConfig:
         return PoolConfig(
-            base_token=pool_config_dict["baseToken"],
-            initial_share_price=str(pool_config_dict["initialSharePrice"]),
-            minimum_share_reserves=str(pool_config_dict["minimumShareReserves"]),
-            minimum_transaction_amount=str(pool_config_dict["minimumTransactionAmount"]),
-            position_duration=str(pool_config_dict["positionDuration"]),
-            checkpoint_duration=str(pool_config_dict["checkpointDuration"]),
-            time_stretch=str(pool_config_dict["timeStretch"]),
+            baseToken=pool_config_dict["baseToken"],
+            initialSharePrice=str(pool_config_dict["initialSharePrice"]),
+            minimumShareReserves=str(pool_config_dict["minimumShareReserves"]),
+            minimumTransactionAmount=str(pool_config_dict["minimumTransactionAmount"]),
+            positionDuration=str(pool_config_dict["positionDuration"]),
+            checkpointDuration=str(pool_config_dict["checkpointDuration"]),
+            timeStretch=str(pool_config_dict["timeStretch"]),
             governance=pool_config_dict["governance"],
-            fee_collector=pool_config_dict["feeCollector"],
-            fees=Fees(
+            feeCollector=pool_config_dict["feeCollector"],
+            Fees=Fees(
                 curve=str(pool_config_dict["fees"][0]),
                 flat=str(pool_config_dict["fees"][1]),
                 governance=str(pool_config_dict["fees"][2]),
             ),
-            oracle_size=str(pool_config_dict["oracleSize"]),
-            update_gap=str(pool_config_dict["updateGap"]),
+            oracleSize=str(pool_config_dict["oracleSize"]),
+            updateGap=str(pool_config_dict["updateGap"]),
         )
 
     def _stringify_pool_info(self, pool_info_dict: dict[str, Any]) -> PoolInfo:
         return PoolInfo(
-            share_reserves=str(pool_info_dict["shareReserves"]),
-            share_adjustment=str(pool_info_dict["shareAdjustment"]),
-            bond_reserves=str(pool_info_dict["bondReserves"]),
-            lp_total_supply=str(pool_info_dict["lpTotalSupply"]),
-            share_price=str(pool_info_dict["sharePrice"]),
-            longs_outstanding=str(pool_info_dict["longsOutstanding"]),
-            long_average_maturity_time=str(pool_info_dict["longAverageMaturityTime"]),
-            shorts_outstanding=str(pool_info_dict["shortsOutstanding"]),
-            short_average_maturity_time=str(pool_info_dict["shortAverageMaturityTime"]),
-            withdrawal_shares_ready_to_withdraw=str(pool_info_dict["withdrawalSharesReadyToWithdraw"]),
-            withdrawal_shares_proceeds=str(pool_info_dict["withdrawalSharesProceeds"]),
-            lp_share_price=str(pool_info_dict["lpSharePrice"]),
-            long_exposure=str(pool_info_dict["longExposure"]),
+            shareReserves=str(pool_info_dict["shareReserves"]),
+            shareAdjustment=str(pool_info_dict["shareAdjustment"]),
+            bondReserves=str(pool_info_dict["bondReserves"]),
+            lpTotalSupply=str(pool_info_dict["lpTotalSupply"]),
+            sharePrice=str(pool_info_dict["sharePrice"]),
+            longsOutstanding=str(pool_info_dict["longsOutstanding"]),
+            longAverageMaturityTime=str(pool_info_dict["longAverageMaturityTime"]),
+            shortsOutstanding=str(pool_info_dict["shortsOutstanding"]),
+            shortAverageMaturityTime=str(pool_info_dict["shortAverageMaturityTime"]),
+            withdrawalSharesReadyToWithdraw=str(pool_info_dict["withdrawalSharesReadyToWithdraw"]),
+            withdrawalSharesProceeds=str(pool_info_dict["withdrawalSharesProceeds"]),
+            lpSharePrice=str(pool_info_dict["lpSharePrice"]),
+            longExposure=str(pool_info_dict["longExposure"]),
         )
 
     def _ensure_current_state(self, override: bool = False) -> None:
