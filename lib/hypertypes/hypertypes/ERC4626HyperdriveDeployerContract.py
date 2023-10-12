@@ -55,9 +55,7 @@ class ERC4626HyperdriveDeployerContract(Contract):
         self.address = (
             address
             if address
-            else cast(
-                ChecksumAddress, "0x0000000000000000000000000000000000000000"
-            )
+            else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
         )
 
         try:

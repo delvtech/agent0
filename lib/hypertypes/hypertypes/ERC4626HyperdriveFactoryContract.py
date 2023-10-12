@@ -16,9 +16,7 @@ from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 
 
-class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(ContractFunction):
     """ContractFunction for the deployAndInitialize method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -64,9 +62,7 @@ class ERC4626HyperdriveFactoryFeesContractFunction(ContractFunction):
     # def call()
 
 
-class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(ContractFunction):
     """ContractFunction for the getDefaultPausers method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -112,9 +108,7 @@ class ERC4626HyperdriveFactoryGovernanceContractFunction(ContractFunction):
     # def call()
 
 
-class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(ContractFunction):
     """ContractFunction for the hyperdriveDeployer method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -130,9 +124,7 @@ class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(
     # def call()
 
 
-class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(ContractFunction):
     """ContractFunction for the hyperdriveGovernance method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -196,9 +188,7 @@ class ERC4626HyperdriveFactoryLinkerFactoryContractFunction(ContractFunction):
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(ContractFunction):
     """ContractFunction for the updateDefaultPausers method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -214,9 +204,7 @@ class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction(ContractFunction):
     """ContractFunction for the updateFeeCollector method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -248,9 +236,7 @@ class ERC4626HyperdriveFactoryUpdateFeesContractFunction(ContractFunction):
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateGovernanceContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateGovernanceContractFunction(ContractFunction):
     """ContractFunction for the updateGovernance method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -284,9 +270,7 @@ class ERC4626HyperdriveFactoryUpdateHyperdriveGovernanceContractFunction(
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(ContractFunction):
     """ContractFunction for the updateImplementation method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -302,9 +286,7 @@ class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(ContractFunction):
     """ContractFunction for the updateLinkerCodeHash method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -320,9 +302,7 @@ class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(ContractFunction):
     """ContractFunction for the updateLinkerFactory method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -338,9 +318,7 @@ class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction(ContractFunction):
     """ContractFunction for the updateSweepTargets method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -428,9 +406,7 @@ class ERC4626HyperdriveFactoryContract(Contract):
         self.address = (
             address
             if address
-            else cast(
-                ChecksumAddress, "0x0000000000000000000000000000000000000000"
-            )
+            else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
         )
 
         try:

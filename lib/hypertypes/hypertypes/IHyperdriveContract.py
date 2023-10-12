@@ -44,9 +44,7 @@ class IHyperdriveAddLiquidityContractFunction(ContractFunction):
         _destination: str,
         _asUnderlying: bool,
     ) -> "IHyperdriveAddLiquidityContractFunction":
-        super().__call__(
-            _contribution, _minApr, _maxApr, _destination, _asUnderlying
-        )
+        super().__call__(_contribution, _minApr, _maxApr, _destination, _asUnderlying)
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -105,9 +103,7 @@ class IHyperdriveCheckpointContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _checkpointTime: int
-    ) -> "IHyperdriveCheckpointContractFunction":
+    def __call__(self, _checkpointTime: int) -> "IHyperdriveCheckpointContractFunction":
         super().__call__(_checkpointTime)
         return self
 
@@ -742,9 +738,7 @@ class IHyperdriveContract(Contract):
         self.address = (
             address
             if address
-            else cast(
-                ChecksumAddress, "0x0000000000000000000000000000000000000000"
-            )
+            else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
         )
 
         try:

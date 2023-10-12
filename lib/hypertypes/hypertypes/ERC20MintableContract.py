@@ -54,9 +54,7 @@ class ERC20MintableBalanceOfContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, account: str
-    ) -> "ERC20MintableBalanceOfContractFunction":
+    def __call__(self, account: str) -> "ERC20MintableBalanceOfContractFunction":
         super().__call__(account)
         return self
 
@@ -200,9 +198,7 @@ class ERC20MintableTransferContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, to: str, amount: int
-    ) -> "ERC20MintableTransferContractFunction":
+    def __call__(self, to: str, amount: int) -> "ERC20MintableTransferContractFunction":
         super().__call__(to, amount)
         return self
 
@@ -266,9 +262,7 @@ class ERC20MintableContract(Contract):
         self.address = (
             address
             if address
-            else cast(
-                ChecksumAddress, "0x0000000000000000000000000000000000000000"
-            )
+            else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
         )
 
         try:
