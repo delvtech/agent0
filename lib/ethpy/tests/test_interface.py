@@ -9,14 +9,19 @@ from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
+# need lots of lcoals
+# pylint: disable=too-many-locals
+
 
 def test_pool_info(local_hyperdrive_pool: DeployedHyperdrivePool):
     """Test the hyperdrive interface versus expected values."""
     uri = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
     rpc_uri = uri or URI("http://localhost:8545")
-    interface = HyperdriveInterface(eth_config=EthConfig(rpc_uri=rpc_uri))
     deploy_account = local_hyperdrive_pool.deploy_account
     hyperdrive_contract_addresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+    interface = HyperdriveInterface(
+        eth_config=EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri), addresses=hyperdrive_contract_addresses
+    )
 
     initial_fixed_rate = FixedPoint("0.05")
     expected_timestretch_fp = FixedPoint(1) / (

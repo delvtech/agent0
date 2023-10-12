@@ -43,9 +43,6 @@ from .receipt_breakdown import ReceiptBreakdown
 # https://github.com/pylint-dev/pylint/issues/5699
 # pylint: disable=unsubscriptable-object
 
-# need lots of lcoals
-# pylint: disable=too-many-locals
-
 
 class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
     """End-point api for interfacing with Hyperdrive."""
