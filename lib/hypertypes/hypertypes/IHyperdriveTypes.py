@@ -13,6 +13,7 @@
 # pylint: disable=no-else-return
 from __future__ import annotations
 
+
 from dataclasses import dataclass
 
 from web3.types import ABIEvent
@@ -66,7 +67,7 @@ class PoolConfig:
     timeStretch: int
     governance: str
     feeCollector: str
-    Fees: Fees
+    fees: Fees
     oracleSize: int
     updateGap: int
 
@@ -199,7 +200,9 @@ RedeemWithdrawalShares = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=True, name="provider", type="address"),
-        ABIEventParams(indexed=False, name="withdrawalShareAmount", type="uint256"),
+        ABIEventParams(
+            indexed=False, name="withdrawalShareAmount", type="uint256"
+        ),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
     ],
     name="RedeemWithdrawalShares",
@@ -212,7 +215,9 @@ RemoveLiquidity = ABIEvent(
         ABIEventParams(indexed=True, name="provider", type="address"),
         ABIEventParams(indexed=False, name="lpAmount", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
-        ABIEventParams(indexed=False, name="withdrawalShareAmount", type="uint256"),
+        ABIEventParams(
+            indexed=False, name="withdrawalShareAmount", type="uint256"
+        ),
     ],
     name="RemoveLiquidity",
     type="event",
