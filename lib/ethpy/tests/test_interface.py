@@ -1,9 +1,7 @@
-from chainsync.analysis import calc_fixed_rate_fp, calc_spot_price
-import pytest
-import logging
-
+"""Test the hyperdrive interface."""
 from typing import cast
 
+from chainsync.analysis import calc_fixed_rate_fp, calc_spot_price
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.hyperdrive.api import HyperdriveInterface
@@ -13,6 +11,7 @@ from web3 import HTTPProvider
 
 
 def test_pool_info(local_hyperdrive_pool: DeployedHyperdrivePool):
+    """Test the hyperdrive interface versus expected values."""
     uri = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
     rpc_uri = uri or URI("http://localhost:8545")
     interface = HyperdriveInterface(eth_config=EthConfig(rpc_uri=rpc_uri))
@@ -108,7 +107,7 @@ def test_pool_info(local_hyperdrive_pool: DeployedHyperdrivePool):
         api_pool_config["positionDuration"],
     )
 
-    # TODO there's rounding errors between db spot price and fixed rates
+    # TODO there's rounding errors between api spot price and fixed rates
     print(f"{abs(api_spot_price - expected_spot_price)=}")
     print(f"{abs(api_fixed_rate - expected_fixed_rate)=}")
     assert abs(api_spot_price - expected_spot_price) <= FixedPoint(1e-16)
