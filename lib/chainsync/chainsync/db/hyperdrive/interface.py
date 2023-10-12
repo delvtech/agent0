@@ -367,7 +367,7 @@ def get_wallet_deltas(
 
 def get_all_traders(
     session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
-) -> list[str]:
+) -> pd.Series:
     """Get the list of all traders from the WalletInfo table.
 
     Arguments
@@ -401,12 +401,12 @@ def get_all_traders(
         query = query.filter(WalletDelta.blockNumber < end_block)
 
     if query is None:
-        return []
+        return pd.Series([])
     query = query.distinct()
 
     results = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
-    return results["walletAddress"].to_list()
+    return results["walletAddress"]
 
 
 # Analysis schema interfaces

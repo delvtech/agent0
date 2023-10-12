@@ -295,7 +295,7 @@ class TestWalletDeltaInterface:
         wallet_delta_2 = WalletDelta(blockNumber=1, transactionHash="b", walletAddress="addr_1")
         wallet_delta_3 = WalletDelta(blockNumber=2, transactionHash="c", walletAddress="addr_2")
         add_wallet_deltas([wallet_delta_1, wallet_delta_2, wallet_delta_3], db_session)
-        agents = get_all_traders(db_session)
+        agents = get_all_traders(db_session).to_list()
         assert len(agents) == 2
         assert "addr_1" in agents
         assert "addr_2" in agents

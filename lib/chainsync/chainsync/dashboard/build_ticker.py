@@ -1,10 +1,10 @@
 """Builds the ticker for the dashboard."""
 import pandas as pd
 
-from .usernames import address_to_username
+from .usernames import map_addresses
 
 
-def build_ticker(ticker_data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
+def build_ticker(ticker_data: pd.DataFrame, user_map: pd.DataFrame) -> pd.DataFrame:
     """Show recent trades.
 
     Arguments
@@ -19,14 +19,14 @@ def build_ticker(ticker_data: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFram
     """
 
     # Gather other information from other tables
-    usernames = address_to_username(lookup, ticker_data["walletAddress"])
+    mapped_addrs = map_addresses(ticker_data["walletAddress"], user_map)
 
     ticker_data = ticker_data.copy()
     ticker_data = ticker_data.drop("id", axis=1)
-    ticker_data.insert(2, "username", usernames.values)  # type: ignore
+    ticker_data.insert(2, "username", mapped_addrs["username"])
     ticker_data.columns = ["blockNumber", "Timestamp", "User", "Wallet", "Method", "Token Deltas"]
     # Shorten wallet address string
-    ticker_data["Wallet"] = ticker_data["Wallet"].str[:6] + "..." + ticker_data["Wallet"].str[-4:]
+    ticker_data["Wallet"] = mapped_addrs["abbr_address"]
     # Return reverse of methods to put most recent transactions at the top
     ticker_data = ticker_data.set_index("Timestamp").sort_index(ascending=False)
     # Drop rows with nonexistant wallets

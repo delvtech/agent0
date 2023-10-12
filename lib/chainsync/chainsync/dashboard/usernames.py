@@ -1,125 +1,123 @@
 """Helper functions for mapping addresses to usernames."""
+from __future__ import annotations
+
+from typing import overload
+
 import pandas as pd
+from chainsync.db.base import get_addr_to_username, get_username_to_user
+from sqlalchemy.orm import Session
 
 
-def combine_usernames(username: pd.Series) -> pd.DataFrame:
-    """Map usernames to a single user (e.g., combine click with bots)."""
-    # TODO Hard coded mapping, should be a config file somewhere
-    user_mapping = {
-        "Charles St. Louis (click)": "Charles St. Louis",
-        "Alim Khamisa (click)": "Alim Khamisa",
-        "Danny Delott (click)": "Danny Delott",
-        "Gregory Lisa (click)": "Gregory Lisa",
-        "Jonny Rhea (click)": "Jonny Rhea",
-        "Matt Brown (click)": "Matt Brown",
-        "Giovanni Effio (click)": "Giovanni Effio",
-        "Mihai Cosma (click)": "Mihai Cosma",
-        "Ryan Goree (click)": "Ryan Goree",
-        "Alex Towle (click)": "Alex Towle",
-        "Adelina Ruffolo (click)": "Adelina Ruffolo",
-        "Jacob Arruda (click)": "Jacob Arruda",
-        "Dylan Paiton (click)": "Dylan Paiton",
-        "Sheng Lundquist (click)": "Sheng Lundquist",
-        "ControlC Schmidt (click)": "ControlC Schmidt",
-        "George Towle (click)": "George Towle",
-        "Jack Burrus (click)": "Jack Burrus",
-        "Jordan J (click)": "Jordan J",
-        # Bot accounts
-        "slundquist (bots)": "Sheng Lundquist",
-    }
-    user_mapping = pd.DataFrame.from_dict(user_mapping, orient="index")
-    user_mapping.columns = ["user"]
-    # Use merge in case mapping doesn't exist
-    username_column = username.name
-    user = username.to_frame().merge(user_mapping, how="left", left_on=username_column, right_index=True)
-    return user
+def build_user_mapping(session: Session, addresses: pd.Series) -> pd.DataFrame:
+    """Given a pd.Series of wallet addresses, we build a corresponding dataframe that contains
+    the mapping between that wallet address and any additional aliases that address may have.
+    Specifically, the output dataframe contains the following columns:
+        address: The original wallet address
+        abbr_address: The wallet address abbreviated (e.g., 0x0000...0000)
+        username: The one-to-one mapped username for that address gathered from the `addr_to_username` postgres table
+        user: The many username to one user gathered from the `username_to_user` postgres table
+        format_name: A formatted name for labels combining username with abbr_address
 
-
-def get_click_addresses() -> pd.DataFrame:
-    """Return a dataframe of hard coded click addresses."""
-    # TODO Hard coded mapping, should be a config file somewhere
-    addresses = {
-        "0x004dfC2dBA6573fa4dFb1E86e3723e1070C0CfdE": "Charles St. Louis (click)",
-        "0x005182C62DA59Ff202D53d6E42Cef6585eBF9617": "Alim Khamisa (click)",
-        "0x005BB73FddB8CE049eE366b50d2f48763E9Dc0De": "Danny Delott (click)",
-        "0x0065291E64E40FF740aE833BE2F68F536A742b70": "Gregory Lisa (click)",
-        "0x0076b154e60BF0E9088FcebAAbd4A778deC5ce2c": "Jonny Rhea (click)",
-        "0x00860d89A40a5B4835a3d498fC1052De04996de6": "Matt Brown (click)",
-        "0x00905A77Dc202e618d15d1a04Bc340820F99d7C4": "Giovanni Effio (click)",
-        "0x009ef846DcbaA903464635B0dF2574CBEE66caDd": "Mihai Cosma (click)",
-        "0x00D5E029aFCE62738fa01EdCA21c9A4bAeabd434": "Ryan Goree (click)",
-        "0x020A6F562884395A7dA2be0b607Bf824546699e2": "Alex Towle (click)",
-        "0x020a898437E9c9DCdF3c2ffdDB94E759C0DAdFB6": "Adelina Ruffolo (click)",
-        "0x020b42c1E3665d14275E2823bCef737015c7f787": "Jacob Arruda (click)",
-        "0x02147558D39cE51e19de3A2E1e5b7c8ff2778829": "Dylan Paiton (click)",
-        "0x021f1Bbd2Ec870FB150bBCAdaaA1F85DFd72407C": "Sheng Lundquist (click)",
-        "0x02237E07b7Ac07A17E1bdEc720722cb568f22840": "ControlC Schmidt (click)",
-        "0x022ca016Dc7af612e9A8c5c0e344585De53E9667": "George Towle (click)",
-        "0x0235037B42b4c0575c2575D50D700dD558098b78": "Jack Burrus (click)",
-        "0x0238811B058bA876Ae5F79cFbCAcCfA1c7e67879": "Jordan J (click)",
-    }
-    addresses = pd.DataFrame.from_dict(addresses, orient="index")
-    addresses = addresses.reset_index()
-    addresses.columns = ["address", "username"]
-
-    return addresses
-
-
-def get_user_lookup(traders: list[str], user_map: pd.DataFrame, keep_nans=False) -> pd.DataFrame:
-    """Generate username to address mapping.
+    If the address doesn't exist in the lookup, the username and user will reflect the abbr_address.
 
     Arguments
     ---------
-    traders: list[str]
-        A list of all traders to build a lookup for
+    session: Session
+        The initialized postgres session object
+    addresses: pd.Series
+        The list of addresses to build the user map for.
+
+    Returns
+    -------
+    pd.Dataframe
+        A dataframe with 5 columns (address, abbr_address, username, user, format_name)
+    """
+    # Create dataframe from input
+    out = addresses.to_frame().copy()
+    out.columns = ["address"]
+    out["abbr_address"] = abbreviate_address(out["address"])
+
+    addr_to_username = get_addr_to_username(session)
+    username_to_user = get_username_to_user(session)
+
+    out = out.merge(addr_to_username, how="left", left_on="address", right_on="address")
+    out = out.merge(username_to_user, how="left", left_on="username", right_on="username")
+    # Fill user/username with abbr_username if address doesn't exist in the lookup
+    out["username"] = out["username"].fillna(out["abbr_address"])
+    out["user"] = out["user"].fillna(out["username"])
+
+    # Generate formatted name
+    # TODO there is a case where the format name is not unique
+    out["format_name"] = out["username"] + " - " + out["abbr_address"]
+    return out
+
+
+@overload
+def map_addresses(key: str, user_map: pd.DataFrame, map_column=None) -> pd.Series:
+    ...
+
+
+@overload
+def map_addresses(key: pd.Series | list, user_map: pd.DataFrame, map_column=None) -> pd.Series:
+    ...
+
+
+def map_addresses(key: pd.Series | list | str, user_map: pd.DataFrame, map_column=None) -> pd.DataFrame | pd.Series:
+    """Helper function to look up the aliases for an address.
+
+    Arguments
+    ---------
+    key: pd.Series | list | str
+        The pd.Series, list, or individual key(s) to look up.
     user_map: pd.DataFrame
-        A dataframe with "username" and "address" columns that map from bot address to a username
-        generated from `get_bot_map`
+        The lookup dataframe returned from build_user_mapping
+    map_column: str | None
+        The column that key is mapped to. If None, will default to address.
 
     Returns
     -------
-    pd.DataFrame
-        A dataframe with an "username" and "address" columns that provide a lookup
-        between a registered username and a wallet address. The lookup contains all entries from
-        `traders`, with the wallet address itself if an address isn't registered.
+    pd.Dataframe | pd.Series
+        A dataframe or series with 5 columns (address, abbr_address, username, user, format_name) in the same order as
+        the input addresses series.
+        Will return a dataframe if a series or list is passed in
+        Will return a series if a single key is passed in
     """
-    # Get data
-    user_map = user_map.copy()
-    # Usernames in postgres are bots
-    user_map["username"] = user_map["username"] + " (bots)"
-    # TODO move this to reading from a config file
-    click_map = get_click_addresses()
-    # Add click users to map
-    user_map = pd.concat([click_map, user_map], axis=0)
+    if map_column is None:
+        map_column = "address"
 
-    # Generate a lookup of users -> address, taking into account that some addresses don't have users
-    # Reindex looks up agent addresses against user_map, adding nans if it doesn't exist
-    options_map = user_map.set_index("address").reindex(traders)
+    # It's assumed that the key must exist in user_map, otherwise it will throw an error.
+    # In practice this shouldn't be an issue since any addresses
+    # passed into this function should have a corresponding mapping in user_map due to
+    # `build_user_mapping` handling missing keys.
+    out = user_map.set_index(map_column).loc[key]
 
-    if not keep_nans:
-        # Set username as address if agent doesn't exist
-        na_idx = options_map["username"].isna()
-        # If there are any nan usernames, set address itself as username
-        if na_idx.any():
-            options_map.loc[na_idx, "username"] = options_map.index[na_idx].values
-    return options_map.reset_index()
+    # Set output's index as the original key's index if a series was passed in
+    if isinstance(key, (pd.Series, list)):
+        # Move map_column back as a column
+        out = out.reset_index()
+        if isinstance(key, pd.Series):
+            # If input was a series, we reset the original index
+            out.index = key.index
+    else:
+        # Move query back as an element
+        out[map_column] = key
+
+    # Reorder columns in order of user_map
+    out = out[user_map.columns]
+    return out
 
 
-def address_to_username(lookup: pd.DataFrame, selected_list: pd.Series) -> pd.Series:
-    """Look up selected users/addrs to all addresses.
+def abbreviate_address(addresses: pd.Series) -> pd.Series:
+    """Given a series of addresses, return the corresponding addresses in a human readable way.
 
     Arguments
     ---------
-    lookup: pd.DataFrame
-        The lookup dataframe from `get_user_lookup` call
-    selected_list: list[str]
-        A list of addresses to look up usernames to
+    addresses: pd.Series
 
     Returns
     -------
-    list[str]
-        A list of usernames based on selected_list
+    pd.Series
+        The corresponding abbreviated addresses in the same order (with the same indices)
     """
-    selected_list_column = selected_list.name
-    out = selected_list.to_frame().merge(lookup, how="left", left_on=selected_list_column, right_on="address")
-    return out["username"]
+
+    return addresses.str[:6] + "..." + addresses.str[-4:]

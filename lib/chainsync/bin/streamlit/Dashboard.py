@@ -17,12 +17,12 @@ from chainsync.dashboard import (
     build_ohlcv,
     build_outstanding_positions,
     build_ticker,
-    get_user_lookup,
+    build_user_mapping,
     plot_fixed_rate,
     plot_ohlcv,
     plot_outstanding_positions,
 )
-from chainsync.db.base import get_user_map, initialize_session
+from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
     get_all_traders,
     get_pool_analysis,
@@ -64,20 +64,19 @@ main_fig = mpf.figure(style="mike", figsize=(10, 10))
 
 while True:
     # Wallet addr to username mapping
-    agents = get_all_traders(session)
-    user_map = get_user_map(session)
-    user_lookup = get_user_lookup(agents, user_map)
+    trader_addrs = get_all_traders(session)
+    user_map = build_user_mapping(session, trader_addrs)
 
     pool_info = get_pool_info(session, start_block=-max_live_blocks, coerce_float=False)
     pool_analysis = get_pool_analysis(session, start_block=-max_live_blocks, coerce_float=False)
     ticker = get_ticker(session, start_block=-max_live_blocks, coerce_float=False)
     # Adds user lookup to the ticker
-    display_ticker = build_ticker(ticker, user_lookup)
+    display_ticker = build_ticker(ticker, user_map)
 
     # get wallet pnl and calculate leaderboard
     # Get the latest updated block
     latest_wallet_pnl = get_wallet_pnl(session, start_block=-1, coerce_float=False)
-    comb_rank, ind_rank = build_leaderboard(latest_wallet_pnl, user_lookup)
+    comb_rank, ind_rank = build_leaderboard(latest_wallet_pnl, user_map)
 
     # build ohlcv and volume
     ohlcv = build_ohlcv(pool_analysis, freq="5T")
