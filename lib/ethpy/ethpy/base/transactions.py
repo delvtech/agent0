@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 import time
 from typing import Any, Awaitable, Callable, ParamSpec, Sequence, TypeVar
@@ -42,13 +43,22 @@ async def async_retry_call(retry_count: int, func: Callable[P, Awaitable[R]], *a
         Returns the value of the called function
     """
     exception = None
-    for _ in range(retry_count):
+    for attempt_number in range(retry_count):
         try:
             out = await func(*args, **kwargs)
             return out
         # Catching general exception but throwing if fails
         except Exception as exc:  # pylint: disable=broad-exception-caught
-            logging.warning("Call to function %s failed with %s, retrying", func, exc)
+            # Get caller of this function's name
+            caller = inspect.stack()[1][3]
+            logging.warning(
+                "Retry attempt %s out of %s: Function %s called from %s failed with %s",
+                attempt_number,
+                retry_count,
+                func,
+                caller,
+                exc,
+            )
             exception = exc
             # TODO implement smarter wait here
             await asyncio.sleep(0.1)
@@ -76,13 +86,22 @@ def retry_call(retry_count: int, func: Callable[P, R], *args: P.args, **kwargs: 
         Returns the value of the called function
     """
     exception = None
-    for _ in range(retry_count):
+    for attempt_number in range(retry_count):
         try:
             out = func(*args, **kwargs)
             return out
         # Catching general exception but throwing if fails
         except Exception as exc:  # pylint: disable=broad-exception-caught
-            logging.warning("Call to function %s failed with %s, retrying", func, exc)
+            # Get caller of this function's name
+            caller = inspect.stack()[1][3]
+            logging.warning(
+                "Retry attempt %s out of %s: Function %s called from %s failed with %s",
+                attempt_number,
+                retry_count,
+                func,
+                caller,
+                exc,
+            )
             exception = exc
             # TODO implement smarter wait here
             time.sleep(0.1)
