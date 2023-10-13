@@ -21,10 +21,15 @@ from ethpy.base import (
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri, get_hyperdrive_pool_config
 from fixedpointmath import FixedPoint
 from web3.contract.contract import Contract
+from web3.types import RPCEndpoint
 
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.
 CHECKPOINT_WAITING_PERIOD = 0.5
+
+# TODO can't seem to get block time or block timestamp interval from anvil, so we code it here
+BLOCK_TIME = 6
+BLOCK_TIMESTAMP_INTERVAL = 312
 
 
 def does_checkpoint_exist(hyperdrive_contract: Contract, checkpoint_time: int) -> bool:
@@ -87,6 +92,7 @@ def main() -> None:
     # to reduce the probability of needing to mint a checkpoint.
     config = get_hyperdrive_pool_config(hyperdrive_contract)
     checkpoint_duration = config["checkpointDuration"]
+
     while True:
         # Get the latest block time and check to see if a new checkpoint should
         # be minted. This bot waits for a portion of the checkpoint to reduce
@@ -129,7 +135,9 @@ def main() -> None:
             datetime.datetime.fromtimestamp(timestamp),
             sleep_duration,
         )
-        time.sleep(sleep_duration)
+        # Adjust sleep duration by the speedup factor
+        adjusted_sleep_duration = sleep_duration / (BLOCK_TIMESTAMP_INTERVAL / BLOCK_TIME)
+        time.sleep(adjusted_sleep_duration)
 
 
 # Run the checkpoint bot.
