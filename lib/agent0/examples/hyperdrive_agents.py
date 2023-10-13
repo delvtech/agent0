@@ -23,7 +23,7 @@ LIQUIDATE = False
 eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http://" + HOST + ":8545")
 
 env_config = EnvironmentConfig(
-    delete_previous_logs=False,
+    delete_previous_logs=True,
     halt_on_errors=True,
     log_filename=".logging/agent0_logs.log",
     log_level=logging.INFO,
