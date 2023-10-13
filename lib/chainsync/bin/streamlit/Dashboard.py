@@ -10,6 +10,7 @@ import time
 
 import matplotlib.pyplot as plt
 import mplfinance as mpf
+import pandas as pd
 import streamlit as st
 from chainsync.dashboard import (
     build_fixed_rate,
@@ -63,12 +64,25 @@ main_fig = mpf.figure(style="mike", figsize=(10, 10))
 # matplotlib doesn't play nice with types
 (ax_ohlcv, ax_fixed_rate, ax_positions) = main_fig.subplots(3, 1, sharex=True)  # type: ignore
 
+freq = None
 while True:
     # Wallet addr to username mapping
     trader_addrs = get_all_traders(session)
     user_map = build_user_mapping(session, trader_addrs)
 
     pool_info = get_pool_info(session, start_block=-max_live_blocks, coerce_float=False)
+    # TODO generalize this
+    # We check the block timestamp difference since we're running
+    # either in real time mode or rapid 312 second per block mode
+    # Determine which one, and set freq respectively
+    if freq is None:
+        if len(pool_info) > 2:
+            time_diff = pool_info.iloc[-1]["timestamp"] - pool_info.iloc[-2]["timestamp"]
+            if time_diff > pd.Timedelta("1T"):
+                freq = "D"
+            else:
+                freq = "5T"
+
     pool_analysis = get_pool_analysis(session, start_block=-max_live_blocks, coerce_float=False)
     ticker = get_ticker(session, start_block=-max_live_blocks, coerce_float=False)
     # Adds user lookup to the ticker
@@ -80,7 +94,7 @@ while True:
     comb_rank, ind_rank = build_leaderboard(latest_wallet_pnl, user_map)
 
     # build ohlcv and volume
-    ohlcv = build_ohlcv(pool_analysis, freq="5T")
+    ohlcv = build_ohlcv(pool_analysis, freq=freq)
     # build rates
     fixed_rate = build_fixed_rate(pool_analysis)
     variable_rate = build_variable_rate(pool_info)
