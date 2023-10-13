@@ -1,8 +1,9 @@
 """Check whether docker is running, and if not, start it, otherwise optionally restart it."""
+import logging
 import os
 import time
-import logging
 from pathlib import Path
+
 
 def check_docker(restart: bool = False):
     """Check whether docker is running, and if not, start it, otherwise optionally restart it."""
@@ -27,9 +28,13 @@ def check_docker(restart: bool = False):
 
 def _start_docker(startup_str: str, infra_folder: Path):
     logging.info(startup_str)
-    _run_cmd(infra_folder, " && docker-compose down -v", 'Shut down docker in ')
-    _run_cmd(infra_folder, " && docker images | awk '(NR>1) && ($2!~/none/) && ($1 ~ /^ghcr\\.io\\//) {print $1\":\"$2}' | xargs -L1 docker pull", 'Updated docker in ')
-    _run_cmd(infra_folder, " && docker-compose up -d", 'Started docker in ')
+    _run_cmd(infra_folder, " && docker-compose down -v", "Shut down docker in ")
+    _run_cmd(
+        infra_folder,
+        " && docker images | awk '(NR>1) && ($2!~/none/) && ($1 ~ /^ghcr\\.io\\//) {print $1\":\"$2}' | xargs -L1 docker pull",
+        "Updated docker in ",
+    )
+    _run_cmd(infra_folder, " && docker-compose up -d", "Started docker in ")
 
 
 def _run_cmd(infra_folder: Path, cmd: str, timing_str: str):
@@ -38,6 +43,7 @@ def _run_cmd(infra_folder: Path, cmd: str, timing_str: str):
     formatted_str = f"{timing_str}{time.time() - result:.2f}s"  # don't use lazy % formatting, to get nice :.2f format
     logging.info(formatted_str)
     return result
+
 
 def _get_docker_ps_and_log() -> str:
     dockerps = os.popen("docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'").read()

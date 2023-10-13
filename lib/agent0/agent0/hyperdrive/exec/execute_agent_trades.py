@@ -4,6 +4,9 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, NoReturn
 
+from ethpy.hyperdrive import HyperdriveInterface
+from fixedpointmath import FixedPoint
+
 from agent0.base import Quantity, TokenType
 from agent0.hyperdrive.state import (
     HyperdriveActionType,
@@ -36,8 +39,9 @@ def assert_never(arg: NoReturn) -> NoReturn:
 async def async_execute_single_agent_trade(
     agent: HyperdriveAgent, hyperdrive: HyperdriveInterface, liquidate: bool
 ) -> list[TradeResult]:
-    """Executes a single agent's trade. This function is async as
-    `match_contract_call_to_trade` waits for a transaction receipt.
+    """Execute a single agent's trade.
+
+    This function is async as `match_contract_call_to_trade` waits for a transaction receipt.
 
     Arguments
     ---------
@@ -177,7 +181,7 @@ async def async_match_contract_call_to_trade(
         Object containing a wallet address and Elfpy Agent for determining trades
     hyperdrive : HyperdriveInterface
         The Hyperdrive API interface object
-    trade_object : Trade
+    trade_envelope : types.Trade[HyperdriveMarketAction]
         A specific trade requested by the given agent
 
     Returns
@@ -248,9 +252,13 @@ async def async_match_contract_call_to_trade(
             assert min_apr, "min_apr is required for ADD_LIQUIDITY"
             max_apr = trade.max_apr
             assert max_apr, "max_apr is required for ADD_LIQUIDITY"
+<<<<<<< HEAD
             trade_result = await hyperdrive.async_add_liquidity(
                 agent, trade.trade_amount, min_apr, max_apr, nonce=nonce
             )
+=======
+            trade_result = await hyperdrive.async_add_liquidity(agent, trade.trade_amount, min_apr, max_apr, nonce=nonce)
+>>>>>>> 7f7acafa (LPandArb)
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=-trade_result.base_amount,

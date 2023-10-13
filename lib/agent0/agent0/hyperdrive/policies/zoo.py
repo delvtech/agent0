@@ -1,4 +1,4 @@
-"""Policies for expert system trading bots"""
+"""Policies for expert system trading bots."""
 from __future__ import annotations
 
 from typing import NamedTuple
@@ -7,6 +7,10 @@ from .arbitrage import Arbitrage
 from .random import Random
 from .smart_long import SmartLong
 from .lpandarb import LPandArb
+
+# Actual policies
+from .random import Random
+
 
 # Container for all the policies
 class Zoo(NamedTuple):

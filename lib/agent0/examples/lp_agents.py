@@ -5,10 +5,10 @@ import logging
 import os
 
 from agent0 import initialize_accounts
-from agent0.utilities import check_docker
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import Zoo
+from agent0.utilities import check_docker
 
 # from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
 from eth_typing import URI
@@ -25,7 +25,7 @@ USERNAME = "changeme"
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 RESTART_DOCKER = True
-BUDGET = 1_000_000 # 1 milly
+BUDGET = 1_000_000  # 1 milly
 
 os.environ["DEVELOP"] = "true"
 
@@ -83,10 +83,10 @@ agent_config: list[AgentConfig] = [
         base_budget_wei=FixedPoint(BUDGET).scaled_value,  # 50k base
         eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
         policy_config=Zoo.arbitrage.Config(
-            trade_amount=FixedPoint(BUDGET*0.1),  # Open 1k in base or short 1k bonds
+            trade_amount=FixedPoint(BUDGET * 0.1),  # Open 1k in base or short 1k bonds
             high_fixed_rate_thresh=FixedPoint(0.06),  # Upper fixed rate threshold
             low_fixed_rate_thresh=FixedPoint(0.04),  # Lower fixed rate threshold
-            ),
+        ),
     ),
 ]
 

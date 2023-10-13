@@ -29,7 +29,8 @@ class LPandArb(HyperdrivePolicy):
         Returns
         -------
         str
-            A description of the policy"""
+        A description of the policy
+        """
         raw_description = """
         LP and arbitrage in a fixed proportion.
         If no arb opportunity, that portion is LPed. In the future this could go into the yield source.
@@ -59,6 +60,7 @@ class LPandArb(HyperdrivePolicy):
         lp_portion: FixedPoint = FixedPoint("0.5")
         high_fixed_rate_thresh: FixedPoint = FixedPoint("0.1")
         low_fixed_rate_thresh: FixedPoint = FixedPoint("0.02")
+        rate_slippage: FixedPoint = FixedPoint("0.01")
 
         @property
         def arb_portion(self) -> FixedPoint:
@@ -91,8 +93,7 @@ class LPandArb(HyperdrivePolicy):
         self.policy_config = policy_config
         self.arb_amount = self.policy_config.arb_portion * budget
         self.lp_amount = (self.policy_config.lp_portion) * budget
-        self.high_fixed_rate_thresh = policy_config.high_fixed_rate_thresh
-        self.low_fixed_rate_thresh = policy_config.low_fixed_rate_thresh
+        self.minimum_trade_amount = FixedPoint("10")
 
         super().__init__(budget, rng, slippage_tolerance)
 
@@ -118,9 +119,7 @@ class LPandArb(HyperdrivePolicy):
         """
         # Get fixed rate
         fixed_rate = interface.fixed_rate
-        variable_rate = interface.variable_rate
-        print(f"{fixed_rate=}")
-        print(f"{variable_rate=}")
+        # variable_rate = interface.variable_rate
 
         action_list = []
 
@@ -134,10 +133,99 @@ class LPandArb(HyperdrivePolicy):
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
                         trade_amount=self.lp_amount,
                         wallet=wallet,
+                        min_apr=fixed_rate - self.policy_config.rate_slippage,
+                        max_apr=fixed_rate + self.policy_config.rate_slippage,
                     ),
                 )
             )
 
-        # TODO run arb bot here
+        # Close longs if matured
+        for maturity_time, long in wallet.longs.items():
+            # If matured
+            if maturity_time < interface.current_block_time:
+                action_list.append(
+                    Trade(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
+                            action_type=HyperdriveActionType.CLOSE_LONG,
+                            trade_amount=long.balance,
+                            wallet=wallet,
+                            maturity_time=maturity_time,
+                        ),
+                    )
+                )
+        # Close shorts if matured
+        for maturity_time, short in wallet.shorts.items():
+            # If matured
+            if maturity_time < interface.current_block_time:
+                action_list.append(
+                    Trade(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
+                            action_type=HyperdriveActionType.CLOSE_SHORT,
+                            trade_amount=short.balance,
+                            wallet=wallet,
+                            maturity_time=maturity_time,
+                        ),
+                    )
+                )
+
+        # High fixed rate detected
+        if fixed_rate >= self.policy_config.high_fixed_rate_thresh:
+            # Close all open shorts
+            if len(wallet.shorts) > 0:
+                for maturity_time, short in wallet.shorts.items():
+                    action_list.append(
+                        Trade(
+                            market_type=MarketType.HYPERDRIVE,
+                            market_action=HyperdriveMarketAction(
+                                action_type=HyperdriveActionType.CLOSE_SHORT,
+                                trade_amount=short.balance,
+                                wallet=wallet,
+                                maturity_time=maturity_time,
+                            ),
+                        )
+                    )
+            # Open a new long, if we have money
+            if wallet.balance.amount > self.minimum_trade_amount:
+                action_list.append(
+                    Trade(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
+                            action_type=HyperdriveActionType.OPEN_LONG,
+                            trade_amount=interface.get_max_long(wallet.balance.amount),
+                            wallet=wallet,
+                        ),
+                    )
+                )
+
+        # Low fixed rate detected
+        if fixed_rate <= self.policy_config.low_fixed_rate_thresh:
+            # Close all open longs
+            if len(wallet.longs) > 0:
+                for maturity_time, long in wallet.longs.items():
+                    action_list.append(
+                        Trade(
+                            market_type=MarketType.HYPERDRIVE,
+                            market_action=HyperdriveMarketAction(
+                                action_type=HyperdriveActionType.CLOSE_LONG,
+                                trade_amount=long.balance,
+                                wallet=wallet,
+                                maturity_time=maturity_time,
+                            ),
+                        )
+                    )
+            # Open a new short, if we have money
+            if wallet.balance.amount > self.minimum_trade_amount:
+                action_list.append(
+                    Trade(
+                        market_type=MarketType.HYPERDRIVE,
+                        market_action=HyperdriveMarketAction(
+                            action_type=HyperdriveActionType.OPEN_SHORT,
+                            trade_amount=interface.get_max_short(wallet.balance.amount),
+                            wallet=wallet,
+                        ),
+                    )
+                )
 
         return action_list, False
