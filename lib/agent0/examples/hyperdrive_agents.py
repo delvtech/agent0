@@ -25,7 +25,7 @@ eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http:/
 env_config = EnvironmentConfig(
     delete_previous_logs=False,
     halt_on_errors=True,
-    log_filename="agent0-logs",
+    log_filename=".logging/agent0_logs.log",
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
