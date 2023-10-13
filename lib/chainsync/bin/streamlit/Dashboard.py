@@ -18,9 +18,10 @@ from chainsync.dashboard import (
     build_outstanding_positions,
     build_ticker,
     build_user_mapping,
-    plot_fixed_rate,
+    build_variable_rate,
     plot_ohlcv,
     plot_outstanding_positions,
+    plot_rates,
 )
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
@@ -80,8 +81,10 @@ while True:
 
     # build ohlcv and volume
     ohlcv = build_ohlcv(pool_analysis, freq="5T")
-    # build fixed rate
+    # build rates
     fixed_rate = build_fixed_rate(pool_analysis)
+    variable_rate = build_variable_rate(pool_info)
+
     # build outstanding positions plots
     outstanding_positions = build_outstanding_positions(pool_info)
 
@@ -100,7 +103,7 @@ while True:
         ax_positions.clear()
 
         plot_ohlcv(ohlcv, ax_ohlcv)
-        plot_fixed_rate(fixed_rate, ax_fixed_rate)
+        plot_rates(fixed_rate, variable_rate, ax_fixed_rate)
         plot_outstanding_positions(outstanding_positions, ax_positions)
 
         ax_ohlcv.tick_params(axis="both", which="both")
