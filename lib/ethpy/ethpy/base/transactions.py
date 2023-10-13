@@ -602,7 +602,7 @@ def fetch_contract_transactions_for_block(web3: Web3, contract: Contract, block_
     all_transactions = block.get("transactions")
 
     if not all_transactions:
-        logging.info("no transactions in block %s", block.get("number"))
+        logging.debug("no transactions in block %s", block.get("number"))
         return []
     contract_transactions: list[TxData] = []
     for transaction in all_transactions:
