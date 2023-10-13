@@ -11,6 +11,7 @@ from .transactions import (
     async_wait_for_transaction_receipt,
     eth_transfer,
     fetch_contract_transactions_for_block,
+    retry_call,
     smart_contract_preview_transaction,
     smart_contract_read,
     smart_contract_transact,

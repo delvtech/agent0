@@ -21,7 +21,7 @@ from web3.exceptions import (
     TimeExhausted,
     TransactionNotFound,
 )
-from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, BlockData, TxData, TxParams, TxReceipt, Wei
+from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, BlockData, Nonce, TxData, TxParams, TxReceipt, Wei
 
 from .errors.errors import decode_error_selector_for_contract
 
@@ -85,7 +85,7 @@ async def async_retry_call(
                 retry_count,
                 func,
                 caller,
-                exc,
+                repr(exc),
             )
             exception = exc
             # TODO implement smarter wait here
@@ -142,7 +142,7 @@ def retry_call(
                 retry_count,
                 func,
                 caller,
-                exc,
+                repr(exc),
             )
             exception = exc
             # TODO implement smarter wait here
@@ -296,7 +296,7 @@ def smart_contract_preview_transaction(
 
 
 async def async_wait_for_transaction_receipt(
-    web3: Web3, transaction_hash: HexBytes, timeout: float = 120, poll_latency: float = 0.1
+    web3: Web3, transaction_hash: HexBytes, timeout: float = 30, poll_latency: float = 0.1
 ) -> TxReceipt:
     """Async version of wait_for_transaction_receipt
     This function is copied from `web3.eth.wait_for_transaction_receipt`, but using a non-blocking wait
@@ -321,7 +321,6 @@ async def async_wait_for_transaction_receipt(
     try:
         with Timeout(timeout) as _timeout:
             while True:
-                await _timeout.async_sleep(poll_latency)
                 try:
                     tx_receipt = web3.eth.get_transaction_receipt(transaction_hash)
                 except TransactionNotFound:
@@ -338,9 +337,7 @@ async def async_wait_for_transaction_receipt(
 
 
 async def _async_send_transaction_and_wait_for_receipt(
-    func_handle: ContractFunction,
-    signer: LocalAccount,
-    web3: Web3,
+    func_handle: ContractFunction, signer: LocalAccount, web3: Web3, nonce: Nonce | None = None
 ) -> TxReceipt:
     """
     Sends a transaction and waits for the receipt asynchronously.
@@ -353,6 +350,8 @@ async def _async_send_transaction_and_wait_for_receipt(
         The LocalAccount that will be used to pay for the gas & sign the transaction
     web3 : Web3
         web3 provider object
+    nonce: Nonce | None
+        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
 
     Returns
     -------
@@ -360,12 +359,20 @@ async def _async_send_transaction_and_wait_for_receipt(
         a TypedDict; success can be checked via tx_receipt["status"]
     """
     signer_checksum_address = Web3.to_checksum_address(signer.address)
+    # TODO figure out which exception here to retry on
+    base_nonce = retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address)
+    if nonce is None:
+        nonce = base_nonce
+    # We explicitly check to ensure explicit nonce is larger than what web3 is reporting
+    if base_nonce > nonce:
+        logging.warning("Specified nonce %s is larger than current trx count %s", nonce, base_nonce)
+        nonce = base_nonce
+
     # We need to update the nonce when retrying a transaction
     unsent_txn = func_handle.build_transaction(
         {
             "from": signer_checksum_address,
-            # TODO figure out which exception here to retry on
-            "nonce": retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address),
+            "nonce": nonce,
         }
     )
     signed_txn = signer.sign_transaction(unsent_txn)
@@ -382,7 +389,12 @@ async def _async_send_transaction_and_wait_for_receipt(
 
 
 async def async_smart_contract_transact(
-    web3: Web3, contract: Contract, signer: LocalAccount, function_name_or_signature: str, *fn_args
+    web3: Web3,
+    contract: Contract,
+    signer: LocalAccount,
+    function_name_or_signature: str,
+    *fn_args,
+    nonce: Nonce | None = None,
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
     Copy of `smart_contract_transact`, but using async wait for `wait_for_transaction_receipt`
@@ -399,6 +411,8 @@ async def async_smart_contract_transact(
         This function must exist in the compiled contract's ABI
     fn_args : ordered list
         All remaining arguments will be passed to the contract function in the order received
+    nonce: Nonce | None
+        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
 
     Returns
     -------
@@ -406,20 +420,17 @@ async def async_smart_contract_transact(
         a TypedDict; success can be checked via tx_receipt["status"]
     """
 
-    # Retry function to catch unknown block error with status = 0
-    def retry_trx_check(exc: Exception) -> bool:
-        # TODO need to figure out exactly which error is due to an anvil error
-        # Currently catching when status=0, but ideally this would be a specific
-        # "anvil is breaking" error. We're currently disabling by setting WRITE_RETRY_COUNT to 1.
-        return isinstance(exc, UnknownBlockError) and exc.args[0] == "Receipt has status of 0"
-
     try:
         if "(" in function_name_or_signature:
             func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
         else:
             func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
-        return await async_retry_call(
-            WRITE_RETRY_COUNT, retry_trx_check, _async_send_transaction_and_wait_for_receipt, func_handle, signer, web3
+
+        return await _async_send_transaction_and_wait_for_receipt(
+            func_handle,
+            signer,
+            web3,
+            nonce=nonce,
         )
     except ContractCustomError as err:
         logging.error(
@@ -454,6 +465,7 @@ def _send_transaction_and_wait_for_receipt(
     func_handle: ContractFunction,
     signer: LocalAccount,
     web3: Web3,
+    nonce: Nonce | None = None,
 ) -> TxReceipt:
     """
     Sends a transaction and waits for the receipt.
@@ -466,6 +478,8 @@ def _send_transaction_and_wait_for_receipt(
         The LocalAccount that will be used to pay for the gas & sign the transaction
     web3 : Web3
         web3 provider object
+    nonce: Nonce | None
+        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
 
     Returns
     -------
@@ -473,12 +487,19 @@ def _send_transaction_and_wait_for_receipt(
         a TypedDict; success can be checked via tx_receipt["status"]
     """
     signer_checksum_address = Web3.to_checksum_address(signer.address)
-    # We need to update the nonce when retrying a transaction
+    # TODO figure out which exception here to retry on
+    base_nonce = retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address)
+    if nonce is None:
+        nonce = base_nonce
+    # We explicitly check to ensure explicit nonce is larger than what web3 is reporting
+    if base_nonce > nonce:
+        logging.warning("Specified nonce %s is larger than current trx count %s", nonce, base_nonce)
+        nonce = base_nonce
+
     unsent_txn = func_handle.build_transaction(
         {
             "from": signer_checksum_address,
-            # TODO figure out which exception here to retry on
-            "nonce": retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address),
+            "nonce": nonce,
         }
     )
     signed_txn = signer.sign_transaction(unsent_txn)
@@ -495,7 +516,12 @@ def _send_transaction_and_wait_for_receipt(
 
 
 def smart_contract_transact(
-    web3: Web3, contract: Contract, signer: LocalAccount, function_name_or_signature: str, *fn_args
+    web3: Web3,
+    contract: Contract,
+    signer: LocalAccount,
+    function_name_or_signature: str,
+    *fn_args,
+    nonce: Nonce | None = None,
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
 
@@ -511,6 +537,8 @@ def smart_contract_transact(
         This function must exist in the compiled contract's ABI
     fn_args : ordered list
         All remaining arguments will be passed to the contract function in the order received
+    nonce: Nonce | None
+        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
 
     Returns
     -------
@@ -518,22 +546,13 @@ def smart_contract_transact(
         a TypedDict; success can be checked via tx_receipt["status"]
     """
 
-    # Retry function to catch unknown block error with status = 0
-    def retry_trx_check(exc: Exception) -> bool:
-        # TODO need to figure out exactly which error is due to an anvil error
-        # Currently catching write when status=0, but ideally this would be a specific
-        # "anvil is breaking" error. We're currently disabling by setting WRITE_RETRY_COUNT to 1.
-        return isinstance(exc, UnknownBlockError) and exc.args[0] == "Receipt has status of 0"
-
     try:
         if "(" in function_name_or_signature:
             func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
         else:
             func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
+        return _send_transaction_and_wait_for_receipt(func_handle, signer, web3, nonce)
 
-        return retry_call(
-            WRITE_RETRY_COUNT, retry_trx_check, _send_transaction_and_wait_for_receipt, func_handle, signer, web3
-        )
     except ContractCustomError as err:
         error_selector = decode_error_selector_for_contract(err.args[0], contract)
         logging.error(
@@ -553,12 +572,15 @@ def smart_contract_transact(
         raise err
 
 
+# TODO clean up args
+# pylint: disable=too-many-arguments
 async def async_eth_transfer(
     web3: Web3,
     signer: LocalAccount,
     to_address: ChecksumAddress,
     amount_wei: int,
     max_priority_fee: int | None = None,
+    nonce: Nonce | None = None,
 ) -> TxReceipt:
     """Execute a generic Ethereum transaction to move ETH from one account to another.
 
@@ -574,6 +596,8 @@ async def async_eth_transfer(
         Amount to transfer, in WEI
     max_priority_fee : int
         Amount of tip to provide to the miner when a block is mined
+    nonce: Nonce | None
+        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
 
     Returns
     -------
@@ -581,11 +605,19 @@ async def async_eth_transfer(
         a TypedDict; success can be checked via tx_receipt["status"]
     """
     signer_checksum_address = Web3.to_checksum_address(signer.address)
+    base_nonce = retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address)
+    if nonce is None:
+        nonce = base_nonce
+    # We explicitly check to ensure explicit nonce is larger than what web3 is reporting
+    if base_nonce > nonce:
+        logging.warning("Specified nonce %s is larger than current trx count %s", nonce, base_nonce)
+        nonce = base_nonce
+
     unsent_txn: TxParams = {
         "from": signer_checksum_address,
         "to": to_address,
         "value": Wei(amount_wei),
-        "nonce": web3.eth.get_transaction_count(signer_checksum_address),
+        "nonce": nonce,
         "chainId": web3.eth.chain_id,
     }
     if max_priority_fee is None:
@@ -603,12 +635,15 @@ async def async_eth_transfer(
     return await async_wait_for_transaction_receipt(web3, tx_hash)
 
 
+# TODO clean up args
+# pylint: disable=too-many-arguments
 def eth_transfer(
     web3: Web3,
     signer: LocalAccount,
     to_address: ChecksumAddress,
     amount_wei: int,
     max_priority_fee: int | None = None,
+    nonce: Nonce | None = None,
 ) -> TxReceipt:
     """Execute a generic Ethereum transaction to move ETH from one account to another.
 
@@ -624,6 +659,8 @@ def eth_transfer(
         Amount to transfer, in WEI
     max_priority_fee : int
         Amount of tip to provide to the miner when a block is mined
+    nonce: Nonce | None
+        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
 
     Returns
     -------
@@ -631,12 +668,15 @@ def eth_transfer(
         a TypedDict; success can be checked via tx_receipt["status"]
     """
     signer_checksum_address = Web3.to_checksum_address(signer.address)
+    if nonce is None:
+        # TODO figure out which exception here to retry on
+        nonce = retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address)
     unsent_txn: TxParams = {
         "from": signer_checksum_address,
         "to": to_address,
         "value": Wei(amount_wei),
         # TODO figure out which exception here to retry on
-        "nonce": retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address),
+        "nonce": nonce,
         "chainId": web3.eth.chain_id,
     }
     if max_priority_fee is None:

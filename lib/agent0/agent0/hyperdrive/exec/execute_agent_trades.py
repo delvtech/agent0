@@ -15,8 +15,10 @@ from agent0.hyperdrive.state import (
     TradeStatus,
 )
 from elfpy import types
+from ethpy.base import retry_call
 from ethpy.hyperdrive import HyperdriveInterface
 from fixedpointmath import FixedPoint
+from web3.types import Nonce
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
@@ -59,12 +61,19 @@ async def async_execute_single_agent_trade(
         trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(interface=hyperdrive)
 
     # Make trades async for this agent. This way, an agent can submit multiple trades for a single block
+    # To do this, we need to manually set the nonce, so we get the base transaction count here
+    # and pass in an incrementing nonce per call
+    # TODO figure out which exception here to retry on
+    base_nonce = retry_call(5, None, hyperdrive.web3.eth.get_transaction_count, agent.checksum_address)
 
     # TODO preliminary search shows async tasks has very low overhead:
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
     # However, should probably test what the limit number of trades an agent can make in one block
     wallet_deltas_or_exception: list[HyperdriveWalletDeltas | Exception] = await asyncio.gather(
-        *[async_match_contract_call_to_trade(agent, hyperdrive, trade_object) for trade_object in trades],
+        *[
+            async_match_contract_call_to_trade(agent, hyperdrive, trade_object, nonce=Nonce(base_nonce + i))
+            for i, trade_object in enumerate(trades)
+        ],
         # Instead of throwing exception, return the exception to the caller here
         return_exceptions=True,
     )
@@ -149,6 +158,7 @@ async def async_match_contract_call_to_trade(
     agent: HyperdriveAgent,
     hyperdrive: HyperdriveInterface,
     trade_envelope: types.Trade[HyperdriveMarketAction],
+    nonce: Nonce,
 ) -> HyperdriveWalletDeltas:
     """Match statement that executes the smart contract trade based on the provided type.
 
@@ -173,7 +183,9 @@ async def async_match_contract_call_to_trade(
             raise ValueError(f"{trade.action_type} not supported!")
 
         case HyperdriveActionType.OPEN_LONG:
-            trade_result = await hyperdrive.async_open_long(agent, trade.trade_amount, trade.slippage_tolerance)
+            trade_result = await hyperdrive.async_open_long(
+                agent, trade.trade_amount, trade.slippage_tolerance, nonce=nonce
+            )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=-trade_result.base_amount,
@@ -186,7 +198,7 @@ async def async_match_contract_call_to_trade(
             if not trade.maturity_time:
                 raise ValueError("Maturity time was not provided, can't close long position.")
             trade_result = await hyperdrive.async_close_long(
-                agent, trade.trade_amount, trade.maturity_time, trade.slippage_tolerance
+                agent, trade.trade_amount, trade.maturity_time, trade.slippage_tolerance, nonce=nonce
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
@@ -197,7 +209,9 @@ async def async_match_contract_call_to_trade(
             )
 
         case HyperdriveActionType.OPEN_SHORT:
-            trade_result = await hyperdrive.async_open_short(agent, trade.trade_amount, trade.slippage_tolerance)
+            trade_result = await hyperdrive.async_open_short(
+                agent, trade.trade_amount, trade.slippage_tolerance, nonce=nonce
+            )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=-trade_result.base_amount,
@@ -210,7 +224,7 @@ async def async_match_contract_call_to_trade(
             if not trade.maturity_time:
                 raise ValueError("Maturity time was not provided, can't close long position.")
             trade_result = await hyperdrive.async_close_short(
-                agent, trade.trade_amount, trade.maturity_time, trade.slippage_tolerance
+                agent, trade.trade_amount, trade.maturity_time, trade.slippage_tolerance, nonce=nonce
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
@@ -224,7 +238,9 @@ async def async_match_contract_call_to_trade(
             # TODO: The following variables are hard coded for now, but should be specified in the trade spec
             min_apr = FixedPoint(scaled_value=1)  # 1e-18
             max_apr = FixedPoint(1)  # 1.0
-            trade_result = await hyperdrive.async_add_liquidity(agent, trade.trade_amount, min_apr, max_apr)
+            trade_result = await hyperdrive.async_add_liquidity(
+                agent, trade.trade_amount, min_apr, max_apr, nonce=nonce
+            )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=-trade_result.base_amount,
@@ -234,7 +250,7 @@ async def async_match_contract_call_to_trade(
             )
 
         case HyperdriveActionType.REMOVE_LIQUIDITY:
-            trade_result = await hyperdrive.async_remove_liquidity(agent, trade.trade_amount)
+            trade_result = await hyperdrive.async_remove_liquidity(agent, trade.trade_amount, nonce=nonce)
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=trade_result.base_amount,
@@ -245,7 +261,7 @@ async def async_match_contract_call_to_trade(
             )
 
         case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
-            trade_result = await hyperdrive.async_redeem_withdraw_shares(agent, trade.trade_amount)
+            trade_result = await hyperdrive.async_redeem_withdraw_shares(agent, trade.trade_amount, nonce=nonce)
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=trade_result.base_amount,
