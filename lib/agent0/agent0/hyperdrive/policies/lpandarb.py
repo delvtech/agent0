@@ -94,6 +94,10 @@ class LPandArb(HyperdrivePolicy):
         self.arb_amount = self.policy_config.arb_portion * budget
         self.lp_amount = (self.policy_config.lp_portion) * budget
         self.minimum_trade_amount = FixedPoint("10")
+        # calculate these once
+        self.fp0 = FixedPoint(0)
+        self.fp1 = FixedPoint(1)
+        self.fp365 = FixedPoint(365)
 
         super().__init__(budget, rng, slippage_tolerance)
 
@@ -117,9 +121,11 @@ class LPandArb(HyperdrivePolicy):
             A tuple where the first element is a list of actions,
             and the second element defines if the agent is done trading
         """
-        # Get fixed rate
+        # Get fixed and variable rates
         fixed_rate = interface.fixed_rate
-        # variable_rate = interface.variable_rate
+        print(f"{fixed_rate=}")
+        variable_rate = interface.variable_rate
+        print(f"{variable_rate=}")
 
         action_list = []
 
@@ -138,6 +144,73 @@ class LPandArb(HyperdrivePolicy):
                     ),
                 )
             )
+
+        # arbitrage from here on out
+        high_fixed_rate_detected = fixed_rate >= self.policy_config.high_fixed_rate_thresh
+        print(f"{high_fixed_rate_detected=}")
+        low_fixed_rate_detected = fixed_rate <= self.policy_config.low_fixed_rate_thresh
+        print(f"{low_fixed_rate_detected=}")
+        we_have_money = wallet.balance.amount > self.minimum_trade_amount
+        print(f"{we_have_money=}")
+
+        def calc_bond_reserves(share_reserves, share_price, apr, position_duration, time_stretch):
+            return share_price * share_reserves * ((self.fp1 + apr * position_duration / self.fp365) ** time_stretch)
+
+        def k(share_price, initial_share_price, share_reserves, bond_reserves, time_stretch):
+            # (c / mu) * (mu * z) ** (1 - t) + y ** (1 - t)
+            return (share_price / initial_share_price) * (initial_share_price * share_reserves) ** (
+                self.fp1 - time_stretch
+            ) + bond_reserves ** (self.fp1 - time_stretch)
+
+        def get_shares_in_for_bonds_out(
+            bond_reserves, share_price, initial_share_price, share_reserves, bonds_out, time_stretch
+        ):
+            # y_term = (y - out) ** (1 - t)
+            # z_val = (k_t - y_term) / (c / mu)
+            # z_val = z_val ** (1 / (1 - t))
+            # z_val /= mu
+            # return z_val - z
+            # pylint: disable=too-many-arguments
+            k_t = k(
+                interface.pool_info["sharePrice"],
+                interface.pool_config["initialSharePrice"],
+                interface.pool_info["shareReserves"],
+                interface.pool_info["bondReserves"],
+                interface.pool_config["timeStretch"],
+            )
+            y_term = (bond_reserves - bonds_out) ** (self.fp1 - time_stretch)
+            z_val = (k_t - y_term) / (share_price / initial_share_price)
+            z_val = z_val ** (self.fp1 / (self.fp1 - time_stretch))
+            z_val /= initial_share_price
+            return z_val - share_reserves
+
+        shares_needed: FixedPoint = self.fp0
+        bonds_needed: FixedPoint = self.fp0
+        if we_have_money:
+            if high_fixed_rate_detected or low_fixed_rate_detected:
+                # Calculate bonds needed to hit target APR
+                target_apr = variable_rate
+                target_bonds = calc_bond_reserves(
+                    interface.pool_info["shareReserves"],
+                    interface.pool_config["initialSharePrice"],
+                    target_apr,
+                    interface.pool_config["positionDuration"],
+                    interface.pool_config["timeStretch"],
+                )
+                print(f"{interface.pool_config['timeStretch']=}")
+                bonds_needed = (target_bonds - interface.pool_info["bondReserves"]) / FixedPoint(2)
+                print(f"{bonds_needed=}")
+            if high_fixed_rate_detected:
+                # assert bonds_needed < 0, "To lower the fixed rate, we should require a decrease in bonds"
+                shares_needed = get_shares_in_for_bonds_out(
+                    interface.pool_info["bondReserves"],
+                    interface.pool_info["sharePrice"],
+                    interface.pool_config["initialSharePrice"],
+                    interface.pool_info["shareReserves"],
+                    abs(bonds_needed),
+                    interface.pool_config["timeStretch"],
+                )
+                print(f"{shares_needed=}")
 
         # Close longs if matured
         for maturity_time, long in wallet.longs.items():
@@ -171,7 +244,7 @@ class LPandArb(HyperdrivePolicy):
                 )
 
         # High fixed rate detected
-        if fixed_rate >= self.policy_config.high_fixed_rate_thresh:
+        if high_fixed_rate_detected:
             # Close all open shorts
             if len(wallet.shorts) > 0:
                 for maturity_time, short in wallet.shorts.items():
@@ -187,20 +260,33 @@ class LPandArb(HyperdrivePolicy):
                         )
                     )
             # Open a new long, if we have money
-            if wallet.balance.amount > self.minimum_trade_amount:
+            if we_have_money:
+                assert shares_needed, "shares_needed is None"
+                max_long_bonds = interface.get_max_long(wallet.balance.amount)
+                max_long_shares = get_shares_in_for_bonds_out(
+                    interface.pool_info["bondReserves"],
+                    interface.pool_info["sharePrice"],
+                    interface.pool_config["initialSharePrice"],
+                    interface.pool_info["shareReserves"],
+                    max_long_bonds,
+                    interface.pool_config["timeStretch"],
+                )
+                amount = min(shares_needed, max_long_shares) * interface.pool_info["sharePrice"]
+                print(f"{max_long_shares=}")
+                print(f"{amount=}")
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.OPEN_LONG,
-                            trade_amount=interface.get_max_long(wallet.balance.amount),
+                            trade_amount=amount,
                             wallet=wallet,
                         ),
                     )
                 )
 
         # Low fixed rate detected
-        if fixed_rate <= self.policy_config.low_fixed_rate_thresh:
+        if low_fixed_rate_detected:
             # Close all open longs
             if len(wallet.longs) > 0:
                 for maturity_time, long in wallet.longs.items():
@@ -216,13 +302,17 @@ class LPandArb(HyperdrivePolicy):
                         )
                     )
             # Open a new short, if we have money
-            if wallet.balance.amount > self.minimum_trade_amount:
+            if we_have_money:
+                max_short_bonds = interface.get_max_short(wallet.balance.amount)
+                amount = min(bonds_needed, max_short_bonds)
+                print(f"{max_short_bonds=}")
+                print(f"{amount=}")
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.OPEN_SHORT,
-                            trade_amount=interface.get_max_short(wallet.balance.amount),
+                            trade_amount=amount,
                             wallet=wallet,
                         ),
                     )
