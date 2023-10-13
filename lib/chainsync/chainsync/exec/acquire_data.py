@@ -67,7 +67,8 @@ def acquire_data(
         contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
 
     # Get web3 and contracts
-    web3, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
+    web3, _, yield_contract, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
+    # Get yield contract for variabel rate
 
     ## Get starting point for restarts
     # Get last entry of pool info in db
@@ -88,7 +89,7 @@ def acquire_data(
     # This if statement executes only on initial run (based on data_latest_block_number check),
     # and if the chain has executed until start_block (based on latest_mined_block check)
     if data_latest_block_number < block_number < latest_mined_block:
-        data_chain_to_db(web3, hyperdrive_contract, block_number, db_session)
+        data_chain_to_db(web3, hyperdrive_contract, yield_contract, block_number, db_session)
 
     # Main data loop
     # monitor for new blocks & add pool info per block
@@ -120,5 +121,5 @@ def acquire_data(
                     latest_mined_block,
                 )
                 continue
-            data_chain_to_db(web3, hyperdrive_contract, block_number, db_session)
+            data_chain_to_db(web3, hyperdrive_contract, yield_contract, block_number, db_session)
         time.sleep(_SLEEP_AMOUNT)

@@ -28,6 +28,6 @@ class TestHyperdriveInterface:
         abi_dir = "./packages/hyperdrive/src/abis"
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
         eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
-        _, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, hyperdrive_contract_addresses)
+        _, _, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, hyperdrive_contract_addresses)
         pool_config = smart_contract_read(hyperdrive_contract, "getPoolConfig")
         assert pool_config is not None
