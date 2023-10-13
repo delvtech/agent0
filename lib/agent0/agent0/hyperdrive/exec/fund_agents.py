@@ -49,7 +49,7 @@ async def async_fund_agents(
     """
 
     # Funding contains its own logging as this is typically ran from a script or in debug mode
-    log_utils.setup_logging(".logging/fund_accounts.log", log_stdout=True)
+    log_utils.setup_logging(".logging/fund_accounts.log", log_stdout=True, delete_previous_logs=True)
 
     agent_accounts = [
         HyperdriveAgent(Account().from_key(agent_private_key)) for agent_private_key in account_key_config.AGENT_KEYS
