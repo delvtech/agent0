@@ -6,7 +6,6 @@ from typing import Any, Sequence
 
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
-from ethpy.base import UnknownBlockError
 from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout
@@ -21,6 +20,7 @@ from web3.exceptions import (
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, BlockData, Nonce, TxData, TxParams, TxReceipt, Wei
 
 from .errors.errors import decode_error_selector_for_contract
+from .errors.types import UnknownBlockError
 from .retry_utils import retry_call
 
 # TODO these should be parameterized so the caller controls how many times to retry
