@@ -335,6 +335,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "openLong")
         return trade_result
 
+    # pylint: disable=too-many-arguments
     async def async_close_long(
         self,
         agent: LocalAccount,
@@ -457,6 +458,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "openShort")
         return trade_result
 
+    # pylint: disable=too-many-arguments
     async def async_close_short(
         self,
         agent: LocalAccount,
@@ -517,6 +519,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "closeShort")
         return trade_result
 
+    # pylint: disable=too-many-arguments
     async def async_add_liquidity(
         self,
         agent: LocalAccount,

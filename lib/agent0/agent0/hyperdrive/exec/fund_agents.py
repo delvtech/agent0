@@ -25,6 +25,8 @@ from web3.types import Nonce, TxReceipt
 RETRY_COUNT = 5
 
 
+# TODO break up this function
+# pylint: disable=too-many-locals
 async def async_fund_agents(
     user_account: HyperdriveAgent,
     eth_config: EthConfig,
@@ -97,10 +99,8 @@ async def async_fund_agents(
     # We launch funding in batches, so we do an outer retry loop here
     # Fund eth
     logging.info("Funding Eth")
-    accounts_left = [
-        (agent_account, eth_budget)
-        for agent_account, eth_budget in zip(agent_accounts, account_key_config.AGENT_ETH_BUDGETS)
-    ]
+    # Prepare accounts and eth budgets
+    accounts_left = list(zip(agent_accounts, account_key_config.AGENT_ETH_BUDGETS))
     for attempt in range(RETRY_COUNT):
         # Fund agents async from a single account.
         # To do this, we need to manually set the nonce, so we get the base transaction count here
@@ -137,10 +137,8 @@ async def async_fund_agents(
     # We launch funding in batches, so we do an outer retry loop here
     # Fund base
     logging.info("Funding Base")
-    accounts_left = [
-        (agent_account, base_budget)
-        for agent_account, base_budget in zip(agent_accounts, account_key_config.AGENT_BASE_BUDGETS)
-    ]
+    # Prepare accounts and eth budgets
+    accounts_left = list(zip(agent_accounts, account_key_config.AGENT_BASE_BUDGETS))
     for attempt in range(RETRY_COUNT):
         # Fund agents async from a single account.
         # To do this, we need to manually set the nonce, so we get the base transaction count here

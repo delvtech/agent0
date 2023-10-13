@@ -108,7 +108,7 @@ async def set_max_approval(
         The address of the deployed hyperdrive contract
     """
 
-    agents_left = [agent for agent in agents]
+    agents_left = list(agents)
     for attempt in range(RETRY_COUNT):
         approval_calls = [
             async_smart_contract_transact(
