@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 
 from ethpy import EthConfig
-from ethpy.base import initialize_web3_with_http_provider, load_all_abis, smart_contract_read,
+from ethpy.base import initialize_web3_with_http_provider, load_all_abis, smart_contract_read
 from web3 import Web3
 from web3.contract.contract import Contract
 
