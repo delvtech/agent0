@@ -17,7 +17,7 @@ from ethpy.eth_config import build_eth_config
 from fixedpointmath import FixedPoint
 
 # Define the unique env filename to use for this script
-ENV_FILE = "hyperdrive_agents.account.env"
+ENV_FILE = "lp_agents.account.env"
 # Host of docker services
 HOST = "localhost"
 # Username binding of bots
@@ -25,8 +25,13 @@ USERNAME = "changeme"
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 RESTART_DOCKER = True
+BUDGET = 1_000_000 # 1 milly
 
 os.environ["DEVELOP"] = "true"
+
+# we're in develop mode, so we'll get a new env file made for us
+if os.path.exists(ENV_FILE):
+    os.remove(ENV_FILE)
 
 check_docker(restart=True)
 
@@ -46,11 +51,12 @@ env_config = EnvironmentConfig(
 
 agent_config: list[AgentConfig] = [
     AgentConfig(
+        name="LPandArb",
         policy=Zoo.LPandArb,
         number_of_agents=1,
         slippage_tolerance=None,  # No slippage tolerance for arb bot
         # Fixed budgets
-        base_budget_wei=FixedPoint(50_000).scaled_value,  # 50k base
+        base_budget_wei=FixedPoint(BUDGET).scaled_value,  # 50k base
         eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
         policy_config=Zoo.LPandArb.Config(
             lp_portion=FixedPoint("0.5"),  # LP with 50% of capital
@@ -59,13 +65,28 @@ agent_config: list[AgentConfig] = [
         ),
     ),
     AgentConfig(
+        name="Random",
         policy=Zoo.random,
         number_of_agents=1,
-        slippage_tolerance=FixedPoint("0.0001"),
+        slippage_tolerance=None,
         # Fixed budget
-        base_budget_wei=FixedPoint(50_000).scaled_value,  # 50k base
+        base_budget_wei=FixedPoint(BUDGET).scaled_value,  # 50k base
         eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
         policy_config=Zoo.random.Config(trade_chance=FixedPoint("0.8")),
+    ),
+    AgentConfig(
+        name="JustArb",
+        policy=Zoo.arbitrage,
+        number_of_agents=1,
+        slippage_tolerance=None,
+        # Fixed budget
+        base_budget_wei=FixedPoint(BUDGET).scaled_value,  # 50k base
+        eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
+        policy_config=Zoo.arbitrage.Config(
+            trade_amount=FixedPoint(BUDGET*0.1),  # Open 1k in base or short 1k bonds
+            high_fixed_rate_thresh=FixedPoint(0.06),  # Upper fixed rate threshold
+            low_fixed_rate_thresh=FixedPoint(0.04),  # Lower fixed rate threshold
+            ),
     ),
 ]
 
