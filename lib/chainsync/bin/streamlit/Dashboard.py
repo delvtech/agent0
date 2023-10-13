@@ -72,7 +72,8 @@ while True:
 
     pool_info = get_pool_info(session, start_block=-max_live_blocks, coerce_float=False)
     # TODO generalize this
-    # We check the block timestamp difference since we're running either in real time mode or rapid 312 second per block mode
+    # We check the block timestamp difference since we're running
+    # either in real time mode or rapid 312 second per block mode
     # Determine which one, and set freq respectively
     if freq is None:
         if len(pool_info) > 2:
