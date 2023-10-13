@@ -67,7 +67,8 @@ def acquire_data(
         contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
 
     # Get web3 and contracts
-    web3, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
+    web3, _, yield_contract, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
+    # Get yield contract for variabel rate
 
     ## Get starting point for restarts
     # Get last entry of pool info in db

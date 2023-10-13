@@ -62,7 +62,7 @@ def data_analysis(
         contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
 
     # Get hyperdrive contract
-    _, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
+    _, _, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
 
     ## Get starting point for restarts
     analysis_latest_block_number = get_latest_block_number_from_analysis_table(db_session)
