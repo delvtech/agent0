@@ -247,7 +247,7 @@ class TestBotToDb:
             "withdrawalSharesProceeds",
             # Added keys
             "timestamp",
-            "variableRate"
+            "variableRate",
             # Calculated keys
             "totalSupplyWithdrawalShares",
         ]
