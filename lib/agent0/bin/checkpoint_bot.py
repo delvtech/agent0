@@ -28,7 +28,9 @@ from web3.types import RPCEndpoint
 CHECKPOINT_WAITING_PERIOD = 0.5
 
 # TODO can't seem to get block time or block timestamp interval from anvil, so we code it here
+# Real time, passed in anvil as `--block-time`
 BLOCK_TIME = 6
+# Interval between blocks, passed in anvil through RPC call `anvil_setBlockTimestampInterval`
 BLOCK_TIMESTAMP_INTERVAL = 312
 
 
