@@ -1,4 +1,6 @@
 """Functions for gathering data from the chain and adding it to the db"""
+from decimal import Decimal
+
 from eth_typing import BlockNumber
 from ethpy.base import fetch_contract_transactions_for_block, smart_contract_read
 from ethpy.hyperdrive import (
@@ -9,6 +11,7 @@ from ethpy.hyperdrive import (
     process_hyperdrive_pool_config,
     process_hyperdrive_pool_info,
 )
+from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -112,6 +115,7 @@ def data_chain_to_db(
     # TODO ideally we'd add this information to a separate table, along with other non-poolinfo data
     # but data exposed from the hyperdrive interface.
     variable_rate = get_variable_rate_from_contract(yield_contract, block_number)
-    block_pool_info.variableRate = variable_rate
+    # Converts scaled integer to fixed point, ultimately to Decimal for database
+    block_pool_info.variableRate = Decimal(str(FixedPoint(scaled_value=variable_rate)))
 
     add_pool_infos([block_pool_info], session)
