@@ -62,7 +62,7 @@ username_to_user = {
 # This reads the .env file for database credentials
 db_session = initialize_session()
 
-log_utils.setup_logging(".logging/update_usernames.log", log_stdout=True)
+log_utils.setup_logging(".logging/update_usernames.log", log_stdout=True, delete_previous_logs=True)
 
 # Add to database
 for addr, username in addr_to_username.items():
