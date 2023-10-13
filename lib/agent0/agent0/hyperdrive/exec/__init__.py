@@ -5,7 +5,7 @@ from .execute_agent_trades import (
     async_execute_single_agent_trade,
     async_match_contract_call_to_trade,
 )
-from .fund_agents import fund_agents
+from .fund_agents import async_fund_agents
 from .get_agent_accounts import get_agent_accounts
 from .run_agents import run_agents
 from .setup_experiment import setup_experiment

@@ -3,8 +3,10 @@ from .abi import load_abi_from_file, load_all_abis
 from .api import BaseInterface
 from .errors import ABIError, UnknownBlockError, decode_error_selector_for_contract
 from .receipts import get_event_object, get_transaction_logs
+from .retry_utils import async_retry_call, retry_call
 from .rpc_interface import get_account_balance, set_anvil_account_balance
 from .transactions import (
+    async_eth_transfer,
     async_smart_contract_transact,
     async_wait_for_transaction_receipt,
     eth_transfer,

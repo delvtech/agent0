@@ -24,7 +24,7 @@ from fixedpointmath import FixedPoint
 from pyperdrive.types import Fees, PoolConfig, PoolInfo
 from web3 import Web3
 from web3.contract.contract import Contract
-from web3.types import BlockData, Timestamp
+from web3.types import BlockData, Nonce, Timestamp
 
 from .addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
 from .interface import (
@@ -278,6 +278,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         agent: LocalAccount,
         trade_amount: FixedPoint,
         slippage_tolerance: FixedPoint | None = None,
+        nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to open a long position.
 
@@ -291,6 +292,8 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             Amount of slippage allowed from the trade.
             If None, then execute the trade regardless of the slippage.
             If not None, then the trade will not execute unless the slippage is below this value.
+        nonce: Nonce | None
+            An optional explicit nonce to set with the transaction
 
         Returns
         -------
@@ -327,17 +330,19 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 as_underlying,
             )
         tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "openLong", *fn_args
+            self.web3, self.hyperdrive_contract, agent, "openLong", *fn_args, nonce=nonce
         )
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "openLong")
         return trade_result
 
+    # pylint: disable=too-many-arguments
     async def async_close_long(
         self,
         agent: LocalAccount,
         trade_amount: FixedPoint,
         maturity_time: int,
         slippage_tolerance: FixedPoint | None = None,
+        nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to close a long position.
 
@@ -353,6 +358,8 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             Amount of slippage allowed from the trade.
             If None, then execute the trade regardless of the slippage.
             If not None, then the trade will not execute unless the slippage is below this value.
+        nonce: Nonce | None
+            An optional explicit nonce to set with the transaction
 
         Returns
         -------
@@ -384,7 +391,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 as_underlying,
             )
         tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "closeLong", *fn_args
+            self.web3, self.hyperdrive_contract, agent, "closeLong", *fn_args, nonce=nonce
         )
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "closeLong")
         return trade_result
@@ -394,6 +401,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         agent: LocalAccount,
         trade_amount: FixedPoint,
         slippage_tolerance: FixedPoint | None = None,
+        nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to open a short position.
 
@@ -407,6 +415,8 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             Amount of slippage allowed from the trade.
             If None, then execute the trade regardless of the slippage.
             If not None, then the trade will not execute unless the slippage is below this value.
+        nonce: Nonce | None
+            An optional explicit nonce to set with the transaction
 
         Returns
         -------
@@ -443,17 +453,19 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             as_underlying,
         )
         tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "openShort", *fn_args
+            self.web3, self.hyperdrive_contract, agent, "openShort", *fn_args, nonce=nonce
         )
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "openShort")
         return trade_result
 
+    # pylint: disable=too-many-arguments
     async def async_close_short(
         self,
         agent: LocalAccount,
         trade_amount: FixedPoint,
         maturity_time: int,
         slippage_tolerance: FixedPoint | None = None,
+        nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to close a short position.
 
@@ -469,6 +481,8 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             Amount of slippage allowed from the trade.
             If None, then execute the trade regardless of the slippage.
             If not None, then the trade will not execute unless the slippage is below this value.
+        nonce: Nonce | None
+            An optional explicit nonce to set with the transaction
 
         Returns
         -------
@@ -500,17 +514,19 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 as_underlying,
             )
         tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "closeShort", *fn_args
+            self.web3, self.hyperdrive_contract, agent, "closeShort", *fn_args, nonce=nonce
         )
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "closeShort")
         return trade_result
 
+    # pylint: disable=too-many-arguments
     async def async_add_liquidity(
         self,
         agent: LocalAccount,
         trade_amount: FixedPoint,
         min_apr: FixedPoint,
         max_apr: FixedPoint,
+        nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to add liquidity to the Hyperdrive pool.
 
@@ -524,6 +540,8 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The minimum allowable APR after liquidity is added.
         max_apr: FixedPoint
             The maximum allowable APR after liquidity is added.
+        nonce: Nonce | None
+            An optional explicit nonce to set with the transaction
 
         Returns
         -------
@@ -540,7 +558,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             as_underlying,
         )
         tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "addLiquidity", *fn_args
+            self.web3, self.hyperdrive_contract, agent, "addLiquidity", *fn_args, nonce=nonce
         )
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "addLiquidity")
         return trade_result
@@ -549,6 +567,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         self,
         agent: LocalAccount,
         trade_amount: FixedPoint,
+        nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to remove liquidity from the Hyperdrive pool.
 
@@ -558,6 +577,8 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The account for the agent that is executing and signing the trade transaction.
         trade_amount: FixedPoint
             The size of the position, in base.
+        nonce: Nonce | None
+            An optional explicit nonce to set with the transaction
 
         Returns
         -------
@@ -574,7 +595,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             as_underlying,
         )
         tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "removeLiquidity", *fn_args
+            self.web3, self.hyperdrive_contract, agent, "removeLiquidity", *fn_args, nonce=nonce
         )
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "removeLiquidity")
         return trade_result
@@ -583,6 +604,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         self,
         agent: LocalAccount,
         trade_amount: FixedPoint,
+        nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to redeem withdraw shares from Hyperdrive pool.
 
@@ -602,6 +624,8 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The size of the position, in base.
         min_output: FixedPoint
             The minimum output amount
+        nonce: Nonce | None
+            An optional explicit nonce to set with the transaction
 
         Returns
         -------
@@ -619,11 +643,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             as_underlying,
         )
         tx_receipt = await async_smart_contract_transact(
-            self.web3,
-            self.hyperdrive_contract,
-            agent,
-            "redeemWithdrawalShares",
-            *fn_args,
+            self.web3, self.hyperdrive_contract, agent, "redeemWithdrawalShares", *fn_args, nonce=nonce
         )
         trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "redeemWithdrawalShares")
         return trade_result

@@ -26,7 +26,7 @@ class EnvironmentConfig(FrozenClass):
     # if halt_on_errors is True, halt_on_slippage controls if we halt when slippage happens
     halt_on_slippage: bool = False
     # optional output filename for logging
-    log_filename: str = "agent0-logs"
+    log_filename: str = ".logging/agent0_logs.log"
     # log level; should be in [logging.DEBUG, logging.INFO, logging.WARNING]
     log_level: int = DEFAULT_LOG_LEVEL  # INFO
     # delete_previous_logs; if True, delete existing logs at the start of the run

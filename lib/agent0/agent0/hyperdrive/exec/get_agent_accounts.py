@@ -1,6 +1,7 @@
 """Script for loading ETH & Elfpy agents with trading policies"""
 from __future__ import annotations
 
+import asyncio
 import logging
 
 import eth_utils
@@ -8,11 +9,14 @@ from agent0 import AccountKeyConfig
 from agent0.base.config import AgentConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
 from eth_account.account import Account
-from ethpy.base import get_account_balance, smart_contract_read, smart_contract_transact
+from ethpy.base import async_smart_contract_transact, get_account_balance, smart_contract_read
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import Web3
 from web3.contract.contract import Contract
+from web3.types import TxReceipt
+
+RETRY_COUNT = 5
 
 
 # TODO consolidate various configs into one config?
@@ -77,16 +81,59 @@ def get_agent_accounts(
             agent_base_funds = smart_contract_read(base_token_contract, "balanceOf", eth_agent.checksum_address)
             if agent_base_funds["value"] == 0:
                 raise AssertionError("Agent needs Base tokens to operate! Did you fund their accounts?")
-            # establish max approval for the hyperdrive contract
-            _ = smart_contract_transact(
+            agents.append(eth_agent)
+        num_agents_so_far.append(agent_info.number_of_agents)
+    logging.info("Added %d agents", sum(num_agents_so_far))
+
+    # establish max approval for the hyperdrive contract
+    asyncio.run(set_max_approval(agents, web3, base_token_contract, hyperdrive_address))
+
+    return agents
+
+
+async def set_max_approval(
+    agents: list[HyperdriveAgent], web3: Web3, base_token_contract: Contract, hyperdrive_address: str
+) -> None:
+    """Establish max approval for the hyperdrive contract for all agents async
+
+    Arguments
+    ---------
+    agents : list[HyperdriveAgent]
+        List of agents
+    web3 : Web3
+        web3 provider object
+    base_token_contract : Contract
+        The deployed ERC20 base token contract
+    hyperdrive_address : str
+        The address of the deployed hyperdrive contract
+    """
+
+    agents_left = list(agents)
+    for attempt in range(RETRY_COUNT):
+        approval_calls = [
+            async_smart_contract_transact(
                 web3,
                 base_token_contract,
-                eth_agent,
+                agent,
                 "approve",
                 hyperdrive_address,
                 eth_utils.conversions.to_int(eth_utils.currency.MAX_WEI),
             )
-            agents.append(eth_agent)
-        num_agents_so_far.append(agent_info.number_of_agents)
-    logging.info("Added %d agents", sum(num_agents_so_far))
-    return agents
+            for agent in agents_left
+        ]
+        gather_results: list[TxReceipt | Exception] = await asyncio.gather(*approval_calls, return_exceptions=True)
+
+        # Rebuild accounts_left list if the result errored out for next iteration
+        agents_left = []
+        for agent, result in zip(agents_left, gather_results):
+            if isinstance(result, Exception):
+                agents_left.append(agent)
+                logging.warning(
+                    "Retry attempt %s out of %s: Base approval failed with exception %s",
+                    attempt,
+                    RETRY_COUNT,
+                    repr(result),
+                )
+        # If successful, break retry loop
+        if len(agents_left) == 0:
+            break

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import pandas as pd
 from agent0 import build_account_key_config_from_agent_config
@@ -16,12 +16,14 @@ from chainsync.exec import acquire_data, data_analysis
 from elfpy.types import MarketType, Trade
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveInterface
-from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
+
+if TYPE_CHECKING:
+    from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveInterface
+    from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 
 
 class MultiTradePolicy(HyperdrivePolicy):
