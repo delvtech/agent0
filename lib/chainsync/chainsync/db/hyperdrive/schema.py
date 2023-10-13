@@ -80,6 +80,7 @@ class PoolInfo(Base):
     withdrawalSharesReadyToWithdraw: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     withdrawalSharesProceeds: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     totalSupplyWithdrawalShares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    variableRate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
 # TODO: either make a more general TokenDelta, or rename this to HyperdriveDelta

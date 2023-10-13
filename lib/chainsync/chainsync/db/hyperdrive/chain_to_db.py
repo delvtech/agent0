@@ -1,6 +1,6 @@
 """Functions for gathering data from the chain and adding it to the db"""
 from eth_typing import BlockNumber
-from ethpy.base import fetch_contract_transactions_for_block
+from ethpy.base import fetch_contract_transactions_for_block, smart_contract_read
 from ethpy.hyperdrive import (
     get_hyperdrive_checkpoint,
     get_hyperdrive_pool_config,
@@ -26,7 +26,15 @@ def init_data_chain_to_db(
     hyperdrive_contract: Contract,
     session: Session,
 ) -> None:
-    """Function to query and insert pool config to dashboard"""
+    """Function to query and insert pool config to dashboard
+
+    Arguments
+    ---------
+    hyperdrive_contract: Contract
+        The hyperdrive contract
+    session: Session
+        The database session
+    """
     # TODO: Use the hyperdrive API here
     pool_config_dict = convert_pool_config(
         process_hyperdrive_pool_config(get_hyperdrive_pool_config(hyperdrive_contract), hyperdrive_contract.address)
@@ -34,13 +42,42 @@ def init_data_chain_to_db(
     add_pool_config(pool_config_dict, session)
 
 
+# TODO this function should likely be moved to ethpy
+def get_variable_rate_from_contract(yield_contract: Contract, block_number: BlockNumber) -> int:
+    """Function to get the variable rate from the yield contract at a given block.
+
+    Arguments
+    ---------
+    yield_contract: Contract
+        The underlying yield contract
+    block_number: BlockNumber
+        The block number to query
+    """
+    return smart_contract_read(yield_contract, "getRate", block_identifier=block_number)["value"]
+
+
 def data_chain_to_db(
     web3: Web3,
     hyperdrive_contract: Contract,
+    yield_contract: Contract,
     block_number: BlockNumber,
     session: Session,
 ) -> None:
-    """Function to query and insert data to dashboard."""
+    """Function to query and insert data to dashboard.
+
+    Arguments
+    ---------
+    web3: Web3
+        The web3 object
+    hyperdrive_contract: Contract
+        The hyperdrive contract
+    yield_contract: Contract
+        The underlying yield contract
+    block_number: BlockNumber
+        The block number to query
+    session: Session
+        The database session
+    """
     # Query and add block_checkpoint_info
     checkpoint_info_dict = process_hyperdrive_checkpoint(
         get_hyperdrive_checkpoint(hyperdrive_contract, block_number), web3, block_number
@@ -70,4 +107,11 @@ def data_chain_to_db(
         block_number=block_number,
     )
     block_pool_info = convert_pool_info(pool_info_dict)
+
+    # Add variable rate to this dictionary
+    # TODO ideally we'd add this information to a separate table, along with other non-poolinfo data
+    # but data exposed from the hyperdrive interface.
+    variable_rate = get_variable_rate_from_contract(yield_contract, block_number)
+    block_pool_info.variableRate = variable_rate
+
     add_pool_infos([block_pool_info], session)

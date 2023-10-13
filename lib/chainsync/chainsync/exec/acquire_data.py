@@ -89,7 +89,7 @@ def acquire_data(
     # This if statement executes only on initial run (based on data_latest_block_number check),
     # and if the chain has executed until start_block (based on latest_mined_block check)
     if data_latest_block_number < block_number < latest_mined_block:
-        data_chain_to_db(web3, hyperdrive_contract, block_number, db_session)
+        data_chain_to_db(web3, hyperdrive_contract, yield_contract, block_number, db_session)
 
     # Main data loop
     # monitor for new blocks & add pool info per block
@@ -121,5 +121,5 @@ def acquire_data(
                     latest_mined_block,
                 )
                 continue
-            data_chain_to_db(web3, hyperdrive_contract, block_number, db_session)
+            data_chain_to_db(web3, hyperdrive_contract, yield_contract, block_number, db_session)
         time.sleep(_SLEEP_AMOUNT)
