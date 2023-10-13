@@ -101,25 +101,37 @@ def log_hyperdrive_crash_report(trade_result: TradeResult, log_level: int | None
     wallet_dict = _hyperdrive_wallet_to_dict(trade_result.agent.wallet)
     formatted_agent_wallet = json.dumps(wallet_dict, indent=4, cls=ExtendedJSONEncoder)
 
-    # TODO Once pool_info and pool_config are objects, we need to add a conversion function
-    # to convert to dict
-    formatted_pool_info = json.dumps(trade_result.pool_info, indent=4, cls=ExtendedJSONEncoder)
-    formatted_pool_config = json.dumps(trade_result.pool_config, indent=4, cls=ExtendedJSONEncoder)
-
     formatted_agent_info = _hyperdrive_agent_to_dict(trade_result.agent)
     formatted_agent_info = json.dumps(formatted_agent_info, indent=4, cls=ExtendedJSONEncoder)
+
+    # TODO Once pool_info and pool_config are objects, we need to add a conversion function to convert to dict
+    formatted_pool_config = json.dumps(trade_result.pool_config, indent=4, cls=ExtendedJSONEncoder)
+    formatted_pool_info = json.dumps(trade_result.pool_info, indent=4, cls=ExtendedJSONEncoder)
+
+    formatted_additional_info = json.dumps(trade_result.additional_info, indent=4, cls=ExtendedJSONEncoder)
 
     assert exception is not None
     formatted_traceback = "".join(format_tb(exception.__traceback__))
 
-    logging.log(
+    logging.critical(
         log_level,
-        """Exception: %s\nTrade: %s\nWallet: %s\nPoolInfo: %s\nPoolConfig: %s\nTraceback: %s\n""",
+        (
+            "Exception: %s\n"
+            + "Trade: %s\n"
+            + "Wallet: %s\n"
+            + "AgentInfo: %s\n"
+            + "PoolConfig: %s\n"
+            + "PoolInfo: %s\n"
+            + "Additional Info: %s\n"
+            + "Traceback: %s\n"
+        ),
         formatted_exception,
         formatted_trade_obj,
         formatted_agent_wallet,
-        formatted_pool_info,
+        formatted_agent_info,
         formatted_pool_config,
+        formatted_pool_info,
+        formatted_additional_info,
         formatted_traceback,
     )
 
