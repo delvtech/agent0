@@ -21,7 +21,6 @@ from ethpy.base import (
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri, get_hyperdrive_pool_config
 from fixedpointmath import FixedPoint
 from web3.contract.contract import Contract
-from web3.types import RPCEndpoint
 
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.
