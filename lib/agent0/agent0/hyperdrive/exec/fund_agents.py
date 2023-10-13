@@ -48,7 +48,7 @@ async def async_fund_agents(
         Configuration for defining various contract addresses.
     """
 
-    # Funding contains its own logging as this is typically ran from a script or in debug mode
+    # Funding contains its own logging as this is typically run from a script or in debug mode
     log_utils.setup_logging(".logging/fund_accounts.log", log_stdout=True, delete_previous_logs=True)
 
     agent_accounts = [
