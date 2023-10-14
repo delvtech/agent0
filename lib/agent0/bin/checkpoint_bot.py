@@ -56,6 +56,21 @@ def main() -> None:
     # pylint: disable=too-many-locals
     eth_config, env_config = get_config()
 
+    # Get environment variables for block time and block timestamp interval
+    # TODO can't seem to get block time or block timestamp interval from anvil, so we get env vars passed in here
+    # Real time, passed in anvil as `--block-time`
+    block_time = os.environ.get("BLOCK_TIME")
+    if block_time is None:
+        block_time = 1
+    else:
+        block_time = int(block_time)
+    # Interval between blocks, passed in anvil through RPC call `anvil_setBlockTimestampInterval`
+    block_timestamp_interval = os.environ.get("BLOCK_TIMESTAMP_INTERVAL")
+    if block_timestamp_interval is None:
+        block_timestamp_interval = 1
+    else:
+        block_timestamp_interval = int(block_time)
+
     web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
 
     # Setup logging
@@ -87,6 +102,7 @@ def main() -> None:
     # to reduce the probability of needing to mint a checkpoint.
     config = get_hyperdrive_pool_config(hyperdrive_contract)
     checkpoint_duration = config["checkpointDuration"]
+
     while True:
         # Get the latest block time and check to see if a new checkpoint should
         # be minted. This bot waits for a portion of the checkpoint to reduce
@@ -129,7 +145,9 @@ def main() -> None:
             datetime.datetime.fromtimestamp(timestamp),
             sleep_duration,
         )
-        time.sleep(sleep_duration)
+        # Adjust sleep duration by the speedup factor
+        adjusted_sleep_duration = sleep_duration / (block_timestamp_interval / block_time)
+        time.sleep(adjusted_sleep_duration)
 
 
 # Run the checkpoint bot.
