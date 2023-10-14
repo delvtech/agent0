@@ -59,13 +59,13 @@ def main() -> None:
     # Get environment variables for block time and block timestamp interval
     # TODO can't seem to get block time or block timestamp interval from anvil, so we get env vars passed in here
     # Real time, passed in anvil as `--block-time`
-    block_time = os.environ["BLOCK_TIME"]
+    block_time = os.environ.get("BLOCK_TIME")
     if block_time is None:
         block_time = 1
     else:
         block_time = int(block_time)
     # Interval between blocks, passed in anvil through RPC call `anvil_setBlockTimestampInterval`
-    block_timestamp_interval = os.environ["BLOCK_TIMESTAMP_INTERVAL"]
+    block_timestamp_interval = os.environ.get("BLOCK_TIMESTAMP_INTERVAL")
     if block_timestamp_interval is None:
         block_timestamp_interval = 1
     else:
