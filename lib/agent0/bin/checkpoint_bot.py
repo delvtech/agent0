@@ -26,12 +26,6 @@ from web3.contract.contract import Contract
 # mint a new checkpoint.
 CHECKPOINT_WAITING_PERIOD = 0.5
 
-# TODO can't seem to get block time or block timestamp interval from anvil, so we code it here
-# Real time, passed in anvil as `--block-time`
-BLOCK_TIME = 6
-# Interval between blocks, passed in anvil through RPC call `anvil_setBlockTimestampInterval`
-BLOCK_TIMESTAMP_INTERVAL = 312
-
 
 def does_checkpoint_exist(hyperdrive_contract: Contract, checkpoint_time: int) -> bool:
     """Checks whether or not a given checkpoint exists."""
@@ -61,6 +55,21 @@ def main() -> None:
     # Checkpoint bot does it's own thing
     # pylint: disable=too-many-locals
     eth_config, env_config = get_config()
+
+    # Get environment variables for block time and block timestamp interval
+    # TODO can't seem to get block time or block timestamp interval from anvil, so we get env vars passed in here
+    # Real time, passed in anvil as `--block-time`
+    block_time = os.environ["BLOCK_TIME"]
+    if block_time is None:
+        block_time = 1
+    else:
+        block_time = int(block_time)
+    # Interval between blocks, passed in anvil through RPC call `anvil_setBlockTimestampInterval`
+    block_timestamp_interval = os.environ["BLOCK_TIMESTAMP_INTERVAL"]
+    if block_timestamp_interval is None:
+        block_timestamp_interval = 1
+    else:
+        block_timestamp_interval = int(block_time)
 
     web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
 
@@ -137,7 +146,7 @@ def main() -> None:
             sleep_duration,
         )
         # Adjust sleep duration by the speedup factor
-        adjusted_sleep_duration = sleep_duration / (BLOCK_TIMESTAMP_INTERVAL / BLOCK_TIME)
+        adjusted_sleep_duration = sleep_duration / (block_timestamp_interval / block_time)
         time.sleep(adjusted_sleep_duration)
 
 
