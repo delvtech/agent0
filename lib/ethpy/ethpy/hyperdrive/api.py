@@ -11,11 +11,15 @@ import pyperdrive
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
-from ethpy.base import (BaseInterface, async_smart_contract_transact,
-                        get_account_balance,
-                        initialize_web3_with_http_provider, load_all_abis,
-                        smart_contract_preview_transaction,
-                        smart_contract_read)
+from ethpy.base import (
+    BaseInterface,
+    async_smart_contract_transact,
+    get_account_balance,
+    initialize_web3_with_http_provider,
+    load_all_abis,
+    smart_contract_preview_transaction,
+    smart_contract_read,
+)
 from fixedpointmath import FixedPoint
 from pyperdrive.types import Fees, PoolConfig, PoolInfo
 from web3 import Web3
@@ -23,11 +27,15 @@ from web3.contract.contract import Contract
 from web3.types import BlockData, Nonce, Timestamp
 
 from .addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
-from .interface import (get_hyperdrive_checkpoint, get_hyperdrive_pool_config,
-                        get_hyperdrive_pool_info, parse_logs,
-                        process_hyperdrive_checkpoint,
-                        process_hyperdrive_pool_config,
-                        process_hyperdrive_pool_info)
+from .interface import (
+    get_hyperdrive_checkpoint,
+    get_hyperdrive_pool_config,
+    get_hyperdrive_pool_info,
+    parse_logs,
+    process_hyperdrive_checkpoint,
+    process_hyperdrive_pool_config,
+    process_hyperdrive_pool_info,
+)
 from .receipt_breakdown import ReceiptBreakdown
 
 # known issue where class properties aren't recognized as subscriptable
@@ -212,7 +220,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         """
         pool_config_str = self._serialized_pool_config()
         pool_info_str = self._serialized_pool_info()
-        out_for_in = pyperdrive.get_out_for_in(pool_config_str, pool_info_str, str(amount_in.scaled_value), shares_in) # pylint: disable=no-member
+        out_for_in = pyperdrive.get_out_for_in(
+            pool_config_str, pool_info_str, str(amount_in.scaled_value), shares_in
+        )  # pylint: disable=no-member
         return FixedPoint(scaled_value=int(out_for_in))
 
     def get_in_for_out(
@@ -236,9 +246,10 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         """
         pool_config_str = self._serialized_pool_config()
         pool_info_str = self._serialized_pool_info()
-        in_for_out = pyperdrive.get_in_for_out(pool_config_str, pool_info_str, str(amount_out.scaled_value), shares_out) # pylint: disable=no-member
+        in_for_out = pyperdrive.get_in_for_out(
+            pool_config_str, pool_info_str, str(amount_out.scaled_value), shares_out
+        )  # pylint: disable=no-member
         return FixedPoint(scaled_value=int(in_for_out))
-
 
     def _serialized_pool_config(self) -> PoolConfig:
         pool_config_str = PoolConfig(
@@ -279,7 +290,6 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         )
         return pool_info_str
 
-
     def _ensure_current_state(self, override: bool = False) -> None:
         """Update the cached pool info and latest checkpoint if needed.
 
@@ -308,7 +318,6 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 self.current_block_number,
             )
 
-
     def bonds_given_shares_and_rate(self, target_rate: FixedPoint) -> FixedPoint:
         r"""Returns the bond reserves for the market share reserves
         and a given fixed rate.
@@ -328,10 +337,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         z_minus_zeta: FixedPoint = self.pool_info["shareReserves"] - self.pool_info["shareAdjustment"]
         t = self.position_duration_in_years
         one_over_tau: FixedPoint = self.pool_config["timeStretch"]
-        adjusted_apr = (FixedPoint("1") + target_rate*t)
+        adjusted_apr = FixedPoint("1") + target_rate * t
 
-        return mu * z_minus_zeta * adjusted_apr ** one_over_tau
-
+        return mu * z_minus_zeta * adjusted_apr**one_over_tau
 
     async def async_open_long(
         self,
