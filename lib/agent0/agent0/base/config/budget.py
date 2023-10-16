@@ -16,10 +16,10 @@ class Budget:
     Wei in the variables below refers to the smallest unit of base, not to ETH.
     """
 
-    mean_wei: int = FixedPoint(5_000).scaled_value
-    std_wei: int = FixedPoint(2_000).scaled_value
-    min_wei: int = FixedPoint(1_000).scaled_value
-    max_wei: int = FixedPoint(10_000).scaled_value
+    mean_wei: int
+    std_wei: int
+    min_wei: int
+    max_wei: int
 
     def sample_budget(self, rng: NumpyGenerator) -> FixedPoint:
         """Return a sample from a clipped normal distribution.
