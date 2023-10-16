@@ -62,7 +62,6 @@ def initialize_accounts(
     agent_config: list[AgentConfig],
     env_file: str | None = None,
     random_seed: int = 1,
-    eth_config: EthConfig | None = None,
 ) -> AccountKeyConfig:
     """
     Build or load an accounts environment file.
@@ -93,9 +92,6 @@ def initialize_accounts(
     # Default location
     if env_file is None:
         env_file = "account.env"
-
-    if eth_config is None:
-        eth_config = build_eth_config()
 
     if not os.path.exists(env_file):
         logging.info("Creating %s", env_file)
