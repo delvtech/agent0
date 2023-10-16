@@ -99,9 +99,11 @@ def trade_if_new_block(
                 assert trade_result.pool_info is not None
 
                 # Crash reporting
-                # TODO add optional argument to crash reporting for logging level
-                # https://github.com/delvtech/elf-simulations/issues/967
-                log_hyperdrive_crash_report(trade_result)
+                if is_slippage:
+                    log_hyperdrive_crash_report(trade_result, logging.WARNING)
+                else:
+                    # Defaults to CRITICAL
+                    log_hyperdrive_crash_report(trade_result)
 
                 if halt_on_errors:
                     # Don't halt if slippage detected and halt_on_slippage is false

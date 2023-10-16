@@ -72,7 +72,7 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
     )
 
 
-def log_hyperdrive_crash_report(trade_result: TradeResult) -> None:
+def log_hyperdrive_crash_report(trade_result: TradeResult, log_level: int | None = None) -> None:
     # pylint: disable=too-many-arguments
     """Log a crash report for a hyperdrive transaction.
 
@@ -80,12 +80,16 @@ def log_hyperdrive_crash_report(trade_result: TradeResult) -> None:
     ---------
     trade_result: TradeResult
         The trade result object that stores all crash information
+    log_level: int | None
+        The logging level for this crash report. Defaults to critical.
 
     Returns
     -------
     None
         This function does not return any value.
     """
+    if log_level is None:
+        log_level = logging.CRITICAL
 
     exception = trade_result.exception
     formatted_exception = repr(exception)
@@ -108,7 +112,8 @@ def log_hyperdrive_crash_report(trade_result: TradeResult) -> None:
     assert exception is not None
     formatted_traceback = "".join(format_tb(exception.__traceback__))
 
-    logging.critical(
+    logging.log(
+        log_level,
         """Exception: %s\nTrade: %s\nWallet: %s\nPoolInfo: %s\nPoolConfig: %s\nTraceback: %s\n""",
         formatted_exception,
         formatted_trade_obj,
