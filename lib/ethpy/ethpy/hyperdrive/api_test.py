@@ -90,6 +90,63 @@ class TestHyperdriveInterface:
         fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * hyperdrive.position_duration_in_years)
         assert abs(fixed_rate - hyperdrive.fixed_rate) <= FixedPoint(scaled_value=100)
 
+    def test_bonds_given_shares_and_rate(self, local_hyperdrive_pool: DeployedHyperdrivePool):
+        """Check that the bonds calculated actually hit the target rate.
+
+        All arguments are fixtures."""
+        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
+        rpc_uri = uri if uri else URI("http://localhost:8545")
+        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+        hyperdrive = HyperdriveInterface(
+            eth_config=EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir="./packages/hyperdrive/src/abis"),
+            addresses=hyperdrive_contract_addresses,
+        )
+        # get pool config variables
+        pool_config = hyperdrive.pool_config
+        init_share_price: FixedPoint = pool_config["initialSharePrice"]
+        time_stretch: FixedPoint = pool_config["timeStretch"]
+        print(f"{time_stretch=}")
+        position_duration: FixedPoint = pool_config["positionDuration"]
+        print(f"{position_duration=}")
+        position_duration_years = position_duration / FixedPoint(60 * 60 * 24 * 365)
+        print(f"{position_duration_years=}")
+        # get pool info variables
+        pool_info = hyperdrive.pool_info
+        share_reserves: FixedPoint = pool_info["shareReserves"]
+        share_adjustment: FixedPoint = pool_info["shareAdjustment"]
+        print(f"{share_adjustment=}")
+        bond_reserves: FixedPoint = pool_info["bondReserves"]
+        # check current rate
+        spot_price = ((init_share_price * share_reserves) / bond_reserves) ** time_stretch
+        fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * hyperdrive.position_duration_in_years)
+        assert abs(fixed_rate - FixedPoint(0.05)) < FixedPoint(scaled_value=100)
+        # test hitting target of 10%
+        target_apr = FixedPoint("0.10")
+        bonds_needed = hyperdrive.bonds_given_shares_and_rate(target_rate=target_apr)
+        print(f"{bonds_needed=}")
+        # bonds_needed = hyperdrive.calc_bond_reserves(
+        #     share_reserves=share_reserves, share_price=init_share_price, apr=target_apr, position_duration=position_duration, time_stretch=time_stretch
+        # )
+        # print(f"{bonds_needed=}")
+        spot_price = ((init_share_price * share_reserves) / bonds_needed) ** time_stretch
+        fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * hyperdrive.position_duration_in_years)
+        assert fixed_rate == target_apr
+        # assert abs(fixed_rate - target_apr) <= FixedPoint(scaled_value=100)
+        # test hitting target of 1%
+        target_apr = FixedPoint("0.01")
+        bonds_needed = hyperdrive.bonds_given_shares_and_rate(target_rate=target_apr)
+        bonds_needed = hyperdrive.calc_bond_reserves(
+            share_reserves=share_reserves,
+            share_price=init_share_price,
+            apr=target_apr,
+            position_duration=position_duration,
+            time_stretch=time_stretch,
+        )
+        spot_price = ((init_share_price * share_reserves) / bonds_needed) ** time_stretch
+        fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * hyperdrive.position_duration_in_years)
+        assert fixed_rate == target_apr
+        # assert abs(fixed_rate - target_apr) <= FixedPoint(scaled_value=100)
+
     def test_misc(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Placeholder for additional tests.
 

@@ -442,6 +442,14 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
 
         return mu * z_minus_zeta * adjusted_apr**one_over_tau
 
+    def calc_bond_reserves(self, share_reserves, share_price, apr, position_duration, time_stretch):
+        """Returns the bond reserves for the market share reserves."""
+        return (
+            share_price
+            * share_reserves
+            * ((FixedPoint(1) + apr * position_duration / FixedPoint(60 * 60 * 24 * 365)) ** time_stretch)
+        )
+
     async def async_open_long(
         self,
         agent: LocalAccount,
