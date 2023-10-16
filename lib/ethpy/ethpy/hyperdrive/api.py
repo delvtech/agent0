@@ -221,7 +221,12 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         pool_config_str = self._serialized_pool_config()
         pool_info_str = self._serialized_pool_info()
         # pylint: disable=no-member
-        out_for_in = pyperdrive.get_out_for_in(pool_config_str, pool_info_str, str(amount_in.scaled_value), shares_in)
+        out_for_in = pyperdrive.get_out_for_in(  # type: ignore
+            pool_config_str,
+            pool_info_str,
+            str(amount_in.scaled_value),
+            shares_in,
+        )
         return FixedPoint(scaled_value=int(out_for_in))
 
     def get_in_for_out(
@@ -246,7 +251,12 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         pool_config_str = self._serialized_pool_config()
         pool_info_str = self._serialized_pool_info()
         # pylint: disable=no-member
-        in_for_out = pyperdrive.get_in_for_out(pool_config_str, pool_info_str, str(amount_out.scaled_value), shares_out)
+        in_for_out = pyperdrive.get_in_for_out(  # type: ignore
+            pool_config_str,
+            pool_info_str,
+            str(amount_out.scaled_value),
+            shares_out,
+        )
         return FixedPoint(scaled_value=int(in_for_out))
 
     def _serialized_pool_config(self) -> PoolConfig:

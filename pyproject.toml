@@ -1,7 +1,7 @@
 [project]
 # TODO test this with docker
 name = "elf-simulations"
-version = "0.7.0"
+version = "0.8.0"
 # Authors are the current, primary stuards of the repo
 # contributors can be found on github
 authors = [

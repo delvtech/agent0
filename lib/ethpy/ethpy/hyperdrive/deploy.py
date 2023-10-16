@@ -12,6 +12,7 @@ from ethpy.base.contract import deploy_contract
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig
 from web3 import Web3
+from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
 from web3.types import TxReceipt
 
@@ -222,18 +223,30 @@ def _deploy_hyperdrive_factory(
     (base_token_contract, factory_token_contract) : tuple[Contract, Contract]
         Containing he deployed base token and factory contracts.
     """
+    # args = [name, symbol, decimals, admin_addr, isCompetitionMode]
+    args = ["Base", "BASE", 18, ADDRESS_ZERO, False]
     base_token_contract_addr, base_token_contract = deploy_contract(
         web3,
         abi=abis["ERC20Mintable"],
         bytecode=bytecodes["ERC20Mintable"],
         deploy_account_addr=deploy_account_addr,
+        args=args,
     )
+    # args = [erc20_contract_addr, name, symbol, initial_apr, admin_addr, isCompetitionMode]
+    args = [
+        base_token_contract_addr,
+        "Delvnet Yield Source",
+        "DELV",
+        initial_variable_rate.scaled_value,
+        ADDRESS_ZERO,
+        False,
+    ]
     pool_contract_addr, _ = deploy_contract(
         web3,
         abi=abis["MockERC4626"],
         bytecode=bytecodes["MockERC4626"],
         deploy_account_addr=deploy_account_addr,
-        args=[base_token_contract_addr, "Delvnet Yield Source", "DELV", initial_variable_rate.scaled_value],
+        args=args,
     )
     forwarder_factory_contract_addr, forwarder_factory_contract = deploy_contract(
         web3,
