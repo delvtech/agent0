@@ -16,9 +16,7 @@ from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 
 
-class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(ContractFunction):
     """ContractFunction for the deployAndInitialize method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -64,9 +62,7 @@ class ERC4626HyperdriveFactoryFeesContractFunction(ContractFunction):
     # def call()
 
 
-class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(ContractFunction):
     """ContractFunction for the getDefaultPausers method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -112,9 +108,7 @@ class ERC4626HyperdriveFactoryGovernanceContractFunction(ContractFunction):
     # def call()
 
 
-class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(ContractFunction):
     """ContractFunction for the hyperdriveDeployer method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -130,9 +124,7 @@ class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(
     # def call()
 
 
-class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(ContractFunction):
     """ContractFunction for the hyperdriveGovernance method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -154,9 +146,7 @@ class ERC4626HyperdriveFactoryIsOfficialContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, instance: str
-    ) -> "ERC4626HyperdriveFactoryIsOfficialContractFunction":
+    def __call__(self, instance: str) -> "ERC4626HyperdriveFactoryIsOfficialContractFunction":
         super().__call__(instance)
         return self
 
@@ -196,17 +186,13 @@ class ERC4626HyperdriveFactoryLinkerFactoryContractFunction(ContractFunction):
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(ContractFunction):
     """ContractFunction for the updateDefaultPausers method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _defaultPausers_: list[str]
-    ) -> "ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction":
+    def __call__(self, _defaultPausers_: list[str]) -> "ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction":
         super().__call__(_defaultPausers_)
         return self
 
@@ -214,17 +200,13 @@ class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction(ContractFunction):
     """ContractFunction for the updateFeeCollector method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _feeCollector: str
-    ) -> "ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction":
+    def __call__(self, _feeCollector: str) -> "ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction":
         super().__call__(_feeCollector)
         return self
 
@@ -238,9 +220,7 @@ class ERC4626HyperdriveFactoryUpdateFeesContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _fees: tuple
-    ) -> "ERC4626HyperdriveFactoryUpdateFeesContractFunction":
+    def __call__(self, _fees: tuple) -> "ERC4626HyperdriveFactoryUpdateFeesContractFunction":
         super().__call__(_fees)
         return self
 
@@ -248,17 +228,13 @@ class ERC4626HyperdriveFactoryUpdateFeesContractFunction(ContractFunction):
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateGovernanceContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateGovernanceContractFunction(ContractFunction):
     """ContractFunction for the updateGovernance method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _governance: str
-    ) -> "ERC4626HyperdriveFactoryUpdateGovernanceContractFunction":
+    def __call__(self, _governance: str) -> "ERC4626HyperdriveFactoryUpdateGovernanceContractFunction":
         super().__call__(_governance)
         return self
 
@@ -266,9 +242,7 @@ class ERC4626HyperdriveFactoryUpdateGovernanceContractFunction(
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateHyperdriveGovernanceContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateHyperdriveGovernanceContractFunction(ContractFunction):
     """ContractFunction for the updateHyperdriveGovernance method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -284,17 +258,13 @@ class ERC4626HyperdriveFactoryUpdateHyperdriveGovernanceContractFunction(
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(ContractFunction):
     """ContractFunction for the updateImplementation method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, newDeployer: str
-    ) -> "ERC4626HyperdriveFactoryUpdateImplementationContractFunction":
+    def __call__(self, newDeployer: str) -> "ERC4626HyperdriveFactoryUpdateImplementationContractFunction":
         super().__call__(newDeployer)
         return self
 
@@ -302,17 +272,13 @@ class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(ContractFunction):
     """ContractFunction for the updateLinkerCodeHash method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _linkerCodeHash: bytes
-    ) -> "ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction":
+    def __call__(self, _linkerCodeHash: bytes) -> "ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction":
         super().__call__(_linkerCodeHash)
         return self
 
@@ -320,17 +286,13 @@ class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(ContractFunction):
     """ContractFunction for the updateLinkerFactory method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _linkerFactory: str
-    ) -> "ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction":
+    def __call__(self, _linkerFactory: str) -> "ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction":
         super().__call__(_linkerFactory)
         return self
 
@@ -338,17 +300,13 @@ class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(
     # def call()
 
 
-class ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction(ContractFunction):
     """ContractFunction for the updateSweepTargets method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _sweepTargets_: list[str]
-    ) -> "ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction":
+    def __call__(self, _sweepTargets_: list[str]) -> "ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction":
         super().__call__(_sweepTargets_)
         return self
 
@@ -425,13 +383,7 @@ class ERC4626HyperdriveFactoryContract(Contract):
         self.abi = abi
         # TODO: make this better, shouldn't initialize to the zero address, but the Contract's init
         # function requires an address.
-        self.address = (
-            address
-            if address
-            else cast(
-                ChecksumAddress, "0x0000000000000000000000000000000000000000"
-            )
-        )
+        self.address = address if address else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
 
         try:
             # Initialize parent Contract class

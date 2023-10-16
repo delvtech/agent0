@@ -36,9 +36,7 @@ class ERC20MintableAllowanceContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: str, arg2: str
-    ) -> "ERC20MintableAllowanceContractFunction":
+    def __call__(self, arg1: str, arg2: str) -> "ERC20MintableAllowanceContractFunction":
         super().__call__()
         return self
 
@@ -52,9 +50,7 @@ class ERC20MintableApproveContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, spender: str, amount: int
-    ) -> "ERC20MintableApproveContractFunction":
+    def __call__(self, spender: str, amount: int) -> "ERC20MintableApproveContractFunction":
         super().__call__(spender, amount)
         return self
 
@@ -96,9 +92,7 @@ class ERC20MintableBurnContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, amount: int, destination: str | None = None
-    ) -> "ERC20MintableBurnContractFunction":
+    def __call__(self, amount: int, destination: str | None = None) -> "ERC20MintableBurnContractFunction":
         if all([destination is None]):
             super().__call__()
             return self
@@ -117,9 +111,7 @@ class ERC20MintableCanCallContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, user: str, target: str, functionSig: bytes
-    ) -> "ERC20MintableCanCallContractFunction":
+    def __call__(self, user: str, target: str, functionSig: bytes) -> "ERC20MintableCanCallContractFunction":
         super().__call__(user, target, functionSig)
         return self
 
@@ -147,9 +139,7 @@ class ERC20MintableDoesRoleHaveCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, role: int, functionSig: bytes
-    ) -> "ERC20MintableDoesRoleHaveCapabilityContractFunction":
+    def __call__(self, role: int, functionSig: bytes) -> "ERC20MintableDoesRoleHaveCapabilityContractFunction":
         super().__call__(role, functionSig)
         return self
 
@@ -163,9 +153,7 @@ class ERC20MintableDoesUserHaveRoleContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, user: str, role: int
-    ) -> "ERC20MintableDoesUserHaveRoleContractFunction":
+    def __call__(self, user: str, role: int) -> "ERC20MintableDoesUserHaveRoleContractFunction":
         super().__call__(user, role)
         return self
 
@@ -179,9 +167,7 @@ class ERC20MintableGetRolesWithCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: bytes
-    ) -> "ERC20MintableGetRolesWithCapabilityContractFunction":
+    def __call__(self, arg1: bytes) -> "ERC20MintableGetRolesWithCapabilityContractFunction":
         super().__call__()
         return self
 
@@ -195,9 +181,7 @@ class ERC20MintableGetTargetCustomAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: str
-    ) -> "ERC20MintableGetTargetCustomAuthorityContractFunction":
+    def __call__(self, arg1: str) -> "ERC20MintableGetTargetCustomAuthorityContractFunction":
         super().__call__()
         return self
 
@@ -211,9 +195,7 @@ class ERC20MintableGetUserRolesContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: str
-    ) -> "ERC20MintableGetUserRolesContractFunction":
+    def __call__(self, arg1: str) -> "ERC20MintableGetUserRolesContractFunction":
         super().__call__()
         return self
 
@@ -227,9 +209,7 @@ class ERC20MintableIsCapabilityPublicContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: bytes
-    ) -> "ERC20MintableIsCapabilityPublicContractFunction":
+    def __call__(self, arg1: bytes) -> "ERC20MintableIsCapabilityPublicContractFunction":
         super().__call__()
         return self
 
@@ -243,9 +223,7 @@ class ERC20MintableMintContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, amount: int, destination: str | None = None
-    ) -> "ERC20MintableMintContractFunction":
+    def __call__(self, amount: int, destination: str | None = None) -> "ERC20MintableMintContractFunction":
         if all([destination is not None]):
             super().__call__()
             return self
@@ -329,9 +307,7 @@ class ERC20MintableSetAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, newAuthority: str
-    ) -> "ERC20MintableSetAuthorityContractFunction":
+    def __call__(self, newAuthority: str) -> "ERC20MintableSetAuthorityContractFunction":
         super().__call__(newAuthority)
         return self
 
@@ -345,9 +321,7 @@ class ERC20MintableSetPublicCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, functionSig: bytes, enabled: bool
-    ) -> "ERC20MintableSetPublicCapabilityContractFunction":
+    def __call__(self, functionSig: bytes, enabled: bool) -> "ERC20MintableSetPublicCapabilityContractFunction":
         super().__call__(functionSig, enabled)
         return self
 
@@ -377,9 +351,7 @@ class ERC20MintableSetTargetCustomAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, target: str, customAuthority: str
-    ) -> "ERC20MintableSetTargetCustomAuthorityContractFunction":
+    def __call__(self, target: str, customAuthority: str) -> "ERC20MintableSetTargetCustomAuthorityContractFunction":
         super().__call__(target, customAuthority)
         return self
 
@@ -393,9 +365,7 @@ class ERC20MintableSetUserRoleContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, user: str, role: int, enabled: bool
-    ) -> "ERC20MintableSetUserRoleContractFunction":
+    def __call__(self, user: str, role: int, enabled: bool) -> "ERC20MintableSetUserRoleContractFunction":
         super().__call__(user, role, enabled)
         return self
 
@@ -437,9 +407,7 @@ class ERC20MintableTransferContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, to: str, amount: int
-    ) -> "ERC20MintableTransferContractFunction":
+    def __call__(self, to: str, amount: int) -> "ERC20MintableTransferContractFunction":
         super().__call__(to, amount)
         return self
 
@@ -453,9 +421,7 @@ class ERC20MintableTransferFromContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _from: str, to: str, amount: int
-    ) -> "ERC20MintableTransferFromContractFunction":
+    def __call__(self, _from: str, to: str, amount: int) -> "ERC20MintableTransferFromContractFunction":
         super().__call__(_from, to, amount)
         return self
 
@@ -469,9 +435,7 @@ class ERC20MintableTransferOwnershipContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, newOwner: str
-    ) -> "ERC20MintableTransferOwnershipContractFunction":
+    def __call__(self, newOwner: str) -> "ERC20MintableTransferOwnershipContractFunction":
         super().__call__(newOwner)
         return self
 
@@ -548,13 +512,7 @@ class ERC20MintableContract(Contract):
         self.abi = abi
         # TODO: make this better, shouldn't initialize to the zero address, but the Contract's init
         # function requires an address.
-        self.address = (
-            address
-            if address
-            else cast(
-                ChecksumAddress, "0x0000000000000000000000000000000000000000"
-            )
-        )
+        self.address = address if address else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
 
         try:
             # Initialize parent Contract class

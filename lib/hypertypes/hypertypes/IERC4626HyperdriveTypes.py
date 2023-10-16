@@ -200,9 +200,7 @@ RedeemWithdrawalShares = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=True, name="provider", type="address"),
-        ABIEventParams(
-            indexed=False, name="withdrawalShareAmount", type="uint256"
-        ),
+        ABIEventParams(indexed=False, name="withdrawalShareAmount", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
     ],
     name="RedeemWithdrawalShares",
@@ -215,9 +213,7 @@ RemoveLiquidity = ABIEvent(
         ABIEventParams(indexed=True, name="provider", type="address"),
         ABIEventParams(indexed=False, name="lpAmount", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
-        ABIEventParams(
-            indexed=False, name="withdrawalShareAmount", type="uint256"
-        ),
+        ABIEventParams(indexed=False, name="withdrawalShareAmount", type="uint256"),
     ],
     name="RemoveLiquidity",
     type="event",
