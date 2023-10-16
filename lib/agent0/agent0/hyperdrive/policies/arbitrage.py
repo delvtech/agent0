@@ -36,7 +36,8 @@ class Arbitrage(HyperdrivePolicy):
         Returns
         -------
         str
-            A description of the policy"""
+            A description of the policy.
+        """
         raw_description = """
         Take advantage of deviations in the fixed rate from specified parameters.
         The following 3 parameters in Config define its operation:

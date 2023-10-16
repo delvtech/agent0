@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
-from textwrap import dedent, indent
 from dataclasses import dataclass
+from textwrap import dedent, indent
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from fixedpointmath import FixedPoint
@@ -75,7 +75,8 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         Returns
         -------
         str
-            A description of the policy"""
+            A description of the policy.
+        """
         if raw_description is None:
             raise NotImplementedError(
                 "This method is meant to be called only by subclasses which provide a `raw_description`."

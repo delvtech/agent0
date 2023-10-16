@@ -27,7 +27,8 @@ class Random(HyperdrivePolicy):
         Returns
         -------
         str
-            A description of the policy"""
+            A description of the policy.
+        """
         raw_description = """
         A simple demonstration agent that chooses its actions randomly.
         It can take 7 actions: open/close longs and shorts, add/remove liquidity, and redeem withdraw shares.
