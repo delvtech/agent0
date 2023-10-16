@@ -22,6 +22,9 @@ if TYPE_CHECKING:
 ENV_FILE = "custom_agent.account.env"
 # Username binding for bots
 USERNAME = "changeme"
+# The amount of base token each bot receives
+BASE_BUDGET_PER_BOT = FixedPoint(50).scaled_value  # 50 base in wei
+ETH_BUDGET_PER_BOT = FixedPoint(1).scaled_value  # 1 eth in wei
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 
@@ -197,8 +200,8 @@ agent_config: list[AgentConfig] = [
         policy=CustomCycleTradesPolicy,
         number_of_agents=1,
         slippage_tolerance=FixedPoint("0.0001"),
-        base_budget_wei=FixedPoint(10_000).scaled_value,  # 10k base
-        eth_budget_wei=FixedPoint(10).scaled_value,  # 10 base
+        base_budget_wei=BASE_BUDGET_PER_BOT,
+        eth_budget_wei=ETH_BUDGET_PER_BOT,
         policy_config=CustomCycleTradesPolicy.Config(
             static_trade_amount_wei=FixedPoint(100).scaled_value,  # 100 base static trades
         ),
