@@ -194,6 +194,62 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The current spot price.
         """
         self._ensure_current_state()
+        pool_config_str = self._serialized_pool_config()
+        pool_info_str = self._serialized_pool_info()
+        spot_price = pyperdrive.get_spot_price(pool_config_str, pool_info_str)  # pylint: disable=no-member
+        return FixedPoint(scaled_value=int(spot_price))
+
+    def get_out_for_in(
+        self,
+        amount_in: FixedPoint,
+        shares_in: bool,
+    ) -> FixedPoint:
+        """Gets the amount of an asset for a given amount in of the other.
+
+        Arguments
+        ---------
+        amount_in : FixedPoint
+            The aount in.
+        shares_in : bool
+            True if the asset in is shares, False if it is bonds.
+
+        Returns
+        -------
+        FixedPoint
+            The aount out.
+        """
+        pool_config_str = self._serialized_pool_config()
+        pool_info_str = self._serialized_pool_info()
+        # pylint: disable=no-member
+        out_for_in = pyperdrive.get_out_for_in(pool_config_str, pool_info_str, str(amount_in.scaled_value), shares_in)
+        return FixedPoint(scaled_value=int(out_for_in))
+
+    def get_in_for_out(
+        self,
+        amount_out: FixedPoint,
+        shares_out: bool,
+    ) -> FixedPoint:
+        """Gets the amount of an asset for a given amount out of the other.
+
+        Arguments
+        ---------
+        amount_out : FixedPoint
+            The aount out.
+        shares_out : bool
+            True if the asset out is shares, False if it is bonds.
+
+        Returns
+        -------
+        FixedPoint
+            The aount in.
+        """
+        pool_config_str = self._serialized_pool_config()
+        pool_info_str = self._serialized_pool_info()
+        # pylint: disable=no-member
+        in_for_out = pyperdrive.get_in_for_out(pool_config_str, pool_info_str, str(amount_out.scaled_value), shares_out)
+        return FixedPoint(scaled_value=int(in_for_out))
+
+    def _serialized_pool_config(self) -> PoolConfig:
         pool_config_str = PoolConfig(
             baseToken=self._contract_pool_config["baseToken"],
             initialSharePrice=str(self._contract_pool_config["initialSharePrice"]),
@@ -212,6 +268,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             oracleSize=str(self._contract_pool_config["oracleSize"]),
             updateGap=str(self._contract_pool_config["updateGap"]),
         )
+        return pool_config_str
+
+    def _serialized_pool_info(self) -> PoolInfo:
         pool_info_str = PoolInfo(
             shareReserves=str(self._contract_pool_info["shareReserves"]),
             shareAdjustment=str(self._contract_pool_info["shareAdjustment"]),
@@ -227,8 +286,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             lpSharePrice=str(self._contract_pool_info["lpSharePrice"]),
             longExposure=str(self._contract_pool_info["longExposure"]),
         )
-        spot_price = pyperdrive.get_spot_price(pool_config_str, pool_info_str)  # pylint: disable=no-member
-        return FixedPoint(scaled_value=int(spot_price))
+        return pool_info_str
 
     def _ensure_current_state(self, override: bool = False) -> None:
         """Update the cached pool info and latest checkpoint if needed.
@@ -262,16 +320,24 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         r"""Returns the bond reserves for the market share reserves
         and a given fixed rate.
 
-        .. math::
-            r = ((1/p)-1)/t //
-            p = ((\mu z) / y)**(t) //
-            y = \mu z p**((p r)/(p - 1))
+
+        The calculation is based on the formula: .. math::
+            mu * (z - zeta) * (1 + apr * t) ** (1 / tau)
+
+        Arguments
+        ---------
+        target_rate : FixedPoint
+            The target apr for which to calculate the bond reserves given the pools current share
+            reserves.
         """
-        return (
-            self.pool_config["initialSharePrice"]
-            * self.pool_info["shareReserves"]
-            * self.spot_price ** ((self.spot_price * target_rate) / (self.spot_price - 1))
-        )
+
+        mu: FixedPoint = self.pool_config["initialSharePrice"]
+        z_minus_zeta: FixedPoint = self.pool_info["shareReserves"] - self.pool_info["shareAdjustment"]
+        t = self.position_duration_in_years
+        one_over_tau: FixedPoint = self.pool_config["timeStretch"]
+        adjusted_apr = FixedPoint("1") + target_rate * t
+
+        return mu * z_minus_zeta * adjusted_apr**one_over_tau
 
     async def async_open_long(
         self,
