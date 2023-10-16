@@ -9,7 +9,6 @@ from dataclasses import dataclass
 
 import numpy as np
 from dotenv import load_dotenv
-from ethpy import EthConfig, build_eth_config
 
 from .base.config import AgentConfig, Budget
 from .base.make_key import make_private_key
