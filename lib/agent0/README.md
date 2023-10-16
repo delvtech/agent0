@@ -87,11 +87,11 @@ Update the parameters in the script. For example:
 ## Step 3: Fund your agents (if you wish to fund the agents from your own wallet key):
 
 3.1.
+Run the script once to generate environment file, with filename set to `ENV_FILE` in the script.
 
     ```bash
-   python lib/agent0/examples/hyperdrive_agents.py
+    python lib/agent0/examples/hyperdrive_agents.py
     ```
-Run the script once to generate environment file, with filename set to `ENV_FILE` in the script.
 
 
     >**💡NOTE:**
