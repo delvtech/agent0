@@ -8,16 +8,19 @@
 This project is a work-in-progress. All code is provided as is and without guarantee.
 The language used in this code and documentation is not intended to, and does not, have any particular financial, legal, or regulatory significance.
 
-Documentation can be found [here](https://elfpy.delv.tech).
-
 ## Packages
 
-Our current supported packages are:
+This monorepo houses internal packages that are still under development. They are:
 
 - agent0 ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/agent0/README.md))
 - chainsync ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/chainsync/README.md))
-- elfpy ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/elfpy/README.md))
 - ethpy ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/ethpy/README.md))
+- elfpy (**WILL BE DEPRECATED NOV 2023** [README](https://github.com/delvtech/elf-simulations/tree/main/lib/elfpy/README.md))
+
+We also utilize internal packages that are "in production," which is to say they live in their own repo:
+
+- pypechain ([README](https://github.com/delvtech/pypechain/tree/main#readme), [pypi](https://pypi.org/project/pypechain/))
+- fixedpointmath ([README](https://github.com/delvtech/agent_0/tree/main/lib/fixedpointmath#readme), [pypi](https://pypi.org/project/fixedpointmath/))
 
 ## Install
 
@@ -57,11 +60,12 @@ Please refer to [CONTRIBUTING.md](https://github.com/delvtech/elf-simulations/bl
 
 ## Number format
 
-Internally Elfpy conducts all operations using 18-decimal fixed-point precision integers and arithmetic.
+Internally we frequently utilize 18-decimal fixed-point precision numbers for arithmetic.
 Briefly, this means our representation for unity, "one", is `1 * 10 ** 18`, which would be `1.0` when cast to a float.
+Unlike typical floats, a FixedPoint numeric always supports 18 decimal digits of precision, regardless of the scale of the number.
 
 This can lead to confusion when additionally dealing with standard Python floats and ints.
-As such, we have purposefully constrain support for mixed-type operations that include the FixedPoint type.
+As such, we have purposefully constrained support for mixed-type operations that include the FixedPoint type.
 Due to a lack of known precision, operations against Python floats are not allowed (e.g. `float * FixedPoint` will raise an error).
 However, operations against `int` are allowed.
 In this case, the `int` _argument_ is assumed to be "unscaled", i.e. if you write `int(8) * FixedPoint(8)` we will scale up the first variable return a `FixedPoint` number that represents the float `64.0` in 18-decimal FixedPoint format.

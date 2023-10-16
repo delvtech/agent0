@@ -25,10 +25,9 @@ git push -f feature-branch
 
 _now, we have completed our feature, so we create a PR to merge the branch into main_
 
-Once the PR is approved, we perform a final rebase, if necessary, and then a _squash merge_. This means each PR results in a single commit to `main`.
-
-If two people are working in a branch then you should `git pull --rebase origin feature-branch` _before_ `git push origin feature-branch`.
-We also recommend that you start each working session with a `pull` and end it with a `push`, so that your colleagues can work asynchronously while you are not.
+Once the PR is approved, we perform a final rebase, if necessary, and then a _squash merge_.
+This means each PR results in a single commit to `main`.
+Please provide a brief description of the PR in the summary, as opposed to a list of commit strings.
 
 # Contributing a new bot policy
 
@@ -38,5 +37,5 @@ Submit a pull request that meets the following criteria:
 
 1. Do something an existing policy doesn't already accomplish
 2. Be well-documented and follow our existing [STYLEGUIDE.md](STYLEGUIDE.md).
-3. Pass all linting checks, including `black` and `pylint`.
+3. Pass all linting and type checks (the GH actions will check this for you).
 4. Describe the bot's behavior in a `describe` [classmethod](https://docs.python.org/3/library/functions.html#classmethod) similarly to existing bots, ending in a `super().describe()` call.

@@ -42,3 +42,15 @@ class NoActionPolicy(BasePolicy[MarketInterface, Wallet]):
         """
         # pylint: disable=unused-argument
         return [], False
+
+    @classmethod
+    def description(cls) -> str:
+        """Describe the policy in a user friendly manner that allows newcomers to decide whether to use it.
+
+        Returns
+        -------
+        str
+            A description of the policy.
+        """
+        raw_description = "Take no actions."
+        return super().describe(raw_description)
