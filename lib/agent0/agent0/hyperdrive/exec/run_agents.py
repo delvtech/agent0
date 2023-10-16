@@ -97,12 +97,12 @@ def run_agents(
                 "lib/agent0/agent0/hyperdrive/config/runner_config.py"
             )
         # Register wallet addresses to username
-        register_username(environment_config.database_api_uri, wallet_addrs, environment_config.username)
+        register_username(eth_config.database_api_uri, wallet_addrs, environment_config.username)
 
     if load_wallet_state:
         # Load existing balances
         # Get existing open positions from db api server
-        balances = balance_of(environment_config.database_api_uri, wallet_addrs)
+        balances = balance_of(eth_config.database_api_uri, wallet_addrs)
         # Set balances of wallets based on db and chain
         for agent in agent_accounts:
             # TODO is this the right location for this to happen?
