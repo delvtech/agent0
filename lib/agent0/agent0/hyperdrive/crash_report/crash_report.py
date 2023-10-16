@@ -80,10 +80,8 @@ def log_hyperdrive_crash_report(trade_result: TradeResult, log_level: int | None
     ---------
     trade_result: TradeResult
         The trade result object that stores all crash information
-
     log_level: int | None
         The logging level for this crash report. Defaults to critical.
-
 
     Returns
     -------
