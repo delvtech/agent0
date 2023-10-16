@@ -777,13 +777,13 @@ def get_wallet_positions_over_time(
     if wallet_address is not None:
         subquery = subquery.filter(WalletPNL.walletAddress.in_(wallet_address))
 
-    subquery = subquery.group_by(WalletPNL.walletAddress, WalletPNL.blockNumber, WalletPNL.baseTokenType)
-
-    # Always sort by block in order
-    subquery = subquery.order_by(WalletPNL.blockNumber).subquery()
+    subquery = subquery.group_by(WalletPNL.walletAddress, WalletPNL.blockNumber, WalletPNL.baseTokenType).subquery()
 
     # query from PoolInfo the timestamp
     query = session.query(PoolInfo.timestamp, subquery)
     query = query.join(PoolInfo, subquery.c.blockNumber == PoolInfo.blockNumber)
+
+    # Always sort by block in order
+    query = query.order_by(PoolInfo.timestamp)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
