@@ -55,6 +55,16 @@ Run the elf-simulations tests to verify that everything installed correctly by e
 ## Step 2: Set your configuration
 
 2.1.
+Copy the `eth.env.sample` file to `eth.env` (`cp eth.env.sample eth.env`) and edit the file to specify the URIs of various endpoints to the chain.
+The default values are set to run off a local chain on docker. For example:
+
+```bash
+RPC_URI="http://localhost:8545"
+ARTIFACTS_URI="http://localhost:8080"
+DATABASE_API_URI="http://localhost:5002"
+```
+
+2.2.
 Copy (or edit) one of the template scripts found in `lib/agent0/examples`:
 
     - `hyperdrive_agents.py` for an example running existing policies.
@@ -62,20 +72,16 @@ Copy (or edit) one of the template scripts found in `lib/agent0/examples`:
 
    This will be the main script to run your agent.
 
-2.2.
+2.3.
 Update the parameters in the script. For example:
 
     ```python
     # option to customize the env file name,
-    # leave unchanged for default behavior
     ENV_FILE = "hyperdrive_agents.account.env"
-    RPC_URI = "<rpc_uri>"
-    ARTIFACTS_URI = "<artifacts_uri>"
-    DATABASE_API_URI = "<database_api_uri>"
     USERNAME = "<agent_username>"
     ```
 
-2.3.
+2.4.
 **Optional**: Change various bot arguments to your liking by adjusting the `AgentConfig` parameters.
 
 ## Step 3: Fund your agents (if you wish to fund the agents from your own wallet key):
@@ -107,10 +113,10 @@ Run the script once to generate environment file, with filename set to `ENV_FILE
 3.2. The output will tell you to run the funding script to fund your bots. For example,
 
    ```bash
-   python lib/agent0/bin/fund_agents_from_user_key.py -u 0xUSER_PRIVATE_KEY --host <host> -f example_agents.accounts.env
+   python lib/agent0/bin/fund_agents_from_user_key.py -u 0xUSER_PRIVATE_KEY -f example_agents.accounts.env
    ```
 
-   Replace the `0xUSER_PRIVATE_KEY` in the above command with your private key for the chain (e.g., from Anvil), and the `<host>` to the host address for the chain.
+   Replace the `0xUSER_PRIVATE_KEY` in the above command with your private key for the chain (e.g., from Anvil).
    This is the account that will fund the agents.
    The script will automatically update the specified `ENV_FILE` to contain your user key, which is needed by the script.
 
