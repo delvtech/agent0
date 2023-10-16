@@ -20,12 +20,6 @@ if TYPE_CHECKING:
 
 # Define the unique agent env filename to use for this script
 ENV_FILE = "custom_agent.account.env"
-
-# Host of services
-RPC_URI = "http://localhost:8545"
-ARTIFACTS_URI = "http://localhost:8080"
-DATABASE_API_URI = "http://localhost:5002"
-
 # Username binding for bots
 USERNAME = "changeme"
 # Run this file with this flag set to true to close out all open positions
@@ -47,7 +41,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
         Attributes
         ----------
         static_trade_amount_wei: int
-            The probability of this bot to make a trade on an actio call
+            The probability of this bot to make a trade on an action call
         """
 
         # Add additional parameters for custom policy here
