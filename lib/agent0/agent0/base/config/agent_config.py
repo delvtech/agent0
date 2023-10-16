@@ -37,8 +37,8 @@ class AgentConfig:
 
     policy: Type[BasePolicy]
     name: str = "BoringBotty"
-    base_budget_wei: Budget | int = Budget()
-    eth_budget_wei: Budget | int = Budget(min_wei=0, max_wei=0)
+    base_budget_wei: Budget | int = 0
+    eth_budget_wei: Budget | int = 0
     slippage_tolerance: FixedPoint | None = FixedPoint("0.0001")  # default to 0.01%
     number_of_agents: int = 1
     private_keys: list[str] | None = None
