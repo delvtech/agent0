@@ -12,15 +12,24 @@ from fixedpointmath import FixedPoint
 
 # Define the unique env filename to use for this script
 ENV_FILE = "hyperdrive_agents.account.env"
-# Host of docker services
-HOST = "localhost"
+
+# Host of services for local services
+RPC_URI = "http://localhost:8545"
+ARTIFACTS_URI = "http://localhost:8080"
+DATABASE_API_URI = "http://localhost:5002"
+
+# Host of services for delv
+# RPC_URI = "https://delvtradingcomp.net/node"
+# ARTIFACTS_URI = "https://delvtradingcomp.net/artifacts"
+# DATABASE_API_URI = "https://delvtradingcomp.net/database"
+
 # Username binding of bots
 USERNAME = "changeme"
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 
 # Build configuration
-eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http://" + HOST + ":8545")
+eth_config = EthConfig(artifacts_uri=ARTIFACTS_URI, rpc_uri=RPC_URI)
 
 env_config = EnvironmentConfig(
     delete_previous_logs=True,
@@ -29,7 +38,7 @@ env_config = EnvironmentConfig(
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
-    database_api_uri="http://" + HOST + ":5002",
+    database_api_uri=DATABASE_API_URI,
     username=USERNAME,
 )
 

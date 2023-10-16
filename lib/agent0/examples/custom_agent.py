@@ -21,8 +21,12 @@ if TYPE_CHECKING:
 
 # Define the unique agent env filename to use for this script
 ENV_FILE = "custom_agent.account.env"
-# Host of chain services
-HOST = "localhost"
+
+# Host of services
+RPC_URI = "http://localhost:8545"
+ARTIFACTS_URI = "http://localhost:8080"
+DATABASE_API_URI = "http://localhost:5002"
+
 # Username binding for bots
 USERNAME = "changeme"
 # Run this file with this flag set to true to close out all open positions
@@ -184,7 +188,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
 
 
 # Build configuration
-eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http://" + HOST + ":8545")
+eth_config = EthConfig(artifacts_uri=ARTIFACTS_URI, rpc_uri=RPC_URI)
 
 # Build environment config
 env_config = EnvironmentConfig(
@@ -194,7 +198,7 @@ env_config = EnvironmentConfig(
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
-    database_api_uri="http://" + HOST + ":5002",
+    database_api_uri=DATABASE_API_URI,
     username=USERNAME,
 )
 
