@@ -95,7 +95,9 @@ GovernanceUpdated = ABIEvent(
 HyperdriveGovernanceUpdated = ABIEvent(
     anonymous=False,
     inputs=[
-        ABIEventParams(indexed=True, name="hyperdriveGovernance", type="address"),
+        ABIEventParams(
+            indexed=True, name="hyperdriveGovernance", type="address"
+        ),
     ],
     name="HyperdriveGovernanceUpdated",
     type="event",

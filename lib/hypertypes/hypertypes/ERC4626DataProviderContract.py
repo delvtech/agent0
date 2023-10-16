@@ -22,7 +22,9 @@ class ERC4626DataProviderBalanceOfContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, tokenId: int, account: str) -> "ERC4626DataProviderBalanceOfContractFunction":
+    def __call__(
+        self, tokenId: int, account: str
+    ) -> "ERC4626DataProviderBalanceOfContractFunction":
         super().__call__(tokenId, account)
         return self
 
@@ -64,7 +66,9 @@ class ERC4626DataProviderGetCheckpointContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _checkpointId: int) -> "ERC4626DataProviderGetCheckpointContractFunction":
+    def __call__(
+        self, _checkpointId: int
+    ) -> "ERC4626DataProviderGetCheckpointContractFunction":
         super().__call__(_checkpointId)
         return self
 
@@ -114,7 +118,9 @@ class ERC4626DataProviderGetPoolInfoContractFunction(ContractFunction):
     # def call()
 
 
-class ERC4626DataProviderGetUncollectedGovernanceFeesContractFunction(ContractFunction):
+class ERC4626DataProviderGetUncollectedGovernanceFeesContractFunction(
+    ContractFunction
+):
     """ContractFunction for the getUncollectedGovernanceFees method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -150,7 +156,9 @@ class ERC4626DataProviderIsApprovedForAllContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, account: str, operator: str) -> "ERC4626DataProviderIsApprovedForAllContractFunction":
+    def __call__(
+        self, account: str, operator: str
+    ) -> "ERC4626DataProviderIsApprovedForAllContractFunction":
         super().__call__(account, operator)
         return self
 
@@ -164,7 +172,9 @@ class ERC4626DataProviderIsSweepableContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _target: str) -> "ERC4626DataProviderIsSweepableContractFunction":
+    def __call__(
+        self, _target: str
+    ) -> "ERC4626DataProviderIsSweepableContractFunction":
         super().__call__(_target)
         return self
 
@@ -192,7 +202,9 @@ class ERC4626DataProviderLoadContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _slots: list[int]) -> "ERC4626DataProviderLoadContractFunction":
+    def __call__(
+        self, _slots: list[int]
+    ) -> "ERC4626DataProviderLoadContractFunction":
         super().__call__(_slots)
         return self
 
@@ -206,7 +218,9 @@ class ERC4626DataProviderNameContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, tokenId: int) -> "ERC4626DataProviderNameContractFunction":
+    def __call__(
+        self, tokenId: int
+    ) -> "ERC4626DataProviderNameContractFunction":
         super().__call__(tokenId)
         return self
 
@@ -220,7 +234,9 @@ class ERC4626DataProviderNoncesContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, account: str) -> "ERC4626DataProviderNoncesContractFunction":
+    def __call__(
+        self, account: str
+    ) -> "ERC4626DataProviderNoncesContractFunction":
         super().__call__(account)
         return self
 
@@ -264,7 +280,9 @@ class ERC4626DataProviderQueryContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, period: int) -> "ERC4626DataProviderQueryContractFunction":
+    def __call__(
+        self, period: int
+    ) -> "ERC4626DataProviderQueryContractFunction":
         super().__call__(period)
         return self
 
@@ -278,7 +296,9 @@ class ERC4626DataProviderSymbolContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, tokenId: int) -> "ERC4626DataProviderSymbolContractFunction":
+    def __call__(
+        self, tokenId: int
+    ) -> "ERC4626DataProviderSymbolContractFunction":
         super().__call__(tokenId)
         return self
 
@@ -292,7 +312,9 @@ class ERC4626DataProviderTotalSupplyContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, tokenId: int) -> "ERC4626DataProviderTotalSupplyContractFunction":
+    def __call__(
+        self, tokenId: int
+    ) -> "ERC4626DataProviderTotalSupplyContractFunction":
         super().__call__(tokenId)
         return self
 
@@ -351,7 +373,13 @@ class ERC4626DataProviderContract(Contract):
         self.abi = abi
         # TODO: make this better, shouldn't initialize to the zero address, but the Contract's init
         # function requires an address.
-        self.address = address if address else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
+        self.address = (
+            address
+            if address
+            else cast(
+                ChecksumAddress, "0x0000000000000000000000000000000000000000"
+            )
+        )
 
         try:
             # Initialize parent Contract class

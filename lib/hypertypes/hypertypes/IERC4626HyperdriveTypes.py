@@ -1,4 +1,4 @@
-"""Dataclasses for all structs in the IHyperdrive contract."""
+"""Dataclasses for all structs in the IERC4626Hyperdrive contract."""
 # super() call methods are generic, while our version adds values & types
 # pylint: disable=arguments-differ
 # contracts have PascalCase names
