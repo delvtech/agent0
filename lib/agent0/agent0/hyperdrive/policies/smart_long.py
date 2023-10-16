@@ -19,17 +19,26 @@ if TYPE_CHECKING:
 
 
 class SmartLong(HyperdrivePolicy):
-    """Agent that opens longs to push the fixed-rate towards the variable-rate
+    """Agent that opens longs to push the fixed-rate towards the variable-rate."""
 
-    .. note::
+    @classmethod
+    def description(cls) -> str:
+        """Describe the policy in a user friendly manner that allows newcomers to decide whether to use it.
+
+        Returns
+        -------
+        str
+            A description of the policy.
+        """
+
+        raw_description = """
         My strategy:
             - I'm not willing to open a long if it will cause the fixed-rate apr to go below the variable rate
                 - I simulate the outcome of my trade, and only execute on this condition
             - I only close if the position has matured
-            - I have total budget of 2k -> 250k (gauss mean=75k; std=50k, i.e. 68% values are within 75k +/- 50k)
             - I only open one long at a time
-
-    """
+        """
+        return super().describe(raw_description)
 
     # pylint: disable=too-many-arguments
 
