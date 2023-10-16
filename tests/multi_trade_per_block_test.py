@@ -148,7 +148,6 @@ class TestMultiTradePerBlock:
             log_level=logging.INFO,
             log_stdout=True,
             random_seed=1234,
-            database_api_uri=db_api,
             username="test",
         )
 
@@ -172,6 +171,7 @@ class TestMultiTradePerBlock:
             # Artifacts_uri isn't used here, as we explicitly set addresses and passed to run_bots
             artifacts_uri="not_used",
             rpc_uri=rpc_uri,
+            database_api_uri=db_api,
             # Using default abi dir
         )
 

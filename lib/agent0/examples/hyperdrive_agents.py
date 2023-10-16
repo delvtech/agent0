@@ -7,21 +7,19 @@ from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import Zoo
-from ethpy import EthConfig
 from fixedpointmath import FixedPoint
+
+# NOTE be sure to adjust `eth.env` to connect to a specific chain
 
 # Define the unique env filename to use for this script
 ENV_FILE = "hyperdrive_agents.account.env"
-# Host of docker services
-HOST = "localhost"
+
 # Username binding of bots
 USERNAME = "changeme"
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 
 # Build configuration
-eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http://" + HOST + ":8545")
-
 env_config = EnvironmentConfig(
     delete_previous_logs=True,
     halt_on_errors=True,
@@ -29,7 +27,6 @@ env_config = EnvironmentConfig(
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
-    database_api_uri="http://" + HOST + ":5002",
     username=USERNAME,
 )
 
@@ -67,4 +64,4 @@ agent_config: list[AgentConfig] = [
 account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed)
 
 # Run agents
-run_agents(env_config, agent_config, account_key_config, eth_config=eth_config, liquidate=LIQUIDATE)
+run_agents(env_config, agent_config, account_key_config, liquidate=LIQUIDATE)

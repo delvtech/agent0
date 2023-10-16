@@ -11,7 +11,6 @@ from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy.types import MarketType, Trade
-from ethpy import EthConfig
 from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
@@ -21,8 +20,6 @@ if TYPE_CHECKING:
 
 # Define the unique agent env filename to use for this script
 ENV_FILE = "custom_agent.account.env"
-# Host of chain services
-HOST = "localhost"
 # Username binding for bots
 USERNAME = "changeme"
 # Run this file with this flag set to true to close out all open positions
@@ -44,7 +41,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
         Attributes
         ----------
         static_trade_amount_wei: int
-            The probability of this bot to make a trade on an actio call
+            The probability of this bot to make a trade on an action call
         """
 
         # Add additional parameters for custom policy here
@@ -183,9 +180,6 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
         return action_list, False
 
 
-# Build configuration
-eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http://" + HOST + ":8545")
-
 # Build environment config
 env_config = EnvironmentConfig(
     delete_previous_logs=False,
@@ -194,7 +188,6 @@ env_config = EnvironmentConfig(
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
-    database_api_uri="http://" + HOST + ":5002",
     username=USERNAME,
 )
 
@@ -220,4 +213,4 @@ agent_config: list[AgentConfig] = [
 account_key_config = initialize_accounts(agent_config, ENV_FILE, random_seed=env_config.random_seed)
 
 # Run agents
-run_agents(env_config, agent_config, account_key_config, eth_config=eth_config, liquidate=LIQUIDATE)
+run_agents(env_config, agent_config, account_key_config, liquidate=LIQUIDATE)
