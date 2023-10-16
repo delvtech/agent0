@@ -69,7 +69,9 @@ Update the parameters in the script. For example:
     # option to customize the env file name,
     # leave unchanged for default behavior
     ENV_FILE = "hyperdrive_agents.account.env"
-    HOST = "<host>"
+    RPC_URI = "<rpc_uri>"
+    ARTIFACTS_URI = "<artifacts_uri>"
+    DATABASE_API_URI = "<database_api_uri>"
     USERNAME = "<agent_username>"
     ```
 
