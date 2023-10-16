@@ -15,7 +15,7 @@ from fixedpointmath import FixedPoint
 ENV_FILE = "hyperdrive_agents.account.env"
 
 # Username binding of bots
-USERNAME = "slundquist_bots_2"
+USERNAME = "changeme"
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 
