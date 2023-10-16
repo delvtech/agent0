@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from dotenv import load_dotenv
+from ethpy import EthConfig, build_eth_config
 
 from .base.config import AgentConfig, Budget
 from .base.make_key import make_private_key
@@ -61,6 +62,7 @@ def initialize_accounts(
     agent_config: list[AgentConfig],
     env_file: str | None = None,
     random_seed: int = 1,
+    eth_config: EthConfig | None = None,
 ) -> AccountKeyConfig:
     """
     Build or load an accounts environment file.
@@ -76,6 +78,8 @@ def initialize_accounts(
         The path to the env file to write/load from. Defaults to `accounts.env`.
     random_seed: int
         Random seed to use for initializing budgets.
+    eth_config: EthConfig | None
+        Only used for getting the hostname for printing funding command
 
     Returns
     -------
@@ -90,6 +94,9 @@ def initialize_accounts(
     if env_file is None:
         env_file = "account.env"
 
+    if eth_config is None:
+        eth_config = build_eth_config()
+
     if not os.path.exists(env_file):
         logging.info("Creating %s", env_file)
         # Create AccountKeyConfig from agent config
@@ -103,7 +110,7 @@ def initialize_accounts(
                 "Run the following command to fund the accounts, then rerun this script."
             )
             # Different commands depending on if default env file is used
-            command_str = "python lib/agent0/bin/fund_agents_from_user_key.py -u <user_private_key> --host <host>"
+            command_str = "python lib/agent0/bin/fund_agents_from_user_key.py -u <user_private_key>"
             if env_file != "account.env":
                 command_str += f" -f {env_file}"
             print(command_str)

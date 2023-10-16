@@ -24,6 +24,7 @@ class EthConfig:
 
     artifacts_uri: URI | str = URI("http://localhost:8080")
     rpc_uri: URI | str = URI("http://localhost:8545")
+    database_api_uri: str = URI("http://localhost:5002")
     abi_dir: str = "./packages/hyperdrive/src/abis"
 
     def __post_init__(self):
@@ -47,6 +48,7 @@ def build_eth_config() -> EthConfig:
 
     artifacts_uri = os.getenv("ARTIFACTS_URI")
     rpc_uri = os.getenv("RPC_URI")
+    database_api_uri = os.getenv("DATABASE_API_URI")
     abi_dir = os.getenv("ABI_DIR")
 
     arg_dict = {}
@@ -56,4 +58,6 @@ def build_eth_config() -> EthConfig:
         arg_dict["rpc_uri"] = rpc_uri
     if abi_dir is not None:
         arg_dict["abi_dir"] = abi_dir
+    if database_api_uri is not None:
+        arg_dict["database_api_uri"] = database_api_uri
     return EthConfig(**arg_dict)

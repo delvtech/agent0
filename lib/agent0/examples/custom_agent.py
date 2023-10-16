@@ -11,7 +11,6 @@ from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy.types import MarketType, Trade
-from ethpy import EthConfig
 from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
@@ -187,9 +186,6 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
         return action_list, False
 
 
-# Build configuration
-eth_config = EthConfig(artifacts_uri=ARTIFACTS_URI, rpc_uri=RPC_URI)
-
 # Build environment config
 env_config = EnvironmentConfig(
     delete_previous_logs=False,
@@ -198,7 +194,6 @@ env_config = EnvironmentConfig(
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
-    database_api_uri=DATABASE_API_URI,
     username=USERNAME,
 )
 
@@ -224,4 +219,4 @@ agent_config: list[AgentConfig] = [
 account_key_config = initialize_accounts(agent_config, ENV_FILE, random_seed=env_config.random_seed)
 
 # Run agents
-run_agents(env_config, agent_config, account_key_config, eth_config=eth_config, liquidate=LIQUIDATE)
+run_agents(env_config, agent_config, account_key_config, liquidate=LIQUIDATE)
