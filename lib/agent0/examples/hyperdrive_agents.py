@@ -21,10 +21,10 @@ DATABASE_API_URI = "http://localhost:5002"
 # Host of services for delv
 # RPC_URI = "https://delvtradingcomp.net/node"
 # ARTIFACTS_URI = "https://delvtradingcomp.net/artifacts"
-# DATABASE_API_URI = "https://delvtradingcomp.net/database"
+# DATABASE_API_URI = "https://delvtradingcomp.net/data"
 
 # Username binding of bots
-USERNAME = "changeme"
+USERNAME = "slundquist_bots_2"
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 
@@ -45,7 +45,7 @@ env_config = EnvironmentConfig(
 agent_config: list[AgentConfig] = [
     AgentConfig(
         policy=Zoo.arbitrage,
-        number_of_agents=1,
+        number_of_agents=0,
         slippage_tolerance=None,  # No slippage tolerance for arb bot
         # Fixed budgets
         base_budget_wei=FixedPoint(50_000).scaled_value,  # 50k base
@@ -58,7 +58,7 @@ agent_config: list[AgentConfig] = [
     ),
     AgentConfig(
         policy=Zoo.random,
-        number_of_agents=0,
+        number_of_agents=3,
         slippage_tolerance=FixedPoint("0.0001"),
         # Fixed budget
         base_budget_wei=FixedPoint(5_000).scaled_value,  # 5k base
