@@ -18,6 +18,8 @@ USERNAME = "changeme"
 # The amount of base token each bot receives
 BASE_BUDGET_PER_BOT = FixedPoint(50).scaled_value  # 50 base in wei
 ETH_BUDGET_PER_BOT = FixedPoint(1).scaled_value  # 1 eth in wei
+# The slippage tolerance for trades
+SLIPPAGE_TOLERANCE = FixedPoint("0.0001")  # 0.1% slippage
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 
@@ -36,7 +38,7 @@ agent_config: list[AgentConfig] = [
     AgentConfig(
         policy=Zoo.arbitrage,
         number_of_agents=1,
-        slippage_tolerance=None,  # No slippage tolerance for arb bot
+        slippage_tolerance=SLIPPAGE_TOLERANCE,  # No slippage tolerance for arb bot
         # Fixed budgets
         base_budget_wei=BASE_BUDGET_PER_BOT,
         eth_budget_wei=ETH_BUDGET_PER_BOT,
@@ -49,7 +51,7 @@ agent_config: list[AgentConfig] = [
     AgentConfig(
         policy=Zoo.random,
         number_of_agents=0,
-        slippage_tolerance=FixedPoint("0.0001"),
+        slippage_tolerance=SLIPPAGE_TOLERANCE,
         # Fixed budget
         base_budget_wei=BASE_BUDGET_PER_BOT,
         eth_budget_wei=ETH_BUDGET_PER_BOT,

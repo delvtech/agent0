@@ -36,10 +36,9 @@ class AgentConfig:
     # pylint: disable=too-many-instance-attributes
 
     policy: Type[BasePolicy]
-    name: str = "BoringBotty"
-    base_budget_wei: Budget | int = 0
-    eth_budget_wei: Budget | int = 0
-    slippage_tolerance: FixedPoint | None = FixedPoint("0.0001")  # default to 0.01%
+    base_budget_wei: Budget | int
+    eth_budget_wei: Budget | int
+    slippage_tolerance: FixedPoint | None = None
     number_of_agents: int = 1
     private_keys: list[str] | None = None
     # TODO might be able to use default factory for this object for default
