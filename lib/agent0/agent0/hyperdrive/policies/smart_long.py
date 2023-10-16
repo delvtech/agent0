@@ -1,6 +1,7 @@
 """Agent policy for leveraged long positions"""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from agent0.hyperdrive.state import (HyperdriveActionType,
@@ -40,26 +41,55 @@ class SmartLong(HyperdrivePolicy):
         """
         return super().describe(raw_description)
 
+    @dataclass
+    class Config(HyperdrivePolicy.Config):
+        """Custom config arguments for this policy
+
+        Attributes
+        ----------
+        trade_chance: FixedPoint
+            The percent chance to open a trade.
+        risk_threshold: FixedPoint
+            The upper threshold of the fixed rate minus the variable rate to open a long.
+        """
+
+        trade_chance: FixedPoint = FixedPoint("0.5")
+        risk_threshold: FixedPoint = FixedPoint("0.0001")
+
     # pylint: disable=too-many-arguments
 
     def __init__(
         self,
         budget: FixedPoint,
-        rng: NumpyGenerator,
-        trade_chance: FixedPoint,
-        risk_threshold: FixedPoint,
+        rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
-    ) -> None:
-        """Add custom stuff then call basic policy init"""
-        if not isinstance(trade_chance, FixedPoint):
-            raise TypeError(f"{trade_chance=} must be of type `FixedPoint`")
-        if not isinstance(risk_threshold, FixedPoint):
-            raise TypeError(f"{risk_threshold=} must be of type `FixedPoint`")
-        self.trade_chance = trade_chance
-        self.risk_threshold = risk_threshold
+        policy_config: Config | None = None,
+    ):
+        """Initializes the bot
+
+        Arguments
+        ---------
+        budget: FixedPoint
+            The budget of this policy
+        rng: NumpyGenerator | None
+            Random number generator
+        slippage_tolerance: FixedPoint | None
+            Slippage tolerance of trades
+        policy_config: Config | None
+            The custom arguments for this policy
+        """
+
+        # Defaults
+        if policy_config is None:
+            policy_config = self.Config()
+        self.trade_chance = policy_config.trade_chance
+        self.risk_threshold = policy_config.risk_threshold
+
         super().__init__(budget, rng, slippage_tolerance)
 
-    def action(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
+    def action(
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Implement a Long Louie user strategy
 
         Arguments
@@ -76,7 +106,7 @@ class SmartLong(HyperdrivePolicy):
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
         gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
         if not gonna_trade:
-            return []
+            return ([], False)
         action_list = []
         for long_time in wallet.longs:  # loop over longs # pylint: disable=consider-using-dict-items
             # if any long is mature
@@ -100,14 +130,12 @@ class SmartLong(HyperdrivePolicy):
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
         if (interface.fixed_rate - interface.variable_rate) > self.risk_threshold and not has_opened_long:
-            total_bonds_to_match_variable_apr = (
-                interface.bonds_given_shares_and_rate(target_rate=interface.variable_rate)
+            total_bonds_to_match_variable_apr = interface.bonds_given_shares_and_rate(
+                target_rate=interface.variable_rate
             )
             # get the delta bond amount & convert units
             bond_reserves: FixedPoint = interface.pool_info["bondReserves"]
-            new_bonds_to_match_variable_apr = (
-                bond_reserves - total_bonds_to_match_variable_apr
-            ) * interface.spot_price
+            new_bonds_to_match_variable_apr = (bond_reserves - total_bonds_to_match_variable_apr) * interface.spot_price
             # new_base_to_match_variable_apr = interface.calc_shares_out_given_bonds_in(
             new_base_to_match_variable_apr = interface.get_out_for_in(new_bonds_to_match_variable_apr, shares_in=False)
             # get the maximum amount the agent can long given the market and the agent's wallet
@@ -126,4 +154,4 @@ class SmartLong(HyperdrivePolicy):
                         ),
                     )
                 ]
-        return action_list
+        return (action_list, False)
