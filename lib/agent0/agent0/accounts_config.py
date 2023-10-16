@@ -76,8 +76,6 @@ def initialize_accounts(
         The path to the env file to write/load from. Defaults to `accounts.env`.
     random_seed: int
         Random seed to use for initializing budgets.
-    eth_config: EthConfig | None
-        Only used for getting the hostname for printing funding command
 
     Returns
     -------
