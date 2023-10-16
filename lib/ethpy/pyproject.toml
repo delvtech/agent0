@@ -22,7 +22,6 @@ with-dependencies = [
     "ethpy[base, lateral]"
 ]
 base = [
-    # TODO move fixedpointmath to lateral if this package comes back to this monorepo
     "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
     # TODO figure out the dependencies below
     "matplotlib",
