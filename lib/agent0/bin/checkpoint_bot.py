@@ -83,8 +83,6 @@ def main() -> None:
         log_format_string=env_config.log_formatter,
     )
 
-    logging.info("Block time: %s; Block timestamp interval: %s", block_time, block_timestamp_interval)
-
     # Fund the checkpoint sender with some ETH.
     balance = FixedPoint(100).scaled_value
     sender = EthAgent(Account().create("CHECKPOINT_BOT"))
@@ -104,6 +102,13 @@ def main() -> None:
     # to reduce the probability of needing to mint a checkpoint.
     config = get_hyperdrive_pool_config(hyperdrive_contract)
     checkpoint_duration = config["checkpointDuration"]
+
+    logging.info(
+        "Checkpoint Duration: %s; Block time: %s; Block timestamp interval: %s",
+        checkpoint_duration,
+        block_time,
+        block_timestamp_interval,
+    )
 
     while True:
         # Get the latest block time and check to see if a new checkpoint should
