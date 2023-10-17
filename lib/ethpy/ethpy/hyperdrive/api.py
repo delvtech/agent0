@@ -269,8 +269,8 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             gov_fee = curve_fee * phi_gov
             flat_fee = (d_y * (1 - t) * phi_flat) / c
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         bonds_in : FixedPoint
             The amount of bonds in.
         interface : HyperdriveInterface
@@ -311,8 +311,8 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             gov_fee = shares * phi_gov
             flat_fee = (d_y * (1 - t) * phi_flat) / c
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         bonds_in : FixedPoint
             The amount of bonds in.
         interface : HyperdriveInterface
