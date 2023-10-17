@@ -17,6 +17,336 @@ if TYPE_CHECKING:
 
     from agent0.hyperdrive.state import HyperdriveWallet
 
+from decimal import Decimal, getcontext
+import time
+
+# pylint: disable=too-many-parameters, too-many-local-variables
+
+# constants
+dec0 = Decimal(0)
+dec1 = Decimal(1)
+dec2 = Decimal(2)
+dec12 = Decimal(12)
+dec_seconds_in_year = Decimal(365 * 24 * 60 * 60)
+tolerance = Decimal(1e-18)
+PRECISION = 24
+MAX_ITER = 10
+
+
+# functions
+def calc_bond_reserves(
+    share_reserves: Decimal,
+    share_price: Decimal,
+    target_rate: Decimal,
+    position_duration: Decimal,
+    time_stretch: Decimal,
+):
+    """Calculate the amount of bonds that hit the target target rate for the given shares.
+
+    Parameters
+    ----------
+    share_reserves : Decimal
+        The amount of share reserves.
+    share_price : Decimal
+        The price of the share.
+    target_rate : Decimal
+        The target rate.
+    position_duration : Decimal
+        The duration of the position.
+    time_stretch : Decimal
+        The time stretch factor.
+
+    Returns
+    -------
+    Decimal
+        The amount of bonds that hit the target rate.
+    """
+    return (
+        share_price * share_reserves * ((dec1 + target_rate * position_duration / dec_seconds_in_year) ** time_stretch)
+    )
+
+
+def calc_spot_price_local(
+    initial_share_price: Decimal,
+    share_reserves: Decimal,
+    share_adjustment: Decimal,
+    bond_reserves: Decimal,
+    time_stretch: Decimal,
+) -> Decimal:
+    """Calculate spot price.
+
+    Parameters
+    ----------
+    initial_share_price : Decimal
+        The initial price of the share.
+    share_reserves : Decimal
+        The amount of share reserves.
+    share_adjustment : Decimal
+        The amount of share adjustment.
+    bond_reserves : Decimal
+        The amount of bond reserves.
+    time_stretch : Decimal
+        The time stretch factor.
+
+    Returns
+    -------
+    Decimal
+        The spot price.
+    """
+    effective_share_reserves = share_reserves - share_adjustment
+    return (initial_share_price * effective_share_reserves / bond_reserves) ** time_stretch
+
+
+def calc_apr(
+    share_reserves: Decimal,
+    share_adjustment: Decimal,
+    bond_reserves: Decimal,
+    initial_share_price: Decimal,
+    position_duration_seconds: Decimal,
+    time_stretch: Decimal,
+) -> Decimal:
+    """Calculate APR.
+
+    Parameters
+    ----------
+    share_reserves : Decimal
+        The amount of share reserves.
+    share_adjustment : Decimal
+        The adjustment for share reserves.
+    bond_reserves : Decimal
+        The amount of bond reserves.
+    initial_share_price : Decimal
+        The initial price of the share.
+    position_duration_seconds : Decimal
+        The duration of the position, in seconds.
+    time_stretch : Decimal
+        The time stretch factor.
+
+    Returns
+    -------
+    Decimal
+        The APR.
+    """
+    annualized_time = position_duration_seconds / dec_seconds_in_year
+    spot_price = calc_spot_price_local(
+        initial_share_price, share_reserves, share_adjustment, bond_reserves, time_stretch
+    )
+    return (dec1 - spot_price) / (spot_price * annualized_time)
+
+
+def calc_k(
+    share_price: Decimal,
+    initial_share_price: Decimal,
+    share_reserves: Decimal,
+    bond_reserves: Decimal,
+    time_stretch: Decimal,
+) -> Decimal:
+    """Calculate the AMM invariant.
+
+    Uses the following equation:
+        k_t = (c / mu) * (mu * z) ** (1 - t) + y ** (1 - t)
+
+    Parameters
+    ----------
+    share_price : Decimal
+        The price of the share.
+    initial_share_price : Decimal
+        The initial price of the share.
+    share_reserves : Decimal
+        The amount of share reserves.
+    bond_reserves : Decimal
+        The amount of bond reserves.
+    time_stretch : Decimal
+        The time stretch factor.
+
+    Returns
+    -------
+    Decimal
+        The AMM invariant.
+    """
+    return (share_price / initial_share_price) * (initial_share_price * share_reserves) ** (
+        dec1 - time_stretch
+    ) + bond_reserves ** (dec1 - time_stretch)
+
+
+def get_shares_in_for_bonds_out(
+    bond_reserves,
+    share_price,
+    initial_share_price,
+    share_reserves,
+    bonds_out,
+    time_stretch,
+    curve_fee,
+    gov_fee,
+    one_block_return,
+):
+    # y_term = (y - out) ** (1 - t)
+    # z_val = (k_t - y_term) / (c / mu)
+    # z_val = z_val ** (1 / (1 - t))
+    # z_val /= mu
+    # return z_val - z
+    # pylint: disable=too-many-arguments
+    k_t = calc_k(
+        share_price,
+        initial_share_price,
+        share_reserves,
+        bond_reserves,
+        time_stretch,
+    )
+    y_term = (bond_reserves - bonds_out) ** (dec1 - time_stretch)
+    z_val = (k_t - y_term) / (share_price / initial_share_price)
+    z_val = z_val ** (dec1 / (dec1 - time_stretch))
+    z_val /= initial_share_price
+    # z_val *= one_block_return
+    spot_price = calc_spot_price_local(initial_share_price, share_reserves, dec0, bond_reserves, time_stretch)
+    amount_in_shares = z_val - share_reserves
+    price_discount = dec1 - spot_price
+    curve_fee_rate = price_discount * curve_fee
+    curve_fee_amount_in_shares = amount_in_shares * curve_fee_rate
+    gov_fee_amount_in_shares = curve_fee_amount_in_shares * gov_fee
+    # applying fees means you pay MORE shares in for the same amount of bonds OUT
+    amount_from_user_in_shares = amount_in_shares + curve_fee_amount_in_shares
+    return amount_from_user_in_shares, curve_fee_amount_in_shares, gov_fee_amount_in_shares
+
+
+def get_shares_out_for_bonds_in(
+    bond_reserves,
+    share_price,
+    initial_share_price,
+    share_reserves,
+    bonds_in,
+    time_stretch,
+    curve_fee,
+    gov_fee,
+    one_block_return,
+):
+    # y_term = (y + in_) ** (1 - t)
+    # z_val = (k_t - y_term) / (c / mu)
+    # z_val = z_val ** (1 / (1 - t))
+    # z_val /= mu
+    # return z - z_val if z > z_val else 0.0
+    # pylint: disable=too-many-arguments
+    k_t = calc_k(
+        share_price,
+        initial_share_price,
+        share_reserves,
+        bond_reserves,
+        time_stretch,
+    )
+    y_term = (bond_reserves + bonds_in) ** (dec1 - time_stretch)
+    z_val = (k_t - y_term) / (share_price / initial_share_price)
+    z_val = z_val ** (dec1 / (dec1 - time_stretch))
+    z_val /= initial_share_price
+    # z_val *= one_block_return
+    spot_price = calc_spot_price_local(initial_share_price, share_reserves, dec0, bond_reserves, time_stretch)
+    price_discount = dec1 - spot_price
+    amount_in_shares = max(dec0, share_reserves - z_val)
+    curve_fee_rate = price_discount * curve_fee
+    curve_fee_amount_in_shares = amount_in_shares * curve_fee_rate
+    gov_fee_amount_in_shares = curve_fee_amount_in_shares * gov_fee
+    # applying fee means you get LESS shares out for the same amount of bonds IN
+    amount_to_user_in_shares = amount_in_shares - curve_fee_amount_in_shares
+    return amount_to_user_in_shares, curve_fee_amount_in_shares, gov_fee_amount_in_shares
+
+
+def calc_reserves_to_hit_target_rate(target_rate: Decimal, interface: HyperdriveInterface) -> tuple[Decimal, Decimal]:
+    """Calculate bonds needed to hit target rate.
+
+    Parameters
+    ----------
+    target_rate : Decimal
+        The target rate.
+    interface : HyperdriveInterface
+        The Hyperdrive API interface object.
+    """
+    # variables
+    predicted_rate = dec0
+    pool_config = interface.pool_config.copy()
+    pool_info = interface.pool_info.copy()
+
+    pool_info["shareReserves"] = Decimal(str(pool_info["shareReserves"]))
+    pool_config["initialSharePrice"] = Decimal(str(pool_config["initialSharePrice"]))
+    pool_config["positionDuration"] = Decimal(str(pool_config["positionDuration"]))
+    pool_config["timeStretch"] = Decimal(str(pool_config["timeStretch"]))
+    pool_config["invTimeStretch"] = Decimal(str(pool_config["invTimeStretch"]))
+    pool_info["bondReserves"] = Decimal(str(pool_info["bondReserves"]))
+    pool_info["sharePrice"] = Decimal(str(pool_info["sharePrice"]))
+    pool_config["curveFee"] = Decimal(str(pool_config["curveFee"]))
+    pool_config["governanceFee"] = Decimal(str(pool_config["governanceFee"]))
+    fixed_rate = Decimal(str(interface.fixed_rate))
+    variable_rate = interface.variable_rate  # this is a Decimal to begin with, unlike every other variable
+    assert isinstance(variable_rate, Decimal)
+    getcontext().prec = PRECISION
+    one_block_return = (dec1 + variable_rate) ** (
+        dec12 / dec_seconds_in_year
+    )  # attempt to see if this improves accuracy, it's 1e-8 difference
+
+    iteration = 0
+    start_time = time.time()
+    total_shares_needed = dec0
+    total_bonds_needed = dec0
+    while abs(predicted_rate - target_rate) > tolerance:  # max tolerance 1e-16
+        iteration += 1
+        target_bonds = calc_bond_reserves(
+            pool_info["shareReserves"],
+            pool_config["initialSharePrice"],
+            target_rate,
+            pool_config["positionDuration"],
+            pool_config["invTimeStretch"],
+        )
+        bonds_needed = (target_bonds - pool_info["bondReserves"]) / dec2
+        if bonds_needed > 0:  # handle the short case
+            shares_out, curve_fee, gov_fee = get_shares_out_for_bonds_in(
+                pool_info["bondReserves"],
+                pool_info["sharePrice"],
+                pool_config["initialSharePrice"],
+                pool_info["shareReserves"],
+                bonds_needed,
+                pool_config["timeStretch"],
+                pool_config["curveFee"],
+                pool_config["governanceFee"],
+                one_block_return,
+            )
+            # shares_out is what the user takes OUT: curve_fee less due to fees.
+            # gov_fee of that doesn't stay in the pool, going OUT to governance (same direction as user flow).
+            pool_info["shareReserves"] += (-shares_out - gov_fee) * 1
+        else:  # handle the long case
+            shares_in, curve_fee, gov_fee = get_shares_in_for_bonds_out(
+                pool_info["bondReserves"],
+                pool_info["sharePrice"],
+                pool_config["initialSharePrice"],
+                pool_info["shareReserves"],
+                -bonds_needed,
+                pool_config["timeStretch"],
+                pool_config["curveFee"],
+                pool_config["governanceFee"],
+                one_block_return,
+            )
+            print(f"{shares_in=}")
+            print(f"{curve_fee=}")
+            print(f"{gov_fee=}")
+            # shares_in is what the user pays IN: curve_fee more due to fees.
+            # gov_fee of that doesn't go to the pool, going OUT to governance (opposite direction of user flow).
+            pool_info["shareReserves"] += (shares_in - gov_fee) * 1  #
+        pool_info["bondReserves"] += bonds_needed
+        total_shares_needed = pool_info["shareReserves"] - Decimal(str(interface.pool_info["shareReserves"]))
+        total_bonds_needed = pool_info["bondReserves"] - Decimal(str(interface.pool_info["bondReserves"]))
+        predicted_rate = calc_apr(
+            pool_info["shareReserves"],
+            dec0,
+            pool_info["bondReserves"],
+            pool_config["initialSharePrice"],
+            pool_config["positionDuration"],
+            pool_config["timeStretch"],
+        )
+        print(
+            f"iteration {iteration:3}: {float(predicted_rate):22.18%} d_bonds={float(total_bonds_needed):27,.18f} d_shares={float(total_shares_needed):27,.18f}"
+        )
+        if iteration >= MAX_ITER:
+            break
+    print(f"predicted precision: {float(abs(predicted_rate-target_rate))}, time taken: {time.time() - start_time}s")
+    return total_shares_needed, total_bonds_needed
+
 
 # TODO this should maybe subclass from arbitrage policy, but perhaps making it swappable
 class LPandArb(HyperdrivePolicy):
@@ -123,9 +453,6 @@ class LPandArb(HyperdrivePolicy):
         """
         # Get fixed and variable rates
         fixed_rate = interface.fixed_rate
-        print(f"{fixed_rate=}")
-        variable_rate = interface.variable_rate
-        print(f"{variable_rate=}")
 
         action_list = []
 
@@ -153,64 +480,13 @@ class LPandArb(HyperdrivePolicy):
         we_have_money = wallet.balance.amount > self.minimum_trade_amount
         print(f"{we_have_money=}")
 
-        def calc_bond_reserves(share_reserves, share_price, apr, position_duration, time_stretch):
-            return share_price * share_reserves * ((self.fp1 + apr * position_duration / self.fp365) ** time_stretch)
-
-        def k(share_price, initial_share_price, share_reserves, bond_reserves, time_stretch):
-            # (c / mu) * (mu * z) ** (1 - t) + y ** (1 - t)
-            return (share_price / initial_share_price) * (initial_share_price * share_reserves) ** (
-                self.fp1 - time_stretch
-            ) + bond_reserves ** (self.fp1 - time_stretch)
-
-        def get_shares_in_for_bonds_out(
-            bond_reserves, share_price, initial_share_price, share_reserves, bonds_out, time_stretch
-        ):
-            # y_term = (y - out) ** (1 - t)
-            # z_val = (k_t - y_term) / (c / mu)
-            # z_val = z_val ** (1 / (1 - t))
-            # z_val /= mu
-            # return z_val - z
-            # pylint: disable=too-many-arguments
-            k_t = k(
-                interface.pool_info["sharePrice"],
-                interface.pool_config["initialSharePrice"],
-                interface.pool_info["shareReserves"],
-                interface.pool_info["bondReserves"],
-                interface.pool_config["timeStretch"],
-            )
-            y_term = (bond_reserves - bonds_out) ** (self.fp1 - time_stretch)
-            z_val = (k_t - y_term) / (share_price / initial_share_price)
-            z_val = z_val ** (self.fp1 / (self.fp1 - time_stretch))
-            z_val /= initial_share_price
-            return z_val - share_reserves
-
-        shares_needed: FixedPoint = self.fp0
-        bonds_needed: FixedPoint = self.fp0
+        shares_needed, bonds_needed = None, None
         if we_have_money:
             if high_fixed_rate_detected or low_fixed_rate_detected:
-                # Calculate bonds needed to hit target APR
-                target_apr = variable_rate
-                target_bonds = calc_bond_reserves(
-                    interface.pool_info["shareReserves"],
-                    interface.pool_config["initialSharePrice"],
-                    target_apr,
-                    interface.pool_config["positionDuration"],
-                    interface.pool_config["timeStretch"],
+                shares_needed, bonds_needed = calc_reserves_to_hit_target_rate(
+                    target_rate=Decimal(str(interface.variable_rate)),
+                    interface=interface,
                 )
-                print(f"{interface.pool_config['timeStretch']=}")
-                bonds_needed = (target_bonds - interface.pool_info["bondReserves"]) / FixedPoint(2)
-                print(f"{bonds_needed=}")
-            if high_fixed_rate_detected:
-                # assert bonds_needed < 0, "To lower the fixed rate, we should require a decrease in bonds"
-                shares_needed = get_shares_in_for_bonds_out(
-                    interface.pool_info["bondReserves"],
-                    interface.pool_info["sharePrice"],
-                    interface.pool_config["initialSharePrice"],
-                    interface.pool_info["shareReserves"],
-                    abs(bonds_needed),
-                    interface.pool_config["timeStretch"],
-                )
-                print(f"{shares_needed=}")
 
         # Close longs if matured
         for maturity_time, long in wallet.longs.items():
@@ -261,7 +537,10 @@ class LPandArb(HyperdrivePolicy):
                     )
             # Open a new long, if we have money
             if we_have_money:
-                assert shares_needed, "shares_needed is None"
+                shares_needed, bonds_needed = calc_reserves_to_hit_target_rate(
+                    target_rate=target_rate,
+                    interface=interface,
+                )
                 max_long_bonds = interface.get_max_long(wallet.balance.amount)
                 max_long_shares = get_shares_in_for_bonds_out(
                     interface.pool_info["bondReserves"],
