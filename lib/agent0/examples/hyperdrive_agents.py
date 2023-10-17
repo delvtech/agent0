@@ -26,9 +26,9 @@ LIQUIDATE = False
 # Build configuration
 env_config = EnvironmentConfig(
     delete_previous_logs=True,
-    halt_on_errors=True,
+    halt_on_errors=False,
     log_filename=".logging/agent0_logs.log",
-    log_level=logging.INFO,
+    log_level=logging.CRITICAL,
     log_stdout=True,
     random_seed=1234,
     username=USERNAME,
@@ -37,7 +37,7 @@ env_config = EnvironmentConfig(
 agent_config: list[AgentConfig] = [
     AgentConfig(
         policy=Zoo.arbitrage,
-        number_of_agents=1,
+        number_of_agents=0,
         slippage_tolerance=SLIPPAGE_TOLERANCE,  # No slippage tolerance for arb bot
         # Fixed budgets
         base_budget_wei=BASE_BUDGET_PER_BOT,
