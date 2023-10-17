@@ -4,12 +4,9 @@ from __future__ import annotations
 from typing import NamedTuple
 
 from .arbitrage import Arbitrage
+from .lpandarb import LPandArb
 from .random import Random
 from .smart_long import SmartLong
-from .lpandarb import LPandArb
-
-# Actual policies
-from .random import Random
 
 
 # Container for all the policies
@@ -19,7 +16,7 @@ class Zoo(NamedTuple):
     random = Random
     arbitrage = Arbitrage
     smart_long = SmartLong
-    LPandArb = LPandArb
+    lp_and_arb = LPandArb
 
     def describe(self, policies: list | str | None = None) -> str:
         """Describe policies, either specific ones provided, or all of them."""

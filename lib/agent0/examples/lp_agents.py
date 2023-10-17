@@ -50,13 +50,13 @@ env_config = EnvironmentConfig(
 
 agent_config: list[AgentConfig] = [
     AgentConfig(
-        policy=Zoo.LPandArb,
+        policy=Zoo.lp_and_arb,
         number_of_agents=1,
         slippage_tolerance=None,  # No slippage tolerance for arb bot
         # Fixed budgets
         base_budget_wei=FixedPoint(BUDGET).scaled_value,
         eth_budget_wei=FixedPoint(1).scaled_value,
-        policy_config=Zoo.LPandArb.Config(
+        policy_config=Zoo.lp_and_arb.Config(
             lp_portion=FixedPoint("0.5"),  # LP with 50% of capital
             high_fixed_rate_thresh=FixedPoint(0.051),  # Upper fixed rate threshold
             low_fixed_rate_thresh=FixedPoint(0.049),  # Lower fixed rate threshold
@@ -96,7 +96,8 @@ agent_config: list[AgentConfig] = [
 # If it does exist, read it in and use it
 account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed)
 eth_config = build_eth_config()
-eth_config.rpc_uri = URI("http://localhost:8546")
+# modify this if your local installation requires it
+eth_config.rpc_uri = URI("http://localhost:8545")
 
 # Run agents
 run_agents(

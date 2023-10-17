@@ -101,8 +101,6 @@ class Arbitrage(HyperdrivePolicy):
 
         Arguments
         ---------
-        market : HyperdriveMarketState
-            the trading market
         interface : MarketInterface
             Interface for the market on which this agent will be executing trades (MarketActions)
         wallet : HyperdriveWallet
