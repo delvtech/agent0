@@ -5,6 +5,7 @@ import logging
 
 import pandas as pd
 from chainsync.db.base import get_latest_block_number_from_table
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from sqlalchemy import exc, func
 from sqlalchemy.orm import Session
 
@@ -492,7 +493,7 @@ def get_current_wallet(
 
     # filter non-base zero positions here
     has_value = current_wallet["value"] > 0
-    is_base = current_wallet["tokenType"] == "BASE"
+    is_base = current_wallet["tokenType"] == BASE_TOKEN_SYMBOL
 
     return current_wallet[has_value | is_base].copy()
 

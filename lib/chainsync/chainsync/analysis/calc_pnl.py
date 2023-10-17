@@ -7,6 +7,7 @@ from decimal import Decimal
 import pandas as pd
 from eth_typing import ChecksumAddress, HexAddress, HexStr
 from ethpy.base import smart_contract_preview_transaction
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from fixedpointmath import FixedPoint
 from web3.contract.contract import Contract
 
@@ -35,7 +36,7 @@ def calc_single_closeout(
         The closeout pnl
     """
     # pnl is itself
-    if position["baseTokenType"] == "BASE":
+    if position["baseTokenType"] == BASE_TOKEN_SYMBOL:
         return position["value"]
     # If no value, pnl is 0
     if position["value"] == 0:

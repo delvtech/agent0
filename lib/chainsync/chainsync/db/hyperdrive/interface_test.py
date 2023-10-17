@@ -5,6 +5,7 @@ from decimal import Decimal
 import numpy as np
 import pytest
 from chainsync.db.base import get_latest_block_number_from_table
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 from .interface import (
     add_checkpoint_infos,
@@ -323,6 +324,8 @@ class TestCurrentWalletInterface:
         wallet_info_3 = CurrentWallet(blockNumber=2, walletAddress="c", value=Decimal("3.3"))
         add_current_wallet([wallet_info_1, wallet_info_2, wallet_info_3], db_session)
         wallet_info_df = get_current_wallet(db_session)
+        # Sort by value to make order invariant
+        wallet_info_df = wallet_info_df.sort_values(by=["value"])
         np.testing.assert_array_equal(wallet_info_df["value"], np.array([3.1, 3.2, 3.3]))
 
     def test_block_query_wallet_info(self, db_session):
@@ -334,19 +337,29 @@ class TestCurrentWalletInterface:
         wallet_info_df = get_current_wallet(db_session, end_block=1)
         np.testing.assert_array_equal(wallet_info_df["value"], np.array([3.1]))
         wallet_info_df = get_current_wallet(db_session, end_block=-1)
+        # Sort by value to make order invariant
+        wallet_info_df = wallet_info_df.sort_values(by=["value"])
         np.testing.assert_array_equal(wallet_info_df["value"], np.array([3.1, 3.2]))
 
     def test_current_wallet_info(self, db_session):
         """Testing helper function to get current wallet values"""
-        wallet_info_1 = CurrentWallet(blockNumber=0, walletAddress="addr", tokenType="BASE", value=Decimal("3.1"))
+        wallet_info_1 = CurrentWallet(
+            blockNumber=0, walletAddress="addr", tokenType=BASE_TOKEN_SYMBOL, value=Decimal("3.1")
+        )
         wallet_info_2 = CurrentWallet(blockNumber=1, walletAddress="addr", tokenType="LP", value=Decimal("5.1"))
         add_current_wallet([wallet_info_1, wallet_info_2], db_session)
         wallet_info_df = get_current_wallet(db_session).reset_index()
-        np.testing.assert_array_equal(wallet_info_df["tokenType"], ["BASE", "LP"])
+        # Sort by value to make order invariant
+        wallet_info_df = wallet_info_df.sort_values(by=["value"])
+        np.testing.assert_array_equal(wallet_info_df["tokenType"], [BASE_TOKEN_SYMBOL, "LP"])
         np.testing.assert_array_equal(wallet_info_df["value"], [3.1, 5.1])
         # E.g., block 2, wallet base tokens gets updated to 6.1
-        wallet_info_3 = CurrentWallet(blockNumber=2, walletAddress="addr", tokenType="BASE", value=Decimal("6.1"))
+        wallet_info_3 = CurrentWallet(
+            blockNumber=2, walletAddress="addr", tokenType=BASE_TOKEN_SYMBOL, value=Decimal("6.1")
+        )
         add_current_wallet([wallet_info_3], db_session)
         wallet_info_df = get_current_wallet(db_session).reset_index()
-        np.testing.assert_array_equal(wallet_info_df["tokenType"], ["BASE", "LP"])
-        np.testing.assert_array_equal(wallet_info_df["value"], [6.1, 5.1])
+        # Sort by value to make order invariant
+        wallet_info_df = wallet_info_df.sort_values(by=["value"])
+        np.testing.assert_array_equal(wallet_info_df["tokenType"], ["LP", BASE_TOKEN_SYMBOL])
+        np.testing.assert_array_equal(wallet_info_df["value"], [5.1, 6.1])

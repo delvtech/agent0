@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Any
 
 from ethpy.base import get_transaction_logs
-from ethpy.hyperdrive import decode_asset_id
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, decode_asset_id
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
@@ -235,8 +235,8 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
-                        baseTokenType="BASE",
-                        tokenType="BASE",
+                        baseTokenType=BASE_TOKEN_SYMBOL,
+                        tokenType=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
@@ -262,8 +262,8 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
-                        baseTokenType="BASE",
-                        tokenType="BASE",
+                        baseTokenType=BASE_TOKEN_SYMBOL,
+                        tokenType=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
@@ -289,8 +289,8 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
-                        baseTokenType="BASE",
-                        tokenType="BASE",
+                        baseTokenType=BASE_TOKEN_SYMBOL,
+                        tokenType=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
@@ -324,8 +324,8 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
-                        baseTokenType="BASE",
-                        tokenType="BASE",
+                        baseTokenType=BASE_TOKEN_SYMBOL,
+                        tokenType=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
@@ -351,8 +351,8 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
-                        baseTokenType="BASE",
-                        tokenType="BASE",
+                        baseTokenType=BASE_TOKEN_SYMBOL,
+                        tokenType=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
@@ -378,8 +378,8 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
-                        baseTokenType="BASE",
-                        tokenType="BASE",
+                        baseTokenType=BASE_TOKEN_SYMBOL,
+                        tokenType=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
@@ -405,8 +405,8 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
                         transactionHash=tx_hash,
                         blockNumber=block_number,
                         walletAddress=wallet_addr,
-                        baseTokenType="BASE",
-                        tokenType="BASE",
+                        baseTokenType=BASE_TOKEN_SYMBOL,
+                        tokenType=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
