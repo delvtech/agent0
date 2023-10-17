@@ -29,6 +29,7 @@ fp12 = FixedPoint(12)
 fp_seconds_in_year = FixedPoint(365 * 24 * 60 * 60)
 tolerance = 1e-18
 MAX_ITER = 10
+MIN_TRADE_AMOUNT = FixedPoint(scaled_value=20)
 
 
 # functions
@@ -333,10 +334,7 @@ def calc_reserves_to_hit_target_rate(
     start_time = time.time()
     total_shares_needed = fp0
     total_bonds_needed = fp0
-    print(f"{MAX_ITER=}")
-    print(f"{float(abs(predicted_rate - target_rate))=}")
-    print(f"{tolerance=}")
-    print(f"{float(abs(predicted_rate - target_rate)) > tolerance=}")
+    print(f"Targetting {float(target_rate):.2%} from {float(interface.fixed_rate):.2%}")
     while float(abs(predicted_rate - target_rate)) > tolerance:
         iteration += 1
         target_bonds = calc_bond_reserves(
@@ -520,16 +518,9 @@ class LPandArb(HyperdrivePolicy):
             )
 
         # arbitrage from here on out
-        print(f"{interface.fixed_rate=}")
-        print(f"{interface.variable_rate=}")
-        print(f"{self.policy_config.high_fixed_rate_thresh=}")
-        print(f"{self.policy_config.low_fixed_rate_thresh=}")
         high_fixed_rate_detected = interface.fixed_rate >= self.policy_config.high_fixed_rate_thresh
-        print(f"{high_fixed_rate_detected=}")
         low_fixed_rate_detected = interface.fixed_rate <= self.policy_config.low_fixed_rate_thresh
-        print(f"{low_fixed_rate_detected=}")
         we_have_money = wallet.balance.amount > self.minimum_trade_amount
-        print(f"{we_have_money=}")
 
         # Close longs if matured
         for maturity_time, long in wallet.longs.items():
@@ -564,26 +555,30 @@ class LPandArb(HyperdrivePolicy):
 
         # High fixed rate detected
         if high_fixed_rate_detected:
-            # Close all open shorts
+            shares_needed, bonds_needed = calc_reserves_to_hit_target_rate(
+                target_rate=interface.variable_rate,
+                interface=interface,
+            )
+            bonds_needed = -bonds_needed  # we trade positive numbers around here
+            # Start by reducing shorts
             if len(wallet.shorts) > 0:
                 for maturity_time, short in wallet.shorts.items():
+                    reduce_short_amount = min(short.balance, bonds_needed)
+                    bonds_needed -= reduce_short_amount
+                    print(f"reducing short by {reduce_short_amount}")
                     action_list.append(
                         Trade(
                             market_type=MarketType.HYPERDRIVE,
                             market_action=HyperdriveMarketAction(
                                 action_type=HyperdriveActionType.CLOSE_SHORT,
-                                trade_amount=short.balance,
+                                trade_amount=reduce_short_amount,
                                 wallet=wallet,
                                 maturity_time=maturity_time,
                             ),
                         )
                     )
-            # Open a new long, if we have money
-            if we_have_money:
-                shares_needed, bonds_needed = calc_reserves_to_hit_target_rate(
-                    target_rate=interface.variable_rate,
-                    interface=interface,
-                )
+            # Open a new long, if there's still a need, and we have money
+            if we_have_money and bonds_needed > MIN_TRADE_AMOUNT:
                 max_long_bonds = interface.get_max_long(wallet.balance.amount)
                 max_long_shares, _, _ = get_shares_in_for_bonds_out(
                     interface.pool_info["bondReserves"],
@@ -596,8 +591,6 @@ class LPandArb(HyperdrivePolicy):
                     interface.pool_config["governanceFee"],
                 )
                 amount = min(shares_needed, max_long_shares) * interface.pool_info["sharePrice"]
-                print(f"{max_long_shares=}")
-                print(f"{amount=}")
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
@@ -611,32 +604,32 @@ class LPandArb(HyperdrivePolicy):
 
         # Low fixed rate detected
         if low_fixed_rate_detected:
-            # Close all open longs
+            shares_needed, bonds_needed = calc_reserves_to_hit_target_rate(
+                target_rate=interface.variable_rate,
+                interface=interface,
+            )
+            print(f"{bonds_needed=}")
+            # Start by reducing longs
             if len(wallet.longs) > 0:
                 for maturity_time, long in wallet.longs.items():
+                    reduce_long_amount = min(long.balance, bonds_needed)
+                    bonds_needed -= reduce_long_amount
+                    print(f"reducing long by {reduce_long_amount}")
                     action_list.append(
                         Trade(
                             market_type=MarketType.HYPERDRIVE,
                             market_action=HyperdriveMarketAction(
                                 action_type=HyperdriveActionType.CLOSE_LONG,
-                                trade_amount=long.balance,
+                                trade_amount=reduce_long_amount,
                                 wallet=wallet,
                                 maturity_time=maturity_time,
                             ),
                         )
                     )
-            # Open a new short, if we have money
-            if we_have_money:
-                shares_needed, bonds_needed = calc_reserves_to_hit_target_rate(
-                    target_rate=interface.variable_rate,
-                    interface=interface,
-                )
-                print(f"{shares_needed=}")
-                print(f"{bonds_needed=}")
+            # Open a new short, if there's still a need, and we have money
+            if we_have_money and bonds_needed > MIN_TRADE_AMOUNT:
                 max_short_bonds = interface.get_max_short(wallet.balance.amount)
                 amount = min(bonds_needed, max_short_bonds)
-                print(f"{max_short_bonds=}")
-                print(f"{amount=}")
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
