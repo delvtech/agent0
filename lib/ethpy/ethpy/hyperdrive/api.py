@@ -209,14 +209,14 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         Arguments
         ---------
         amount_in : FixedPoint
-            The aount in.
+            The amount in.
         shares_in : bool
             True if the asset in is shares, False if it is bonds.
 
         Returns
         -------
         FixedPoint
-            The aount out.
+            The amount out.
         """
         pool_config_str = self._serialized_pool_config()
         pool_info_str = self._serialized_pool_info()
@@ -246,7 +246,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         Returns
         -------
         FixedPoint
-            The aount in.
+            The amount in.
         """
         pool_config_str = self._serialized_pool_config()
         pool_info_str = self._serialized_pool_info()
