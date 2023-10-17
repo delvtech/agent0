@@ -844,12 +844,12 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         Arguments
         ---------
         budget: FixedPoint
-            How much money the agent is able to spend
+            How much money the agent is able to spend, in base.
 
         Returns
         -------
         FixedPoint
-            The maximum long, in units of base, in base.
+            The maximum long, in units of base.
         """
         self._ensure_current_state()
         # pylint: disable=no-member
