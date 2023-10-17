@@ -852,23 +852,20 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The maximum long, in units of base, in base.
         """
         self._ensure_current_state()
-        pool_config_str = self._serialized_pool_config()
-        pool_info_str = self._serialized_pool_info()
         # pylint: disable=no-member
-        max_long = FixedPoint(
+        return FixedPoint(
             scaled_value=int(
                 pyperdrive.get_max_long(
-                    pool_config_str,
-                    pool_info_str,
+                    self._serialized_pool_config(),
+                    self._serialized_pool_info(),
                     str(budget.scaled_value),
-                    checkpoint_exposure=str(self.latest_checkpoint["longExposure"].scaled_value),
+                    checkpoint_exposure=str(
+                        self.latest_checkpoint["longExposure"].scaled_value
+                    ),
                     maybe_max_iterations=None,
                 )
             )
-        )  # in units of base
-        curve_fee, _, _ = self.calculate_fees_out_given_shares_in(shares_in=max_long / self.pool_config["sharePrice"])
-        curve_fee_in_base = curve_fee * self.pool_config["sharePrice"]
-        return max_long - curve_fee_in_base
+        )
 
     def get_max_short(self, budget: FixedPoint) -> FixedPoint:
         """Get the maximum allowable short for the given Hyperdrive pool and agent budget.
@@ -884,23 +881,20 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The maximum short, in units of base.
         """
         self._ensure_current_state()
-        pool_config_str = self._serialized_pool_config()
-        pool_info_str = self._serialized_pool_info()
+        pool_info = self._serialized_pool_info()
         # pylint: disable=no-member
-        max_short = FixedPoint(
+        return FixedPoint(
             scaled_value=int(
                 pyperdrive.get_max_short(
-                    pool_config_str,
-                    pool_info_str,
+                    self._serialized_pool_config(),
+                    pool_info,
                     str(budget.scaled_value),
-                    pool_info_str.sharePrice,
-                    checkpoint_exposure=str(self.latest_checkpoint["longExposure"].scaled_value),
+                    pool_info.sharePrice,
+                    checkpoint_exposure=str(
+                        self.latest_checkpoint["longExposure"].scaled_value
+                    ),
                     maybe_conservative_price=None,
                     maybe_max_iterations=None,
                 )
             )
         )
-        bonds_in = self.get_in_for_out(amount_out=max_short / self.pool_config["sharePrice"], shares_out=True)
-        curve_fee, _, _ = self.calculate_fees_out_given_bonds_in(bonds_in=bonds_in)
-        curve_fee_in_base = curve_fee * self.pool_config["sharePrice"]
-        return max_short - curve_fee_in_base
