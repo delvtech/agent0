@@ -17,7 +17,6 @@ from agent0.hyperdrive.state import (
 from elfpy import types
 from ethpy.base import retry_call
 from ethpy.hyperdrive import HyperdriveInterface
-from fixedpointmath import FixedPoint
 from web3.types import Nonce
 
 if TYPE_CHECKING:
@@ -235,9 +234,10 @@ async def async_match_contract_call_to_trade(
             )
 
         case HyperdriveActionType.ADD_LIQUIDITY:
-            # TODO: The following variables are hard coded for now, but should be specified in the trade spec
-            min_apr = FixedPoint(scaled_value=1)  # 1e-18
-            max_apr = FixedPoint(1)  # 1.0
+            min_apr = trade.min_apr
+            assert min_apr, "min_apr is required for ADD_LIQUIDITY"
+            max_apr = trade.max_apr
+            assert max_apr, "max_apr is required for ADD_LIQUIDITY"
             trade_result = await hyperdrive.async_add_liquidity(
                 agent, trade.trade_amount, min_apr, max_apr, nonce=nonce
             )
