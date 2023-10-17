@@ -485,9 +485,7 @@ class LPandArb(HyperdrivePolicy):
 
         Arguments
         ---------
-        market : HyperdriveMarketState
-            the trading market
-        interface : MarketInterface
+        interface : HyperdriveInterface
             Interface for the market on which this agent will be executing trades (MarketActions)
         wallet : HyperdriveWallet
             agent's wallet
