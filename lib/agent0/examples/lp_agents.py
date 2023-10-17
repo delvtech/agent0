@@ -8,7 +8,6 @@ from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import Zoo
-from agent0.utilities import check_docker
 
 # from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
 from eth_typing import URI
@@ -32,8 +31,6 @@ os.environ["DEVELOP"] = "true"
 # we're in develop mode, so we'll get a new env file made for us
 if os.path.exists(ENV_FILE):
     os.remove(ENV_FILE)
-
-check_docker(restart=True)
 
 # Build configuration
 eth_config = EthConfig(
