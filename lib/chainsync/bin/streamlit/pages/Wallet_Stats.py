@@ -135,7 +135,7 @@ for addr in wallet_positions["walletAddress"].unique():
     ax_withdraw.plot(withdraw_positions["timestamp"], withdraw_positions["value"], label=format_name)
 
 all_ax = [ax_base, ax_long, ax_short, ax_lp, ax_withdraw]
-bonds_label = "Hy" + BASE_TOKEN_SYMBOL
+bonds_label = "hy" + BASE_TOKEN_SYMBOL
 y_labels = [BASE_TOKEN_SYMBOL, bonds_label, bonds_label, "LP", "Withdraw"]
 titles = ["Base Positions", "Long Positions", "Short Positions", "LP Positions", "Withdraw Positions"]
 for ax, y_label, title in zip(all_ax, y_labels, titles):

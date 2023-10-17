@@ -7,7 +7,7 @@ from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 def plot_outstanding_positions(data, axes):
     """Returns the fixed rate plot"""
-    bonds_symbol = "Hy" + BASE_TOKEN_SYMBOL
+    bonds_symbol = "hy" + BASE_TOKEN_SYMBOL
 
     axes.plot(data["timestamp"], data["longsOutstanding"], label="Longs")
     axes.plot(data["timestamp"], data["shortsOutstanding"], label="Shorts")
