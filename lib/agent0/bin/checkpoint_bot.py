@@ -69,7 +69,7 @@ def main() -> None:
     if block_timestamp_interval is None:
         block_timestamp_interval = 1
     else:
-        block_timestamp_interval = int(block_time)
+        block_timestamp_interval = int(block_timestamp_interval)
 
     web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
 
