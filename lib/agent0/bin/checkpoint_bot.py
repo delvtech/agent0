@@ -69,7 +69,7 @@ def main() -> None:
     if block_timestamp_interval is None:
         block_timestamp_interval = 1
     else:
-        block_timestamp_interval = int(block_time)
+        block_timestamp_interval = int(block_timestamp_interval)
 
     web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
 
@@ -102,6 +102,13 @@ def main() -> None:
     # to reduce the probability of needing to mint a checkpoint.
     config = get_hyperdrive_pool_config(hyperdrive_contract)
     checkpoint_duration = config["checkpointDuration"]
+
+    logging.info(
+        "Checkpoint Duration: %s; Block time: %s; Block timestamp interval: %s",
+        checkpoint_duration,
+        block_time,
+        block_timestamp_interval,
+    )
 
     while True:
         # Get the latest block time and check to see if a new checkpoint should
@@ -140,13 +147,13 @@ def main() -> None:
             sleep_duration = checkpoint_duration * (1 + CHECKPOINT_WAITING_PERIOD) - checkpoint_portion_elapsed
         else:
             sleep_duration = checkpoint_duration * CHECKPOINT_WAITING_PERIOD - checkpoint_portion_elapsed
+        # Adjust sleep duration by the speedup factor
+        adjusted_sleep_duration = sleep_duration / (block_timestamp_interval / block_time)
         logging.info(
             "Current time is %s. Sleeping for %s seconds ...",
             datetime.datetime.fromtimestamp(timestamp),
-            sleep_duration,
+            adjusted_sleep_duration,
         )
-        # Adjust sleep duration by the speedup factor
-        adjusted_sleep_duration = sleep_duration / (block_timestamp_interval / block_time)
         time.sleep(adjusted_sleep_duration)
 
 

@@ -92,10 +92,7 @@ def run_agents(
         # Ignore this check if not develop
         if environment_config.username == DEFAULT_USERNAME:
             # Check for default name and exit if is default
-            raise ValueError(
-                "Default username detected, please update 'username' in "
-                "lib/agent0/agent0/hyperdrive/config/runner_config.py"
-            )
+            raise ValueError("Default username detected, please update 'username' in your environment config.")
         # Register wallet addresses to username
         register_username(eth_config.database_api_uri, wallet_addrs, environment_config.username)
 
