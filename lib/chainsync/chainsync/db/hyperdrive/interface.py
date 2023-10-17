@@ -5,6 +5,7 @@ import logging
 
 import pandas as pd
 from chainsync.db.base import get_latest_block_number_from_table
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from sqlalchemy import exc, func
 from sqlalchemy.orm import Session
 
@@ -19,7 +20,6 @@ from .schema import (
     WalletDelta,
     WalletPNL,
 )
- from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 
 def add_transactions(transactions: list[HyperdriveTransaction], session: Session) -> None:
