@@ -188,9 +188,9 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
 # Build environment config
 env_config = EnvironmentConfig(
     delete_previous_logs=False,
-    halt_on_errors=True,
+    halt_on_errors=False,
     log_filename=".logging/agent0_logs.logs",
-    log_level=logging.INFO,
+    log_level=logging.CRITICAL,
     log_stdout=True,
     random_seed=1234,
     username=USERNAME,
