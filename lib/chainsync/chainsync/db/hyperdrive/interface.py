@@ -19,6 +19,7 @@ from .schema import (
     WalletDelta,
     WalletPNL,
 )
+ from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 
 def add_transactions(transactions: list[HyperdriveTransaction], session: Session) -> None:
@@ -492,7 +493,7 @@ def get_current_wallet(
 
     # filter non-base zero positions here
     has_value = current_wallet["value"] > 0
-    is_base = current_wallet["tokenType"] == "BASE"
+    is_base = current_wallet["tokenType"] == BASE_TOKEN_SYMBOL
 
     return current_wallet[has_value | is_base].copy()
 

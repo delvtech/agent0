@@ -1,6 +1,10 @@
 """Hyperdrive AssetId classes and methods"""
 from enum import IntEnum
 
+# TODO get this value from the deployed pool, putting this here now for reference
+# across everything
+BASE_TOKEN_SYMBOL = "WETH"
+
 
 class AssetIdPrefix(IntEnum):
     r"""The asset ID is used to encode the trade type in a transaction receipt"""

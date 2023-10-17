@@ -24,7 +24,7 @@ from chainsync.exec import acquire_data, data_analysis
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.hyperdrive import HyperdriveInterface
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveInterface
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
@@ -301,7 +301,7 @@ class TestBotToDb:
                 # Ensure number of token deltas
                 assert len(block_wallet_deltas) == 2
                 lp_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LP"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == BASE_TOKEN_SYMBOL]
                 assert len(lp_delta_df) == 1
                 assert len(base_delta_df) == 1
                 lp_delta = lp_delta_df.iloc[0]
@@ -322,7 +322,7 @@ class TestBotToDb:
                 # Ensure number of token deltas
                 assert len(block_wallet_deltas) == 2
                 long_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LONG"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == BASE_TOKEN_SYMBOL]
                 assert len(long_delta_df) == 1
                 assert len(base_delta_df) == 1
                 long_delta = long_delta_df.iloc[0]
@@ -342,7 +342,7 @@ class TestBotToDb:
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
                 assert len(block_wallet_deltas) == 2
                 short_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "SHORT"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == BASE_TOKEN_SYMBOL]
                 assert len(short_delta_df) == 1
                 assert len(base_delta_df) == 1
                 short_delta = short_delta_df.iloc[0]
@@ -362,7 +362,7 @@ class TestBotToDb:
                 assert len(block_wallet_deltas) == 3
                 lp_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LP"]
                 withdrawal_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "WITHDRAWAL_SHARE"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == BASE_TOKEN_SYMBOL]
                 assert len(lp_delta_df) == 1
                 assert len(withdrawal_delta_df) == 1
                 assert len(base_delta_df) == 1
@@ -384,7 +384,7 @@ class TestBotToDb:
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
                 assert len(block_wallet_deltas) == 2
                 long_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LONG"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == BASE_TOKEN_SYMBOL]
                 assert len(long_delta_df) == 1
                 assert len(base_delta_df) == 1
                 long_delta = long_delta_df.iloc[0]
@@ -401,7 +401,7 @@ class TestBotToDb:
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
                 assert len(block_wallet_deltas) == 2
                 short_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "SHORT"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == BASE_TOKEN_SYMBOL]
                 assert len(short_delta_df) == 1
                 assert len(base_delta_df) == 1
                 short_delta = short_delta_df.iloc[0]
@@ -419,7 +419,7 @@ class TestBotToDb:
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
                 assert len(block_wallet_deltas) == 2
                 withdrawal_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "WITHDRAWAL_SHARE"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == BASE_TOKEN_SYMBOL]
                 assert len(withdrawal_delta_df) == 1
                 assert len(base_delta_df) == 1
                 withdrawal_delta = withdrawal_delta_df.iloc[0]
