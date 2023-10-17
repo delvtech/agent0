@@ -857,9 +857,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                     self._serialized_pool_config(),
                     self._serialized_pool_info(),
                     str(budget.scaled_value),
-                    checkpoint_exposure=str(
-                        self.latest_checkpoint["longExposure"].scaled_value
-                    ),
+                    checkpoint_exposure=str(self.latest_checkpoint["longExposure"].scaled_value),
                     maybe_max_iterations=None,
                 )
             )
@@ -888,9 +886,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                     pool_info,
                     str(budget.scaled_value),
                     pool_info.sharePrice,
-                    checkpoint_exposure=str(
-                        self.latest_checkpoint["longExposure"].scaled_value
-                    ),
+                    checkpoint_exposure=str(self.latest_checkpoint["longExposure"].scaled_value),
                     maybe_conservative_price=None,
                     maybe_max_iterations=None,
                 )
