@@ -113,7 +113,7 @@ def log_hyperdrive_crash_report(trade_result: TradeResult, log_level: int | None
     assert exception is not None
     formatted_traceback = "".join(format_tb(exception.__traceback__))
 
-    logging.critical(
+    logging.log(
         log_level,
         (
             "Exception: %s\n"
