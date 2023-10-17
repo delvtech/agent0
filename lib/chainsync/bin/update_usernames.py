@@ -61,7 +61,7 @@ username_to_user = {
 }
 
 # Get session object
-# This reads the .env file for database credentials
+# This reads the postgres.env file for database credentials
 db_session = initialize_session()
 
 log_utils.setup_logging(".logging/update_usernames.log", log_stdout=True, delete_previous_logs=True)
