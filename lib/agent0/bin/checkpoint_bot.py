@@ -83,6 +83,8 @@ def main() -> None:
         log_format_string=env_config.log_formatter,
     )
 
+    logging.info("Block time: %s; Block timestamp interval: %s", block_time, block_timestamp_interval)
+
     # Fund the checkpoint sender with some ETH.
     balance = FixedPoint(100).scaled_value
     sender = EthAgent(Account().create("CHECKPOINT_BOT"))
@@ -140,13 +142,13 @@ def main() -> None:
             sleep_duration = checkpoint_duration * (1 + CHECKPOINT_WAITING_PERIOD) - checkpoint_portion_elapsed
         else:
             sleep_duration = checkpoint_duration * CHECKPOINT_WAITING_PERIOD - checkpoint_portion_elapsed
+        # Adjust sleep duration by the speedup factor
+        adjusted_sleep_duration = sleep_duration / (block_timestamp_interval / block_time)
         logging.info(
             "Current time is %s. Sleeping for %s seconds ...",
             datetime.datetime.fromtimestamp(timestamp),
-            sleep_duration,
+            adjusted_sleep_duration,
         )
-        # Adjust sleep duration by the speedup factor
-        adjusted_sleep_duration = sleep_duration / (block_timestamp_interval / block_time)
         time.sleep(adjusted_sleep_duration)
 
 
