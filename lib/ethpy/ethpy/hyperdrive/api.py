@@ -289,9 +289,10 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 Governance fee, in shares.
         """
         if maturity_time is None:
-            maturity_time: int = self.pool_config["positionDuration"]
-        time_remaining_in_seconds = FixedPoint(maturity_time - self.current_block_time)
-        normalized_time_remaining = time_remaining_in_seconds / self.pool_config["positionDuration"]
+            normalized_time_remaining = FixedPoint(1)
+        else:
+            time_remaining_in_seconds = FixedPoint(maturity_time - self.current_block_time)
+            normalized_time_remaining = time_remaining_in_seconds / self.pool_config["positionDuration"]
         curve_fee = (
             (FixedPoint(1) - self.spot_price) * self.pool_config["curveFee"] * bonds_in * normalized_time_remaining
         ) / self.pool_config["initialSharePrice"]
@@ -331,9 +332,10 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 Governance fee, in shares.
         """
         if maturity_time is None:
-            maturity_time: int = self.pool_config["positionDuration"]
-        time_remaining_in_seconds = FixedPoint(maturity_time - self.current_block_time)
-        normalized_time_remaining = time_remaining_in_seconds / self.pool_config["positionDuration"]
+            normalized_time_remaining = FixedPoint(1)
+        else:
+            time_remaining_in_seconds = FixedPoint(maturity_time - self.current_block_time)
+            normalized_time_remaining = time_remaining_in_seconds / self.pool_config["positionDuration"]
         curve_fee = (
             ((FixedPoint(1) / self.spot_price) - FixedPoint(1))
             * self.pool_config["curveFee"]
