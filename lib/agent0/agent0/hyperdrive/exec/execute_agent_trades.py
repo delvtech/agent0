@@ -17,7 +17,6 @@ from agent0.hyperdrive.state import (
 from elfpy import types
 from ethpy.base import retry_call
 from ethpy.hyperdrive import HyperdriveInterface
-from fixedpointmath import FixedPoint
 from web3.types import Nonce
 
 if TYPE_CHECKING:
