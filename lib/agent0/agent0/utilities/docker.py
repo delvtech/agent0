@@ -1,4 +1,5 @@
 """Check whether docker is running, and if not, start it, otherwise optionally restart it."""
+import subprocess
 import logging
 import os
 import time
@@ -29,18 +30,23 @@ def check_docker(restart: bool = False):
 def _start_docker(startup_str: str, infra_folder: Path):
     logging.info(startup_str)
     _run_cmd(infra_folder, " && docker-compose down -v", "Shut down docker in ")
-    _run_cmd(
-        infra_folder,
-        " && docker images | awk '(NR>1) && ($2!~/none/) && ($1 ~ /^ghcr\\.io\\//) {print $1\":\"$2}' | xargs -L1 docker pull",
-        "Updated docker in ",
-    )
+
+    cmd = "docker images | awk 'NR>1 && $2 !~ /none/ && $1 ~ /^ghcr\\.io\\// {print $1 \":\" $2}'"
+    output = subprocess.getoutput(cmd)
+
+    if not output:
+        logging.info("No matching images found.")
+    else:
+        docker_pull_cmd = f"echo '{output}' | xargs -L1 docker pull"
+        _run_cmd(infra_folder, f" && {docker_pull_cmd}", "Updated docker in ")
+
     _run_cmd(infra_folder, " && docker-compose up -d", "Started docker in ")
 
 
 def _run_cmd(infra_folder: Path, cmd: str, timing_str: str):
     result = time.time()
     os.system(f"cd {infra_folder}{cmd}")
-    formatted_str = f"{timing_str}{time.time() - result:.2f}s"  # don't use lazy % formatting, to get nice :.2f format
+    formatted_str = f"{timing_str}{time.time() - result:.2f}s"
     logging.info(formatted_str)
     return result
 
