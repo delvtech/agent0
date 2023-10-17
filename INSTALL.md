@@ -36,7 +36,7 @@ python -m pip install --upgrade pip
 python -m pip install --upgrade -r requirements.txt
 ```
 
-If you want to use the CI tools, such as run tests, check linting or types, build containers or documentation, then you must also install the dev packages:
+If you want to use the CI tools, such as run tests, check linting or types, build containers or documentation, then you must also [install Foundry](https://book.getfoundry.sh/getting-started/installation) and the dev packages:
 
 ```bash
 python -m pip install --upgrade -r requirements-dev.txt
