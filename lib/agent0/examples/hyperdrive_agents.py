@@ -43,7 +43,7 @@ agent_config: list[AgentConfig] = [
         base_budget_wei=BASE_BUDGET_PER_BOT,
         eth_budget_wei=ETH_BUDGET_PER_BOT,
         policy_config=Zoo.arbitrage.Config(
-            trade_amount=FixedPoint(1000),  # Open 1k in base or short 1k bonds
+            trade_amount=FixedPoint(10),  # Open 10 base or short 10 bonds
             high_fixed_rate_thresh=FixedPoint(0.1),  # Upper fixed rate threshold
             low_fixed_rate_thresh=FixedPoint(0.02),  # Lower fixed rate threshold
         ),
