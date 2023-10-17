@@ -88,7 +88,8 @@ class Random(HyperdrivePolicy):
         if disallowed_actions is None:
             disallowed_actions = []
         # compile a list of all actions
-        if wallet.balance.amount <= WEI:
+        minimum_trade: FixedPoint = interface.pool_config["minimumTransactionAmount"]
+        if wallet.balance.amount <= minimum_trade:
             all_available_actions = []
         else:
             all_available_actions = [
