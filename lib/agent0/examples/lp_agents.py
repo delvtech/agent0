@@ -36,7 +36,9 @@ if os.path.exists(ENV_FILE):
 check_docker(restart=True)
 
 # Build configuration
-eth_config = EthConfig(artifacts_uri=f"http://{HOST}:8080", rpc_uri=f"http://{HOST}:8545")
+eth_config = EthConfig(
+    artifacts_uri=f"http://{HOST}:8080", rpc_uri=f"http://{HOST}:8545", database_api_uri=f"http://{HOST}:5002"
+)
 
 env_config = EnvironmentConfig(
     delete_previous_logs=True,
@@ -46,13 +48,11 @@ env_config = EnvironmentConfig(
     log_level=logging.INFO,
     log_stdout=True,
     random_seed=1234,
-    database_api_uri=f"http://{HOST}:5002",
     username=USERNAME,
 )
 
 agent_config: list[AgentConfig] = [
     AgentConfig(
-        name="LPandArb",
         policy=Zoo.LPandArb,
         number_of_agents=1,
         slippage_tolerance=None,  # No slippage tolerance for arb bot
@@ -66,7 +66,6 @@ agent_config: list[AgentConfig] = [
         ),
     ),
     AgentConfig(
-        name="Random",
         policy=Zoo.random,
         number_of_agents=1,
         slippage_tolerance=None,
@@ -76,7 +75,6 @@ agent_config: list[AgentConfig] = [
         policy_config=Zoo.random.Config(trade_chance=FixedPoint("0.1")),
     ),
     AgentConfig(
-        name="JustArb",
         policy=Zoo.arbitrage,
         number_of_agents=0,
         slippage_tolerance=None,
