@@ -31,6 +31,7 @@ addr_to_username = {
     "0x022ca016Dc7af612e9A8c5c0e344585De53E9667": "George Towle (click)",
     "0x0235037B42b4c0575c2575D50D700dD558098b78": "Jack Burrus (click)",
     "0x0238811B058bA876Ae5F79cFbCAcCfA1c7e67879": "Jordan J (click)",
+    "0x2C4F64C3BE604E7Ae00fd822CE5FC3131F30C3F0": "Nate - Numbers Group (click)",
 }
 
 # Maps all usernames to a single user
@@ -53,6 +54,7 @@ username_to_user = {
     "George Towle (click)": "George Towle",
     "Jack Burrus (click)": "Jack Burrus",
     "Jordan J (click)": "Jordan J",
+    "Nate - Numbers Group (click)": "Nate - Numbers Group",
     # Bot accounts
     # NOTE register username from bots automatically appends " (bots)" to the username
     "slundquist (bots)": "Sheng Lundquist",
