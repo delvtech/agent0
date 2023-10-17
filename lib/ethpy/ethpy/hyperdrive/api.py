@@ -7,7 +7,6 @@ from datetime import datetime
 from typing import Any
 
 import eth_utils
-from numpy import mat
 import pyperdrive
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber
