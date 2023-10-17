@@ -4,21 +4,31 @@ import logging
 import os
 import time
 from pathlib import Path
+import docker
+from docker.errors import DockerException
 
 
-def check_docker(restart: bool = False) -> None:
+def check_docker(infra_folder: Path, restart: bool = False) -> None:
     """Check whether docker is running to your liking.
 
-    Parameters
-    ----------
-    restart: bool
+    Arguments
+    ---------
+    infra_folder : Path
+        Path to infra repo folder.
+    restart : bool
         Restart docker even if it is running.
     """
-    home_infra = Path(os.path.expanduser("~")) / "code" / "infra"
-    if os.path.exists(home_infra):
-        infra_folder = home_infra
-    else:
-        infra_folder = Path("/code/infra")
+    try:
+        home_dir = os.path.expanduser("~")
+        socket_path = Path(f"{home_dir}/.docker/desktop/docker.sock")
+        if socket_path.exists():
+            logging.debug("The socket exists at %s.. using it to connect to docker", socket_path)
+            _ = docker.DockerClient(base_url=f"unix://{socket_path}")
+        else:
+            logging.debug("No socket found at %s.. using default socket", socket_path)
+            _ = docker.from_env()
+    except DockerException as exc:
+        raise DockerException("Failed to connect to docker.") from exc
     dockerps = _get_docker_ps_and_log()
     number_of_running_services = dockerps.count("\n") - 1
     if number_of_running_services > 0:
