@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import random
 from typing import Any, Sequence
 
 from eth_account.signers.local import LocalAccount
@@ -177,7 +178,7 @@ def smart_contract_preview_transaction(
 
 
 async def async_wait_for_transaction_receipt(
-    web3: Web3, transaction_hash: HexBytes, timeout: float = 30, poll_latency: float = 0.1
+    web3: Web3, transaction_hash: HexBytes, timeout: float = 30, start_latency: float = 1, backoff: float = 2
 ) -> TxReceipt:
     """Async version of wait_for_transaction_receipt
     This function is copied from `web3.eth.wait_for_transaction_receipt`, but using a non-blocking wait
@@ -201,6 +202,7 @@ async def async_wait_for_transaction_receipt(
     """
     try:
         with Timeout(timeout) as _timeout:
+            poll_latency = start_latency + random.uniform(0, 1)
             while True:
                 try:
                     tx_receipt = web3.eth.get_transaction_receipt(transaction_hash)
@@ -209,6 +211,10 @@ async def async_wait_for_transaction_receipt(
                 if tx_receipt is not None:
                     break
                 await _timeout.async_sleep(poll_latency)
+                # Exp backoff
+                poll_latency *= backoff
+                # Add random latency to avoid collisions
+                poll_latency += random.uniform(0, 1)
         return tx_receipt
 
     except Timeout as exc:

@@ -3,8 +3,11 @@ from __future__ import annotations
 
 import json
 import logging
+import subprocess
+from collections import OrderedDict
 from datetime import datetime
 from traceback import format_tb
+from types import TracebackType
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -45,12 +48,22 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return "NumpyGenerator"
         if isinstance(o, datetime):
             return str(o)
+        if isinstance(o, TracebackType):
+            return format_tb(o)
+        if isinstance(o, Exception):
+            return repr(o)
+
         try:
             return o.__dict__
         except AttributeError:
             pass
         # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, o)
+
+
+def _get_git_revision_hash() -> str:
+    """Helper function for getting commit hash from git."""
+    return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
 
 
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:
@@ -91,49 +104,33 @@ def log_hyperdrive_crash_report(trade_result: TradeResult, log_level: int | None
     if log_level is None:
         log_level = logging.CRITICAL
 
-    exception = trade_result.exception
-    formatted_exception = repr(exception)
+    # If we're crash reporting, an exception is expected
+    assert trade_result.exception is not None
 
-    formatted_trade_obj = _hyperdrive_trade_obj_to_dict(trade_result.trade_object)
-    formatted_trade_obj = json.dumps(formatted_trade_obj, indent=4, cls=ExtendedJSONEncoder)
-
-    # Handle wallet outside of agents
-    wallet_dict = _hyperdrive_wallet_to_dict(trade_result.agent.wallet)
-    formatted_agent_wallet = json.dumps(wallet_dict, indent=4, cls=ExtendedJSONEncoder)
-
-    formatted_agent_info = _hyperdrive_agent_to_dict(trade_result.agent)
-    formatted_agent_info = json.dumps(formatted_agent_info, indent=4, cls=ExtendedJSONEncoder)
-
-    # TODO Once pool_info and pool_config are objects, we need to add a conversion function to convert to dict
-    formatted_pool_config = json.dumps(trade_result.pool_config, indent=4, cls=ExtendedJSONEncoder)
-    formatted_pool_info = json.dumps(trade_result.pool_info, indent=4, cls=ExtendedJSONEncoder)
-
-    formatted_additional_info = json.dumps(trade_result.additional_info, indent=4, cls=ExtendedJSONEncoder)
-
-    assert exception is not None
-    formatted_traceback = "".join(format_tb(exception.__traceback__))
-
-    logging.log(
-        log_level,
-        (
-            "Exception: %s\n"
-            + "Trade: %s\n"
-            + "Wallet: %s\n"
-            + "AgentInfo: %s\n"
-            + "PoolConfig: %s\n"
-            + "PoolInfo: %s\n"
-            + "Additional Info: %s\n"
-            + "Traceback: %s\n"
+    # We use ordered dict to ensure the outermost order is preserved
+    crash_report_json = json.dumps(
+        OrderedDict(
+            [
+                ("exception", trade_result.exception),
+                ("trade", _hyperdrive_trade_obj_to_dict(trade_result.trade_object)),
+                ("wallet", _hyperdrive_wallet_to_dict(trade_result.agent.wallet)),
+                ("agent_info", _hyperdrive_agent_to_dict(trade_result.agent)),
+                # TODO Once pool_info and pool_config are objects,
+                # we need to add a conversion function to convert to dict
+                ("pool_config", trade_result.pool_config),
+                ("pool_info", trade_result.pool_info),
+                ("additional_info", trade_result.additional_info),
+                ("traceback", trade_result.exception.__traceback__),
+                # NOTE if this crash report happens in a PR that gets squashed,
+                # we loose this hash.
+                ("commit_hash", _get_git_revision_hash()),
+            ]
         ),
-        formatted_exception,
-        formatted_trade_obj,
-        formatted_agent_wallet,
-        formatted_agent_info,
-        formatted_pool_config,
-        formatted_pool_info,
-        formatted_additional_info,
-        formatted_traceback,
+        indent=4,
+        cls=ExtendedJSONEncoder,
     )
+
+    logging.log(log_level, crash_report_json)
 
 
 def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
