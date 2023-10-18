@@ -125,7 +125,9 @@ def main() -> None:
         need_checkpoint = checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration
         checkpoint_doesnt_exist = not does_checkpoint_exist(hyperdrive_contract, checkpoint_time)
 
-        logging.info(f"{timestamp=} {checkpoint_portion_elapsed=} {checkpoint_time=} {need_checkpoint=} {checkpoint_doesnt_exist=}")
+        logging.info(
+            f"{timestamp=} {checkpoint_portion_elapsed=} {checkpoint_time=} {need_checkpoint=} {checkpoint_doesnt_exist=}"
+        )
 
         if need_checkpoint and checkpoint_doesnt_exist:
             logging.info("Submitting a checkpoint for checkpointTime=%s...", checkpoint_time)
