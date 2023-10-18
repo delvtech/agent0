@@ -61,9 +61,11 @@ def trade_if_new_block(
     if not wait_for_new_block or latest_block_number > last_executed_block:
         # log and show block info
         logging.info(
-            "Block number: %d, Block time: %s",
+            "Block number: %d, Block time: %s, Price: %s, Rate: %s",
             latest_block_number,
             str(datetime.fromtimestamp(float(latest_block_timestamp))),
+            hyperdrive.spot_price,
+            hyperdrive.fixed_rate,
         )
         # To avoid jumbled print statements due to asyncio, we handle all logging and crash reporting
         # here, with inner functions returning trade results.

@@ -430,8 +430,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         Arguments
         ---------
         target_rate : FixedPoint
-            The target apr for which to calculate the bond reserves given the pools current share
-            reserves.
+            The target apr for which to calculate the bond reserves given the pools current share reserves.
         """
 
         mu: FixedPoint = self.pool_config["initialSharePrice"]

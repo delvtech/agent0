@@ -277,7 +277,7 @@ class Random(HyperdrivePolicy):
         Arguments
         ---------
         interface : HyperdriveInterface
-            The trading market.
+            Interface for the market on which this agent will be executing trades (MarketActions)
         wallet : HyperdriveWallet
             The agent's wallet.
 
