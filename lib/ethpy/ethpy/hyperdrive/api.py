@@ -92,9 +92,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         data_provider_contract: Contract = web3.eth.contract(
             abi=abis["ERC4626DataProvider"], address=web3.to_checksum_address(addresses.mock_hyperdrive)
         )
-        yield_address = smart_contract_read(data_provider_contract, "pool")["value"]
+        self.yield_address = smart_contract_read(data_provider_contract, "pool")["value"]
         self.yield_contract: Contract = web3.eth.contract(
-            abi=abis["MockERC4626"], address=web3.to_checksum_address(yield_address)
+            abi=abis["MockERC4626"], address=web3.to_checksum_address(self.yield_address)
         )
         # pool config is static
         self._contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
@@ -198,6 +198,12 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         pool_info_str = self._serialized_pool_info()
         spot_price = pyperdrive.get_spot_price(pool_config_str, pool_info_str)  # pylint: disable=no-member
         return FixedPoint(scaled_value=int(spot_price))
+
+    @property
+    def vault_shares(self) -> FixedPoint:
+        """Get the balance of vault shares that Hyperdrive has."""
+        vault_shares = smart_contract_read(self.yield_contract, "balanceOf", (self.hyperdrive_contract.address))
+        return FixedPoint(vault_shares["value"])
 
     def get_out_for_in(
         self,

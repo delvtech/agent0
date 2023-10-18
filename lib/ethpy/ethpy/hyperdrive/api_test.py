@@ -109,6 +109,7 @@ class TestHyperdriveInterface:
         _ = hyperdrive.current_block_number
         _ = hyperdrive.current_block_time
         _ = hyperdrive.variable_rate
+        _ = hyperdrive.vault_shares
         _ = hyperdrive.get_max_long(FixedPoint(1000))
         _ = hyperdrive.get_max_short(FixedPoint(1000))
         # TODO: need an agent address to mock up trades
