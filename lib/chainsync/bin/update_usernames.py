@@ -96,6 +96,12 @@ addr_to_username = {
     "0x03Df13eCd08CC1bd5FF7F8E339FfABA716Cee334": "Christian (Component) (click)",
     "0x03a461045fE36815C41663819EBb47a49fF2d1e4": "Greg (Chainsafe) (click)",
     "0x03c8ADC46c02EC34D7065c97C85E352085E64aB3": "Simona Pop (click)",
+    "0x03d8FF639642441a16701bc49666c2f670EBD640": "Re'em (click)",
+    "0x03dD702256C0cFAd7D53FeFaddC51063A151c898": "Mattias (click)",
+    "0x03f581A203C30c838d2772D209F888BeE68d6805": "Bobby (click)",
+    "0x04032d4b73470f1c72F6c918b263B5B6CD696C35": "Shant (click)",
+    "0x0405bfa774BC712c8141E627D292c0d6FB1F5A78": "Tucker (Oasis Pro) (click)",
+    "0x0406863656EB235C7eAd4c4c7c22294A7450563a": "Coulter (click)",
 }
 
 # Maps all usernames to a single user
@@ -183,9 +189,17 @@ username_to_user = {
     "Christian (Component) (click)": "Christian (Component)",
     "Greg (Chainsafe) (click)": "Greg (Chainsafe)",
     "Simona Pop (click)": "Simona Pop",
+    "Re'em (click)": "Re'em",
+    "Mattias (click)": "Mattias",
+    "Bobby (click)": "Bobby",
+    "Shant (click)": "Shant",
+    "Tucker (Oasis Pro) (click)": "Tucker (Oasis Pro)",
+    "Coulter (click)": "Coulter",
     # Bot accounts
     # NOTE register username from bots automatically appends " (bots)" to the username
     "slundquist (bots)": "Sheng Lundquist",
+    "dylan (bots)": "Dylan Paiton",
+    "jonny-bot (bots)": "Jonny Rhea",
 }
 
 # Get session object
