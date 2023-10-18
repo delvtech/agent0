@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import json
 import logging
+from collections import OrderedDict
 from datetime import datetime
 from traceback import format_tb
+from types import TracebackType
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -45,6 +47,9 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return "NumpyGenerator"
         if isinstance(o, datetime):
             return str(o)
+        if isinstance(o, TracebackType):
+            return format_tb(o)
+
         try:
             return o.__dict__
         except AttributeError:
@@ -94,46 +99,36 @@ def log_hyperdrive_crash_report(trade_result: TradeResult, log_level: int | None
     exception = trade_result.exception
     formatted_exception = repr(exception)
 
-    formatted_trade_obj = _hyperdrive_trade_obj_to_dict(trade_result.trade_object)
-    formatted_trade_obj = json.dumps(formatted_trade_obj, indent=4, cls=ExtendedJSONEncoder)
-
+    trade_obj = _hyperdrive_trade_obj_to_dict(trade_result.trade_object)
     # Handle wallet outside of agents
     wallet_dict = _hyperdrive_wallet_to_dict(trade_result.agent.wallet)
-    formatted_agent_wallet = json.dumps(wallet_dict, indent=4, cls=ExtendedJSONEncoder)
-
-    formatted_agent_info = _hyperdrive_agent_to_dict(trade_result.agent)
-    formatted_agent_info = json.dumps(formatted_agent_info, indent=4, cls=ExtendedJSONEncoder)
-
+    agent_info = _hyperdrive_agent_to_dict(trade_result.agent)
     # TODO Once pool_info and pool_config are objects, we need to add a conversion function to convert to dict
-    formatted_pool_config = json.dumps(trade_result.pool_config, indent=4, cls=ExtendedJSONEncoder)
-    formatted_pool_info = json.dumps(trade_result.pool_info, indent=4, cls=ExtendedJSONEncoder)
-
-    formatted_additional_info = json.dumps(trade_result.additional_info, indent=4, cls=ExtendedJSONEncoder)
-
+    pool_config = trade_result.pool_config
+    pool_info = trade_result.pool_info
+    additional_info = trade_result.additional_info
     assert exception is not None
-    formatted_traceback = "".join(format_tb(exception.__traceback__))
+    traceback_obj = exception.__traceback__
 
-    logging.log(
-        log_level,
-        (
-            "Exception: %s\n"
-            + "Trade: %s\n"
-            + "Wallet: %s\n"
-            + "AgentInfo: %s\n"
-            + "PoolConfig: %s\n"
-            + "PoolInfo: %s\n"
-            + "Additional Info: %s\n"
-            + "Traceback: %s\n"
+    # We use ordered dict to ensure the outermost order is preserved
+    crash_report_json = json.dumps(
+        OrderedDict(
+            [
+                ("exception", formatted_exception),
+                ("trade", trade_obj),
+                ("wallet", wallet_dict),
+                ("agent_info", agent_info),
+                ("pool_config", pool_config),
+                ("pool_info", pool_info),
+                ("additional_info", additional_info),
+                ("traceback", traceback_obj),
+            ]
         ),
-        formatted_exception,
-        formatted_trade_obj,
-        formatted_agent_wallet,
-        formatted_agent_info,
-        formatted_pool_config,
-        formatted_pool_info,
-        formatted_additional_info,
-        formatted_traceback,
+        indent=4,
+        cls=ExtendedJSONEncoder,
     )
+
+    logging.log(log_level, crash_report_json)
 
 
 def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
