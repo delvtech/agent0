@@ -110,6 +110,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_LONG,
                         trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
+                        slippage_tolerance=self.slippage_tolerance,
                         wallet=wallet,
                     ),
                 )
@@ -122,6 +123,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_SHORT,
                         trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
+                        slippage_tolerance=self.slippage_tolerance,
                         wallet=wallet,
                     ),
                 )
@@ -148,6 +150,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                             maturity_time=long_time,
                         ),
@@ -163,6 +166,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                             maturity_time=short_time,
                         ),
