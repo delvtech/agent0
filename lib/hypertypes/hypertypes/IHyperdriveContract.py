@@ -708,7 +708,7 @@ class IHyperdriveContract(Contract):
     """A web3.py Contract class for the IHyperdrive contract."""
 
     def __init__(self, address: ChecksumAddress | None = None, abi=Any) -> None:
-        self.abi = abi
+        self.abi = abi  # type: ignore
         # TODO: make this better, shouldn't initialize to the zero address, but the Contract's init
         # function requires an address.
         self.address = address if address else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
