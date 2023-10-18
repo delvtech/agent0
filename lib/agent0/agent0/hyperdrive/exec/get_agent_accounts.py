@@ -121,7 +121,7 @@ async def set_max_approval(
             )
             for agent in agents_left
         ]
-        gather_results: list[TxReceipt | Exception] = await asyncio.gather(*approval_calls, return_exceptions=True)
+        gather_results: list[TxReceipt | BaseException] = await asyncio.gather(*approval_calls, return_exceptions=True)
 
         # Rebuild accounts_left list if the result errored out for next iteration
         agents_left = []
