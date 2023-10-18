@@ -170,4 +170,5 @@ def main() -> None:
 
 
 # Run the checkpoint bot.
-main()
+if __name__ == "__main__":
+    main()
