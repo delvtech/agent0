@@ -117,7 +117,9 @@ async def async_fund_agents(
             )
             for i, (agent_account, agent_eth_budget) in enumerate(accounts_left)
         ]
-        gather_results: list[TxReceipt | Exception] = await asyncio.gather(*eth_funding_calls, return_exceptions=True)
+        gather_results: list[TxReceipt | BaseException] = await asyncio.gather(
+            *eth_funding_calls, return_exceptions=True
+        )
 
         # Rebuild accounts_left list if the result errored out for next iteration
         accounts_left = []
@@ -161,7 +163,9 @@ async def async_fund_agents(
             )
             for i, (agent_account, agent_base_budget) in enumerate(accounts_left)
         ]
-        gather_results: list[TxReceipt | Exception] = await asyncio.gather(*base_funding_calls, return_exceptions=True)
+        gather_results: list[TxReceipt | BaseException] = await asyncio.gather(
+            *base_funding_calls, return_exceptions=True
+        )
 
         # Rebuild accounts_left list if the result errored out for next iteration
         accounts_left = []

@@ -68,7 +68,7 @@ async def async_execute_single_agent_trade(
     # TODO preliminary search shows async tasks has very low overhead:
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
     # However, should probably test what the limit number of trades an agent can make in one block
-    wallet_deltas_or_exception: list[HyperdriveWalletDeltas | Exception] = await asyncio.gather(
+    wallet_deltas_or_exception: list[HyperdriveWalletDeltas | BaseException] = await asyncio.gather(
         *[
             async_match_contract_call_to_trade(agent, hyperdrive, trade_object, nonce=Nonce(base_nonce + i))
             for i, trade_object in enumerate(trades)
@@ -121,11 +121,9 @@ async def async_execute_single_agent_trade(
                 checkpoint_info=checkpoint_info,
                 additional_info=additional_info,
             )
-        else:
-            # Should never get here
-            # TODO this function was originally used for types
-            # Is this okay to use here?
-            assert_never(result)
+        else:  # Should never get here
+            # TODO: use match statement and assert_never(result)
+            raise AssertionError("invalid result type")
         trade_results.append(trade_result)
 
     return trade_results
