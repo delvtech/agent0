@@ -119,6 +119,7 @@ def log_hyperdrive_crash_report(trade_result: TradeResult, log_level: int | None
                 # we need to add a conversion function to convert to dict
                 ("pool_config", trade_result.pool_config),
                 ("pool_info", trade_result.pool_info),
+                ("checkpoint_info", trade_result.checkpoint_info),
                 ("additional_info", trade_result.additional_info),
                 ("traceback", trade_result.exception.__traceback__),
                 # NOTE if this crash report happens in a PR that gets squashed,
