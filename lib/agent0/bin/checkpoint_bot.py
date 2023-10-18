@@ -29,8 +29,9 @@ CHECKPOINT_WAITING_PERIOD = 0.5
 
 def does_checkpoint_exist(hyperdrive_contract: Contract, checkpoint_time: int) -> bool:
     """Checks whether or not a given checkpoint exists."""
-
-    return smart_contract_read(hyperdrive_contract, "getCheckpoint", int(checkpoint_time))["sharePrice"] > 0
+    checkpoint = smart_contract_read(hyperdrive_contract, "getCheckpoint", int(checkpoint_time))
+    logging.info(f"{checkpoint=}")
+    return checkpoint["sharePrice"] > 0
 
 
 def get_config() -> tuple[EthConfig, EnvironmentConfig]:
@@ -121,9 +122,12 @@ def main() -> None:
             raise AssertionError(f"{latest_block=} has no timestamp")
         checkpoint_portion_elapsed = timestamp % checkpoint_duration
         checkpoint_time = timestamp - timestamp % checkpoint_duration
-        if checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration and not does_checkpoint_exist(
-            hyperdrive_contract, checkpoint_time
-        ):
+        need_checkpoint = checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration
+        checkpoint_doesnt_exist = not does_checkpoint_exist(hyperdrive_contract, checkpoint_time)
+
+        logging.info(f"{timestamp=} {checkpoint_portion_elapsed=} {checkpoint_time=} {need_checkpoint=} {checkpoint_doesnt_exist=}")
+
+        if need_checkpoint and checkpoint_doesnt_exist:
             logging.info("Submitting a checkpoint for checkpointTime=%s...", checkpoint_time)
             # TODO: We will run into issues with the gas price being too low
             # with testnets and mainnet. When we get closer to production, we
