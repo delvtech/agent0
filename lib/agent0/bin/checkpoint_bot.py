@@ -30,7 +30,7 @@ CHECKPOINT_WAITING_PERIOD = 0.5
 def does_checkpoint_exist(hyperdrive_contract: Contract, checkpoint_time: int) -> bool:
     """Checks whether or not a given checkpoint exists."""
     checkpoint = smart_contract_read(hyperdrive_contract, "getCheckpoint", int(checkpoint_time))
-    logging.info(f"{checkpoint=}")
+    logging.info("%s", checkpoint)
     return checkpoint["sharePrice"] > 0
 
 
@@ -126,7 +126,13 @@ def main() -> None:
         checkpoint_doesnt_exist = not does_checkpoint_exist(hyperdrive_contract, checkpoint_time)
 
         logging.info(
-            f"{timestamp=} {checkpoint_portion_elapsed=} {checkpoint_time=} {need_checkpoint=} {checkpoint_doesnt_exist=}"
+            "timestamp=%s checkpoint_portion_elapsed=%s checkpoint_time=%s "
+            "need_checkpoint=%s checkpoint_doesnt_exist=%s",
+            timestamp,
+            checkpoint_portion_elapsed,
+            checkpoint_time,
+            need_checkpoint,
+            checkpoint_doesnt_exist,
         )
 
         if need_checkpoint and checkpoint_doesnt_exist:
