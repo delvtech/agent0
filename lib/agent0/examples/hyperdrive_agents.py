@@ -57,6 +57,19 @@ agent_config: list[AgentConfig] = [
         eth_budget_wei=ETH_BUDGET_PER_BOT,
         policy_config=Zoo.random.Config(trade_chance=FixedPoint("0.8")),
     ),
+    AgentConfig(
+        policy=Zoo.lp_and_arb,
+        number_of_agents=0,
+        slippage_tolerance=None,  # No slippage tolerance for arb bot
+        # Fixed budgets
+        base_budget_wei=BASE_BUDGET_PER_BOT,
+        eth_budget_wei=ETH_BUDGET_PER_BOT,
+        policy_config=Zoo.lp_and_arb.Config(
+            lp_portion=FixedPoint("0.5"),  # LP with 50% of capital
+            high_fixed_rate_thresh=FixedPoint(0.01),  # Amount over variable rate to arbitrage
+            low_fixed_rate_thresh=FixedPoint(0.01),  # Amount below variable rate to arbitrage
+        ),
+    ),
 ]
 
 
