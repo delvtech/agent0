@@ -82,8 +82,11 @@ def data_chain_to_db(
         The database session
     """
     # Query and add block_checkpoint_info
+    timestamp = web3.eth.get_block(block_number).get("timestamp", None)
+    if timestamp is None:
+        raise AssertionError("timestamp can not be None")
     checkpoint_info_dict = process_hyperdrive_checkpoint(
-        get_hyperdrive_checkpoint(hyperdrive_contract, block_number), web3, block_number
+        get_hyperdrive_checkpoint(hyperdrive_contract, timestamp), web3, block_number
     )
     block_checkpoint_info = convert_checkpoint_info(checkpoint_info_dict)
     add_checkpoint_infos([block_checkpoint_info], session)
