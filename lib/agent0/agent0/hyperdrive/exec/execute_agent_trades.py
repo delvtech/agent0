@@ -103,6 +103,13 @@ async def async_execute_single_agent_trade(
             # in isolation and doing one trade per call.
             pool_config = hyperdrive.pool_config
             pool_info = hyperdrive.pool_info
+            # add additional information to the exception
+            additional_info = {
+                "Spot Price": hyperdrive.spot_price,
+                "Fixed Rate": hyperdrive.fixed_rate,
+                "Variable Rate": hyperdrive.variable_rate,
+            }
+
             trade_result = TradeResult(
                 status=TradeStatus.FAIL,
                 agent=agent,
@@ -110,6 +117,7 @@ async def async_execute_single_agent_trade(
                 exception=result,
                 pool_config=pool_config,
                 pool_info=pool_info,
+                additional_info=additional_info,
             )
         else:
             # Should never get here
