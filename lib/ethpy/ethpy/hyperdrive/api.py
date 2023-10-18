@@ -205,6 +205,22 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         vault_shares = smart_contract_read(self.yield_contract, "balanceOf", (self.hyperdrive_contract.address))
         return FixedPoint(scaled_value=int(vault_shares["value"]))
 
+    def get_checkpoint_id(self, block_timestamp: int) -> int:
+        """Get the Checkpoint ID for a given timestamp.
+
+        Arguments
+        ---------
+        block_timestamp: int
+            A timestamp for any block. Use the latest block to get the current checkpoint id,
+            or a specific timestamp of a transaction's block if getting the checkpoint id for that transaction.
+
+        Returns
+        -------
+        int
+            The checkpoint id, which can be used as an argument for the Hyperdrive getCheckpoint function.
+        """
+        return block_timestamp - (block_timestamp % self.pool_config["checkpointDuration"])
+
     def get_out_for_in(
         self,
         amount_in: FixedPoint,
@@ -411,7 +427,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 self.current_block_number,
             )
             self._contract_latest_checkpoint = get_hyperdrive_checkpoint(
-                self.hyperdrive_contract, self.current_block_number
+                self.hyperdrive_contract, self.get_checkpoint_id(self.current_block_number)
             )
             self._latest_checkpoint = process_hyperdrive_checkpoint(
                 copy.deepcopy(self._contract_latest_checkpoint),
