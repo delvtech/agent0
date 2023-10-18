@@ -21,6 +21,8 @@ class TradeStatus(Enum):
 
 # TODO some of these are generic, move to base directory
 @dataclass
+# Dataclass has lots of attributes
+# pylint: disable=too-many-instance-attributes
 class TradeResult:
     """A data object that stores all information of an executed trade
 
