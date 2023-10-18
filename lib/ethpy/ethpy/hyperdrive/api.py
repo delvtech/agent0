@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy
 import os
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 import eth_utils
 import pyperdrive
@@ -204,6 +204,23 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         """Get the balance of vault shares that Hyperdrive has."""
         vault_shares = smart_contract_read(self.yield_contract, "balanceOf", (self.hyperdrive_contract.address))
         return FixedPoint(scaled_value=int(vault_shares["value"]))
+
+    def get_checkpoint_id(self, block_timestamp: Timestamp) -> Timestamp:
+        """Get the Checkpoint ID for a given timestamp.
+
+        Arguments
+        ---------
+        block_timestamp: int
+            A timestamp for any block. Use the latest block to get the current checkpoint id,
+            or a specific timestamp of a transaction's block if getting the checkpoint id for that transaction.
+
+        Returns
+        -------
+        int
+            The checkpoint id, which can be used as an argument for the Hyperdrive getCheckpoint function.
+        """
+        latest_checkpoint_timestamp = block_timestamp - (block_timestamp % self.pool_config["checkpointDuration"])
+        return cast(Timestamp, latest_checkpoint_timestamp)
 
     def get_out_for_in(
         self,
@@ -411,7 +428,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 self.current_block_number,
             )
             self._contract_latest_checkpoint = get_hyperdrive_checkpoint(
-                self.hyperdrive_contract, self.current_block_number
+                self.hyperdrive_contract, self.get_checkpoint_id(self.current_block_time)
             )
             self._latest_checkpoint = process_hyperdrive_checkpoint(
                 copy.deepcopy(self._contract_latest_checkpoint),

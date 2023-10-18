@@ -10,7 +10,7 @@ from ethpy.base import UnknownBlockError, get_transaction_logs, smart_contract_r
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
-from web3.types import BlockData, TxReceipt
+from web3.types import BlockData, Timestamp, TxReceipt
 
 from .addresses import HyperdriveAddresses
 from .assets import AssetIdPrefix, encode_asset_id
@@ -128,7 +128,7 @@ def process_hyperdrive_pool_info(
     return pool_info
 
 
-def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, int]:
+def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_timestamp: Timestamp) -> dict[str, int]:
     """Returns the checkpoint info for the Hyperdrive contract at a given block.
 
     Arguments
@@ -143,7 +143,7 @@ def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_number: Block
     dict[str, int]
         A dictionary containing the checkpoint details.
     """
-    return smart_contract_read(hyperdrive_contract, "getCheckpoint", block_number)
+    return smart_contract_read(hyperdrive_contract, "getCheckpoint", block_timestamp)
 
 
 def process_hyperdrive_checkpoint(checkpoint: dict[str, int], web3: Web3, block_number: BlockNumber) -> dict[str, Any]:
