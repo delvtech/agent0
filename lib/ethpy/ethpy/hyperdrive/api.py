@@ -203,7 +203,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
     def vault_shares(self) -> FixedPoint:
         """Get the balance of vault shares that Hyperdrive has."""
         vault_shares = smart_contract_read(self.yield_contract, "balanceOf", (self.hyperdrive_contract.address))
-        return FixedPoint(vault_shares["value"])
+        return FixedPoint(scaled_value=int(vault_shares["value"]))
 
     def get_out_for_in(
         self,

@@ -1,8 +1,8 @@
 """The resulting deltas of a market action"""
 # Please enter the commit message for your changes. Lines starting
 from __future__ import annotations
-from dataclasses import dataclass
 
+from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
@@ -21,6 +21,8 @@ class TradeStatus(Enum):
 
 # TODO some of these are generic, move to base directory
 @dataclass
+# Dataclass has lots of attributes
+# pylint: disable=too-many-instance-attributes
 class TradeResult:
     """A data object that stores all information of an executed trade
 
@@ -36,6 +38,8 @@ class TradeResult:
         The configuration of the pool
     pool_info : dict[str, Any]
         The information of the pool
+    checkpoint_info: dict[str, Any]
+        The information of the latest checkpoint
     additional_info : dict[str, Any]
         Additional information used for crash reporting
     """
@@ -47,4 +51,5 @@ class TradeResult:
     exception: Exception | None | None = None
     pool_config: dict[str, Any] | None = None
     pool_info: dict[str, Any] | None = None
+    checkpoint_info: dict[str, Any] | None = None
     additional_info: dict[str, Any] | None = None
