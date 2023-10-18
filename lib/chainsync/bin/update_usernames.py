@@ -199,6 +199,7 @@ username_to_user = {
     # NOTE register username from bots automatically appends " (bots)" to the username
     "slundquist (bots)": "Sheng Lundquist",
     "dylan (bots)": "Dylan Paiton",
+    "jonny-bot (bots)": "Jonny Rhea",
 }
 
 # Get session object
