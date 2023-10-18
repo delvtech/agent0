@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import subprocess
 from collections import OrderedDict
 from datetime import datetime
 from traceback import format_tb
@@ -49,6 +50,8 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return str(o)
         if isinstance(o, TracebackType):
             return format_tb(o)
+        if isinstance(o, Exception):
+            return repr(o)
 
         try:
             return o.__dict__
@@ -56,6 +59,11 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             pass
         # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, o)
+
+
+def _get_git_revision_hash() -> str:
+    """Helper function for getting commit hash from git."""
+    return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
 
 
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:
@@ -96,32 +104,26 @@ def log_hyperdrive_crash_report(trade_result: TradeResult, log_level: int | None
     if log_level is None:
         log_level = logging.CRITICAL
 
-    exception = trade_result.exception
-    formatted_exception = repr(exception)
-
-    trade_obj = _hyperdrive_trade_obj_to_dict(trade_result.trade_object)
-    # Handle wallet outside of agents
-    wallet_dict = _hyperdrive_wallet_to_dict(trade_result.agent.wallet)
-    agent_info = _hyperdrive_agent_to_dict(trade_result.agent)
-    # TODO Once pool_info and pool_config are objects, we need to add a conversion function to convert to dict
-    pool_config = trade_result.pool_config
-    pool_info = trade_result.pool_info
-    additional_info = trade_result.additional_info
-    assert exception is not None
-    traceback_obj = exception.__traceback__
+    # If we're crash reporting, an exception is expected
+    assert trade_result.exception is not None
 
     # We use ordered dict to ensure the outermost order is preserved
     crash_report_json = json.dumps(
         OrderedDict(
             [
-                ("exception", formatted_exception),
-                ("trade", trade_obj),
-                ("wallet", wallet_dict),
-                ("agent_info", agent_info),
-                ("pool_config", pool_config),
-                ("pool_info", pool_info),
-                ("additional_info", additional_info),
-                ("traceback", traceback_obj),
+                ("exception", trade_result.exception),
+                ("trade", _hyperdrive_trade_obj_to_dict(trade_result.trade_object)),
+                ("wallet", _hyperdrive_wallet_to_dict(trade_result.agent.wallet)),
+                ("agent_info", _hyperdrive_agent_to_dict(trade_result.agent)),
+                # TODO Once pool_info and pool_config are objects,
+                # we need to add a conversion function to convert to dict
+                ("pool_config", trade_result.pool_config),
+                ("pool_info", trade_result.pool_info),
+                ("additional_info", trade_result.additional_info),
+                ("traceback", trade_result.exception.__traceback__),
+                # NOTE if this crash report happens in a PR that gets squashed,
+                # we loose this hash.
+                ("commit_hash", _get_git_revision_hash()),
             ]
         ),
         indent=4,
