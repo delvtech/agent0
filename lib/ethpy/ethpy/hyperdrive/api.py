@@ -500,10 +500,14 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             agent_checksum_address,
             as_underlying,
         )
+        # To catch any solidity errors, we always preview transactions on the current block
+        # before calling smart contract transact
+        # Since current_block_number is a property, we want to get the static block here
+        current_block = self.current_block_number
+        preview_result = smart_contract_preview_transaction(
+            self.hyperdrive_contract, agent_checksum_address, "openLong", *fn_args, block_identifier=current_block
+        )
         if slippage_tolerance is not None:
-            preview_result = smart_contract_preview_transaction(
-                self.hyperdrive_contract, agent_checksum_address, "openLong", *fn_args
-            )
             min_output = (
                 FixedPoint(scaled_value=preview_result["bondProceeds"]) * (FixedPoint(1) - slippage_tolerance)
             ).scaled_value
@@ -514,10 +518,16 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 agent_checksum_address,
                 as_underlying,
             )
-        tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "openLong", *fn_args, nonce=nonce
-        )
-        trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "openLong")
+
+        try:
+            tx_receipt = await async_smart_contract_transact(
+                self.web3, self.hyperdrive_contract, agent, "openLong", *fn_args, nonce=nonce
+            )
+            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "openLong")
+        except Exception as exc:
+            # We add the preview block as an arg to the exception
+            exc.args += (f"Call previewed in block {current_block}",)
+            raise exc
         return trade_result
 
     # pylint: disable=too-many-arguments
@@ -561,10 +571,14 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             agent_checksum_address,
             as_underlying,
         )
+        # To catch any solidity errors, we always preview transactions on the current block
+        # before calling smart contract transact
+        # Since current_block_number is a property, we want to get the static block here
+        current_block = self.current_block_number
+        preview_result = smart_contract_preview_transaction(
+            self.hyperdrive_contract, agent_checksum_address, "closeLong", *fn_args, block_identifier=current_block
+        )
         if slippage_tolerance:
-            preview_result = smart_contract_preview_transaction(
-                self.hyperdrive_contract, agent_checksum_address, "closeLong", *fn_args
-            )
             min_output = (
                 FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
             ).scaled_value
@@ -575,10 +589,17 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 agent_checksum_address,
                 as_underlying,
             )
-        tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "closeLong", *fn_args, nonce=nonce
-        )
-        trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "closeLong")
+
+        try:
+            tx_receipt = await async_smart_contract_transact(
+                self.web3, self.hyperdrive_contract, agent, "closeLong", *fn_args, nonce=nonce
+            )
+            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "closeLong")
+        except Exception as exc:
+            # We add the preview block as an arg to the exception
+            exc.args += (f"Call previewed in block {current_block}",)
+            raise exc
+
         return trade_result
 
     async def async_open_short(
@@ -623,24 +644,34 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             agent_checksum_address,
             as_underlying,
         )
+        # To catch any solidity errors, we always preview transactions on the current block
+        # before calling smart contract transact
+        # Since current_block_number is a property, we want to get the static block here
+        current_block = self.current_block_number
+        preview_result = smart_contract_preview_transaction(
+            self.hyperdrive_contract, agent_checksum_address, "openShort", *fn_args, block_identifier=current_block
+        )
         if slippage_tolerance:
-            preview_result = smart_contract_preview_transaction(
-                self.hyperdrive_contract, agent_checksum_address, "openShort", *fn_args
-            )
             max_deposit = (
                 FixedPoint(scaled_value=preview_result["traderDeposit"]) * (FixedPoint(1) + slippage_tolerance)
             ).scaled_value
-        fn_args = (
-            trade_amount.scaled_value,
-            max_deposit,
-            min_share_price,
-            agent_checksum_address,
-            as_underlying,
-        )
-        tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "openShort", *fn_args, nonce=nonce
-        )
-        trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "openShort")
+            fn_args = (
+                trade_amount.scaled_value,
+                max_deposit,
+                min_share_price,
+                agent_checksum_address,
+                as_underlying,
+            )
+
+        try:
+            tx_receipt = await async_smart_contract_transact(
+                self.web3, self.hyperdrive_contract, agent, "openShort", *fn_args, nonce=nonce
+            )
+            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "openShort")
+        except Exception as exc:
+            # We add the preview block as an arg to the exception
+            exc.args += (f"Call previewed in block {current_block}",)
+            raise exc
         return trade_result
 
     # pylint: disable=too-many-arguments
@@ -684,10 +715,14 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             agent_checksum_address,
             as_underlying,
         )
+        # To catch any solidity errors, we always preview transactions on the current block
+        # before calling smart contract transact
+        # Since current_block_number is a property, we want to get the static block here
+        current_block = self.current_block_number
+        preview_result = smart_contract_preview_transaction(
+            self.hyperdrive_contract, agent_checksum_address, "closeShort", *fn_args, block_identifier=current_block
+        )
         if slippage_tolerance:
-            preview_result = smart_contract_preview_transaction(
-                self.hyperdrive_contract, agent_checksum_address, "closeShort", *fn_args
-            )
             min_output = (
                 FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
             ).scaled_value
@@ -698,10 +733,16 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 agent_checksum_address,
                 as_underlying,
             )
-        tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "closeShort", *fn_args, nonce=nonce
-        )
-        trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "closeShort")
+
+        try:
+            tx_receipt = await async_smart_contract_transact(
+                self.web3, self.hyperdrive_contract, agent, "closeShort", *fn_args, nonce=nonce
+            )
+            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "closeShort")
+        except Exception as exc:
+            # We add the preview block as an arg to the exception
+            exc.args += (f"Call previewed in block {current_block}",)
+            raise exc
         return trade_result
 
     # pylint: disable=too-many-arguments
@@ -742,10 +783,24 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             agent_checksum_address,
             as_underlying,
         )
-        tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "addLiquidity", *fn_args, nonce=nonce
+        # To catch any solidity errors, we always preview transactions on the current block
+        # before calling smart contract transact
+        # Since current_block_number is a property, we want to get the static block here
+        current_block = self.current_block_number
+        _ = smart_contract_preview_transaction(
+            self.hyperdrive_contract, agent_checksum_address, "addLiquidity", *fn_args, block_identifier=current_block
         )
-        trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "addLiquidity")
+        # TODO add slippage controls for add liquidity
+
+        try:
+            tx_receipt = await async_smart_contract_transact(
+                self.web3, self.hyperdrive_contract, agent, "addLiquidity", *fn_args, nonce=nonce
+            )
+            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "addLiquidity")
+        except Exception as exc:
+            # We add the preview block as an arg to the exception
+            exc.args += (f"Call previewed in block {current_block}",)
+            raise exc
         return trade_result
 
     async def async_remove_liquidity(
@@ -779,10 +834,27 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             agent_checksum_address,
             as_underlying,
         )
-        tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "removeLiquidity", *fn_args, nonce=nonce
+        # To catch any solidity errors, we always preview transactions on the current block
+        # before calling smart contract transact
+        # Since current_block_number is a property, we want to get the static block here
+        current_block = self.current_block_number
+        _ = smart_contract_preview_transaction(
+            self.hyperdrive_contract,
+            agent_checksum_address,
+            "removeLiquidity",
+            *fn_args,
+            block_identifier=current_block,
         )
-        trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "removeLiquidity")
+
+        try:
+            tx_receipt = await async_smart_contract_transact(
+                self.web3, self.hyperdrive_contract, agent, "removeLiquidity", *fn_args, nonce=nonce
+            )
+            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "removeLiquidity")
+        except Exception as exc:
+            # We add the preview block as an arg to the exception
+            exc.args += (f"Call previewed in block {current_block}",)
+            raise exc
         return trade_result
 
     async def async_redeem_withdraw_shares(
@@ -827,10 +899,27 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             agent_checksum_address,
             as_underlying,
         )
-        tx_receipt = await async_smart_contract_transact(
-            self.web3, self.hyperdrive_contract, agent, "redeemWithdrawalShares", *fn_args, nonce=nonce
+        # To catch any solidity errors, we always preview transactions on the current block
+        # before calling smart contract transact
+        # Since current_block_number is a property, we want to get the static block here
+        current_block = self.current_block_number
+        _ = smart_contract_preview_transaction(
+            self.hyperdrive_contract,
+            agent_checksum_address,
+            "redeemWithdrawalShares",
+            *fn_args,
+            block_identifier=current_block,
         )
-        trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "redeemWithdrawalShares")
+
+        try:
+            tx_receipt = await async_smart_contract_transact(
+                self.web3, self.hyperdrive_contract, agent, "redeemWithdrawalShares", *fn_args, nonce=nonce
+            )
+            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "redeemWithdrawalShares")
+        except Exception as exc:
+            # We add the preview block as an arg to the exception
+            exc.args += (f"Call previewed in block {current_block}",)
+            raise exc
         return trade_result
 
     def get_eth_base_balances(self, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
