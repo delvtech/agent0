@@ -398,6 +398,7 @@ def calc_reserves_to_hit_target_rate(
     logging.debug(f"Targeting {float(target_rate):.2%} from {float(interface.fixed_rate):.2%}")
     while float(abs(predicted_rate - target_rate)) > TOLERANCE:
         iteration += 1
+        latest_fixed_rate = calc_apr_local_dict(pool_config, pool_info)
         target_bonds = calc_bond_reserves(
             pool_info["shareReserves"],
             pool_info["shareAdjustment"],
@@ -417,7 +418,7 @@ def calc_reserves_to_hit_target_rate(
         temp_pool_info = apply_step(pool_info.copy(), bonds_needed, shares_needed, gov_fee)
         predicted_rate = calc_apr_local_dict(pool_config, temp_pool_info)
         # improve my guess by scaling up or down based on how much I overshot or undershot and try again
-        overshoot_or_undershoot = (predicted_rate - interface.fixed_rate) / (target_rate - interface.fixed_rate)
+        overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
         # if we overshot by 2x, we adjust our guess to be 2x less, etc.
         bonds_needed /= overshoot_or_undershoot
         shares_needed, gov_fee = calc_shares_needed_for_bonds(bonds_needed, pool_info, pool_config)
