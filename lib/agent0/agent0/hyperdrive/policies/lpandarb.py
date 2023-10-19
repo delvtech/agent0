@@ -652,7 +652,8 @@ class LPandArb(HyperdrivePolicy):
             # Reduce shorts first, if we have them
             if len(wallet.shorts) > 0:
                 for maturity_time, short in wallet.shorts.items():
-                    reduce_short_amount = min(short.balance, bonds_needed)
+                    max_long_bonds = interface.get_max_long(wallet.balance.amount)
+                    reduce_short_amount = min(short.balance, bonds_needed, max_long_bonds)
                     bonds_needed -= reduce_short_amount
                     logging.debug("reducing short by %s", reduce_short_amount)
                     action_list.append(
@@ -695,7 +696,8 @@ class LPandArb(HyperdrivePolicy):
             # Reduce longs first, if we have them
             if len(wallet.longs) > 0:
                 for maturity_time, long in wallet.longs.items():
-                    reduce_long_amount = min(long.balance, bonds_needed)
+                    max_short_bonds = interface.get_max_short(wallet.balance.amount)
+                    reduce_long_amount = min(long.balance, bonds_needed, max_short_bonds)
                     bonds_needed -= reduce_long_amount
                     logging.debug("reducing long by %s", reduce_long_amount)
                     action_list.append(
