@@ -142,9 +142,10 @@ class TestMultiTradePerBlock:
 
         # Build environment config
         env_config = EnvironmentConfig(
-            delete_previous_logs=False,
+            delete_previous_logs=True,
             halt_on_errors=True,
-            log_filename="system_test",
+            dump_state_on_crash=True,
+            log_filename=".logging/multi_trade_per_block_test.log",
             log_level=logging.INFO,
             log_stdout=True,
             random_seed=1234,
