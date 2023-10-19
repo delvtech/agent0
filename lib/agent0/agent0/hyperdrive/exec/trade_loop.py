@@ -25,7 +25,7 @@ def trade_if_new_block(
     agent_accounts: list[HyperdriveAgent],
     halt_on_errors: bool,
     halt_on_slippage: bool,
-    dump_state_on_crash: bool,
+    crash_report_to_file: bool,
     last_executed_block: int,
     liquidate: bool,
 ) -> int:
@@ -103,12 +103,12 @@ def trade_if_new_block(
 
                 # Crash reporting
                 if is_slippage:
-                    log_hyperdrive_crash_report(trade_result, logging.WARNING)
+                    log_hyperdrive_crash_report(trade_result, logging.WARNING, crash_report_to_file=False)
                 else:
-                    if dump_state_on_crash:
+                    if crash_report_to_file:
                         trade_result.anvil_state = _get_anvil_state_dump(hyperdrive.web3)
                     # Defaults to CRITICAL
-                    log_hyperdrive_crash_report(trade_result)
+                    log_hyperdrive_crash_report(trade_result, crash_report_to_file=crash_report_to_file)
 
                 if halt_on_errors:
                     # Don't halt if slippage detected and halt_on_slippage is false
