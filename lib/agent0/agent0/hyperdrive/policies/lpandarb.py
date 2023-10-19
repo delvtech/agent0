@@ -4,7 +4,8 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from statistics import mean
+from typing import TYPE_CHECKING, Any
 
 from fixedpointmath import FixedPoint
 
@@ -22,8 +23,8 @@ if TYPE_CHECKING:
 # pylint: disable=too-many-arguments, too-many-locals
 
 # constants
-TOLERANCE = 1e-18
-MAX_ITER = 10
+TOLERANCE = 1e-16
+MAX_ITER = 50
 
 
 # functions
@@ -39,7 +40,8 @@ def calc_bond_reserves(
     r"""Calculate the amount of bonds that hit the target rate for the given shares.
 
     The calculation is based on the formula: .. math::
-            mu * (z - zeta) * (1 + apr * t) ** (1 / tau)
+            mu * (z - zeta) * (1 + apr * t) ** (1 / time_stretch)
+
 
     Arguments
     ---------
@@ -98,6 +100,18 @@ def calc_spot_price_local(
     """
     effective_share_reserves = share_reserves - share_adjustment
     return (initial_share_price * effective_share_reserves / bond_reserves) ** time_stretch
+
+
+def calc_apr_local_dict(pool_config, pool_info):
+    """Calculate APR by passing in the pool config and pool info as dicts."""
+    return calc_apr_local(
+        pool_info["shareReserves"],
+        pool_info["shareAdjustment"],
+        pool_info["bondReserves"],
+        pool_config["initialSharePrice"],
+        pool_config["positionDuration"],
+        pool_config["timeStretch"],
+    )
 
 
 # TODO: switch over to using function in the SDK
@@ -298,10 +312,58 @@ def get_shares_out_for_bonds_in(
     return amount_to_user_in_shares, curve_fee_amount_in_shares, gov_fee_amount_in_shares
 
 
+def calc_shares_needed_for_bonds(
+    bonds_needed: FixedPoint, pool_info: dict[str, Any], pool_config: dict[str, Any]
+) -> tuple[FixedPoint, FixedPoint]:
+    """Calculate the shares needed to trade a certain amount of bonds, and the associate governance fee.
+
+    Arguments
+    ---------
+    bonds_needed : FixedPoint
+        The given amount of bonds that is going to be traded.
+    pool_info : dict[str, Any]
+        The hyperdrive pool info.
+    pool_config : dict[str, Any]
+        The hyperdrive pool config.
+
+
+    Returns
+    -------
+    tuple[FixedPoint, FixedPoint] containing:
+        shares_needed : FixedPoint
+            The amount of shares needed to trade the given amount of bonds.
+        gov_fee : FixedPoint
+            The associated governance fee.
+    """
+    if bonds_needed > 0:  # handle the short case
+        shares_needed, _, gov_fee = get_shares_out_for_bonds_in(
+            pool_info["bondReserves"],
+            pool_info["sharePrice"],
+            pool_config["initialSharePrice"],
+            pool_info["shareReserves"] - pool_info["shareAdjustment"],
+            bonds_needed,
+            pool_config["timeStretch"],
+            pool_config["curveFee"],
+            pool_config["governanceFee"],
+        )
+    else:  # handle the long case
+        shares_needed, _, gov_fee = get_shares_in_for_bonds_out(
+            pool_info["bondReserves"],
+            pool_info["sharePrice"],
+            pool_config["initialSharePrice"],
+            pool_info["shareReserves"] - pool_info["shareAdjustment"],
+            -bonds_needed,
+            pool_config["timeStretch"],
+            pool_config["curveFee"],
+            pool_config["governanceFee"],
+        )
+    return shares_needed, gov_fee
+
+
 # TODO: switch over to using function in the SDK
 def calc_reserves_to_hit_target_rate(
     target_rate: FixedPoint, interface: HyperdriveInterface
-) -> tuple[FixedPoint, FixedPoint]:
+) -> tuple[FixedPoint, FixedPoint, int, float]:
     """Calculate the bonds and shares needed to hit the target fixed rate.
 
     Arguments
@@ -318,6 +380,10 @@ def calc_reserves_to_hit_target_rate(
             Total amount of shares needed to be added into the pool to hit the target rate.
         total_bonds_needed : FixedPoint
             Total amount of bonds needed to be added into the pool to hit the target rate.
+        convergence_iterations : int
+            The number of iterations it took to converge.
+        convergence_speed : float
+            The amount of time it took to converge, in seconds.
     """
     # variables
     predicted_rate = FixedPoint(0)
@@ -329,9 +395,10 @@ def calc_reserves_to_hit_target_rate(
     total_shares_needed = FixedPoint(0)
     total_bonds_needed = FixedPoint(0)
     # pylint: disable=logging-fstring-interpolation
-    logging.info(f"Targeting {float(target_rate):.2%} from {float(interface.fixed_rate):.2%}")
+    logging.debug(f"Targeting {float(target_rate):.2%} from {float(interface.fixed_rate):.2%}")
     while float(abs(predicted_rate - target_rate)) > TOLERANCE:
         iteration += 1
+        latest_fixed_rate = calc_apr_local_dict(pool_config, pool_info)
         target_bonds = calc_bond_reserves(
             pool_info["shareReserves"],
             pool_info["shareAdjustment"],
@@ -344,46 +411,23 @@ def calc_reserves_to_hit_target_rate(
         # however trades modify both bonds and shares in amounts of equal value.
         # we modify bonds by only half of bonds_needed, knowing that an amount of equal
         # value will move shares in the other direction, toward our desired ratio.
+        # this guess is very bad when slippage is high, so we check how bad, then scale accordingly.
         bonds_needed = (target_bonds - pool_info["bondReserves"]) / FixedPoint(2)
-        if bonds_needed > 0:  # handle the short case
-            shares_out, _, gov_fee = get_shares_out_for_bonds_in(
-                pool_info["bondReserves"],
-                pool_info["sharePrice"],
-                pool_config["initialSharePrice"],
-                pool_info["shareReserves"],
-                bonds_needed,
-                pool_config["timeStretch"],
-                pool_config["curveFee"],
-                pool_config["governanceFee"],
-            )
-            # shares_out is what the user takes OUT: curve_fee less due to fees.
-            # gov_fee of that doesn't stay in the pool, going OUT to governance (same direction as user flow).
-            pool_info["shareReserves"] += -shares_out - gov_fee
-        else:  # handle the long case
-            shares_in, _, gov_fee = get_shares_in_for_bonds_out(
-                pool_info["bondReserves"],
-                pool_info["sharePrice"],
-                pool_config["initialSharePrice"],
-                pool_info["shareReserves"],
-                -bonds_needed,
-                pool_config["timeStretch"],
-                pool_config["curveFee"],
-                pool_config["governanceFee"],
-            )
-            # shares_in is what the user pays IN: curve_fee more due to fees.
-            # gov_fee of that doesn't go to the pool, going OUT to governance (opposite direction of user flow).
-            pool_info["shareReserves"] += shares_in - gov_fee
-        pool_info["bondReserves"] += bonds_needed
+        shares_needed, gov_fee = calc_shares_needed_for_bonds(bonds_needed, pool_info, pool_config)
+        # save my bad first guess to a temporary variable
+        temp_pool_info = apply_step(pool_info.copy(), bonds_needed, shares_needed, gov_fee)
+        predicted_rate = calc_apr_local_dict(pool_config, temp_pool_info)
+        # improve my guess by scaling up or down based on how much I overshot or undershot and try again
+        overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
+        # if we overshot by 2x, we adjust our guess to be 2x less, etc.
+        bonds_needed /= overshoot_or_undershoot
+        shares_needed, gov_fee = calc_shares_needed_for_bonds(bonds_needed, pool_info, pool_config)
+        # save my step for real
+        pool_info = apply_step(pool_info, bonds_needed, shares_needed, gov_fee)
+        predicted_rate = calc_apr_local_dict(pool_config, pool_info)
         total_shares_needed = pool_info["shareReserves"] - interface.pool_info["shareReserves"]
         total_bonds_needed = pool_info["bondReserves"] - interface.pool_info["bondReserves"]
-        predicted_rate = calc_apr_local(
-            pool_info["shareReserves"],
-            FixedPoint(0),
-            pool_info["bondReserves"],
-            pool_config["initialSharePrice"],
-            pool_config["positionDuration"],
-            pool_config["timeStretch"],
-        )
+        # log info about my step
         formatted_str = (
             f"iteration {iteration:3}: {float(predicted_rate):22.18%}"
             + f" d_bonds={float(total_bonds_needed):27,.18f} d_shares={float(total_shares_needed):27,.18f}"
@@ -391,11 +435,42 @@ def calc_reserves_to_hit_target_rate(
         logging.debug(formatted_str)
         if iteration >= MAX_ITER:
             break
-    formatted_str = (
-        f"predicted precision: {float(abs(predicted_rate-target_rate))}, time taken: {time.time() - start_time}s"
-    )
+    convergence_speed = time.time() - start_time
+    formatted_str = f"predicted precision: {float(abs(predicted_rate-target_rate))}, time taken: {convergence_speed}s"
     logging.debug(formatted_str)
-    return total_shares_needed, total_bonds_needed
+    return total_shares_needed, total_bonds_needed, iteration, convergence_speed
+
+
+def apply_step(pool_info: dict, bonds_needed: FixedPoint, shares_needed: FixedPoint, gov_fee: FixedPoint) -> dict:
+    """Save a single convergence step into the pool info.
+
+    Arguments
+    ---------
+    pool_info : dict
+        The current pool info.
+    bonds_needed : FixedPoint
+        The amount of bonds that is going to be traded.
+    shares_needed : FixedPoint
+        The amount of shares that is going to be traded.
+    gov_fee : FixedPoint
+        The associated governance fee.
+
+
+    Returns
+    -------
+    pool_info : dict
+    The updated pool info.
+    """
+    if bonds_needed > 0:  # short case
+        # shares_needed is what the user takes OUT: curve_fee less due to fees.
+        # gov_fee of that doesn't stay in the pool, going OUT to governance (same direction as user flow).
+        pool_info["shareReserves"] += -shares_needed - gov_fee
+    else:  # long case
+        # shares_needed is what the user pays IN: curve_fee more due to fees.
+        # gov_fee of that doesn't go to the pool, going OUT to governance (opposite direction of user flow).
+        pool_info["shareReserves"] += shares_needed - gov_fee
+    pool_info["bondReserves"] += bonds_needed
+    return pool_info
 
 
 # TODO this should maybe subclass from arbitrage policy, but perhaps making it swappable
@@ -475,6 +550,8 @@ class LPandArb(HyperdrivePolicy):
         self.arb_amount = self.policy_config.arb_portion * budget
         self.lp_amount = self.policy_config.lp_portion * budget
         self.minimum_trade_amount = FixedPoint(10)
+        self.convergence_iters = []
+        self.convergence_speed = []
 
         super().__init__(budget, rng, slippage_tolerance)
 
@@ -555,17 +632,29 @@ class LPandArb(HyperdrivePolicy):
                     )
                 )
 
-        # High fixed rate detected
-        if high_fixed_rate_detected:
-            shares_needed, bonds_needed = calc_reserves_to_hit_target_rate(
+        # calculate bonds and shares needed if we're arbitraging in either direction
+        bonds_needed, shares_needed = FixedPoint(0), FixedPoint(0)
+        if high_fixed_rate_detected or low_fixed_rate_detected:
+            shares_needed, bonds_needed, iters, speed = calc_reserves_to_hit_target_rate(
                 target_rate=interface.variable_rate,
                 interface=interface,
             )
+            self.convergence_iters.append(iters)
+            self.convergence_speed.append(speed)
+            logging.debug(
+                "  ==> iters: %s, speed: %s, n: %s",
+                mean(self.convergence_iters),
+                mean(self.convergence_speed),
+                len(self.convergence_iters),
+            )
+
+        if high_fixed_rate_detected:
             bonds_needed = -bonds_needed  # we trade positive numbers around here
-            # Start by reducing shorts
+            # Reduce shorts first, if we have them
             if len(wallet.shorts) > 0:
                 for maturity_time, short in wallet.shorts.items():
-                    reduce_short_amount = min(short.balance, bonds_needed)
+                    max_long_bonds = interface.get_max_long(wallet.balance.amount)
+                    reduce_short_amount = min(short.balance, bonds_needed, max_long_bonds)
                     bonds_needed -= reduce_short_amount
                     logging.debug("reducing short by %s", reduce_short_amount)
                     action_list.append(
@@ -586,7 +675,7 @@ class LPandArb(HyperdrivePolicy):
                     interface.pool_info["bondReserves"],
                     interface.pool_info["sharePrice"],
                     interface.pool_config["initialSharePrice"],
-                    interface.pool_info["shareReserves"],
+                    interface.pool_info["shareReserves"] - interface.pool_info["shareReserves"],
                     max_long_bonds,
                     interface.pool_config["timeStretch"],
                     interface.pool_config["curveFee"],
@@ -604,16 +693,12 @@ class LPandArb(HyperdrivePolicy):
                     )
                 )
 
-        # Low fixed rate detected
         if low_fixed_rate_detected:
-            shares_needed, bonds_needed = calc_reserves_to_hit_target_rate(
-                target_rate=interface.variable_rate,
-                interface=interface,
-            )
-            # Start by reducing longs
+            # Reduce longs first, if we have them
             if len(wallet.longs) > 0:
                 for maturity_time, long in wallet.longs.items():
-                    reduce_long_amount = min(long.balance, bonds_needed)
+                    max_short_bonds = interface.get_max_short(wallet.balance.amount)
+                    reduce_long_amount = min(long.balance, bonds_needed, max_short_bonds)
                     bonds_needed -= reduce_long_amount
                     logging.debug("reducing long by %s", reduce_long_amount)
                     action_list.append(
