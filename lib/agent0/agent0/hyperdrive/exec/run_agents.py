@@ -130,7 +130,7 @@ def run_agents(
             agent_accounts,
             environment_config.halt_on_errors,
             environment_config.halt_on_slippage,
-            environment_config.dump_state_on_crash,
+            environment_config.crash_report_to_file,
             last_executed_block,
             liquidate,
         )
