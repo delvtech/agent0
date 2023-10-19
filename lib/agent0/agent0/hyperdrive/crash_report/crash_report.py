@@ -61,11 +61,6 @@ class ExtendedJSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 
-def _get_git_revision_hash() -> str:
-    """Helper function for getting commit hash from git."""
-    return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
-
-
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:
     """Create a new logging file handler with CRITICAL log level for hyperdrive crash reporting.
 
@@ -125,12 +120,16 @@ def log_hyperdrive_crash_report(trade_result: TradeResult, log_level: int | None
                 # NOTE if this crash report happens in a PR that gets squashed,
                 # we loose this hash.
                 ("commit_hash", _get_git_revision_hash()),
+                ("anvil_dump_state", trade_result.anvil_state),
             ]
         ),
         indent=4,
         cls=ExtendedJSONEncoder,
     )
 
+    # TODO the anvil dump state blows up the output, should likely print to stdout
+    # without the state, and log the full crash report to a file. This allows us
+    # to default state dumps to true, while keeping the output sane.
     logging.log(log_level, crash_report_json)
 
 
@@ -189,3 +188,8 @@ def _hyperdrive_trade_obj_to_dict(trade_obj: types.Trade[HyperdriveMarketAction]
 
 def _hyperdrive_agent_to_dict(agent: HyperdriveAgent):
     return {"address": agent.checksum_address, "policy": agent.policy.name}
+
+
+def _get_git_revision_hash() -> str:
+    """Helper function for getting commit hash from git."""
+    return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
