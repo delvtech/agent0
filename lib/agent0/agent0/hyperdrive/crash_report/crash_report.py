@@ -80,7 +80,9 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
     )
 
 
-def log_hyperdrive_crash_report(trade_result: TradeResult, log_level: int | None = None) -> None:
+def log_hyperdrive_crash_report(
+    trade_result: TradeResult, log_level: int | None = None, crash_report_file_prefix: str | None = None
+) -> None:
     # pylint: disable=too-many-arguments
     """Log a crash report for a hyperdrive transaction.
 
