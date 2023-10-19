@@ -7,18 +7,16 @@ from dataclasses import dataclass
 from statistics import mean
 from typing import TYPE_CHECKING, Any
 
-from fixedpointmath import FixedPoint
-
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy.types import MarketType, Trade
+from fixedpointmath import FixedPoint
 
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
+    from agent0.hyperdrive.state import HyperdriveWallet
     from ethpy.hyperdrive import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
-
-    from agent0.hyperdrive.state import HyperdriveWallet
 
 # pylint: disable=too-many-arguments, too-many-locals
 
@@ -611,6 +609,7 @@ class LPandArb(HyperdrivePolicy):
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                             maturity_time=maturity_time,
                         ),
@@ -626,6 +625,7 @@ class LPandArb(HyperdrivePolicy):
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                             maturity_time=maturity_time,
                         ),
@@ -663,6 +663,7 @@ class LPandArb(HyperdrivePolicy):
                             market_action=HyperdriveMarketAction(
                                 action_type=HyperdriveActionType.CLOSE_SHORT,
                                 trade_amount=reduce_short_amount,
+                                slippage_tolerance=self.slippage_tolerance,
                                 wallet=wallet,
                                 maturity_time=maturity_time,
                             ),
@@ -688,6 +689,7 @@ class LPandArb(HyperdrivePolicy):
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.OPEN_LONG,
                             trade_amount=amount,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                         ),
                     )
@@ -707,6 +709,7 @@ class LPandArb(HyperdrivePolicy):
                             market_action=HyperdriveMarketAction(
                                 action_type=HyperdriveActionType.CLOSE_LONG,
                                 trade_amount=reduce_long_amount,
+                                slippage_tolerance=self.slippage_tolerance,
                                 wallet=wallet,
                                 maturity_time=maturity_time,
                             ),
@@ -722,6 +725,7 @@ class LPandArb(HyperdrivePolicy):
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.OPEN_SHORT,
                             trade_amount=amount,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                         ),
                     )
