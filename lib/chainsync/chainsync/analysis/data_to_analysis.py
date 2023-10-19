@@ -91,7 +91,9 @@ def calc_current_wallet(wallet_deltas_df: pd.DataFrame, latest_wallet: pd.DataFr
 
     # If there was a initial wallet, add deltas to initial wallet to calculate current positions
     if len(latest_wallet) > 0:
-        wallet_deltas_df = wallet_deltas_df.set_index(["walletAddress", "tokenType", "blockNumber"])
+        # There's a chance multiple wallet deltas can happen from the same address at the same block
+        # Hence, we do a groupby here
+        wallet_deltas_df = wallet_deltas_df.groupby(["walletAddress", "tokenType", "blockNumber"]).sum()
         latest_wallet = latest_wallet.set_index(["walletAddress", "tokenType"])
 
         # Add the latest wallet to each wallet delta position to calculate most current positions
