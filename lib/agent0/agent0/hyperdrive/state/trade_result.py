@@ -42,6 +42,8 @@ class TradeResult:
         The information of the latest checkpoint
     additional_info : dict[str, Any]
         Additional information used for crash reporting
+    anvil_state: str | None
+        The anvil state dump when the exception occurred
     """
 
     status: TradeStatus
@@ -53,3 +55,4 @@ class TradeResult:
     pool_info: dict[str, Any] | None = None
     checkpoint_info: dict[str, Any] | None = None
     additional_info: dict[str, Any] | None = None
+    anvil_state: str | None = None
