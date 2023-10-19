@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import subprocess
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timezone
 from traceback import format_tb
 from types import TracebackType
 from typing import TYPE_CHECKING, Any
@@ -80,7 +81,12 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
     )
 
 
-def log_hyperdrive_crash_report(trade_result: TradeResult, log_level: int | None = None) -> None:
+def log_hyperdrive_crash_report(
+    trade_result: TradeResult,
+    log_level: int | None = None,
+    crash_report_to_file: bool = True,
+    crash_report_file_prefix: str | None = None,
+) -> None:
     # pylint: disable=too-many-arguments
     """Log a crash report for a hyperdrive transaction.
 
@@ -102,35 +108,47 @@ def log_hyperdrive_crash_report(trade_result: TradeResult, log_level: int | None
     # If we're crash reporting, an exception is expected
     assert trade_result.exception is not None
 
-    # We use ordered dict to ensure the outermost order is preserved
-    crash_report_json = json.dumps(
-        OrderedDict(
-            [
-                ("exception", trade_result.exception),
-                ("trade", _hyperdrive_trade_obj_to_dict(trade_result.trade_object)),
-                ("wallet", _hyperdrive_wallet_to_dict(trade_result.agent.wallet)),
-                ("agent_info", _hyperdrive_agent_to_dict(trade_result.agent)),
-                # TODO Once pool_info and pool_config are objects,
-                # we need to add a conversion function to convert to dict
-                ("pool_config", trade_result.pool_config),
-                ("pool_info", trade_result.pool_info),
-                ("checkpoint_info", trade_result.checkpoint_info),
-                ("additional_info", trade_result.additional_info),
-                ("traceback", trade_result.exception.__traceback__),
-                # NOTE if this crash report happens in a PR that gets squashed,
-                # we loose this hash.
-                ("commit_hash", _get_git_revision_hash()),
-                ("anvil_dump_state", trade_result.anvil_state),
-            ]
-        ),
-        indent=4,
-        cls=ExtendedJSONEncoder,
+    time_str = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
+
+    dump_obj = OrderedDict(
+        [
+            ("log_time", time_str),
+            ("exception", trade_result.exception),
+            ("trade", _hyperdrive_trade_obj_to_dict(trade_result.trade_object)),
+            ("wallet", _hyperdrive_wallet_to_dict(trade_result.agent.wallet)),
+            ("agent_info", _hyperdrive_agent_to_dict(trade_result.agent)),
+            # TODO Once pool_info and pool_config are objects,
+            # we need to add a conversion function to convert to dict
+            ("pool_config", trade_result.pool_config),
+            ("pool_info", trade_result.pool_info),
+            ("checkpoint_info", trade_result.checkpoint_info),
+            ("additional_info", trade_result.additional_info),
+            ("traceback", trade_result.exception.__traceback__),
+            # NOTE if this crash report happens in a PR that gets squashed,
+            # we loose this hash.
+            ("commit_hash", _get_git_revision_hash()),
+        ]
     )
 
-    # TODO the anvil dump state blows up the output, should likely print to stdout
-    # without the state, and log the full crash report to a file. This allows us
-    # to default state dumps to true, while keeping the output sane.
-    logging.log(log_level, crash_report_json)
+    # We use ordered dict to ensure the outermost order is preserved
+    logging_crash_report = json.dumps(dump_obj, indent=4, cls=ExtendedJSONEncoder)
+
+    logging.log(log_level, logging_crash_report)
+
+    # We print out a machine readable crash report
+    if crash_report_to_file:
+        # We add the anvil state to the crash report for file
+        # OrderedDict doesn't play nice with types
+        dump_obj["anvil_dump_state"] = trade_result.anvil_state  # type: ignore
+        # Generate filename
+        if crash_report_file_prefix is None:
+            crash_report_file_prefix = ""
+        crash_report_dir = ".crash_report/"
+        crash_report_file = f"{crash_report_dir}/{crash_report_file_prefix}{time_str}.json"
+        if not os.path.exists(crash_report_dir):
+            os.makedirs(crash_report_dir)
+        with open(crash_report_file, "w", encoding="utf-8") as file:
+            json.dump(dump_obj, file, indent=4, cls=ExtendedJSONEncoder)
 
 
 def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:

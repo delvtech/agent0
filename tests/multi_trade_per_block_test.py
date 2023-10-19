@@ -144,7 +144,8 @@ class TestMultiTradePerBlock:
         env_config = EnvironmentConfig(
             delete_previous_logs=True,
             halt_on_errors=True,
-            dump_state_on_crash=True,
+            # We don't want tests to write lots of files
+            crash_report_to_file=False,
             log_filename=".logging/multi_trade_per_block_test.log",
             log_level=logging.INFO,
             log_stdout=True,
