@@ -60,7 +60,8 @@ class TradeResult:
     contract_addresses: dict[str, Any] | None = None
     additional_info: dict[str, Any] | None = None
     # Machine readable states
-    contract_pool_config: dict[str, Any] | None = None
-    contract_pool_info: dict[str, Any] | None = None
-    contract_checkpoint: dict[str, Any] | None = None
+    raw_trade_object: dict[str, Any] | None = None
+    raw_pool_config: dict[str, Any] | None = None
+    raw_pool_info: dict[str, Any] | None = None
+    raw_checkpoint: dict[str, Any] | None = None
     anvil_state: str | None = None

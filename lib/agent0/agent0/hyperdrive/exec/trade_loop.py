@@ -6,7 +6,7 @@ import logging
 from datetime import datetime
 
 from agent0.hyperdrive.agents import HyperdriveAgent
-from agent0.hyperdrive.crash_report import log_hyperdrive_crash_report
+from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
 from ethpy.hyperdrive import HyperdriveInterface
 from web3 import Web3
@@ -105,6 +105,10 @@ def trade_if_new_block(
                 if is_slippage:
                     log_hyperdrive_crash_report(trade_result, logging.WARNING, crash_report_to_file=False)
                 else:
+                    # We only get anvil state dump here, since it's an on chain call
+                    # and we don't want to do it when e.g., slippage happens
+                    if crash_report_to_file:
+                        trade_result.anvil_state = get_anvil_state_dump(hyperdrive.web3)
                     # Defaults to CRITICAL
                     log_hyperdrive_crash_report(trade_result, crash_report_to_file=crash_report_to_file)
 

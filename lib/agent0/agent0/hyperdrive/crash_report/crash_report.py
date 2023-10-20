@@ -120,23 +120,31 @@ def build_crash_trade_result(
     trade_result.block_number = hyperdrive.current_block_number
     trade_result.block_timestamp = hyperdrive.current_block_time
     trade_result.exception = exception
-    trade_result.contract_pool_config = hyperdrive._contract_pool_config  # pylint: disable=protected-access
-    trade_result.contract_pool_info = hyperdrive._contract_pool_info  # pylint: disable=protected-access
-    trade_result.contract_checkpoint = hyperdrive._contract_latest_checkpoint  # pylint: disable=protected-access
+    trade_result.raw_pool_config = hyperdrive._contract_pool_config  # pylint: disable=protected-access
+    trade_result.raw_pool_info = hyperdrive._contract_pool_info  # pylint: disable=protected-access
+    trade_result.raw_checkpoint = hyperdrive._contract_latest_checkpoint  # pylint: disable=protected-access
+
+    raw_trade_object = _hyperdrive_trade_obj_to_dict(trade_object)
+    trade_result.raw_trade_object = {}
+    for key, val in raw_trade_object.items():
+        if isinstance(val, FixedPoint):
+            trade_result.raw_trade_object[key] = val.scaled_value
+        else:
+            trade_result.raw_trade_object[key] = val
 
     # We call the conversion functions to convert them to human readable versions as well
     trade_result.pool_config = process_hyperdrive_pool_config(
-        copy.deepcopy(trade_result.contract_pool_config), hyperdrive.hyperdrive_contract.address
+        copy.deepcopy(trade_result.raw_pool_config), hyperdrive.hyperdrive_contract.address
     )
     trade_result.pool_info = process_hyperdrive_pool_info(
-        copy.deepcopy(trade_result.contract_pool_info),
+        copy.deepcopy(trade_result.raw_pool_info),
         hyperdrive.web3,
         hyperdrive.hyperdrive_contract,
-        trade_result.contract_pool_config["positionDuration"],
+        trade_result.raw_pool_config["positionDuration"],
         trade_result.block_number,
     )
     trade_result.checkpoint_info = process_hyperdrive_checkpoint(
-        copy.deepcopy(trade_result.contract_checkpoint),
+        copy.deepcopy(trade_result.raw_checkpoint),
         hyperdrive.web3,
         trade_result.block_number,
     )
@@ -151,8 +159,6 @@ def build_crash_trade_result(
         "variable_rate": hyperdrive.variable_rate,
         "vault_shares": hyperdrive.vault_shares,
     }
-
-    trade_result.anvil_state = _get_anvil_state_dump(hyperdrive.web3)
 
     return trade_result
 
@@ -218,9 +224,10 @@ def log_hyperdrive_crash_report(
     if crash_report_to_file:
         # We add the machine readable version of the crash to the file
         # OrderedDict doesn't play nice with types
-        dump_obj["contract_pool_config"] = trade_result.contract_pool_config  # type: ignore
-        dump_obj["contract_pool_info"] = trade_result.contract_pool_info  # type: ignore
-        dump_obj["contract_checkpoint"] = trade_result.contract_checkpoint  # type: ignore
+        dump_obj["raw_trade_object"] = trade_result.raw_trade_object  # type: ignore
+        dump_obj["raw_pool_config"] = trade_result.raw_pool_config  # type: ignore
+        dump_obj["raw_pool_info"] = trade_result.raw_pool_info  # type: ignore
+        dump_obj["raw_checkpoint"] = trade_result.raw_checkpoint  # type: ignore
         dump_obj["anvil_dump_state"] = trade_result.anvil_state  # type: ignore
         # Generate filename
         if crash_report_file_prefix is None:
@@ -295,7 +302,7 @@ def _get_git_revision_hash() -> str:
     return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
 
 
-def _get_anvil_state_dump(web3: Web3) -> str | None:
+def get_anvil_state_dump(web3: Web3) -> str | None:
     """Helper function for getting anvil dump state"""
     result: str | None = None
     try:
