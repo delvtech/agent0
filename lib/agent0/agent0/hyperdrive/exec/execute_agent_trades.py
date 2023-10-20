@@ -5,6 +5,7 @@ import asyncio
 from typing import TYPE_CHECKING, NoReturn
 
 from agent0.base import Quantity, TokenType
+from agent0.hyperdrive.crash_report import build_crash_trade_result
 from agent0.hyperdrive.state import (
     HyperdriveActionType,
     HyperdriveMarketAction,
@@ -97,30 +98,7 @@ async def async_execute_single_agent_trade(
             agent.wallet.update(result)
             trade_result = TradeResult(status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object)
         elif isinstance(result, Exception):
-            # We log pool config and pool info here
-            # However, this is a best effort attempt to get this information
-            # due to async conditions. If debugging this crash, ensure the agent is running
-            # in isolation and doing one trade per call.
-            pool_config = hyperdrive.pool_config
-            pool_info = hyperdrive.pool_info
-            checkpoint_info = hyperdrive.latest_checkpoint
-            # add additional information to the exception
-            additional_info = {
-                "spot_price": hyperdrive.spot_price,
-                "fixed_rate": hyperdrive.fixed_rate,
-                "variable_rate": hyperdrive.variable_rate,
-                "vault_shares": hyperdrive.vault_shares,
-            }
-            trade_result = TradeResult(
-                status=TradeStatus.FAIL,
-                agent=agent,
-                trade_object=trade_object,
-                exception=result,
-                pool_config=pool_config,
-                pool_info=pool_info,
-                checkpoint_info=checkpoint_info,
-                additional_info=additional_info,
-            )
+            trade_result = build_crash_trade_result(result, agent, trade_object, hyperdrive)
         else:  # Should never get here
             # TODO: use match statement and assert_never(result)
             raise AssertionError("invalid result type")

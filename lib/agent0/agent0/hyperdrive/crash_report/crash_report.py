@@ -12,7 +12,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from agent0.hyperdrive.state import HyperdriveWallet, TradeResult
+from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
 from elfpy.utils import logs
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
     from agent0.hyperdrive.state import HyperdriveMarketAction
     from elfpy import types
+    from ethpy.hyperdrive import HyperdriveInterface
 
 
 class ExtendedJSONEncoder(json.JSONEncoder):
@@ -79,6 +80,47 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
         delete_previous_logs=False,
         log_level=logging.CRITICAL,
     )
+
+
+def build_crash_trade_result(
+    exception: Exception,
+    agent: HyperdriveAgent,
+    trade_object: types.Trade[HyperdriveMarketAction],
+    hyperdrive: HyperdriveInterface,
+) -> TradeResult:
+    """Build the trade result object when a crash happens.
+
+    Arguments
+    ---------
+    exception : Exception
+        The exception that was thrown
+    """
+    # We log pool config and pool info here
+    # However, this is a best effort attempt to get this information
+    # due to async conditions. If debugging this crash, ensure the agent is running
+    # in isolation and doing one trade per call.
+    pool_config = hyperdrive.pool_config
+    pool_info = hyperdrive.pool_info
+    checkpoint_info = hyperdrive.latest_checkpoint
+    # add additional information to the exception
+    additional_info = {
+        "spot_price": hyperdrive.spot_price,
+        "fixed_rate": hyperdrive.fixed_rate,
+        "variable_rate": hyperdrive.variable_rate,
+        "vault_shares": hyperdrive.vault_shares,
+    }
+    trade_result = TradeResult(
+        status=TradeStatus.FAIL,
+        agent=agent,
+        trade_object=trade_object,
+        exception=exception,
+        pool_config=pool_config,
+        pool_info=pool_info,
+        checkpoint_info=checkpoint_info,
+        additional_info=additional_info,
+    )
+
+    return trade_result
 
 
 def log_hyperdrive_crash_report(
