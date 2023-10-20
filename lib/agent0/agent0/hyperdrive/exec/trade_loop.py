@@ -6,7 +6,7 @@ import logging
 from datetime import datetime
 
 from agent0.hyperdrive.agents import HyperdriveAgent
-from agent0.hyperdrive.crash_report import log_hyperdrive_crash_report
+from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
 from ethpy.hyperdrive import HyperdriveInterface
 from web3 import Web3
@@ -105,8 +105,10 @@ def trade_if_new_block(
                 if is_slippage:
                     log_hyperdrive_crash_report(trade_result, logging.WARNING, crash_report_to_file=False)
                 else:
+                    # We only get anvil state dump here, since it's an on chain call
+                    # and we don't want to do it when e.g., slippage happens
                     if crash_report_to_file:
-                        trade_result.anvil_state = _get_anvil_state_dump(hyperdrive.web3)
+                        trade_result.anvil_state = get_anvil_state_dump(hyperdrive.web3)
                     # Defaults to CRITICAL
                     log_hyperdrive_crash_report(trade_result, crash_report_to_file=crash_report_to_file)
 
@@ -307,15 +309,3 @@ def get_wait_for_new_block(web3: Web3) -> bool:
         # do nothing, this will fail for non anvil nodes and we don't care.
         automine = False
     return not automine
-
-
-def _get_anvil_state_dump(web3: Web3) -> str | None:
-    """Helper function for getting anvil dump state"""
-    result: str | None = None
-    try:
-        response = web3.provider.make_request(method=RPCEndpoint("anvil_dumpState"), params=[])
-        result = response.get("result", False)
-    except Exception:  # pylint: disable=broad-exception-caught
-        # do nothing, this is best effort crash reporting
-        pass
-    return result
