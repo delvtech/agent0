@@ -105,8 +105,6 @@ def trade_if_new_block(
                 if is_slippage:
                     log_hyperdrive_crash_report(trade_result, logging.WARNING, crash_report_to_file=False)
                 else:
-                    if crash_report_to_file:
-                        trade_result.anvil_state = _get_anvil_state_dump(hyperdrive.web3)
                     # Defaults to CRITICAL
                     log_hyperdrive_crash_report(trade_result, crash_report_to_file=crash_report_to_file)
 
@@ -307,15 +305,3 @@ def get_wait_for_new_block(web3: Web3) -> bool:
         # do nothing, this will fail for non anvil nodes and we don't care.
         automine = False
     return not automine
-
-
-def _get_anvil_state_dump(web3: Web3) -> str | None:
-    """Helper function for getting anvil dump state"""
-    result: str | None = None
-    try:
-        response = web3.provider.make_request(method=RPCEndpoint("anvil_dumpState"), params=[])
-        result = response.get("result", False)
-    except Exception:  # pylint: disable=broad-exception-caught
-        # do nothing, this is best effort crash reporting
-        pass
-    return result

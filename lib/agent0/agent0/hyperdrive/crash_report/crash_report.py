@@ -1,6 +1,7 @@
 """Utility function for logging agent crash reports."""
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -14,10 +15,17 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
 from elfpy.utils import logs
+from ethpy.hyperdrive.interface import (
+    process_hyperdrive_checkpoint,
+    process_hyperdrive_pool_config,
+    process_hyperdrive_pool_info,
+)
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from numpy.random._generator import Generator as NumpyGenerator
+from web3 import Web3
 from web3.datastructures import AttributeDict, MutableAttributeDict
+from web3.types import RPCEndpoint
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
@@ -95,30 +103,56 @@ def build_crash_trade_result(
     exception : Exception
         The exception that was thrown
     """
+    trade_result = TradeResult(
+        status=TradeStatus.FAIL,
+        agent=agent,
+        trade_object=trade_object,
+    )
+
     # We log pool config and pool info here
     # However, this is a best effort attempt to get this information
     # due to async conditions. If debugging this crash, ensure the agent is running
     # in isolation and doing one trade per call.
-    pool_config = hyperdrive.pool_config
-    pool_info = hyperdrive.pool_info
-    checkpoint_info = hyperdrive.latest_checkpoint
+
+    # We get the underlying contract info and convert them to human readable versions
+    # Dispite these being protected variables, we need low level access for crash reporting
+    # TODO we likely should call underlying web3 commands here to prevent race conditions
+    trade_result.block_number = hyperdrive.current_block_number
+    trade_result.block_timestamp = hyperdrive.current_block_time
+    trade_result.exception = exception
+    trade_result.contract_pool_config = hyperdrive._contract_pool_config  # pylint: disable=protected-access
+    trade_result.contract_pool_info = hyperdrive._contract_pool_info  # pylint: disable=protected-access
+    trade_result.contract_checkpoint = hyperdrive._contract_latest_checkpoint  # pylint: disable=protected-access
+
+    # We call the conversion functions to convert them to human readable versions as well
+    trade_result.pool_config = process_hyperdrive_pool_config(
+        copy.deepcopy(trade_result.contract_pool_config), hyperdrive.hyperdrive_contract.address
+    )
+    trade_result.pool_info = process_hyperdrive_pool_info(
+        copy.deepcopy(trade_result.contract_pool_info),
+        hyperdrive.web3,
+        hyperdrive.hyperdrive_contract,
+        trade_result.contract_pool_config["positionDuration"],
+        trade_result.block_number,
+    )
+    trade_result.checkpoint_info = process_hyperdrive_checkpoint(
+        copy.deepcopy(trade_result.contract_checkpoint),
+        hyperdrive.web3,
+        trade_result.block_number,
+    )
+    trade_result.contract_addresses = {
+        "hyperdrive_address": hyperdrive.hyperdrive_contract.address,
+        "base_token_address": hyperdrive.base_token_contract.address,
+    }
     # add additional information to the exception
-    additional_info = {
+    trade_result.additional_info = {
         "spot_price": hyperdrive.spot_price,
         "fixed_rate": hyperdrive.fixed_rate,
         "variable_rate": hyperdrive.variable_rate,
         "vault_shares": hyperdrive.vault_shares,
     }
-    trade_result = TradeResult(
-        status=TradeStatus.FAIL,
-        agent=agent,
-        trade_object=trade_object,
-        exception=exception,
-        pool_config=pool_config,
-        pool_info=pool_info,
-        checkpoint_info=checkpoint_info,
-        additional_info=additional_info,
-    )
+
+    trade_result.anvil_state = _get_anvil_state_dump(hyperdrive.web3)
 
     return trade_result
 
@@ -155,6 +189,8 @@ def log_hyperdrive_crash_report(
     dump_obj = OrderedDict(
         [
             ("log_time", time_str),
+            ("block_number", trade_result.block_number),
+            ("block_timestamp", trade_result.block_timestamp),
             ("exception", trade_result.exception),
             ("trade", _hyperdrive_trade_obj_to_dict(trade_result.trade_object)),
             ("wallet", _hyperdrive_wallet_to_dict(trade_result.agent.wallet)),
@@ -164,6 +200,7 @@ def log_hyperdrive_crash_report(
             ("pool_config", trade_result.pool_config),
             ("pool_info", trade_result.pool_info),
             ("checkpoint_info", trade_result.checkpoint_info),
+            ("contract_addresses", trade_result.contract_addresses),
             ("additional_info", trade_result.additional_info),
             ("traceback", trade_result.exception.__traceback__),
             # NOTE if this crash report happens in a PR that gets squashed,
@@ -179,8 +216,11 @@ def log_hyperdrive_crash_report(
 
     # We print out a machine readable crash report
     if crash_report_to_file:
-        # We add the anvil state to the crash report for file
+        # We add the machine readable version of the crash to the file
         # OrderedDict doesn't play nice with types
+        dump_obj["contract_pool_config"] = trade_result.contract_pool_config  # type: ignore
+        dump_obj["contract_pool_info"] = trade_result.contract_pool_info  # type: ignore
+        dump_obj["contract_checkpoint"] = trade_result.contract_checkpoint  # type: ignore
         dump_obj["anvil_dump_state"] = trade_result.anvil_state  # type: ignore
         # Generate filename
         if crash_report_file_prefix is None:
@@ -253,3 +293,15 @@ def _hyperdrive_agent_to_dict(agent: HyperdriveAgent):
 def _get_git_revision_hash() -> str:
     """Helper function for getting commit hash from git."""
     return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
+
+
+def _get_anvil_state_dump(web3: Web3) -> str | None:
+    """Helper function for getting anvil dump state"""
+    result: str | None = None
+    try:
+        response = web3.provider.make_request(method=RPCEndpoint("anvil_dumpState"), params=[])
+        result = response.get("result", False)
+    except Exception:  # pylint: disable=broad-exception-caught
+        # do nothing, this is best effort crash reporting
+        pass
+    return result
