@@ -101,6 +101,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         )
         # pool config is static
         self._contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
+        # TODO process functions should not adjust state
         self.pool_config = process_hyperdrive_pool_config(
             copy.deepcopy(self._contract_pool_config), self.hyperdrive_contract.address
         )
@@ -423,6 +424,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         if self.current_block_number > self.last_state_block_number or override:
             self.last_state_block_number = copy.copy(self.current_block_number)
             self._contract_pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, self.current_block_number)
+            # TODO process functions should not adjust state
             self._pool_info = process_hyperdrive_pool_info(
                 copy.deepcopy(self._contract_pool_info),
                 self.web3,
@@ -433,6 +435,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             self._contract_latest_checkpoint = get_hyperdrive_checkpoint(
                 self.hyperdrive_contract, self.get_checkpoint_id(self.current_block_time)
             )
+            # TODO process functions should not adjust state
             self._latest_checkpoint = process_hyperdrive_checkpoint(
                 copy.deepcopy(self._contract_latest_checkpoint),
                 self.web3,

@@ -50,9 +50,18 @@ class TradeResult:
     agent: HyperdriveAgent
     trade_object: types.Trade[HyperdriveMarketAction]
     # Optional fields for crash reporting
+    # These fields are typically set as human readable versions
+    block_number: int | None = None
+    block_timestamp: int | None = None
     exception: Exception | None | None = None
     pool_config: dict[str, Any] | None = None
     pool_info: dict[str, Any] | None = None
     checkpoint_info: dict[str, Any] | None = None
+    contract_addresses: dict[str, Any] | None = None
     additional_info: dict[str, Any] | None = None
+    # Machine readable states
+    raw_trade_object: dict[str, Any] | None = None
+    raw_pool_config: dict[str, Any] | None = None
+    raw_pool_info: dict[str, Any] | None = None
+    raw_checkpoint: dict[str, Any] | None = None
     anvil_state: str | None = None
