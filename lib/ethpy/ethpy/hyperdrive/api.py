@@ -209,6 +209,18 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         vault_shares = smart_contract_read(self.yield_contract, "balanceOf", (self.hyperdrive_contract.address))
         return FixedPoint(scaled_value=int(vault_shares["value"]))
 
+    @property
+    def effective_share_reserves(self) -> FixedPoint:
+        """Get the adjusted share reserves for the current Hyperdrive pool."""
+        return FixedPoint(
+            scaled_value=int(
+                pyperdrive.get_effective_share_reserves(  # pylint: disable=no-member
+                    str(self.pool_info["shareReserves"].scaled_value),
+                    str(self.pool_info["shareAdjustment"].scaled_value),
+                )
+            )
+        )
+
     def get_checkpoint_id(self, block_timestamp: Timestamp) -> Timestamp:
         """Get the Checkpoint ID for a given timestamp.
 
@@ -442,7 +454,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 self.current_block_number,
             )
 
-    def bonds_given_shares_and_rate(self, target_rate: FixedPoint) -> FixedPoint:
+    def bonds_given_rate_and_shares(
+        self, target_rate: FixedPoint, target_shares: FixedPoint | None = None
+    ) -> FixedPoint:
         r"""Returns the bond reserves for the market share reserves
         and a given fixed rate.
 
@@ -454,15 +468,22 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ---------
         target_rate : FixedPoint
             The target apr for which to calculate the bond reserves given the pools current share reserves.
+        target_shares : FixedPoint, optional
+            The target share reserves for the pool
         """
-
-        mu: FixedPoint = self.pool_config["initialSharePrice"]
-        z_minus_zeta: FixedPoint = self.pool_info["shareReserves"] - self.pool_info["shareAdjustment"]
-        t = self.position_duration_in_years
-        one_over_tau: FixedPoint = self.pool_config["timeStretch"]
-        adjusted_apr = FixedPoint("1") + target_rate * t
-
-        return mu * z_minus_zeta * adjusted_apr**one_over_tau
+        if target_shares is None:
+            target_shares = self.effective_share_reserves
+        return FixedPoint(
+            scaled_value=int(
+                pyperdrive.calculate_bonds_given_shares_and_rate(  # pylint: disable=no-member
+                    str(target_shares.scaled_value),
+                    str(self.pool_config["initialSharePrice"].scaled_value),
+                    str(target_rate.scaled_value),
+                    str(self.pool_config["positionDuration"]),
+                    str(self.pool_config["timeStretch"].scaled_value),
+                )
+            )
+        )
 
     async def async_open_long(
         self,
