@@ -60,7 +60,7 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return str(o)
         if isinstance(o, TracebackType):
             return format_tb(o)
-        if isinstance(o, Exception):
+        if isinstance(o, BaseException):
             return repr(o)
 
         try:
@@ -91,7 +91,7 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
 
 
 def build_crash_trade_result(
-    exception: Exception,
+    exception: BaseException,
     agent: HyperdriveAgent,
     trade_object: types.Trade[HyperdriveMarketAction],
     hyperdrive: HyperdriveInterface,
@@ -114,10 +114,13 @@ def build_crash_trade_result(
     # due to async conditions. If debugging this crash, ensure the agent is running
     # in isolation and doing one trade per call.
 
-    # We get the underlying contract info and convert them to human readable versions
-    # Dispite these being protected variables, we need low level access for crash reporting
-    # TODO we likely should call underlying web3 commands here to prevent race conditions
+    # Instead of using the interface here, we directly call the underlying contract methods
+    # to ensure all data is from the same block.
     trade_result.block_number = hyperdrive.current_block_number
+
+    # We get the underlying contract info and convert them to human readable versions
+    # Despite these being protected variables, we need low level access for crash reporting
+    # TODO we likely should call underlying web3 commands here to prevent race conditions
     trade_result.block_timestamp = hyperdrive.current_block_time
     trade_result.exception = exception
     trade_result.raw_pool_config = hyperdrive._contract_pool_config  # pylint: disable=protected-access
