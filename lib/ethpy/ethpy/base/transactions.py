@@ -285,14 +285,7 @@ async def _async_send_transaction_and_wait_for_receipt(
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
     # TODO set poll time as a parameter
-    tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash)
-    # Check status here
-    status = tx_receipt.get("status", None)
-    if status is None:
-        raise UnknownBlockError("Receipt did not return status")
-    if status == 0:
-        raise UnknownBlockError("Receipt has status of 0", f"{tx_receipt=}")
-    return tx_receipt
+    return await async_wait_for_transaction_receipt(web3, tx_hash)
 
 
 async def async_smart_contract_transact(
@@ -333,19 +326,45 @@ async def async_smart_contract_transact(
         else:
             func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
 
-        return await _async_send_transaction_and_wait_for_receipt(
+        tx_receipt = await _async_send_transaction_and_wait_for_receipt(
             func_handle,
             signer,
             web3,
             nonce=nonce,
         )
 
+        # Error checking when transaction doesn't throw an error, but instead
+        # has errors in the tx_receipt
+
+        # The block number of this call failing is the previous block
+        block_number = tx_receipt.get("blockNumber") - 1
+        # Check status here
+        status = tx_receipt.get("status", None)
+        orig_exception = None
+        if status is None:
+            orig_exception = UnknownBlockError("Receipt did not return status")
+        if status == 0:
+            orig_exception = UnknownBlockError("Receipt has status of 0", f"{tx_receipt=}")
+        logs = tx_receipt.get("logs", None)
+        if logs is None:
+            orig_exception = UnknownBlockError("Receipt did not return logs")
+        if len(logs) == 0:
+            orig_exception = UnknownBlockError("Logs have a length of 0", f"{tx_receipt=}")
+
+        if orig_exception is not None:
+            raise ContractCallException(
+                "Error in smart_contract_transact",
+                orig_exception=orig_exception,
+                contract_call_type=ContractCallType.TRANSACTION,
+                function_name_or_signature=function_name_or_signature,
+                fn_args=fn_args,
+                fn_kwargs={},
+                block_number=block_number,
+            )
+        return tx_receipt
+
     except ContractCustomError as err:
-        err.args += (
-            f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.\n"
-            + f"function name: {function_name_or_signature}"
-            + f"\nfunction args: {fn_args}",
-        )
+        err.args += (f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.",)
         # Add additional information to the exception
         # TODO get block number of the call here
         raise ContractCallException(
@@ -367,17 +386,9 @@ async def async_smart_contract_transact(
             fn_args=fn_args,
             fn_kwargs={},
         ) from err
-    except UnknownBlockError as err:
-        # Add additional information to the exception
-        # TODO get block number of the call here
-        raise ContractCallException(
-            "Error in smart_contract_transact",
-            orig_exception=err,
-            contract_call_type=ContractCallType.TRANSACTION,
-            function_name_or_signature=function_name_or_signature,
-            fn_args=fn_args,
-            fn_kwargs={},
-        ) from err
+    except ContractCallException as err:
+        # Avoid double wrapping exception
+        raise err
     except Exception as err:
         # Add additional information to the exception
         # TODO get block number of the call here
@@ -435,14 +446,7 @@ def _send_transaction_and_wait_for_receipt(
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
     # TODO set poll time as a parameter
-    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-    # Check status here
-    status = tx_receipt.get("status", None)
-    if status is None:
-        raise UnknownBlockError("Receipt did not return status")
-    if status == 0:
-        raise UnknownBlockError("Receipt has status of 0", f"{tx_receipt=}")
-    return tx_receipt
+    return web3.eth.wait_for_transaction_receipt(tx_hash)
 
 
 def smart_contract_transact(
@@ -481,7 +485,37 @@ def smart_contract_transact(
             func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
         else:
             func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
-        return _send_transaction_and_wait_for_receipt(func_handle, signer, web3, nonce)
+        tx_receipt = _send_transaction_and_wait_for_receipt(func_handle, signer, web3, nonce)
+
+        # Error checking when transaction doesn't throw an error, but instead
+        # has errors in the tx_receipt
+
+        # The block number of this call failing is the previous block
+        block_number = tx_receipt.get("blockNumber") - 1
+        # Check status here
+        status = tx_receipt.get("status", None)
+        orig_exception = None
+        if status is None:
+            orig_exception = UnknownBlockError("Receipt did not return status")
+        if status == 0:
+            orig_exception = UnknownBlockError("Receipt has status of 0", f"{tx_receipt=}")
+        logs = tx_receipt.get("logs", None)
+        if logs is None:
+            orig_exception = UnknownBlockError("Receipt did not return logs")
+        if len(logs) == 0:
+            orig_exception = UnknownBlockError("Logs have a length of 0", f"{tx_receipt=}")
+
+        if orig_exception is not None:
+            raise ContractCallException(
+                "Error in smart_contract_transact",
+                orig_exception=orig_exception,
+                contract_call_type=ContractCallType.TRANSACTION,
+                function_name_or_signature=function_name_or_signature,
+                fn_args=fn_args,
+                fn_kwargs={},
+                block_number=block_number,
+            )
+        return tx_receipt
     except ContractCustomError as err:
         err.args += (
             f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.\n"
@@ -509,17 +543,9 @@ def smart_contract_transact(
             fn_args=fn_args,
             fn_kwargs={},
         ) from err
-    except UnknownBlockError as err:
-        # Add additional information to the exception
-        # TODO get block number of the call here
-        raise ContractCallException(
-            "Error in smart_contract_transact",
-            orig_exception=err,
-            contract_call_type=ContractCallType.TRANSACTION,
-            function_name_or_signature=function_name_or_signature,
-            fn_args=fn_args,
-            fn_kwargs={},
-        ) from err
+    except ContractCallException as err:
+        # Avoid double wrapping exception
+        raise err
     except Exception as err:
         # Add additional information to the exception
         # TODO get block number of the call here
