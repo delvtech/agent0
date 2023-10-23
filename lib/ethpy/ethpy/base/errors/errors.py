@@ -1,10 +1,44 @@
 """Error handling for the hyperdrive ecosystem"""
+from __future__ import annotations
+
+from enum import Enum
+from typing import Any
 
 from eth_utils.conversions import to_hex
 from eth_utils.crypto import keccak
 from web3.contract.contract import Contract
 
 from .types import ABIError
+
+
+class ContractCallType(Enum):
+    r"""A type of token"""
+
+    PREVIEW = "preview"
+    TRANSACTION = "transaction"
+    READ = "read"
+
+
+class ContractCallException(BaseException):
+    """Custom contract call exception wrapper that contains additional information on the function call"""
+
+    def __init__(
+        self,
+        *args,
+        orig_exception: BaseException | None = None,
+        contract_call_type: ContractCallType | None = None,
+        function_name_or_signature: str | None = None,
+        fn_args: tuple | None = None,
+        fn_kwargs: dict[str, Any] | None = None,
+        block_number: int | None = None,
+    ):
+        super().__init__(*args)
+        self.orig_exception = orig_exception
+        self.contract_call_type = contract_call_type
+        self.function_name_or_signature = function_name_or_signature
+        self.fn_args = fn_args
+        self.fn_kwargs = fn_kwargs
+        self.block_number = block_number
 
 
 def decode_error_selector_for_contract(error_selector: str, contract: Contract) -> str:

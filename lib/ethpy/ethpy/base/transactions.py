@@ -20,7 +20,7 @@ from web3.exceptions import (
 )
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, BlockData, Nonce, TxData, TxParams, TxReceipt, Wei
 
-from .errors.errors import decode_error_selector_for_contract
+from .errors.errors import ContractCallException, ContractCallType, decode_error_selector_for_contract
 from .errors.types import UnknownBlockError
 from .retry_utils import retry_call
 
@@ -68,8 +68,18 @@ def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn
         return_values = retry_call(READ_RETRY_COUNT, None, function.call, **fn_kwargs)
     except Exception as err:
         # Add additional information to the exception
-        err.args += (f"Error in smart contract read {function=}",)
-        raise err
+        # This field is passed in if smart_contract_read is called with an explicit block
+        # TODO get current block number if this field wasn't passed into this call
+        block_number = fn_kwargs.get("block_identifier", None)
+        raise ContractCallException(
+            "Error in smart contract read",
+            orig_exception=err,
+            contract_call_type=ContractCallType.READ,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs=fn_kwargs,
+            block_number=block_number,
+        ) from err
 
     # If there is a single value returned, we want to put it in a list of length 1
     if not isinstance(return_values, Sequence) or isinstance(return_values, str):
@@ -151,9 +161,19 @@ def smart_contract_preview_transaction(
             **fn_kwargs,
         )
     except Exception as err:
-        # Add function call information to exception args
-        err.args += (f"Error in preview transaction {function=}",)
-        raise err
+        # Add additional information to the exception
+        # This field is passed in if smart_contract_read is called with an explicit block
+        # TODO get current block number if this field wasn't passed into this call
+        block_number = fn_kwargs.get("block_identifier", None)
+        raise ContractCallException(
+            "Error in preview transaction",
+            orig_exception=err,
+            contract_call_type=ContractCallType.PREVIEW,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs=fn_kwargs,
+            block_number=block_number,
+        ) from err
 
     if not isinstance(return_values, Sequence):  # could be list or tuple
         return_values = [return_values]
@@ -319,33 +339,56 @@ async def async_smart_contract_transact(
             web3,
             nonce=nonce,
         )
+
     except ContractCustomError as err:
-        logging.error(
-            "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",
-            decode_error_selector_for_contract(err.args[0], contract),
-            function_name_or_signature,
-            fn_args,
-        )
         err.args += (
             f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.\n"
             + f"function name: {function_name_or_signature}"
             + f"\nfunction args: {fn_args}",
         )
-
-        raise err
+        # Add additional information to the exception
+        # TODO get block number of the call here
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
     except ContractLogicError as err:
-        logging.error(
-            "ContractLogicError:\n%s\nfunction name:%s\nfunction args: %s",
-            err.message,
-            function_name_or_signature,
-            fn_args,
-        )
-        err.args += (
-            "ContractLogicError raised.\n"
-            + f"function name: {function_name_or_signature}"
-            + f"\nfunction args: {fn_args}",
-        )
-        raise err
+        # Add additional information to the exception
+        # TODO get block number of the call here
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
+    except UnknownBlockError as err:
+        # Add additional information to the exception
+        # TODO get block number of the call here
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
+    except Exception as err:
+        # Add additional information to the exception
+        # TODO get block number of the call here
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
 
 
 def _send_transaction_and_wait_for_receipt(
@@ -439,24 +482,55 @@ def smart_contract_transact(
         else:
             func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
         return _send_transaction_and_wait_for_receipt(func_handle, signer, web3, nonce)
-
     except ContractCustomError as err:
-        error_selector = decode_error_selector_for_contract(err.args[0], contract)
-        logging.error(
-            "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",
-            error_selector,
-            function_name_or_signature,
-            fn_args,
+        err.args += (
+            f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.\n"
+            + f"function name: {function_name_or_signature}"
+            + f"\nfunction args: {fn_args}",
         )
-        raise err
+        # Add additional information to the exception
+        # TODO get block number of the call here
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
     except ContractLogicError as err:
-        logging.error(
-            "ContractLogicError:\n%s\nfunction name:%s\nfunction args: %s",
-            err.message,
-            function_name_or_signature,
-            fn_args,
-        )
-        raise err
+        # Add additional information to the exception
+        # TODO get block number of the call here
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
+    except UnknownBlockError as err:
+        # Add additional information to the exception
+        # TODO get block number of the call here
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
+    except Exception as err:
+        # Add additional information to the exception
+        # TODO get block number of the call here
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
 
 
 # TODO clean up args
