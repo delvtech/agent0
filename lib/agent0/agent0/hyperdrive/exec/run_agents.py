@@ -4,6 +4,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import random
+import time
 import warnings
 
 import pandas as pd
@@ -24,6 +26,9 @@ from .create_and_fund_user_account import create_and_fund_user_account
 from .fund_agents import async_fund_agents
 from .setup_experiment import setup_experiment
 from .trade_loop import trade_if_new_block
+
+START_LATENCY = 1
+BACKOFF = 2
 
 
 # TODO consolidate various configs into one config?
@@ -118,6 +123,7 @@ def run_agents(
 
     # run the trades
     last_executed_block = BlockNumber(0)
+    poll_latency = START_LATENCY + random.uniform(0, 1)
     while True:
         # Check if all agents done trading
         # If so, exit cleanly
@@ -125,7 +131,7 @@ def run_agents(
         if all(agent.done_trading for agent in agent_accounts):
             break
 
-        last_executed_block = trade_if_new_block(
+        new_executed_block = trade_if_new_block(
             hyperdrive,
             agent_accounts,
             environment_config.halt_on_errors,
@@ -133,6 +139,15 @@ def run_agents(
             last_executed_block,
             liquidate,
         )
+        if new_executed_block == last_executed_block:
+            # wait
+            time.sleep(poll_latency)
+            poll_latency *= BACKOFF
+            poll_latency += random.uniform(0, 1)
+        else:
+            # Reset backoff
+            poll_latency = START_LATENCY + random.uniform(0, 1)
+        last_executed_block = new_executed_block
 
 
 def build_wallet_positions_from_data(
