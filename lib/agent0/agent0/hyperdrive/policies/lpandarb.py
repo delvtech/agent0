@@ -27,6 +27,48 @@ MAX_ITER = 50
 
 # functions
 # TODO: switch over to using function in the SDK
+def calc_bond_reserves(
+    share_reserves: FixedPoint,
+    share_adjustment: FixedPoint,
+    initial_share_price: FixedPoint,
+    target_rate: FixedPoint,
+    position_duration: FixedPoint,
+    inverted_time_stretch: FixedPoint,
+):
+    r"""Calculate the amount of bonds that hit the target rate for the given shares.
+
+    The calculation is based on the formula: .. math::
+            mu * (z - zeta) * (1 + apr * t) ** (1 / time_stretch)
+
+
+    Arguments
+    ---------
+    share_reserves : FixedPoint
+        The amount of share reserves in the Hyperdrive pool.
+    share_adjustment : FixedPoint
+        The zeta adjustment to share reserves, which gives us effective share reserves (z - zeta).
+    initial_share_price : FixedPoint
+        The initial price of a share in the yield source, from the original pool configurartion.
+    target_rate : FixedPoint
+        The target rate the pool will have after the calculated change in bonds and shares.
+    position_duration : FixedPoint
+        The term of the pool in seconds.
+    inverted_time_stretch : FixedPoint
+        The inverse of the time stretch factor, from the original pool configurartion.
+
+    Returns
+    -------
+    FixedPoint
+        The amount of bonds that hit the target rate.
+    """
+    return (
+        initial_share_price
+        * (share_reserves - share_adjustment)
+        * ((FixedPoint(1) + target_rate * position_duration / FixedPoint(365 * 24 * 60 * 60)) ** inverted_time_stretch)
+    )
+
+
+# TODO: switch over to using function in the SDK
 def calc_spot_price_local(
     initial_share_price: FixedPoint,
     share_reserves: FixedPoint,
@@ -355,7 +397,14 @@ def calc_reserves_to_hit_target_rate(
     while float(abs(predicted_rate - target_rate)) > TOLERANCE:
         iteration += 1
         latest_fixed_rate = calc_apr_local_dict(pool_config, pool_info)
-        target_bonds = interface.bonds_given_rate_and_shares(target_rate)
+        target_bonds = calc_bond_reserves(
+            pool_info["shareReserves"],
+            pool_info["shareAdjustment"],
+            pool_config["initialSharePrice"],
+            target_rate,
+            pool_config["positionDuration"],
+            pool_config["invTimeStretch"],
+        )
         # bonds_needed tells us the number of bonds to hit the desired reserves ratio, keeping shares constant.
         # however trades modify both bonds and shares in amounts of equal value.
         # we modify bonds by only half of bonds_needed, knowing that an amount of equal
