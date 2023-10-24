@@ -14,7 +14,6 @@ from ethpy import EthConfig
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
-from web3.exceptions import ContractCustomError
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
