@@ -20,17 +20,12 @@ from web3.exceptions import (
 )
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, BlockData, Nonce, TxData, TxParams, TxReceipt, Wei
 
-from .errors.errors import decode_error_selector_for_contract
+from .errors.errors import ContractCallException, ContractCallType, decode_error_selector_for_contract
 from .errors.types import UnknownBlockError
 from .retry_utils import retry_call
 
 # TODO these should be parameterized so the caller controls how many times to retry
 READ_RETRY_COUNT = 5
-# Not retrying on write counts
-# TODO need to figure out exactly which error is due to an anvil error
-# Currently catching write when status=0, but ideally this would be a specific
-# "anvil is breaking" error. We're currently disabling by setting WRITE_RETRY_COUNT to 1.
-WRITE_RETRY_COUNT = 1
 
 
 def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
@@ -68,8 +63,19 @@ def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn
         return_values = retry_call(READ_RETRY_COUNT, None, function.call, **fn_kwargs)
     except Exception as err:
         # Add additional information to the exception
-        err.args += (f"Error in smart contract read {function=}",)
-        raise err
+        # This field is passed in if smart_contract_read is called with an explicit block
+        # Will default to None, in which case crash reporting will do best attempt at getting
+        # the block number
+        block_number = fn_kwargs.get("block_identifier", None)
+        raise ContractCallException(
+            "Error in smart contract read",
+            orig_exception=err,
+            contract_call_type=ContractCallType.READ,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs=fn_kwargs,
+            block_number=block_number,
+        ) from err
 
     # If there is a single value returned, we want to put it in a list of length 1
     if not isinstance(return_values, Sequence) or isinstance(return_values, str):
@@ -151,9 +157,20 @@ def smart_contract_preview_transaction(
             **fn_kwargs,
         )
     except Exception as err:
-        # Add function call information to exception args
-        err.args += (f"Error in preview transaction {function=}",)
-        raise err
+        # Add additional information to the exception
+        # This field is passed in if smart_contract_read is called with an explicit block
+        # Will default to None, in which case crash reporting will do best attempt at getting
+        # the block number
+        block_number = fn_kwargs.get("block_identifier", None)
+        raise ContractCallException(
+            "Error in preview transaction",
+            orig_exception=err,
+            contract_call_type=ContractCallType.PREVIEW,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs=fn_kwargs,
+            block_number=block_number,
+        ) from err
 
     if not isinstance(return_values, Sequence):  # could be list or tuple
         return_values = [return_values]
@@ -264,14 +281,24 @@ async def _async_send_transaction_and_wait_for_receipt(
     )
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-    # TODO set poll time as a parameter
     tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash)
+
+    # Error checking when transaction doesn't throw an error, but instead
+    # has errors in the tx_receipt
+    # The block number of this call failing is the previous block
+    block_number = tx_receipt.get("blockNumber") - 1
     # Check status here
     status = tx_receipt.get("status", None)
+    # Set block number as the second argument
     if status is None:
-        raise UnknownBlockError("Receipt did not return status")
+        raise UnknownBlockError("Receipt did not return status", f"{block_number=}")
     if status == 0:
-        raise UnknownBlockError("Receipt has status of 0", f"{tx_receipt=}")
+        raise UnknownBlockError("Receipt has status of 0", f"{block_number=}", f"{tx_receipt=}")
+    logs = tx_receipt.get("logs", None)
+    if logs is None:
+        raise UnknownBlockError("Receipt did not return logs", f"{block_number=}")
+    if len(logs) == 0:
+        raise UnknownBlockError("Logs have a length of 0", f"{block_number=}", f"{tx_receipt=}")
     return tx_receipt
 
 
@@ -312,40 +339,58 @@ async def async_smart_contract_transact(
             func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
         else:
             func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
-
         return await _async_send_transaction_and_wait_for_receipt(
             func_handle,
             signer,
             web3,
             nonce=nonce,
         )
-    except ContractCustomError as err:
-        logging.error(
-            "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",
-            decode_error_selector_for_contract(err.args[0], contract),
-            function_name_or_signature,
-            fn_args,
-        )
-        err.args += (
-            f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.\n"
-            + f"function name: {function_name_or_signature}"
-            + f"\nfunction args: {fn_args}",
-        )
 
-        raise err
+    # Wraps the exception with a contract call exception, adding additional information
+    # Other than UnknownBlockError, which gets the block number from the transaction receipt,
+    # the rest will default to setting the block number to None, which then crash reporting
+    # will attempt a best effort guess as to the block the chain was on before it crashed.
+    except ContractCustomError as err:
+        err.args += (f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.",)
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
     except ContractLogicError as err:
-        logging.error(
-            "ContractLogicError:\n%s\nfunction name:%s\nfunction args: %s",
-            err.message,
-            function_name_or_signature,
-            fn_args,
-        )
-        err.args += (
-            "ContractLogicError raised.\n"
-            + f"function name: {function_name_or_signature}"
-            + f"\nfunction args: {fn_args}",
-        )
-        raise err
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
+    except UnknownBlockError as err:
+        block_number_arg = err.args[1]
+        assert "block_number=" in block_number_arg
+        block_number = int(block_number_arg.split("block_number=")[1])
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+            block_number=block_number,
+        ) from err
+    except Exception as err:
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
 
 
 def _send_transaction_and_wait_for_receipt(
@@ -391,14 +436,24 @@ def _send_transaction_and_wait_for_receipt(
     )
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-    # TODO set poll time as a parameter
     tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+
+    # Error checking when transaction doesn't throw an error, but instead
+    # has errors in the tx_receipt
+    # The block number of this call failing is the previous block
+    block_number = tx_receipt.get("blockNumber") - 1
     # Check status here
     status = tx_receipt.get("status", None)
+    # Set block number as the second argument
     if status is None:
-        raise UnknownBlockError("Receipt did not return status")
+        raise UnknownBlockError("Receipt did not return status", f"{block_number=}")
     if status == 0:
-        raise UnknownBlockError("Receipt has status of 0", f"{tx_receipt=}")
+        raise UnknownBlockError("Receipt has status of 0", f"{block_number=}", f"{tx_receipt=}")
+    logs = tx_receipt.get("logs", None)
+    if logs is None:
+        raise UnknownBlockError("Receipt did not return logs", f"{block_number=}")
+    if len(logs) == 0:
+        raise UnknownBlockError("Logs have a length of 0", f"{block_number=}", f"{tx_receipt=}")
     return tx_receipt
 
 
@@ -440,23 +495,55 @@ def smart_contract_transact(
             func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
         return _send_transaction_and_wait_for_receipt(func_handle, signer, web3, nonce)
 
+    # Wraps the exception with a contract call exception, adding additional information
+    # Other than UnknownBlockError, which gets the block number from the transaction receipt,
+    # the rest will default to setting the block number to None, which then crash reporting
+    # will attempt a best effort guess as to the block the chain was on before it crashed.
     except ContractCustomError as err:
-        error_selector = decode_error_selector_for_contract(err.args[0], contract)
-        logging.error(
-            "ContractCustomError %s raised.\n function name: %s\nfunction args: %s",
-            error_selector,
-            function_name_or_signature,
-            fn_args,
+        err.args += (
+            f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.\n"
+            + f"function name: {function_name_or_signature}"
+            + f"\nfunction args: {fn_args}",
         )
-        raise err
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
     except ContractLogicError as err:
-        logging.error(
-            "ContractLogicError:\n%s\nfunction name:%s\nfunction args: %s",
-            err.message,
-            function_name_or_signature,
-            fn_args,
-        )
-        raise err
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
+    except UnknownBlockError as err:
+        block_number_arg = err.args[1]
+        assert "block_number=" in block_number_arg
+        block_number = int(block_number_arg.split("block_number=")[1])
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+            block_number=block_number,
+        ) from err
+    except Exception as err:
+        raise ContractCallException(
+            "Error in smart_contract_transact",
+            orig_exception=err,
+            contract_call_type=ContractCallType.TRANSACTION,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs={},
+        ) from err
 
 
 # TODO clean up args
@@ -562,7 +649,6 @@ def eth_transfer(
         "from": signer_checksum_address,
         "to": to_address,
         "value": Wei(amount_wei),
-        # TODO figure out which exception here to retry on
         "nonce": nonce,
         "chainId": web3.eth.chain_id,
     }
@@ -578,9 +664,6 @@ def eth_transfer(
     unsent_txn["maxPriorityFeePerGas"] = Wei(max_priority_fee)
     signed_txn = signer.sign_transaction(unsent_txn)
 
-    # TODO how do we want to handle retries here?
-    # While this is fine for exceptions thrown, we may need to handle the case where the log status
-    # return fail
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
     return web3.eth.wait_for_transaction_receipt(tx_hash)
 

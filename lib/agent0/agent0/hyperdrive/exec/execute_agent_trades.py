@@ -97,7 +97,7 @@ async def async_execute_single_agent_trade(
         if isinstance(result, HyperdriveWalletDeltas):
             agent.wallet.update(result)
             trade_result = TradeResult(status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object)
-        elif isinstance(result, Exception):
+        elif isinstance(result, BaseException):
             trade_result = build_crash_trade_result(result, agent, trade_object, hyperdrive)
         else:  # Should never get here
             # TODO: use match statement and assert_never(result)

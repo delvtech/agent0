@@ -11,9 +11,9 @@ from agent0.hyperdrive.exec import run_agents
 from agent0.test_fixtures import CycleTradesPolicy
 from eth_typing import URI
 from ethpy import EthConfig
+from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
-from web3.exceptions import ContractCustomError
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -115,5 +115,5 @@ class TestSlippageWarning:
                 contract_addresses=hyperdrive_contract_addresses,
                 load_wallet_state=False,
             )
-        except ContractCustomError as exc:
+        except ContractCallException as exc:
             assert "Slippage detected" in exc.args[0]
