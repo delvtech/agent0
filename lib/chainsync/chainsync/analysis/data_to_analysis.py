@@ -28,6 +28,8 @@ from .calc_ticker import calc_ticker
 
 pd.set_option("display.max_columns", None)
 
+MAX_BATCH_SIZE = 10000
+
 
 def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
     """Helper function to add a dataframe to a database"""
@@ -43,6 +45,7 @@ def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session)
         method="multi",
         index=False,
         dtype=dtype,  # type: ignore
+        chunksize=MAX_BATCH_SIZE,
     )
     # commit the transaction
     try:
@@ -137,6 +140,7 @@ def data_to_analysis(
     hyperdrive_contract: Contract,
 ) -> None:
     """Function to query postgres data tables and insert to analysis tables"""
+
     # Get data
     pool_info = get_pool_info(db_session, start_block, end_block, coerce_float=False)
 
