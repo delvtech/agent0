@@ -16,6 +16,7 @@ from chainsync.exec import acquire_data, data_analysis
 from elfpy.types import MarketType, Trade
 from eth_typing import URI
 from ethpy import EthConfig
+from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from sqlalchemy.orm import Session
@@ -187,10 +188,8 @@ class TestMultiTradePerBlock:
             )
             # If this reaches this point, the agent was successful, which means this test should fail
             assert False, "Agent was successful with known invalid trade"
-        except AssertionError as exc:
+        except ContractCallException as exc:
             # Expected error due to illegal trade
-            # TODO currently, the illegal trade is throwing an assertion error
-            # due to a lack of a trx receipt. Ideally, this error should be more informative
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Invalid balance:" in exc.args[0]
 
