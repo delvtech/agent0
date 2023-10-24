@@ -454,7 +454,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 self.current_block_number,
             )
 
-    def bonds_given_rate_and_shares(
+    def calculate_bonds_given_shares_and_rate(
         self, target_rate: FixedPoint, target_shares: FixedPoint | None = None
     ) -> FixedPoint:
         r"""Returns the bond reserves for the market share reserves
