@@ -8,6 +8,7 @@ from datetime import datetime
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
+from ethpy.base.errors import ContractCallException
 from ethpy.hyperdrive import HyperdriveInterface
 from web3 import Web3
 from web3.exceptions import ContractCustomError, ContractLogicError
@@ -137,13 +138,15 @@ def check_for_slippage(trade_result) -> tuple[bool, TradeResult]:
         A tuple of a flag for detecting slippage and
         a modified trade_result that has a custom exception argument message prepended
     """
-    # To detect slippage, we look for the `OutputLimit` exception thrown from the smart contract.
+    # To detect slippage, we first look for the wrapper that defines a contract call exception.
+    # We then look for the `OutputLimit` exception thrown as the original exception.
     # Since this exception is used elsewhere (e.g., in redeem withdraw shares), we also explicitly check
     # that the trade here is open/close long/short.
     # TODO this error is not guaranteed to be exclusive for slippage in the future.
     is_slippage = (
-        isinstance(trade_result.exception, ContractCustomError)
-        and ("OutputLimit raised" in trade_result.exception.args[1])
+        isinstance(trade_result.exception, ContractCallException)
+        and isinstance(trade_result.exception.orig_exception, ContractCustomError)
+        and ("OutputLimit raised" in trade_result.exception.orig_exception.args[1])
         and (
             trade_result.trade_object.market_action.action_type
             in (
@@ -220,8 +223,10 @@ def check_for_invalid_balance(trade_result: TradeResult) -> tuple[bool, TradeRes
 
             # We explicitly check for the error here to set flag
             # TODO this catch is not guaranteed to be correct in the future.
-            if isinstance(trade_result.exception, ContractLogicError) and (
-                "ERC20: transfer amount exceeds balance" in trade_result.exception.args[0]
+            if (
+                isinstance(trade_result.exception, ContractCallException)
+                and isinstance(trade_result.exception.orig_exception, ContractLogicError)
+                and ("ERC20: transfer amount exceeds balance" in trade_result.exception.args[0])
             ):
                 invalid_balance = True
 
