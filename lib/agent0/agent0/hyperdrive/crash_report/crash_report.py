@@ -8,6 +8,7 @@ import os
 import subprocess
 from collections import OrderedDict
 from datetime import datetime, timezone
+from enum import Enum
 from traceback import format_tb
 from types import TracebackType
 from typing import TYPE_CHECKING, Any
@@ -15,7 +16,11 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
 from elfpy.utils import logs
+from eth_typing import BlockNumber
+from ethpy.base.errors import ContractCallException
 from ethpy.hyperdrive.interface import (
+    get_hyperdrive_checkpoint,
+    get_hyperdrive_pool_info,
     process_hyperdrive_checkpoint,
     process_hyperdrive_pool_config,
     process_hyperdrive_pool_info,
@@ -62,7 +67,8 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return format_tb(o)
         if isinstance(o, BaseException):
             return repr(o)
-
+        if isinstance(o, Enum):
+            return o.name
         try:
             return o.__dict__
         except AttributeError:
@@ -109,52 +115,95 @@ def build_crash_trade_result(
         trade_object=trade_object,
     )
 
-    # We log pool config and pool info here
-    # However, this is a best effort attempt to get this information
-    # due to async conditions. If debugging this crash, ensure the agent is running
-    # in isolation and doing one trade per call.
+    # We first check if the exception came from a contract call
+    # If it did, we fill various trade result data with custom data from
+    # the exception
+    trade_result.exception = exception
+    if isinstance(exception, ContractCallException):
+        trade_result.orig_exception = exception.orig_exception
+        if exception.block_number is not None:
+            trade_result.block_number = exception.block_number
+        else:
+            # Best effort to get the block it crashed on
+            # We assume the exception happened in the previous block
+            trade_result.block_number = hyperdrive.current_block_number - 1
+        trade_result.contract_call = {
+            "contract_call_type": exception.contract_call_type,
+            "function_name_or_signature": exception.function_name_or_signature,
+            "fn_args": exception.fn_args,
+            "fn_kwargs": exception.fn_kwargs,
+        }
 
-    # Instead of using the interface here, we directly call the underlying contract methods
-    # to ensure all data is from the same block.
-    trade_result.block_number = hyperdrive.current_block_number
+    else:
+        # Best effort to get the block it crashed on
+        # We assume the exception happened in the previous block
+        trade_result.block_number = hyperdrive.current_block_number - 1
+        # We still build this structure so the schema stays the same
+        trade_result.contract_call = {
+            "contract_call_type": None,
+            "function_name_or_signature": None,
+            "fn_args": None,
+            "fn_kwargs": None,
+        }
 
     # We get the underlying contract info and convert them to human readable versions
     # Despite these being protected variables, we need low level access for crash reporting
-    # TODO we likely should call underlying web3 commands here to prevent race conditions
-    trade_result.block_timestamp = hyperdrive.current_block_time
-    trade_result.exception = exception
+    trade_result.block_timestamp = hyperdrive.web3.eth.get_block(trade_result.block_number).get("timestamp", None)
+    # Pool config is static, so we can get it from the interface here
     trade_result.raw_pool_config = hyperdrive._contract_pool_config  # pylint: disable=protected-access
-    trade_result.raw_pool_info = hyperdrive._contract_pool_info  # pylint: disable=protected-access
-    trade_result.raw_checkpoint = hyperdrive._contract_latest_checkpoint  # pylint: disable=protected-access
 
-    raw_trade_object = _hyperdrive_trade_obj_to_dict(trade_object)
-    trade_result.raw_trade_object = {}
-    for key, val in raw_trade_object.items():
-        if isinstance(val, FixedPoint):
-            trade_result.raw_trade_object[key] = val.scaled_value
+    # We wrap contract calls in a try catch to avoid crashing during crash report
+    try:
+        trade_result.raw_pool_info = get_hyperdrive_pool_info(
+            hyperdrive.hyperdrive_contract, BlockNumber(trade_result.block_number)
+        )
+    except Exception as exc:  # pylint: disable=broad-except
+        logging.warning("Failed to get hyperdrive pool info in crash reporting: %s", repr(exc))
+        trade_result.raw_pool_info = None
+
+    try:
+        if trade_result.block_timestamp is not None:
+            trade_result.raw_checkpoint = get_hyperdrive_checkpoint(
+                hyperdrive.hyperdrive_contract, hyperdrive.get_checkpoint_id(trade_result.block_timestamp)
+            )
         else:
-            trade_result.raw_trade_object[key] = val
+            logging.warning("Failed to get block_timestamp in crash_reporting")
+            trade_result.raw_checkpoint = None
+    except Exception as exc:  # pylint: disable=broad-except
+        logging.warning("Failed to get hyperdrive checkpoint in crash reporting: %s", repr(exc))
+        trade_result.raw_checkpoint = None
 
     # We call the conversion functions to convert them to human readable versions as well
+    # TODO make process functions not affect state
     trade_result.pool_config = process_hyperdrive_pool_config(
         copy.deepcopy(trade_result.raw_pool_config), hyperdrive.hyperdrive_contract.address
     )
-    trade_result.pool_info = process_hyperdrive_pool_info(
-        copy.deepcopy(trade_result.raw_pool_info),
-        hyperdrive.web3,
-        hyperdrive.hyperdrive_contract,
-        trade_result.raw_pool_config["positionDuration"],
-        trade_result.block_number,
-    )
-    trade_result.checkpoint_info = process_hyperdrive_checkpoint(
-        copy.deepcopy(trade_result.raw_checkpoint),
-        hyperdrive.web3,
-        trade_result.block_number,
-    )
+
+    if trade_result.raw_pool_info is not None:
+        trade_result.pool_info = process_hyperdrive_pool_info(
+            copy.deepcopy(trade_result.raw_pool_info),
+            hyperdrive.web3,
+            hyperdrive.hyperdrive_contract,
+            trade_result.raw_pool_config["positionDuration"],
+            BlockNumber(trade_result.block_number),
+        )
+    else:
+        trade_result.pool_info = None
+
+    if trade_result.raw_checkpoint is not None:
+        trade_result.checkpoint_info = process_hyperdrive_checkpoint(
+            copy.deepcopy(trade_result.raw_checkpoint),
+            hyperdrive.web3,
+            BlockNumber(trade_result.block_number),
+        )
+    else:
+        trade_result.checkpoint_info = None
+
     trade_result.contract_addresses = {
         "hyperdrive_address": hyperdrive.hyperdrive_contract.address,
         "base_token_address": hyperdrive.base_token_contract.address,
     }
+
     # add additional information to the exception
     trade_result.additional_info = {
         "spot_price": hyperdrive.spot_price,
@@ -193,7 +242,13 @@ def log_hyperdrive_crash_report(
     # If we're crash reporting, an exception is expected
     assert trade_result.exception is not None
 
-    time_str = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
+    curr_time = datetime.utcnow().replace(tzinfo=timezone.utc)
+    fn_time_str = curr_time.strftime("%Y_%m_%d_%H_%M_%S_Z")
+    time_str = curr_time.isoformat()
+
+    orig_traceback = None
+    if trade_result.orig_exception is not None:
+        orig_traceback = trade_result.orig_exception.__traceback__
 
     dump_obj = OrderedDict(
         [
@@ -201,6 +256,7 @@ def log_hyperdrive_crash_report(
             ("block_number", trade_result.block_number),
             ("block_timestamp", trade_result.block_timestamp),
             ("exception", trade_result.exception),
+            ("orig_exception", trade_result.orig_exception),
             ("trade", _hyperdrive_trade_obj_to_dict(trade_result.trade_object)),
             ("wallet", _hyperdrive_wallet_to_dict(trade_result.agent.wallet)),
             ("agent_info", _hyperdrive_agent_to_dict(trade_result.agent)),
@@ -212,6 +268,7 @@ def log_hyperdrive_crash_report(
             ("contract_addresses", trade_result.contract_addresses),
             ("additional_info", trade_result.additional_info),
             ("traceback", trade_result.exception.__traceback__),
+            ("orig_traceback", orig_traceback),
             # NOTE if this crash report happens in a PR that gets squashed,
             # we loose this hash.
             ("commit_hash", _get_git_revision_hash()),
@@ -219,7 +276,7 @@ def log_hyperdrive_crash_report(
     )
 
     # We use ordered dict to ensure the outermost order is preserved
-    logging_crash_report = json.dumps(dump_obj, indent=4, cls=ExtendedJSONEncoder)
+    logging_crash_report = json.dumps(dump_obj, indent=2, cls=ExtendedJSONEncoder)
 
     logging.log(log_level, logging_crash_report)
 
@@ -227,7 +284,7 @@ def log_hyperdrive_crash_report(
     if crash_report_to_file:
         # We add the machine readable version of the crash to the file
         # OrderedDict doesn't play nice with types
-        dump_obj["raw_trade_object"] = trade_result.raw_trade_object  # type: ignore
+        dump_obj["contract_call"] = trade_result.contract_call  # type: ignore
         dump_obj["raw_pool_config"] = trade_result.raw_pool_config  # type: ignore
         dump_obj["raw_pool_info"] = trade_result.raw_pool_info  # type: ignore
         dump_obj["raw_checkpoint"] = trade_result.raw_checkpoint  # type: ignore
@@ -236,11 +293,11 @@ def log_hyperdrive_crash_report(
         if crash_report_file_prefix is None:
             crash_report_file_prefix = ""
         crash_report_dir = ".crash_report/"
-        crash_report_file = f"{crash_report_dir}/{crash_report_file_prefix}{time_str}.json"
+        crash_report_file = f"{crash_report_dir}/{crash_report_file_prefix}{fn_time_str}.json"
         if not os.path.exists(crash_report_dir):
             os.makedirs(crash_report_dir)
         with open(crash_report_file, "w", encoding="utf-8") as file:
-            json.dump(dump_obj, file, indent=4, cls=ExtendedJSONEncoder)
+            json.dump(dump_obj, file, indent=2, cls=ExtendedJSONEncoder)
 
 
 def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
