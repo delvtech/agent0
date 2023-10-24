@@ -41,8 +41,9 @@ if TYPE_CHECKING:
 
 class ExtendedJSONEncoder(json.JSONEncoder):
     r"""Custom encoder for JSON string dumps"""
-    # pylint: disable=too-many-return-statements
 
+    # pylint: disable=too-many-return-statements
+    # pylint: disable=too-many-branches
     def default(self, o):
         r"""Override default behavior"""
         if isinstance(o, set):
