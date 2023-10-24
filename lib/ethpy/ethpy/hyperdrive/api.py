@@ -21,7 +21,7 @@ from ethpy.base import (
     smart_contract_read,
 )
 from fixedpointmath import FixedPoint
-from pyperdrive.types import Fees, PoolConfig, PoolInfo
+from hypertypes.IHyperdriveTypes import Fees, PoolConfig, PoolInfo
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData, Nonce, Timestamp
@@ -388,39 +388,39 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
     def _serialized_pool_config(self) -> PoolConfig:
         pool_config_str = PoolConfig(
             baseToken=self._contract_pool_config["baseToken"],
-            initialSharePrice=str(self._contract_pool_config["initialSharePrice"]),
-            minimumShareReserves=str(self._contract_pool_config["minimumShareReserves"]),
-            minimumTransactionAmount=str(self._contract_pool_config["minimumTransactionAmount"]),
-            positionDuration=str(self._contract_pool_config["positionDuration"]),
-            checkpointDuration=str(self._contract_pool_config["checkpointDuration"]),
-            timeStretch=str(self._contract_pool_config["timeStretch"]),
+            initialSharePrice=self._contract_pool_config["initialSharePrice"],
+            minimumShareReserves=self._contract_pool_config["minimumShareReserves"],
+            minimumTransactionAmount=self._contract_pool_config["minimumTransactionAmount"],
+            positionDuration=self._contract_pool_config["positionDuration"],
+            checkpointDuration=self._contract_pool_config["checkpointDuration"],
+            timeStretch=self._contract_pool_config["timeStretch"],
             governance=self._contract_pool_config["governance"],
             feeCollector=self._contract_pool_config["feeCollector"],
-            Fees=Fees(
-                curve=str(self._contract_pool_config["fees"][0]),
-                flat=str(self._contract_pool_config["fees"][1]),
-                governance=str(self._contract_pool_config["fees"][2]),
+            fees=Fees(
+                curve=self._contract_pool_config["fees"][0],
+                flat=self._contract_pool_config["fees"][1],
+                governance=self._contract_pool_config["fees"][2],
             ),
-            oracleSize=str(self._contract_pool_config["oracleSize"]),
-            updateGap=str(self._contract_pool_config["updateGap"]),
+            oracleSize=self._contract_pool_config["oracleSize"],
+            updateGap=self._contract_pool_config["updateGap"],
         )
         return pool_config_str
 
     def _serialized_pool_info(self) -> PoolInfo:
         pool_info_str = PoolInfo(
-            shareReserves=str(self._contract_pool_info["shareReserves"]),
-            shareAdjustment=str(self._contract_pool_info["shareAdjustment"]),
-            bondReserves=str(self._contract_pool_info["bondReserves"]),
-            lpTotalSupply=str(self._contract_pool_info["lpTotalSupply"]),
-            sharePrice=str(self._contract_pool_info["sharePrice"]),
-            longsOutstanding=str(self._contract_pool_info["longsOutstanding"]),
-            longAverageMaturityTime=str(self._contract_pool_info["longAverageMaturityTime"]),
-            shortsOutstanding=str(self._contract_pool_info["shortsOutstanding"]),
-            shortAverageMaturityTime=str(self._contract_pool_info["shortAverageMaturityTime"]),
-            withdrawalSharesReadyToWithdraw=str(self._contract_pool_info["withdrawalSharesReadyToWithdraw"]),
-            withdrawalSharesProceeds=str(self._contract_pool_info["withdrawalSharesProceeds"]),
-            lpSharePrice=str(self._contract_pool_info["lpSharePrice"]),
-            longExposure=str(self._contract_pool_info["longExposure"]),
+            shareReserves=self._contract_pool_info["shareReserves"],
+            shareAdjustment=self._contract_pool_info["shareAdjustment"],
+            bondReserves=self._contract_pool_info["bondReserves"],
+            lpTotalSupply=self._contract_pool_info["lpTotalSupply"],
+            sharePrice=self._contract_pool_info["sharePrice"],
+            longsOutstanding=self._contract_pool_info["longsOutstanding"],
+            longAverageMaturityTime=self._contract_pool_info["longAverageMaturityTime"],
+            shortsOutstanding=self._contract_pool_info["shortsOutstanding"],
+            shortAverageMaturityTime=self._contract_pool_info["shortAverageMaturityTime"],
+            withdrawalSharesReadyToWithdraw=self._contract_pool_info["withdrawalSharesReadyToWithdraw"],
+            withdrawalSharesProceeds=self._contract_pool_info["withdrawalSharesProceeds"],
+            lpSharePrice=self._contract_pool_info["lpSharePrice"],
+            longExposure=self._contract_pool_info["longExposure"],
         )
         return pool_info_str
 
@@ -1023,7 +1023,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                     self._serialized_pool_config(),
                     pool_info,
                     str(budget.scaled_value),
-                    pool_info.sharePrice,
+                    str(pool_info.sharePrice),
                     checkpoint_exposure=str(self.latest_checkpoint["longExposure"].scaled_value),
                     maybe_conservative_price=None,
                     maybe_max_iterations=None,
