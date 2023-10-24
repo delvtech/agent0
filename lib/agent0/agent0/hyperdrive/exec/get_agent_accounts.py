@@ -9,7 +9,7 @@ from agent0 import AccountKeyConfig
 from agent0.base.config import AgentConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
 from eth_account.account import Account
-from ethpy.base import async_smart_contract_transact, get_account_balance, smart_contract_read
+from ethpy.base import async_smart_contract_transact, get_account_balance
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import Web3
@@ -78,9 +78,6 @@ def get_agent_accounts(
                     f"Agent needs Ethereum to operate! The agent {eth_agent.checksum_address=} has a "
                     f"balance of 0.\nDid you fund their accounts?"
                 )
-            agent_base_funds = smart_contract_read(base_token_contract, "balanceOf", eth_agent.checksum_address)
-            if agent_base_funds["value"] == 0:
-                raise AssertionError("Agent needs Base tokens to operate! Did you fund their accounts?")
             agents.append(eth_agent)
         num_agents_so_far.append(agent_info.number_of_agents)
     logging.info("Added %d agents", sum(num_agents_so_far))
