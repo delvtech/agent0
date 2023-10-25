@@ -21,7 +21,7 @@ from ethpy.base import (
     smart_contract_read,
 )
 from fixedpointmath import FixedPoint
-from pyperdrive.types import Fees, PoolConfig, PoolInfo
+from hypertypes.IHyperdriveTypes import Fees, PoolConfig, PoolInfo
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData, Nonce, Timestamp
@@ -209,6 +209,18 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         vault_shares = smart_contract_read(self.yield_contract, "balanceOf", (self.hyperdrive_contract.address))
         return FixedPoint(scaled_value=int(vault_shares["value"]))
 
+    @property
+    def effective_share_reserves(self) -> FixedPoint:
+        """Get the adjusted share reserves for the current Hyperdrive pool."""
+        return FixedPoint(
+            scaled_value=int(
+                pyperdrive.get_effective_share_reserves(  # pylint: disable=no-member
+                    str(self.pool_info["shareReserves"].scaled_value),
+                    str(self.pool_info["shareAdjustment"].scaled_value),
+                )
+            )
+        )
+
     def get_checkpoint_id(self, block_timestamp: Timestamp) -> Timestamp:
         """Get the Checkpoint ID for a given timestamp.
 
@@ -376,39 +388,39 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
     def _serialized_pool_config(self) -> PoolConfig:
         pool_config_str = PoolConfig(
             baseToken=self._contract_pool_config["baseToken"],
-            initialSharePrice=str(self._contract_pool_config["initialSharePrice"]),
-            minimumShareReserves=str(self._contract_pool_config["minimumShareReserves"]),
-            minimumTransactionAmount=str(self._contract_pool_config["minimumTransactionAmount"]),
-            positionDuration=str(self._contract_pool_config["positionDuration"]),
-            checkpointDuration=str(self._contract_pool_config["checkpointDuration"]),
-            timeStretch=str(self._contract_pool_config["timeStretch"]),
+            initialSharePrice=self._contract_pool_config["initialSharePrice"],
+            minimumShareReserves=self._contract_pool_config["minimumShareReserves"],
+            minimumTransactionAmount=self._contract_pool_config["minimumTransactionAmount"],
+            positionDuration=self._contract_pool_config["positionDuration"],
+            checkpointDuration=self._contract_pool_config["checkpointDuration"],
+            timeStretch=self._contract_pool_config["timeStretch"],
             governance=self._contract_pool_config["governance"],
             feeCollector=self._contract_pool_config["feeCollector"],
-            Fees=Fees(
-                curve=str(self._contract_pool_config["fees"][0]),
-                flat=str(self._contract_pool_config["fees"][1]),
-                governance=str(self._contract_pool_config["fees"][2]),
+            fees=Fees(
+                curve=self._contract_pool_config["fees"][0],
+                flat=self._contract_pool_config["fees"][1],
+                governance=self._contract_pool_config["fees"][2],
             ),
-            oracleSize=str(self._contract_pool_config["oracleSize"]),
-            updateGap=str(self._contract_pool_config["updateGap"]),
+            oracleSize=self._contract_pool_config["oracleSize"],
+            updateGap=self._contract_pool_config["updateGap"],
         )
         return pool_config_str
 
     def _serialized_pool_info(self) -> PoolInfo:
         pool_info_str = PoolInfo(
-            shareReserves=str(self._contract_pool_info["shareReserves"]),
-            shareAdjustment=str(self._contract_pool_info["shareAdjustment"]),
-            bondReserves=str(self._contract_pool_info["bondReserves"]),
-            lpTotalSupply=str(self._contract_pool_info["lpTotalSupply"]),
-            sharePrice=str(self._contract_pool_info["sharePrice"]),
-            longsOutstanding=str(self._contract_pool_info["longsOutstanding"]),
-            longAverageMaturityTime=str(self._contract_pool_info["longAverageMaturityTime"]),
-            shortsOutstanding=str(self._contract_pool_info["shortsOutstanding"]),
-            shortAverageMaturityTime=str(self._contract_pool_info["shortAverageMaturityTime"]),
-            withdrawalSharesReadyToWithdraw=str(self._contract_pool_info["withdrawalSharesReadyToWithdraw"]),
-            withdrawalSharesProceeds=str(self._contract_pool_info["withdrawalSharesProceeds"]),
-            lpSharePrice=str(self._contract_pool_info["lpSharePrice"]),
-            longExposure=str(self._contract_pool_info["longExposure"]),
+            shareReserves=self._contract_pool_info["shareReserves"],
+            shareAdjustment=self._contract_pool_info["shareAdjustment"],
+            bondReserves=self._contract_pool_info["bondReserves"],
+            lpTotalSupply=self._contract_pool_info["lpTotalSupply"],
+            sharePrice=self._contract_pool_info["sharePrice"],
+            longsOutstanding=self._contract_pool_info["longsOutstanding"],
+            longAverageMaturityTime=self._contract_pool_info["longAverageMaturityTime"],
+            shortsOutstanding=self._contract_pool_info["shortsOutstanding"],
+            shortAverageMaturityTime=self._contract_pool_info["shortAverageMaturityTime"],
+            withdrawalSharesReadyToWithdraw=self._contract_pool_info["withdrawalSharesReadyToWithdraw"],
+            withdrawalSharesProceeds=self._contract_pool_info["withdrawalSharesProceeds"],
+            lpSharePrice=self._contract_pool_info["lpSharePrice"],
+            longExposure=self._contract_pool_info["longExposure"],
         )
         return pool_info_str
 
@@ -442,7 +454,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 self.current_block_number,
             )
 
-    def bonds_given_shares_and_rate(self, target_rate: FixedPoint) -> FixedPoint:
+    def calculate_bonds_given_shares_and_rate(
+        self, target_rate: FixedPoint, target_shares: FixedPoint | None = None
+    ) -> FixedPoint:
         r"""Returns the bond reserves for the market share reserves
         and a given fixed rate.
 
@@ -454,15 +468,22 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ---------
         target_rate : FixedPoint
             The target apr for which to calculate the bond reserves given the pools current share reserves.
+        target_shares : FixedPoint, optional
+            The target share reserves for the pool
         """
-
-        mu: FixedPoint = self.pool_config["initialSharePrice"]
-        z_minus_zeta: FixedPoint = self.pool_info["shareReserves"] - self.pool_info["shareAdjustment"]
-        t = self.position_duration_in_years
-        one_over_tau: FixedPoint = self.pool_config["timeStretch"]
-        adjusted_apr = FixedPoint("1") + target_rate * t
-
-        return mu * z_minus_zeta * adjusted_apr**one_over_tau
+        if target_shares is None:
+            target_shares = self.effective_share_reserves
+        return FixedPoint(
+            scaled_value=int(
+                pyperdrive.calculate_bonds_given_shares_and_rate(  # pylint: disable=no-member
+                    str(target_shares.scaled_value),
+                    str(self.pool_config["initialSharePrice"].scaled_value),
+                    str(target_rate.scaled_value),
+                    str(self.pool_config["positionDuration"]),
+                    str(self.pool_config["timeStretch"].scaled_value),
+                )
+            )
+        )
 
     async def async_open_long(
         self,
@@ -1002,7 +1023,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                     self._serialized_pool_config(),
                     pool_info,
                     str(budget.scaled_value),
-                    pool_info.sharePrice,
+                    str(pool_info.sharePrice),
                     checkpoint_exposure=str(self.latest_checkpoint["longExposure"].scaled_value),
                     maybe_conservative_price=None,
                     maybe_max_iterations=None,
