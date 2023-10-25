@@ -26,8 +26,8 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData, Nonce, Timestamp
 
-from .addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
-from .interface import (
+from ..addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from ..interface import (
     get_hyperdrive_checkpoint,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
@@ -36,7 +36,7 @@ from .interface import (
     process_hyperdrive_pool_config,
     process_hyperdrive_pool_info,
 )
-from .receipt_breakdown import ReceiptBreakdown
+from ..receipt_breakdown import ReceiptBreakdown
 
 # known issue where class properties aren't recognized as subscriptable
 # https://github.com/pylint-dev/pylint/issues/5699

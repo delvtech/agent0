@@ -9,9 +9,9 @@ from ethpy.base.transactions import smart_contract_read
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
-from .addresses import HyperdriveAddresses
+from ..addresses import HyperdriveAddresses
+from ..deploy import DeployedHyperdrivePool
 from .api import HyperdriveInterface
-from .deploy import DeployedHyperdrivePool
 
 
 class TestHyperdriveInterface:
