@@ -240,8 +240,42 @@ async def async_wait_for_transaction_receipt(
         ) from exc
 
 
-async def _async_send_transaction_and_wait_for_receipt(
+def build_transaction(
     func_handle: ContractFunction, signer: LocalAccount, web3: Web3, nonce: Nonce | None = None
+) -> TxParams:
+    """
+    Builds a transaction for the given function.
+
+    Arguments
+    ---------
+    func_handle: ContractFunction
+        The function to call
+    signer: LocalAccount
+        The LocalAccount that will be used to pay for the gas & sign the transaction
+    nonce: Nonce | None
+    """
+    signer_checksum_address = Web3.to_checksum_address(signer.address)
+    # TODO figure out which exception here to retry on
+    base_nonce = retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address)
+    if nonce is None:
+        nonce = base_nonce
+    # We explicitly check to ensure explicit nonce is larger than what web3 is reporting
+    if base_nonce > nonce:
+        logging.warning("Specified nonce %s is larger than current trx count %s", nonce, base_nonce)
+        nonce = base_nonce
+
+    # We need to update the nonce when retrying a transaction
+    unsent_txn = func_handle.build_transaction(
+        {
+            "from": signer_checksum_address,
+            "nonce": nonce,
+        }
+    )
+    return unsent_txn
+
+
+async def _async_send_transaction_and_wait_for_receipt(
+    unsent_txn: TxParams, signer: LocalAccount, web3: Web3
 ) -> TxReceipt:
     """
     Sends a transaction and waits for the receipt asynchronously.
@@ -262,23 +296,6 @@ async def _async_send_transaction_and_wait_for_receipt(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    signer_checksum_address = Web3.to_checksum_address(signer.address)
-    # TODO figure out which exception here to retry on
-    base_nonce = retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address)
-    if nonce is None:
-        nonce = base_nonce
-    # We explicitly check to ensure explicit nonce is larger than what web3 is reporting
-    if base_nonce > nonce:
-        logging.warning("Specified nonce %s is larger than current trx count %s", nonce, base_nonce)
-        nonce = base_nonce
-
-    # We need to update the nonce when retrying a transaction
-    unsent_txn = func_handle.build_transaction(
-        {
-            "from": signer_checksum_address,
-            "nonce": nonce,
-        }
-    )
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
     tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash)
@@ -333,18 +350,16 @@ async def async_smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
+    if "(" in function_name_or_signature:
+        func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
+    else:
+        func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
+
+    # Build transaction
+    unsent_txn = build_transaction(func_handle, signer, web3, nonce=nonce)
 
     try:
-        if "(" in function_name_or_signature:
-            func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
-        else:
-            func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
-        return await _async_send_transaction_and_wait_for_receipt(
-            func_handle,
-            signer,
-            web3,
-            nonce=nonce,
-        )
+        return await _async_send_transaction_and_wait_for_receipt(unsent_txn, signer, web3)
 
     # Wraps the exception with a contract call exception, adding additional information
     # Other than UnknownBlockError, which gets the block number from the transaction receipt,
@@ -359,6 +374,7 @@ async def async_smart_contract_transact(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs={},
+            raw_txn=dict(unsent_txn),
         ) from err
     except ContractLogicError as err:
         raise ContractCallException(
@@ -368,6 +384,7 @@ async def async_smart_contract_transact(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs={},
+            raw_txn=dict(unsent_txn),
         ) from err
     except UnknownBlockError as err:
         block_number_arg = err.args[1]
@@ -380,6 +397,7 @@ async def async_smart_contract_transact(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs={},
+            raw_txn=dict(unsent_txn),
             block_number=block_number,
         ) from err
     except Exception as err:
@@ -390,15 +408,11 @@ async def async_smart_contract_transact(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs={},
+            raw_txn=dict(unsent_txn),
         ) from err
 
 
-def _send_transaction_and_wait_for_receipt(
-    func_handle: ContractFunction,
-    signer: LocalAccount,
-    web3: Web3,
-    nonce: Nonce | None = None,
-) -> TxReceipt:
+def _send_transaction_and_wait_for_receipt(unsent_txn: TxParams, signer: LocalAccount, web3: Web3) -> TxReceipt:
     """
     Sends a transaction and waits for the receipt.
 
@@ -418,22 +432,6 @@ def _send_transaction_and_wait_for_receipt(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    signer_checksum_address = Web3.to_checksum_address(signer.address)
-    # TODO figure out which exception here to retry on
-    base_nonce = retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address)
-    if nonce is None:
-        nonce = base_nonce
-    # We explicitly check to ensure explicit nonce is larger than what web3 is reporting
-    if base_nonce > nonce:
-        logging.warning("Specified nonce %s is larger than current trx count %s", nonce, base_nonce)
-        nonce = base_nonce
-
-    unsent_txn = func_handle.build_transaction(
-        {
-            "from": signer_checksum_address,
-            "nonce": nonce,
-        }
-    )
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
     tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
@@ -487,24 +485,22 @@ def smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
+    if "(" in function_name_or_signature:
+        func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
+    else:
+        func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
+    # Build transaction
+    unsent_txn = build_transaction(func_handle, signer, web3, nonce=nonce)
 
     try:
-        if "(" in function_name_or_signature:
-            func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
-        else:
-            func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
-        return _send_transaction_and_wait_for_receipt(func_handle, signer, web3, nonce)
+        return _send_transaction_and_wait_for_receipt(unsent_txn, signer, web3)
 
     # Wraps the exception with a contract call exception, adding additional information
     # Other than UnknownBlockError, which gets the block number from the transaction receipt,
     # the rest will default to setting the block number to None, which then crash reporting
     # will attempt a best effort guess as to the block the chain was on before it crashed.
     except ContractCustomError as err:
-        err.args += (
-            f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.\n"
-            + f"function name: {function_name_or_signature}"
-            + f"\nfunction args: {fn_args}",
-        )
+        err.args += (f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.",)
         raise ContractCallException(
             "Error in smart_contract_transact",
             orig_exception=err,
@@ -512,6 +508,7 @@ def smart_contract_transact(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs={},
+            raw_txn=dict(unsent_txn),
         ) from err
     except ContractLogicError as err:
         raise ContractCallException(
@@ -521,6 +518,7 @@ def smart_contract_transact(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs={},
+            raw_txn=dict(unsent_txn),
         ) from err
     except UnknownBlockError as err:
         block_number_arg = err.args[1]
@@ -533,6 +531,7 @@ def smart_contract_transact(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs={},
+            raw_txn=dict(unsent_txn),
             block_number=block_number,
         ) from err
     except Exception as err:
@@ -542,6 +541,7 @@ def smart_contract_transact(
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
+            raw_txn=dict(unsent_txn),
             fn_kwargs={},
         ) from err
 
