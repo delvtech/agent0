@@ -15,7 +15,7 @@ from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.state import HyperdriveWallet
-    from ethpy.hyperdrive import HyperdriveInterface
+    from ethpy.hyperdrive.api import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
 # Define the unique agent env filename to use for this script

@@ -10,7 +10,7 @@ from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from elfpy.types import MarketType, Trade
 from eth_account.signers.local import LocalAccount
-from ethpy.hyperdrive import HyperdriveInterface
+from ethpy.hyperdrive.api import HyperdriveInterface
 from hexbytes import HexBytes
 
 Policy = TypeVar("Policy", bound=BasePolicy)

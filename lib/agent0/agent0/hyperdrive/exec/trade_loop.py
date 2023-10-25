@@ -9,7 +9,7 @@ from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
 from ethpy.base.errors import ContractCallException
-from ethpy.hyperdrive import HyperdriveInterface
+from ethpy.hyperdrive.api import HyperdriveInterface
 from web3 import Web3
 from web3.exceptions import ContractCustomError, ContractLogicError
 from web3.types import RPCEndpoint
