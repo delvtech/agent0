@@ -290,14 +290,12 @@ async def _async_send_transaction_and_wait_for_receipt(
 
     Arguments
     ---------
-    func_handle: ContractFunction
-        The function to call
+    unsent_txn: TxParams
+        The built transaction ready to be sent
     signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction
     web3 : Web3
         web3 provider object
-    nonce: Nonce | None
-        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
 
     Returns
     -------
@@ -427,14 +425,14 @@ def _send_transaction_and_wait_for_receipt(unsent_txn: TxParams, signer: LocalAc
 
     Arguments
     ---------
-    func_handle: ContractFunction
-        The function to call
+    Arguments
+    ---------
+    unsent_txn: TxParams
+        The built transaction ready to be sent
     signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction
     web3 : Web3
         web3 provider object
-    nonce: Nonce | None
-        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
 
     Returns
     -------
