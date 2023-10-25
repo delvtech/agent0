@@ -4,55 +4,70 @@ from __future__ import annotations
 import copy
 import os
 from datetime import datetime
-from typing import Any, cast
+from typing import TYPE_CHECKING, cast
 
-import eth_utils
-import pyperdrive
-from eth_account.signers.local import LocalAccount
-from eth_typing import BlockNumber
-from ethpy import EthConfig, build_eth_config
-from ethpy.base import (
-    BaseInterface,
-    async_smart_contract_transact,
-    get_account_balance,
-    initialize_web3_with_http_provider,
-    load_all_abis,
-    smart_contract_preview_transaction,
-    smart_contract_read,
-)
-from fixedpointmath import FixedPoint
-from hypertypes.IHyperdriveTypes import Fees, PoolConfig, PoolInfo
-from web3 import Web3
-from web3.contract.contract import Contract
-from web3.types import BlockData, Nonce, Timestamp
-
-from ..addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
-from ..interface import (
+from ethpy import build_eth_config
+from ethpy.base import BaseInterface, initialize_web3_with_http_provider, load_all_abis, smart_contract_read
+from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from ethpy.hyperdrive.interface import (
     get_hyperdrive_checkpoint,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
-    parse_logs,
     process_hyperdrive_checkpoint,
     process_hyperdrive_pool_config,
     process_hyperdrive_pool_info,
 )
-from ..receipt_breakdown import ReceiptBreakdown
+from web3.types import Timestamp
 
-# known issue where class properties aren't recognized as subscriptable
-# https://github.com/pylint-dev/pylint/issues/5699
-# pylint: disable=unsubscriptable-object
+from ._block_getters import _get_block, _get_block_number, _get_block_time
+from ._contract_calls import (
+    _async_add_liquidity,
+    _async_close_long,
+    _async_close_short,
+    _async_open_long,
+    _async_open_short,
+    _async_redeem_withdraw_shares,
+    _async_remove_liquidity,
+    _get_eth_base_balances,
+    _get_variable_rate,
+    _get_vault_shares,
+)
+from ._mock_contract import (
+    _calc_bonds_given_rate_and_shares,
+    _calc_effective_share_reserves,
+    _calc_fees_out_given_bonds_in,
+    _calc_fees_out_given_shares_in,
+    _calc_fixed_rate,
+    _calc_in_for_out,
+    _calc_max_long,
+    _calc_max_short,
+    _calc_out_for_in,
+    _calc_position_duration_in_years,
+    _calc_spot_price,
+)
 
-# TODO break up this file
-# pylint: disable=too-many-lines
+if TYPE_CHECKING:
+    from typing import Any
+
+    from eth_account.signers.local import LocalAccount
+    from eth_typing import BlockNumber
+    from ethpy import EthConfig
+    from fixedpointmath import FixedPoint
+    from web3 import Web3
+    from web3.contract.contract import Contract
+    from web3.types import BlockData, Nonce
+
+    from ..receipt_breakdown import ReceiptBreakdown
+
+# We expect to have many instance attributes & public methods since this is a large API.
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-public-methods
+# We only worry about protected access for anyone outside of this folder
+# pylint: disable=protected-access
 
 
 class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
     """End-point api for interfacing with Hyperdrive."""
-
-    # TODO: we expect to have many instance attributes & methods since this is a large API
-    # although we should still break this up into a folder of files
-    # pylint: disable=too-many-instance-attributes
-    # pylint: disable=too-many-public-methods
 
     def __init__(
         self,
@@ -65,12 +80,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         HyperdriveInterface requires an EthConfig to initialize.
         If the user does not provide one, then it is constructed from environment variables.
         The user can optionally include an `artifacts` HyperdriveAddresses object.
-        In this case, the `eth_config.artifacts_uri` variable is not used,
-        and these Addresses are used instead.
-
-        .. todo::
-            Change pyperdrive interface to take str OR python FixedPoint objs;
-            use FixedPoint here.
+        In this case, the `eth_config.artifacts_uri` variable is not used, and these Addresses are used instead.
         """
         if eth_config is None:
             eth_config = build_eth_config()
@@ -129,23 +139,17 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
     @property
     def current_block(self) -> BlockData:
         """The current block."""
-        return self.web3.eth.get_block("latest")
+        return _get_block(self, "latest")
 
     @property
     def current_block_number(self) -> BlockNumber:
         """The current block number."""
-        current_block_number = self.current_block.get("number", None)
-        if current_block_number is None:
-            raise AssertionError("The current block has no number")
-        return current_block_number
+        return _get_block_number(self, "latest")
 
     @property
     def current_block_time(self) -> Timestamp:
         """The current block timestamp."""
-        current_block_timestamp = self.current_block.get("timestamp", None)
-        if current_block_timestamp is None:
-            raise AssertionError("current_block_timestamp can not be None")
-        return current_block_timestamp
+        return _get_block_time(self, "latest")
 
     @property
     def position_duration_in_years(self) -> FixedPoint:
@@ -153,13 +157,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
 
         This "annualized" time value is used in some calculations, such as the Fixed APR.
         """
-        return (
-            FixedPoint(self.pool_config["positionDuration"])
-            / FixedPoint(60)
-            / FixedPoint(60)
-            / FixedPoint(24)
-            / FixedPoint(365)
-        )
+        return _calc_position_duration_in_years(self)
 
     @property
     def fixed_rate(self) -> FixedPoint:
@@ -168,15 +166,14 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         Follows the formula:
 
         .. math::
-            r = ((1/p)-1)/t = (1-p)/(pt)
+            r = ((1 / p) - 1) / t = (1 - p) / (p * t)
         """
-        return (FixedPoint(1) - self.spot_price) / (self.spot_price * self.position_duration_in_years)
+        return _calc_fixed_rate(self)
 
     @property
     def variable_rate(self) -> FixedPoint:
         """Returns the market variable rate."""
-        rate = smart_contract_read(self.yield_contract, "getRate")["value"]
-        return FixedPoint(scaled_value=rate)
+        return _get_variable_rate(self)
 
     @property
     def seconds_since_latest_checkpoint(self) -> int:
@@ -198,231 +195,18 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The current spot price.
         """
         self._ensure_current_state()
-        pool_config_str = self._serialized_pool_config()
-        pool_info_str = self._serialized_pool_info()
-        spot_price = pyperdrive.get_spot_price(pool_config_str, pool_info_str)  # pylint: disable=no-member
-        return FixedPoint(scaled_value=int(spot_price))
+        return _calc_spot_price(self)
 
     @property
     def vault_shares(self) -> FixedPoint:
         """Get the balance of vault shares that Hyperdrive has."""
-        vault_shares = smart_contract_read(self.yield_contract, "balanceOf", (self.hyperdrive_contract.address))
-        return FixedPoint(scaled_value=int(vault_shares["value"]))
+        return _get_vault_shares(self)
 
     @property
     def effective_share_reserves(self) -> FixedPoint:
         """Get the adjusted share reserves for the current Hyperdrive pool."""
-        return FixedPoint(
-            scaled_value=int(
-                pyperdrive.get_effective_share_reserves(  # pylint: disable=no-member
-                    str(self.pool_info["shareReserves"].scaled_value),
-                    str(self.pool_info["shareAdjustment"].scaled_value),
-                )
-            )
-        )
-
-    def get_checkpoint_id(self, block_timestamp: Timestamp) -> Timestamp:
-        """Get the Checkpoint ID for a given timestamp.
-
-        Arguments
-        ---------
-        block_timestamp: int
-            A timestamp for any block. Use the latest block to get the current checkpoint id,
-            or a specific timestamp of a transaction's block if getting the checkpoint id for that transaction.
-
-        Returns
-        -------
-        int
-            The checkpoint id, which can be used as an argument for the Hyperdrive getCheckpoint function.
-        """
-        latest_checkpoint_timestamp = block_timestamp - (block_timestamp % self.pool_config["checkpointDuration"])
-        return cast(Timestamp, latest_checkpoint_timestamp)
-
-    def get_out_for_in(
-        self,
-        amount_in: FixedPoint,
-        shares_in: bool,
-    ) -> FixedPoint:
-        """Gets the amount of an asset for a given amount in of the other.
-
-        Arguments
-        ---------
-        amount_in : FixedPoint
-            The amount in.
-        shares_in : bool
-            True if the asset in is shares, False if it is bonds.
-
-        Returns
-        -------
-        FixedPoint
-            The amount out.
-        """
-        pool_config_str = self._serialized_pool_config()
-        pool_info_str = self._serialized_pool_info()
-        # pylint: disable=no-member
-        out_for_in = pyperdrive.get_out_for_in(  # type: ignore
-            pool_config_str,
-            pool_info_str,
-            str(amount_in.scaled_value),
-            shares_in,
-        )
-        return FixedPoint(scaled_value=int(out_for_in))
-
-    def get_in_for_out(
-        self,
-        amount_out: FixedPoint,
-        shares_out: bool,
-    ) -> FixedPoint:
-        """Gets the amount of an asset for a given amount out of the other.
-
-        Arguments
-        ---------
-        amount_out : FixedPoint
-            The amount out.
-        shares_out : bool
-            True if the asset out is shares, False if it is bonds.
-
-        Returns
-        -------
-        FixedPoint
-            The amount in.
-        """
-        pool_config_str = self._serialized_pool_config()
-        pool_info_str = self._serialized_pool_info()
-        # pylint: disable=no-member
-        in_for_out = pyperdrive.get_in_for_out(  # type: ignore
-            pool_config_str,
-            pool_info_str,
-            str(amount_out.scaled_value),
-            shares_out,
-        )
-        return FixedPoint(scaled_value=int(in_for_out))
-
-    def calculate_fees_out_given_bonds_in(
-        self, bonds_in: FixedPoint, maturity_time: int | None = None
-    ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
-        """Calculates the fees that go to the LPs and governance.
-
-        Implements the formula:
-            curve_fee = ((1 - p) * phi_curve * d_y * t)/c
-            gov_fee = curve_fee * phi_gov
-            flat_fee = (d_y * (1 - t) * phi_flat) / c
-
-        Arguments
-        ---------
-        bonds_in : FixedPoint
-            The amount of bonds in.
-        interface : HyperdriveInterface
-            The API interface object.
-        maturity_time : int, optional
-            The maturity timestamp of the open position, in epoch seconds.
-
-        Returns
-        -------
-        tuple[FixedPoint, FixedPoint, FixedPoint] consisting of:
-            curve_fee : FixedPoint
-                Curve fee, in shares.
-            flat_fee : FixedPoint
-                Flat fee, in shares.
-            gov_fee : FixedPoint
-                Governance fee, in shares.
-        """
-        if maturity_time is None:
-            maturity_time = self.current_block_time + int(self.pool_config["positionDuration"])
-        time_remaining_in_seconds = FixedPoint(maturity_time - self.current_block_time)
-        normalized_time_remaining = time_remaining_in_seconds / self.pool_config["positionDuration"]
-        curve_fee = (
-            (FixedPoint(1) - self.spot_price) * self.pool_config["curveFee"] * bonds_in * normalized_time_remaining
-        ) / self.pool_config["initialSharePrice"]
-        flat_fee = (
-            bonds_in * (FixedPoint(1) - normalized_time_remaining) * self.pool_config["flatFee"]
-        ) / self.pool_config["initialSharePrice"]
-        gov_fee = curve_fee * self.pool_config["governanceFee"] + flat_fee * self.pool_config["governanceFee"]
-        return curve_fee, flat_fee, gov_fee
-
-    def calculate_fees_out_given_shares_in(
-        self, shares_in: FixedPoint, maturity_time: int | None = None
-    ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
-        """Calculates the fees that go to the LPs and governance.
-
-        Implements the formula:
-            curve_fee = ((1 / p) - 1) * phi_curve * c * dz
-            gov_fee = shares * phi_gov
-            flat_fee = (d_y * (1 - t) * phi_flat) / c
-
-        Arguments
-        ---------
-        bonds_in : FixedPoint
-            The amount of bonds in.
-        interface : HyperdriveInterface
-            The API interface object.
-        maturity_time : int, optional
-            The maturity timestamp of the open position, in epoch seconds.
-
-        Returns
-        -------
-        tuple[FixedPoint, FixedPoint, FixedPoint] consisting of:
-            curve_fee : FixedPoint
-                Curve fee, in shares.
-            flat_fee : FixedPoint
-                Flat fee, in shares.
-            gov_fee : FixedPoint
-                Governance fee, in shares.
-        """
-        if maturity_time is None:
-            maturity_time = self.current_block_time + int(self.pool_config["positionDuration"])
-        time_remaining_in_seconds = FixedPoint(maturity_time - self.current_block_time)
-        normalized_time_remaining = time_remaining_in_seconds / self.pool_config["positionDuration"]
-        curve_fee = (
-            ((FixedPoint(1) / self.spot_price) - FixedPoint(1))
-            * self.pool_config["curveFee"]
-            * self.pool_config["initialSharePrice"]
-            * shares_in
-        )
-        flat_fee = (
-            shares_in * (FixedPoint(1) - normalized_time_remaining) * self.pool_config["flatFee"]
-        ) / self.pool_config["initialSharePrice"]
-        gov_fee = curve_fee * self.pool_config["governanceFee"] + flat_fee * self.pool_config["governanceFee"]
-        return curve_fee, flat_fee, gov_fee
-
-    def _serialized_pool_config(self) -> PoolConfig:
-        pool_config_str = PoolConfig(
-            baseToken=self._contract_pool_config["baseToken"],
-            initialSharePrice=self._contract_pool_config["initialSharePrice"],
-            minimumShareReserves=self._contract_pool_config["minimumShareReserves"],
-            minimumTransactionAmount=self._contract_pool_config["minimumTransactionAmount"],
-            positionDuration=self._contract_pool_config["positionDuration"],
-            checkpointDuration=self._contract_pool_config["checkpointDuration"],
-            timeStretch=self._contract_pool_config["timeStretch"],
-            governance=self._contract_pool_config["governance"],
-            feeCollector=self._contract_pool_config["feeCollector"],
-            fees=Fees(
-                curve=self._contract_pool_config["fees"][0],
-                flat=self._contract_pool_config["fees"][1],
-                governance=self._contract_pool_config["fees"][2],
-            ),
-            oracleSize=self._contract_pool_config["oracleSize"],
-            updateGap=self._contract_pool_config["updateGap"],
-        )
-        return pool_config_str
-
-    def _serialized_pool_info(self) -> PoolInfo:
-        pool_info_str = PoolInfo(
-            shareReserves=self._contract_pool_info["shareReserves"],
-            shareAdjustment=self._contract_pool_info["shareAdjustment"],
-            bondReserves=self._contract_pool_info["bondReserves"],
-            lpTotalSupply=self._contract_pool_info["lpTotalSupply"],
-            sharePrice=self._contract_pool_info["sharePrice"],
-            longsOutstanding=self._contract_pool_info["longsOutstanding"],
-            longAverageMaturityTime=self._contract_pool_info["longAverageMaturityTime"],
-            shortsOutstanding=self._contract_pool_info["shortsOutstanding"],
-            shortAverageMaturityTime=self._contract_pool_info["shortAverageMaturityTime"],
-            withdrawalSharesReadyToWithdraw=self._contract_pool_info["withdrawalSharesReadyToWithdraw"],
-            withdrawalSharesProceeds=self._contract_pool_info["withdrawalSharesProceeds"],
-            lpSharePrice=self._contract_pool_info["lpSharePrice"],
-            longExposure=self._contract_pool_info["longExposure"],
-        )
-        return pool_info_str
+        self._ensure_current_state()
+        return _calc_effective_share_reserves(self)
 
     def _ensure_current_state(self, override: bool = False) -> None:
         """Update the cached pool info and latest checkpoint if needed.
@@ -445,7 +229,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 self.current_block_number,
             )
             self._contract_latest_checkpoint = get_hyperdrive_checkpoint(
-                self.hyperdrive_contract, self.get_checkpoint_id(self.current_block_time)
+                self.hyperdrive_contract, self.calc_checkpoint_id(self.current_block_time)
             )
             # TODO process functions should not adjust state
             self._latest_checkpoint = process_hyperdrive_checkpoint(
@@ -454,36 +238,37 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 self.current_block_number,
             )
 
-    def calculate_bonds_given_shares_and_rate(
-        self, target_rate: FixedPoint, target_shares: FixedPoint | None = None
-    ) -> FixedPoint:
-        r"""Returns the bond reserves for the market share reserves
-        and a given fixed rate.
-
-
-        The calculation is based on the formula: .. math::
-            mu * (z - zeta) * (1 + apr * t) ** (1 / tau)
+    def calc_checkpoint_id(self, block_timestamp: Timestamp) -> Timestamp:
+        """Get the Checkpoint ID for a given timestamp.
 
         Arguments
         ---------
-        target_rate : FixedPoint
-            The target apr for which to calculate the bond reserves given the pools current share reserves.
-        target_shares : FixedPoint, optional
-            The target share reserves for the pool
+        block_timestamp: int
+            A timestamp for any block. Use the latest block to get the current checkpoint id,
+            or a specific timestamp of a transaction's block if getting the checkpoint id for that transaction.
+
+        Returns
+        -------
+        int
+            The checkpoint id, which can be used as an argument for the Hyperdrive getCheckpoint function.
         """
-        if target_shares is None:
-            target_shares = self.effective_share_reserves
-        return FixedPoint(
-            scaled_value=int(
-                pyperdrive.calculate_bonds_given_shares_and_rate(  # pylint: disable=no-member
-                    str(target_shares.scaled_value),
-                    str(self.pool_config["initialSharePrice"].scaled_value),
-                    str(target_rate.scaled_value),
-                    str(self.pool_config["positionDuration"]),
-                    str(self.pool_config["timeStretch"].scaled_value),
-                )
-            )
-        )
+        latest_checkpoint_timestamp = block_timestamp - (block_timestamp % self.pool_config["checkpointDuration"])
+        return cast(Timestamp, latest_checkpoint_timestamp)
+
+    def get_eth_base_balances(self, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
+        """Get the agent's balance on the Hyperdrive & base contracts.
+
+        Arguments
+        ---------
+        agent: LocalAccount
+            The account for the agent that is executing and signing the trade transaction.
+
+        Returns
+        -------
+        tuple[FixedPoint]
+            A tuple containing the [agent_eth_balance, agent_base_balance]
+        """
+        return _get_eth_base_balances(self, agent)
 
     async def async_open_long(
         self,
@@ -512,50 +297,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
-        agent_checksum_address = Web3.to_checksum_address(agent.address)
-        # min_share_price : int
-        #   Minium share price at which to open the long.
-        #   This allows traders to protect themselves from opening a long in
-        #   a checkpoint where negative interest has accrued.
-        min_share_price = 0  # TODO: give the user access to this parameter
-        min_output = 0  # TODO: give the user access to this parameter
-        as_underlying = True
-        fn_args = (
-            trade_amount.scaled_value,
-            min_output,
-            min_share_price,
-            agent_checksum_address,
-            as_underlying,
-        )
-        # To catch any solidity errors, we always preview transactions on the current block
-        # before calling smart contract transact
-        # Since current_block_number is a property, we want to get the static block here
-        current_block = self.current_block_number
-        preview_result = smart_contract_preview_transaction(
-            self.hyperdrive_contract, agent_checksum_address, "openLong", *fn_args, block_identifier=current_block
-        )
-        if slippage_tolerance is not None:
-            min_output = (
-                FixedPoint(scaled_value=preview_result["bondProceeds"]) * (FixedPoint(1) - slippage_tolerance)
-            ).scaled_value
-            fn_args = (
-                trade_amount.scaled_value,
-                min_output,
-                min_share_price,
-                agent_checksum_address,
-                as_underlying,
-            )
-
-        try:
-            tx_receipt = await async_smart_contract_transact(
-                self.web3, self.hyperdrive_contract, agent, "openLong", *fn_args, nonce=nonce
-            )
-            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "openLong")
-        except Exception as exc:
-            # We add the preview block as an arg to the exception
-            exc.args += (f"Call previewed in block {current_block}",)
-            raise exc
-        return trade_result
+        return await _async_open_long(self, agent, trade_amount, slippage_tolerance, nonce)
 
     # pylint: disable=too-many-arguments
     async def async_close_long(
@@ -588,46 +330,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
-        agent_checksum_address = Web3.to_checksum_address(agent.address)
-        min_output = 0
-        as_underlying = True
-        fn_args = (
-            maturity_time,
-            trade_amount.scaled_value,
-            min_output,
-            agent_checksum_address,
-            as_underlying,
-        )
-        # To catch any solidity errors, we always preview transactions on the current block
-        # before calling smart contract transact
-        # Since current_block_number is a property, we want to get the static block here
-        current_block = self.current_block_number
-        preview_result = smart_contract_preview_transaction(
-            self.hyperdrive_contract, agent_checksum_address, "closeLong", *fn_args, block_identifier=current_block
-        )
-        if slippage_tolerance:
-            min_output = (
-                FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
-            ).scaled_value
-            fn_args = (
-                maturity_time,
-                trade_amount.scaled_value,
-                min_output,
-                agent_checksum_address,
-                as_underlying,
-            )
-
-        try:
-            tx_receipt = await async_smart_contract_transact(
-                self.web3, self.hyperdrive_contract, agent, "closeLong", *fn_args, nonce=nonce
-            )
-            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "closeLong")
-        except Exception as exc:
-            # We add the preview block as an arg to the exception
-            exc.args += (f"Call previewed in block {current_block}",)
-            raise exc
-
-        return trade_result
+        return await _async_close_long(self, agent, trade_amount, maturity_time, slippage_tolerance, nonce)
 
     async def async_open_short(
         self,
@@ -656,50 +359,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
-        agent_checksum_address = Web3.to_checksum_address(agent.address)
-        as_underlying = True
-        max_deposit = int(eth_utils.currency.MAX_WEI)
-        # min_share_price : int
-        #   Minium share price at which to open the short.
-        #   This allows traders to protect themselves from opening a long in
-        #   a checkpoint where negative interest has accrued.
-        min_share_price = 0  # TODO: give the user access to this parameter
-        fn_args = (
-            trade_amount.scaled_value,
-            max_deposit,
-            min_share_price,
-            agent_checksum_address,
-            as_underlying,
-        )
-        # To catch any solidity errors, we always preview transactions on the current block
-        # before calling smart contract transact
-        # Since current_block_number is a property, we want to get the static block here
-        current_block = self.current_block_number
-        preview_result = smart_contract_preview_transaction(
-            self.hyperdrive_contract, agent_checksum_address, "openShort", *fn_args, block_identifier=current_block
-        )
-        if slippage_tolerance:
-            max_deposit = (
-                FixedPoint(scaled_value=preview_result["traderDeposit"]) * (FixedPoint(1) + slippage_tolerance)
-            ).scaled_value
-            fn_args = (
-                trade_amount.scaled_value,
-                max_deposit,
-                min_share_price,
-                agent_checksum_address,
-                as_underlying,
-            )
-
-        try:
-            tx_receipt = await async_smart_contract_transact(
-                self.web3, self.hyperdrive_contract, agent, "openShort", *fn_args, nonce=nonce
-            )
-            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "openShort")
-        except Exception as exc:
-            # We add the preview block as an arg to the exception
-            exc.args += (f"Call previewed in block {current_block}",)
-            raise exc
-        return trade_result
+        return await _async_open_short(self, agent, trade_amount, slippage_tolerance, nonce)
 
     # pylint: disable=too-many-arguments
     async def async_close_short(
@@ -732,45 +392,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
-        agent_checksum_address = Web3.to_checksum_address(agent.address)
-        min_output = 0
-        as_underlying = True
-        fn_args = (
-            maturity_time,
-            trade_amount.scaled_value,
-            min_output,
-            agent_checksum_address,
-            as_underlying,
-        )
-        # To catch any solidity errors, we always preview transactions on the current block
-        # before calling smart contract transact
-        # Since current_block_number is a property, we want to get the static block here
-        current_block = self.current_block_number
-        preview_result = smart_contract_preview_transaction(
-            self.hyperdrive_contract, agent_checksum_address, "closeShort", *fn_args, block_identifier=current_block
-        )
-        if slippage_tolerance:
-            min_output = (
-                FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
-            ).scaled_value
-            fn_args = (
-                maturity_time,
-                trade_amount.scaled_value,
-                min_output,
-                agent_checksum_address,
-                as_underlying,
-            )
-
-        try:
-            tx_receipt = await async_smart_contract_transact(
-                self.web3, self.hyperdrive_contract, agent, "closeShort", *fn_args, nonce=nonce
-            )
-            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "closeShort")
-        except Exception as exc:
-            # We add the preview block as an arg to the exception
-            exc.args += (f"Call previewed in block {current_block}",)
-            raise exc
-        return trade_result
+        return await _async_close_short(self, agent, trade_amount, maturity_time, slippage_tolerance, nonce)
 
     # pylint: disable=too-many-arguments
     async def async_add_liquidity(
@@ -801,34 +423,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ReceiptBreakdown
             A dataclass containing the absolute values for token quantities changed
         """
-        agent_checksum_address = Web3.to_checksum_address(agent.address)
-        as_underlying = True
-        fn_args = (
-            trade_amount.scaled_value,
-            min_apr.scaled_value,
-            max_apr.scaled_value,
-            agent_checksum_address,
-            as_underlying,
-        )
-        # To catch any solidity errors, we always preview transactions on the current block
-        # before calling smart contract transact
-        # Since current_block_number is a property, we want to get the static block here
-        current_block = self.current_block_number
-        _ = smart_contract_preview_transaction(
-            self.hyperdrive_contract, agent_checksum_address, "addLiquidity", *fn_args, block_identifier=current_block
-        )
-        # TODO add slippage controls for add liquidity
-
-        try:
-            tx_receipt = await async_smart_contract_transact(
-                self.web3, self.hyperdrive_contract, agent, "addLiquidity", *fn_args, nonce=nonce
-            )
-            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "addLiquidity")
-        except Exception as exc:
-            # We add the preview block as an arg to the exception
-            exc.args += (f"Call previewed in block {current_block}",)
-            raise exc
-        return trade_result
+        return await _async_add_liquidity(self, agent, trade_amount, min_apr, max_apr, nonce)
 
     async def async_remove_liquidity(
         self,
@@ -852,37 +447,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ReceiptBreakdown
             A dataclass containing the absolute values for token quantities changed
         """
-        agent_checksum_address = Web3.to_checksum_address(agent.address)
-        min_output = 0
-        as_underlying = True
-        fn_args = (
-            trade_amount.scaled_value,
-            min_output,
-            agent_checksum_address,
-            as_underlying,
-        )
-        # To catch any solidity errors, we always preview transactions on the current block
-        # before calling smart contract transact
-        # Since current_block_number is a property, we want to get the static block here
-        current_block = self.current_block_number
-        _ = smart_contract_preview_transaction(
-            self.hyperdrive_contract,
-            agent_checksum_address,
-            "removeLiquidity",
-            *fn_args,
-            block_identifier=current_block,
-        )
-
-        try:
-            tx_receipt = await async_smart_contract_transact(
-                self.web3, self.hyperdrive_contract, agent, "removeLiquidity", *fn_args, nonce=nonce
-            )
-            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "removeLiquidity")
-        except Exception as exc:
-            # We add the preview block as an arg to the exception
-            exc.args += (f"Call previewed in block {current_block}",)
-            raise exc
-        return trade_result
+        return await _async_remove_liquidity(self, agent, trade_amount, nonce)
 
     async def async_redeem_withdraw_shares(
         self,
@@ -916,65 +481,134 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ReceiptBreakdown
             A dataclass containing the absolute values for token quantities changed
         """
-        # for now, assume an underlying vault share price of at least 1, should be higher by a bit
-        agent_checksum_address = Web3.to_checksum_address(agent.address)
-        min_output = FixedPoint(scaled_value=1)
-        as_underlying = True
-        fn_args = (
-            trade_amount.scaled_value,
-            min_output.scaled_value,
-            agent_checksum_address,
-            as_underlying,
-        )
-        # To catch any solidity errors, we always preview transactions on the current block
-        # before calling smart contract transact
-        # Since current_block_number is a property, we want to get the static block here
-        current_block = self.current_block_number
-        _ = smart_contract_preview_transaction(
-            self.hyperdrive_contract,
-            agent_checksum_address,
-            "redeemWithdrawalShares",
-            *fn_args,
-            block_identifier=current_block,
-        )
+        return await _async_redeem_withdraw_shares(self, agent, trade_amount, nonce)
 
-        try:
-            tx_receipt = await async_smart_contract_transact(
-                self.web3, self.hyperdrive_contract, agent, "redeemWithdrawalShares", *fn_args, nonce=nonce
-            )
-            trade_result = parse_logs(tx_receipt, self.hyperdrive_contract, "redeemWithdrawalShares")
-        except Exception as exc:
-            # We add the preview block as an arg to the exception
-            exc.args += (f"Call previewed in block {current_block}",)
-            raise exc
-        return trade_result
-
-    def get_eth_base_balances(self, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
-        """Get the agent's balance on the Hyperdrive & base contracts.
+    def calc_out_for_in(
+        self,
+        amount_in: FixedPoint,
+        shares_in: bool,
+    ) -> FixedPoint:
+        """Gets the amount of an asset for a given amount in of the other.
 
         Arguments
         ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
+        amount_in : FixedPoint
+            The amount in.
+        shares_in : bool
+            True if the asset in is shares, False if it is bonds.
 
         Returns
         -------
-        tuple[FixedPoint]
-            A tuple containing the [agent_eth_balance, agent_base_balance]
+        FixedPoint
+            The amount out.
         """
-        agent_checksum_address = Web3.to_checksum_address(agent.address)
-        agent_eth_balance = get_account_balance(self.web3, agent_checksum_address)
-        agent_base_balance = smart_contract_read(
-            self.base_token_contract,
-            "balanceOf",
-            agent_checksum_address,
-        )["value"]
-        return (
-            FixedPoint(scaled_value=agent_eth_balance),
-            FixedPoint(scaled_value=agent_base_balance),
-        )
+        return _calc_out_for_in(self, amount_in, shares_in)
 
-    def get_max_long(self, budget: FixedPoint) -> FixedPoint:
+    def calc_in_for_out(
+        self,
+        amount_out: FixedPoint,
+        shares_out: bool,
+    ) -> FixedPoint:
+        """Gets the amount of an asset for a given amount out of the other.
+
+        Arguments
+        ---------
+        amount_out : FixedPoint
+            The amount out.
+        shares_out : bool
+            True if the asset out is shares, False if it is bonds.
+
+        Returns
+        -------
+        FixedPoint
+            The amount in.
+        """
+        return _calc_in_for_out(self, amount_out, shares_out)
+
+    def calc_fees_out_given_bonds_in(
+        self, bonds_in: FixedPoint, maturity_time: int | None = None
+    ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
+        """Calculates the fees that go to the LPs and governance.
+
+        Implements the formula:
+            curve_fee = ((1 - p) * phi_curve * d_y * t)/c
+            gov_fee = curve_fee * phi_gov
+            flat_fee = (d_y * (1 - t) * phi_flat) / c
+
+        Arguments
+        ---------
+        bonds_in : FixedPoint
+            The amount of bonds in.
+        interface : HyperdriveInterface
+            The API interface object.
+        maturity_time : int, optional
+            The maturity timestamp of the open position, in epoch seconds.
+
+        Returns
+        -------
+        tuple[FixedPoint, FixedPoint, FixedPoint] consisting of:
+            curve_fee : FixedPoint
+                Curve fee, in shares.
+            flat_fee : FixedPoint
+                Flat fee, in shares.
+            gov_fee : FixedPoint
+                Governance fee, in shares.
+        """
+        return _calc_fees_out_given_bonds_in(self, bonds_in, maturity_time)
+
+    def calc_fees_out_given_shares_in(
+        self, shares_in: FixedPoint, maturity_time: int | None = None
+    ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
+        """Calculates the fees that go to the LPs and governance.
+
+        Implements the formula:
+            curve_fee = ((1 / p) - 1) * phi_curve * c * dz
+            gov_fee = shares * phi_gov
+            flat_fee = (d_y * (1 - t) * phi_flat) / c
+
+        Arguments
+        ---------
+        bonds_in : FixedPoint
+            The amount of bonds in.
+        interface : HyperdriveInterface
+            The API interface object.
+        maturity_time : int, optional
+            The maturity timestamp of the open position, in epoch seconds.
+
+        Returns
+        -------
+        tuple[FixedPoint, FixedPoint, FixedPoint] consisting of:
+            curve_fee : FixedPoint
+                Curve fee, in shares.
+            flat_fee : FixedPoint
+                Flat fee, in shares.
+            gov_fee : FixedPoint
+                Governance fee, in shares.
+        """
+        return _calc_fees_out_given_shares_in(self, shares_in, maturity_time)
+
+    def calc_bonds_given_rate_and_shares(
+        self, target_rate: FixedPoint, target_shares: FixedPoint | None = None
+    ) -> FixedPoint:
+        r"""Returns the bond reserves for the market share reserves
+        and a given fixed rate.
+
+
+        The calculation is based on the formula:
+
+        .. math::
+            mu * (z - zeta) * (1 + apr * t) ** (1 / tau)
+
+        Arguments
+        ---------
+        target_rate : FixedPoint
+            The target apr for which to calculate the bond reserves given the pools current share reserves.
+        target_shares : FixedPoint, optional
+            The target share reserves for the pool
+        """
+        return _calc_bonds_given_rate_and_shares(self, target_rate, target_shares)
+
+    def calc_max_long(self, budget: FixedPoint) -> FixedPoint:
         """Get the maximum allowable long for the given Hyperdrive pool and agent budget.
 
         Arguments
@@ -987,21 +621,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         FixedPoint
             The maximum long, in units of base.
         """
-        self._ensure_current_state()
-        # pylint: disable=no-member
-        return FixedPoint(
-            scaled_value=int(
-                pyperdrive.get_max_long(
-                    self._serialized_pool_config(),
-                    self._serialized_pool_info(),
-                    str(budget.scaled_value),
-                    checkpoint_exposure=str(self.latest_checkpoint["longExposure"].scaled_value),
-                    maybe_max_iterations=None,
-                )
-            )
-        )
+        return _calc_max_long(self, budget)
 
-    def get_max_short(self, budget: FixedPoint) -> FixedPoint:
+    def calc_max_short(self, budget: FixedPoint) -> FixedPoint:
         """Get the maximum allowable short for the given Hyperdrive pool and agent budget.
 
         Arguments
@@ -1014,19 +636,4 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         FixedPoint
             The maximum short, in units of base.
         """
-        self._ensure_current_state()
-        pool_info = self._serialized_pool_info()
-        # pylint: disable=no-member
-        return FixedPoint(
-            scaled_value=int(
-                pyperdrive.get_max_short(
-                    self._serialized_pool_config(),
-                    pool_info,
-                    str(budget.scaled_value),
-                    str(pool_info.sharePrice),
-                    checkpoint_exposure=str(self.latest_checkpoint["longExposure"].scaled_value),
-                    maybe_conservative_price=None,
-                    maybe_max_iterations=None,
-                )
-            )
-        )
+        return _calc_max_short(self, budget)
