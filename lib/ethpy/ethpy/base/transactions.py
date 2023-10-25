@@ -102,6 +102,8 @@ def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn
     return {f"value{idx}": value for idx, value in enumerate(return_values)}
 
 
+# TODO cleanup
+# pylint: disable=too-many-locals
 def smart_contract_preview_transaction(
     contract: Contract,
     signer_address: ChecksumAddress,
