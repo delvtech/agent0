@@ -49,6 +49,7 @@ class TradeResult:
     status: TradeStatus
     agent: HyperdriveAgent
     trade_object: types.Trade[HyperdriveMarketAction]
+    contract_call: dict[str, Any] | None = None
     # Optional fields for crash reporting
     # These fields are typically set as human readable versions
     block_number: int | None = None
@@ -61,7 +62,7 @@ class TradeResult:
     contract_addresses: dict[str, Any] | None = None
     additional_info: dict[str, Any] | None = None
     # Machine readable states
-    contract_call: dict[str, Any] | None = None
+    raw_transaction: dict[str, Any] | None = None
     raw_pool_config: dict[str, Any] | None = None
     raw_pool_info: dict[str, Any] | None = None
     raw_checkpoint: dict[str, Any] | None = None

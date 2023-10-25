@@ -134,6 +134,7 @@ def build_crash_trade_result(
             "fn_args": exception.fn_args,
             "fn_kwargs": exception.fn_kwargs,
         }
+        trade_result.raw_transaction = exception.raw_txn
 
     else:
         # Best effort to get the block it crashed on
@@ -259,6 +260,7 @@ def log_hyperdrive_crash_report(
             ("exception", trade_result.exception),
             ("orig_exception", trade_result.orig_exception),
             ("trade", _hyperdrive_trade_obj_to_dict(trade_result.trade_object)),
+            ("contract_call", trade_result.contract_call),
             ("wallet", _hyperdrive_wallet_to_dict(trade_result.agent.wallet)),
             ("agent_info", _hyperdrive_agent_to_dict(trade_result.agent)),
             # TODO Once pool_info and pool_config are objects,
@@ -285,7 +287,7 @@ def log_hyperdrive_crash_report(
     if crash_report_to_file:
         # We add the machine readable version of the crash to the file
         # OrderedDict doesn't play nice with types
-        dump_obj["contract_call"] = trade_result.contract_call  # type: ignore
+        dump_obj["raw_transaction"] = trade_result.raw_transaction  # type: ignore
         dump_obj["raw_pool_config"] = trade_result.raw_pool_config  # type: ignore
         dump_obj["raw_pool_info"] = trade_result.raw_pool_info  # type: ignore
         dump_obj["raw_checkpoint"] = trade_result.raw_checkpoint  # type: ignore

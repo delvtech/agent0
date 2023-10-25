@@ -66,6 +66,7 @@ def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn
         # This field is passed in if smart_contract_read is called with an explicit block
         # Will default to None, in which case crash reporting will do best attempt at getting
         # the block number
+        # TODO add in raw_txn to smart contract read functions
         block_number = fn_kwargs.get("block_identifier", None)
         raise ContractCallException(
             "Error in smart contract read",
