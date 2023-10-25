@@ -24,8 +24,9 @@ from chainsync.exec import acquire_data, data_analysis
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveInterface
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
+from ethpy.hyperdrive.api import HyperdriveInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session

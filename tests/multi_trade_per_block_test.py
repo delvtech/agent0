@@ -23,7 +23,8 @@ from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveInterface
+    from ethpy.hyperdrive import HyperdriveAddresses
+    from ethpy.hyperdrive.api import HyperdriveInterface
     from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 
 

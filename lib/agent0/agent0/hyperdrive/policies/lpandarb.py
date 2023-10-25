@@ -15,7 +15,7 @@ from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.state import HyperdriveWallet
-    from ethpy.hyperdrive import HyperdriveInterface
+    from ethpy.hyperdrive.api import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
 # pylint: disable=too-many-arguments, too-many-locals
@@ -653,7 +653,7 @@ class LPandArb(HyperdrivePolicy):
             # Reduce shorts first, if we have them
             if len(wallet.shorts) > 0:
                 for maturity_time, short in wallet.shorts.items():
-                    max_long_bonds = interface.get_max_long(wallet.balance.amount)
+                    max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                     reduce_short_amount = min(short.balance, bonds_needed, max_long_bonds)
                     bonds_needed -= reduce_short_amount
                     logging.debug("reducing short by %s", reduce_short_amount)
@@ -671,7 +671,7 @@ class LPandArb(HyperdrivePolicy):
                     )
             # Open a new long, if there's still a need, and we have money
             if we_have_money and bonds_needed > interface.pool_config["minimumTransactionAmount"]:
-                max_long_bonds = interface.get_max_long(wallet.balance.amount)
+                max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                 max_long_shares, _, _ = get_shares_in_for_bonds_out(
                     interface.pool_info["bondReserves"],
                     interface.pool_info["sharePrice"],
@@ -699,7 +699,7 @@ class LPandArb(HyperdrivePolicy):
             # Reduce longs first, if we have them
             if len(wallet.longs) > 0:
                 for maturity_time, long in wallet.longs.items():
-                    max_short_bonds = interface.get_max_short(wallet.balance.amount)
+                    max_short_bonds = interface.calc_max_short(wallet.balance.amount)
                     reduce_long_amount = min(long.balance, bonds_needed, max_short_bonds)
                     bonds_needed -= reduce_long_amount
                     logging.debug("reducing long by %s", reduce_long_amount)
@@ -717,7 +717,7 @@ class LPandArb(HyperdrivePolicy):
                     )
             # Open a new short, if there's still a need, and we have money
             if we_have_money and bonds_needed > interface.pool_config["minimumTransactionAmount"]:
-                max_short_bonds = interface.get_max_short(wallet.balance.amount)
+                max_short_bonds = interface.calc_max_short(wallet.balance.amount)
                 amount = min(bonds_needed, max_short_bonds)
                 action_list.append(
                     Trade(

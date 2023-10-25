@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
     from agent0.hyperdrive.state import HyperdriveMarketAction
     from elfpy import types
-    from ethpy.hyperdrive import HyperdriveInterface
+    from ethpy.hyperdrive.api import HyperdriveInterface
 
 
 class ExtendedJSONEncoder(json.JSONEncoder):
@@ -165,7 +165,7 @@ def build_crash_trade_result(
     try:
         if trade_result.block_timestamp is not None:
             trade_result.raw_checkpoint = get_hyperdrive_checkpoint(
-                hyperdrive.hyperdrive_contract, hyperdrive.get_checkpoint_id(trade_result.block_timestamp)
+                hyperdrive.hyperdrive_contract, hyperdrive.calc_checkpoint_id(trade_result.block_timestamp)
             )
         else:
             logging.warning("Failed to get block_timestamp in crash_reporting")
