@@ -33,7 +33,7 @@ from ._contract_calls import (
     _get_vault_shares,
 )
 from ._mock_contract import (
-    _calc_bonds_given_rate_and_shares,
+    _calc_bonds_given_shares_and_rate,
     _calc_effective_share_reserves,
     _calc_fees_out_given_bonds_in,
     _calc_fees_out_given_shares_in,
@@ -587,7 +587,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         """
         return _calc_fees_out_given_shares_in(self, shares_in, maturity_time)
 
-    def calc_bonds_given_rate_and_shares(
+    def calc_bonds_given_shares_and_rate(
         self, target_rate: FixedPoint, target_shares: FixedPoint | None = None
     ) -> FixedPoint:
         r"""Returns the bond reserves for the market share reserves
@@ -605,8 +605,13 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The target apr for which to calculate the bond reserves given the pools current share reserves.
         target_shares : FixedPoint, optional
             The target share reserves for the pool
+
+        .. todo::
+            This function name matches the Rust implementation, but is not preferred because
+            "given_*" is in the wrong order and can be inferred from arguments.
+            Need to fix it from the bottom up.
         """
-        return _calc_bonds_given_rate_and_shares(self, target_rate, target_shares)
+        return _calc_bonds_given_shares_and_rate(self, target_rate, target_shares)
 
     def calc_max_long(self, budget: FixedPoint) -> FixedPoint:
         """Get the maximum allowable long for the given Hyperdrive pool and agent budget.

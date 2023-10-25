@@ -31,9 +31,9 @@ def _construct_pool_config(contract_pool_config: dict[str, Any]) -> PoolConfig:
         governance=contract_pool_config["governance"],
         feeCollector=contract_pool_config["feeCollector"],
         fees=Fees(
-            curve=contract_pool_config["fees.curve"],
-            flat=contract_pool_config["fees.flat"],
-            governance=contract_pool_config["fees.governance"],
+            curve=contract_pool_config["fees"][0],
+            flat=contract_pool_config["fees"][1],
+            governance=contract_pool_config["fees"][2],
         ),
         oracleSize=contract_pool_config["oracleSize"],
         updateGap=contract_pool_config["updateGap"],
@@ -73,29 +73,27 @@ def _calc_position_duration_in_years(cls: HyperdriveInterface) -> FixedPoint:
 
 
 def _calc_fixed_rate(cls: HyperdriveInterface) -> FixedPoint:
-    """See API for documentation.
-
-    ..todo::
-        This should be done in the hyperdrive sdk.
-    """
-    return FixedPoint(cls.pool_config["positionDuration"]) / FixedPoint(60 * 60 * 24 * 365)
+    """See API for documentation."""
+    spot_rate = pyperdrive.get_spot_rate(
+        _construct_pool_config(cls._contract_pool_config), _construct_pool_info(cls._contract_pool_info)
+    )
+    return FixedPoint(scaled_value=int(spot_rate))
 
 
 def _calc_effective_share_reserves(cls: HyperdriveInterface) -> FixedPoint:
     """See API for documentation."""
-    return FixedPoint(
-        scaled_value=int(
-            pyperdrive.get_effective_share_reserves(
-                str(cls.pool_info["shareReserves"].scaled_value),
-                str(cls.pool_info["shareAdjustment"].scaled_value),
-            )
-        )
+    effective_share_reserves = pyperdrive.get_effective_share_reserves(
+        str(cls.pool_info["shareReserves"].scaled_value),
+        str(cls.pool_info["shareAdjustment"].scaled_value),
     )
+    return FixedPoint(scaled_value=int(effective_share_reserves))
 
 
 def _calc_spot_price(cls: HyperdriveInterface):
     """See API for documentation."""
-    spot_price = pyperdrive.get_spot_price(cls._contract_pool_config, cls._contract_pool_info)
+    spot_price = pyperdrive.get_spot_price(
+        _construct_pool_config(cls._contract_pool_config), _construct_pool_info(cls._contract_pool_info)
+    )
     return FixedPoint(scaled_value=int(spot_price))
 
 
@@ -176,7 +174,7 @@ def _calc_fees_out_given_shares_in(
     return curve_fee, flat_fee, gov_fee
 
 
-def _calc_bonds_given_rate_and_shares(
+def _calc_bonds_given_shares_and_rate(
     cls: HyperdriveInterface, target_rate: FixedPoint, target_shares: FixedPoint | None = None
 ) -> FixedPoint:
     """See API for documentation."""

@@ -56,12 +56,12 @@ class TestHyperdriveInterface:
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
         eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
         hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
-        checkpoint_id = hyperdrive.get_checkpoint_id(hyperdrive.current_block_time)
+        checkpoint_id = hyperdrive.calc_checkpoint_id(hyperdrive.current_block_time)
         checkpoint = smart_contract_read(hyperdrive.hyperdrive_contract, "getCheckpoint", checkpoint_id)
         assert checkpoint == hyperdrive._contract_latest_checkpoint  # pylint: disable=protected-access
 
     def test_spot_price_and_fixed_rate(self, local_hyperdrive_pool: DeployedHyperdrivePool):
-        """Checks that the Hyperdrive spot price and fixed rate matche computing it by hand.
+        """Checks that the Hyperdrive spot price and fixed rate match computing it by hand.
 
         All arguments are fixtures.
         """
@@ -81,7 +81,6 @@ class TestHyperdriveInterface:
         share_reserves: FixedPoint = pool_info["shareReserves"]
         bond_reserves: FixedPoint = pool_info["bondReserves"]
         # test spot price
-        # TODO: This should be exact up to 1e-18, but is not
         spot_price = ((init_share_price * share_reserves) / bond_reserves) ** time_stretch
         assert abs(spot_price - hyperdrive.spot_price) <= FixedPoint(scaled_value=1)
         # test fixed rate (rounding issues can cause it to be off by 1e-18)
@@ -109,7 +108,7 @@ class TestHyperdriveInterface:
         _ = hyperdrive.current_block_time
         _ = hyperdrive.variable_rate
         _ = hyperdrive.vault_shares
-        _ = hyperdrive.calculate_bonds_given_shares_and_rate(FixedPoint(0.05))
-        _ = hyperdrive.get_max_long(FixedPoint(1000))
-        _ = hyperdrive.get_max_short(FixedPoint(1000))
+        _ = hyperdrive.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
+        _ = hyperdrive.calc_max_long(FixedPoint(1000))
+        _ = hyperdrive.calc_max_short(FixedPoint(1000))
         # TODO: need an agent address to mock up trades
