@@ -34,6 +34,7 @@ class ContractCallException(BaseException):
         function_name_or_signature: str | None = None,
         fn_args: tuple | None = None,
         fn_kwargs: dict[str, Any] | None = None,
+        raw_txn: dict[str, Any] | None = None,
         block_number: int | None = None,
     ):
         super().__init__(*args)
@@ -43,6 +44,7 @@ class ContractCallException(BaseException):
         self.fn_args = fn_args
         self.fn_kwargs = fn_kwargs
         self.block_number = block_number
+        self.raw_txn = raw_txn
 
 
 def decode_error_selector_for_contract(error_selector: str, contract: Contract) -> str:
