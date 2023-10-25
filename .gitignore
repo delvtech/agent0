@@ -18,8 +18,12 @@ __pypackages__/
 
 # default logging directory
 .logging
+
+# Crash reporting directory
 .crash_report
 
+# DB Data dump directory
+.db_data_dump
 
 # build directories
 .build
