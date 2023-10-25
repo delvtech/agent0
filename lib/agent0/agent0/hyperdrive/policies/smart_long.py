@@ -13,7 +13,7 @@ from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.state import HyperdriveWallet
-    from ethpy.hyperdrive import HyperdriveInterface
+    from ethpy.hyperdrive.api import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 # pylint: disable=too-few-public-methods
 

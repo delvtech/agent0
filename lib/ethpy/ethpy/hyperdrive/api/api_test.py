@@ -6,11 +6,11 @@ from typing import cast
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base.transactions import smart_contract_read
+from ethpy.hyperdrive.addresses import HyperdriveAddresses
+from ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
-from ..addresses import HyperdriveAddresses
-from ..deploy import DeployedHyperdrivePool
 from .api import HyperdriveInterface
 
 

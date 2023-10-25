@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
     from agent0.hyperdrive.state import HyperdriveMarketAction
     from elfpy import types
-    from ethpy.hyperdrive import HyperdriveInterface
+    from ethpy.hyperdrive.api import HyperdriveInterface
 
 
 class ExtendedJSONEncoder(json.JSONEncoder):

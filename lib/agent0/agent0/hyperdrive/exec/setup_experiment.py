@@ -8,7 +8,8 @@ from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.crash_report import setup_hyperdrive_crash_report_logging
 from elfpy.utils import logs
 from ethpy import EthConfig
-from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveInterface
+from ethpy.hyperdrive import HyperdriveAddresses
+from ethpy.hyperdrive.api import HyperdriveInterface
 
 from .get_agent_accounts import get_agent_accounts
 
