@@ -361,10 +361,11 @@ async def async_smart_contract_transact(
     else:
         func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
 
-    # Build transaction
-    unsent_txn = build_transaction(func_handle, signer, web3, nonce=nonce)
-
+    unsent_txn = {}
     try:
+        # Build transaction
+        # Building transaction can fail when transaction itself isn't correct
+        unsent_txn = build_transaction(func_handle, signer, web3, nonce=nonce)
         return await _async_send_transaction_and_wait_for_receipt(unsent_txn, signer, web3)
 
     # Wraps the exception with a contract call exception, adding additional information
@@ -495,10 +496,12 @@ def smart_contract_transact(
         func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
     else:
         func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
-    # Build transaction
-    unsent_txn = build_transaction(func_handle, signer, web3, nonce=nonce)
 
+    unsent_txn = {}
     try:
+        # Build transaction
+        # Building transaction can fail when transaction itself isn't correct
+        unsent_txn = build_transaction(func_handle, signer, web3, nonce=nonce)
         return _send_transaction_and_wait_for_receipt(unsent_txn, signer, web3)
 
     # Wraps the exception with a contract call exception, adding additional information
