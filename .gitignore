@@ -18,8 +18,9 @@ __pypackages__/
 
 # default logging directory
 .logging
-.crash_report
 
+# Crash reporting directory
+.crash_report
 
 # build directories
 .build
