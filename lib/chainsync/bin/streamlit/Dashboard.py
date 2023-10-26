@@ -24,7 +24,7 @@ from chainsync.dashboard import (
     plot_outstanding_positions,
     plot_rates,
 )
-from chainsync.db.base import initialize_session
+from chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
 from chainsync.db.hyperdrive import (
     get_all_traders,
     get_pool_analysis,
@@ -68,7 +68,9 @@ freq = None
 while True:
     # Wallet addr to username mapping
     trader_addrs = get_all_traders(session)
-    user_map = build_user_mapping(session, trader_addrs)
+    addr_to_username = get_addr_to_username(session)
+    username_to_user = get_username_to_user(session)
+    user_map = build_user_mapping(trader_addrs, addr_to_username, username_to_user)
 
     pool_info = get_pool_info(session, start_block=-max_live_blocks, coerce_float=False)
     # TODO generalize this
