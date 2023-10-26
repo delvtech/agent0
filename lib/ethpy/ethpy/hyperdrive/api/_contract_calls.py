@@ -77,7 +77,7 @@ async def _async_open_long(
     # Since current_block_number is a property, we want to get the static block here
     current_block = cls.current_block_number
     preview_result = smart_contract_preview_transaction(
-        cls.hyperdrive_contract, agent_checksum_address, "openLong", *fn_args, block_identifier=current_block
+        cls.hyperdrive_contract, agent_checksum_address, "openLong", *fn_args, block_number=current_block
     )
     if slippage_tolerance is not None:
         min_output = (
@@ -127,7 +127,7 @@ async def _async_close_long(
     # Since current_block_number is a property, we want to get the static block here
     current_block = cls.current_block_number
     preview_result = smart_contract_preview_transaction(
-        cls.hyperdrive_contract, agent_checksum_address, "closeLong", *fn_args, block_identifier=current_block
+        cls.hyperdrive_contract, agent_checksum_address, "closeLong", *fn_args, block_number=current_block
     )
     if slippage_tolerance:
         min_output = (
@@ -180,7 +180,7 @@ async def _async_open_short(
     # Since current_block_number is a property, we want to get the static block here
     current_block = cls.current_block_number
     preview_result = smart_contract_preview_transaction(
-        cls.hyperdrive_contract, agent_checksum_address, "openShort", *fn_args, block_identifier=current_block
+        cls.hyperdrive_contract, agent_checksum_address, "openShort", *fn_args, block_number=current_block
     )
     if slippage_tolerance:
         max_deposit = (
@@ -230,7 +230,7 @@ async def _async_close_short(
     # Since current_block_number is a property, we want to get the static block here
     current_block = cls.current_block_number
     preview_result = smart_contract_preview_transaction(
-        cls.hyperdrive_contract, agent_checksum_address, "closeShort", *fn_args, block_identifier=current_block
+        cls.hyperdrive_contract, agent_checksum_address, "closeShort", *fn_args, block_number=current_block
     )
     if slippage_tolerance:
         min_output = (
@@ -279,7 +279,7 @@ async def _async_add_liquidity(
     # Since current_block_number is a property, we want to get the static block here
     current_block = cls.current_block_number
     _ = smart_contract_preview_transaction(
-        cls.hyperdrive_contract, agent_checksum_address, "addLiquidity", *fn_args, block_identifier=current_block
+        cls.hyperdrive_contract, agent_checksum_address, "addLiquidity", *fn_args, block_number=current_block
     )
     # TODO add slippage controls for add liquidity
     try:
@@ -319,7 +319,7 @@ async def _async_remove_liquidity(
         agent_checksum_address,
         "removeLiquidity",
         *fn_args,
-        block_identifier=current_block,
+        block_number=current_block,
     )
     try:
         tx_receipt = await async_smart_contract_transact(
@@ -359,7 +359,7 @@ async def _async_redeem_withdraw_shares(
         agent_checksum_address,
         "redeemWithdrawalShares",
         *fn_args,
-        block_identifier=current_block,
+        block_number=current_block,
     )
     try:
         tx_receipt = await async_smart_contract_transact(
