@@ -203,10 +203,6 @@ def smart_contract_preview_transaction(
             block_number=block_number,
         ) from err
     except Exception as err:
-        # Add additional information to the exception
-        # This field is passed in if smart_contract_read is called with an explicit block
-        # Will default to None, in which case crash reporting will do best attempt at getting
-        # the block number
         raise ContractCallException(
             "Error in preview transaction",
             orig_exception=err,
