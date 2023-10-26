@@ -79,7 +79,7 @@ def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockN
     dict[str, Any]
         The hyperdrive pool info returned from the smart contract.
     """
-    return smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
+    return smart_contract_read(hyperdrive_contract, "getPoolInfo", block_number=block_number)
 
 
 def process_hyperdrive_pool_info(

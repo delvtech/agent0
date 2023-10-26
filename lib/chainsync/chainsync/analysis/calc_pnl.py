@@ -61,7 +61,7 @@ def calc_single_closeout(
         fn_args = (maturity, amount, min_output, address, as_underlying)
         try:
             preview_result = smart_contract_preview_transaction(
-                contract, sender, "closeLong", *fn_args, block_identifier=position["blockNumber"]
+                contract, sender, "closeLong", *fn_args, block_number=position["blockNumber"]
             )
             out_pnl = Decimal(preview_result["value"]) / Decimal(1e18)
         except Exception as exception:  # pylint: disable=broad-except
@@ -71,7 +71,7 @@ def calc_single_closeout(
         fn_args = (maturity, amount, min_output, address, as_underlying)
         try:
             preview_result = smart_contract_preview_transaction(
-                contract, sender, "closeShort", *fn_args, block_identifier=position["blockNumber"]
+                contract, sender, "closeShort", *fn_args, block_number=position["blockNumber"]
             )
             out_pnl = preview_result["value"] / Decimal(1e18)
         except Exception as exception:  # pylint: disable=broad-except
@@ -82,7 +82,7 @@ def calc_single_closeout(
         # If this fails, keep as nan and continue iterating
         try:
             preview_result = smart_contract_preview_transaction(
-                contract, sender, "removeLiquidity", *fn_args, block_identifier=position["blockNumber"]
+                contract, sender, "removeLiquidity", *fn_args, block_number=position["blockNumber"]
             )
             out_pnl = Decimal(
                 preview_result["baseProceeds"]
