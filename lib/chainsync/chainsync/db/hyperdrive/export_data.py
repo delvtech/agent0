@@ -59,7 +59,9 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
     get_wallet_deltas(db_session, coerce_float=False).to_parquet(
         os.path.join(out_dir, "wallet_delta.parquet"), index=False, engine="pyarrow"
     )
-    get_transactions(db_session, coerce_float=False).to_parquet(
+    # TODO input_params_maxDeposit is too large of a number to be stored in parquet
+    # so we coerce_float here for data export purposes.
+    get_transactions(db_session, coerce_float=True).to_parquet(
         os.path.join(out_dir, "transactions.parquet"), index=False, engine="pyarrow"
     )
 
