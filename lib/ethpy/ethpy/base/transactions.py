@@ -28,7 +28,13 @@ from .retry_utils import retry_call
 READ_RETRY_COUNT = 5
 
 
-def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn_args, **fn_kwargs) -> dict[str, Any]:
+def smart_contract_read(
+    contract: Contract,
+    function_name_or_signature: str,
+    *fn_args,
+    block_number: BlockNumber | None = None,
+    **fn_kwargs,
+) -> dict[str, Any]:
     """Return from a smart contract read call
 
     Arguments
@@ -39,6 +45,8 @@ def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn
         The name of the function to query.
     *fn_args : Unknown
         The arguments passed to the contract method.
+    block_number: BlockNumber | None
+        If set, will query the chain on the specified block
     **fn_kwargs : Unknown
         The keyword arguments passed to the contract method.
 
@@ -55,19 +63,18 @@ def smart_contract_read(contract: Contract, function_name_or_signature: str, *fn
     """
     # get the callable contract function from function_name & call it
     if "(" in function_name_or_signature:
-        function = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
+        function = contract.get_function_by_signature(function_name_or_signature)(*fn_args, **fn_kwargs)
     else:
-        function = contract.get_function_by_name(function_name_or_signature)(*fn_args)
+        function = contract.get_function_by_name(function_name_or_signature)(*fn_args, **fn_kwargs)
     try:
         # Call function with retries
-        return_values = retry_call(READ_RETRY_COUNT, None, function.call, **fn_kwargs)
+        return_values = retry_call(READ_RETRY_COUNT, None, function.call, block_identifier=block_number)
     except Exception as err:
         # Add additional information to the exception
         # This field is passed in if smart_contract_read is called with an explicit block
         # Will default to None, in which case crash reporting will do best attempt at getting
         # the block number
         # TODO add in raw_txn to smart contract read functions
-        block_number = fn_kwargs.get("block_identifier", None)
         raise ContractCallException(
             "Error in smart contract read",
             orig_exception=err,
@@ -109,6 +116,7 @@ def smart_contract_preview_transaction(
     signer_address: ChecksumAddress,
     function_name_or_signature: str,
     *fn_args,
+    block_number: BlockNumber | None = None,
     **fn_kwargs,
 ) -> dict[str, Any]:
     """Returns the values from a transaction without actually submitting the transaction.
@@ -123,6 +131,8 @@ def smart_contract_preview_transaction(
         The name of the function
     *fn_args : Unknown
         The arguments passed to the contract method.
+    block_number: BlockNumber | None
+        If set, will query the chain on the specified block
     **fn_kwargs : Unknown
         The keyword arguments passed to the contract method.
 
@@ -139,9 +149,9 @@ def smart_contract_preview_transaction(
     """
     # get the callable contract function from function_name & call it
     if "(" in function_name_or_signature:
-        function = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
+        function = contract.get_function_by_signature(function_name_or_signature)(*fn_args, **fn_kwargs)
     else:
-        function = contract.get_function_by_name(function_name_or_signature)(*fn_args)
+        function = contract.get_function_by_name(function_name_or_signature)(*fn_args, **fn_kwargs)
 
     # We build the raw transaction here in case of error. Note that we don't call `build_transaction`
     # since it adds the nonce to the transaction, and we ignore nonce in preview
@@ -155,20 +165,22 @@ def smart_contract_preview_transaction(
             and exc.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
         )
 
+    # This is the additional transaction argument passed into function.call
+    # that may contain additional call arguments such as max_gas, nonce, etc.
+    transaction_kwargs = {"from": signer_address}
     try:
         return_values = retry_call(
             READ_RETRY_COUNT,
             retry_preview_check,
             function.call,
-            {"from": signer_address},
-            **fn_kwargs,
+            transaction_kwargs,
+            block_identifier=block_number,
         )
     except Exception as err:
         # Add additional information to the exception
         # This field is passed in if smart_contract_read is called with an explicit block
         # Will default to None, in which case crash reporting will do best attempt at getting
         # the block number
-        block_number = fn_kwargs.get("block_identifier", None)
         raise ContractCallException(
             "Error in preview transaction",
             orig_exception=err,
@@ -272,13 +284,15 @@ def build_transaction(
         logging.warning("Specified nonce %s is larger than current trx count %s", nonce, base_nonce)
         nonce = base_nonce
 
-    # We need to update the nonce when retrying a transaction
-    unsent_txn = func_handle.build_transaction(
+    # This is the additional transaction argument passed into function.call
+    # that may contain additional call arguments such as max_gas, nonce, etc.
+    transaction_kwargs = TxParams(
         {
             "from": signer_checksum_address,
             "nonce": nonce,
         }
     )
+    unsent_txn = func_handle.build_transaction(transaction_kwargs)
     return unsent_txn
 
 
@@ -325,6 +339,8 @@ async def _async_send_transaction_and_wait_for_receipt(
     return tx_receipt
 
 
+# TODO cleanup args
+# pylint: disable=too-many-arguments
 async def async_smart_contract_transact(
     web3: Web3,
     contract: Contract,
@@ -332,6 +348,7 @@ async def async_smart_contract_transact(
     function_name_or_signature: str,
     *fn_args,
     nonce: Nonce | None = None,
+    **fn_kwargs,
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
     Copy of `smart_contract_transact`, but using async wait for `wait_for_transaction_receipt`
@@ -346,10 +363,12 @@ async def async_smart_contract_transact(
         The LocalAccount that will be used to pay for the gas & sign the transaction
     function_name_or_signature : str
         This function must exist in the compiled contract's ABI
-    fn_args : ordered list
+    *fn_args : Unknown
         All remaining arguments will be passed to the contract function in the order received
     nonce: Nonce | None
         If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
+    **fn_kwargs : Unknown
+        The keyword arguments passed to the contract method.
 
     Returns
     -------
@@ -357,9 +376,9 @@ async def async_smart_contract_transact(
         a TypedDict; success can be checked via tx_receipt["status"]
     """
     if "(" in function_name_or_signature:
-        func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
+        func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args, **fn_kwargs)
     else:
-        func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
+        func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args, **fn_kwargs)
 
     unsent_txn = {}
     try:
@@ -380,7 +399,7 @@ async def async_smart_contract_transact(
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
-            fn_kwargs={},
+            fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
         ) from err
     except ContractLogicError as err:
@@ -390,7 +409,7 @@ async def async_smart_contract_transact(
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
-            fn_kwargs={},
+            fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
         ) from err
     except UnknownBlockError as err:
@@ -403,7 +422,7 @@ async def async_smart_contract_transact(
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
-            fn_kwargs={},
+            fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
             block_number=block_number,
         ) from err
@@ -414,7 +433,7 @@ async def async_smart_contract_transact(
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
-            fn_kwargs={},
+            fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
         ) from err
 
@@ -469,6 +488,7 @@ def smart_contract_transact(
     function_name_or_signature: str,
     *fn_args,
     nonce: Nonce | None = None,
+    **fn_kwargs,
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
 
@@ -493,9 +513,9 @@ def smart_contract_transact(
         a TypedDict; success can be checked via tx_receipt["status"]
     """
     if "(" in function_name_or_signature:
-        func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args)
+        func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args, **fn_kwargs)
     else:
-        func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args)
+        func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args, **fn_kwargs)
 
     unsent_txn = {}
     try:
@@ -516,7 +536,7 @@ def smart_contract_transact(
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
-            fn_kwargs={},
+            fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
         ) from err
     except ContractLogicError as err:
@@ -526,7 +546,7 @@ def smart_contract_transact(
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
-            fn_kwargs={},
+            fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
         ) from err
     except UnknownBlockError as err:
@@ -539,7 +559,7 @@ def smart_contract_transact(
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
-            fn_kwargs={},
+            fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
             block_number=block_number,
         ) from err
@@ -551,7 +571,7 @@ def smart_contract_transact(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             raw_txn=dict(unsent_txn),
-            fn_kwargs={},
+            fn_kwargs=fn_kwargs,
         ) from err
 
 

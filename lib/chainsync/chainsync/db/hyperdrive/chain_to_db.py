@@ -56,7 +56,7 @@ def get_variable_rate_from_contract(yield_contract: Contract, block_number: Bloc
     block_number: BlockNumber
         The block number to query
     """
-    return smart_contract_read(yield_contract, "getRate", block_identifier=block_number)["value"]
+    return smart_contract_read(yield_contract, "getRate", block_number=block_number)["value"]
 
 
 def data_chain_to_db(
