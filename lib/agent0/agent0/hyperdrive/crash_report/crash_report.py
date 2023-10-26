@@ -186,7 +186,6 @@ def build_crash_trade_result(
             copy.deepcopy(trade_result.raw_pool_info),
             hyperdrive.web3,
             hyperdrive.hyperdrive_contract,
-            trade_result.raw_pool_config["positionDuration"],
             BlockNumber(trade_result.block_number),
         )
     else:
