@@ -225,7 +225,6 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 copy.deepcopy(self._contract_pool_info),
                 self.web3,
                 self.hyperdrive_contract,
-                self.pool_config["positionDuration"],
                 self.current_block_number,
             )
             self._contract_latest_checkpoint = get_hyperdrive_checkpoint(
