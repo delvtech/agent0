@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import mplfinance as mpf
 import streamlit as st
 from chainsync.dashboard import build_ticker, build_user_mapping, map_addresses
-from chainsync.db.base import initialize_session
+from chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
 from chainsync.db.hyperdrive import (
     get_all_traders,
     get_ticker,
@@ -42,8 +42,11 @@ st.button("Refresh")
 # Multiselect box of all available agents
 # Get all addresses that have made a trade
 trader_addrs = get_all_traders(session)
+addr_to_username = get_addr_to_username(session)
+username_to_user = get_username_to_user(session)
+
 # Get corresponding usernames
-user_map = build_user_mapping(session, trader_addrs)
+user_map = build_user_mapping(trader_addrs, addr_to_username, username_to_user)
 
 # TODO does this take series? Or do I need to cast this as a list
 # TODO there is a case that format_name is not unique, where we should use the wallet addresses
