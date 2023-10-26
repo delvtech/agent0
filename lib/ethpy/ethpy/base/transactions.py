@@ -32,7 +32,7 @@ def smart_contract_read(
     contract: Contract,
     function_name_or_signature: str,
     *fn_args,
-    block_identifier: BlockNumber | None = None,
+    block_number: BlockNumber | None = None,
     **fn_kwargs,
 ) -> dict[str, Any]:
     """Return from a smart contract read call
@@ -45,7 +45,7 @@ def smart_contract_read(
         The name of the function to query.
     *fn_args : Unknown
         The arguments passed to the contract method.
-    block_identifier: BlockNumber | None
+    block_number: BlockNumber | None
         If set, will query the chain on this block
     **fn_kwargs : Unknown
         The keyword arguments passed to the contract method.
@@ -68,7 +68,7 @@ def smart_contract_read(
         function = contract.get_function_by_name(function_name_or_signature)(*fn_args, **fn_kwargs)
     try:
         # Call function with retries
-        return_values = retry_call(READ_RETRY_COUNT, None, function.call, block_identifier=block_identifier)
+        return_values = retry_call(READ_RETRY_COUNT, None, function.call, block_identifier=block_number)
     except Exception as err:
         # Add additional information to the exception
         # This field is passed in if smart_contract_read is called with an explicit block
@@ -82,7 +82,7 @@ def smart_contract_read(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
-            block_number=block_identifier,
+            block_number=block_number,
         ) from err
 
     # If there is a single value returned, we want to put it in a list of length 1
@@ -116,7 +116,7 @@ def smart_contract_preview_transaction(
     signer_address: ChecksumAddress,
     function_name_or_signature: str,
     *fn_args,
-    block_identifier: BlockNumber | None = None,
+    block_number: BlockNumber | None = None,
     **fn_kwargs,
 ) -> dict[str, Any]:
     """Returns the values from a transaction without actually submitting the transaction.
@@ -131,7 +131,7 @@ def smart_contract_preview_transaction(
         The name of the function
     *fn_args : Unknown
         The arguments passed to the contract method.
-    block_identifier: BlockNumber | None
+    block_number: BlockNumber | None
         If set, will query the chain on this block
     **fn_kwargs : Unknown
         The keyword arguments passed to the contract method.
@@ -171,7 +171,7 @@ def smart_contract_preview_transaction(
             retry_preview_check,
             function.call,
             {"from": signer_address},
-            block_identifier=block_identifier,
+            block_identifier=block_number,
         )
     except Exception as err:
         # Add additional information to the exception
@@ -186,7 +186,7 @@ def smart_contract_preview_transaction(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=raw_txn,
-            block_number=block_identifier,
+            block_number=block_number,
         ) from err
 
     if not isinstance(return_values, Sequence):  # could be list or tuple
