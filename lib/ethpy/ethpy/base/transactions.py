@@ -11,13 +11,7 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.contract.contract import Contract, ContractFunction
-from web3.exceptions import (
-    ContractCustomError,
-    ContractLogicError,
-    ContractPanicError,
-    TimeExhausted,
-    TransactionNotFound,
-)
+from web3.exceptions import ContractCustomError, ContractPanicError, TimeExhausted, TransactionNotFound
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, BlockData, Nonce, TxData, TxParams, TxReceipt, Wei
 
 from .errors.errors import ContractCallException, ContractCallType, decode_error_selector_for_contract
