@@ -11,13 +11,7 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.contract.contract import Contract, ContractFunction
-from web3.exceptions import (
-    ContractCustomError,
-    ContractLogicError,
-    ContractPanicError,
-    TimeExhausted,
-    TransactionNotFound,
-)
+from web3.exceptions import ContractCustomError, ContractPanicError, TimeExhausted, TransactionNotFound
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, BlockData, Nonce, TxData, TxParams, TxReceipt, Wei
 
 from .errors.errors import ContractCallException, ContractCallType, decode_error_selector_for_contract
@@ -176,11 +170,22 @@ def smart_contract_preview_transaction(
             transaction_kwargs,
             block_identifier=block_number,
         )
+    # Wraps the exception with a contract call exception, adding additional information
+    # If block number is set in the preview call, will add to crash report,
+    # otherwise will do best attempt at getting the block it crashed at.
+    except ContractCustomError as err:
+        err.args += (f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.",)
+        raise ContractCallException(
+            "Error in preview transaction",
+            orig_exception=err,
+            contract_call_type=ContractCallType.PREVIEW,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs=fn_kwargs,
+            raw_txn=raw_txn,
+            block_number=block_number,
+        ) from err
     except Exception as err:
-        # Add additional information to the exception
-        # This field is passed in if smart_contract_read is called with an explicit block
-        # Will default to None, in which case crash reporting will do best attempt at getting
-        # the block number
         raise ContractCallException(
             "Error in preview transaction",
             orig_exception=err,
@@ -402,16 +407,6 @@ async def async_smart_contract_transact(
             fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
         ) from err
-    except ContractLogicError as err:
-        raise ContractCallException(
-            "Error in smart_contract_transact",
-            orig_exception=err,
-            contract_call_type=ContractCallType.TRANSACTION,
-            function_name_or_signature=function_name_or_signature,
-            fn_args=fn_args,
-            fn_kwargs=fn_kwargs,
-            raw_txn=dict(unsent_txn),
-        ) from err
     except UnknownBlockError as err:
         block_number_arg = err.args[1]
         assert "block_number=" in block_number_arg
@@ -530,16 +525,6 @@ def smart_contract_transact(
     # will attempt a best effort guess as to the block the chain was on before it crashed.
     except ContractCustomError as err:
         err.args += (f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.",)
-        raise ContractCallException(
-            "Error in smart_contract_transact",
-            orig_exception=err,
-            contract_call_type=ContractCallType.TRANSACTION,
-            function_name_or_signature=function_name_or_signature,
-            fn_args=fn_args,
-            fn_kwargs=fn_kwargs,
-            raw_txn=dict(unsent_txn),
-        ) from err
-    except ContractLogicError as err:
         raise ContractCallException(
             "Error in smart_contract_transact",
             orig_exception=err,
