@@ -46,7 +46,7 @@ def smart_contract_read(
     *fn_args : Unknown
         The arguments passed to the contract method.
     block_number: BlockNumber | None
-        If set, will query the chain on this block
+        If set, will query the chain on the specified block
     **fn_kwargs : Unknown
         The keyword arguments passed to the contract method.
 
@@ -132,7 +132,7 @@ def smart_contract_preview_transaction(
     *fn_args : Unknown
         The arguments passed to the contract method.
     block_number: BlockNumber | None
-        If set, will query the chain on this block
+        If set, will query the chain on the specified block
     **fn_kwargs : Unknown
         The keyword arguments passed to the contract method.
 
@@ -165,12 +165,15 @@ def smart_contract_preview_transaction(
             and exc.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
         )
 
+    # This is the additional transaction argument passed into function.call
+    # that may contain additional call arguments such as max_gas, nonce, etc.
+    transaction_kwargs = {"from": signer_address}
     try:
         return_values = retry_call(
             READ_RETRY_COUNT,
             retry_preview_check,
             function.call,
-            {"from": signer_address},
+            transaction_kwargs,
             block_identifier=block_number,
         )
     except Exception as err:
@@ -281,13 +284,15 @@ def build_transaction(
         logging.warning("Specified nonce %s is larger than current trx count %s", nonce, base_nonce)
         nonce = base_nonce
 
-    # We need to update the nonce when retrying a transaction
-    unsent_txn = func_handle.build_transaction(
+    # This is the additional transaction argument passed into function.call
+    # that may contain additional call arguments such as max_gas, nonce, etc.
+    transaction_kwargs = TxParams(
         {
             "from": signer_checksum_address,
             "nonce": nonce,
         }
     )
+    unsent_txn = func_handle.build_transaction(transaction_kwargs)
     return unsent_txn
 
 
