@@ -176,6 +176,32 @@ def smart_contract_preview_transaction(
             transaction_kwargs,
             block_identifier=block_number,
         )
+    # Wraps the exception with a contract call exception, adding additional information
+    # If block number is set in the preview call, will add to crash report,
+    # otherwise will do best attempt at getting the block it crashed at.
+    except ContractCustomError as err:
+        err.args += (f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.",)
+        raise ContractCallException(
+            "Error in preview transaction",
+            orig_exception=err,
+            contract_call_type=ContractCallType.PREVIEW,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs=fn_kwargs,
+            raw_txn=raw_txn,
+            block_number=block_number,
+        ) from err
+    except ContractLogicError as err:
+        raise ContractCallException(
+            "Error in preview transaction",
+            orig_exception=err,
+            contract_call_type=ContractCallType.PREVIEW,
+            function_name_or_signature=function_name_or_signature,
+            fn_args=fn_args,
+            fn_kwargs=fn_kwargs,
+            raw_txn=raw_txn,
+            block_number=block_number,
+        ) from err
     except Exception as err:
         # Add additional information to the exception
         # This field is passed in if smart_contract_read is called with an explicit block
