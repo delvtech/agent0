@@ -97,6 +97,35 @@ def _calc_spot_price(cls: HyperdriveInterface):
     return FixedPoint(scaled_value=int(spot_price))
 
 
+def _calc_long_amount(cls: HyperdriveInterface, base_amount: FixedPoint) -> FixedPoint:
+    """See API for documentation."""
+    long_amount = pyperdrive.get_long_amount(
+        _construct_pool_config(cls._contract_pool_config),
+        _construct_pool_info(cls._contract_pool_info),
+        str(base_amount.scaled_value),
+    )
+    return FixedPoint(scaled_value=int(long_amount))
+
+
+def _calc_short_deposit(
+    cls: HyperdriveInterface,
+    short_amount: FixedPoint,
+    spot_price: FixedPoint,
+    open_share_price: FixedPoint | None = None,
+) -> FixedPoint:
+    """See API for documentation."""
+    if isinstance(open_share_price, FixedPoint):
+        open_share_price = str(open_share_price.scaled_value)
+    short_deposit = pyperdrive.get_short_deposit(
+        _construct_pool_config(cls._contract_pool_config),
+        _construct_pool_info(cls._contract_pool_info),
+        str(short_amount.scaled_value),
+        str(spot_price.scaled_value),
+        open_share_price,
+    )
+    return FixedPoint(scaled_value=int(short_deposit))
+
+
 def _calc_out_for_in(
     cls: HyperdriveInterface,
     amount_in: FixedPoint,
