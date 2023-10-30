@@ -108,6 +108,8 @@ class TestHyperdriveInterface:
         _ = hyperdrive.current_block_time
         _ = hyperdrive.variable_rate
         _ = hyperdrive.vault_shares
+        _ = hyperdrive.calc_open_long(FixedPoint(100))
+        _ = hyperdrive.calc_open_short(FixedPoint(100))
         _ = hyperdrive.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
         _ = hyperdrive.calc_max_long(FixedPoint(1000))
         _ = hyperdrive.calc_max_short(FixedPoint(1000))
