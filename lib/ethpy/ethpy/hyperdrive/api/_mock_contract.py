@@ -100,14 +100,17 @@ def _calc_short_deposit(
     open_share_price: FixedPoint | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
-    if open_share_price is not None:  # convert FixedPoint to string
-        open_share_price = str(open_share_price.scaled_value)
+    open_share_price_str: str | None
+    if open_share_price is None:  # keep it None
+        open_share_price_str = None
+    else:  # convert FixedPoint to string
+        open_share_price_str = str(open_share_price.scaled_value)
     short_deposit = pyperdrive.get_short_deposit(
         _construct_pool_config(cls._contract_pool_config),
         _construct_pool_info(cls._contract_pool_info),
         str(short_amount.scaled_value),
         str(spot_price.scaled_value),
-        open_share_price,  # str | None
+        open_share_price_str,  # str | None
     )
     return FixedPoint(scaled_value=int(short_deposit))
 
