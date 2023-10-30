@@ -499,27 +499,20 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         """
         return _calc_long_amount(self, base_amount)
 
-    def calc_open_short(
-        self, short_amount: FixedPoint, spot_price: FixedPoint, open_share_price: FixedPoint | None = None
-    ) -> FixedPoint:
+    def calc_open_short(self, short_amount: FixedPoint) -> FixedPoint:
         """Calculate the amount of base the trader will need to deposit for a short of a given size.
 
         Arguments
         ---------
         short_amount : FixedPoint
             The amount to of bonds to short.
-        spot_price : FixedPoint
-            The pool's current price for bonds.
-        open_share_price : FixedPoint, optional
-            Optionally provide the open share price for the short.
-            If this is not provided or is None or zero, then we will use the pool's current share price.
 
         Returns
         -------
         short_amount : FixedPoint
             The amount of base required to short the bonds (aka the "max loss").
         """
-        return _calc_short_deposit(self, short_amount, spot_price, open_share_price)
+        return _calc_short_deposit(self, short_amount, self.spot_price, self.pool_info["sharePrice"])
 
     def calc_out_for_in(
         self,
