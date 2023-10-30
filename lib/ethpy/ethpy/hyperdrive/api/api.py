@@ -39,10 +39,12 @@ from ._mock_contract import (
     _calc_fees_out_given_shares_in,
     _calc_fixed_rate,
     _calc_in_for_out,
+    _calc_long_amount,
     _calc_max_long,
     _calc_max_short,
     _calc_out_for_in,
     _calc_position_duration_in_years,
+    _calc_short_deposit,
     _calc_spot_price,
 )
 
@@ -482,12 +484,42 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         """
         return await _async_redeem_withdraw_shares(self, agent, trade_amount, nonce)
 
+    def calc_open_long(self, base_amount: FixedPoint) -> FixedPoint:
+        """Calculate the long amount that will be opened for a given base amount after fees.
+
+        Arguments
+        ---------
+        base_amount : FixedPoint
+            The amount to spend, in base.
+
+        Returns
+        -------
+        long_amount : FixedPoint
+            The amount of bonds purchased.
+        """
+        return _calc_long_amount(self, base_amount)
+
+    def calc_open_short(self, short_amount: FixedPoint) -> FixedPoint:
+        """Calculate the amount of base the trader will need to deposit for a short of a given size.
+
+        Arguments
+        ---------
+        short_amount : FixedPoint
+            The amount to of bonds to short.
+
+        Returns
+        -------
+        short_amount : FixedPoint
+            The amount of base required to short the bonds (aka the "max loss").
+        """
+        return _calc_short_deposit(self, short_amount, self.spot_price, self.pool_info["sharePrice"])
+
     def calc_out_for_in(
         self,
         amount_in: FixedPoint,
         shares_in: bool,
     ) -> FixedPoint:
-        """Gets the amount of an asset for a given amount in of the other.
+        """Calculate the amount of an asset for a given amount in of the other.
 
         Arguments
         ---------
@@ -508,7 +540,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         amount_out: FixedPoint,
         shares_out: bool,
     ) -> FixedPoint:
-        """Gets the amount of an asset for a given amount out of the other.
+        """Calculate the amount of an asset for a given amount out of the other.
 
         Arguments
         ---------
@@ -613,7 +645,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         return _calc_bonds_given_shares_and_rate(self, target_rate, target_shares)
 
     def calc_max_long(self, budget: FixedPoint) -> FixedPoint:
-        """Get the maximum allowable long for the given Hyperdrive pool and agent budget.
+        """Calculate the maximum allowable long for the given Hyperdrive pool and agent budget.
 
         Arguments
         ---------
@@ -628,7 +660,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         return _calc_max_long(self, budget)
 
     def calc_max_short(self, budget: FixedPoint) -> FixedPoint:
-        """Get the maximum allowable short for the given Hyperdrive pool and agent budget.
+        """Calculate the maximum allowable short for the given Hyperdrive pool and agent budget.
 
         Arguments
         ---------

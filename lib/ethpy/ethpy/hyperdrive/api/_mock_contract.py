@@ -46,21 +46,7 @@ def _construct_pool_info(contract_pool_info: dict[str, Any]) -> PoolInfo:
     .. note::
         This function will be deprecated as soon as we finish integrating pypechain.
     """
-    return PoolInfo(
-        shareReserves=contract_pool_info["shareReserves"],
-        shareAdjustment=contract_pool_info["shareAdjustment"],
-        bondReserves=contract_pool_info["bondReserves"],
-        lpTotalSupply=contract_pool_info["lpTotalSupply"],
-        sharePrice=contract_pool_info["sharePrice"],
-        longsOutstanding=contract_pool_info["longsOutstanding"],
-        longAverageMaturityTime=contract_pool_info["longAverageMaturityTime"],
-        shortsOutstanding=contract_pool_info["shortsOutstanding"],
-        shortAverageMaturityTime=contract_pool_info["shortAverageMaturityTime"],
-        withdrawalSharesReadyToWithdraw=contract_pool_info["withdrawalSharesReadyToWithdraw"],
-        withdrawalSharesProceeds=contract_pool_info["withdrawalSharesProceeds"],
-        lpSharePrice=contract_pool_info["lpSharePrice"],
-        longExposure=contract_pool_info["longExposure"],
-    )
+    return PoolInfo(**contract_pool_info)
 
 
 def _calc_position_duration_in_years(cls: HyperdriveInterface) -> FixedPoint:
@@ -95,6 +81,38 @@ def _calc_spot_price(cls: HyperdriveInterface):
         _construct_pool_config(cls._contract_pool_config), _construct_pool_info(cls._contract_pool_info)
     )
     return FixedPoint(scaled_value=int(spot_price))
+
+
+def _calc_long_amount(cls: HyperdriveInterface, base_amount: FixedPoint) -> FixedPoint:
+    """See API for documentation."""
+    long_amount = pyperdrive.get_long_amount(
+        _construct_pool_config(cls._contract_pool_config),
+        _construct_pool_info(cls._contract_pool_info),
+        str(base_amount.scaled_value),
+    )
+    return FixedPoint(scaled_value=int(long_amount))
+
+
+def _calc_short_deposit(
+    cls: HyperdriveInterface,
+    short_amount: FixedPoint,
+    spot_price: FixedPoint,
+    open_share_price: FixedPoint | None = None,
+) -> FixedPoint:
+    """See API for documentation."""
+    open_share_price_str: str | None
+    if open_share_price is None:  # keep it None
+        open_share_price_str = None
+    else:  # convert FixedPoint to string
+        open_share_price_str = str(open_share_price.scaled_value)
+    short_deposit = pyperdrive.get_short_deposit(
+        _construct_pool_config(cls._contract_pool_config),
+        _construct_pool_info(cls._contract_pool_info),
+        str(short_amount.scaled_value),
+        str(spot_price.scaled_value),
+        open_share_price_str,  # str | None
+    )
+    return FixedPoint(scaled_value=int(short_deposit))
 
 
 def _calc_out_for_in(
