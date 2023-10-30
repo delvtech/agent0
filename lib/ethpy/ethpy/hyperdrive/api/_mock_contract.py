@@ -46,7 +46,7 @@ def _construct_pool_info(contract_pool_info: dict[str, Any]) -> PoolInfo:
     .. note::
         This function will be deprecated as soon as we finish integrating pypechain.
     """
-    return PoolInfo(
+    return PoolInfo(*
         shareReserves=contract_pool_info["shareReserves"],
         shareAdjustment=contract_pool_info["shareAdjustment"],
         bondReserves=contract_pool_info["bondReserves"],
@@ -114,14 +114,14 @@ def _calc_short_deposit(
     open_share_price: FixedPoint | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
-    if isinstance(open_share_price, FixedPoint):
+    if open_share_price is not None: # convert FixedPoint to string
         open_share_price = str(open_share_price.scaled_value)
     short_deposit = pyperdrive.get_short_deposit(
         _construct_pool_config(cls._contract_pool_config),
         _construct_pool_info(cls._contract_pool_info),
         str(short_amount.scaled_value),
         str(spot_price.scaled_value),
-        open_share_price,
+        open_share_price, # str | None
     )
     return FixedPoint(scaled_value=int(short_deposit))
 
