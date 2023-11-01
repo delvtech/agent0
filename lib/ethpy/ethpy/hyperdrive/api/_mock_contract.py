@@ -55,13 +55,16 @@ def _calc_position_duration_in_years(cls: HyperdriveInterface) -> FixedPoint:
     ..todo::
         This should be done in the hyperdrive sdk.
     """
-    return FixedPoint(cls.pool_config["positionDuration"]) / FixedPoint(60 * 60 * 24 * 365)
+    return FixedPoint(cls.pool_config["positionDuration"]) / FixedPoint(
+        60 * 60 * 24 * 365
+    )
 
 
 def _calc_fixed_rate(cls: HyperdriveInterface) -> FixedPoint:
     """See API for documentation."""
     spot_rate = pyperdrive.get_spot_rate(
-        _construct_pool_config(cls._contract_pool_config), _construct_pool_info(cls._contract_pool_info)
+        _construct_pool_config(cls._contract_pool_config),
+        _construct_pool_info(cls._contract_pool_info),
     )
     return FixedPoint(scaled_value=int(spot_rate))
 
@@ -69,8 +72,8 @@ def _calc_fixed_rate(cls: HyperdriveInterface) -> FixedPoint:
 def _calc_effective_share_reserves(cls: HyperdriveInterface) -> FixedPoint:
     """See API for documentation."""
     effective_share_reserves = pyperdrive.get_effective_share_reserves(
-        str(cls.pool_info["shareReserves"].scaled_value),
-        str(cls.pool_info["shareAdjustment"].scaled_value),
+        str(cls.current_pool_info["shareReserves"].scaled_value),
+        str(cls.current_pool_info["shareAdjustment"].scaled_value),
     )
     return FixedPoint(scaled_value=int(effective_share_reserves))
 
@@ -78,7 +81,8 @@ def _calc_effective_share_reserves(cls: HyperdriveInterface) -> FixedPoint:
 def _calc_spot_price(cls: HyperdriveInterface):
     """See API for documentation."""
     spot_price = pyperdrive.get_spot_price(
-        _construct_pool_config(cls._contract_pool_config), _construct_pool_info(cls._contract_pool_info)
+        _construct_pool_config(cls._contract_pool_config),
+        _construct_pool_info(cls._contract_pool_info),
     )
     return FixedPoint(scaled_value=int(spot_price))
 
@@ -154,16 +158,28 @@ def _calc_fees_out_given_bonds_in(
         This should be done in the hyperdrive sdk.
     """
     if maturity_time is None:
-        maturity_time = cls.current_block_time + int(cls.pool_config["positionDuration"])
+        maturity_time = cls.current_block_time + int(
+            cls.pool_config["positionDuration"]
+        )
     time_remaining_in_seconds = FixedPoint(maturity_time - cls.current_block_time)
-    normalized_time_remaining = time_remaining_in_seconds / cls.pool_config["positionDuration"]
+    normalized_time_remaining = (
+        time_remaining_in_seconds / cls.pool_config["positionDuration"]
+    )
     curve_fee = (
-        (FixedPoint(1) - cls.spot_price) * cls.pool_config["curveFee"] * bonds_in * normalized_time_remaining
+        (FixedPoint(1) - cls.spot_price)
+        * cls.pool_config["curveFee"]
+        * bonds_in
+        * normalized_time_remaining
     ) / cls.pool_config["initialSharePrice"]
-    flat_fee = (bonds_in * (FixedPoint(1) - normalized_time_remaining) * cls.pool_config["flatFee"]) / cls.pool_config[
-        "initialSharePrice"
-    ]
-    gov_fee = curve_fee * cls.pool_config["governanceFee"] + flat_fee * cls.pool_config["governanceFee"]
+    flat_fee = (
+        bonds_in
+        * (FixedPoint(1) - normalized_time_remaining)
+        * cls.pool_config["flatFee"]
+    ) / cls.pool_config["initialSharePrice"]
+    gov_fee = (
+        curve_fee * cls.pool_config["governanceFee"]
+        + flat_fee * cls.pool_config["governanceFee"]
+    )
     return curve_fee, flat_fee, gov_fee
 
 
@@ -176,24 +192,35 @@ def _calc_fees_out_given_shares_in(
         This should be done in the hyperdrive sdk.
     """
     if maturity_time is None:
-        maturity_time = cls.current_block_time + int(cls.pool_config["positionDuration"])
+        maturity_time = cls.current_block_time + int(
+            cls.pool_config["positionDuration"]
+        )
     time_remaining_in_seconds = FixedPoint(maturity_time - cls.current_block_time)
-    normalized_time_remaining = time_remaining_in_seconds / cls.pool_config["positionDuration"]
+    normalized_time_remaining = (
+        time_remaining_in_seconds / cls.pool_config["positionDuration"]
+    )
     curve_fee = (
         ((FixedPoint(1) / cls.spot_price) - FixedPoint(1))
         * cls.pool_config["curveFee"]
         * cls.pool_config["initialSharePrice"]
         * shares_in
     )
-    flat_fee = (shares_in * (FixedPoint(1) - normalized_time_remaining) * cls.pool_config["flatFee"]) / cls.pool_config[
-        "initialSharePrice"
-    ]
-    gov_fee = curve_fee * cls.pool_config["governanceFee"] + flat_fee * cls.pool_config["governanceFee"]
+    flat_fee = (
+        shares_in
+        * (FixedPoint(1) - normalized_time_remaining)
+        * cls.pool_config["flatFee"]
+    ) / cls.pool_config["initialSharePrice"]
+    gov_fee = (
+        curve_fee * cls.pool_config["governanceFee"]
+        + flat_fee * cls.pool_config["governanceFee"]
+    )
     return curve_fee, flat_fee, gov_fee
 
 
 def _calc_bonds_given_shares_and_rate(
-    cls: HyperdriveInterface, target_rate: FixedPoint, target_shares: FixedPoint | None = None
+    cls: HyperdriveInterface,
+    target_rate: FixedPoint,
+    target_shares: FixedPoint | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
     if target_shares is None:
@@ -220,7 +247,9 @@ def _calc_max_long(cls: HyperdriveInterface, budget: FixedPoint) -> FixedPoint:
                 _construct_pool_config(cls._contract_pool_config),
                 _construct_pool_info(cls._contract_pool_info),
                 str(budget.scaled_value),
-                checkpoint_exposure=str(cls.latest_checkpoint["longExposure"].scaled_value),
+                checkpoint_exposure=str(
+                    cls.latest_checkpoint["longExposure"].scaled_value
+                ),
                 maybe_max_iterations=None,
             )
         )
@@ -236,8 +265,10 @@ def _calc_max_short(cls: HyperdriveInterface, budget: FixedPoint) -> FixedPoint:
                 pool_config=_construct_pool_config(cls._contract_pool_config),
                 pool_info=_construct_pool_info(cls._contract_pool_info),
                 budget=str(budget.scaled_value),
-                open_share_price=str(cls.pool_info["sharePrice"].scaled_value),
-                checkpoint_exposure=str(cls.latest_checkpoint["longExposure"].scaled_value),
+                open_share_price=str(cls.current_pool_info["sharePrice"].scaled_value),
+                checkpoint_exposure=str(
+                    cls.latest_checkpoint["longExposure"].scaled_value
+                ),
                 maybe_conservative_price=None,
                 maybe_max_iterations=None,
             )

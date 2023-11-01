@@ -7,8 +7,16 @@ from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
 from ethpy import build_eth_config
-from ethpy.base import BaseInterface, initialize_web3_with_http_provider, load_all_abis, smart_contract_read
-from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from ethpy.base import (
+    BaseInterface,
+    initialize_web3_with_http_provider,
+    load_all_abis,
+    smart_contract_read,
+)
+from ethpy.hyperdrive.addresses import (
+    HyperdriveAddresses,
+    fetch_hyperdrive_address_from_uri,
+)
 from ethpy.hyperdrive.interface import (
     get_hyperdrive_checkpoint,
     get_hyperdrive_pool_config,
@@ -88,31 +96,43 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             eth_config = build_eth_config()
         self.config = eth_config
         if addresses is None:
-            addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
+            addresses = fetch_hyperdrive_address_from_uri(
+                os.path.join(eth_config.artifacts_uri, "addresses.json")
+            )
         if web3 is None:
-            web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
+            web3 = initialize_web3_with_http_provider(
+                eth_config.rpc_uri, reset_provider=False
+            )
         self.web3 = web3
         abis = load_all_abis(eth_config.abi_dir)
         # set up the ERC20 contract for minting base tokens
         self.base_token_contract: Contract = web3.eth.contract(
-            abi=abis["ERC20Mintable"], address=web3.to_checksum_address(addresses.base_token)
+            abi=abis["ERC20Mintable"],
+            address=web3.to_checksum_address(addresses.base_token),
         )
         # set up hyperdrive contract
         self.hyperdrive_contract: Contract = web3.eth.contract(
-            abi=abis["IHyperdrive"], address=web3.to_checksum_address(addresses.mock_hyperdrive)
+            abi=abis["IHyperdrive"],
+            address=web3.to_checksum_address(addresses.mock_hyperdrive),
         )
         self.last_state_block_number = copy.copy(self.current_block_number)
         # get yield (variable rate) pool contract
         # TODO: In the future we want to switch to a single IERC4626Hyperdrive ABI
         data_provider_contract: Contract = web3.eth.contract(
-            abi=abis["ERC4626DataProvider"], address=web3.to_checksum_address(addresses.mock_hyperdrive)
+            abi=abis["ERC4626DataProvider"],
+            address=web3.to_checksum_address(addresses.mock_hyperdrive),
         )
-        self.yield_address = smart_contract_read(data_provider_contract, "pool")["value"]
+        self.yield_address = smart_contract_read(data_provider_contract, "pool")[
+            "value"
+        ]
         self.yield_contract: Contract = web3.eth.contract(
-            abi=abis["MockERC4626"], address=web3.to_checksum_address(self.yield_address)
+            abi=abis["MockERC4626"],
+            address=web3.to_checksum_address(self.yield_address),
         )
         # pool config is static
-        self._contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
+        self._contract_pool_config = get_hyperdrive_pool_config(
+            self.hyperdrive_contract
+        )
         # TODO process functions should not adjust state
         self.pool_config = process_hyperdrive_pool_config(
             copy.deepcopy(self._contract_pool_config), self.hyperdrive_contract.address
@@ -127,7 +147,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         super().__init__(eth_config, addresses)
 
     @property
-    def pool_info(self) -> dict[str, Any]:
+    def current_pool_info(self) -> dict[str, Any]:
         """Returns the current pool state info."""
         self._ensure_current_state()
         return self._pool_info
@@ -185,7 +205,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         self._ensure_current_state()
         latest_checkpoint_datetime: datetime = self.latest_checkpoint["timestamp"]
         current_block_datetime = datetime.fromtimestamp(int(self.current_block_time))
-        return int(round((current_block_datetime - latest_checkpoint_datetime).total_seconds()))
+        return int(
+            round((current_block_datetime - latest_checkpoint_datetime).total_seconds())
+        )
 
     @property
     def spot_price(self) -> FixedPoint:
@@ -221,7 +243,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         """
         if self.current_block_number > self.last_state_block_number or override:
             self.last_state_block_number = copy.copy(self.current_block_number)
-            self._contract_pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, self.current_block_number)
+            self._contract_pool_info = get_hyperdrive_pool_info(
+                self.hyperdrive_contract, self.current_block_number
+            )
             # TODO process functions should not adjust state
             self._pool_info = process_hyperdrive_pool_info(
                 copy.deepcopy(self._contract_pool_info),
@@ -230,7 +254,8 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 self.current_block_number,
             )
             self._contract_latest_checkpoint = get_hyperdrive_checkpoint(
-                self.hyperdrive_contract, self.calc_checkpoint_id(self.current_block_time)
+                self.hyperdrive_contract,
+                self.calc_checkpoint_id(self.current_block_time),
             )
             # TODO process functions should not adjust state
             self._latest_checkpoint = process_hyperdrive_checkpoint(
@@ -253,10 +278,14 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         int
             The checkpoint id, which can be used as an argument for the Hyperdrive getCheckpoint function.
         """
-        latest_checkpoint_timestamp = block_timestamp - (block_timestamp % self.pool_config["checkpointDuration"])
+        latest_checkpoint_timestamp = block_timestamp - (
+            block_timestamp % self.pool_config["checkpointDuration"]
+        )
         return cast(Timestamp, latest_checkpoint_timestamp)
 
-    def get_eth_base_balances(self, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
+    def get_eth_base_balances(
+        self, agent: LocalAccount
+    ) -> tuple[FixedPoint, FixedPoint]:
         """Get the agent's balance on the Hyperdrive & base contracts.
 
         Arguments
@@ -298,7 +327,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
-        return await _async_open_long(self, agent, trade_amount, slippage_tolerance, nonce)
+        return await _async_open_long(
+            self, agent, trade_amount, slippage_tolerance, nonce
+        )
 
     # pylint: disable=too-many-arguments
     async def async_close_long(
@@ -331,7 +362,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
-        return await _async_close_long(self, agent, trade_amount, maturity_time, slippage_tolerance, nonce)
+        return await _async_close_long(
+            self, agent, trade_amount, maturity_time, slippage_tolerance, nonce
+        )
 
     async def async_open_short(
         self,
@@ -360,7 +393,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
-        return await _async_open_short(self, agent, trade_amount, slippage_tolerance, nonce)
+        return await _async_open_short(
+            self, agent, trade_amount, slippage_tolerance, nonce
+        )
 
     # pylint: disable=too-many-arguments
     async def async_close_short(
@@ -393,7 +428,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
-        return await _async_close_short(self, agent, trade_amount, maturity_time, slippage_tolerance, nonce)
+        return await _async_close_short(
+            self, agent, trade_amount, maturity_time, slippage_tolerance, nonce
+        )
 
     # pylint: disable=too-many-arguments
     async def async_add_liquidity(
@@ -424,7 +461,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         ReceiptBreakdown
             A dataclass containing the absolute values for token quantities changed
         """
-        return await _async_add_liquidity(self, agent, trade_amount, min_apr, max_apr, nonce)
+        return await _async_add_liquidity(
+            self, agent, trade_amount, min_apr, max_apr, nonce
+        )
 
     async def async_remove_liquidity(
         self,
@@ -512,7 +551,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         short_amount : FixedPoint
             The amount of base required to short the bonds (aka the "max loss").
         """
-        return _calc_short_deposit(self, short_amount, self.spot_price, self.pool_info["sharePrice"])
+        return _calc_short_deposit(
+            self, short_amount, self.spot_price, self.current_pool_info["sharePrice"]
+        )
 
     def calc_out_for_in(
         self,
