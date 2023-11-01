@@ -16,7 +16,6 @@ from ethpy.base import (
 )
 from ethpy.hyperdrive.addresses import (
     HyperdriveAddresses,
-    camel_to_snake,
     fetch_hyperdrive_address_from_uri,
 )
 from ethpy.hyperdrive.interface import (
@@ -83,12 +82,20 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class Checkpoint:
+    """Checkpoint struct."""
+
+    share_price: int
+    long_exposure: int
+
+
+@dataclass
 class Fees:
     """Fees struct."""
 
-    curve: int
-    flat: int
-    governance: int
+    curve: FixedPoint
+    flat: FixedPoint
+    governance: FixedPoint
 
 
 @dataclass
@@ -96,12 +103,12 @@ class PoolConfig:
     """PoolConfig struct."""
 
     base_token: str
-    initial_share_price: int
-    minimum_share_reserves: int
-    minimum_transaction_amount: int
+    initial_share_price: FixedPoint
+    minimum_share_reserves: FixedPoint
+    minimum_transaction_amount: FixedPoint
     position_duration: int
     checkpoint_duration: int
-    time_stretch: int
+    time_stretch: FixedPoint
     governance: str
     fee_collector: str
     fees: dict | Fees
@@ -117,19 +124,19 @@ class PoolConfig:
 class PoolInfo:
     """PoolInfo struct."""
 
-    share_reserves: int
-    share_adjustment: int
-    bond_reserves: int
-    lp_total_supply: int
-    share_price: int
-    longs_outstanding: int
-    long_average_maturity_time: int
-    shorts_outstanding: int
-    short_average_maturity_time: int
-    withdrawal_shares_ready_to_withdraw: int
-    withdrawal_shares_proceeds: int
-    lp_share_price: int
-    long_exposure: int
+    share_reserves: FixedPoint
+    share_adjustment: FixedPoint
+    bond_reserves: FixedPoint
+    lp_total_supply: FixedPoint
+    share_price: FixedPoint
+    longs_outstanding: FixedPoint
+    long_average_maturity_time: FixedPoint
+    shorts_outstanding: FixedPoint
+    short_average_maturity_time: FixedPoint
+    withdrawal_shares_ready_to_withdraw: FixedPoint
+    withdrawal_shares_proceeds: FixedPoint
+    lp_share_price: FixedPoint
+    long_exposure: FixedPoint
 
 
 @dataclass
@@ -146,19 +153,23 @@ class PoolState:
             self.hyperdrive_interface.hyperdrive_contract
         )
         # TODO: Get the rest of the extra process pool config values as extra attributes
-        self.pool_config = convert_hyperdrive_pool_config_types(
-            self.contract_pool_config
+        self.pool_config = PoolConfig(
+            **convert_hyperdrive_pool_config_types(self.contract_pool_config)
         )
         self.contract_pool_info = get_hyperdrive_pool_info(
             self.hyperdrive_interface.hyperdrive_contract, self.block_number
         )
         # TODO: Get the rest of the extra process pool info values as extra attributes
-        self.pool_info = convert_hyperdrive_pool_info_types(self.contract_pool_info)
+        self.pool_info = PoolInfo(
+            **convert_hyperdrive_pool_info_types(self.contract_pool_info)
+        )
         self.contract_checkpoint = get_hyperdrive_checkpoint(
             self.hyperdrive_interface.hyperdrive_contract,
             self.hyperdrive_interface.calc_checkpoint_id(self.block_time),
         )
-        self.checkpoint = convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
+        self.checkpoint = Checkpoint(
+            **convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
+        )
 
 
 class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
