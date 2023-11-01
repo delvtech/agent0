@@ -79,12 +79,37 @@ if TYPE_CHECKING:
 
 @dataclass
 class PoolState:
-    r"""A granular breakdown of important values in a trade receipt."""
+    r"""A collection of stateful variables for a deployed Hyperdrive contract."""
     hyperdrive_interface: HyperdriveInterface
     block_identifier: BlockIdentifier = cast(BlockIdentifier, "latest")
 
     def __post_init__(self):
         self.block = self.hyperdrive_interface.get_block(self.block_identifier)
+        self.block_number = _get_block_number(self.block)
+        self.block_time = _get_block_time(self.block)
+        self.contract_pool_config = get_hyperdrive_pool_config(
+            self.hyperdrive_interface.hyperdrive_contract
+        )
+        self.pool_config = process_hyperdrive_pool_config(
+            self.contract_pool_config,
+            self.hyperdrive_interface.hyperdrive_contract.address,
+        )
+        self.contract_pool_info = get_hyperdrive_pool_info(
+            self.hyperdrive_interface.hyperdrive_contract, self.block_number
+        )
+        self.pool_info = process_hyperdrive_pool_info(
+            self.contract_pool_info,
+            self.hyperdrive_interface.web3,
+            self.hyperdrive_interface.hyperdrive_contract,
+            self.block_number,
+        )
+        self.contract_checkpoint = get_hyperdrive_checkpoint(
+            self.hyperdrive_interface.hyperdrive_contract,
+            self.hyperdrive_interface.calc_checkpoint_id(self.block_time),
+        )
+        self.checkpoint = process_hyperdrive_checkpoint(
+            self.contract_checkpoint, self.hyperdrive_interface.web3, self.block_number
+        )
 
 
 class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
@@ -183,12 +208,12 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
     @property
     def current_block_number(self) -> BlockNumber:
         """The current block number."""
-        return _get_block_number(self, "latest")
+        return _get_block_number(self.current_block)
 
     @property
     def current_block_time(self) -> Timestamp:
         """The current block timestamp."""
-        return _get_block_time(self, "latest")
+        return _get_block_time(self.current_block)
 
     @property
     def position_duration_in_years(self) -> FixedPoint:
@@ -287,7 +312,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
 
     def get_block_number(self, block_identifier: BlockIdentifier) -> BlockNumber:
         """Get the block number for a given identifier."""
-        return _get_block_number(self, block_identifier)
+        return _get_block_number(_get_block(self, block_identifier))
 
     def calc_checkpoint_id(self, block_timestamp: Timestamp) -> Timestamp:
         """Get the Checkpoint ID for a given timestamp.
