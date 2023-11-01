@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import os
+from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
@@ -25,7 +26,7 @@ from ethpy.hyperdrive.interface import (
     process_hyperdrive_pool_config,
     process_hyperdrive_pool_info,
 )
-from web3.types import Timestamp
+from web3.types import BlockIdentifier, Timestamp
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
 from ._contract_calls import (
@@ -74,6 +75,16 @@ if TYPE_CHECKING:
 # pylint: disable=too-many-public-methods
 # We only worry about protected access for anyone outside of this folder
 # pylint: disable=protected-access
+
+
+@dataclass
+class PoolState:
+    r"""A granular breakdown of important values in a trade receipt."""
+    hyperdrive_interface: HyperdriveInterface
+    block_identifier: BlockIdentifier = cast(BlockIdentifier, "latest")
+
+    def __post_init__(self):
+        self.block = self.hyperdrive_interface.get_block(self.block_identifier)
 
 
 class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
@@ -145,6 +156,12 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         # fill in initial cache
         self._ensure_current_state(override=True)
         super().__init__(eth_config, addresses)
+
+    def get_hyperdrive_state(self, block_identifier: BlockIdentifier | None = None):
+        """Get the hyperdrive pool and block state, given a block identifier"""
+        if block_identifier is None:
+            block_identifier = cast(BlockIdentifier, "latest")
+        return PoolState(self, block_identifier)
 
     @property
     def current_pool_info(self) -> dict[str, Any]:
@@ -263,6 +280,14 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
                 self.web3,
                 self.current_block_number,
             )
+
+    def get_block(self, block_identifier: BlockIdentifier) -> BlockData:
+        """Get the block for a given identifier."""
+        return _get_block(self, block_identifier)
+
+    def get_block_number(self, block_identifier: BlockIdentifier) -> BlockNumber:
+        """Get the block number for a given identifier."""
+        return _get_block_number(self, block_identifier)
 
     def calc_checkpoint_id(self, block_timestamp: Timestamp) -> Timestamp:
         """Get the Checkpoint ID for a given timestamp.
