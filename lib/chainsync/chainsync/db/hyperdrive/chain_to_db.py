@@ -56,7 +56,7 @@ def get_variable_rate_from_contract(yield_contract: Contract, block_number: Bloc
     block_number: BlockNumber
         The block number to query
     """
-    return smart_contract_read(yield_contract, "getRate", block_identifier=block_number)["value"]
+    return smart_contract_read(yield_contract, "getRate", block_number=block_number)["value"]
 
 
 def data_chain_to_db(
@@ -109,7 +109,6 @@ def data_chain_to_db(
         pool_info=get_hyperdrive_pool_info(hyperdrive_contract, block_number),
         web3=web3,
         hyperdrive_contract=hyperdrive_contract,
-        position_duration=int(get_hyperdrive_pool_config(hyperdrive_contract)["positionDuration"]),
         block_number=block_number,
     )
     block_pool_info = convert_pool_info(pool_info_dict)

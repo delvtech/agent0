@@ -25,6 +25,11 @@ class EnvironmentConfig(FrozenClass):
     halt_on_errors: bool = False
     # if halt_on_errors is True, halt_on_slippage controls if we halt when slippage happens
     halt_on_slippage: bool = False
+    # if true, will write crash report under .crash_report directory
+    # including the anvil crash state.
+    # Since crash reports are timestamped, we set this default to false
+    # to avoid using lots of disk space
+    crash_report_to_file: bool = False
     # optional output filename for logging
     log_filename: str = ".logging/agent0_logs.log"
     # log level; should be in [logging.DEBUG, logging.INFO, logging.WARNING]

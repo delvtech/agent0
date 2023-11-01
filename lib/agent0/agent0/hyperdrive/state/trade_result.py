@@ -32,7 +32,7 @@ class TradeResult:
         The status of the trade
     agent : HyperdriveAgent
         The agent that was executing the trade
-    exception : Exception | None
+    exception : BaseException | None
         The exception that was thrown
     pool_config : dict[str, Any]
         The configuration of the pool
@@ -42,14 +42,28 @@ class TradeResult:
         The information of the latest checkpoint
     additional_info : dict[str, Any]
         Additional information used for crash reporting
+    anvil_state: str | None
+        The anvil state dump when the exception occurred
     """
 
     status: TradeStatus
     agent: HyperdriveAgent
     trade_object: types.Trade[HyperdriveMarketAction]
+    contract_call: dict[str, Any] | None = None
     # Optional fields for crash reporting
-    exception: Exception | None | None = None
+    # These fields are typically set as human readable versions
+    block_number: int | None = None
+    block_timestamp: int | None = None
+    exception: BaseException | None = None
+    orig_exception: BaseException | None = None
     pool_config: dict[str, Any] | None = None
     pool_info: dict[str, Any] | None = None
     checkpoint_info: dict[str, Any] | None = None
+    contract_addresses: dict[str, Any] | None = None
     additional_info: dict[str, Any] | None = None
+    # Machine readable states
+    raw_transaction: dict[str, Any] | None = None
+    raw_pool_config: dict[str, Any] | None = None
+    raw_pool_info: dict[str, Any] | None = None
+    raw_checkpoint: dict[str, Any] | None = None
+    anvil_state: str | None = None

@@ -10,7 +10,7 @@ from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from elfpy.types import MarketType, Trade
 from eth_account.signers.local import LocalAccount
-from ethpy.hyperdrive import HyperdriveInterface
+from ethpy.hyperdrive.api import HyperdriveInterface
 from hexbytes import HexBytes
 
 Policy = TypeVar("Policy", bound=BasePolicy)
@@ -158,10 +158,6 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         # edit each action in place
         for action in actions:
             if action.market_type == MarketType.HYPERDRIVE and action.market_action.maturity_time is None:
-                # TODO market latest_checkpoint_time and position_duration should be in ints
-                action.market_action.maturity_time = (
-                    interface.seconds_since_latest_checkpoint + interface.pool_config["positionDuration"]
-                )
                 if action.market_action.trade_amount <= 0:
                     raise ValueError("Trade amount cannot be zero or negative.")
         return actions

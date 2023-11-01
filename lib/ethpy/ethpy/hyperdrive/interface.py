@@ -79,14 +79,13 @@ def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockN
     dict[str, Any]
         The hyperdrive pool info returned from the smart contract.
     """
-    return smart_contract_read(hyperdrive_contract, "getPoolInfo", block_identifier=block_number)
+    return smart_contract_read(hyperdrive_contract, "getPoolInfo", block_number=block_number)
 
 
 def process_hyperdrive_pool_info(
     pool_info: dict[str, Any],
     web3: Web3,
     hyperdrive_contract: Contract,
-    position_duration: int,
     block_number: BlockNumber,
 ) -> dict[str, Any]:
     """Convert pool_info to python-friendly (FixedPoint, integer, str) types and add some computed values.
@@ -99,8 +98,6 @@ def process_hyperdrive_pool_info(
         Web3 provider object.
     hyperdrive_contract: Contract
         The contract to query the pool info from.
-    position_duration: int
-        The position duration for the hyperdrive pool (supplied by pool_config).
     block_number: BlockNumber
         The block number used to query the pool info from the chain.
 
@@ -119,11 +116,10 @@ def process_hyperdrive_pool_info(
         raise AssertionError("Current block has no timestamp")
     pool_info.update({"timestamp": datetime.utcfromtimestamp(current_block_timestamp)})
     pool_info.update({"blockNumber": int(block_number)})
-    # add position duration to the data dict
-    # TODO get position duration from existing config passed in instead of from the chain
-    asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, position_duration)
+    # add total supply withdrawal shares to pool info
+    asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
     pool_info["totalSupplyWithdrawalShares"] = smart_contract_read(
-        hyperdrive_contract, "balanceOf", asset_id, hyperdrive_contract.address
+        hyperdrive_contract, "balanceOf", asset_id, hyperdrive_contract.address, block_number=block_number
     )["value"]
     return pool_info
 

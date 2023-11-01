@@ -13,7 +13,7 @@ from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.state import HyperdriveWallet
-    from ethpy.hyperdrive import HyperdriveInterface
+    from ethpy.hyperdrive.api import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 # pylint: disable=too-few-public-methods
 
@@ -131,7 +131,7 @@ class SmartLong(HyperdrivePolicy):
         # only open a long if the fixed rate is higher than variable rate
         if (interface.fixed_rate - interface.variable_rate) > self.risk_threshold and not has_opened_long:
             # calculate the total number of bonds we want to see in the pool
-            total_bonds_to_match_variable_apr = interface.bonds_given_shares_and_rate(
+            total_bonds_to_match_variable_apr = interface.calc_bonds_given_shares_and_rate(
                 target_rate=interface.variable_rate
             )
             # get the delta bond amount & convert units
@@ -139,9 +139,9 @@ class SmartLong(HyperdrivePolicy):
             # calculate how many bonds we take out of the pool
             new_bonds_to_match_variable_apr = (bond_reserves - total_bonds_to_match_variable_apr) * interface.spot_price
             # calculate how much base we pay for the new bonds
-            new_base_to_match_variable_apr = interface.get_out_for_in(new_bonds_to_match_variable_apr, shares_in=False)
+            new_base_to_match_variable_apr = interface.calc_out_for_in(new_bonds_to_match_variable_apr, shares_in=False)
             # get the maximum amount the agent can long given the market and the agent's wallet
-            max_base = interface.get_max_long(wallet.balance.amount)
+            max_base = interface.calc_max_long(wallet.balance.amount)
             # don't want to trade more than the agent has or more than the market can handle
             trade_amount = FixedPointMath.minimum(max_base, new_base_to_match_variable_apr)
             if trade_amount > WEI and wallet.balance.amount > WEI:

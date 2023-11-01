@@ -13,7 +13,7 @@ from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.state import HyperdriveWallet
-    from ethpy.hyperdrive import HyperdriveInterface
+    from ethpy.hyperdrive.api import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
 
@@ -110,7 +110,7 @@ class Random(HyperdrivePolicy):
 
     def open_short_with_random_amount(self, interface: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade]:
         """Open a short with a random allowable amount."""
-        maximum_trade_amount = interface.get_max_short(wallet.balance.amount)
+        maximum_trade_amount = interface.calc_max_short(wallet.balance.amount)
         if maximum_trade_amount <= WEI:
             return []
 
@@ -155,7 +155,7 @@ class Random(HyperdrivePolicy):
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> list[Trade[HyperdriveMarketAction]]:
         """Open a long with a random allowable amount."""
-        maximum_trade_amount = interface.get_max_long(wallet.balance.amount)
+        maximum_trade_amount = interface.calc_max_long(wallet.balance.amount)
         if maximum_trade_amount <= WEI:
             return []
         # take a guess at the trade amount, which should be about 10% of the agent’s budget

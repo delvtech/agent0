@@ -8,7 +8,7 @@ import pytest
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from elfpy.types import MarketType, Trade
-from ethpy.hyperdrive import HyperdriveInterface
+from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 
@@ -93,6 +93,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_LONG,
                         trade_amount=FixedPoint(22222),
+                        slippage_tolerance=self.slippage_tolerance,
                         wallet=wallet,
                     ),
                 )
@@ -105,6 +106,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_SHORT,
                         trade_amount=FixedPoint(33333),
+                        slippage_tolerance=self.slippage_tolerance,
                         wallet=wallet,
                     ),
                 )
@@ -131,6 +133,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                             maturity_time=long_time,
                         ),
@@ -146,6 +149,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                             # TODO is this actually maturity time? Not mint time?
                             maturity_time=short_time,

@@ -16,13 +16,15 @@ from chainsync.exec import acquire_data, data_analysis
 from elfpy.types import MarketType, Trade
 from eth_typing import URI
 from ethpy import EthConfig
+from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveInterface
+    from ethpy.hyperdrive import HyperdriveAddresses
+    from ethpy.hyperdrive.api import HyperdriveInterface
     from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 
 
@@ -142,9 +144,11 @@ class TestMultiTradePerBlock:
 
         # Build environment config
         env_config = EnvironmentConfig(
-            delete_previous_logs=False,
+            delete_previous_logs=True,
             halt_on_errors=True,
-            log_filename="system_test",
+            # We don't want tests to write lots of files
+            crash_report_to_file=False,
+            log_filename=".logging/multi_trade_per_block_test.log",
             log_level=logging.INFO,
             log_stdout=True,
             random_seed=1234,
@@ -185,10 +189,8 @@ class TestMultiTradePerBlock:
             )
             # If this reaches this point, the agent was successful, which means this test should fail
             assert False, "Agent was successful with known invalid trade"
-        except AssertionError as exc:
+        except ContractCallException as exc:
             # Expected error due to illegal trade
-            # TODO currently, the illegal trade is throwing an assertion error
-            # due to a lack of a trx receipt. Ideally, this error should be more informative
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Invalid balance:" in exc.args[0]
 

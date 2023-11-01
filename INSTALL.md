@@ -91,7 +91,7 @@ These folder should contain the ABI JSON and bytecode files for each contract.
 Paste the folders into `elf-simulations/packages/hyperdrive/src/abis/`.
 
 ```bash
-cp ../hyperdrive/out/*.sol packages/hyperdrive/src/abis/
+cp -R ../hyperdrive/out/*.sol packages/hyperdrive/src/abis/
 ```
 
 Our codebase uses the following contracts:
@@ -109,7 +109,7 @@ MockERC4626.sol/
 You then can update the generated `hypertypes` python package by running `pypechain` on this folder:
 
 ```bash
-pip install --upgrade pip && pip intstall --upgrade pypechain
+pip install --upgrade pip && pip install --upgrade pypechain
 pypechain packages/hyperdrive/src/abis/ --output_dir lib/hypertypes/hypertypes/
 ```
 
