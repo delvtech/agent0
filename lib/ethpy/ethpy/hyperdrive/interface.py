@@ -13,7 +13,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import BlockData, Timestamp, TxReceipt
 
-from .addresses import HyperdriveAddresses
+from .addresses import HyperdriveAddresses, camel_to_snake
 from .assets import AssetIdPrefix, encode_asset_id
 from .receipt_breakdown import ReceiptBreakdown
 
@@ -47,12 +47,12 @@ def convert_hyperdrive_pool_config_types(pool_config: dict[str, Any]) -> dict[st
     dict[str, Any]
         The hyperdrive pool config with modified types.
     """
-    out_config = deepcopy(pool_config)
+    out_config = {camel_to_snake(key): value for key, value in pool_config.items()}
     fixedpoint_keys = [
-        "initialSharePrice",
-        "minimumShareReserves",
-        "timeStretch",
-        "minimumTransactionAmount",
+        "initial_share_price",
+        "minimum_share_reserves",
+        "minimum_transaction_amount",
+        "time_stretch",
     ]
     for key in pool_config:
         if key in fixedpoint_keys:
@@ -135,8 +135,8 @@ def convert_hyperdrive_pool_info_types(pool_info: dict[str, Any]) -> dict[str, A
         The hyperdrive pool info with modified types.
     """
     return {
-        str(key): FixedPoint(scaled_value=value)
-        for (key, value) in deepcopy(pool_info).items()
+        camel_to_snake(key): FixedPoint(scaled_value=value)
+        for (key, value) in pool_info.items()
     }
 
 
@@ -223,9 +223,13 @@ def convert_hyperdrive_checkpoint_types(
     dict[str, int | FixedPoint]
         A dict containing the checkpoint sharePrice and longExposure fields converted to FixedPoint.
     """
-    out_checkpoint: dict[str, int | FixedPoint] = deepcopy(checkpoint)
-    out_checkpoint["sharePrice"] = FixedPoint(scaled_value=checkpoint["sharePrice"])
-    out_checkpoint["longExposure"] = FixedPoint(scaled_value=checkpoint["longExposure"])
+    out_checkpoint: dict[str, int | FixedPoint] = {
+        camel_to_snake(key): value for key, value in checkpoint.items()
+    }
+    out_checkpoint["share_price"] = FixedPoint(scaled_value=checkpoint["share_price"])
+    out_checkpoint["long_exposure"] = FixedPoint(
+        scaled_value=checkpoint["long_exposure"]
+    )
     return out_checkpoint
 
 
