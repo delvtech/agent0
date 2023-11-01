@@ -16,9 +16,13 @@ from ethpy.base import (
 )
 from ethpy.hyperdrive.addresses import (
     HyperdriveAddresses,
+    camel_to_snake,
     fetch_hyperdrive_address_from_uri,
 )
 from ethpy.hyperdrive.interface import (
+    convert_hyperdrive_checkpoint_types,
+    convert_hyperdrive_pool_config_types,
+    convert_hyperdrive_pool_info_types,
     get_hyperdrive_checkpoint,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
@@ -57,6 +61,13 @@ from ._mock_contract import (
     _calc_spot_price,
 )
 
+# We expect to have many instance attributes & public methods since this is a large API.
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-public-methods
+# We only worry about protected access for anyone outside of this folder
+# pylint: disable=protected-access
+
+
 if TYPE_CHECKING:
     from typing import Any
 
@@ -70,11 +81,55 @@ if TYPE_CHECKING:
 
     from ..receipt_breakdown import ReceiptBreakdown
 
-# We expect to have many instance attributes & public methods since this is a large API.
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-public-methods
-# We only worry about protected access for anyone outside of this folder
-# pylint: disable=protected-access
+
+@dataclass
+class Fees:
+    """Fees struct."""
+
+    curve: int
+    flat: int
+    governance: int
+
+
+@dataclass
+class PoolConfig:
+    """PoolConfig struct."""
+
+    base_token: str
+    initial_share_price: int
+    minimum_share_reserves: int
+    minimum_transaction_amount: int
+    position_duration: int
+    checkpoint_duration: int
+    time_stretch: int
+    governance: str
+    fee_collector: str
+    fees: dict | Fees
+    oracle_size: int
+    update_gap: int
+
+    def __post_init__(self):
+        if isinstance(self.fees, dict):
+            self.fees: Fees = Fees(**self.fees)
+
+
+@dataclass
+class PoolInfo:
+    """PoolInfo struct."""
+
+    share_reserves: int
+    share_adjustment: int
+    bond_reserves: int
+    lp_total_supply: int
+    share_price: int
+    longs_outstanding: int
+    long_average_maturity_time: int
+    shorts_outstanding: int
+    short_average_maturity_time: int
+    withdrawal_shares_ready_to_withdraw: int
+    withdrawal_shares_proceeds: int
+    lp_share_price: int
+    long_exposure: int
 
 
 @dataclass
@@ -90,26 +145,20 @@ class PoolState:
         self.contract_pool_config = get_hyperdrive_pool_config(
             self.hyperdrive_interface.hyperdrive_contract
         )
-        self.pool_config = process_hyperdrive_pool_config(
-            self.contract_pool_config,
-            self.hyperdrive_interface.hyperdrive_contract.address,
+        # TODO: Get the rest of the extra process pool config values as extra attributes
+        self.pool_config = convert_hyperdrive_pool_config_types(
+            self.contract_pool_config
         )
         self.contract_pool_info = get_hyperdrive_pool_info(
             self.hyperdrive_interface.hyperdrive_contract, self.block_number
         )
-        self.pool_info = process_hyperdrive_pool_info(
-            self.contract_pool_info,
-            self.hyperdrive_interface.web3,
-            self.hyperdrive_interface.hyperdrive_contract,
-            self.block_number,
-        )
+        # TODO: Get the rest of the extra process pool info values as extra attributes
+        self.pool_info = convert_hyperdrive_pool_info_types(self.contract_pool_info)
         self.contract_checkpoint = get_hyperdrive_checkpoint(
             self.hyperdrive_interface.hyperdrive_contract,
             self.hyperdrive_interface.calc_checkpoint_id(self.block_time),
         )
-        self.checkpoint = process_hyperdrive_checkpoint(
-            self.contract_checkpoint, self.hyperdrive_interface.web3, self.block_number
-        )
+        self.checkpoint = convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
 
 
 class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):

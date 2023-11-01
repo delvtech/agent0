@@ -13,6 +13,7 @@ from .interface import (
     add_pool_infos,
     add_transactions,
     add_wallet_deltas,
+    convert_hyperdrive_checkpoint_types,
     get_all_traders,
     get_checkpoint_info,
     get_current_wallet,

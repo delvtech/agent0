@@ -22,6 +22,11 @@ class HyperdriveAddresses:
     mock_hyperdrive_math: Address | ChecksumAddress | None = attr.ib()
 
 
+def camel_to_snake(snake_string: str) -> str:
+    """Convert camel case string to snake case string."""
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", snake_string).lower()
+
+
 def fetch_hyperdrive_address_from_uri(contracts_uri: str) -> HyperdriveAddresses:
     """Fetch addresses for deployed contracts in the Hyperdrive system."""
     response = None
@@ -42,11 +47,12 @@ def fetch_hyperdrive_address_from_uri(contracts_uri: str) -> HyperdriveAddresses
     if response is None:
         raise ConnectionError("Request failed, returning status `None`")
     if response.status_code != 200:
-        raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
+        raise ConnectionError(
+            f"Request failed with status code {response.status_code} @ {time.ctime()}"
+        )
     addresses_json = response.json()
 
-    def camel_to_snake(snake_string: str) -> str:
-        return re.sub(r"(?<!^)(?=[A-Z])", "_", snake_string).lower()
-
-    addresses = HyperdriveAddresses(**{camel_to_snake(key): value for key, value in addresses_json.items()})
+    addresses = HyperdriveAddresses(
+        **{camel_to_snake(key): value for key, value in addresses_json.items()}
+    )
     return addresses
