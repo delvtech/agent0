@@ -202,11 +202,11 @@ def get_shares_in_for_bonds_out(
     """Calculate the amount of shares a user will receive from the pool by providing a specified amount of bonds.
 
     Implements the formula:
-        y_term = (y - out) ** (1 - t)
-        z_val = (k_t - y_term) / (c / mu)
-        z_val = z_val ** (1 / (1 - t))
-        z_val /= mu
-        return z_val - z
+        y_new = (y - out) ** (1 - t)
+        z_new = (k_t - y_new) / (c / mu)
+        z_new = z_new ** (1 / (1 - t))
+        z_new /= mu
+        return z_new - z
 
     Arguments
     ---------
@@ -235,19 +235,20 @@ def get_shares_in_for_bonds_out(
         bond_reserves,
         time_stretch,
     )
-    y_term = (bond_reserves - bonds_out) ** (FixedPoint(1) - time_stretch)
-    z_val = (k_t - y_term) / (share_price / initial_share_price)
-    z_val = z_val ** (FixedPoint(1) / (FixedPoint(1) - time_stretch))
-    z_val /= initial_share_price
+    y_new = (bond_reserves - bonds_out) ** (FixedPoint(1) - time_stretch)
+    z_new = (k_t - y_new) / (share_price / initial_share_price)
+    z_new = z_new ** (FixedPoint(1) / (FixedPoint(1) - time_stretch))
+    z_new /= initial_share_price
+    amount_pre_fee_in_shares = z_new - share_reserves
+    # calculate fees
     spot_price = calc_spot_price_local(initial_share_price, share_reserves, FixedPoint(0), bond_reserves, time_stretch)
-    amount_in_shares = z_val - share_reserves
     price_discount = FixedPoint(1) - spot_price
     curve_fee_rate = price_discount * curve_fee
-    curve_fee_amount_in_shares = amount_in_shares * curve_fee_rate
+    curve_fee_amount_in_shares = amount_pre_fee_in_shares * curve_fee_rate
     gov_fee_amount_in_shares = curve_fee_amount_in_shares * gov_fee
-    # applying fees means you pay MORE shares in for the same amount of bonds OUT
-    amount_from_user_in_shares = amount_in_shares + curve_fee_amount_in_shares
-    return (amount_from_user_in_shares, curve_fee_amount_in_shares, gov_fee_amount_in_shares)
+    # applying fees means you pay FEWER shares in for the same amount of bonds OUT
+    amount_from_user_in_shares = amount_pre_fee_in_shares + curve_fee_amount_in_shares
+    return amount_from_user_in_shares, curve_fee_amount_in_shares, gov_fee_amount_in_shares
 
 
 # TODO: switch over to using function in the SDK
@@ -264,11 +265,11 @@ def get_shares_out_for_bonds_in(
     """Calculate the amount of shares a user will receive from the pool by providing a specified amount of bonds.
 
     Implements the formula:
-        y_term = (y + in_) ** (1 - t)
-        z_val = (k_t - y_term) / (c / mu)
-        z_val = z_val ** (1 / (1 - t))
-        z_val /= mu
-        return z - z_val if z > z_val else 0.0
+        y_new = (y + in_) ** (1 - t)
+        z_new = (k_t - y_new) / (c / mu)
+        z_new = z_new ** (1 / (1 - t))
+        z_new /= mu
+        return z - z_new if z > z_new else 0.0
 
     Arguments
     ---------
@@ -297,23 +298,99 @@ def get_shares_out_for_bonds_in(
         bond_reserves,
         time_stretch,
     )
-    y_term = (bond_reserves + bonds_in) ** (FixedPoint(1) - time_stretch)
-    z_val = (k_t - y_term) / (share_price / initial_share_price)
-    z_val = z_val ** (FixedPoint(1) / (FixedPoint(1) - time_stretch))
-    z_val /= initial_share_price
+    y_new = (bond_reserves + bonds_in) ** (FixedPoint(1) - time_stretch)
+    z_new = (k_t - y_new) / (share_price / initial_share_price)
+    z_new = z_new ** (FixedPoint(1) / (FixedPoint(1) - time_stretch))
+    z_new /= initial_share_price
+    amount_pre_fee_in_shares = max(FixedPoint(0), share_reserves - z_new)
+    # calculate fees
     spot_price = calc_spot_price_local(initial_share_price, share_reserves, FixedPoint(0), bond_reserves, time_stretch)
     price_discount = FixedPoint(1) - spot_price
-    amount_in_shares = max(FixedPoint(0), share_reserves - z_val)
     curve_fee_rate = price_discount * curve_fee
-    curve_fee_amount_in_shares = amount_in_shares * curve_fee_rate
+    # what solidity does is:
+    #   user gets = share_amount_from_yieldspace - calculateShortCurveFee
+    #     calculateShortCurveFee = max_loss * 10% (curveFee)
+    #   user gets = share_amount_from_yieldspace * ( 1 - max_loss * 10% )
+    curve_fee_amount_in_shares = amount_pre_fee_in_shares * curve_fee_rate
     gov_fee_amount_in_shares = curve_fee_amount_in_shares * gov_fee
-    # applying fee means you get LESS shares out for the same amount of bonds IN
-    amount_to_user_in_shares = amount_in_shares - curve_fee_amount_in_shares
-    return (
-        amount_to_user_in_shares,
-        curve_fee_amount_in_shares,
-        gov_fee_amount_in_shares,
+    # applying fee means you get FEWER shares out for the same amount of bonds IN
+    # amount_to_user_in_shares = amount_pre_fee_in_shares * ( 1 - (1-p) * 10% )
+    # the following are equivalent ways of thinking about it:
+    #   you get 10% of the max loss less
+    #   you get 10% of the price discount less (multiplied by the amount)
+    amount_to_user_in_shares = amount_pre_fee_in_shares - curve_fee_amount_in_shares
+    return amount_to_user_in_shares, curve_fee_amount_in_shares, gov_fee_amount_in_shares
+
+
+def get_bonds_out_for_shares_in(
+    bond_reserves: FixedPoint,
+    share_price: FixedPoint,
+    initial_share_price: FixedPoint,
+    share_reserves: FixedPoint,
+    shares_in: FixedPoint,
+    time_stretch: FixedPoint,
+    curve_fee: FixedPoint,
+    gov_fee: FixedPoint,
+):
+    """Calculate the amount of shares a user will receive from the pool by providing a specified amount of bonds.
+
+    Implements the formula:
+        cDivMu = (c / µ)
+        k = cDivMu * (µ * z) ** (1 - t) + y ** (1 - t)
+        z_new = cDivMu * (µ * (z + dz)) ** (1 - t)
+        y_new = (k - z) ** (1 / (1 - t))
+        fee = curveFee * (1/p - 1) * (z * c)
+        return y - y_new
+
+    Arguments
+    ---------
+    bond_reserves : FixedPoint
+        The amount of bond reserves in the Hyperdrive pool.
+    share_price : FixedPoint
+        The price of a share in the yield source.
+    initial_share_price : FixedPoint
+        The initial price of a share in the yield source, from the original pool configurartion.
+    share_reserves : FixedPoint
+        The amount of share reserves in the Hyperdrive pool.
+    shares_in : FixedPoint
+        The amount of shares entering the pool.
+    time_stretch : FixedPoint
+        The time stretch factor, from the original pool configurartion.
+    curve_fee : FixedPoint
+        The curve fee, as a percentage of the price discount, from pool config.
+    gov_fee : FixedPoint
+        The governance fee, as a percentage of the flat+curve fee, from pool config.
+    """
+    # pylint: disable=too-many-arguments
+    k = calc_k_local(
+        share_price,
+        initial_share_price,
+        share_reserves,
+        bond_reserves,
+        time_stretch,
     )
+    c_div_mu = share_price / initial_share_price
+    z_new = c_div_mu * (initial_share_price * (share_reserves + shares_in)) ** (FixedPoint(1) - time_stretch)
+    y_new = (k - z_new) ** (FixedPoint(1) / (FixedPoint(1) - time_stretch))
+    amount_pre_fee_in_bonds = bond_reserves - y_new
+    # calculate fees
+    spot_price = calc_spot_price_local(initial_share_price, share_reserves, FixedPoint(0), bond_reserves, time_stretch)
+    # 1/p-1 is used when applied to base, solving for max_loss equivalently to (1-p)*bonds
+    price_discount = FixedPoint(1) / spot_price - FixedPoint(1)
+    curve_fee_rate = price_discount * curve_fee
+    # what solidity does is:
+    #   user gets = bond_amount_from_yieldspace - calculateLongCurveFee(baseAmount)
+    #   calculateLongCurveFee = max_loss * 10% (curveFee)
+    # this is equivalent to:
+    #   user gets = bond_amount_from_yieldspace * ( 1 - max_loss * 10% )
+    curve_fee_amount_in_shares = amount_pre_fee_in_bonds * curve_fee_rate
+    gov_fee_amount_in_shares = curve_fee_amount_in_shares * gov_fee
+    # applying fee means you get FEWER bonds out for the same amount of shares IN
+    # amount_to_user_in_bonds = amount_pre_fee_in_bonds * ( 1 - (1-p) * 10% )
+    #   you get 10% of the max loss less
+    #   you get 10% of the price discount less
+    amount_to_user_in_bonds = amount_pre_fee_in_bonds - curve_fee_amount_in_shares
+    return amount_to_user_in_bonds, curve_fee_amount_in_shares, gov_fee_amount_in_shares
 
 
 def calc_shares_needed_for_bonds(
@@ -608,11 +685,14 @@ class LPandArb(HyperdrivePolicy):
             hyperdrive.calc_fixed_rate()
             >= hyperdrive.current_pool_state.variable_rate + self.policy_config.high_fixed_rate_thresh
         )
+        print(f"{high_fixed_rate_detected=}")
         low_fixed_rate_detected = (
             hyperdrive.calc_fixed_rate()
             <= hyperdrive.current_pool_state.variable_rate - self.policy_config.low_fixed_rate_thresh
         )
+        print(f"{low_fixed_rate_detected=}")
         we_have_money = wallet.balance.amount >= self.minimum_trade_amount
+        print(f"{we_have_money=}")
 
         # Close longs if matured
         for maturity_time, long in wallet.longs.items():
@@ -683,21 +763,26 @@ class LPandArb(HyperdrivePolicy):
                             ),
                         )
                     )
+            print(f"{bonds_needed > interface.pool_config['minimumTransactionAmount']=}")
             # Open a new long, if there's still a need, and we have money
             if we_have_money and bonds_needed > hyperdrive.current_pool_state.pool_config.minimum_transaction_amount:
-                max_long_bonds = hyperdrive.calc_max_long(wallet.balance.amount)
+                max_long_base = hyperdrive.calc_max_long(wallet.balance.amount)
                 max_long_shares, _, _ = get_shares_in_for_bonds_out(
                     hyperdrive.current_pool_state.pool_info.bond_reserves,
                     hyperdrive.current_pool_state.pool_info.share_price,
                     hyperdrive.current_pool_state.pool_config.initial_share_price,
                     hyperdrive.current_pool_state.pool_info.share_reserves
                     - hyperdrive.current_pool_state.pool_info.share_reserves,
-                    max_long_bonds,
+                    max_long_base / hyperdrive.pool_info["spotPrice"],
                     hyperdrive.current_pool_state.pool_config.time_stretch,
                     hyperdrive.current_pool_state.pool_config.fees.curve,
                     hyperdrive.current_pool_state.pool_config.fees.governance,
                 )
+                print(f"{max_long_base=}")
+                print(f"{hyperdrive.pool_info['sharePrice']=}")
+                print(f"{min(shares_needed * hyperdrive.pool_info['sharePrice'], max_long_base)=}")
                 amount = min(shares_needed, max_long_shares) * hyperdrive.current_pool_state.pool_info.share_price
+                print(f"{amount=}")
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
@@ -732,7 +817,18 @@ class LPandArb(HyperdrivePolicy):
                     )
             # Open a new short, if there's still a need, and we have money
             if we_have_money and bonds_needed > hyperdrive.current_pool_state.pool_config.minimum_transaction_amount:
-                max_short_bonds = hyperdrive.calc_max_short(wallet.balance.amount)
+                max_short_base = hyperdrive.calc_max_short(wallet.balance.amount)
+                max_short_shares = max_short_base / hyperdrive.current_pool_state.pool_info["sharePrice"]
+                max_short_bonds, _, _ = get_bonds_out_for_shares_in(
+                    hyperdrive.current_pool_state.pool_info["bondReserves"],
+                    hyperdrive.current_pool_state.pool_info["sharePrice"],
+                    hyperdrive.current_pool_state.pool_config["initialSharePrice"],
+                    hyperdrive.current_pool_state.pool_info["shareReserves"] - hyperdrive.current_pool_state.pool_info["shareReserves"],
+                    max_short_shares,
+                    hyperdrive.current_pool_state.pool_config["timeStretch"],
+                    hyperdrive.current_pool_state.pool_config["curveFee"],
+                    hyperdrive.current_pool_state.pool_config["governanceFee"],
+                )
                 amount = min(bonds_needed, max_short_bonds)
                 action_list.append(
                     Trade(
