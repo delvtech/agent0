@@ -1,6 +1,7 @@
 """Helper functions for interfacing with hyperdrive."""
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import datetime
 from typing import Any
 
@@ -33,7 +34,36 @@ def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> dict[str, Any]:
     return smart_contract_read(hyperdrive_contract, "getPoolConfig")
 
 
-def process_hyperdrive_pool_config(pool_config: dict[str, Any], hyperdrive_address: ChecksumAddress) -> dict[str, Any]:
+def convert_hyperdrive_pool_config_types(pool_config: dict[str, Any]) -> dict[str, Any]:
+    """Convert the pool_config types from what solidity returns to FixedPoint
+
+    Arguments
+    ----------
+    pool_config : dict[str, Any]
+        The hyperdrive pool config.
+
+    Returns
+    -------
+    dict[str, Any]
+        The hyperdrive pool config with modified types.
+    """
+    out_config = deepcopy(pool_config)
+    fixedpoint_keys = [
+        "initialSharePrice",
+        "minimumShareReserves",
+        "timeStretch",
+        "minimumTransactionAmount",
+    ]
+    for key in pool_config:
+        if key in fixedpoint_keys:
+            out_config[key] = FixedPoint(scaled_value=pool_config[key])
+    out_config["fees"] = [FixedPoint(scaled_value=fee) for fee in pool_config["fees"]]
+    return out_config
+
+
+def process_hyperdrive_pool_config(
+    pool_config: dict[str, Any], hyperdrive_address: ChecksumAddress
+) -> dict[str, Any]:
     """Convert pool_config to python-friendly (FixedPoint, integer, str) types and add some computed values.
 
     Arguments
@@ -49,7 +79,12 @@ def process_hyperdrive_pool_config(pool_config: dict[str, Any], hyperdrive_addre
         The hyperdrive pool config with modified types.
     """
     # convert values to FixedPoint
-    fixedpoint_keys = ["initialSharePrice", "minimumShareReserves", "timeStretch", "minimumTransactionAmount"]
+    fixedpoint_keys = [
+        "initialSharePrice",
+        "minimumShareReserves",
+        "timeStretch",
+        "minimumTransactionAmount",
+    ]
     for key in pool_config:
         if key in fixedpoint_keys:
             pool_config[key] = FixedPoint(scaled_value=pool_config[key])
@@ -64,8 +99,10 @@ def process_hyperdrive_pool_config(pool_config: dict[str, Any], hyperdrive_addre
     return pool_config
 
 
-def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, Any]:
-    """Return the block pool info from the Hyperdrive contract.
+def get_hyperdrive_pool_info(
+    hyperdrive_contract: Contract, block_number: BlockNumber
+) -> dict[str, Any]:
+    """Get the block pool info from the Hyperdrive contract.
 
     Arguments
     ---------
@@ -79,7 +116,28 @@ def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockN
     dict[str, Any]
         The hyperdrive pool info returned from the smart contract.
     """
-    return smart_contract_read(hyperdrive_contract, "getPoolInfo", block_number=block_number)
+    return smart_contract_read(
+        hyperdrive_contract, "getPoolInfo", block_number=block_number
+    )
+
+
+def convert_hyperdrive_pool_info_types(pool_info: dict[str, Any]) -> dict[str, Any]:
+    """Convert the pool info types from what solidity returns to FixedPoint.
+
+    Arguments
+    ---------
+    pool_info : dict[str, Any]
+        The hyperdrive pool info.
+
+    Returns
+    -------
+    dict
+        The hyperdrive pool info with modified types.
+    """
+    return {
+        str(key): FixedPoint(scaled_value=value)
+        for (key, value) in deepcopy(pool_info).items()
+    }
 
 
 def process_hyperdrive_pool_info(
@@ -108,7 +166,9 @@ def process_hyperdrive_pool_info(
         This output can be inserted into the Postgres PoolInfo schema.
     """
     # convert values to fixedpoint
-    pool_info = {str(key): FixedPoint(scaled_value=value) for (key, value) in pool_info.items()}
+    pool_info = {
+        str(key): FixedPoint(scaled_value=value) for (key, value) in pool_info.items()
+    }
     # get current block information & add to pool info
     current_block: BlockData = web3.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
@@ -119,13 +179,19 @@ def process_hyperdrive_pool_info(
     # add total supply withdrawal shares to pool info
     asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
     pool_info["totalSupplyWithdrawalShares"] = smart_contract_read(
-        hyperdrive_contract, "balanceOf", asset_id, hyperdrive_contract.address, block_number=block_number
+        hyperdrive_contract,
+        "balanceOf",
+        asset_id,
+        hyperdrive_contract.address,
+        block_number=block_number,
     )["value"]
     return pool_info
 
 
-def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_timestamp: Timestamp) -> dict[str, int]:
-    """Returns the checkpoint info for the Hyperdrive contract at a given block.
+def get_hyperdrive_checkpoint(
+    hyperdrive_contract: Contract, block_timestamp: Timestamp
+) -> dict[str, int]:
+    """Get the checkpoint info for the Hyperdrive contract at a given block.
 
     Arguments
     ---------
@@ -142,8 +208,31 @@ def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_timestamp: Ti
     return smart_contract_read(hyperdrive_contract, "getCheckpoint", block_timestamp)
 
 
-def process_hyperdrive_checkpoint(checkpoint: dict[str, int], web3: Web3, block_number: BlockNumber) -> dict[str, Any]:
-    """Returns the checkpoint info of Hyperdrive contract for the given block.
+def convert_hyperdrive_checkpoint_types(
+    checkpoint: dict[str, int]
+) -> dict[str, int | FixedPoint]:
+    """Convert the checkpoint types from what solidity returns to FixedPoint.
+
+    Arguments
+    ---------
+    checkpoint : dict[str, int]
+        A dictionary containing the checkpoint details.
+
+    Returns
+    -------
+    dict[str, int | FixedPoint]
+        A dict containing the checkpoint sharePrice and longExposure fields converted to FixedPoint.
+    """
+    out_checkpoint: dict[str, int | FixedPoint] = deepcopy(checkpoint)
+    out_checkpoint["sharePrice"] = FixedPoint(scaled_value=checkpoint["sharePrice"])
+    out_checkpoint["longExposure"] = FixedPoint(scaled_value=checkpoint["longExposure"])
+    return out_checkpoint
+
+
+def process_hyperdrive_checkpoint(
+    checkpoint: dict[str, int], web3: Web3, block_number: BlockNumber
+) -> dict[str, Any]:
+    """Get the checkpoint info of Hyperdrive contract for the given block.
 
     Arguments
     ---------
@@ -175,7 +264,9 @@ def process_hyperdrive_checkpoint(checkpoint: dict[str, int], web3: Web3, block_
     return out_checkpoint
 
 
-def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses) -> Contract:
+def get_hyperdrive_contract(
+    web3: Web3, abis: dict, addresses: HyperdriveAddresses
+) -> Contract:
     """Get the hyperdrive contract given abis.
 
     Arguments
@@ -202,7 +293,9 @@ def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddress
     return hyperdrive_contract
 
 
-def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> ReceiptBreakdown:
+def parse_logs(
+    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str
+) -> ReceiptBreakdown:
     """Decode a Hyperdrive contract transaction receipt to get the changes to the agent's funds.
 
     Arguments
@@ -249,12 +342,17 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
     if "lpAmount" in log_args:
         trade_result.lp_amount = FixedPoint(scaled_value=log_args["lpAmount"])
     if "withdrawalShareAmount" in log_args:
-        trade_result.withdrawal_share_amount = FixedPoint(scaled_value=log_args["withdrawalShareAmount"])
+        trade_result.withdrawal_share_amount = FixedPoint(
+            scaled_value=log_args["withdrawalShareAmount"]
+        )
     return trade_result
 
 
 def get_event_history_from_chain(
-    hyperdrive_contract: Contract, from_block: int, to_block: int, wallet_addr: str | None = None
+    hyperdrive_contract: Contract,
+    from_block: int,
+    to_block: int,
+    wallet_addr: str | None = None,
 ) -> dict:
     """Helper function to query event logs directly from the chain.
     Useful for debugging open positions of wallet addresses.
@@ -293,20 +391,40 @@ def get_event_history_from_chain(
     if wallet_addr is not None:
         lp_addr_filter = {"provider": wallet_addr}
         trade_addr_filter = {"trader": wallet_addr}
-    lp_filter_args = {"fromBlock": from_block, "toBlock": to_block, "argument_filters": lp_addr_filter}
-    trade_filter_args = {"fromBlock": from_block, "toBlock": to_block, "argument_filters": trade_addr_filter}
+    lp_filter_args = {
+        "fromBlock": from_block,
+        "toBlock": to_block,
+        "argument_filters": lp_addr_filter,
+    }
+    trade_filter_args = {
+        "fromBlock": from_block,
+        "toBlock": to_block,
+        "argument_filters": trade_addr_filter,
+    }
 
     # Create filter on events
     # Typing doesn't know about create_filter function with various events
     add_lp_event_filter = hyperdrive_contract.events.AddLiquidity.create_filter(**lp_filter_args)  # type: ignore
-    remove_lp_event_filter = hyperdrive_contract.events.RemoveLiquidity.create_filter(**lp_filter_args)  # type:ignore
-    withdraw_event_filter = hyperdrive_contract.events.RedeemWithdrawalShares.create_filter(  # type:ignore
+    remove_lp_event_filter = hyperdrive_contract.events.RemoveLiquidity.create_filter(
         **lp_filter_args
+    )  # type:ignore
+    withdraw_event_filter = (
+        hyperdrive_contract.events.RedeemWithdrawalShares.create_filter(  # type:ignore
+            **lp_filter_args
+        )
     )
-    open_long_event_filter = hyperdrive_contract.events.OpenLong.create_filter(**trade_filter_args)  # type:ignore
-    close_long_event_filter = hyperdrive_contract.events.CloseLong.create_filter(**trade_filter_args)  # type:ignore
-    open_short_event_filter = hyperdrive_contract.events.OpenShort.create_filter(**trade_filter_args)  # type:ignore
-    close_short_event_filter = hyperdrive_contract.events.CloseShort.create_filter(**trade_filter_args)  # type:ignore
+    open_long_event_filter = hyperdrive_contract.events.OpenLong.create_filter(
+        **trade_filter_args
+    )  # type:ignore
+    close_long_event_filter = hyperdrive_contract.events.CloseLong.create_filter(
+        **trade_filter_args
+    )  # type:ignore
+    open_short_event_filter = hyperdrive_contract.events.OpenShort.create_filter(
+        **trade_filter_args
+    )  # type:ignore
+    close_short_event_filter = hyperdrive_contract.events.CloseShort.create_filter(
+        **trade_filter_args
+    )  # type:ignore
 
     # Retrieve all entries
     add_lp_events = add_lp_event_filter.get_all_entries()

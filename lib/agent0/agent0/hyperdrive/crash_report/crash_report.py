@@ -17,13 +17,16 @@ import numpy as np
 from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
 from elfpy.utils import logs
 from eth_typing import BlockNumber
+from ethpy.base import smart_contract_read
 from ethpy.base.errors import ContractCallException
-from ethpy.hyperdrive.interface import (
+from ethpy.hyperdrive import (
+    AssetIdPrefix,
+    convert_hyperdrive_checkpoint_types,
+    convert_hyperdrive_pool_config_types,
+    convert_hyperdrive_pool_info_types,
+    encode_asset_id,
     get_hyperdrive_checkpoint,
     get_hyperdrive_pool_info,
-    process_hyperdrive_checkpoint,
-    process_hyperdrive_pool_config,
-    process_hyperdrive_pool_info,
 )
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
@@ -150,9 +153,13 @@ def build_crash_trade_result(
 
     # We get the underlying contract info and convert them to human readable versions
     # Despite these being protected variables, we need low level access for crash reporting
-    trade_result.block_timestamp = hyperdrive.web3.eth.get_block(trade_result.block_number).get("timestamp", None)
+    trade_result.block_timestamp = hyperdrive.web3.eth.get_block(
+        trade_result.block_number
+    ).get("timestamp", None)
     # Pool config is static, so we can get it from the interface here
-    trade_result.raw_pool_config = hyperdrive._contract_pool_config  # pylint: disable=protected-access
+    trade_result.raw_pool_config = (
+        hyperdrive._contract_pool_config
+    )  # pylint: disable=protected-access
 
     # We wrap contract calls in a try catch to avoid crashing during crash report
     try:
@@ -160,42 +167,65 @@ def build_crash_trade_result(
             hyperdrive.hyperdrive_contract, BlockNumber(trade_result.block_number)
         )
     except Exception as exc:  # pylint: disable=broad-except
-        logging.warning("Failed to get hyperdrive pool info in crash reporting: %s", repr(exc))
+        logging.warning(
+            "Failed to get hyperdrive pool info in crash reporting: %s", repr(exc)
+        )
         trade_result.raw_pool_info = None
 
     try:
         if trade_result.block_timestamp is not None:
             trade_result.raw_checkpoint = get_hyperdrive_checkpoint(
-                hyperdrive.hyperdrive_contract, hyperdrive.calc_checkpoint_id(trade_result.block_timestamp)
+                hyperdrive.hyperdrive_contract,
+                hyperdrive.calc_checkpoint_id(trade_result.block_timestamp),
             )
         else:
             logging.warning("Failed to get block_timestamp in crash_reporting")
             trade_result.raw_checkpoint = None
     except Exception as exc:  # pylint: disable=broad-except
-        logging.warning("Failed to get hyperdrive checkpoint in crash reporting: %s", repr(exc))
+        logging.warning(
+            "Failed to get hyperdrive checkpoint in crash reporting: %s", repr(exc)
+        )
         trade_result.raw_checkpoint = None
 
     # We call the conversion functions to convert them to human readable versions as well
-    # TODO make process functions not affect state
-    trade_result.pool_config = process_hyperdrive_pool_config(
-        copy.deepcopy(trade_result.raw_pool_config), hyperdrive.hyperdrive_contract.address
+    trade_result.pool_config = convert_hyperdrive_pool_config_types(
+        trade_result.raw_pool_config
+    )
+    trade_result.pool_config["contractAddress"] = hyperdrive.hyperdrive_contract.address
+    curve_fee, flat_fee, governance_fee = trade_result.pool_config["fees"]
+    trade_result.pool_config["curveFee"] = curve_fee
+    trade_result.pool_config["flatFee"] = flat_fee
+    trade_result.pool_config["governanceFee"] = governance_fee
+    trade_result.pool_config["invTimeStretch"] = (
+        FixedPoint(1) / trade_result.pool_config["timeStretch"]
     )
 
     if trade_result.raw_pool_info is not None:
-        trade_result.pool_info = process_hyperdrive_pool_info(
-            copy.deepcopy(trade_result.raw_pool_info),
-            hyperdrive.web3,
-            hyperdrive.hyperdrive_contract,
-            BlockNumber(trade_result.block_number),
+        trade_result.pool_info = convert_hyperdrive_pool_info_types(
+            trade_result.raw_pool_info
         )
+        trade_result.pool_info.update(
+            {"timestamp": datetime.utcfromtimestamp(trade_result.block_timestamp)}
+        )
+        trade_result.pool_info.update({"blockNumber": int(trade_result.block_number)})
+        asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
+        trade_result.pool_info["totalSupplyWithdrawalShares"] = smart_contract_read(
+            hyperdrive.hyperdrive_contract,
+            "balanceOf",
+            asset_id,
+            hyperdrive.hyperdrive_contract.address,
+            BlockNumber(trade_result.block_number),
+        )["value"]
     else:
         trade_result.pool_info = None
 
     if trade_result.raw_checkpoint is not None:
-        trade_result.checkpoint_info = process_hyperdrive_checkpoint(
-            copy.deepcopy(trade_result.raw_checkpoint),
-            hyperdrive.web3,
-            BlockNumber(trade_result.block_number),
+        trade_result.checkpoint_info = convert_hyperdrive_checkpoint_types(
+            trade_result.raw_checkpoint
+        )
+        trade_result.checkpoint_info["blockNumber"] = int(trade_result.block_number)
+        trade_result.checkpoint_info["timestamp"] = datetime.fromtimestamp(
+            int(trade_result.block_timestamp)
         )
     else:
         trade_result.checkpoint_info = None
@@ -295,7 +325,9 @@ def log_hyperdrive_crash_report(
         if crash_report_file_prefix is None:
             crash_report_file_prefix = ""
         crash_report_dir = ".crash_report/"
-        crash_report_file = f"{crash_report_dir}/{crash_report_file_prefix}{fn_time_str}.json"
+        crash_report_file = (
+            f"{crash_report_dir}/{crash_report_file_prefix}{fn_time_str}.json"
+        )
         if not os.path.exists(crash_report_dir):
             os.makedirs(crash_report_dir)
         with open(crash_report_file, "w", encoding="utf-8") as file:
@@ -333,7 +365,9 @@ def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
     }
 
 
-def _hyperdrive_trade_obj_to_dict(trade_obj: types.Trade[HyperdriveMarketAction]) -> dict[str, Any]:
+def _hyperdrive_trade_obj_to_dict(
+    trade_obj: types.Trade[HyperdriveMarketAction],
+) -> dict[str, Any]:
     """Helper function to convert hyperdrive trade object to a dict
 
     Arguments
@@ -368,7 +402,9 @@ def get_anvil_state_dump(web3: Web3) -> str | None:
     """Helper function for getting anvil dump state"""
     result: str | None = None
     try:
-        response = web3.provider.make_request(method=RPCEndpoint("anvil_dumpState"), params=[])
+        response = web3.provider.make_request(
+            method=RPCEndpoint("anvil_dumpState"), params=[]
+        )
         result = response.get("result", False)
     except Exception:  # pylint: disable=broad-exception-caught
         # do nothing, this is best effort crash reporting
