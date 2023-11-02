@@ -3,20 +3,17 @@ from dataclasses import asdict
 from datetime import datetime
 from decimal import Decimal
 
-from ethpy.base import fetch_contract_transactions_for_block, smart_contract_read
-from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
+from ethpy.base import fetch_contract_transactions_for_block
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3.types import BlockData
 
-from .convert_data import (
-    convert_checkpoint_info,
-    convert_hyperdrive_transactions_for_block,
-    convert_pool_config,
-    convert_pool_info,
-)
-from .interface import add_checkpoint_infos, add_pool_config, add_pool_infos, add_transactions, add_wallet_deltas
+from .convert_data import (convert_checkpoint_info,
+                           convert_hyperdrive_transactions_for_block,
+                           convert_pool_config, convert_pool_info)
+from .interface import (add_checkpoint_infos, add_pool_config, add_pool_infos,
+                        add_transactions, add_wallet_deltas)
 
 
 def init_data_chain_to_db(
@@ -81,14 +78,7 @@ def data_chain_to_db(hyperdrive: HyperdriveInterface, block: BlockData, session:
     pool_info_dict = asdict(pool_state.pool_info)
     pool_info_dict["block_number"] = int(pool_state.block_number)
     pool_info_dict["timestamp"] = datetime.utcfromtimestamp(pool_state.block_time)
-    asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
-    pool_info_dict["total_supply_withdrawal_shares"] = smart_contract_read(
-        hyperdrive.hyperdrive_contract,
-        "balanceOf",
-        asset_id,
-        hyperdrive.hyperdrive_contract.address,
-        pool_state.block_number,
-    )["value"]
+    pool_info_dict["total_supply_withdrawal_shares"] = pool_state.total_supply_withdrawal_shares
     block_pool_info = convert_pool_info(pool_info_dict)
     # Add variable rate to this dictionary
     # TODO ideally we'd add this information to a separate table, along with other non-poolinfo data

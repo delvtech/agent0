@@ -16,10 +16,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
 from elfpy.utils import logs
-from eth_typing import BlockNumber
-from ethpy.base import smart_contract_read
 from ethpy.base.errors import ContractCallException
-from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from numpy.random._generator import Generator as NumpyGenerator
@@ -181,14 +178,7 @@ def build_crash_trade_result(
         trade_result.pool_info = asdict(pool_state.pool_info)
         trade_result.pool_info["timestamp"] = datetime.utcfromtimestamp(trade_result.block_timestamp)
         trade_result.pool_info["block_number"] = trade_result.block_number
-        asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
-        trade_result.pool_info["total_supply_withdrawal_shares"] = smart_contract_read(
-            hyperdrive.hyperdrive_contract,
-            "balanceOf",
-            asset_id,
-            hyperdrive.hyperdrive_contract.address,
-            BlockNumber(trade_result.block_number),
-        )["value"]
+        trade_result.pool_info["total_supply_withdrawal_shares"] = pool_state.total_supply_withdrawal_shares
     else:
         trade_result.pool_info = None
 
