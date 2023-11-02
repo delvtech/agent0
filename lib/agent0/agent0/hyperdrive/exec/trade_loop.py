@@ -6,10 +6,7 @@ import logging
 from datetime import datetime
 
 from agent0.hyperdrive.agents import HyperdriveAgent
-from agent0.hyperdrive.crash_report import (
-    get_anvil_state_dump,
-    log_hyperdrive_crash_report,
-)
+from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
 from ethpy.base.errors import ContractCallException
 from ethpy.hyperdrive.api import HyperdriveInterface
