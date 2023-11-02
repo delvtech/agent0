@@ -11,12 +11,10 @@ from ethpy.base import (initialize_web3_with_http_provider, load_all_abis,
                         smart_contract_read)
 from ethpy.hyperdrive.addresses import (HyperdriveAddresses,
                                         fetch_hyperdrive_address_from_uri)
-from ethpy.hyperdrive.interface import (convert_hyperdrive_checkpoint_types,
-                                        convert_hyperdrive_pool_config_types,
-                                        convert_hyperdrive_pool_info_types,
-                                        get_hyperdrive_checkpoint,
-                                        get_hyperdrive_pool_config,
-                                        get_hyperdrive_pool_info)
+from ethpy.hyperdrive.transactions import (
+    convert_hyperdrive_checkpoint_types, convert_hyperdrive_pool_config_types,
+    convert_hyperdrive_pool_info_types, get_hyperdrive_checkpoint,
+    get_hyperdrive_pool_config, get_hyperdrive_pool_info)
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time

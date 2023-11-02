@@ -4,13 +4,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from eth_utils.currency import MAX_WEI
-from ethpy.base import (
-    async_smart_contract_transact,
-    get_account_balance,
-    smart_contract_preview_transaction,
-    smart_contract_read,
-)
-from ethpy.hyperdrive.interface import parse_logs
+from ethpy.base import (async_smart_contract_transact, get_account_balance,
+                        smart_contract_preview_transaction,
+                        smart_contract_read)
+from ethpy.hyperdrive.transactions import parse_logs
 from fixedpointmath import FixedPoint
 from web3 import Web3
 
