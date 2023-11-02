@@ -59,7 +59,7 @@ def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session)
 def calc_total_wallet_delta(wallet_deltas: pd.DataFrame) -> pd.DataFrame:
     """Calculates total wallet deltas from wallet_delta for every wallet type and position"""
     return wallet_deltas.groupby(["wallet_address", "token_type"]).agg(
-        {"delta": "sum", "base_token_type": "first", "maturityTime": "first"}
+        {"delta": "sum", "base_token_type": "first", "maturity_time": "first"}
     )
 
 
@@ -88,7 +88,7 @@ def calc_current_wallet(wallet_deltas_df: pd.DataFrame, latest_wallet: pd.DataFr
         .agg(
             {
                 "base_token_type": "first",
-                "maturityTime": "first",
+                "maturity_time": "first",
                 "delta": "sum",
             }
         )
