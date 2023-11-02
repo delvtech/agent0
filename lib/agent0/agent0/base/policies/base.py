@@ -12,11 +12,10 @@ from numpy.random import default_rng
 if TYPE_CHECKING:
     from agent0.base.state import EthWallet
     from elfpy.types import Trade
-    from ethpy.base import BaseInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
 Wallet = TypeVar("Wallet", bound="EthWallet")
-MarketInterface = TypeVar("MarketInterface", bound="BaseInterface")
+MarketInterface = TypeVar("MarketInterface")
 
 
 class BasePolicy(Generic[MarketInterface, Wallet]):
@@ -39,8 +38,12 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
             raise TypeError(f"{budget=} must be of type `FixedPoint`")
         self.budget: FixedPoint = budget
         self.slippage_tolerance = slippage_tolerance
-        if rng is None:  # TODO: Check that multiple agent.rng derefs to the same rng object
-            logging.warning("Policy random number generator (rng) argument not set, using seed of `123`.")
+        if (
+            rng is None
+        ):  # TODO: Check that multiple agent.rng derefs to the same rng object
+            logging.warning(
+                "Policy random number generator (rng) argument not set, using seed of `123`."
+            )
             self.rng: NumpyGenerator = default_rng(123)
         else:
             self.rng: NumpyGenerator = rng
@@ -50,7 +53,9 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         """Return the class name"""
         return self.__class__.__name__
 
-    def action(self, interface: MarketInterface, wallet: Wallet) -> tuple[list[Trade], bool]:
+    def action(
+        self, interface: MarketInterface, wallet: Wallet
+    ) -> tuple[list[Trade], bool]:
         """Specify actions.
 
         Arguments
