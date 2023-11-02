@@ -121,9 +121,9 @@ def build_crash_trade_result(
         agent=agent,
         trade_object=trade_object,
     )
-    pool_state = hyperdrive.current_pool_state
+    current_block_number = hyperdrive.block_number(hyperdrive.current_block)
 
-    ## Check if the exception came from a contract call
+    ## Check if the exception came from a contract call & determine block number
     # If it did, we fill various trade result data with custom data from
     # the exception
     trade_result.exception = exception
@@ -134,7 +134,7 @@ def build_crash_trade_result(
         else:
             # Best effort to get the block it crashed on
             # We assume the exception happened in the previous block
-            trade_result.block_number = pool_state.block_number - 1
+            trade_result.block_number = current_block_number - 1
         trade_result.contract_call = {
             "contract_call_type": exception.contract_call_type,
             "function_name_or_signature": exception.function_name_or_signature,
@@ -145,7 +145,7 @@ def build_crash_trade_result(
     else:
         # Best effort to get the block it crashed on
         # We assume the exception happened in the previous block
-        trade_result.block_number = pool_state.block_number - 1
+        trade_result.block_number = current_block_number - 1
         # We still build this structure so the schema stays the same
         trade_result.contract_call = {
             "contract_call_type": None,
@@ -153,6 +153,9 @@ def build_crash_trade_result(
             "fn_args": None,
             "fn_kwargs": None,
         }
+
+    ## Get the pool state at the desired block number
+    pool_state = hyperdrive.get_hyperdrive_state(hyperdrive.block(trade_result.block_number))
 
     ## Get pool config
     # Pool config is static, so we can get it from the interface here
