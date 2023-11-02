@@ -448,12 +448,12 @@ class TestBotToDb:
         latest_pool_analysis = db_pool_analysis.iloc[-1]
 
         latest_spot_price = FixedPoint(str(latest_pool_analysis["spot_price"]))
-        expected_spot_price = hyperdrive_interface.spot_price
+        expected_spot_price = hyperdrive_interface.calc_spot_price()
 
         latest_fixed_rate = FixedPoint(str(latest_pool_analysis["fixed_rate"]))
-        expected_fixed_rate = hyperdrive_interface.fixed_rate
+        expected_fixed_rate = hyperdrive_interface.calc_fixed_rate()
 
-        assert latest_pool_analysis["blockNumber"] == hyperdrive_interface.current_block_number
+        assert latest_pool_analysis["blockNumber"] == hyperdrive_interface.current_pool_state.block_number
         # TODO there's rounding errors between db spot price and fixed rates
         assert abs(latest_spot_price - expected_spot_price) <= FixedPoint(1e-16)
         assert abs(latest_fixed_rate - expected_fixed_rate) <= FixedPoint(1e-16)

@@ -130,7 +130,7 @@ def build_crash_trade_result(
         else:
             # Best effort to get the block it crashed on
             # We assume the exception happened in the previous block
-            trade_result.block_number = hyperdrive.current_block_number - 1
+            trade_result.block_number = hyperdrive.current_pool_state.block_number - 1
         trade_result.contract_call = {
             "contract_call_type": exception.contract_call_type,
             "function_name_or_signature": exception.function_name_or_signature,
@@ -142,7 +142,7 @@ def build_crash_trade_result(
     else:
         # Best effort to get the block it crashed on
         # We assume the exception happened in the previous block
-        trade_result.block_number = hyperdrive.current_block_number - 1
+        trade_result.block_number = hyperdrive.current_pool_state.block_number - 1
         # We still build this structure so the schema stays the same
         trade_result.contract_call = {
             "contract_call_type": None,
@@ -235,10 +235,10 @@ def build_crash_trade_result(
 
     # add additional information to the exception
     trade_result.additional_info = {
-        "spot_price": hyperdrive.spot_price,
-        "fixed_rate": hyperdrive.fixed_rate,
-        "variable_rate": hyperdrive.variable_rate,
-        "vault_shares": hyperdrive.vault_shares,
+        "spot_price": hyperdrive.calc_spot_price(),
+        "fixed_rate": hyperdrive.calc_fixed_rate(),
+        "variable_rate": hyperdrive.current_pool_state.variable_rate,
+        "vault_shares": hyperdrive.current_pool_state.vault_shares,
     }
 
     return trade_result

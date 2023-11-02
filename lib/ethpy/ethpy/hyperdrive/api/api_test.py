@@ -82,7 +82,9 @@ class TestHyperdriveInterface:
         hyperdrive = HyperdriveInterface(
             eth_config, addresses=hyperdrive_contract_addresses
         )
-        checkpoint_id = hyperdrive.calc_checkpoint_id(hyperdrive.current_block_time)
+        checkpoint_id = hyperdrive.calc_checkpoint_id(
+            hyperdrive.current_pool_state.block_time
+        )
         checkpoint = smart_contract_read(
             hyperdrive.hyperdrive_contract, "getCheckpoint", checkpoint_id
         )
@@ -122,13 +124,17 @@ class TestHyperdriveInterface:
         spot_price = (
             (init_share_price * share_reserves) / bond_reserves
         ) ** time_stretch
-        assert abs(spot_price - hyperdrive.spot_price) <= FixedPoint(scaled_value=1)
+        assert abs(spot_price - hyperdrive.calc_spot_price()) <= FixedPoint(
+            scaled_value=1
+        )
         # test fixed rate (rounding issues can cause it to be off by 1e-18)
         # TODO: This should be exact up to 1e-18, but is not
         fixed_rate = (FixedPoint(1) - spot_price) / (
-            spot_price * hyperdrive.position_duration_in_years
+            spot_price * hyperdrive.calc_position_duration_in_years()
         )
-        assert abs(fixed_rate - hyperdrive.fixed_rate) <= FixedPoint(scaled_value=100)
+        assert abs(fixed_rate - hyperdrive.calc_fixed_rate()) <= FixedPoint(
+            scaled_value=100
+        )
 
     def test_misc(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Placeholder for additional tests.
@@ -151,8 +157,8 @@ class TestHyperdriveInterface:
             eth_config, addresses=hyperdrive_contract_addresses
         )
         _ = hyperdrive.current_pool_state
-        _ = hyperdrive.variable_rate
-        _ = hyperdrive.vault_shares
+        _ = hyperdrive.current_pool_state.variable_rate
+        _ = hyperdrive.current_pool_state.vault_shares
         _ = hyperdrive.calc_open_long(FixedPoint(100))
         _ = hyperdrive.calc_open_short(FixedPoint(100))
         _ = hyperdrive.calc_bonds_given_shares_and_rate(FixedPoint(0.05))

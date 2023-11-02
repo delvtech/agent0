@@ -42,6 +42,7 @@ from ._contract_calls import (
 )
 from ._mock_contract import (
     _calc_bonds_given_shares_and_rate,
+    _calc_checkpoint_id,
     _calc_effective_share_reserves,
     _calc_fees_out_given_bonds_in,
     _calc_fees_out_given_shares_in,
@@ -65,42 +66,46 @@ from ._mock_contract import (
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
-    from eth_typing import BlockNumber
     from ethpy import EthConfig
     from fixedpointmath import FixedPoint
     from web3 import Web3
     from web3.contract.contract import Contract
-    from web3.types import BlockData, Nonce
+    from web3.types import Nonce
 
     from ..receipt_breakdown import ReceiptBreakdown
 
 
 @dataclass
 class PoolState:
-    r"""A collection of stateful variables for a deployed Hyperdrive contract."""
-    hyperdrive_interface: HyperdriveInterface
+    r"""A collection of stateful variables for a deployed Hyperdrive and Yield contracts."""
+    hyperdrive_contract: Contract
+    yield_contract: Contract
     block_identifier: BlockIdentifier = cast(BlockIdentifier, "latest")
 
     def __post_init__(self):
-        self.block = self.hyperdrive_interface.get_block(self.block_identifier)
+        self.block = _get_block(self, self.block_identifier)
         self.block_number = _get_block_number(self.block)
         self.block_time = _get_block_time(self.block)
-        self.contract_pool_config = get_hyperdrive_pool_config(
-            self.hyperdrive_interface.hyperdrive_contract
-        )
+        self.contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         self.pool_config = convert_hyperdrive_pool_config_types(
             self.contract_pool_config
         )
         # TODO: Get the rest of the extra process pool info values as extra attributes
         self.contract_pool_info = get_hyperdrive_pool_info(
-            self.hyperdrive_interface.hyperdrive_contract, self.block_number
+            self.hyperdrive_contract, self.block_number
         )
         self.pool_info = convert_hyperdrive_pool_info_types(self.contract_pool_info)
         self.contract_checkpoint = get_hyperdrive_checkpoint(
-            self.hyperdrive_interface.hyperdrive_contract,
-            self.hyperdrive_interface.calc_checkpoint_id(self.block_time),
+            self.hyperdrive_contract,
+            _calc_checkpoint_id(self, self.block_time),
         )
         self.checkpoint = convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
+        self.variable_rate = _get_variable_rate(self.yield_contract, self.block_number)
+        self.vault_shares = _get_vault_shares(
+            self.yield_contract,
+            self.hyperdrive_contract,
+            self.block_number,
+        )
 
 
 class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
@@ -119,9 +124,7 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         The user can optionally include an `artifacts` HyperdriveAddresses object.
         In this case, the `eth_config.artifacts_uri` variable is not used, and these Addresses are used instead.
         """
-        if eth_config is None:
-            eth_config = build_eth_config()
-        self.config = eth_config
+        self.config = build_eth_config() if eth_config is None else eth_config
         if addresses is None:
             addresses = fetch_hyperdrive_address_from_uri(
                 os.path.join(eth_config.artifacts_uri, "addresses.json")
@@ -142,7 +145,6 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             abi=abis["IHyperdrive"],
             address=web3.to_checksum_address(addresses.mock_hyperdrive),
         )
-        self.last_state_block_number = copy.copy(self.current_block_number)
         # get yield (variable rate) pool contract
         # TODO: In the future we want to switch to a single IERC4626Hyperdrive ABI
         data_provider_contract: Contract = web3.eth.contract(
@@ -157,120 +159,25 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             address=web3.to_checksum_address(self.yield_address),
         )
         # fill in initial cache
-        self._ensure_current_state(override=True)
+        self.current_pool_state = self.get_hyperdrive_state()
+        self.last_state_block_number = copy.copy(self.current_pool_state.block_number)
         super().__init__(eth_config, addresses)
 
-    @property
-    def current_block(self) -> BlockData:
-        """The current block."""
-        return _get_block(self, "latest")
-
-    @property
-    def current_block_number(self) -> BlockNumber:
-        """The current block number."""
-        return _get_block_number(self.current_block)
-
-    @property
-    def current_block_time(self) -> Timestamp:
-        """The current block timestamp."""
-        return _get_block_time(self.current_block)
-
-    @property
-    def position_duration_in_years(self) -> FixedPoint:
-        """Returns the pool config position duration as a fraction of a year.
-
-        This "annualized" time value is used in some calculations, such as the Fixed APR.
-        """
-        return _calc_position_duration_in_years(self)
-
-    @property
-    def fixed_rate(self) -> FixedPoint:
-        """Returns the market fixed rate.
-
-        Follows the formula:
-
-        .. math::
-            r = ((1 / p) - 1) / t = (1 - p) / (p * t)
-        """
-        self._ensure_current_state()
-        return _calc_fixed_rate(self)
-
-    @property
-    def variable_rate(self) -> FixedPoint:
-        """Returns the market variable rate."""
-        return _get_variable_rate(self)
-
-    @property
-    def spot_price(self) -> FixedPoint:
-        """Get the current Hyperdrive pool spot price.
-
-        Returns
-        -------
-        FixedPoint
-            The current spot price.
-        """
-        self._ensure_current_state()
-        return _calc_spot_price(self)
-
-    @property
-    def vault_shares(self) -> FixedPoint:
-        """Get the balance of vault shares that Hyperdrive has."""
-        return _get_vault_shares(self)
-
-    @property
-    def effective_share_reserves(self) -> FixedPoint:
-        """Get the adjusted share reserves for the current Hyperdrive pool."""
-        self._ensure_current_state()
-        return _calc_effective_share_reserves(self)
-
-    def _ensure_current_state(self, override: bool = False) -> None:
-        """Update the cached pool info and latest checkpoint if needed.
-
-        Attributes
-        ----------
-        override : bool
-            If True, then reset the variables even if it is not needed.
-
-        """
-        if self.current_block_number > self.last_state_block_number or override:
-            self.current_pool_state = self.get_hyperdrive_state(
-                self.current_block_number
+    def _ensure_current_state(self) -> None:
+        """Update the cached pool info and latest checkpoint if needed."""
+        if self.current_pool_state.block_number > self.last_state_block_number:
+            self.current_pool_state = self.get_hyperdrive_state()
+            self.last_state_block_number = copy.copy(
+                self.current_pool_state.block_number
             )
-            self.last_state_block_number = self.current_block_number
 
     def get_hyperdrive_state(self, block_identifier: BlockIdentifier | None = None):
         """Get the hyperdrive pool and block state, given a block identifier"""
         if block_identifier is None:
             block_identifier = cast(BlockIdentifier, "latest")
-        return PoolState(self, block_identifier)
-
-    def get_block(self, block_identifier: BlockIdentifier) -> BlockData:
-        """Get the block for a given identifier."""
-        return _get_block(self, block_identifier)
-
-    def get_block_number(self, block_identifier: BlockIdentifier) -> BlockNumber:
-        """Get the block number for a given identifier."""
-        return _get_block_number(_get_block(self, block_identifier))
-
-    def calc_checkpoint_id(self, block_timestamp: Timestamp) -> Timestamp:
-        """Get the Checkpoint ID for a given timestamp.
-
-        Arguments
-        ---------
-        block_timestamp: int
-            A timestamp for any block. Use the latest block to get the current checkpoint id,
-            or a specific timestamp of a transaction's block if getting the checkpoint id for that transaction.
-
-        Returns
-        -------
-        int
-            The checkpoint id, which can be used as an argument for the Hyperdrive getCheckpoint function.
-        """
-        self._ensure_current_state()
-        latest_checkpoint_timestamp = block_timestamp - (
-            block_timestamp % self.current_pool_state.pool_config.checkpoint_duration
+        return PoolState(
+            self.hyperdrive_contract, self.yield_contract, block_identifier
         )
-        return cast(Timestamp, latest_checkpoint_timestamp)
 
     def get_eth_base_balances(
         self, agent: LocalAccount
@@ -512,47 +419,168 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         """
         return await _async_redeem_withdraw_shares(self, agent, trade_amount, nonce)
 
-    def calc_open_long(self, base_amount: FixedPoint) -> FixedPoint:
+    def calc_position_duration_in_years(
+        self, pool_state: PoolState | None = None
+    ) -> FixedPoint:
+        """Returns the pool config position duration as a fraction of a year.
+
+        This "annualized" time value is used in some calculations, such as the Fixed APR.
+
+        Arguments
+        ---------
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The annualized position duration
+        """
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
+        return _calc_position_duration_in_years(self.current_pool_state)
+
+    def calc_checkpoint_id(
+        self, block_timestamp: Timestamp, pool_state: PoolState | None = None
+    ) -> Timestamp:
+        """Calculate the Checkpoint ID for a given timestamp.
+
+        Arguments
+        ---------
+        block_timestamp : Timestamp
+            A timestamp for any block. Use the latest block to get the current checkpoint id,
+            or a specific timestamp of a transaction's block if getting the checkpoint id for that transaction.
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
+
+        Returns
+        -------
+        int
+            The checkpoint id, which can be used as an argument for the Hyperdrive getCheckpoint function.
+        """
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
+        return _calc_checkpoint_id(pool_state, block_timestamp)
+
+    def calc_fixed_rate(self, pool_state: PoolState | None = None) -> FixedPoint:
+        """Calculate the fixed rate for a given pool state.
+
+        Follows the formula:
+
+        .. math::
+            r = ((1 / p) - 1) / t = (1 - p) / (p * t)
+
+        Arguments
+        ---------
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
+        """
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
+        return _calc_fixed_rate(pool_state)
+
+    def calc_spot_price(self, pool_state: PoolState | None = None) -> FixedPoint:
+        """Calculate the spot price for a given Hyperdrive pool.
+
+        Arguments
+        ---------
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The current spot price.
+        """
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
+        return _calc_spot_price(pool_state)
+
+    def calc_effective_share_reserves(
+        self, pool_state: PoolState | None = None
+    ) -> FixedPoint:
+        """Calculate the adjusted share reserves for a given Hyperdrive pool.
+
+        Arguments
+        ---------
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The effective (aka zeta-adjusted) share reserves.
+        """
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
+        return _calc_effective_share_reserves(pool_state)
+
+    def calc_open_long(
+        self, base_amount: FixedPoint, pool_state: PoolState | None = None
+    ) -> FixedPoint:
         """Calculate the long amount that will be opened for a given base amount after fees.
 
         Arguments
         ---------
         base_amount : FixedPoint
             The amount to spend, in base.
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
 
         Returns
         -------
-        long_amount : FixedPoint
+        FixedPoint
             The amount of bonds purchased.
         """
-        self._ensure_current_state()
-        return _calc_long_amount(self, base_amount)
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
+        return _calc_long_amount(pool_state, base_amount)
 
-    def calc_open_short(self, short_amount: FixedPoint) -> FixedPoint:
+    def calc_open_short(
+        self, short_amount: FixedPoint, pool_state: PoolState | None = None
+    ) -> FixedPoint:
         """Calculate the amount of base the trader will need to deposit for a short of a given size.
 
         Arguments
         ---------
         short_amount : FixedPoint
             The amount to of bonds to short.
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
 
         Returns
         -------
         short_amount : FixedPoint
             The amount of base required to short the bonds (aka the "max loss").
         """
-        self._ensure_current_state()
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
         return _calc_short_deposit(
-            self,
+            pool_state,
             short_amount,
-            self.spot_price,
-            self.current_pool_state.pool_info.share_price,
+            _calc_spot_price(pool_state),
+            pool_state.pool_info.share_price,
         )
 
     def calc_out_for_in(
         self,
         amount_in: FixedPoint,
         shares_in: bool,
+        pool_state: PoolState | None = None,
     ) -> FixedPoint:
         """Calculate the amount of an asset for a given amount in of the other.
 
@@ -562,19 +590,25 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The amount in.
         shares_in : bool
             True if the asset in is shares, False if it is bonds.
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
 
         Returns
         -------
         FixedPoint
             The amount out.
         """
-        self._ensure_current_state()
-        return _calc_out_for_in(self, amount_in, shares_in)
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
+        return _calc_out_for_in(pool_state, amount_in, shares_in)
 
     def calc_in_for_out(
         self,
         amount_out: FixedPoint,
         shares_out: bool,
+        pool_state: PoolState | None = None,
     ) -> FixedPoint:
         """Calculate the amount of an asset for a given amount out of the other.
 
@@ -584,17 +618,25 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The amount out.
         shares_out : bool
             True if the asset out is shares, False if it is bonds.
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
 
         Returns
         -------
         FixedPoint
             The amount in.
         """
-        self._ensure_current_state()
-        return _calc_in_for_out(self, amount_out, shares_out)
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
+        return _calc_in_for_out(pool_state, amount_out, shares_out)
 
     def calc_fees_out_given_bonds_in(
-        self, bonds_in: FixedPoint, maturity_time: int | None = None
+        self,
+        bonds_in: FixedPoint,
+        maturity_time: int | None = None,
+        pool_state: PoolState | None = None,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         """Calculates the fees that go to the LPs and governance.
 
@@ -611,6 +653,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The API interface object.
         maturity_time : int, optional
             The maturity timestamp of the open position, in epoch seconds.
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
 
         Returns
         -------
@@ -622,11 +667,16 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             gov_fee : FixedPoint
                 Governance fee, in shares.
         """
-        self._ensure_current_state()
-        return _calc_fees_out_given_bonds_in(self, bonds_in, maturity_time)
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
+        return _calc_fees_out_given_bonds_in(pool_state, bonds_in, maturity_time)
 
     def calc_fees_out_given_shares_in(
-        self, shares_in: FixedPoint, maturity_time: int | None = None
+        self,
+        shares_in: FixedPoint,
+        maturity_time: int | None = None,
+        pool_state: PoolState | None = None,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         """Calculates the fees that go to the LPs and governance.
 
@@ -643,6 +693,9 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The API interface object.
         maturity_time : int, optional
             The maturity timestamp of the open position, in epoch seconds.
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
 
         Returns
         -------
@@ -654,11 +707,16 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             gov_fee : FixedPoint
                 Governance fee, in shares.
         """
-        self._ensure_current_state()
-        return _calc_fees_out_given_shares_in(self, shares_in, maturity_time)
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
+        return _calc_fees_out_given_shares_in(pool_state, shares_in, maturity_time)
 
     def calc_bonds_given_shares_and_rate(
-        self, target_rate: FixedPoint, target_shares: FixedPoint | None = None
+        self,
+        target_rate: FixedPoint,
+        target_shares: FixedPoint | None = None,
+        pool_state: PoolState | None = None,
     ) -> FixedPoint:
         r"""Returns the bond reserves for the market share reserves
         and a given fixed rate.
@@ -675,43 +733,63 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
             The target apr for which to calculate the bond reserves given the pools current share reserves.
         target_shares : FixedPoint, optional
             The target share reserves for the pool
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
 
         .. todo::
             This function name matches the Rust implementation, but is not preferred because
-            "given_*" is in the wrong order and can be inferred from arguments.
+            "given_shares_and_rate" is in the wrong order (should be rate_and_shares) according to arguments
+            and really "given_*" could be removed because it can be inferred from arguments.
             Need to fix it from the bottom up.
         """
-        self._ensure_current_state()
-        return _calc_bonds_given_shares_and_rate(self, target_rate, target_shares)
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
+        return _calc_bonds_given_shares_and_rate(pool_state, target_rate, target_shares)
 
-    def calc_max_long(self, budget: FixedPoint) -> FixedPoint:
+    def calc_max_long(
+        self, budget: FixedPoint, pool_state: PoolState | None = None
+    ) -> FixedPoint:
         """Calculate the maximum allowable long for the given Hyperdrive pool and agent budget.
 
         Arguments
         ---------
         budget: FixedPoint
             How much money the agent is able to spend, in base.
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
 
         Returns
         -------
         FixedPoint
             The maximum long, in units of base.
         """
-        self._ensure_current_state()
-        return _calc_max_long(self, budget)
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
+        return _calc_max_long(pool_state, budget)
 
-    def calc_max_short(self, budget: FixedPoint) -> FixedPoint:
+    def calc_max_short(
+        self, budget: FixedPoint, pool_state: PoolState | None = None
+    ) -> FixedPoint:
         """Calculate the maximum allowable short for the given Hyperdrive pool and agent budget.
 
         Arguments
         ---------
         budget: FixedPoint
             How much money the agent is able to spend, in base.
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
 
         Returns
         -------
         FixedPoint
             The maximum short, in units of base.
         """
-        self._ensure_current_state()
+        if pool_state is None:
+            self._ensure_current_state()
+            pool_state = self.current_pool_state
         return _calc_max_short(self, budget)
