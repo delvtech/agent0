@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Any
 
 from ethpy.base import get_transaction_logs
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, decode_asset_id
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveAddresses, decode_asset_id
 from ethpy.hyperdrive.addresses import camel_to_snake
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
@@ -131,6 +131,9 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> PoolConfig:
             value = pool_config_dict[key]
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
+            # Pool config contains many addresses, the DB only needs the mock hyperdrive address
+            if isinstance(value, HyperdriveAddresses):
+                value = value.mock_hyperdrive
         args_dict[camel_to_snake(key)] = value
     pool_config = PoolConfig(**args_dict)
     return pool_config
