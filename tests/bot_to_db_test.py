@@ -12,11 +12,14 @@ from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.test_fixtures import CycleTradesPolicy
-from chainsync.db.hyperdrive.interface import (get_current_wallet,
-                                               get_pool_analysis,
-                                               get_pool_config, get_pool_info,
-                                               get_transactions,
-                                               get_wallet_deltas)
+from chainsync.db.hyperdrive.interface import (
+    get_current_wallet,
+    get_pool_analysis,
+    get_pool_config,
+    get_pool_info,
+    get_transactions,
+    get_wallet_deltas,
+)
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI
@@ -193,21 +196,21 @@ class TestBotToDb:
 
         expected_pool_config = {
             "contract_address": hyperdrive_contract_addresses.mock_hyperdrive,
-            "baseToken": hyperdrive_contract_addresses.base_token,
-            "initialSharePrice": _to_unscaled_decimal(FixedPoint("1")),
-            "minimumShareReserves": _to_unscaled_decimal(FixedPoint("10")),
-            "minimumTransactionAmount": _to_unscaled_decimal(FixedPoint("0.001")),
-            "positionDuration": 604800,  # 1 week
-            "checkpointDuration": 3600,  # 1 hour
-            "timeStretch": expected_timestretch,
+            "base_token": hyperdrive_contract_addresses.base_token,
+            "initial_share_price": _to_unscaled_decimal(FixedPoint("1")),
+            "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
+            "minimum_transaction_amount": _to_unscaled_decimal(FixedPoint("0.001")),
+            "position_duration": 604800,  # 1 week
+            "checkpoint_duration": 3600,  # 1 hour
+            "time_stretch": expected_timestretch,
             "governance": deploy_account.address,
-            "feeCollector": deploy_account.address,
-            "curveFee": _to_unscaled_decimal(FixedPoint("0.1")),  # 10%
-            "flatFee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05%
-            "governanceFee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%
-            "oracleSize": 10,
-            "updateGap": 3600,  # TODO don't know where this is getting set
-            "invTimeStretch": expected_inv_timestretch,
+            "fee_collector": deploy_account.address,
+            "curve_fee": _to_unscaled_decimal(FixedPoint("0.1")),  # 10%
+            "flat_fee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05%
+            "governance_fee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%
+            "oracle_size": 10,
+            "update_gap": 3600,  # TODO don't know where this is getting set
+            "inv_time_stretch": expected_inv_timestretch,
         }
 
         # Existence test
@@ -230,24 +233,24 @@ class TestBotToDb:
         expected_pool_info_keys = [
             # Keys from contract call
             "block_number",
-            "shareReserves",
-            "bondReserves",
-            "lpTotalSupply",
-            "sharePrice",
-            "shareAdjustment",
-            "lpSharePrice",
-            "longExposure",
-            "longsOutstanding",
-            "longAverageMaturityTime",
-            "shortsOutstanding",
-            "shortAverageMaturityTime",
-            "withdrawalSharesReadyToWithdraw",
-            "withdrawalSharesProceeds",
+            "share_reserves",
+            "bond_reserves",
+            "lp_total_supply",
+            "share_price",
+            "share_adjustment",
+            "lp_share_price",
+            "long_exposure",
+            "long_outstanding",
+            "long_average_maturity_time",
+            "shorts_outstanding",
+            "short_average_maturity_time",
+            "withdrawal_shares_ready_to_withdraw",
+            "withdrawal_shares_proceeds",
             # Added keys
             "timestamp",
-            "variableRate",
+            "variable_rate",
             # Calculated keys
-            "totalSupplyWithdrawalShares",
+            "total_supply_withdrawal_shares",
         ]
         # Convert to sets and compare
         assert set(db_pool_info.columns) == set(expected_pool_info_keys)
