@@ -6,7 +6,8 @@ from typing import Type
 
 import pytest
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.state import (HyperdriveActionType,
+                                     HyperdriveMarketAction, HyperdriveWallet)
 from elfpy.types import MarketType, Trade
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
@@ -46,15 +47,17 @@ class CycleTradesPolicy(HyperdrivePolicy):
         self.max_trades = policy_config.max_trades
         super().__init__(budget, rng, slippage_tolerance)
 
+    # We want to rename the argument from "interface" in the base class to "hyperdrive" to be more explicit
+    # pylint: disable=arguments-renamed
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time
 
         Arguments
         ---------
-        market : HyperdriveMarketState
-            the trading market
+        hyperdrive : HyperdriveInterface
+            The trading market.
         wallet : HyperdriveWallet
             agent's wallet
 

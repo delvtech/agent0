@@ -10,8 +10,10 @@ from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
-from chainsync.db.hyperdrive.interface import get_ticker, get_transactions, get_wallet_deltas
+from agent0.hyperdrive.state import (HyperdriveActionType,
+                                     HyperdriveMarketAction, HyperdriveWallet)
+from chainsync.db.hyperdrive.interface import (get_ticker, get_transactions,
+                                               get_wallet_deltas)
 from chainsync.exec import acquire_data, data_analysis
 from elfpy.types import MarketType, Trade
 from eth_typing import URI
@@ -47,8 +49,10 @@ class MultiTradePolicy(HyperdrivePolicy):
         self.made_trade = False
         super().__init__(budget, rng, slippage_tolerance)
 
+    # We want to rename the argument from "interface" in the base class to "hyperdrive" to be more explicit
+    # pylint: disable=arguments-renamed
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
         # pylint: disable=unused-argument

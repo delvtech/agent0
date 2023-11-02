@@ -58,7 +58,9 @@ agent_config: list[AgentConfig] = [
 # If it doesn't exist, create it based on agent_config
 # (If os.environ["DEVELOP"] is False, will clean exit and print instructions on how to fund agent)
 # If it does exist, read it in and use it
-account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed)
+account_key_config = initialize_accounts(
+    agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed
+)
 
 # Run agents
 # If bots crash, we make rpc call to stop mining anvil
@@ -70,5 +72,7 @@ except KeyboardInterrupt:
 except Exception as exc:  # pylint: disable=broad-exception-caught
     # create hyperdrive interface object
     hyperdrive = HyperdriveInterface()
-    hyperdrive.web3.provider.make_request(method=RPCEndpoint("evm_setIntervalMining"), params=[0])
+    hyperdrive.web3.provider.make_request(
+        method=RPCEndpoint("evm_setIntervalMining"), params=[0]
+    )
     raise exc

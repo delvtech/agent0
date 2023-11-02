@@ -14,12 +14,19 @@ from chainsync.db.hyperdrive import (
 )
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri, get_web3_and_hyperdrive_contracts
+from ethpy.hyperdrive import (
+    HyperdriveAddresses,
+    fetch_hyperdrive_address_from_uri,
+    get_web3_and_hyperdrive_contracts,
+)
+from ethpy.hyperdrive.api import HyperdriveInterface
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
 
-warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
+warnings.filterwarnings(
+    "ignore", category=UserWarning, module="web3.contract.base_contract"
+)
 
 
 # Lots of arguments
@@ -64,10 +71,14 @@ def acquire_data(
 
     # Get addresses either from artifacts URI defined in eth_config or from contract_addresses
     if contract_addresses is None:
-        contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
+        contract_addresses = fetch_hyperdrive_address_from_uri(
+            os.path.join(eth_config.artifacts_uri, "addresses.json")
+        )
 
     # Get web3 and contracts
-    web3, _, yield_contract, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
+    web3, _, yield_contract, hyperdrive_contract = get_web3_and_hyperdrive_contracts(
+        eth_config, contract_addresses
+    )
     # Get yield contract for variabel rate
 
     ## Get starting point for restarts
@@ -82,14 +93,19 @@ def acquire_data(
 
     if (latest_mined_block - block_number) > lookback_block_limit:
         block_number = BlockNumber(latest_mined_block - lookback_block_limit)
-        logging.warning("Starting block is past lookback block limit, starting at block %s", block_number)
+        logging.warning(
+            "Starting block is past lookback block limit, starting at block %s",
+            block_number,
+        )
 
     # Collect initial data
     init_data_chain_to_db(hyperdrive_contract, db_session)
     # This if statement executes only on initial run (based on data_latest_block_number check),
     # and if the chain has executed until start_block (based on latest_mined_block check)
     if data_latest_block_number < block_number < latest_mined_block:
-        data_chain_to_db(web3, hyperdrive_contract, yield_contract, block_number, db_session)
+        data_chain_to_db(
+            web3, hyperdrive_contract, yield_contract, block_number, db_session
+        )
 
     # Main data loop
     # monitor for new blocks & add pool info per block
@@ -121,5 +137,7 @@ def acquire_data(
                     latest_mined_block,
                 )
                 continue
-            data_chain_to_db(web3, hyperdrive_contract, yield_contract, block_number, db_session)
+            data_chain_to_db(
+                web3, hyperdrive_contract, yield_contract, block_number, db_session
+            )
         time.sleep(_SLEEP_AMOUNT)
