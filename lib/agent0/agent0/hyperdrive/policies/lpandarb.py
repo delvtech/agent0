@@ -408,7 +408,7 @@ def calc_reserves_to_hit_target_rate(
             pool_info.share_adjustment,
             pool_config.initial_share_price,
             target_rate,
-            pool_config.position_duration,
+            FixedPoint(pool_config.position_duration),
             FixedPoint(1) / pool_config.time_stretch,
         )
         # bonds_needed tells us the number of bonds to hit the desired reserves ratio, keeping shares constant.

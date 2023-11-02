@@ -2,19 +2,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any, Sequence
 
-from eth_typing import BlockNumber, ChecksumAddress
+from eth_typing import BlockNumber
 from eth_utils import address
 from ethpy.base import UnknownBlockError, get_transaction_logs, smart_contract_read
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
-from web3.types import BlockData, Timestamp, TxReceipt
+from web3.types import Timestamp, TxReceipt
 
 from .addresses import HyperdriveAddresses, camel_to_snake
-from .assets import AssetIdPrefix, encode_asset_id
 from .receipt_breakdown import ReceiptBreakdown
 
 
@@ -58,7 +56,9 @@ class PoolConfig:
     time_stretch: FixedPoint
     governance: str
     fee_collector: str
-    fees: Sequence | Fees
+    # TODO: Pyright:
+    # Declaration "fees" is obscured by a declaration of the same name here but not elsewhere
+    fees: Fees | Sequence  # type: ignore
     oracle_size: int
     update_gap: int
 
