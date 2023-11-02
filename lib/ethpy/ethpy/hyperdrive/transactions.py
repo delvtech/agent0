@@ -118,7 +118,10 @@ def convert_hyperdrive_pool_config_types(pool_config: dict[str, Any]) -> PoolCon
           - The attribute names are converted to snake_case.
           - FixedPoint types are used if the type was FixedPoint in the underlying contract.
     """
-    out_config = {camel_to_snake(key): value for key, value in pool_config.items()}
+    # Adjust the pool_config to use snake case here
+    pool_config = {camel_to_snake(key): value for key, value in pool_config.items()}
+    # Copy all elements into new out_config
+    out_config = pool_config.copy()
     fixedpoint_keys = ["initial_share_price", "minimum_share_reserves", "minimum_transaction_amount", "time_stretch"]
     for key in pool_config:
         if key in fixedpoint_keys:
