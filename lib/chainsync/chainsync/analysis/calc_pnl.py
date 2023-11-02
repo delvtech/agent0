@@ -49,7 +49,7 @@ def calc_single_closeout(
     preview_result = None
     maturity = 0
     if tokentype in ["LONG", "SHORT"]:
-        maturity = position["maturityTime"]
+        maturity = position["maturity_time"]
         assert isinstance(maturity, Decimal)
         maturity = int(maturity)
         assert isinstance(maturity, int)

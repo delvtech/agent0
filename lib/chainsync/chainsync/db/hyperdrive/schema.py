@@ -146,34 +146,34 @@ class HyperdriveTransaction(Base):
     input_params_bond_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     input_params_max_deposit: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # input_params_destination
-    # input_params_asUnderlying
+    # input_params_as_underlying
 
     # Method: closeLong
     input_params_maturity_time: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
-    # input_params_bondAmount
-    # input_params_minOutput
+    # input_params_bond_amount
+    # input_params_min_output
     # input_params_destination
-    # input_params_asUnderlying
+    # input_params_as_underlying
 
     # Method: closeShort
-    # input_params_maturityTime
-    # input_params_bondAmount
-    # input_params_minOutput
+    # input_params_maturity_time
+    # input_params_bond_amount
+    # input_params_min_output
     # input_params_destination
-    # input_params_asUnderlying
+    # input_params_as_underlying
 
     # Method: addLiquidity
     # input_params_contribution
     input_params_min_apr: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     input_params_max_apr: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # input_params_destination
-    # input_params_asUnderlying
+    # input_params_as_underlying
 
     # Method: removeLiquidity
     input_params_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    # input_params_minOutput
+    # input_params_min_output
     # input_params_destination
-    # input_params_asUnderlying
+    # input_params_as_underlying
 
     #### Fields from event logs ####
     # Addresses in event logs
