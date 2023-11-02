@@ -47,12 +47,8 @@ def fetch_hyperdrive_address_from_uri(contracts_uri: str) -> HyperdriveAddresses
     if response is None:
         raise ConnectionError("Request failed, returning status `None`")
     if response.status_code != 200:
-        raise ConnectionError(
-            f"Request failed with status code {response.status_code} @ {time.ctime()}"
-        )
+        raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
     addresses_json = response.json()
 
-    addresses = HyperdriveAddresses(
-        **{camel_to_snake(key): value for key, value in addresses_json.items()}
-    )
+    addresses = HyperdriveAddresses(**{camel_to_snake(key): value for key, value in addresses_json.items()})
     return addresses

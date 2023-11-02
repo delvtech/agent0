@@ -4,35 +4,50 @@ from __future__ import annotations
 import copy
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 from ethpy import build_eth_config
-from ethpy.base import (initialize_web3_with_http_provider, load_all_abis,
-                        smart_contract_read)
-from ethpy.hyperdrive.addresses import (HyperdriveAddresses,
-                                        fetch_hyperdrive_address_from_uri)
+from ethpy.base import initialize_web3_with_http_provider, load_all_abis, smart_contract_read
+from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
 from ethpy.hyperdrive.transactions import (
-    Checkpoint, PoolConfig, PoolInfo, convert_hyperdrive_checkpoint_types,
-    convert_hyperdrive_pool_config_types, convert_hyperdrive_pool_info_types,
-    get_hyperdrive_checkpoint, get_hyperdrive_pool_config,
-    get_hyperdrive_pool_info)
+    convert_hyperdrive_checkpoint_types,
+    convert_hyperdrive_pool_config_types,
+    convert_hyperdrive_pool_info_types,
+    get_hyperdrive_checkpoint,
+    get_hyperdrive_pool_config,
+    get_hyperdrive_pool_info,
+)
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
-from ._contract_calls import (_async_add_liquidity, _async_close_long,
-                              _async_close_short, _async_open_long,
-                              _async_open_short, _async_redeem_withdraw_shares,
-                              _async_remove_liquidity, _get_eth_base_balances,
-                              _get_variable_rate, _get_vault_shares)
-from ._mock_contract import (_calc_bonds_given_shares_and_rate,
-                             _calc_checkpoint_id,
-                             _calc_effective_share_reserves,
-                             _calc_fees_out_given_bonds_in,
-                             _calc_fees_out_given_shares_in, _calc_fixed_rate,
-                             _calc_in_for_out, _calc_long_amount,
-                             _calc_max_long, _calc_max_short, _calc_out_for_in,
-                             _calc_position_duration_in_years,
-                             _calc_short_deposit, _calc_spot_price)
+from ._contract_calls import (
+    _async_add_liquidity,
+    _async_close_long,
+    _async_close_short,
+    _async_open_long,
+    _async_open_short,
+    _async_redeem_withdraw_shares,
+    _async_remove_liquidity,
+    _get_eth_base_balances,
+    _get_variable_rate,
+    _get_vault_shares,
+)
+from ._mock_contract import (
+    _calc_bonds_given_shares_and_rate,
+    _calc_checkpoint_id,
+    _calc_effective_share_reserves,
+    _calc_fees_out_given_bonds_in,
+    _calc_fees_out_given_shares_in,
+    _calc_fixed_rate,
+    _calc_in_for_out,
+    _calc_long_amount,
+    _calc_max_long,
+    _calc_max_short,
+    _calc_out_for_in,
+    _calc_position_duration_in_years,
+    _calc_short_deposit,
+    _calc_spot_price,
+)
 
 # We expect to have many instance attributes & public methods since this is a large API.
 # pylint: disable=too-many-instance-attributes
@@ -66,9 +81,7 @@ class PoolState:
         self.block_time = _get_block_time(self.block)
         self.contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         self.pool_config = convert_hyperdrive_pool_config_types(self.contract_pool_config)
-        self.contract_pool_info = get_hyperdrive_pool_info(
-            self.hyperdrive_contract, self.block_number
-        )
+        self.contract_pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, self.block_number)
         # TODO: Get the rest of the extra process pool info values as extra attributes
         # These are constructed a few times in chainsync; would be nice to clean that up
         # by computing here
@@ -84,9 +97,6 @@ class PoolState:
             self.block_number,
         )
         self.checkpoint = convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
-
-        
-        
 
 
 class HyperdriveInterface:
@@ -106,19 +116,13 @@ class HyperdriveInterface:
         In this case, the `eth_config.artifacts_uri` variable is not used, and these Addresses are used instead.
         """
         # Handle defaults for config and addresses
-        self.eth_config: EthConfig = (
-            build_eth_config() if eth_config is None else eth_config
-        )
+        self.eth_config: EthConfig = build_eth_config() if eth_config is None else eth_config
         if addresses is None:
-            addresses = fetch_hyperdrive_address_from_uri(
-                os.path.join(self.eth_config.artifacts_uri, "addresses.json")
-            )
+            addresses = fetch_hyperdrive_address_from_uri(os.path.join(self.eth_config.artifacts_uri, "addresses.json"))
         self.addresses: HyperdriveAddresses = addresses
         # Setup provider for communicating with the chain
         if web3 is None:
-            web3 = initialize_web3_with_http_provider(
-                self.eth_config.rpc_uri, reset_provider=False
-            )
+            web3 = initialize_web3_with_http_provider(self.eth_config.rpc_uri, reset_provider=False)
         self.web3 = web3
         abis = load_all_abis(self.eth_config.abi_dir)
         # set up the ERC20 contract for minting base tokens
@@ -137,9 +141,7 @@ class HyperdriveInterface:
             abi=abis["ERC4626DataProvider"],
             address=web3.to_checksum_address(self.addresses.mock_hyperdrive),
         )
-        self.yield_address = smart_contract_read(data_provider_contract, "pool")[
-            "value"
-        ]
+        self.yield_address = smart_contract_read(data_provider_contract, "pool")["value"]
         self.yield_contract: Contract = web3.eth.contract(
             abi=abis["MockERC4626"],
             address=web3.to_checksum_address(self.yield_address),
@@ -175,7 +177,7 @@ class HyperdriveInterface:
         ---------
         block : BlockData
             A web3py dataclass for storing block information.
-        
+
         Returns
         -------
         BlockNumber
@@ -190,7 +192,7 @@ class HyperdriveInterface:
         ---------
         block : BlockData
             A web3py dataclass for storing block information.
-        
+
         Returns
         -------
         Timestamp
@@ -202,29 +204,23 @@ class HyperdriveInterface:
         """Update the cached pool info and latest checkpoint if needed."""
         if self.current_pool_state.block_number > self.last_state_block_number:
             self.current_pool_state = self.get_hyperdrive_state()
-            self.last_state_block_number = copy.copy(
-                self.current_pool_state.block_number
-            )
-    
+            self.last_state_block_number = copy.copy(self.current_pool_state.block_number)
 
     def get_hyperdrive_state(self, block: BlockData | None = None):
         """Get the hyperdrive pool and block state, given a block identifier.
-        
+
         Arguments
         ---------
         block : BlockData, optional
             A web3py dataclass for storing block information.
-        
+
         """
         if block is None:
             block_identifier = cast(BlockIdentifier, "latest")
             block = self.block(block_identifier)
         return PoolState(self.hyperdrive_contract, self.yield_contract, block)
 
-
-    def get_eth_base_balances(
-        self, agent: LocalAccount
-    ) -> tuple[FixedPoint, FixedPoint]:
+    def get_eth_base_balances(self, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
         """Get the agent's balance on the Hyperdrive & base contracts.
 
         Arguments
@@ -266,9 +262,7 @@ class HyperdriveInterface:
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
-        return await _async_open_long(
-            self, agent, trade_amount, slippage_tolerance, nonce
-        )
+        return await _async_open_long(self, agent, trade_amount, slippage_tolerance, nonce)
 
     # pylint: disable=too-many-arguments
     async def async_close_long(
@@ -301,9 +295,7 @@ class HyperdriveInterface:
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
-        return await _async_close_long(
-            self, agent, trade_amount, maturity_time, slippage_tolerance, nonce
-        )
+        return await _async_close_long(self, agent, trade_amount, maturity_time, slippage_tolerance, nonce)
 
     async def async_open_short(
         self,
@@ -332,9 +324,7 @@ class HyperdriveInterface:
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
-        return await _async_open_short(
-            self, agent, trade_amount, slippage_tolerance, nonce
-        )
+        return await _async_open_short(self, agent, trade_amount, slippage_tolerance, nonce)
 
     # pylint: disable=too-many-arguments
     async def async_close_short(
@@ -367,9 +357,7 @@ class HyperdriveInterface:
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed
         """
-        return await _async_close_short(
-            self, agent, trade_amount, maturity_time, slippage_tolerance, nonce
-        )
+        return await _async_close_short(self, agent, trade_amount, maturity_time, slippage_tolerance, nonce)
 
     # pylint: disable=too-many-arguments
     async def async_add_liquidity(
@@ -400,9 +388,7 @@ class HyperdriveInterface:
         ReceiptBreakdown
             A dataclass containing the absolute values for token quantities changed
         """
-        return await _async_add_liquidity(
-            self, agent, trade_amount, min_apr, max_apr, nonce
-        )
+        return await _async_add_liquidity(self, agent, trade_amount, min_apr, max_apr, nonce)
 
     async def async_remove_liquidity(
         self,
@@ -462,9 +448,7 @@ class HyperdriveInterface:
         """
         return await _async_redeem_withdraw_shares(self, agent, trade_amount, nonce)
 
-    def calc_position_duration_in_years(
-        self, pool_state: PoolState | None = None
-    ) -> FixedPoint:
+    def calc_position_duration_in_years(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Returns the pool config position duration as a fraction of a year.
 
         This "annualized" time value is used in some calculations, such as the Fixed APR.
@@ -485,9 +469,7 @@ class HyperdriveInterface:
             pool_state = self.current_pool_state
         return _calc_position_duration_in_years(self.current_pool_state)
 
-    def calc_checkpoint_id(
-        self, block_timestamp: Timestamp, pool_state: PoolState | None = None
-    ) -> Timestamp:
+    def calc_checkpoint_id(self, block_timestamp: Timestamp, pool_state: PoolState | None = None) -> Timestamp:
         """Calculate the Checkpoint ID for a given timestamp.
 
         Arguments
@@ -547,9 +529,7 @@ class HyperdriveInterface:
             pool_state = self.current_pool_state
         return _calc_spot_price(pool_state)
 
-    def calc_effective_share_reserves(
-        self, pool_state: PoolState | None = None
-    ) -> FixedPoint:
+    def calc_effective_share_reserves(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the adjusted share reserves for a given Hyperdrive pool.
 
         Arguments
@@ -568,9 +548,7 @@ class HyperdriveInterface:
             pool_state = self.current_pool_state
         return _calc_effective_share_reserves(pool_state)
 
-    def calc_open_long(
-        self, base_amount: FixedPoint, pool_state: PoolState | None = None
-    ) -> FixedPoint:
+    def calc_open_long(self, base_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the long amount that will be opened for a given base amount after fees.
 
         Arguments
@@ -591,9 +569,7 @@ class HyperdriveInterface:
             pool_state = self.current_pool_state
         return _calc_long_amount(pool_state, base_amount)
 
-    def calc_open_short(
-        self, short_amount: FixedPoint, pool_state: PoolState | None = None
-    ) -> FixedPoint:
+    def calc_open_short(self, short_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the amount of base the trader will need to deposit for a short of a given size.
 
         Arguments
@@ -787,9 +763,7 @@ class HyperdriveInterface:
             pool_state = self.current_pool_state
         return _calc_bonds_given_shares_and_rate(pool_state, target_rate, target_shares)
 
-    def calc_max_long(
-        self, budget: FixedPoint, pool_state: PoolState | None = None
-    ) -> FixedPoint:
+    def calc_max_long(self, budget: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the maximum allowable long for the given Hyperdrive pool and agent budget.
 
         Arguments
@@ -810,9 +784,7 @@ class HyperdriveInterface:
             pool_state = self.current_pool_state
         return _calc_max_long(pool_state, budget)
 
-    def calc_max_short(
-        self, budget: FixedPoint, pool_state: PoolState | None = None
-    ) -> FixedPoint:
+    def calc_max_short(self, budget: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the maximum allowable short for the given Hyperdrive pool and agent budget.
 
         Arguments

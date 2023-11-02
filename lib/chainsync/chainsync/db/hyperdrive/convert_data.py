@@ -15,8 +15,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxData
 
-from .schema import (CheckpointInfo, HyperdriveTransaction, PoolConfig,
-                     PoolInfo, WalletDelta)
+from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta
 
 
 def convert_hyperdrive_transactions_for_block(

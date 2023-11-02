@@ -7,8 +7,7 @@ from typing import Any, Sequence
 
 from eth_typing import BlockNumber, ChecksumAddress
 from eth_utils import address
-from ethpy.base import (UnknownBlockError, get_transaction_logs,
-                        smart_contract_read)
+from ethpy.base import UnknownBlockError, get_transaction_logs, smart_contract_read
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -135,9 +134,7 @@ def convert_hyperdrive_pool_config_types(pool_config: dict[str, Any]) -> PoolCon
     return PoolConfig(**out_config)
 
 
-def process_hyperdrive_pool_config(
-    pool_config: dict[str, Any], hyperdrive_address: ChecksumAddress
-) -> dict[str, Any]:
+def process_hyperdrive_pool_config(pool_config: dict[str, Any], hyperdrive_address: ChecksumAddress) -> dict[str, Any]:
     """Convert pool_config to python-friendly (FixedPoint, integer, str) types and add some computed values.
 
     Arguments
@@ -173,9 +170,7 @@ def process_hyperdrive_pool_config(
     return pool_config
 
 
-def get_hyperdrive_pool_info(
-    hyperdrive_contract: Contract, block_number: BlockNumber
-) -> dict[str, Any]:
+def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, Any]:
     """Get the block pool info from the Hyperdrive contract.
 
     Arguments
@@ -190,9 +185,7 @@ def get_hyperdrive_pool_info(
     dict[str, Any]
         A dictionary containing the Hyperdrive pool info returned from the smart contract.
     """
-    return smart_contract_read(
-        hyperdrive_contract, "getPoolInfo", block_number=block_number
-    )
+    return smart_contract_read(hyperdrive_contract, "getPoolInfo", block_number=block_number)
 
 
 def convert_hyperdrive_pool_info_types(pool_info: dict[str, Any]) -> PoolInfo:
@@ -211,12 +204,7 @@ def convert_hyperdrive_pool_info_types(pool_info: dict[str, Any]) -> PoolInfo:
           - The attribute names are converted to snake_case.
           - FixedPoint types are used if the type was FixedPoint in the underlying contract.
     """
-    return PoolInfo(
-        **{
-            camel_to_snake(key): FixedPoint(scaled_value=value)
-            for (key, value) in pool_info.items()
-        }
-    )
+    return PoolInfo(**{camel_to_snake(key): FixedPoint(scaled_value=value) for (key, value) in pool_info.items()})
 
 
 def process_hyperdrive_pool_info(
@@ -245,9 +233,7 @@ def process_hyperdrive_pool_info(
         This output can be inserted into the Postgres PoolInfo schema.
     """
     # convert values to fixedpoint
-    pool_info = {
-        str(key): FixedPoint(scaled_value=value) for (key, value) in pool_info.items()
-    }
+    pool_info = {str(key): FixedPoint(scaled_value=value) for (key, value) in pool_info.items()}
     # get current block information & add to pool info
     current_block: BlockData = web3.eth.get_block(block_number)
     current_block_timestamp = current_block.get("timestamp")
@@ -267,9 +253,7 @@ def process_hyperdrive_pool_info(
     return pool_info
 
 
-def get_hyperdrive_checkpoint(
-    hyperdrive_contract: Contract, block_timestamp: Timestamp
-) -> dict[str, int]:
+def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_timestamp: Timestamp) -> dict[str, int]:
     """Get the checkpoint info for the Hyperdrive contract at a given block.
 
     Arguments
@@ -300,17 +284,10 @@ def convert_hyperdrive_checkpoint_types(checkpoint: dict[str, int]) -> Checkpoin
     Checkpoint
         A dataclass containing the checkpoint share_price and long_exposure fields converted to FixedPoint.
     """
-    return Checkpoint(
-        **{
-            camel_to_snake(key): FixedPoint(scaled_value=value)
-            for key, value in checkpoint.items()
-        }
-    )
+    return Checkpoint(**{camel_to_snake(key): FixedPoint(scaled_value=value) for key, value in checkpoint.items()})
 
 
-def process_hyperdrive_checkpoint(
-    checkpoint: dict[str, int], web3: Web3, block_number: BlockNumber
-) -> dict[str, Any]:
+def process_hyperdrive_checkpoint(checkpoint: dict[str, int], web3: Web3, block_number: BlockNumber) -> dict[str, Any]:
     """Get the checkpoint info of Hyperdrive contract for the given block.
 
     Arguments
@@ -343,9 +320,7 @@ def process_hyperdrive_checkpoint(
     return out_checkpoint
 
 
-def get_hyperdrive_contract(
-    web3: Web3, abis: dict, addresses: HyperdriveAddresses
-) -> Contract:
+def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses) -> Contract:
     """Get the hyperdrive contract given abis.
 
     Arguments
@@ -372,9 +347,7 @@ def get_hyperdrive_contract(
     return hyperdrive_contract
 
 
-def parse_logs(
-    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str
-) -> ReceiptBreakdown:
+def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> ReceiptBreakdown:
     """Decode a Hyperdrive contract transaction receipt to get the changes to the agent's funds.
 
     Arguments
@@ -421,9 +394,7 @@ def parse_logs(
     if "lpAmount" in log_args:
         trade_result.lp_amount = FixedPoint(scaled_value=log_args["lpAmount"])
     if "withdrawalShareAmount" in log_args:
-        trade_result.withdrawal_share_amount = FixedPoint(
-            scaled_value=log_args["withdrawalShareAmount"]
-        )
+        trade_result.withdrawal_share_amount = FixedPoint(scaled_value=log_args["withdrawalShareAmount"])
     return trade_result
 
 
@@ -484,35 +455,23 @@ def get_event_history_from_chain(
     # Create filter on events
     # Typing doesn't know about create_filter function with various events
     add_lp_event_filter = hyperdrive_contract.events.AddLiquidity.create_filter(**lp_filter_args)  # type: ignore
-    remove_lp_event_filter = (
-        hyperdrive_contract.events.RemoveLiquidity.create_filter(  # type:ignore
-            **lp_filter_args
-        )
+    remove_lp_event_filter = hyperdrive_contract.events.RemoveLiquidity.create_filter(  # type:ignore
+        **lp_filter_args
     )
-    withdraw_event_filter = (
-        hyperdrive_contract.events.RedeemWithdrawalShares.create_filter(  # type:ignore
-            **lp_filter_args
-        )
+    withdraw_event_filter = hyperdrive_contract.events.RedeemWithdrawalShares.create_filter(  # type:ignore
+        **lp_filter_args
     )
-    open_long_event_filter = (
-        hyperdrive_contract.events.OpenLong.create_filter(  # type:ignore
-            **trade_filter_args
-        )
+    open_long_event_filter = hyperdrive_contract.events.OpenLong.create_filter(  # type:ignore
+        **trade_filter_args
     )
-    close_long_event_filter = (
-        hyperdrive_contract.events.CloseLong.create_filter(  # type:ignore
-            **trade_filter_args
-        )
+    close_long_event_filter = hyperdrive_contract.events.CloseLong.create_filter(  # type:ignore
+        **trade_filter_args
     )
-    open_short_event_filter = (
-        hyperdrive_contract.events.OpenShort.create_filter(  # type:ignore
-            **trade_filter_args
-        )
+    open_short_event_filter = hyperdrive_contract.events.OpenShort.create_filter(  # type:ignore
+        **trade_filter_args
     )
-    close_short_event_filter = (
-        hyperdrive_contract.events.CloseShort.create_filter(  # type:ignore
-            **trade_filter_args
-        )
+    close_short_event_filter = hyperdrive_contract.events.CloseShort.create_filter(  # type:ignore
+        **trade_filter_args
     )
 
     # Retrieve all entries

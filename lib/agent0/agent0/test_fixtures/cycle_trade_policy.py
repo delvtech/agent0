@@ -6,8 +6,7 @@ from typing import Type
 
 import pytest
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import (HyperdriveActionType,
-                                     HyperdriveMarketAction, HyperdriveWallet)
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from elfpy.types import MarketType, Trade
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint

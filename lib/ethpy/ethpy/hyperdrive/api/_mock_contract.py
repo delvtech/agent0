@@ -52,17 +52,13 @@ def _construct_pool_info(contract_pool_info: dict[str, Any]) -> PoolInfo:
 
 def _calc_checkpoint_id(pool_state: PoolState, block_timestamp: Timestamp) -> Timestamp:
     """See API for documentation."""
-    latest_checkpoint_timestamp = block_timestamp - (
-        block_timestamp % pool_state.pool_config.checkpoint_duration
-    )
+    latest_checkpoint_timestamp = block_timestamp - (block_timestamp % pool_state.pool_config.checkpoint_duration)
     return cast(Timestamp, latest_checkpoint_timestamp)
 
 
 def _calc_position_duration_in_years(pool_state: PoolState) -> FixedPoint:
     """See API for documentation."""
-    return FixedPoint(pool_state.pool_config.position_duration) / FixedPoint(
-        60 * 60 * 24 * 365
-    )
+    return FixedPoint(pool_state.pool_config.position_duration) / FixedPoint(60 * 60 * 24 * 365)
 
 
 def _calc_fixed_rate(pool_state: PoolState) -> FixedPoint:
@@ -163,13 +159,9 @@ def _calc_fees_out_given_bonds_in(
         This should be done in the hyperdrive sdk.
     """
     if maturity_time is None:
-        maturity_time = pool_state.block_time + int(
-            pool_state.pool_config.position_duration
-        )
+        maturity_time = pool_state.block_time + int(pool_state.pool_config.position_duration)
     time_remaining_in_seconds = FixedPoint(maturity_time - pool_state.block_time)
-    normalized_time_remaining = (
-        time_remaining_in_seconds / pool_state.pool_config.position_duration
-    )
+    normalized_time_remaining = time_remaining_in_seconds / pool_state.pool_config.position_duration
     curve_fee = (
         (FixedPoint(1) - _calc_spot_price(pool_state))
         * pool_state.pool_config.fees.curve
@@ -177,14 +169,9 @@ def _calc_fees_out_given_bonds_in(
         * normalized_time_remaining
     ) / pool_state.pool_config.initial_share_price
     flat_fee = (
-        bonds_in
-        * (FixedPoint(1) - normalized_time_remaining)
-        * pool_state.pool_config.fees.flat
+        bonds_in * (FixedPoint(1) - normalized_time_remaining) * pool_state.pool_config.fees.flat
     ) / pool_state.pool_config.initial_share_price
-    gov_fee = (
-        curve_fee * pool_state.pool_config.fees.governance
-        + flat_fee * pool_state.pool_config.fees.governance
-    )
+    gov_fee = curve_fee * pool_state.pool_config.fees.governance + flat_fee * pool_state.pool_config.fees.governance
     return curve_fee, flat_fee, gov_fee
 
 
@@ -197,13 +184,9 @@ def _calc_fees_out_given_shares_in(
         This should be done in the hyperdrive sdk.
     """
     if maturity_time is None:
-        maturity_time = pool_state.block_time + int(
-            pool_state.pool_config.position_duration
-        )
+        maturity_time = pool_state.block_time + int(pool_state.pool_config.position_duration)
     time_remaining_in_seconds = FixedPoint(maturity_time - pool_state.block_time)
-    normalized_time_remaining = (
-        time_remaining_in_seconds / pool_state.pool_config.position_duration
-    )
+    normalized_time_remaining = time_remaining_in_seconds / pool_state.pool_config.position_duration
     curve_fee = (
         ((FixedPoint(1) / _calc_spot_price(pool_state)) - FixedPoint(1))
         * pool_state.pool_config.fees.curve
@@ -211,14 +194,9 @@ def _calc_fees_out_given_shares_in(
         * shares_in
     )
     flat_fee = (
-        shares_in
-        * (FixedPoint(1) - normalized_time_remaining)
-        * pool_state.pool_config.fees.flat
+        shares_in * (FixedPoint(1) - normalized_time_remaining) * pool_state.pool_config.fees.flat
     ) / pool_state.pool_config.initial_share_price
-    gov_fee = (
-        curve_fee * pool_state.pool_config.fees.governance
-        + flat_fee * pool_state.pool_config.fees.governance
-    )
+    gov_fee = curve_fee * pool_state.pool_config.fees.governance + flat_fee * pool_state.pool_config.fees.governance
     return curve_fee, flat_fee, gov_fee
 
 
@@ -251,9 +229,7 @@ def _calc_max_long(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
                 _construct_pool_config(pool_state.contract_pool_config),
                 _construct_pool_info(pool_state.contract_pool_info),
                 str(budget.scaled_value),
-                checkpoint_exposure=str(
-                    pool_state.checkpoint.long_exposure.scaled_value
-                ),
+                checkpoint_exposure=str(pool_state.checkpoint.long_exposure.scaled_value),
                 maybe_max_iterations=None,
             )
         )
@@ -269,9 +245,7 @@ def _calc_max_short(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
                 pool_info=_construct_pool_info(pool_state.contract_pool_info),
                 budget=str(budget.scaled_value),
                 open_share_price=str(pool_state.pool_info.share_price.scaled_value),
-                checkpoint_exposure=str(
-                    pool_state.checkpoint.long_exposure.scaled_value
-                ),
+                checkpoint_exposure=str(pool_state.checkpoint.long_exposure.scaled_value),
                 maybe_conservative_price=None,
                 maybe_max_iterations=None,
             )

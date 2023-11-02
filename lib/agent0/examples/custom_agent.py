@@ -9,8 +9,7 @@ from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import (HyperdriveActionType,
-                                     HyperdriveMarketAction)
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint
 

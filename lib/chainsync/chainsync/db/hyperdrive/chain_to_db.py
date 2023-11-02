@@ -3,27 +3,20 @@ from dataclasses import asdict
 from datetime import datetime
 from decimal import Decimal
 
-from eth_typing import BlockNumber
-from ethpy.base import (fetch_contract_transactions_for_block,
-                        smart_contract_read)
-from ethpy.hyperdrive import (AssetIdPrefix,
-                              convert_hyperdrive_checkpoint_types,
-                              convert_hyperdrive_pool_config_types,
-                              convert_hyperdrive_pool_info_types,
-                              encode_asset_id, get_hyperdrive_checkpoint,
-                              get_hyperdrive_pool_config,
-                              get_hyperdrive_pool_info)
+from ethpy.base import fetch_contract_transactions_for_block, smart_contract_read
+from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
-from web3.contract.contract import Contract
 from web3.types import BlockData
 
-from .convert_data import (convert_checkpoint_info,
-                           convert_hyperdrive_transactions_for_block,
-                           convert_pool_config, convert_pool_info)
-from .interface import (add_checkpoint_infos, add_pool_config, add_pool_infos,
-                        add_transactions, add_wallet_deltas)
+from .convert_data import (
+    convert_checkpoint_info,
+    convert_hyperdrive_transactions_for_block,
+    convert_pool_config,
+    convert_pool_info,
+)
+from .interface import add_checkpoint_infos, add_pool_config, add_pool_infos, add_transactions, add_wallet_deltas
 
 
 def init_data_chain_to_db(
@@ -50,11 +43,7 @@ def init_data_chain_to_db(
     add_pool_config(pool_config_dict, session)
 
 
-def data_chain_to_db(
-    hyperdrive: HyperdriveInterface,
-    block: BlockData,
-    session: Session
-) -> None:
+def data_chain_to_db(hyperdrive: HyperdriveInterface, block: BlockData, session: Session) -> None:
     """Function to query and insert data to dashboard.
 
     Arguments
@@ -84,9 +73,7 @@ def data_chain_to_db(
     (
         block_transactions,
         wallet_deltas,
-    ) = convert_hyperdrive_transactions_for_block(
-        hyperdrive.web3, hyperdrive.hyperdrive_contract, transactions
-    )
+    ) = convert_hyperdrive_transactions_for_block(hyperdrive.web3, hyperdrive.hyperdrive_contract, transactions)
     add_transactions(block_transactions, session)
     add_wallet_deltas(wallet_deltas, session)
 

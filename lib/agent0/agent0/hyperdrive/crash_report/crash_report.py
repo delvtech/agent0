@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from traceback import format_tb
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
@@ -19,12 +19,7 @@ from elfpy.utils import logs
 from eth_typing import BlockNumber
 from ethpy.base import smart_contract_read
 from ethpy.base.errors import ContractCallException
-from ethpy.hyperdrive import (AssetIdPrefix,
-                              convert_hyperdrive_checkpoint_types,
-                              convert_hyperdrive_pool_config_types,
-                              convert_hyperdrive_pool_info_types,
-                              encode_asset_id, get_hyperdrive_checkpoint,
-                              get_hyperdrive_pool_info)
+from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from numpy.random._generator import Generator as NumpyGenerator
@@ -97,6 +92,7 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
     )
 
 
+# pylint: disable=too-many-statements
 def build_crash_trade_result(
     exception: BaseException,
     agent: HyperdriveAgent,
@@ -160,7 +156,7 @@ def build_crash_trade_result(
     ## We get the underlying contract info and convert them to human readable versions
     # Despite these being protected variables, we need low level access for crash reporting
     trade_result.block_timestamp = pool_state.block.get("timestamp", None)
-    
+
     ## Get pool config
     # Pool config is static, so we can get it from the interface here
     trade_result.raw_pool_config = pool_state.contract_pool_config
@@ -171,18 +167,14 @@ def build_crash_trade_result(
     trade_result.pool_config["curve_fee"] = curve_fee
     trade_result.pool_config["flat_fee"] = flat_fee
     trade_result.pool_config["governance_fee"] = governance_fee
-    trade_result.pool_config["inv_time_stretch"] = (
-        FixedPoint(1) / trade_result.pool_config["time_stretch"]
-    )
+    trade_result.pool_config["inv_time_stretch"] = FixedPoint(1) / trade_result.pool_config["time_stretch"]
 
     ## Get pool info
     # We wrap contract calls in a try catch to avoid crashing during crash report
     try:
         trade_result.raw_pool_info = pool_state.contract_pool_info
     except Exception as exc:  # pylint: disable=broad-except
-        logging.warning(
-            "Failed to get hyperdrive pool info in crash reporting: %s", repr(exc)
-        )
+        logging.warning("Failed to get hyperdrive pool info in crash reporting: %s", repr(exc))
         trade_result.raw_pool_info = None
     if trade_result.raw_pool_info is not None and trade_result.block_timestamp is not None:
         trade_result.pool_info = asdict(pool_state.pool_info)
@@ -207,16 +199,12 @@ def build_crash_trade_result(
             logging.warning("Failed to get block_timestamp in crash_reporting")
             trade_result.raw_checkpoint = None
     except Exception as exc:  # pylint: disable=broad-except
-        logging.warning(
-            "Failed to get hyperdrive checkpoint in crash reporting: %s", repr(exc)
-        )
+        logging.warning("Failed to get hyperdrive checkpoint in crash reporting: %s", repr(exc))
         trade_result.raw_checkpoint = None
     if trade_result.raw_checkpoint is not None and trade_result.block_timestamp is not None:
         trade_result.checkpoint_info = asdict(pool_state.checkpoint)
         trade_result.checkpoint_info["block_number"] = trade_result.block_number
-        trade_result.checkpoint_info["timestamp"] = datetime.fromtimestamp(
-            int(trade_result.block_timestamp)
-        )
+        trade_result.checkpoint_info["timestamp"] = datetime.fromtimestamp(int(trade_result.block_timestamp))
     else:
         trade_result.checkpoint_info = None
 
@@ -315,9 +303,7 @@ def log_hyperdrive_crash_report(
         if crash_report_file_prefix is None:
             crash_report_file_prefix = ""
         crash_report_dir = ".crash_report/"
-        crash_report_file = (
-            f"{crash_report_dir}/{crash_report_file_prefix}{fn_time_str}.json"
-        )
+        crash_report_file = f"{crash_report_dir}/{crash_report_file_prefix}{fn_time_str}.json"
         if not os.path.exists(crash_report_dir):
             os.makedirs(crash_report_dir)
         with open(crash_report_file, "w", encoding="utf-8") as file:
@@ -392,9 +378,7 @@ def get_anvil_state_dump(web3: Web3) -> str | None:
     """Helper function for getting anvil dump state"""
     result: str | None = None
     try:
-        response = web3.provider.make_request(
-            method=RPCEndpoint("anvil_dumpState"), params=[]
-        )
+        response = web3.provider.make_request(method=RPCEndpoint("anvil_dumpState"), params=[])
         result = response.get("result", False)
     except Exception:  # pylint: disable=broad-exception-caught
         # do nothing, this is best effort crash reporting
