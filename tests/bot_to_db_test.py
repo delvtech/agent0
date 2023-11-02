@@ -12,14 +12,11 @@ from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.test_fixtures import CycleTradesPolicy
-from chainsync.db.hyperdrive.interface import (
-    get_current_wallet,
-    get_pool_analysis,
-    get_pool_config,
-    get_pool_info,
-    get_transactions,
-    get_wallet_deltas,
-)
+from chainsync.db.hyperdrive.interface import (get_current_wallet,
+                                               get_pool_analysis,
+                                               get_pool_config, get_pool_info,
+                                               get_transactions,
+                                               get_wallet_deltas)
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI
@@ -195,7 +192,7 @@ class TestBotToDb:
         expected_inv_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
 
         expected_pool_config = {
-            "contractAddress": hyperdrive_contract_addresses.mock_hyperdrive,
+            "contract_address": hyperdrive_contract_addresses.mock_hyperdrive,
             "baseToken": hyperdrive_contract_addresses.base_token,
             "initialSharePrice": _to_unscaled_decimal(FixedPoint("1")),
             "minimumShareReserves": _to_unscaled_decimal(FixedPoint("10")),

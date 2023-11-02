@@ -209,7 +209,7 @@ class HyperdriveTransaction(Base):
     # logIndex
     # address
     # cumulativeGasUsed
-    # contractAddress
+    # contract_address
     # status
     # logsBloom
     # effectiveGasPrice
