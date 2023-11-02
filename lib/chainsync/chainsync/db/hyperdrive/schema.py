@@ -94,9 +94,9 @@ class WalletDelta(Base):
     transaction_hash: Mapped[str] = mapped_column(String, index=True)
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
     wallet_address: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
-    # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
+    # base_token_type can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
     base_token_type: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
-    # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
+    # token_type is the base_token_type appended with "-<maturity_time>" for LONG and SHORT
     token_type: Mapped[Union[str, None]] = mapped_column(String, default=None)
     delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
@@ -134,22 +134,22 @@ class HyperdriveTransaction(Base):
     input_params_contribution: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     input_params_apr: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     input_params_destination: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    input_params_asUnderlying: Mapped[Union[bool, None]] = mapped_column(Boolean, default=None)
+    input_params_as_underlying: Mapped[Union[bool, None]] = mapped_column(Boolean, default=None)
 
     # Method: openLong
-    input_params_baseAmount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    input_params_minOutput: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    input_params_base_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    input_params_min_output: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # input_params_destination
     # input_params_asUnderlying
 
     # Method: openShort
-    input_params_bondAmount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    input_params_maxDeposit: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    input_params_bond_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    input_params_max_deposit: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # input_params_destination
     # input_params_asUnderlying
 
     # Method: closeLong
-    input_params_maturityTime: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
+    input_params_maturity_time: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
     # input_params_bondAmount
     # input_params_minOutput
     # input_params_destination
@@ -164,8 +164,8 @@ class HyperdriveTransaction(Base):
 
     # Method: addLiquidity
     # input_params_contribution
-    input_params_minApr: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    input_params_maxApr: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    input_params_min_apr: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    input_params_max_apr: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # input_params_destination
     # input_params_asUnderlying
 
@@ -242,9 +242,9 @@ class CurrentWallet(Base):
     id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
     wallet_address: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
-    # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
+    # base_token_type can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
     base_token_type: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
-    # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
+    # token_type is the base_token_type appended with "-<maturity_time>" for LONG and SHORT
     token_type: Mapped[Union[str, None]] = mapped_column(String, default=None)
     value: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs
@@ -281,9 +281,9 @@ class WalletPNL(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
     wallet_address: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
-    # baseTokenType can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
+    # base_token_type can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
     base_token_type: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
-    # tokenType is the baseTokenType appended with "-<maturity_time>" for LONG and SHORT
+    # token_type is the base_token_type appended with "-<maturity_time>" for LONG and SHORT
     token_type: Mapped[Union[str, None]] = mapped_column(String, default=None)
     value: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # While time here is in epoch seconds, we use Numeric to allow for (1) lossless storage and (2) allow for NaNs

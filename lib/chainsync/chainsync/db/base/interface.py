@@ -293,7 +293,7 @@ def get_username_to_user(session: Session, username: str | None = None) -> pd.Da
 
 
 class TableWithBlockNumber(Base):
-    """An abstract table that has blockNumber"""
+    """An abstract table that has block_number"""
 
     __abstract__ = True
 
@@ -301,7 +301,7 @@ class TableWithBlockNumber(Base):
     # has to be camelCase to match table column name
     # pylint: disable=invalid-name
     def block_number(self):
-        """Stubbed blockNumber column."""
+        """Stubbed block_number column."""
         return Column(String)
 
 
@@ -311,7 +311,7 @@ def get_latest_block_number_from_table(table_obj: Type[Base], session: Session) 
     Arguments
     ---------
     table_obj : Type[Base]
-        The sqlalchemy class that contains the blockNumber column
+        The sqlalchemy class that contains the block_number column
     session : Session
         The initialized session object
 

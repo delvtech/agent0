@@ -58,8 +58,8 @@ def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session)
 
 def calc_total_wallet_delta(wallet_deltas: pd.DataFrame) -> pd.DataFrame:
     """Calculates total wallet deltas from wallet_delta for every wallet type and position"""
-    return wallet_deltas.groupby(["walletAddress", "tokenType"]).agg(
-        {"delta": "sum", "baseTokenType": "first", "maturityTime": "first"}
+    return wallet_deltas.groupby(["wallet_address", "token_type"]).agg(
+        {"delta": "sum", "base_token_type": "first", "maturityTime": "first"}
     )
 
 
@@ -84,10 +84,10 @@ def calc_current_wallet(wallet_deltas_df: pd.DataFrame, latest_wallet: pd.DataFr
     # There's a chance multiple wallet deltas can happen from the same address at the same block
     # Hence, we group all deltas into a single delta for cumsum
     wallet_deltas_df = (
-        wallet_deltas_df.groupby(["walletAddress", "tokenType", "blockNumber"])
+        wallet_deltas_df.groupby(["wallet_address", "token_type", "block_number"])
         .agg(
             {
-                "baseTokenType": "first",
+                "base_token_type": "first",
                 "maturityTime": "first",
                 "delta": "sum",
             }
@@ -95,10 +95,10 @@ def calc_current_wallet(wallet_deltas_df: pd.DataFrame, latest_wallet: pd.DataFr
         .reset_index()
     )
 
-    # Ensure wallet_deltas are sorted by blockNumber
-    wallet_deltas_df = wallet_deltas_df.sort_values("blockNumber")
+    # Ensure wallet_deltas are sorted by block_number
+    wallet_deltas_df = wallet_deltas_df.sort_values("block_number")
     # Using np.cumsum because of decimal objects in dataframe
-    wallet_delta_by_block = wallet_deltas_df.groupby(["walletAddress", "tokenType"])["delta"].apply(np.cumsum)
+    wallet_delta_by_block = wallet_deltas_df.groupby(["wallet_address", "token_type"])["delta"].apply(np.cumsum)
     # Use only the index of the original df
     wallet_delta_by_block.index = wallet_delta_by_block.index.get_level_values(2)
     # Add column
@@ -108,11 +108,11 @@ def calc_current_wallet(wallet_deltas_df: pd.DataFrame, latest_wallet: pd.DataFr
 
     # If there was a initial wallet, add deltas to initial wallet to calculate current positions
     if len(latest_wallet) > 0:
-        wallet_deltas_df = wallet_deltas_df.set_index(["walletAddress", "tokenType", "blockNumber"])
-        latest_wallet = latest_wallet.set_index(["walletAddress", "tokenType"])
+        wallet_deltas_df = wallet_deltas_df.set_index(["wallet_address", "token_type", "block_number"])
+        latest_wallet = latest_wallet.set_index(["wallet_address", "token_type"])
 
         # Add the latest wallet to each wallet delta position to calculate most current positions
-        # We broadcast latest wallet across all blockNumbers. If a position does not exist in latest_wallet,
+        # We broadcast latest wallet across all block_numbers. If a position does not exist in latest_wallet,
         # it will treat it as 0 (based on fill_value)
         wallet_deltas_df["value"] = wallet_deltas_df["value"].add(latest_wallet["value"], fill_value=0)
         # In the case where latest_wallet has positions not in wallet_deltas, we can ignore them
@@ -168,8 +168,8 @@ def data_to_analysis(
         pool_info["longsOutstanding"], pool_info["sharePrice"], pool_config["minimumShareReserves"]
     )
 
-    pool_analysis_df = pd.concat([pool_info["blockNumber"], spot_price, fixed_rate, base_buffer], axis=1)
-    pool_analysis_df.columns = ["blockNumber", "spot_price", "fixed_rate", "base_buffer"]
+    pool_analysis_df = pd.concat([pool_info["block_number"], spot_price, fixed_rate, base_buffer], axis=1)
+    pool_analysis_df.columns = ["block_number", "spot_price", "fixed_rate", "base_buffer"]
     _df_to_db(pool_analysis_df, PoolAnalysis, db_session)
 
     # TODO calculate current wallet positions for this block

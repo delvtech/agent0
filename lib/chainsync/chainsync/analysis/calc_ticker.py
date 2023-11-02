@@ -7,26 +7,26 @@ def calc_ticker(wallet_delta: pd.DataFrame, transactions: pd.DataFrame, pool_inf
     # TODO these merges should really happen via an sql query instead of in pandas here
     # Set ticker so that each transaction is a single row
     ticker_data = wallet_delta.groupby(["transactionHash"]).agg(
-        {"blockNumber": "first", "walletAddress": "first", "baseTokenType": tuple, "delta": tuple}
+        {"block_number": "first", "wallet_address": "first", "base_token_type": tuple, "delta": tuple}
     )
 
     # Expand column of lists into separate dataframes, then str cat them together
-    token_type = pd.DataFrame(ticker_data["baseTokenType"].to_list(), index=ticker_data.index)
+    token_type = pd.DataFrame(ticker_data["base_token_type"].to_list(), index=ticker_data.index)
     token_deltas = pd.DataFrame(ticker_data["delta"].to_list(), index=ticker_data.index)
     token_diffs = token_type + ": " + token_deltas.astype("str")
     # Aggregate columns into a single list, removing nans
     token_diffs = token_diffs.stack().groupby(level=0).agg(list)
 
     # Gather other information from other tables
-    timestamps = pool_info.set_index("blockNumber").loc[ticker_data["blockNumber"], "timestamp"]
+    timestamps = pool_info.set_index("block_number").loc[ticker_data["block_number"], "timestamp"]
     trade_type = transactions.set_index("transactionHash").loc[ticker_data.index, "input_method"]
 
-    ticker_data = ticker_data[["blockNumber", "walletAddress"]].copy()
+    ticker_data = ticker_data[["block_number", "wallet_address"]].copy()
     ticker_data["timestamp"] = timestamps.values
     ticker_data["trade_type"] = trade_type
     ticker_data["token_diffs"] = token_diffs
     # Drop rows with nonexistent wallets
-    ticker_data = ticker_data.dropna(axis=0, subset="walletAddress")
-    # Remove txn hash index and sort by blockNumber
-    ticker_data = ticker_data.sort_values("blockNumber").reset_index(drop=True)
+    ticker_data = ticker_data.dropna(axis=0, subset="wallet_address")
+    # Remove txn hash index and sort by block_number
+    ticker_data = ticker_data.sort_values("block_number").reset_index(drop=True)
     return ticker_data
