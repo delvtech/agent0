@@ -99,7 +99,7 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
                     f"Adding pool configuration field: key {key} doesn't match (new: {new_value}, old:{old_value})"
                 )
     else:
-        # Should never get here, contractAddress is primary_key, which is unique
+        # Should never get here, contract_address is primary_key, which is unique
         raise ValueError
 
 

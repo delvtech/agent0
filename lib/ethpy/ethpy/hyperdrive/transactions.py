@@ -154,7 +154,7 @@ def process_hyperdrive_pool_config(pool_config: dict[str, Any], hyperdrive_addre
             pool_config[key] = FixedPoint(scaled_value=pool_config[key])
     pool_config["fees"] = [FixedPoint(scaled_value=fee) for fee in pool_config["fees"]]
     # new attributes
-    pool_config["contractAddress"] = hyperdrive_address
+    pool_config["contract_address"] = hyperdrive_address
     curve_fee, flat_fee, governance_fee = pool_config["fees"]
     pool_config["curveFee"] = curve_fee
     pool_config["flatFee"] = flat_fee
