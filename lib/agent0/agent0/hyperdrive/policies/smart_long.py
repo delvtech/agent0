@@ -109,14 +109,13 @@ class SmartLong(HyperdrivePolicy):
         gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
         if not gonna_trade:
             return ([], False)
+        pool_state = hyperdrive.current_pool_state
         action_list = []
         for long_time in wallet.longs:  # loop over longs # pylint: disable=consider-using-dict-items
             # if any long is mature
             # TODO: should we make this less time? they dont close before the agent runs out of money
             # how to intelligently pick the length? using PNL I guess.
-            if (
-                hyperdrive.current_pool_state.block_time - FixedPoint(long_time)
-            ) >= hyperdrive.current_pool_state.pool_config.position_duration:
+            if (pool_state.block_time - FixedPoint(long_time)) >= pool_state.pool_config.position_duration:
                 trade_amount = wallet.longs[long_time].balance  # close the whole thing
                 action_list += [
                     Trade(
@@ -133,15 +132,13 @@ class SmartLong(HyperdrivePolicy):
         long_balances = [long.balance for long in wallet.longs.values()]
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
-        if (
-            hyperdrive.calc_fixed_rate() - hyperdrive.current_pool_state.variable_rate
-        ) > self.risk_threshold and not has_opened_long:
+        if (hyperdrive.calc_fixed_rate() - pool_state.variable_rate) > self.risk_threshold and not has_opened_long:
             # calculate the total number of bonds we want to see in the pool
             total_bonds_to_match_variable_apr = hyperdrive.calc_bonds_given_shares_and_rate(
-                target_rate=hyperdrive.current_pool_state.variable_rate
+                target_rate=pool_state.variable_rate
             )
             # get the delta bond amount & convert units
-            bond_reserves: FixedPoint = hyperdrive.current_pool_state.pool_info.bond_reserves
+            bond_reserves: FixedPoint = pool_state.pool_info.bond_reserves
             # calculate how many bonds we take out of the pool
             new_bonds_to_match_variable_apr = (
                 bond_reserves - total_bonds_to_match_variable_apr
@@ -151,7 +148,7 @@ class SmartLong(HyperdrivePolicy):
                 new_bonds_to_match_variable_apr, shares_in=False
             )
             # get the maximum amount the agent can long given the market and the agent's wallet
-            max_base = hyperdrive.calc_max_long(wallet.balance.amount)
+            max_base = hyperdrive.calc_max_long(wallet.balance.amount, pool_state)
             # don't want to trade more than the agent has or more than the market can handle
             trade_amount = FixedPointMath.minimum(max_base, new_base_to_match_variable_apr)
             if trade_amount > WEI and wallet.balance.amount > WEI:

@@ -58,15 +58,13 @@ class PoolConfig:
     time_stretch: FixedPoint
     governance: str
     fee_collector: str
-    _fees: Sequence | Fees
+    fees: Sequence | Fees
     oracle_size: int
     update_gap: int
 
     def __post_init__(self):
-        if isinstance(self._fees, Sequence):
-            self.fees: Fees = Fees(*self._fees)
-        else:
-            self.fees = self._fees
+        if isinstance(self.fees, Sequence):
+            self.fees: Fees = Fees(*self.fees)
 
 
 @dataclass
@@ -121,12 +119,7 @@ def convert_hyperdrive_pool_config_types(pool_config: dict[str, Any]) -> PoolCon
           - FixedPoint types are used if the type was FixedPoint in the underlying contract.
     """
     out_config = {camel_to_snake(key): value for key, value in pool_config.items()}
-    fixedpoint_keys = [
-        "initial_share_price",
-        "minimum_share_reserves",
-        "minimum_transaction_amount",
-        "time_stretch",
-    ]
+    fixedpoint_keys = ["initial_share_price", "minimum_share_reserves", "minimum_transaction_amount", "time_stretch"]
     for key in pool_config:
         if key in fixedpoint_keys:
             out_config[key] = FixedPoint(scaled_value=pool_config[key])
@@ -399,10 +392,7 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
 
 
 def get_event_history_from_chain(
-    hyperdrive_contract: Contract,
-    from_block: int,
-    to_block: int,
-    wallet_addr: str | None = None,
+    hyperdrive_contract: Contract, from_block: int, to_block: int, wallet_addr: str | None = None
 ) -> dict:
     """Helper function to query event logs directly from the chain.
     Useful for debugging open positions of wallet addresses.
@@ -441,16 +431,8 @@ def get_event_history_from_chain(
     if wallet_addr is not None:
         lp_addr_filter = {"provider": wallet_addr}
         trade_addr_filter = {"trader": wallet_addr}
-    lp_filter_args = {
-        "fromBlock": from_block,
-        "toBlock": to_block,
-        "argument_filters": lp_addr_filter,
-    }
-    trade_filter_args = {
-        "fromBlock": from_block,
-        "toBlock": to_block,
-        "argument_filters": trade_addr_filter,
-    }
+    lp_filter_args = {"fromBlock": from_block, "toBlock": to_block, "argument_filters": lp_addr_filter}
+    trade_filter_args = {"fromBlock": from_block, "toBlock": to_block, "argument_filters": trade_addr_filter}
 
     # Create filter on events
     # Typing doesn't know about create_filter function with various events

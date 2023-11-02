@@ -183,11 +183,7 @@ async def async_match_contract_call_to_trade(
             if not trade.maturity_time:
                 raise ValueError("Maturity time was not provided, can't close long position.")
             trade_result = await hyperdrive.async_close_long(
-                agent,
-                trade.trade_amount,
-                trade.maturity_time,
-                trade.slippage_tolerance,
-                nonce=nonce,
+                agent, trade.trade_amount, trade.maturity_time, trade.slippage_tolerance, nonce=nonce
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
@@ -213,11 +209,7 @@ async def async_match_contract_call_to_trade(
             if not trade.maturity_time:
                 raise ValueError("Maturity time was not provided, can't close long position.")
             trade_result = await hyperdrive.async_close_short(
-                agent,
-                trade.trade_amount,
-                trade.maturity_time,
-                trade.slippage_tolerance,
-                nonce=nonce,
+                agent, trade.trade_amount, trade.maturity_time, trade.slippage_tolerance, nonce=nonce
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(

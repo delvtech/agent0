@@ -70,10 +70,9 @@ def data_chain_to_db(hyperdrive: HyperdriveInterface, block: BlockData, session:
     transactions = fetch_contract_transactions_for_block(
         hyperdrive.web3, hyperdrive.hyperdrive_contract, pool_state.block_number
     )
-    (
-        block_transactions,
-        wallet_deltas,
-    ) = convert_hyperdrive_transactions_for_block(hyperdrive.web3, hyperdrive.hyperdrive_contract, transactions)
+    block_transactions, wallet_deltas = convert_hyperdrive_transactions_for_block(
+        hyperdrive.web3, hyperdrive.hyperdrive_contract, transactions
+    )
     add_transactions(block_transactions, session)
     add_wallet_deltas(wallet_deltas, session)
 
