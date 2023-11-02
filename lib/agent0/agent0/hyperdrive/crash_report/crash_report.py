@@ -160,10 +160,6 @@ def build_crash_trade_result(
     # We call the conversion functions to convert them to human readable versions as well
     trade_result.pool_config = asdict(pool_state.pool_config)
     trade_result.pool_config["contract_address"] = hyperdrive.hyperdrive_contract.address
-    curve_fee, flat_fee, governance_fee = trade_result.pool_config["fees"]
-    trade_result.pool_config["curve_fee"] = curve_fee
-    trade_result.pool_config["flat_fee"] = flat_fee
-    trade_result.pool_config["governance_fee"] = governance_fee
     trade_result.pool_config["inv_time_stretch"] = FixedPoint(1) / trade_result.pool_config["time_stretch"]
 
     ## Get pool info
