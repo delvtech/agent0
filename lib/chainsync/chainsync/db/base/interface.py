@@ -300,7 +300,7 @@ class TableWithBlockNumber(Base):
     @declared_attr
     # has to be camelCase to match table column name
     # pylint: disable=invalid-name
-    def blockNumber(self):
+    def block_number(self):
         """Stubbed blockNumber column."""
         return Column(String)
 
@@ -321,13 +321,13 @@ def get_latest_block_number_from_table(table_obj: Type[Base], session: Session) 
         The latest block number from the specified table
     """
 
-    if not hasattr(table_obj, "blockNumber"):
-        raise ValueError("Table does not have a blockNumber column")
+    if not hasattr(table_obj, "block_number"):
+        raise ValueError("Table does not have a block_number column")
 
     table = cast(TableWithBlockNumber, table_obj)
 
     # For some reason, pylint doesn't like func.max from sqlalchemy
-    result = session.query(func.max(table.blockNumber)).first()  # pylint: disable=not-callable
+    result = session.query(func.max(table.block_number)).first()  # pylint: disable=not-callable
     # If table doesn't exist
     if result is None:
         return 0

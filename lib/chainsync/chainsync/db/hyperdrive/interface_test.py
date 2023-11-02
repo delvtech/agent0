@@ -121,19 +121,19 @@ class TestCheckpointInterface:
         add_checkpoint_infos([checkpoint_1, checkpoint_2, checkpoint_3], db_session)
 
         checkpoints_df = get_checkpoint_info(db_session, start_block=1)
-        np.testing.assert_array_equal(checkpoints_df["sharePrice"], [3.2, 3.3])
+        np.testing.assert_array_equal(checkpoints_df["share_price"], [3.2, 3.3])
 
         checkpoints_df = get_checkpoint_info(db_session, start_block=-1)
-        np.testing.assert_array_equal(checkpoints_df["sharePrice"], [3.3])
+        np.testing.assert_array_equal(checkpoints_df["share_price"], [3.3])
 
         checkpoints_df = get_checkpoint_info(db_session, end_block=1)
-        np.testing.assert_array_equal(checkpoints_df["sharePrice"], [3.1])
+        np.testing.assert_array_equal(checkpoints_df["share_price"], [3.1])
 
         checkpoints_df = get_checkpoint_info(db_session, end_block=-1)
-        np.testing.assert_array_equal(checkpoints_df["sharePrice"], [3.1, 3.2])
+        np.testing.assert_array_equal(checkpoints_df["share_price"], [3.1, 3.2])
 
         checkpoints_df = get_checkpoint_info(db_session, start_block=1, end_block=-1)
-        np.testing.assert_array_equal(checkpoints_df["sharePrice"], [3.2])
+        np.testing.assert_array_equal(checkpoints_df["share_price"], [3.2])
 
 
 class TestPoolConfigInterface:
@@ -146,14 +146,14 @@ class TestPoolConfigInterface:
 
         pool_config_df_1 = get_pool_config(db_session)
         assert len(pool_config_df_1) == 1
-        np.testing.assert_array_equal(pool_config_df_1["initialSharePrice"], np.array([3.2]))
+        np.testing.assert_array_equal(pool_config_df_1["initial_share_price"], np.array([3.2]))
 
         pool_config_2 = PoolConfig(contract_address="1", initial_share_price=Decimal("3.4"))
         add_pool_config(pool_config_2, db_session)
 
         pool_config_df_2 = get_pool_config(db_session)
         assert len(pool_config_df_2) == 2
-        np.testing.assert_array_equal(pool_config_df_2["initialSharePrice"], np.array([3.2, 3.4]))
+        np.testing.assert_array_equal(pool_config_df_2["initial_share_price"], np.array([3.2, 3.4]))
 
     def test_primary_id_query_pool_config(self, db_session):
         """Testing retrieval of pool config via interface"""
@@ -162,7 +162,7 @@ class TestPoolConfigInterface:
 
         pool_config_df_1 = get_pool_config(db_session, contract_address="0")
         assert len(pool_config_df_1) == 1
-        assert pool_config_df_1.loc[0, "initialSharePrice"] == 3.2
+        assert pool_config_df_1.loc[0, "initial_share_price"] == 3.2
 
         pool_config_df_2 = get_pool_config(db_session, contract_address="1")
         assert len(pool_config_df_2) == 0
@@ -173,14 +173,14 @@ class TestPoolConfigInterface:
         add_pool_config(pool_config_1, db_session)
         pool_config_df_1 = get_pool_config(db_session)
         assert len(pool_config_df_1) == 1
-        assert pool_config_df_1.loc[0, "initialSharePrice"] == 3.2
+        assert pool_config_df_1.loc[0, "initial_share_price"] == 3.2
 
         # Nothing should happen if we give the same pool_config
         pool_config_2 = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
         add_pool_config(pool_config_2, db_session)
         pool_config_df_2 = get_pool_config(db_session)
         assert len(pool_config_df_2) == 1
-        assert pool_config_df_2.loc[0, "initialSharePrice"] == 3.2
+        assert pool_config_df_2.loc[0, "initial_share_price"] == 3.2
 
         # If we try to add another pool config with a different value, should throw a ValueError
         pool_config_3 = PoolConfig(contract_address="0", initial_share_price=Decimal("3.4"))
@@ -351,7 +351,7 @@ class TestCurrentWalletInterface:
         wallet_info_df = get_current_wallet(db_session).reset_index()
         # Sort by value to make order invariant
         wallet_info_df = wallet_info_df.sort_values(by=["value"])
-        np.testing.assert_array_equal(wallet_info_df["tokenType"], [BASE_TOKEN_SYMBOL, "LP"])
+        np.testing.assert_array_equal(wallet_info_df["token_type"], [BASE_TOKEN_SYMBOL, "LP"])
         np.testing.assert_array_equal(wallet_info_df["value"], [3.1, 5.1])
         # E.g., block 2, wallet base tokens gets updated to 6.1
         wallet_info_3 = CurrentWallet(
@@ -361,5 +361,5 @@ class TestCurrentWalletInterface:
         wallet_info_df = get_current_wallet(db_session).reset_index()
         # Sort by value to make order invariant
         wallet_info_df = wallet_info_df.sort_values(by=["value"])
-        np.testing.assert_array_equal(wallet_info_df["tokenType"], ["LP", BASE_TOKEN_SYMBOL])
+        np.testing.assert_array_equal(wallet_info_df["token_type"], ["LP", BASE_TOKEN_SYMBOL])
         np.testing.assert_array_equal(wallet_info_df["value"], [5.1, 6.1])

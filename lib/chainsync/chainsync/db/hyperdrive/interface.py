@@ -405,7 +405,7 @@ def get_all_traders(
 
     results = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
-    return results["walletAddress"]
+    return results["wallet_address"]
 
 
 # Analysis schema interfaces
@@ -483,15 +483,15 @@ def get_current_wallet(
     current_wallet = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
     # Rename blockNumber column to be latest_block_update, and set the new blockNumber to be the query block
-    current_wallet["latest_block_update"] = current_wallet["blockNumber"]
-    current_wallet["blockNumber"] = end_block - 1
+    current_wallet["latest_block_update"] = current_wallet["block_number"]
+    current_wallet["block_number"] = end_block - 1
 
     # Drop id, as id is autofilled when inserting
     current_wallet = current_wallet.drop("id", axis=1)
 
     # filter non-base zero positions here
     has_value = current_wallet["value"] > 0
-    is_base = current_wallet["tokenType"] == BASE_TOKEN_SYMBOL
+    is_base = current_wallet["token_type"] == BASE_TOKEN_SYMBOL
 
     return current_wallet[has_value | is_base].copy()
 
