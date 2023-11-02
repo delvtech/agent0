@@ -12,7 +12,7 @@ class TestTransactionTable:
 
     def test_create_transaction(self, db_session):
         """Create and entry"""
-        transaction = HyperdriveTransaction(blockNumber=1, transactionHash="a", event_value=Decimal("3.2"))
+        transaction = HyperdriveTransaction(block_number=1, transaction_hash="a", event_value=Decimal("3.2"))
         db_session.add(transaction)
         db_session.commit()
 
@@ -23,7 +23,7 @@ class TestTransactionTable:
 
     def test_update_transaction(self, db_session):
         """Update an entry"""
-        transaction = HyperdriveTransaction(blockNumber=1, transactionHash="a", event_value=Decimal("3.2"))
+        transaction = HyperdriveTransaction(block_number=1, transaction_hash="a", event_value=Decimal("3.2"))
         db_session.add(transaction)
         db_session.commit()
 
@@ -36,7 +36,7 @@ class TestTransactionTable:
 
     def test_delete_transaction(self, db_session):
         """Delete an entry"""
-        transaction = HyperdriveTransaction(blockNumber=1, transactionHash="a", event_value=Decimal("3.2"))
+        transaction = HyperdriveTransaction(block_number=1, transaction_hash="a", event_value=Decimal("3.2"))
         db_session.add(transaction)
         db_session.commit()
 
@@ -162,7 +162,7 @@ class TestWalletDeltaTable:
 
     def test_create_wallet_delta(self, db_session):
         """Create and entry"""
-        wallet_delta = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.2"))
+        wallet_delta = WalletDelta(block_number=1, transaction_hash="a", delta=Decimal("3.2"))
         db_session.add(wallet_delta)
         db_session.commit()
 
@@ -173,7 +173,7 @@ class TestWalletDeltaTable:
 
     def test_update_wallet_delta(self, db_session):
         """Update an entry"""
-        wallet_delta = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.2"))
+        wallet_delta = WalletDelta(block_number=1, transaction_hash="a", delta=Decimal("3.2"))
         db_session.add(wallet_delta)
         db_session.commit()
         wallet_delta.delta = Decimal("5.0")
@@ -184,7 +184,7 @@ class TestWalletDeltaTable:
 
     def test_delete_wallet_delta(self, db_session):
         """Delete an entry"""
-        wallet_delta = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.2"))
+        wallet_delta = WalletDelta(block_number=1, transaction_hash="a", delta=Decimal("3.2"))
         db_session.add(wallet_delta)
         db_session.commit()
         db_session.delete(wallet_delta)
