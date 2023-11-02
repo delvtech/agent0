@@ -7,24 +7,15 @@ import pytest
 from chainsync.db.base import get_latest_block_number_from_table
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
-from .interface import (
-    add_checkpoint_infos,
-    add_current_wallet,
-    add_pool_config,
-    add_pool_infos,
-    add_transactions,
-    add_wallet_deltas,
-    get_all_traders,
-    get_checkpoint_info,
-    get_current_wallet,
-    get_latest_block_number_from_pool_info_table,
-    get_latest_block_number_from_table,
-    get_pool_config,
-    get_pool_info,
-    get_transactions,
-    get_wallet_deltas,
-)
-from .schema import CheckpointInfo, CurrentWallet, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta
+from .interface import (add_checkpoint_infos, add_current_wallet,
+                        add_pool_config, add_pool_infos, add_transactions,
+                        add_wallet_deltas, get_all_traders,
+                        get_checkpoint_info, get_current_wallet,
+                        get_latest_block_number_from_pool_info_table,
+                        get_latest_block_number_from_table, get_pool_config,
+                        get_pool_info, get_transactions, get_wallet_deltas)
+from .schema import (CheckpointInfo, CurrentWallet, HyperdriveTransaction,
+                     PoolConfig, PoolInfo, WalletDelta)
 
 
 # These tests are using fixtures defined in conftest.py
@@ -84,15 +75,15 @@ class TestCheckpointInterface:
 
     def test_latest_block_number(self, db_session):
         """Testing retrieval of checkpoint via interface"""
-        checkpoint_1 = CheckpointInfo(blockNumber=1, timestamp=datetime.now())
+        checkpoint_1 = CheckpointInfo(block_number=1, timestamp=datetime.now())
         add_checkpoint_infos([checkpoint_1], db_session)
         db_session.commit()
 
         latest_block_number = get_latest_block_number_from_table(CheckpointInfo, db_session)
         assert latest_block_number == 1
 
-        checkpoint_2 = CheckpointInfo(blockNumber=2, timestamp=datetime.now())
-        checkpoint_3 = CheckpointInfo(blockNumber=3, timestamp=datetime.now())
+        checkpoint_2 = CheckpointInfo(block_number=2, timestamp=datetime.now())
+        checkpoint_3 = CheckpointInfo(block_number=3, timestamp=datetime.now())
         add_checkpoint_infos([checkpoint_2, checkpoint_3], db_session)
 
         latest_block_number = get_latest_block_number_from_table(CheckpointInfo, db_session)
@@ -103,9 +94,9 @@ class TestCheckpointInterface:
         date_1 = datetime(1945, 8, 6)
         date_2 = datetime(1984, 8, 9)
         date_3 = datetime(2001, 9, 11)
-        checkpoint_1 = CheckpointInfo(blockNumber=0, timestamp=date_1)
-        checkpoint_2 = CheckpointInfo(blockNumber=1, timestamp=date_2)
-        checkpoint_3 = CheckpointInfo(blockNumber=2, timestamp=date_3)
+        checkpoint_1 = CheckpointInfo(block_number=0, timestamp=date_1)
+        checkpoint_2 = CheckpointInfo(block_number=1, timestamp=date_2)
+        checkpoint_3 = CheckpointInfo(block_number=2, timestamp=date_3)
         add_checkpoint_infos([checkpoint_1, checkpoint_2, checkpoint_3], db_session)
 
         checkpoints_df = get_checkpoint_info(db_session)
@@ -115,9 +106,9 @@ class TestCheckpointInterface:
 
     def test_block_query_checkpoints(self, db_session):
         """Testing querying by block number of checkpoints via interface"""
-        checkpoint_1 = CheckpointInfo(blockNumber=0, timestamp=datetime.now(), sharePrice=Decimal("3.1"))
-        checkpoint_2 = CheckpointInfo(blockNumber=1, timestamp=datetime.now(), sharePrice=Decimal("3.2"))
-        checkpoint_3 = CheckpointInfo(blockNumber=2, timestamp=datetime.now(), sharePrice=Decimal("3.3"))
+        checkpoint_1 = CheckpointInfo(block_number=0, timestamp=datetime.now(), share_price=Decimal("3.1"))
+        checkpoint_2 = CheckpointInfo(block_number=1, timestamp=datetime.now(), share_price=Decimal("3.2"))
+        checkpoint_3 = CheckpointInfo(block_number=2, timestamp=datetime.now(), share_price=Decimal("3.3"))
         add_checkpoint_infos([checkpoint_1, checkpoint_2, checkpoint_3], db_session)
 
         checkpoints_df = get_checkpoint_info(db_session, start_block=1)
@@ -141,14 +132,14 @@ class TestPoolConfigInterface:
 
     def test_get_pool_config(self, db_session):
         """Testing retrieval of pool config via interface"""
-        pool_config_1 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
+        pool_config_1 = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
         add_pool_config(pool_config_1, db_session)
 
         pool_config_df_1 = get_pool_config(db_session)
         assert len(pool_config_df_1) == 1
         np.testing.assert_array_equal(pool_config_df_1["initialSharePrice"], np.array([3.2]))
 
-        pool_config_2 = PoolConfig(contractAddress="1", initialSharePrice=Decimal("3.4"))
+        pool_config_2 = PoolConfig(contract_address="1", initial_share_price=Decimal("3.4"))
         add_pool_config(pool_config_2, db_session)
 
         pool_config_df_2 = get_pool_config(db_session)
@@ -157,7 +148,7 @@ class TestPoolConfigInterface:
 
     def test_primary_id_query_pool_config(self, db_session):
         """Testing retrieval of pool config via interface"""
-        pool_config = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
+        pool_config = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
         add_pool_config(pool_config, db_session)
 
         pool_config_df_1 = get_pool_config(db_session, contract_address="0")
@@ -169,21 +160,21 @@ class TestPoolConfigInterface:
 
     def test_pool_config_verify(self, db_session):
         """Testing retrieval of pool config via interface"""
-        pool_config_1 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
+        pool_config_1 = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
         add_pool_config(pool_config_1, db_session)
         pool_config_df_1 = get_pool_config(db_session)
         assert len(pool_config_df_1) == 1
         assert pool_config_df_1.loc[0, "initialSharePrice"] == 3.2
 
         # Nothing should happen if we give the same pool_config
-        pool_config_2 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
+        pool_config_2 = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
         add_pool_config(pool_config_2, db_session)
         pool_config_df_2 = get_pool_config(db_session)
         assert len(pool_config_df_2) == 1
         assert pool_config_df_2.loc[0, "initialSharePrice"] == 3.2
 
         # If we try to add another pool config with a different value, should throw a ValueError
-        pool_config_3 = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.4"))
+        pool_config_3 = PoolConfig(contract_address="0", initial_share_price=Decimal("3.4"))
         with pytest.raises(ValueError):
             add_pool_config(pool_config_3, db_session)
 
@@ -194,16 +185,16 @@ class TestPoolInfoInterface:
     def test_latest_block_number(self, db_session):
         """Testing latest block number call"""
         timestamp_1 = datetime.fromtimestamp(1628472000)
-        pool_info_1 = PoolInfo(blockNumber=1, timestamp=timestamp_1)
+        pool_info_1 = PoolInfo(block_number=1, timestamp=timestamp_1)
         add_pool_infos([pool_info_1], db_session)
 
         latest_block_number = get_latest_block_number_from_pool_info_table(db_session)
         assert latest_block_number == 1
 
         timestamp_1 = datetime.fromtimestamp(1628472002)
-        pool_info_1 = PoolInfo(blockNumber=2, timestamp=timestamp_1)
+        pool_info_1 = PoolInfo(block_number=2, timestamp=timestamp_1)
         timestamp_2 = datetime.fromtimestamp(1628472004)
-        pool_info_2 = PoolInfo(blockNumber=3, timestamp=timestamp_2)
+        pool_info_2 = PoolInfo(block_number=3, timestamp=timestamp_2)
         add_pool_infos([pool_info_1, pool_info_2], db_session)
 
         latest_block_number = get_latest_block_number_from_pool_info_table(db_session)
@@ -212,11 +203,11 @@ class TestPoolInfoInterface:
     def test_get_pool_info(self, db_session):
         """Testing retrieval of pool info via interface"""
         timestamp_1 = datetime.fromtimestamp(1628472000)
-        pool_info_1 = PoolInfo(blockNumber=0, timestamp=timestamp_1)
+        pool_info_1 = PoolInfo(block_number=0, timestamp=timestamp_1)
         timestamp_2 = datetime.fromtimestamp(1628472002)
-        pool_info_2 = PoolInfo(blockNumber=1, timestamp=timestamp_2)
+        pool_info_2 = PoolInfo(block_number=1, timestamp=timestamp_2)
         timestamp_3 = datetime.fromtimestamp(1628472004)
-        pool_info_3 = PoolInfo(blockNumber=2, timestamp=timestamp_3)
+        pool_info_3 = PoolInfo(block_number=2, timestamp=timestamp_3)
         add_pool_infos([pool_info_1, pool_info_2, pool_info_3], db_session)
 
         pool_info_df = get_pool_info(db_session)
@@ -227,11 +218,11 @@ class TestPoolInfoInterface:
     def test_block_query_pool_info(self, db_session):
         """Testing retrieval of pool info via interface"""
         timestamp_1 = datetime.fromtimestamp(1628472000)
-        pool_info_1 = PoolInfo(blockNumber=0, timestamp=timestamp_1)
+        pool_info_1 = PoolInfo(block_number=0, timestamp=timestamp_1)
         timestamp_2 = datetime.fromtimestamp(1628472002)
-        pool_info_2 = PoolInfo(blockNumber=1, timestamp=timestamp_2)
+        pool_info_2 = PoolInfo(block_number=1, timestamp=timestamp_2)
         timestamp_3 = datetime.fromtimestamp(1628472004)
-        pool_info_3 = PoolInfo(blockNumber=2, timestamp=timestamp_3)
+        pool_info_3 = PoolInfo(block_number=2, timestamp=timestamp_3)
         add_pool_infos([pool_info_1, pool_info_2, pool_info_3], db_session)
         pool_info_df = get_pool_info(db_session, start_block=1)
         np.testing.assert_array_equal(

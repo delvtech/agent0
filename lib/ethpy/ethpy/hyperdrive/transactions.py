@@ -7,7 +7,8 @@ from typing import Any, Sequence
 
 from eth_typing import BlockNumber, ChecksumAddress
 from eth_utils import address
-from ethpy.base import UnknownBlockError, get_transaction_logs, smart_contract_read
+from ethpy.base import (UnknownBlockError, get_transaction_logs,
+                        smart_contract_read)
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -27,6 +28,7 @@ from .receipt_breakdown import ReceiptBreakdown
 # We'd like to rely on the pypechain classes as much as possible.
 # One solution could be to build our own interface wrapper that pulls in the pypechain
 # dataclass and makes this fixed set of changes?
+# pylint: disable=too-many-instance-attributes
 @dataclass
 class Checkpoint:
     """Checkpoint struct."""

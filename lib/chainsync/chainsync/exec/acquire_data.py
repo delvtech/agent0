@@ -8,17 +8,13 @@ import warnings
 
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
-    data_chain_to_db,
-    get_latest_block_number_from_pool_info_table,
-    init_data_chain_to_db,
-)
+    data_chain_to_db, get_latest_block_number_from_pool_info_table,
+    init_data_chain_to_db)
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import (
-    HyperdriveAddresses,
-    fetch_hyperdrive_address_from_uri,
-    get_web3_and_hyperdrive_contracts,
-)
+from ethpy.hyperdrive import (HyperdriveAddresses,
+                              fetch_hyperdrive_address_from_uri,
+                              get_web3_and_hyperdrive_contracts)
 from ethpy.hyperdrive.api import HyperdriveInterface
 from sqlalchemy.orm import Session
 
@@ -60,26 +56,10 @@ def acquire_data(
         If True, will exit after catching up to current block
     """
     ## Initialization
-    # eth config
-    if eth_config is None:
-        # Load parameters from env vars if they exist
-        eth_config = build_eth_config()
-
+    hyperdrive = HyperdriveInterface(eth_config, contract_addresses)
     # postgres session
     if db_session is None:
         db_session = initialize_session()
-
-    # Get addresses either from artifacts URI defined in eth_config or from contract_addresses
-    if contract_addresses is None:
-        contract_addresses = fetch_hyperdrive_address_from_uri(
-            os.path.join(eth_config.artifacts_uri, "addresses.json")
-        )
-
-    # Get web3 and contracts
-    web3, _, yield_contract, hyperdrive_contract = get_web3_and_hyperdrive_contracts(
-        eth_config, contract_addresses
-    )
-    # Get yield contract for variabel rate
 
     ## Get starting point for restarts
     # Get last entry of pool info in db
@@ -88,9 +68,8 @@ def acquire_data(
     block_number: BlockNumber = BlockNumber(max(start_block, data_latest_block_number))
     # Make sure to not grab current block, as the current block is subject to change
     # Current block is still being built
-    latest_mined_block = web3.eth.get_block_number()
+    latest_mined_block = hyperdrive.block_number(hyperdrive.current_block)
     lookback_block_limit = BlockNumber(lookback_block_limit)
-
     if (latest_mined_block - block_number) > lookback_block_limit:
         block_number = BlockNumber(latest_mined_block - lookback_block_limit)
         logging.warning(
@@ -98,20 +77,18 @@ def acquire_data(
             block_number,
         )
 
-    # Collect initial data
-    init_data_chain_to_db(hyperdrive_contract, db_session)
+    ## Collect initial data
+    init_data_chain_to_db(hyperdrive, db_session)
     # This if statement executes only on initial run (based on data_latest_block_number check),
     # and if the chain has executed until start_block (based on latest_mined_block check)
     if data_latest_block_number < block_number < latest_mined_block:
-        data_chain_to_db(
-            web3, hyperdrive_contract, yield_contract, block_number, db_session
-        )
+        data_chain_to_db(hyperdrive, hyperdrive.block(block_number), db_session)
 
     # Main data loop
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring for pool info updates...")
     while True:
-        latest_mined_block = web3.eth.get_block_number()
+        latest_mined_block = hyperdrive.web3.eth.get_block_number()
         # Only execute if we are on a new block
         if latest_mined_block <= block_number:
             time.sleep(_SLEEP_AMOUNT)
@@ -137,7 +114,5 @@ def acquire_data(
                     latest_mined_block,
                 )
                 continue
-            data_chain_to_db(
-                web3, hyperdrive_contract, yield_contract, block_number, db_session
-            )
+            data_chain_to_db(hyperdrive, hyperdrive.block(block_number), db_session)
         time.sleep(_SLEEP_AMOUNT)

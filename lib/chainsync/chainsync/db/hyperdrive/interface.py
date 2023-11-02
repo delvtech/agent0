@@ -9,17 +9,9 @@ from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from sqlalchemy import exc, func
 from sqlalchemy.orm import Session
 
-from .schema import (
-    CheckpointInfo,
-    CurrentWallet,
-    HyperdriveTransaction,
-    PoolAnalysis,
-    PoolConfig,
-    PoolInfo,
-    Ticker,
-    WalletDelta,
-    WalletPNL,
-)
+from .schema import (CheckpointInfo, CurrentWallet, HyperdriveTransaction,
+                     PoolAnalysis, PoolConfig, PoolInfo, Ticker, WalletDelta,
+                     WalletPNL)
 
 
 def add_transactions(transactions: list[HyperdriveTransaction], session: Session) -> None:
@@ -59,7 +51,7 @@ def get_pool_config(session: Session, contract_address: str | None = None, coerc
     """
     query = session.query(PoolConfig)
     if contract_address is not None:
-        query = query.filter(PoolConfig.contractAddress == contract_address)
+        query = query.filter(PoolConfig.contract_address == contract_address)
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
@@ -79,10 +71,8 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
     # if multiple threads try to add pool config at the same time
     # This function is being called by acquire_data.py, which should only have one
     # instance per db, so no need to worry about it here
-
     # Since we're doing a direct equality comparison, we don't want to coerce into floats here
-    existing_pool_config = get_pool_config(session, contract_address=pool_config.contractAddress, coerce_float=False)
-
+    existing_pool_config = get_pool_config(session, contract_address=pool_config.contract_address, coerce_float=False)
     if len(existing_pool_config) == 0:
         session.add(pool_config)
         try:
@@ -228,9 +218,9 @@ def get_pool_info(
         end_block = get_latest_block_number_from_pool_info_table(session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(PoolInfo.blockNumber >= start_block)
+        query = query.filter(PoolInfo.block_number >= start_block)
     if end_block is not None:
-        query = query.filter(PoolInfo.blockNumber < end_block)
+        query = query.filter(PoolInfo.block_number < end_block)
 
     # Always sort by time in order
     query = query.order_by(PoolInfo.timestamp)
@@ -317,9 +307,9 @@ def get_checkpoint_info(
         end_block = get_latest_block_number_from_table(CheckpointInfo, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(CheckpointInfo.blockNumber >= start_block)
+        query = query.filter(CheckpointInfo.block_number >= start_block)
     if end_block is not None:
-        query = query.filter(CheckpointInfo.blockNumber < end_block)
+        query = query.filter(CheckpointInfo.block_number < end_block)
 
     # Always sort by time in order
     query = query.order_by(CheckpointInfo.timestamp)
@@ -545,7 +535,7 @@ def get_pool_analysis(
 
     if return_timestamp:
         # query from PoolInfo the timestamp
-        query = query.join(PoolInfo, PoolAnalysis.blockNumber == PoolInfo.blockNumber)
+        query = query.join(PoolInfo, PoolAnalysis.blockNumber == PoolInfo.block_number)
 
     # Always sort by block in order
     query = query.order_by(PoolAnalysis.blockNumber)
@@ -658,7 +648,7 @@ def get_wallet_pnl(
 
     if return_timestamp:
         # query from PoolInfo the timestamp
-        query = query.join(PoolInfo, WalletPNL.blockNumber == PoolInfo.blockNumber)
+        query = query.join(PoolInfo, WalletPNL.blockNumber == PoolInfo.block_number)
 
     # Always sort by block in order
     query = query.order_by(WalletPNL.blockNumber)
@@ -723,7 +713,7 @@ def get_total_wallet_pnl_over_time(
 
     # Additional query to join timestamp to block number
     query = session.query(PoolInfo.timestamp, subquery)
-    query = query.join(PoolInfo, subquery.c.blockNumber == PoolInfo.blockNumber)
+    query = query.join(PoolInfo, subquery.c.blockNumber == PoolInfo.block_number)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
@@ -782,7 +772,7 @@ def get_wallet_positions_over_time(
 
     # query from PoolInfo the timestamp
     query = session.query(PoolInfo.timestamp, subquery)
-    query = query.join(PoolInfo, subquery.c.blockNumber == PoolInfo.blockNumber)
+    query = query.join(PoolInfo, subquery.c.blockNumber == PoolInfo.block_number)
 
     # Always sort by block in order
     query = query.order_by(PoolInfo.timestamp)

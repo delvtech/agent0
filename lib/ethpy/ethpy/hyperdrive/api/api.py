@@ -42,6 +42,7 @@ from ._mock_contract import (_calc_bonds_given_shares_and_rate,
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
+    from eth_typing import BlockNumber
     from ethpy import EthConfig
     from fixedpointmath import FixedPoint
     from web3 import Web3
@@ -142,6 +143,56 @@ class HyperdriveInterface:
         self.current_pool_state = self.get_hyperdrive_state()
         self.last_state_block_number = copy.copy(self.current_pool_state.block_number)
 
+    @property
+    def current_block(self) -> BlockData:
+        """The current block."""
+        return self.block("latest")
+
+    def block(self, block_identifier: BlockIdentifier) -> BlockData:
+        """Return the block for the provided identifier.
+
+        Delegates to eth_getBlockByNumber if block_identifier is an integer or
+        one of the predefined block parameters 'latest', 'earliest', 'pending', 'safe', 'finalized'.
+        Otherwise delegates to eth_getBlockByHash.
+        Throws BlockNotFound error if the block is not found.
+
+        Arguments
+        ---------
+        block_identifier : BlockIdentifier
+            Any one of the web3py types: [BlockParams, BlockNumber, Hash32, HexStr, HexBytes, int].
+        """
+        return _get_block(self, block_identifier)
+
+    def block_number(self, block: BlockData) -> BlockNumber:
+        """Return the number for the provided block.
+
+        Arguments
+        ---------
+        block : BlockData
+            A web3py dataclass for storing block information.
+        
+        Returns
+        -------
+        BlockNumber
+            The number for the corresponding block
+        """
+        return _get_block_number(block)
+
+    def block_timestamp(self, block: BlockData) -> Timestamp:
+        """Return the time for the provided block.
+
+        Arguments
+        ---------
+        block : BlockData
+            A web3py dataclass for storing block information.
+        
+        Returns
+        -------
+        Timestamp
+            The integer timestamp, in seconds, for the corresponding block.
+        """
+        return _get_block_time(block)
+
     def _ensure_current_state(self) -> None:
         """Update the cached pool info and latest checkpoint if needed."""
         if self.current_pool_state.block_number > self.last_state_block_number:
@@ -149,12 +200,20 @@ class HyperdriveInterface:
             self.last_state_block_number = copy.copy(
                 self.current_pool_state.block_number
             )
+    
 
-    def get_hyperdrive_state(self, block_identifier: BlockIdentifier | None = None):
-        """Get the hyperdrive pool and block state, given a block identifier"""
-        if block_identifier is None:
+    def get_hyperdrive_state(self, block: BlockData | None = None):
+        """Get the hyperdrive pool and block state, given a block identifier.
+        
+        Arguments
+        ---------
+        block : BlockData, optional
+            A web3py dataclass for storing block information.
+        
+        """
+        if block is None:
             block_identifier = cast(BlockIdentifier, "latest")
-        block = _get_block(self, block_identifier)
+            block = self.block(block_identifier)
         return PoolState(self.hyperdrive_contract, self.yield_contract, block)
 
     def get_eth_base_balances(

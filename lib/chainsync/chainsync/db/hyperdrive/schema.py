@@ -5,7 +5,8 @@ from decimal import Decimal
 from typing import Union
 
 from chainsync.db.base import Base
-from sqlalchemy import ARRAY, BigInteger, Boolean, DateTime, Integer, Numeric, String
+from sqlalchemy import (ARRAY, BigInteger, Boolean, DateTime, Integer, Numeric,
+                        String)
 from sqlalchemy.orm import Mapped, mapped_column
 
 # pylint: disable=invalid-name
@@ -26,23 +27,23 @@ class PoolConfig(Base):
 
     __tablename__ = "pool_config"
 
-    contractAddress: Mapped[str] = mapped_column(String, primary_key=True)
-    baseToken: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    initialSharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    minimumShareReserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    minimumTransactionAmount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    positionDuration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
-    checkpointDuration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
-    timeStretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    contract_address: Mapped[str] = mapped_column(String, primary_key=True)
+    base_token: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    initial_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    minimum_share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    minimum_transaction_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    position_duration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
+    checkpoint_duration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
+    time_stretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     governance: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    feeCollector: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    curveFee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    flatFee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    governanceFee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    oracleSize: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
-    updateGap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
-    invTimeStretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    updateGap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
+    fee_collector: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    curve_fee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    flat_fee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    governance_fee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    oracle_size: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
+    update_gap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
+    inv_time_stretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    update_gap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
 
 
 class CheckpointInfo(Base):
@@ -50,10 +51,10 @@ class CheckpointInfo(Base):
 
     __tablename__ = "checkpoint_info"
 
-    blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime)
-    sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    longExposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    long_exposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
 class PoolInfo(Base):
@@ -64,23 +65,23 @@ class PoolInfo(Base):
 
     __tablename__ = "pool_info"
 
-    blockNumber: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime)
-    shareReserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    bondReserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    lpTotalSupply: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    sharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    shareAdjustment: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    lpSharePrice: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    longExposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    longsOutstanding: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    longAverageMaturityTime: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    shortsOutstanding: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    shortAverageMaturityTime: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    withdrawalSharesReadyToWithdraw: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    withdrawalSharesProceeds: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    totalSupplyWithdrawalShares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    variableRate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    bond_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    lp_total_supply: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    share_adjustment: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    lp_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    long_exposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    longs_outstanding: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    long_average_maturity_time: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    shorts_outstanding: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    short_average_maturity_time: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    withdrawal_shares_ready_to_withdraw: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    withdrawal_shares_proceeds: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    total_supply_withdrawal_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    variable_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
 # TODO: either make a more general TokenDelta, or rename this to HyperdriveDelta
