@@ -317,7 +317,7 @@ class TestBotToDb:
 
             # TODO differentiate between the first and second openLong
             if txn["input_method"] == "openLong":
-                assert txn["input_params_baseAmount"] == Decimal(22222)
+                assert txn["input_params_base_amount"] == Decimal(22222)
                 # Filter for all deltas of this trade
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 # Ensure number of token deltas
@@ -339,7 +339,7 @@ class TestBotToDb:
 
             # TODO differentiate between the first and second openShort
             if txn["input_method"] == "openShort":
-                assert txn["input_params_bondAmount"] == Decimal(33333)
+                assert txn["input_params_bond_amount"] == Decimal(33333)
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 assert len(block_wallet_deltas) == 2
                 short_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "SHORT"]
@@ -381,7 +381,7 @@ class TestBotToDb:
 
             if txn["input_method"] == "closeLong":
                 # TODO change this to expected long amount
-                assert txn["input_params_bondAmount"] == actual_num_longs
+                assert txn["input_params_bond_amount"] == actual_num_longs
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 assert len(block_wallet_deltas) == 2
                 long_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "LONG"]
@@ -398,7 +398,7 @@ class TestBotToDb:
                 # TODO check pool info after this tx
 
             if txn["input_method"] == "closeShort":
-                assert txn["input_params_bondAmount"] == Decimal(33333)
+                assert txn["input_params_bond_amount"] == Decimal(33333)
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 assert len(block_wallet_deltas) == 2
                 short_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "SHORT"]
