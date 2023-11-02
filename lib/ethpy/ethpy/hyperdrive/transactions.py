@@ -127,42 +127,6 @@ def convert_hyperdrive_pool_config_types(pool_config: dict[str, Any]) -> PoolCon
     return PoolConfig(**out_config)
 
 
-def process_hyperdrive_pool_config(pool_config: dict[str, Any], hyperdrive_address: ChecksumAddress) -> dict[str, Any]:
-    """Convert pool_config to python-friendly (FixedPoint, integer, str) types and add some computed values.
-
-    Arguments
-    ----------
-    pool_config : dict[str, Any]
-        The hyperdrive pool config.
-    hyperdrive_address : ChecksumAddress
-        The deployed hyperdrive contract instance address.
-
-    Returns
-    -------
-    dict[str, Any]
-        The hyperdrive pool config with modified types.
-    """
-    # convert values to FixedPoint
-    fixedpoint_keys = [
-        "initialSharePrice",
-        "minimumShareReserves",
-        "timeStretch",
-        "minimumTransactionAmount",
-    ]
-    for key in pool_config:
-        if key in fixedpoint_keys:
-            pool_config[key] = FixedPoint(scaled_value=pool_config[key])
-    pool_config["fees"] = [FixedPoint(scaled_value=fee) for fee in pool_config["fees"]]
-    # new attributes
-    pool_config["contract_address"] = hyperdrive_address
-    curve_fee, flat_fee, governance_fee = pool_config["fees"]
-    pool_config["curveFee"] = curve_fee
-    pool_config["flatFee"] = flat_fee
-    pool_config["governanceFee"] = governance_fee
-    pool_config["invTimeStretch"] = FixedPoint(1) / pool_config["timeStretch"]
-    return pool_config
-
-
 def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, Any]:
     """Get the block pool info from the Hyperdrive contract.
 
@@ -200,52 +164,6 @@ def convert_hyperdrive_pool_info_types(pool_info: dict[str, Any]) -> PoolInfo:
     return PoolInfo(**{camel_to_snake(key): FixedPoint(scaled_value=value) for (key, value) in pool_info.items()})
 
 
-def process_hyperdrive_pool_info(
-    pool_info: dict[str, Any],
-    web3: Web3,
-    hyperdrive_contract: Contract,
-    block_number: BlockNumber,
-) -> dict[str, Any]:
-    """Convert pool_info to python-friendly (FixedPoint, integer, str) types and add some computed values.
-
-    Arguments
-    ---------
-    pool_info : dict[str, Any]
-        The hyperdrive pool info.
-    web3: Web3
-        Web3 provider object.
-    hyperdrive_contract: Contract
-        The contract to query the pool info from.
-    block_number: BlockNumber
-        The block number used to query the pool info from the chain.
-
-    Returns
-    -------
-    dict
-        The hyperdrive pool info with modified types.
-        This output can be inserted into the Postgres PoolInfo schema.
-    """
-    # convert values to fixedpoint
-    pool_info = {str(key): FixedPoint(scaled_value=value) for (key, value) in pool_info.items()}
-    # get current block information & add to pool info
-    current_block: BlockData = web3.eth.get_block(block_number)
-    current_block_timestamp = current_block.get("timestamp")
-    if current_block_timestamp is None:
-        raise AssertionError("Current block has no timestamp")
-    pool_info.update({"timestamp": datetime.utcfromtimestamp(current_block_timestamp)})
-    pool_info.update({"blockNumber": int(block_number)})
-    # add total supply withdrawal shares to pool info
-    asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
-    pool_info["totalSupplyWithdrawalShares"] = smart_contract_read(
-        hyperdrive_contract,
-        "balanceOf",
-        asset_id,
-        hyperdrive_contract.address,
-        block_number=block_number,
-    )["value"]
-    return pool_info
-
-
 def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_timestamp: Timestamp) -> dict[str, int]:
     """Get the checkpoint info for the Hyperdrive contract at a given block.
 
@@ -278,39 +196,6 @@ def convert_hyperdrive_checkpoint_types(checkpoint: dict[str, int]) -> Checkpoin
         A dataclass containing the checkpoint share_price and long_exposure fields converted to FixedPoint.
     """
     return Checkpoint(**{camel_to_snake(key): FixedPoint(scaled_value=value) for key, value in checkpoint.items()})
-
-
-def process_hyperdrive_checkpoint(checkpoint: dict[str, int], web3: Web3, block_number: BlockNumber) -> dict[str, Any]:
-    """Get the checkpoint info of Hyperdrive contract for the given block.
-
-    Arguments
-    ---------
-    checkpoint : dict[str, int]
-        A dictionary containing the checkpoint details.
-    web3 : Web3
-        web3 provider object.
-    block_number : BlockNumber
-        The block number to query from the chain.
-
-    Returns
-    -------
-    dict[str, Any]
-        A dict containing the checkpoint with some additional fields.
-        This is what is expected by the chainsync db conversion function.
-    """
-    out_checkpoint: dict[str, Any] = {}
-    out_checkpoint.update(checkpoint)
-    current_block: BlockData = web3.eth.get_block(block_number)
-    current_block_timestamp = current_block.get("timestamp")
-    if current_block_timestamp is None:
-        raise AssertionError("Current block has no timestamp")
-    out_checkpoint["blockNumber"] = int(block_number)
-    # TODO: change "timestamp" to use exact current_block_timestamp,
-    # and anytime we need the datetime we do it there
-    out_checkpoint["timestamp"] = datetime.fromtimestamp(int(current_block_timestamp))
-    out_checkpoint["sharePrice"] = FixedPoint(scaled_value=checkpoint["sharePrice"])
-    out_checkpoint["longExposure"] = FixedPoint(scaled_value=checkpoint["longExposure"])
-    return out_checkpoint
 
 
 def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses) -> Contract:
