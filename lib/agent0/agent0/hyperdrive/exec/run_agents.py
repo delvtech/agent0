@@ -177,29 +177,29 @@ def build_wallet_positions_from_data(
     base_obj = Quantity(amount=FixedPoint(scaled_value=base_amount["value"]), unit=TokenType.BASE)
 
     # TODO We can also get lp and withdraw shares from chain?
-    wallet_balances = db_balances[db_balances["walletAddress"] == wallet_addr]
+    wallet_balances = db_balances[db_balances["wallet_address"] == wallet_addr]
 
     # Get longs
-    long_balances = wallet_balances[wallet_balances["baseTokenType"] == "LONG"]
+    long_balances = wallet_balances[wallet_balances["base_token_type"] == "LONG"]
     long_obj = {}
-    # Casting maturityTime to int due to values getting encoded as strings
+    # Casting maturity_time to int due to values getting encoded as strings
     for _, row in long_balances.iterrows():
-        long_obj[int(row["maturityTime"])] = Long(balance=FixedPoint(row["value"]))
+        long_obj[int(row["maturity_time"])] = Long(balance=FixedPoint(row["value"]))
 
-    short_balances = wallet_balances[wallet_balances["baseTokenType"] == "SHORT"]
+    short_balances = wallet_balances[wallet_balances["base_token_type"] == "SHORT"]
     short_obj = {}
-    # Casting maturityTime to int due to values getting encoded as strings
+    # Casting maturity_time to int due to values getting encoded as strings
     for _, row in short_balances.iterrows():
-        short_obj[int(row["maturityTime"])] = Short(balance=FixedPoint(row["value"]))
+        short_obj[int(row["maturity_time"])] = Short(balance=FixedPoint(row["value"]))
 
-    lp_balances = wallet_balances[wallet_balances["baseTokenType"] == "LP"]
+    lp_balances = wallet_balances[wallet_balances["base_token_type"] == "LP"]
     assert len(lp_balances) <= 1
     if len(lp_balances) == 0:
         lp_obj = FixedPoint(0)
     else:
         lp_obj = FixedPoint(lp_balances.iloc[0]["value"])
 
-    withdraw_balances = wallet_balances[wallet_balances["baseTokenType"] == "WITHDRAWAL_SHARE"]
+    withdraw_balances = wallet_balances[wallet_balances["base_token_type"] == "WITHDRAWAL_SHARE"]
     assert len(withdraw_balances) <= 1
     if len(withdraw_balances) == 0:
         withdraw_obj = FixedPoint(0)

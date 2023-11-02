@@ -7,7 +7,8 @@ from decimal import Decimal
 from typing import Any
 
 from ethpy.base import get_transaction_logs
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, decode_asset_id
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveAddresses, decode_asset_id
+from ethpy.hyperdrive.addresses import camel_to_snake
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
@@ -130,7 +131,10 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> PoolConfig:
             value = pool_config_dict[key]
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
-        args_dict[key] = value
+            # Pool config contains many addresses, the DB only needs the mock hyperdrive address
+            if isinstance(value, HyperdriveAddresses):
+                value = value.mock_hyperdrive
+        args_dict[camel_to_snake(key)] = value
     pool_config = PoolConfig(**args_dict)
     return pool_config
 
@@ -152,14 +156,14 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> PoolInfo:
     for key in PoolInfo.__annotations__:
         if key not in pool_info_dict:
             # TODO don't print warning for variable rate. The variable rate should live in a different table
-            if key != "variableRate":
+            if key != "variable_rate":
                 logging.warning("Missing %s from pool info", key)
             value = None
         else:
             value = pool_info_dict[key]
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
-        args_dict[key] = value
+        args_dict[camel_to_snake(key)] = value
     block_pool_info = PoolInfo(**args_dict)
     return block_pool_info
 
@@ -187,7 +191,7 @@ def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> CheckpointI
             value = checkpoint_info_dict[key]
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
-        args_dict[key] = value
+        args_dict[camel_to_snake(key)] = value
     block_checkpoint_info = CheckpointInfo(**args_dict)
     return block_checkpoint_info
 
@@ -224,19 +228,19 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
             wallet_deltas.extend(
                 [
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType="LP",
-                        tokenType="LP",
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type="LP",
+                        token_type="LP",
                         delta=token_delta,
                     ),
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType=BASE_TOKEN_SYMBOL,
-                        tokenType=BASE_TOKEN_SYMBOL,
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type=BASE_TOKEN_SYMBOL,
+                        token_type=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
@@ -250,20 +254,20 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
             wallet_deltas.extend(
                 [
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType="LONG",
-                        tokenType="LONG-" + str(maturity_time),
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type="LONG",
+                        token_type="LONG-" + str(maturity_time),
                         delta=token_delta,
-                        maturityTime=maturity_time,
+                        maturity_time=maturity_time,
                     ),
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType=BASE_TOKEN_SYMBOL,
-                        tokenType=BASE_TOKEN_SYMBOL,
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type=BASE_TOKEN_SYMBOL,
+                        token_type=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
@@ -277,20 +281,20 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
             wallet_deltas.extend(
                 [
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType="SHORT",
-                        tokenType="SHORT-" + str(maturity_time),
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type="SHORT",
+                        token_type="SHORT-" + str(maturity_time),
                         delta=token_delta,
-                        maturityTime=maturity_time,
+                        maturity_time=maturity_time,
                     ),
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType=BASE_TOKEN_SYMBOL,
-                        tokenType=BASE_TOKEN_SYMBOL,
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type=BASE_TOKEN_SYMBOL,
+                        token_type=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
@@ -305,27 +309,27 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
             wallet_deltas.extend(
                 [
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType="LP",
-                        tokenType="LP",
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type="LP",
+                        token_type="LP",
                         delta=lp_delta,
                     ),
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType="WITHDRAWAL_SHARE",
-                        tokenType="WITHDRAWAL_SHARE",
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type="WITHDRAWAL_SHARE",
+                        token_type="WITHDRAWAL_SHARE",
                         delta=withdrawal_delta,
                     ),
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType=BASE_TOKEN_SYMBOL,
-                        tokenType=BASE_TOKEN_SYMBOL,
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type=BASE_TOKEN_SYMBOL,
+                        token_type=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
@@ -339,20 +343,20 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
             wallet_deltas.extend(
                 [
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType="LONG",
-                        tokenType="LONG-" + str(maturity_time),
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type="LONG",
+                        token_type="LONG-" + str(maturity_time),
                         delta=token_delta,
-                        maturityTime=maturity_time,
+                        maturity_time=maturity_time,
                     ),
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType=BASE_TOKEN_SYMBOL,
-                        tokenType=BASE_TOKEN_SYMBOL,
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type=BASE_TOKEN_SYMBOL,
+                        token_type=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
@@ -366,20 +370,20 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
             wallet_deltas.extend(
                 [
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType="SHORT",
-                        tokenType="SHORT-" + str(maturity_time),
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type="SHORT",
+                        token_type="SHORT-" + str(maturity_time),
                         delta=token_delta,
-                        maturityTime=maturity_time,
+                        maturity_time=maturity_time,
                     ),
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType=BASE_TOKEN_SYMBOL,
-                        tokenType=BASE_TOKEN_SYMBOL,
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type=BASE_TOKEN_SYMBOL,
+                        token_type=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
@@ -393,20 +397,20 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
             wallet_deltas.extend(
                 [
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType="WITHDRAWAL_SHARE",
-                        tokenType="WITHDRAWAL_SHARE",
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type="WITHDRAWAL_SHARE",
+                        token_type="WITHDRAWAL_SHARE",
                         delta=token_delta,
-                        maturityTime=maturity_time,
+                        maturity_time=maturity_time,
                     ),
                     WalletDelta(
-                        transactionHash=tx_hash,
-                        blockNumber=block_number,
-                        walletAddress=wallet_addr,
-                        baseTokenType=BASE_TOKEN_SYMBOL,
-                        tokenType=BASE_TOKEN_SYMBOL,
+                        transaction_hash=tx_hash,
+                        block_number=block_number,
+                        wallet_address=wallet_addr,
+                        base_token_type=BASE_TOKEN_SYMBOL,
+                        token_type=BASE_TOKEN_SYMBOL,
                         delta=base_delta,
                     ),
                 ]
@@ -442,13 +446,13 @@ def _build_hyperdrive_transaction_object(
     # i.e., HyperdriveTransaction(**out_dict)
     # Base transaction fields
     out_dict: dict[str, Any] = {
-        "blockNumber": transaction_dict["blockNumber"],
-        "transactionIndex": transaction_dict["transactionIndex"],
+        "block_number": transaction_dict["blockNumber"],
+        "transaction_index": transaction_dict["transactionIndex"],
         "nonce": transaction_dict["nonce"],
-        "transactionHash": transaction_dict["hash"],
+        "transaction_hash": transaction_dict["hash"],
         "txn_to": transaction_dict["to"],
         "txn_from": transaction_dict["from"],
-        "gasUsed": _convert_scaled_value_to_decimal(receipt["gasUsed"]),
+        "gas_used": _convert_scaled_value_to_decimal(receipt["gasUsed"]),
     }
     # Input solidity methods and parameters
     # TODO can the input field ever be empty or not exist?
@@ -457,14 +461,14 @@ def _build_hyperdrive_transaction_object(
     out_dict["input_params_contribution"] = _convert_scaled_value_to_decimal(input_params.get("_contribution", None))
     out_dict["input_params_apr"] = _convert_scaled_value_to_decimal(input_params.get("_apr", None))
     out_dict["input_params_destination"] = input_params.get("_destination", None)
-    out_dict["input_params_asUnderlying"] = input_params.get("_asUnderlying", None)
-    out_dict["input_params_baseAmount"] = _convert_scaled_value_to_decimal(input_params.get("_baseAmount", None))
-    out_dict["input_params_minOutput"] = _convert_scaled_value_to_decimal(input_params.get("_minOutput", None))
-    out_dict["input_params_bondAmount"] = _convert_scaled_value_to_decimal(input_params.get("_bondAmount", None))
-    out_dict["input_params_maxDeposit"] = _convert_scaled_value_to_decimal(input_params.get("_maxDeposit", None))
-    out_dict["input_params_maturityTime"] = input_params.get("_maturityTime", None)
-    out_dict["input_params_minApr"] = _convert_scaled_value_to_decimal(input_params.get("_minApr", None))
-    out_dict["input_params_maxApr"] = _convert_scaled_value_to_decimal(input_params.get("_maxApr", None))
+    out_dict["input_params_as_underlying"] = input_params.get("_asUnderlying", None)
+    out_dict["input_params_base_amount"] = _convert_scaled_value_to_decimal(input_params.get("_baseAmount", None))
+    out_dict["input_params_min_output"] = _convert_scaled_value_to_decimal(input_params.get("_minOutput", None))
+    out_dict["input_params_bond_amount"] = _convert_scaled_value_to_decimal(input_params.get("_bondAmount", None))
+    out_dict["input_params_max_deposit"] = _convert_scaled_value_to_decimal(input_params.get("_maxDeposit", None))
+    out_dict["input_params_maturity_time"] = input_params.get("_maturityTime", None)
+    out_dict["input_params_min_apr"] = _convert_scaled_value_to_decimal(input_params.get("_minApr", None))
+    out_dict["input_params_max_apr"] = _convert_scaled_value_to_decimal(input_params.get("_maxApr", None))
     out_dict["input_params_shares"] = _convert_scaled_value_to_decimal(input_params.get("_shares", None))
     # Assuming one TransferSingle per transfer
     # TODO Fix this below eventually

@@ -29,7 +29,7 @@ class TestHyperdriveInterface:
         eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
         hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
         pool_config = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolConfig")
-        assert pool_config == hyperdrive._contract_pool_config  # pylint: disable=protected-access
+        assert pool_config == hyperdrive.current_pool_state.contract_pool_config
 
     def test_pool_info(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Checks that the Hyperdrive pool_info matches what is returned from the smart contract.
@@ -43,7 +43,7 @@ class TestHyperdriveInterface:
         eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
         hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
         pool_info = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolInfo")
-        assert pool_info == hyperdrive._contract_pool_info  # pylint: disable=protected-access
+        assert pool_info == hyperdrive.current_pool_state.contract_pool_info
 
     def test_checkpoint(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Checks that the Hyperdrive checkpoint matches what is returned from the smart contract.
@@ -56,9 +56,9 @@ class TestHyperdriveInterface:
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
         eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
         hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
-        checkpoint_id = hyperdrive.calc_checkpoint_id(hyperdrive.current_block_time)
+        checkpoint_id = hyperdrive.calc_checkpoint_id(hyperdrive.current_pool_state.block_time)
         checkpoint = smart_contract_read(hyperdrive.hyperdrive_contract, "getCheckpoint", checkpoint_id)
-        assert checkpoint == hyperdrive._contract_latest_checkpoint  # pylint: disable=protected-access
+        assert checkpoint == hyperdrive.current_pool_state.contract_checkpoint
 
     def test_spot_price_and_fixed_rate(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Checks that the Hyperdrive spot price and fixed rate match computing it by hand.
@@ -69,24 +69,28 @@ class TestHyperdriveInterface:
         rpc_uri = uri if uri else URI("http://localhost:8545")
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
         hyperdrive = HyperdriveInterface(
-            eth_config=EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir="./packages/hyperdrive/src/abis"),
+            eth_config=EthConfig(
+                artifacts_uri="not used",
+                rpc_uri=rpc_uri,
+                abi_dir="./packages/hyperdrive/src/abis",
+            ),
             addresses=hyperdrive_contract_addresses,
         )
         # get pool config variables
-        pool_config = hyperdrive.pool_config
-        init_share_price: FixedPoint = pool_config["initialSharePrice"]
-        time_stretch: FixedPoint = pool_config["timeStretch"]
+        pool_config = hyperdrive.current_pool_state.pool_config
+        init_share_price: FixedPoint = pool_config.initial_share_price
+        time_stretch: FixedPoint = pool_config.time_stretch
         # get pool info variables
-        pool_info = hyperdrive.pool_info
-        share_reserves: FixedPoint = pool_info["shareReserves"]
-        bond_reserves: FixedPoint = pool_info["bondReserves"]
+        pool_info = hyperdrive.current_pool_state.pool_info
+        share_reserves: FixedPoint = pool_info.share_reserves
+        bond_reserves: FixedPoint = pool_info.bond_reserves
         # test spot price
         spot_price = ((init_share_price * share_reserves) / bond_reserves) ** time_stretch
-        assert abs(spot_price - hyperdrive.spot_price) <= FixedPoint(scaled_value=1)
+        assert abs(spot_price - hyperdrive.calc_spot_price()) <= FixedPoint(scaled_value=1)
         # test fixed rate (rounding issues can cause it to be off by 1e-18)
         # TODO: This should be exact up to 1e-18, but is not
-        fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * hyperdrive.position_duration_in_years)
-        assert abs(fixed_rate - hyperdrive.fixed_rate) <= FixedPoint(scaled_value=100)
+        fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * hyperdrive.calc_position_duration_in_years())
+        assert abs(fixed_rate - hyperdrive.calc_fixed_rate()) <= FixedPoint(scaled_value=100)
 
     def test_misc(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Placeholder for additional tests.
@@ -100,14 +104,9 @@ class TestHyperdriveInterface:
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
         eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
         hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
-        _ = hyperdrive.pool_config
-        _ = hyperdrive.pool_info
-        _ = hyperdrive.latest_checkpoint
-        _ = hyperdrive.current_block
-        _ = hyperdrive.current_block_number
-        _ = hyperdrive.current_block_time
-        _ = hyperdrive.variable_rate
-        _ = hyperdrive.vault_shares
+        _ = hyperdrive.current_pool_state
+        _ = hyperdrive.current_pool_state.variable_rate
+        _ = hyperdrive.current_pool_state.vault_shares
         _ = hyperdrive.calc_open_long(FixedPoint(100))
         _ = hyperdrive.calc_open_short(FixedPoint(100))
         _ = hyperdrive.calc_bonds_given_shares_and_rate(FixedPoint(0.05))

@@ -58,7 +58,7 @@ async def async_execute_single_agent_trade(
     if liquidate:
         trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_liquidation_trades()
     else:
-        trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(interface=hyperdrive)
+        trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(hyperdrive=hyperdrive)
 
     # Make trades async for this agent. This way, an agent can submit multiple trades for a single block
     # To do this, we need to manually set the nonce, so we get the base transaction count here

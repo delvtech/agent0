@@ -12,11 +12,10 @@ from numpy.random import default_rng
 if TYPE_CHECKING:
     from agent0.base.state import EthWallet
     from elfpy.types import Trade
-    from ethpy.base import BaseInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
 Wallet = TypeVar("Wallet", bound="EthWallet")
-MarketInterface = TypeVar("MarketInterface", bound="BaseInterface")
+MarketInterface = TypeVar("MarketInterface")
 
 
 class BasePolicy(Generic[MarketInterface, Wallet]):

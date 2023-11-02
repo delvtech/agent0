@@ -15,8 +15,8 @@ def build_variable_rate(pool_info: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         The ready to plot variable rate
     """
-    variable_rate = pool_info[["timestamp", "variableRate"]].copy()
-    variable_rate["variableRate"] = variable_rate["variableRate"].astype(float)
-    variable_rate = variable_rate.rename(columns={"variableRate": "variable_rate"})
+    variable_rate = pool_info[["timestamp", "variable_rate"]].copy()
+    variable_rate["variable_rate"] = variable_rate["variable_rate"].astype(float)
+    variable_rate = variable_rate.rename(columns={"variable_rate": "variable_rate"})
     # Return here as float for plotting
     return variable_rate

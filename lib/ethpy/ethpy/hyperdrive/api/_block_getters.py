@@ -11,30 +11,24 @@ if TYPE_CHECKING:
 
 
 def _get_block(cls: HyperdriveInterface, block_identifier: BlockIdentifier) -> BlockData:
-    """Returns the block specified by block_identifier.
-
-    Delegates to eth_getBlockByNumber if block_identifier is an integer or
-    one of the predefined block parameters 'latest', 'earliest', 'pending', 'safe', 'finalized'.
-    Otherwise delegates to eth_getBlockByHash.
-    Throws BlockNotFound error if the block is not found.
-    """
+    """See API for documentation."""
     return cls.web3.eth.get_block(block_identifier)
 
 
-def _get_block_number(cls: HyperdriveInterface, block_identifier: BlockIdentifier) -> BlockNumber:
+def _get_block_number(block: BlockData) -> BlockNumber:
     """See API for documentation."""
-    current_block_number = _get_block(cls, block_identifier).get("number", None)
-    if current_block_number is None:
-        raise AssertionError("The current block has no number")
-    return current_block_number
+    block_number = block.get("number", None)
+    if block_number is None:
+        raise AssertionError("The provided block has no number")
+    return block_number
 
 
-def _get_block_time(cls: HyperdriveInterface, block_identifier: BlockIdentifier) -> Timestamp:
+def _get_block_time(block: BlockData) -> Timestamp:
     """See API for documentation."""
-    current_block_timestamp = _get_block(cls, block_identifier).get("timestamp", None)
-    if current_block_timestamp is None:
-        raise AssertionError("current_block_timestamp can not be None")
-    return current_block_timestamp
+    block_timestamp = block.get("timestamp", None)
+    if block_timestamp is None:
+        raise AssertionError("The provided block has no timestamp")
+    return block_timestamp
 
 
 def _get_checkpoint_id(cls, block_timestamp: Timestamp) -> Timestamp:

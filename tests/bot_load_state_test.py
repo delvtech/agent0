@@ -57,8 +57,10 @@ class WalletTestPolicy(HyperdrivePolicy):
         self.rerun = policy_config.rerun
         super().__init__(budget, rng, slippage_tolerance)
 
+    # We want to rename the argument from "interface" in the base class to "hyperdrive" to be more explicit
+    # pylint: disable=arguments-renamed
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
         # pylint: disable=unused-argument

@@ -93,7 +93,11 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
                     )
                 )
         for maturity_time, short in self.wallet.shorts.items():
-            logging.debug("closing short: maturity_time=%g, balance=%s", maturity_time, short.balance)
+            logging.debug(
+                "closing short: maturity_time=%g, balance=%s",
+                maturity_time,
+                short.balance,
+            )
             if short.balance > 0:
                 action_list.append(
                     Trade(
@@ -137,12 +141,14 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
 
         return action_list
 
-    def get_trades(self, interface: HyperdriveInterface) -> list[Trade[HyperdriveMarketAction]]:
+    # We want to rename the argument from "interface" to "hyperdrive" to be more explicit
+    # pylint: disable=arguments-renamed
+    def get_trades(self, hyperdrive: HyperdriveInterface) -> list[Trade[HyperdriveMarketAction]]:
         """Helper function for computing a agent trade
 
         Arguments
         ----------
-        interface : HyperdriveInterface
+        hyperdrive : HyperdriveInterface
             The market on which this agent will be executing trades (MarketActions)
 
         Returns
@@ -153,7 +159,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         # get the action list from the policy
         # TODO: Deprecate the old wallet in favor of this new one
         actions: list[Trade[HyperdriveMarketAction]]
-        actions, self.done_trading = self.policy.action(interface, self.wallet)
+        actions, self.done_trading = self.policy.action(hyperdrive, self.wallet)
 
         # edit each action in place
         for action in actions:
