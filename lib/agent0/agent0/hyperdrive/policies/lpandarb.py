@@ -66,10 +66,7 @@ def calc_bond_reserves(
     return (
         initial_share_price
         * (share_reserves - share_adjustment)
-        * (
-            (FixedPoint(1) + target_rate * FixedPoint(position_duration) / FixedPoint(365 * 24 * 60 * 60))
-            ** inverted_time_stretch
-        )
+        * ((FixedPoint(1) + target_rate * position_duration / FixedPoint(365 * 24 * 60 * 60)) ** inverted_time_stretch)
     )
 
 
@@ -148,7 +145,7 @@ def calc_apr_local(
     FixedPoint
         The APR.
     """
-    annualized_time = FixedPoint(position_duration_seconds) / FixedPoint(365 * 24 * 60 * 60)
+    annualized_time = position_duration_seconds / FixedPoint(365 * 24 * 60 * 60)
     spot_price = calc_spot_price_local(
         initial_share_price, share_reserves, share_adjustment, bond_reserves, time_stretch
     )
@@ -653,14 +650,8 @@ class LPandArb(HyperdrivePolicy):
         # calculate bonds and shares needed if we're arbitraging in either direction
         bonds_needed, shares_needed = FixedPoint(0), FixedPoint(0)
         if high_fixed_rate_detected or low_fixed_rate_detected:
-            (
-                shares_needed,
-                bonds_needed,
-                iters,
-                speed,
-            ) = calc_reserves_to_hit_target_rate(
-                target_rate=hyperdrive.current_pool_state.variable_rate,
-                hyperdrive=hyperdrive,
+            shares_needed, bonds_needed, iters, speed = calc_reserves_to_hit_target_rate(
+                target_rate=hyperdrive.current_pool_state.variable_rate, hyperdrive=hyperdrive
             )
             self.convergence_iters.append(iters)
             self.convergence_speed.append(speed)
