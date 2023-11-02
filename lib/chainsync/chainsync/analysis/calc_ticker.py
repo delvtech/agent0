@@ -6,7 +6,7 @@ def calc_ticker(wallet_delta: pd.DataFrame, transactions: pd.DataFrame, pool_inf
     """Adjusts wallet_deltas to be a ticker with one row per transaction"""
     # TODO these merges should really happen via an sql query instead of in pandas here
     # Set ticker so that each transaction is a single row
-    ticker_data = wallet_delta.groupby(["transactionHash"]).agg(
+    ticker_data = wallet_delta.groupby(["transaction_hash"]).agg(
         {"block_number": "first", "wallet_address": "first", "base_token_type": tuple, "delta": tuple}
     )
 
@@ -19,7 +19,7 @@ def calc_ticker(wallet_delta: pd.DataFrame, transactions: pd.DataFrame, pool_inf
 
     # Gather other information from other tables
     timestamps = pool_info.set_index("block_number").loc[ticker_data["block_number"], "timestamp"]
-    trade_type = transactions.set_index("transactionHash").loc[ticker_data.index, "input_method"]
+    trade_type = transactions.set_index("transaction_hash").loc[ticker_data.index, "input_method"]
 
     ticker_data = ticker_data[["block_number", "wallet_address"]].copy()
     ticker_data["timestamp"] = timestamps.values
