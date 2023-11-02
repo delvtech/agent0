@@ -119,15 +119,14 @@ def convert_hyperdrive_pool_config_types(pool_config: dict[str, Any]) -> PoolCon
           - FixedPoint types are used if the type was FixedPoint in the underlying contract.
     """
     # Adjust the pool_config to use snake case here
+    # Dict comp is a copy
     pool_config = {camel_to_snake(key): value for key, value in pool_config.items()}
-    # Copy all elements into new out_config
-    out_config = pool_config.copy()
     fixedpoint_keys = ["initial_share_price", "minimum_share_reserves", "minimum_transaction_amount", "time_stretch"]
     for key in pool_config:
         if key in fixedpoint_keys:
-            out_config[key] = FixedPoint(scaled_value=pool_config[key])
-    out_config["fees"] = [FixedPoint(scaled_value=fee) for fee in pool_config["fees"]]
-    return PoolConfig(**out_config)
+            pool_config[key] = FixedPoint(scaled_value=pool_config[key])
+    pool_config["fees"] = [FixedPoint(scaled_value=fee) for fee in pool_config["fees"]]
+    return PoolConfig(**pool_config)
 
 
 def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, Any]:
