@@ -55,16 +55,16 @@ def _calc_position_duration_in_years(cls: HyperdriveInterface) -> FixedPoint:
     ..todo::
         This should be done in the hyperdrive sdk.
     """
-    return FixedPoint(cls.pool_config["positionDuration"]) / FixedPoint(
-        60 * 60 * 24 * 365
-    )
+    return FixedPoint(
+        cls.current_pool_state.pool_config.position_duration
+    ) / FixedPoint(60 * 60 * 24 * 365)
 
 
 def _calc_fixed_rate(cls: HyperdriveInterface) -> FixedPoint:
     """See API for documentation."""
     spot_rate = pyperdrive.get_spot_rate(
-        _construct_pool_config(cls._contract_pool_config),
-        _construct_pool_info(cls._contract_pool_info),
+        _construct_pool_config(cls.current_pool_state.contract_pool_config),
+        _construct_pool_info(cls.current_pool_state.contract_pool_info),
     )
     return FixedPoint(scaled_value=int(spot_rate))
 
@@ -72,8 +72,8 @@ def _calc_fixed_rate(cls: HyperdriveInterface) -> FixedPoint:
 def _calc_effective_share_reserves(cls: HyperdriveInterface) -> FixedPoint:
     """See API for documentation."""
     effective_share_reserves = pyperdrive.get_effective_share_reserves(
-        str(cls.current_pool_info["shareReserves"].scaled_value),
-        str(cls.current_pool_info["shareAdjustment"].scaled_value),
+        str(cls.current_pool_state.pool_info.share_reserves.scaled_value),
+        str(cls.current_pool_state.pool_info.share_adjustment.scaled_value),
     )
     return FixedPoint(scaled_value=int(effective_share_reserves))
 
@@ -81,8 +81,8 @@ def _calc_effective_share_reserves(cls: HyperdriveInterface) -> FixedPoint:
 def _calc_spot_price(cls: HyperdriveInterface):
     """See API for documentation."""
     spot_price = pyperdrive.get_spot_price(
-        _construct_pool_config(cls._contract_pool_config),
-        _construct_pool_info(cls._contract_pool_info),
+        _construct_pool_config(cls.current_pool_state.contract_pool_config),
+        _construct_pool_info(cls.current_pool_state.contract_pool_info),
     )
     return FixedPoint(scaled_value=int(spot_price))
 
@@ -90,8 +90,8 @@ def _calc_spot_price(cls: HyperdriveInterface):
 def _calc_long_amount(cls: HyperdriveInterface, base_amount: FixedPoint) -> FixedPoint:
     """See API for documentation."""
     long_amount = pyperdrive.get_long_amount(
-        _construct_pool_config(cls._contract_pool_config),
-        _construct_pool_info(cls._contract_pool_info),
+        _construct_pool_config(cls.current_pool_state.contract_pool_config),
+        _construct_pool_info(cls.current_pool_state.contract_pool_info),
         str(base_amount.scaled_value),
     )
     return FixedPoint(scaled_value=int(long_amount))
@@ -110,8 +110,8 @@ def _calc_short_deposit(
     else:  # convert FixedPoint to string
         open_share_price_str = str(open_share_price.scaled_value)
     short_deposit = pyperdrive.get_short_deposit(
-        _construct_pool_config(cls._contract_pool_config),
-        _construct_pool_info(cls._contract_pool_info),
+        _construct_pool_config(cls.current_pool_state.contract_pool_config),
+        _construct_pool_info(cls.current_pool_state.contract_pool_info),
         str(short_amount.scaled_value),
         str(spot_price.scaled_value),
         open_share_price_str,  # str | None
@@ -126,8 +126,8 @@ def _calc_out_for_in(
 ) -> FixedPoint:
     """See API for documentation."""
     out_for_in = pyperdrive.get_out_for_in(
-        _construct_pool_config(cls._contract_pool_config),
-        _construct_pool_info(cls._contract_pool_info),
+        _construct_pool_config(cls.current_pool_state.contract_pool_config),
+        _construct_pool_info(cls.current_pool_state.contract_pool_info),
         str(amount_in.scaled_value),
         shares_in,
     )
@@ -141,8 +141,8 @@ def _calc_in_for_out(
 ) -> FixedPoint:
     """See API for documentation."""
     in_for_out = pyperdrive.get_in_for_out(
-        _construct_pool_config(cls._contract_pool_config),
-        _construct_pool_info(cls._contract_pool_info),
+        _construct_pool_config(cls.current_pool_state.contract_pool_config),
+        _construct_pool_info(cls.current_pool_state.contract_pool_info),
         str(amount_out.scaled_value),
         shares_out,
     )
@@ -159,26 +159,26 @@ def _calc_fees_out_given_bonds_in(
     """
     if maturity_time is None:
         maturity_time = cls.current_block_time + int(
-            cls.pool_config["positionDuration"]
+            cls.current_pool_state.pool_config.position_duration
         )
     time_remaining_in_seconds = FixedPoint(maturity_time - cls.current_block_time)
     normalized_time_remaining = (
-        time_remaining_in_seconds / cls.pool_config["positionDuration"]
+        time_remaining_in_seconds / cls.current_pool_state.pool_config.position_duration
     )
     curve_fee = (
         (FixedPoint(1) - cls.spot_price)
-        * cls.pool_config["curveFee"]
+        * cls.current_pool_state.pool_config.fees.curve
         * bonds_in
         * normalized_time_remaining
-    ) / cls.pool_config["initialSharePrice"]
+    ) / cls.current_pool_state.pool_config.initial_share_price
     flat_fee = (
         bonds_in
         * (FixedPoint(1) - normalized_time_remaining)
-        * cls.pool_config["flatFee"]
-    ) / cls.pool_config["initialSharePrice"]
+        * cls.current_pool_state.pool_config.fees.flat
+    ) / cls.current_pool_state.pool_config.initial_share_price
     gov_fee = (
-        curve_fee * cls.pool_config["governanceFee"]
-        + flat_fee * cls.pool_config["governanceFee"]
+        curve_fee * cls.current_pool_state.pool_config.fees.governance
+        + flat_fee * cls.current_pool_state.pool_config.fees.governance
     )
     return curve_fee, flat_fee, gov_fee
 
@@ -193,26 +193,26 @@ def _calc_fees_out_given_shares_in(
     """
     if maturity_time is None:
         maturity_time = cls.current_block_time + int(
-            cls.pool_config["positionDuration"]
+            cls.current_pool_state.pool_config.position_duration
         )
     time_remaining_in_seconds = FixedPoint(maturity_time - cls.current_block_time)
     normalized_time_remaining = (
-        time_remaining_in_seconds / cls.pool_config["positionDuration"]
+        time_remaining_in_seconds / cls.current_pool_state.pool_config.position_duration
     )
     curve_fee = (
         ((FixedPoint(1) / cls.spot_price) - FixedPoint(1))
-        * cls.pool_config["curveFee"]
-        * cls.pool_config["initialSharePrice"]
+        * cls.current_pool_state.pool_config.fees.curve
+        * cls.current_pool_state.pool_config.initial_share_price
         * shares_in
     )
     flat_fee = (
         shares_in
         * (FixedPoint(1) - normalized_time_remaining)
-        * cls.pool_config["flatFee"]
-    ) / cls.pool_config["initialSharePrice"]
+        * cls.current_pool_state.pool_config.fees.flat
+    ) / cls.current_pool_state.pool_config.initial_share_price
     gov_fee = (
-        curve_fee * cls.pool_config["governanceFee"]
-        + flat_fee * cls.pool_config["governanceFee"]
+        curve_fee * cls.current_pool_state.pool_config.fees.governance
+        + flat_fee * cls.current_pool_state.pool_config.fees.governance
     )
     return curve_fee, flat_fee, gov_fee
 
@@ -229,10 +229,12 @@ def _calc_bonds_given_shares_and_rate(
         scaled_value=int(
             pyperdrive.calculate_bonds_given_shares_and_rate(
                 str(target_shares.scaled_value),
-                str(cls.pool_config["initialSharePrice"].scaled_value),
+                str(
+                    cls.current_pool_state.pool_config.initial_share_price.scaled_value
+                ),
                 str(target_rate.scaled_value),
-                str(cls.pool_config["positionDuration"]),
-                str(cls.pool_config["timeStretch"].scaled_value),
+                str(cls.current_pool_state.pool_config.position_duration),
+                str(cls.current_pool_state.pool_config.time_stretch.scaled_value),
             )
         )
     )
@@ -244,11 +246,11 @@ def _calc_max_long(cls: HyperdriveInterface, budget: FixedPoint) -> FixedPoint:
     return FixedPoint(
         scaled_value=int(
             pyperdrive.get_max_long(
-                _construct_pool_config(cls._contract_pool_config),
-                _construct_pool_info(cls._contract_pool_info),
+                _construct_pool_config(cls.current_pool_state.contract_pool_config),
+                _construct_pool_info(cls.current_pool_state.contract_pool_info),
                 str(budget.scaled_value),
                 checkpoint_exposure=str(
-                    cls.latest_checkpoint["longExposure"].scaled_value
+                    cls.current_pool_state.checkpoint.long_exposure.scaled_value
                 ),
                 maybe_max_iterations=None,
             )
@@ -262,12 +264,18 @@ def _calc_max_short(cls: HyperdriveInterface, budget: FixedPoint) -> FixedPoint:
     return FixedPoint(
         scaled_value=int(
             pyperdrive.get_max_short(
-                pool_config=_construct_pool_config(cls._contract_pool_config),
-                pool_info=_construct_pool_info(cls._contract_pool_info),
+                pool_config=_construct_pool_config(
+                    cls.current_pool_state.contract_pool_config
+                ),
+                pool_info=_construct_pool_info(
+                    cls.current_pool_state.contract_pool_info
+                ),
                 budget=str(budget.scaled_value),
-                open_share_price=str(cls.current_pool_info["sharePrice"].scaled_value),
+                open_share_price=str(
+                    cls.current_pool_state.pool_info.share_price.scaled_value
+                ),
                 checkpoint_exposure=str(
-                    cls.latest_checkpoint["longExposure"].scaled_value
+                    cls.current_pool_state.checkpoint.long_exposure.scaled_value
                 ),
                 maybe_conservative_price=None,
                 maybe_max_iterations=None,

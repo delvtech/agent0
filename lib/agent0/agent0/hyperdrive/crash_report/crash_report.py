@@ -157,9 +157,7 @@ def build_crash_trade_result(
         trade_result.block_number
     ).get("timestamp", None)
     # Pool config is static, so we can get it from the interface here
-    trade_result.raw_pool_config = (
-        hyperdrive._contract_pool_config
-    )  # pylint: disable=protected-access
+    trade_result.raw_pool_config = hyperdrive.current_pool_state.contract_pool_config
 
     # We wrap contract calls in a try catch to avoid crashing during crash report
     try:

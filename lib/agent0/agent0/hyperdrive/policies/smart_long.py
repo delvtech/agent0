@@ -120,7 +120,7 @@ class SmartLong(HyperdrivePolicy):
             # how to intelligently pick the length? using PNL I guess.
             if (
                 interface.current_block_time - FixedPoint(long_time)
-            ) >= interface.pool_config["positionDuration"]:
+            ) >= interface.current_pool_state.pool_config.position_duration:
                 trade_amount = wallet.longs[long_time].balance  # close the whole thing
                 action_list += [
                     Trade(
@@ -147,7 +147,9 @@ class SmartLong(HyperdrivePolicy):
                 )
             )
             # get the delta bond amount & convert units
-            bond_reserves: FixedPoint = interface.current_pool_info["bondReserves"]
+            bond_reserves: FixedPoint = (
+                interface.current_pool_state.pool_info.bond_reserves
+            )
             # calculate how many bonds we take out of the pool
             new_bonds_to_match_variable_apr = (
                 bond_reserves - total_bonds_to_match_variable_apr

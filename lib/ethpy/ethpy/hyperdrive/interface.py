@@ -1,9 +1,9 @@
 """Helper functions for interfacing with hyperdrive."""
 from __future__ import annotations
 
-from copy import deepcopy
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Sequence
 
 from eth_typing import BlockNumber, ChecksumAddress
 from eth_utils import address
@@ -16,6 +16,75 @@ from web3.types import BlockData, Timestamp, TxReceipt
 from .addresses import HyperdriveAddresses, camel_to_snake
 from .assets import AssetIdPrefix, encode_asset_id
 from .receipt_breakdown import ReceiptBreakdown
+
+
+# TODO: These dataclasses are similar to pypechain except for
+#  - snake_case attributes instead of camelCase
+#  - FixedPoint types instead of int
+#  - nested dataclasses (PoolConfig) include a __post_init__ that allows for
+#  instantiation with a nested dictionary
+#
+# We'd like to rely on the pypechain classes as much as possible.
+# One solution could be to build our own interface wrapper that pulls in the pypechain
+# dataclass and makes this fixed set of changes?
+@dataclass
+class Checkpoint:
+    """Checkpoint struct."""
+
+    share_price: FixedPoint
+    long_exposure: FixedPoint
+
+
+@dataclass
+class Fees:
+    """Fees struct."""
+
+    curve: FixedPoint
+    flat: FixedPoint
+    governance: FixedPoint
+
+
+@dataclass
+class PoolConfig:
+    """PoolConfig struct."""
+
+    base_token: str
+    initial_share_price: FixedPoint
+    minimum_share_reserves: FixedPoint
+    minimum_transaction_amount: FixedPoint
+    position_duration: int
+    checkpoint_duration: int
+    time_stretch: FixedPoint
+    governance: str
+    fee_collector: str
+    _fees: Sequence | Fees
+    oracle_size: int
+    update_gap: int
+
+    def __post_init__(self):
+        if isinstance(self._fees, Sequence):
+            self.fees: Fees = Fees(*self._fees)
+        else:
+            self.fees = self._fees
+
+
+@dataclass
+class PoolInfo:
+    """PoolInfo struct."""
+
+    share_reserves: FixedPoint
+    share_adjustment: FixedPoint
+    bond_reserves: FixedPoint
+    lp_total_supply: FixedPoint
+    share_price: FixedPoint
+    longs_outstanding: FixedPoint
+    long_average_maturity_time: FixedPoint
+    shorts_outstanding: FixedPoint
+    short_average_maturity_time: FixedPoint
+    withdrawal_shares_ready_to_withdraw: FixedPoint
+    withdrawal_shares_proceeds: FixedPoint
+    lp_share_price: FixedPoint
+    long_exposure: FixedPoint
 
 
 def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> dict[str, Any]:
@@ -34,7 +103,7 @@ def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> dict[str, Any]:
     return smart_contract_read(hyperdrive_contract, "getPoolConfig")
 
 
-def convert_hyperdrive_pool_config_types(pool_config: dict[str, Any]) -> dict[str, Any]:
+def convert_hyperdrive_pool_config_types(pool_config: dict[str, Any]) -> PoolConfig:
     """Convert the pool_config types from what solidity returns to FixedPoint
 
     Arguments
@@ -44,8 +113,11 @@ def convert_hyperdrive_pool_config_types(pool_config: dict[str, Any]) -> dict[st
 
     Returns
     -------
-    dict[str, Any]
-        The hyperdrive pool config with modified types.
+    PoolConfig
+        A dataclass containing the Hyperdrive pool config with modified types.
+        This dataclass has the same attributes as the Hyperdrive ABI, with these changes:
+          - The attribute names are converted to snake_case.
+          - FixedPoint types are used if the type was FixedPoint in the underlying contract.
     """
     out_config = {camel_to_snake(key): value for key, value in pool_config.items()}
     fixedpoint_keys = [
@@ -58,7 +130,7 @@ def convert_hyperdrive_pool_config_types(pool_config: dict[str, Any]) -> dict[st
         if key in fixedpoint_keys:
             out_config[key] = FixedPoint(scaled_value=pool_config[key])
     out_config["fees"] = [FixedPoint(scaled_value=fee) for fee in pool_config["fees"]]
-    return out_config
+    return PoolConfig(**out_config)
 
 
 def process_hyperdrive_pool_config(
@@ -114,14 +186,14 @@ def get_hyperdrive_pool_info(
     Returns
     -------
     dict[str, Any]
-        The hyperdrive pool info returned from the smart contract.
+        A dictionary containing the Hyperdrive pool info returned from the smart contract.
     """
     return smart_contract_read(
         hyperdrive_contract, "getPoolInfo", block_number=block_number
     )
 
 
-def convert_hyperdrive_pool_info_types(pool_info: dict[str, Any]) -> dict[str, Any]:
+def convert_hyperdrive_pool_info_types(pool_info: dict[str, Any]) -> PoolInfo:
     """Convert the pool info types from what solidity returns to FixedPoint.
 
     Arguments
@@ -131,13 +203,18 @@ def convert_hyperdrive_pool_info_types(pool_info: dict[str, Any]) -> dict[str, A
 
     Returns
     -------
-    dict
-        The hyperdrive pool info with modified types.
+    PoolInfo
+        A dataclass containing the Hyperdrive pool info with modified types.
+        This dataclass has the same attributes as the Hyperdrive ABI, with these changes:
+          - The attribute names are converted to snake_case.
+          - FixedPoint types are used if the type was FixedPoint in the underlying contract.
     """
-    return {
-        camel_to_snake(key): FixedPoint(scaled_value=value)
-        for (key, value) in pool_info.items()
-    }
+    return PoolInfo(
+        **{
+            camel_to_snake(key): FixedPoint(scaled_value=value)
+            for (key, value) in pool_info.items()
+        }
+    )
 
 
 def process_hyperdrive_pool_info(
@@ -208,9 +285,7 @@ def get_hyperdrive_checkpoint(
     return smart_contract_read(hyperdrive_contract, "getCheckpoint", block_timestamp)
 
 
-def convert_hyperdrive_checkpoint_types(
-    checkpoint: dict[str, int]
-) -> dict[str, int | FixedPoint]:
+def convert_hyperdrive_checkpoint_types(checkpoint: dict[str, int]) -> Checkpoint:
     """Convert the checkpoint types from what solidity returns to FixedPoint.
 
     Arguments
@@ -220,17 +295,15 @@ def convert_hyperdrive_checkpoint_types(
 
     Returns
     -------
-    dict[str, int | FixedPoint]
-        A dict containing the checkpoint sharePrice and longExposure fields converted to FixedPoint.
+    Checkpoint
+        A dataclass containing the checkpoint share_price and long_exposure fields converted to FixedPoint.
     """
-    out_checkpoint: dict[str, int | FixedPoint] = {
-        camel_to_snake(key): value for key, value in checkpoint.items()
-    }
-    out_checkpoint["share_price"] = FixedPoint(scaled_value=checkpoint["share_price"])
-    out_checkpoint["long_exposure"] = FixedPoint(
-        scaled_value=checkpoint["long_exposure"]
+    return Checkpoint(
+        **{
+            camel_to_snake(key): FixedPoint(scaled_value=value)
+            for key, value in checkpoint.items()
+        }
     )
-    return out_checkpoint
 
 
 def process_hyperdrive_checkpoint(
@@ -409,26 +482,36 @@ def get_event_history_from_chain(
     # Create filter on events
     # Typing doesn't know about create_filter function with various events
     add_lp_event_filter = hyperdrive_contract.events.AddLiquidity.create_filter(**lp_filter_args)  # type: ignore
-    remove_lp_event_filter = hyperdrive_contract.events.RemoveLiquidity.create_filter(
-        **lp_filter_args
-    )  # type:ignore
+    remove_lp_event_filter = (
+        hyperdrive_contract.events.RemoveLiquidity.create_filter(  # type:ignore
+            **lp_filter_args
+        )
+    )
     withdraw_event_filter = (
         hyperdrive_contract.events.RedeemWithdrawalShares.create_filter(  # type:ignore
             **lp_filter_args
         )
     )
-    open_long_event_filter = hyperdrive_contract.events.OpenLong.create_filter(
-        **trade_filter_args
-    )  # type:ignore
-    close_long_event_filter = hyperdrive_contract.events.CloseLong.create_filter(
-        **trade_filter_args
-    )  # type:ignore
-    open_short_event_filter = hyperdrive_contract.events.OpenShort.create_filter(
-        **trade_filter_args
-    )  # type:ignore
-    close_short_event_filter = hyperdrive_contract.events.CloseShort.create_filter(
-        **trade_filter_args
-    )  # type:ignore
+    open_long_event_filter = (
+        hyperdrive_contract.events.OpenLong.create_filter(  # type:ignore
+            **trade_filter_args
+        )
+    )
+    close_long_event_filter = (
+        hyperdrive_contract.events.CloseLong.create_filter(  # type:ignore
+            **trade_filter_args
+        )
+    )
+    open_short_event_filter = (
+        hyperdrive_contract.events.OpenShort.create_filter(  # type:ignore
+            **trade_filter_args
+        )
+    )
+    close_short_event_filter = (
+        hyperdrive_contract.events.CloseShort.create_filter(  # type:ignore
+            **trade_filter_args
+        )
+    )
 
     # Retrieve all entries
     add_lp_events = add_lp_event_filter.get_all_entries()

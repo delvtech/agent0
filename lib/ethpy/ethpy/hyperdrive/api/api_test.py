@@ -39,9 +39,7 @@ class TestHyperdriveInterface:
         pool_config = smart_contract_read(
             hyperdrive.hyperdrive_contract, "getPoolConfig"
         )
-        assert (
-            pool_config == hyperdrive._contract_pool_config
-        )  # pylint: disable=protected-access
+        assert pool_config == hyperdrive.current_pool_state.contract_pool_config
 
     def test_pool_info(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Checks that the Hyperdrive pool_info matches what is returned from the smart contract.
@@ -63,9 +61,7 @@ class TestHyperdriveInterface:
             eth_config, addresses=hyperdrive_contract_addresses
         )
         pool_info = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolInfo")
-        assert (
-            pool_info == hyperdrive._contract_pool_info
-        )  # pylint: disable=protected-access
+        assert pool_info == hyperdrive.current_pool_state.contract_pool_info
 
     def test_checkpoint(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Checks that the Hyperdrive checkpoint matches what is returned from the smart contract.
@@ -90,9 +86,7 @@ class TestHyperdriveInterface:
         checkpoint = smart_contract_read(
             hyperdrive.hyperdrive_contract, "getCheckpoint", checkpoint_id
         )
-        assert (
-            checkpoint == hyperdrive._contract_latest_checkpoint
-        )  # pylint: disable=protected-access
+        assert checkpoint == hyperdrive.current_pool_state.contract_checkpoint
 
     def test_spot_price_and_fixed_rate(
         self, local_hyperdrive_pool: DeployedHyperdrivePool
@@ -117,13 +111,13 @@ class TestHyperdriveInterface:
             addresses=hyperdrive_contract_addresses,
         )
         # get pool config variables
-        pool_config = hyperdrive.pool_config
-        init_share_price: FixedPoint = pool_config["initialSharePrice"]
-        time_stretch: FixedPoint = pool_config["timeStretch"]
+        pool_config = hyperdrive.current_pool_state.pool_config
+        init_share_price: FixedPoint = pool_config.initial_share_price
+        time_stretch: FixedPoint = pool_config.time_stretch
         # get pool info variables
-        pool_info = hyperdrive.current_pool_info
-        share_reserves: FixedPoint = pool_info["shareReserves"]
-        bond_reserves: FixedPoint = pool_info["bondReserves"]
+        pool_info = hyperdrive.current_pool_state.pool_info
+        share_reserves: FixedPoint = pool_info.share_reserves
+        bond_reserves: FixedPoint = pool_info.bond_reserves
         # test spot price
         spot_price = (
             (init_share_price * share_reserves) / bond_reserves
@@ -156,12 +150,7 @@ class TestHyperdriveInterface:
         hyperdrive = HyperdriveInterface(
             eth_config, addresses=hyperdrive_contract_addresses
         )
-        _ = hyperdrive.pool_config
-        _ = hyperdrive.current_pool_info
-        _ = hyperdrive.latest_checkpoint
-        _ = hyperdrive.current_block
-        _ = hyperdrive.current_block_number
-        _ = hyperdrive.current_block_time
+        _ = hyperdrive.current_pool_state
         _ = hyperdrive.variable_rate
         _ = hyperdrive.vault_shares
         _ = hyperdrive.calc_open_long(FixedPoint(100))

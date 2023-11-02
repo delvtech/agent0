@@ -88,7 +88,9 @@ class Random(HyperdrivePolicy):
         if disallowed_actions is None:
             disallowed_actions = []
         # compile a list of all actions
-        minimum_trade: FixedPoint = interface.pool_config["minimumTransactionAmount"]
+        minimum_trade: FixedPoint = (
+            interface.current_pool_state.pool_config.minimum_transaction_amount
+        )
         if wallet.balance.amount <= minimum_trade:
             all_available_actions = []
         else:
@@ -105,7 +107,8 @@ class Random(HyperdrivePolicy):
             all_available_actions.append(HyperdriveActionType.REMOVE_LIQUIDITY)
         if (
             wallet.withdraw_shares
-            and interface.current_pool_info["withdrawalSharesReadyToWithdraw"] > 0
+            and interface.current_pool_state.pool_info.withdrawal_shares_ready_to_withdraw
+            > 0
         ):
             all_available_actions.append(HyperdriveActionType.REDEEM_WITHDRAW_SHARE)
         # downselect from all actions to only include allowed actions
@@ -276,7 +279,7 @@ class Random(HyperdrivePolicy):
         )
         shares_available_to_withdraw = min(
             wallet.withdraw_shares,
-            interface.current_pool_info["withdrawalSharesReadyToWithdraw"],
+            interface.current_pool_state.pool_info.withdrawal_shares_ready_to_withdraw,
         )
         # WEI <= trade_amount <= withdraw_shares
         trade_amount = max(WEI, min(shares_available_to_withdraw, initial_trade_amount))
