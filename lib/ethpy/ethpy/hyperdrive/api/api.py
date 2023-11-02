@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, cast
 
 from ethpy import build_eth_config
 from ethpy.base import (
-    BaseInterface,
     initialize_web3_with_http_provider,
     load_all_abis,
     smart_contract_read,
@@ -25,7 +24,7 @@ from ethpy.hyperdrive.interface import (
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
 )
-from web3.types import BlockIdentifier, Timestamp
+from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
 from ._contract_calls import (
@@ -80,10 +79,9 @@ class PoolState:
     r"""A collection of stateful variables for a deployed Hyperdrive and Yield contracts."""
     hyperdrive_contract: Contract
     yield_contract: Contract
-    block_identifier: BlockIdentifier = cast(BlockIdentifier, "latest")
+    block: BlockData
 
     def __post_init__(self):
-        self.block = _get_block(self, self.block_identifier)
         self.block_number = _get_block_number(self.block)
         self.block_time = _get_block_time(self.block)
         self.contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
@@ -108,7 +106,7 @@ class PoolState:
         )
 
 
-class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
+class HyperdriveInterface:
     """End-point api for interfacing with Hyperdrive."""
 
     def __init__(
@@ -124,32 +122,37 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         The user can optionally include an `artifacts` HyperdriveAddresses object.
         In this case, the `eth_config.artifacts_uri` variable is not used, and these Addresses are used instead.
         """
-        self.config = build_eth_config() if eth_config is None else eth_config
+        # Handle defaults for config and addresses
+        self.config: EthConfig = (
+            build_eth_config() if eth_config is None else eth_config
+        )
         if addresses is None:
             addresses = fetch_hyperdrive_address_from_uri(
-                os.path.join(eth_config.artifacts_uri, "addresses.json")
+                os.path.join(self.config.artifacts_uri, "addresses.json")
             )
+        self.addresses: HyperdriveAddresses = addresses
+        # Setup provider for communicating with the chain
         if web3 is None:
             web3 = initialize_web3_with_http_provider(
-                eth_config.rpc_uri, reset_provider=False
+                self.config.rpc_uri, reset_provider=False
             )
         self.web3 = web3
-        abis = load_all_abis(eth_config.abi_dir)
+        abis = load_all_abis(self.config.abi_dir)
         # set up the ERC20 contract for minting base tokens
         self.base_token_contract: Contract = web3.eth.contract(
             abi=abis["ERC20Mintable"],
-            address=web3.to_checksum_address(addresses.base_token),
+            address=web3.to_checksum_address(self.addresses.base_token),
         )
         # set up hyperdrive contract
         self.hyperdrive_contract: Contract = web3.eth.contract(
             abi=abis["IHyperdrive"],
-            address=web3.to_checksum_address(addresses.mock_hyperdrive),
+            address=web3.to_checksum_address(self.addresses.mock_hyperdrive),
         )
         # get yield (variable rate) pool contract
         # TODO: In the future we want to switch to a single IERC4626Hyperdrive ABI
         data_provider_contract: Contract = web3.eth.contract(
             abi=abis["ERC4626DataProvider"],
-            address=web3.to_checksum_address(addresses.mock_hyperdrive),
+            address=web3.to_checksum_address(self.addresses.mock_hyperdrive),
         )
         self.yield_address = smart_contract_read(data_provider_contract, "pool")[
             "value"
@@ -161,7 +164,6 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         # fill in initial cache
         self.current_pool_state = self.get_hyperdrive_state()
         self.last_state_block_number = copy.copy(self.current_pool_state.block_number)
-        super().__init__(eth_config, addresses)
 
     def _ensure_current_state(self) -> None:
         """Update the cached pool info and latest checkpoint if needed."""
@@ -175,9 +177,8 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         """Get the hyperdrive pool and block state, given a block identifier"""
         if block_identifier is None:
             block_identifier = cast(BlockIdentifier, "latest")
-        return PoolState(
-            self.hyperdrive_contract, self.yield_contract, block_identifier
-        )
+        block = _get_block(self, block_identifier)
+        return PoolState(self.hyperdrive_contract, self.yield_contract, block)
 
     def get_eth_base_balances(
         self, agent: LocalAccount
@@ -792,4 +793,4 @@ class HyperdriveInterface(BaseInterface[HyperdriveAddresses]):
         if pool_state is None:
             self._ensure_current_state()
             pool_state = self.current_pool_state
-        return _calc_max_short(self, budget)
+        return _calc_max_short(pool_state, budget)
