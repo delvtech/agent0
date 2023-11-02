@@ -7,7 +7,8 @@ from typing import TypeVar
 from agent0.base import Quantity, TokenType
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.state import (HyperdriveActionType,
+                                     HyperdriveMarketAction, HyperdriveWallet)
 from elfpy.types import MarketType, Trade
 from eth_account.signers.local import LocalAccount
 from ethpy.hyperdrive.api import HyperdriveInterface
@@ -79,7 +80,9 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         """
         action_list = []
         for maturity_time, long in self.wallet.longs.items():
-            logging.debug("closing long: maturity_time=%g, balance=%s", maturity_time, long)
+            logging.debug(
+                "closing long: maturity_time=%g, balance=%s", maturity_time, long
+            )
             if long.balance > 0:
                 action_list.append(
                     Trade(
@@ -93,7 +96,11 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
                     )
                 )
         for maturity_time, short in self.wallet.shorts.items():
-            logging.debug("closing short: maturity_time=%g, balance=%s", maturity_time, short.balance)
+            logging.debug(
+                "closing short: maturity_time=%g, balance=%s",
+                maturity_time,
+                short.balance,
+            )
             if short.balance > 0:
                 action_list.append(
                     Trade(
@@ -137,12 +144,16 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
 
         return action_list
 
-    def get_trades(self, interface: HyperdriveInterface) -> list[Trade[HyperdriveMarketAction]]:
+    # We want to rename the argument from "interface" to "hyperdrive" to be more explicit
+    # pylint: disable=arguments-renamed
+    def get_trades(
+        self, hyperdrive: HyperdriveInterface
+    ) -> list[Trade[HyperdriveMarketAction]]:
         """Helper function for computing a agent trade
 
         Arguments
         ----------
-        interface : HyperdriveInterface
+        hyperdrive : HyperdriveInterface
             The market on which this agent will be executing trades (MarketActions)
 
         Returns
@@ -153,11 +164,14 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         # get the action list from the policy
         # TODO: Deprecate the old wallet in favor of this new one
         actions: list[Trade[HyperdriveMarketAction]]
-        actions, self.done_trading = self.policy.action(interface, self.wallet)
+        actions, self.done_trading = self.policy.action(hyperdrive, self.wallet)
 
         # edit each action in place
         for action in actions:
-            if action.market_type == MarketType.HYPERDRIVE and action.market_action.maturity_time is None:
+            if (
+                action.market_type == MarketType.HYPERDRIVE
+                and action.market_action.maturity_time is None
+            ):
                 if action.market_action.trade_amount <= 0:
                     raise ValueError("Trade amount cannot be zero or negative.")
         return actions

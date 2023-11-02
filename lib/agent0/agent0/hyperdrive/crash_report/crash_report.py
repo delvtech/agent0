@@ -1,7 +1,6 @@
 """Utility function for logging agent crash reports."""
 from __future__ import annotations
 
-import copy
 import json
 import logging
 import os
@@ -19,15 +18,12 @@ from elfpy.utils import logs
 from eth_typing import BlockNumber
 from ethpy.base import smart_contract_read
 from ethpy.base.errors import ContractCallException
-from ethpy.hyperdrive import (
-    AssetIdPrefix,
-    convert_hyperdrive_checkpoint_types,
-    convert_hyperdrive_pool_config_types,
-    convert_hyperdrive_pool_info_types,
-    encode_asset_id,
-    get_hyperdrive_checkpoint,
-    get_hyperdrive_pool_info,
-)
+from ethpy.hyperdrive import (AssetIdPrefix,
+                              convert_hyperdrive_checkpoint_types,
+                              convert_hyperdrive_pool_config_types,
+                              convert_hyperdrive_pool_info_types,
+                              encode_asset_id, get_hyperdrive_checkpoint,
+                              get_hyperdrive_pool_info)
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from numpy.random._generator import Generator as NumpyGenerator
@@ -112,6 +108,16 @@ def build_crash_trade_result(
     ---------
     exception : Exception
         The exception that was thrown
+    agent : HyperdriveAgent
+    trade_object : types.Trade[HyperdriveMarketAction]
+    hyperdrive : HyperdriveInterface
+
+    Returns
+    -------
+    TradeResult
+
+    .. todo::
+        Fill out this docstring.
     """
     trade_result = TradeResult(
         status=TradeStatus.FAIL,

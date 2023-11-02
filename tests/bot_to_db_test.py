@@ -12,14 +12,11 @@ from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.test_fixtures import CycleTradesPolicy
-from chainsync.db.hyperdrive.interface import (
-    get_current_wallet,
-    get_pool_analysis,
-    get_pool_config,
-    get_pool_info,
-    get_transactions,
-    get_wallet_deltas,
-)
+from chainsync.db.hyperdrive.interface import (get_current_wallet,
+                                               get_pool_analysis,
+                                               get_pool_config, get_pool_info,
+                                               get_transactions,
+                                               get_wallet_deltas)
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI
@@ -441,19 +438,19 @@ class TestBotToDb:
         # Check spot price and fixed rate
         db_pool_analysis: pd.DataFrame = get_pool_analysis(db_session, coerce_float=False)
         # Compare last value to what hyperdrive interface is reporting
-        hyperdrive_interface = HyperdriveInterface(
+        hyperdrive = HyperdriveInterface(
             eth_config=eth_config,
             addresses=hyperdrive_contract_addresses,
         )
         latest_pool_analysis = db_pool_analysis.iloc[-1]
 
         latest_spot_price = FixedPoint(str(latest_pool_analysis["spot_price"]))
-        expected_spot_price = hyperdrive_interface.calc_spot_price()
+        expected_spot_price = hyperdrive.calc_spot_price()
 
         latest_fixed_rate = FixedPoint(str(latest_pool_analysis["fixed_rate"]))
-        expected_fixed_rate = hyperdrive_interface.calc_fixed_rate()
+        expected_fixed_rate = hyperdrive.calc_fixed_rate()
 
-        assert latest_pool_analysis["blockNumber"] == hyperdrive_interface.current_pool_state.block_number
+        assert latest_pool_analysis["blockNumber"] == hyperdrive.current_pool_state.block_number
         # TODO there's rounding errors between db spot price and fixed rates
         assert abs(latest_spot_price - expected_spot_price) <= FixedPoint(1e-16)
         assert abs(latest_fixed_rate - expected_fixed_rate) <= FixedPoint(1e-16)

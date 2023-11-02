@@ -9,8 +9,10 @@ from ethpy.hyperdrive.api import HyperdriveInterface
 class HyperdrivePolicy(BasePolicy[HyperdriveInterface, HyperdriveWallet]):
     """Hyperdrive policy."""
 
+    # We want to rename the argument from "interface" to "hyperdrive" to be more explicit
+    # pylint: disable=arguments-renamed
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Returns an empty list, indicating no action."""
         raise NotImplementedError

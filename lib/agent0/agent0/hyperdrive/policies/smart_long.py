@@ -4,7 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
+from agent0.hyperdrive.state import (HyperdriveActionType,
+                                     HyperdriveMarketAction)
 from elfpy import WEI
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint, FixedPointMath
@@ -87,14 +88,16 @@ class SmartLong(HyperdrivePolicy):
 
         super().__init__(budget, rng, slippage_tolerance)
 
+    # We want to rename the argument from "interface" to "hyperdrive" to be more explicit
+    # pylint: disable=arguments-renamed
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Implement a Long Louie user strategy
 
         Arguments
         ---------
-        interface : HyperdriveInterface
+        hyperdrive : HyperdriveInterface
             The trading market.
         wallet : HyperdriveWallet
             The agent's wallet.
@@ -119,8 +122,8 @@ class SmartLong(HyperdrivePolicy):
             # TODO: should we make this less time? they dont close before the agent runs out of money
             # how to intelligently pick the length? using PNL I guess.
             if (
-                interface.current_pool_state.block_time - FixedPoint(long_time)
-            ) >= interface.current_pool_state.pool_config.position_duration:
+                hyperdrive.current_pool_state.block_time - FixedPoint(long_time)
+            ) >= hyperdrive.current_pool_state.pool_config.position_duration:
                 trade_amount = wallet.longs[long_time].balance  # close the whole thing
                 action_list += [
                     Trade(
@@ -138,28 +141,28 @@ class SmartLong(HyperdrivePolicy):
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
         if (
-            interface.calc_fixed_rate() - interface.current_pool_state.variable_rate
+            hyperdrive.calc_fixed_rate() - hyperdrive.current_pool_state.variable_rate
         ) > self.risk_threshold and not has_opened_long:
             # calculate the total number of bonds we want to see in the pool
             total_bonds_to_match_variable_apr = (
-                interface.calc_bonds_given_shares_and_rate(
-                    target_rate=interface.current_pool_state.variable_rate
+                hyperdrive.calc_bonds_given_shares_and_rate(
+                    target_rate=hyperdrive.current_pool_state.variable_rate
                 )
             )
             # get the delta bond amount & convert units
             bond_reserves: FixedPoint = (
-                interface.current_pool_state.pool_info.bond_reserves
+                hyperdrive.current_pool_state.pool_info.bond_reserves
             )
             # calculate how many bonds we take out of the pool
             new_bonds_to_match_variable_apr = (
                 bond_reserves - total_bonds_to_match_variable_apr
-            ) * interface.calc_spot_price()
+            ) * hyperdrive.calc_spot_price()
             # calculate how much base we pay for the new bonds
-            new_base_to_match_variable_apr = interface.calc_out_for_in(
+            new_base_to_match_variable_apr = hyperdrive.calc_out_for_in(
                 new_bonds_to_match_variable_apr, shares_in=False
             )
             # get the maximum amount the agent can long given the market and the agent's wallet
-            max_base = interface.calc_max_long(wallet.balance.amount)
+            max_base = hyperdrive.calc_max_long(wallet.balance.amount)
             # don't want to trade more than the agent has or more than the market can handle
             trade_amount = FixedPointMath.minimum(
                 max_base, new_base_to_match_variable_apr

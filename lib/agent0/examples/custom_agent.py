@@ -9,7 +9,8 @@ from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
+from agent0.hyperdrive.state import (HyperdriveActionType,
+                                     HyperdriveMarketAction)
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint
 
@@ -70,15 +71,17 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
         self.counter = 0
         super().__init__(budget, rng, slippage_tolerance)
 
+    # We want to rename the argument from "interface" in the base class to "hyperdrive" to be more explicit
+    # pylint: disable=arguments-renamed
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time
 
         Arguments
         ---------
-        market : HyperdriveMarketState
-            the trading market
+        hyperdrive : HyperdriveInterface
+            The trading market.
         wallet : HyperdriveWallet
             agent's wallet
 
