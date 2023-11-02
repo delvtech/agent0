@@ -87,15 +87,10 @@ class PoolState:
         # by computing here
         self.pool_info = convert_hyperdrive_pool_info_types(self.contract_pool_info)
         self.contract_checkpoint = get_hyperdrive_checkpoint(
-            self.hyperdrive_contract,
-            _calc_checkpoint_id(self, self.block_time),
+            self.hyperdrive_contract, _calc_checkpoint_id(self, self.block_time)
         )
         self.variable_rate = _get_variable_rate(self.yield_contract, self.block_number)
-        self.vault_shares = _get_vault_shares(
-            self.yield_contract,
-            self.hyperdrive_contract,
-            self.block_number,
-        )
+        self.vault_shares = _get_vault_shares(self.yield_contract, self.hyperdrive_contract, self.block_number)
         self.checkpoint = convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
 
 
@@ -127,24 +122,20 @@ class HyperdriveInterface:
         abis = load_all_abis(self.eth_config.abi_dir)
         # set up the ERC20 contract for minting base tokens
         self.base_token_contract: Contract = web3.eth.contract(
-            abi=abis["ERC20Mintable"],
-            address=web3.to_checksum_address(self.addresses.base_token),
+            abi=abis["ERC20Mintable"], address=web3.to_checksum_address(self.addresses.base_token)
         )
         # set up hyperdrive contract
         self.hyperdrive_contract: Contract = web3.eth.contract(
-            abi=abis["IHyperdrive"],
-            address=web3.to_checksum_address(self.addresses.mock_hyperdrive),
+            abi=abis["IHyperdrive"], address=web3.to_checksum_address(self.addresses.mock_hyperdrive)
         )
         # get yield (variable rate) pool contract
         # TODO: In the future we want to switch to a single IERC4626Hyperdrive ABI
         data_provider_contract: Contract = web3.eth.contract(
-            abi=abis["ERC4626DataProvider"],
-            address=web3.to_checksum_address(self.addresses.mock_hyperdrive),
+            abi=abis["ERC4626DataProvider"], address=web3.to_checksum_address(self.addresses.mock_hyperdrive)
         )
         self.yield_address = smart_contract_read(data_provider_contract, "pool")["value"]
         self.yield_contract: Contract = web3.eth.contract(
-            abi=abis["MockERC4626"],
-            address=web3.to_checksum_address(self.yield_address),
+            abi=abis["MockERC4626"], address=web3.to_checksum_address(self.yield_address)
         )
         # fill in initial cache
         self.current_pool_state = self.get_hyperdrive_state()
@@ -391,10 +382,7 @@ class HyperdriveInterface:
         return await _async_add_liquidity(self, agent, trade_amount, min_apr, max_apr, nonce)
 
     async def async_remove_liquidity(
-        self,
-        agent: LocalAccount,
-        trade_amount: FixedPoint,
-        nonce: Nonce | None = None,
+        self, agent: LocalAccount, trade_amount: FixedPoint, nonce: Nonce | None = None
     ) -> ReceiptBreakdown:
         """Contract call to remove liquidity from the Hyperdrive pool.
 
@@ -415,10 +403,7 @@ class HyperdriveInterface:
         return await _async_remove_liquidity(self, agent, trade_amount, nonce)
 
     async def async_redeem_withdraw_shares(
-        self,
-        agent: LocalAccount,
-        trade_amount: FixedPoint,
-        nonce: Nonce | None = None,
+        self, agent: LocalAccount, trade_amount: FixedPoint, nonce: Nonce | None = None
     ) -> ReceiptBreakdown:
         """Contract call to redeem withdraw shares from Hyperdrive pool.
 
@@ -589,17 +574,11 @@ class HyperdriveInterface:
             self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_short_deposit(
-            pool_state,
-            short_amount,
-            _calc_spot_price(pool_state),
-            pool_state.pool_info.share_price,
+            pool_state, short_amount, _calc_spot_price(pool_state), pool_state.pool_info.share_price
         )
 
     def calc_out_for_in(
-        self,
-        amount_in: FixedPoint,
-        shares_in: bool,
-        pool_state: PoolState | None = None,
+        self, amount_in: FixedPoint, shares_in: bool, pool_state: PoolState | None = None
     ) -> FixedPoint:
         """Calculate the amount of an asset for a given amount in of the other.
 
@@ -624,10 +603,7 @@ class HyperdriveInterface:
         return _calc_out_for_in(pool_state, amount_in, shares_in)
 
     def calc_in_for_out(
-        self,
-        amount_out: FixedPoint,
-        shares_out: bool,
-        pool_state: PoolState | None = None,
+        self, amount_out: FixedPoint, shares_out: bool, pool_state: PoolState | None = None
     ) -> FixedPoint:
         """Calculate the amount of an asset for a given amount out of the other.
 
@@ -652,10 +628,7 @@ class HyperdriveInterface:
         return _calc_in_for_out(pool_state, amount_out, shares_out)
 
     def calc_fees_out_given_bonds_in(
-        self,
-        bonds_in: FixedPoint,
-        maturity_time: int | None = None,
-        pool_state: PoolState | None = None,
+        self, bonds_in: FixedPoint, maturity_time: int | None = None, pool_state: PoolState | None = None
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         """Calculates the fees that go to the LPs and governance.
 
@@ -690,10 +663,7 @@ class HyperdriveInterface:
         return _calc_fees_out_given_bonds_in(pool_state, bonds_in, maturity_time)
 
     def calc_fees_out_given_shares_in(
-        self,
-        shares_in: FixedPoint,
-        maturity_time: int | None = None,
-        pool_state: PoolState | None = None,
+        self, shares_in: FixedPoint, maturity_time: int | None = None, pool_state: PoolState | None = None
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         """Calculates the fees that go to the LPs and governance.
 
@@ -728,10 +698,7 @@ class HyperdriveInterface:
         return _calc_fees_out_given_shares_in(pool_state, shares_in, maturity_time)
 
     def calc_bonds_given_shares_and_rate(
-        self,
-        target_rate: FixedPoint,
-        target_shares: FixedPoint | None = None,
-        pool_state: PoolState | None = None,
+        self, target_rate: FixedPoint, target_shares: FixedPoint | None = None, pool_state: PoolState | None = None
     ) -> FixedPoint:
         r"""Returns the bond reserves for the market share reserves
         and a given fixed rate.

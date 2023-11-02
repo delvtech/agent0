@@ -34,7 +34,7 @@ def calc_bond_reserves(
     share_adjustment: FixedPoint,
     initial_share_price: FixedPoint,
     target_rate: FixedPoint,
-    position_duration: int,
+    position_duration: FixedPoint,
     inverted_time_stretch: FixedPoint,
 ):
     r"""Calculate the amount of bonds that hit the target rate for the given shares.
@@ -53,7 +53,7 @@ def calc_bond_reserves(
         The initial price of a share in the yield source, from the original pool configurartion.
     target_rate : FixedPoint
         The target rate the pool will have after the calculated change in bonds and shares.
-    position_duration : int
+    position_duration : FixedPoint
         The term of the pool in seconds.
     inverted_time_stretch : FixedPoint
         The inverse of the time stretch factor, from the original pool configurartion.
@@ -112,7 +112,7 @@ def calc_apr_local_dict(pool_config: PoolConfig, pool_info: PoolInfo):
         pool_info.share_adjustment,
         pool_info.bond_reserves,
         pool_config.initial_share_price,
-        pool_config.position_duration,
+        FixedPoint(pool_config.position_duration),
         pool_config.time_stretch,
     )
 
@@ -123,7 +123,7 @@ def calc_apr_local(
     share_adjustment: FixedPoint,
     bond_reserves: FixedPoint,
     initial_share_price: FixedPoint,
-    position_duration_seconds: int,
+    position_duration_seconds: FixedPoint,
     time_stretch: FixedPoint,
 ) -> FixedPoint:
     """Calculate APR.
@@ -138,7 +138,7 @@ def calc_apr_local(
         The amount of bond reserves in the Hyperdrive pool.
     initial_share_price : FixedPoint
         The initial price of a share in the yield source, from the original pool configurartion.
-    position_duration_seconds : int
+    position_duration_seconds : FixedPoint
         The duration of the position, in seconds.
     time_stretch : FixedPoint
         The time stretch factor, from the original pool configurartion.
@@ -150,11 +150,7 @@ def calc_apr_local(
     """
     annualized_time = FixedPoint(position_duration_seconds) / FixedPoint(365 * 24 * 60 * 60)
     spot_price = calc_spot_price_local(
-        initial_share_price,
-        share_reserves,
-        share_adjustment,
-        bond_reserves,
-        time_stretch,
+        initial_share_price, share_reserves, share_adjustment, bond_reserves, time_stretch
     )
     return (FixedPoint(1) - spot_price) / (spot_price * annualized_time)
 
@@ -254,11 +250,7 @@ def get_shares_in_for_bonds_out(
     gov_fee_amount_in_shares = curve_fee_amount_in_shares * gov_fee
     # applying fees means you pay MORE shares in for the same amount of bonds OUT
     amount_from_user_in_shares = amount_in_shares + curve_fee_amount_in_shares
-    return (
-        amount_from_user_in_shares,
-        curve_fee_amount_in_shares,
-        gov_fee_amount_in_shares,
-    )
+    return (amount_from_user_in_shares, curve_fee_amount_in_shares, gov_fee_amount_in_shares)
 
 
 # TODO: switch over to using function in the SDK

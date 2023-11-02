@@ -121,10 +121,11 @@ def build_crash_trade_result(
         agent=agent,
         trade_object=trade_object,
     )
-    ## We first check if the exception came from a contract call
+    pool_state = hyperdrive.current_pool_state
+
+    ## Check if the exception came from a contract call
     # If it did, we fill various trade result data with custom data from
     # the exception
-    pool_state = hyperdrive.current_pool_state
     trade_result.exception = exception
     if isinstance(exception, ContractCallException):
         trade_result.orig_exception = exception.orig_exception
@@ -153,10 +154,6 @@ def build_crash_trade_result(
             "fn_kwargs": None,
         }
 
-    ## We get the underlying contract info and convert them to human readable versions
-    # Despite these being protected variables, we need low level access for crash reporting
-    trade_result.block_timestamp = pool_state.block.get("timestamp", None)
-
     ## Get pool config
     # Pool config is static, so we can get it from the interface here
     trade_result.raw_pool_config = pool_state.contract_pool_config
@@ -176,6 +173,7 @@ def build_crash_trade_result(
     except Exception as exc:  # pylint: disable=broad-except
         logging.warning("Failed to get hyperdrive pool info in crash reporting: %s", repr(exc))
         trade_result.raw_pool_info = None
+    trade_result.block_timestamp = pool_state.block.get("timestamp", None)
     if trade_result.raw_pool_info is not None and trade_result.block_timestamp is not None:
         trade_result.pool_info = asdict(pool_state.pool_info)
         trade_result.pool_info["timestamp"] = datetime.utcfromtimestamp(trade_result.block_timestamp)
@@ -341,9 +339,7 @@ def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
     }
 
 
-def _hyperdrive_trade_obj_to_dict(
-    trade_obj: types.Trade[HyperdriveMarketAction],
-) -> dict[str, Any]:
+def _hyperdrive_trade_obj_to_dict(trade_obj: types.Trade[HyperdriveMarketAction]) -> dict[str, Any]:
     """Helper function to convert hyperdrive trade object to a dict
 
     Arguments
