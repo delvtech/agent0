@@ -165,7 +165,7 @@ def data_to_analysis(
 
     # Calculate base buffer
     base_buffer = calc_base_buffer(
-        pool_info["long_outstanding"], pool_info["share_price"], pool_config["minimum_share_reserves"]
+        pool_info["longs_outstanding"], pool_info["share_price"], pool_config["minimum_share_reserves"]
     )
 
     pool_analysis_df = pd.concat([pool_info["block_number"], spot_price, fixed_rate, base_buffer], axis=1)
