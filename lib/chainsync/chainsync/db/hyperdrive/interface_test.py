@@ -33,14 +33,14 @@ class TestTransactionInterface:
 
     def test_latest_block_number(self, db_session):
         """Testing retrieval of transaction via interface"""
-        transaction_1 = HyperdriveTransaction(blockNumber=1, transactionHash="a", event_value=Decimal("3.0"))
+        transaction_1 = HyperdriveTransaction(block_number=1, transaction_hash="a", event_value=Decimal("3.0"))
         add_transactions([transaction_1], db_session)
 
         latest_block_number = get_latest_block_number_from_table(HyperdriveTransaction, db_session)
         assert latest_block_number == 1
 
-        transaction_2 = HyperdriveTransaction(blockNumber=2, transactionHash="b", event_value=Decimal("3.2"))
-        transaction_3 = HyperdriveTransaction(blockNumber=3, transactionHash="c", event_value=Decimal("3.4"))
+        transaction_2 = HyperdriveTransaction(block_number=2, transaction_hash="b", event_value=Decimal("3.2"))
+        transaction_3 = HyperdriveTransaction(block_number=3, transaction_hash="c", event_value=Decimal("3.4"))
         add_transactions([transaction_2, transaction_3], db_session)
 
         latest_block_number = get_latest_block_number_from_table(HyperdriveTransaction, db_session)
@@ -48,9 +48,9 @@ class TestTransactionInterface:
 
     def test_get_transactions(self, db_session):
         """Testing retrieval of transactions via interface"""
-        transaction_1 = HyperdriveTransaction(blockNumber=0, transactionHash="a", event_value=Decimal("3.1"))
-        transaction_2 = HyperdriveTransaction(blockNumber=1, transactionHash="b", event_value=Decimal("3.2"))
-        transaction_3 = HyperdriveTransaction(blockNumber=2, transactionHash="c", event_value=Decimal("3.3"))
+        transaction_1 = HyperdriveTransaction(block_number=0, transaction_hash="a", event_value=Decimal("3.1"))
+        transaction_2 = HyperdriveTransaction(block_number=1, transaction_hash="b", event_value=Decimal("3.2"))
+        transaction_3 = HyperdriveTransaction(block_number=2, transaction_hash="c", event_value=Decimal("3.3"))
         add_transactions([transaction_1, transaction_2, transaction_3], db_session)
 
         transactions_df = get_transactions(db_session)
@@ -58,9 +58,9 @@ class TestTransactionInterface:
 
     def test_block_query_transactions(self, db_session):
         """Testing querying by block number of transactions via interface"""
-        transaction_1 = HyperdriveTransaction(blockNumber=0, transactionHash="a", event_value=Decimal("3.1"))
-        transaction_2 = HyperdriveTransaction(blockNumber=1, transactionHash="b", event_value=Decimal("3.2"))
-        transaction_3 = HyperdriveTransaction(blockNumber=2, transactionHash="c", event_value=Decimal("3.3"))
+        transaction_1 = HyperdriveTransaction(block_number=0, transaction_hash="a", event_value=Decimal("3.1"))
+        transaction_2 = HyperdriveTransaction(block_number=1, transaction_hash="b", event_value=Decimal("3.2"))
+        transaction_3 = HyperdriveTransaction(block_number=2, transaction_hash="c", event_value=Decimal("3.3"))
         add_transactions([transaction_1, transaction_2, transaction_3], db_session)
 
         transactions_df = get_transactions(db_session, start_block=1)
@@ -254,30 +254,30 @@ class TestWalletDeltaInterface:
 
     def test_latest_block_number(self, db_session):
         """Testing retrieval of wallet info via interface"""
-        wallet_delta_1 = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.0"))
+        wallet_delta_1 = WalletDelta(block_number=1, transaction_hash="a", delta=Decimal("3.0"))
         add_wallet_deltas([wallet_delta_1], db_session)
         latest_block_number = get_latest_block_number_from_table(WalletDelta, db_session)
         assert latest_block_number == 1
-        wallet_delta_2 = WalletDelta(blockNumber=2, transactionHash="a", delta=Decimal("3.2"))
-        wallet_delta_3 = WalletDelta(blockNumber=3, transactionHash="a", delta=Decimal("3.4"))
+        wallet_delta_2 = WalletDelta(block_number=2, transaction_hash="a", delta=Decimal("3.2"))
+        wallet_delta_3 = WalletDelta(block_number=3, transaction_hash="a", delta=Decimal("3.4"))
         add_wallet_deltas([wallet_delta_2, wallet_delta_3], db_session)
         latest_block_number = get_latest_block_number_from_table(WalletDelta, db_session)
         assert latest_block_number == 3
 
     def test_get_wallet_delta(self, db_session):
         """Testing retrievals of walletinfo via interface"""
-        wallet_delta_1 = WalletDelta(blockNumber=0, transactionHash="a", delta=Decimal("3.1"))
-        wallet_delta_2 = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.2"))
-        wallet_delta_3 = WalletDelta(blockNumber=2, transactionHash="a", delta=Decimal("3.3"))
+        wallet_delta_1 = WalletDelta(block_number=0, transaction_hash="a", delta=Decimal("3.1"))
+        wallet_delta_2 = WalletDelta(block_number=1, transaction_hash="a", delta=Decimal("3.2"))
+        wallet_delta_3 = WalletDelta(block_number=2, transaction_hash="a", delta=Decimal("3.3"))
         add_wallet_deltas([wallet_delta_1, wallet_delta_2, wallet_delta_3], db_session)
         wallet_delta_df = get_wallet_deltas(db_session)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.1, 3.2, 3.3]))
 
     def test_block_query_wallet_delta(self, db_session):
         """Testing querying by block number of wallet info via interface"""
-        wallet_delta_1 = WalletDelta(blockNumber=0, transactionHash="a", delta=Decimal("3.1"))
-        wallet_delta_2 = WalletDelta(blockNumber=1, transactionHash="a", delta=Decimal("3.2"))
-        wallet_delta_3 = WalletDelta(blockNumber=2, transactionHash="a", delta=Decimal("3.3"))
+        wallet_delta_1 = WalletDelta(block_number=0, transaction_hash="a", delta=Decimal("3.1"))
+        wallet_delta_2 = WalletDelta(block_number=1, transaction_hash="a", delta=Decimal("3.2"))
+        wallet_delta_3 = WalletDelta(block_number=2, transaction_hash="a", delta=Decimal("3.3"))
         add_wallet_deltas([wallet_delta_1, wallet_delta_2, wallet_delta_3], db_session)
         wallet_delta_df = get_wallet_deltas(db_session, start_block=1)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.2, 3.3]))
@@ -292,9 +292,9 @@ class TestWalletDeltaInterface:
 
     def test_get_agents(self, db_session):
         """Testing helper function to get current wallet values"""
-        wallet_delta_1 = WalletDelta(blockNumber=0, transactionHash="a", walletAddress="addr_1")
-        wallet_delta_2 = WalletDelta(blockNumber=1, transactionHash="b", walletAddress="addr_1")
-        wallet_delta_3 = WalletDelta(blockNumber=2, transactionHash="c", walletAddress="addr_2")
+        wallet_delta_1 = WalletDelta(block_number=0, transaction_hash="a", wallet_address="addr_1")
+        wallet_delta_2 = WalletDelta(block_number=1, transaction_hash="b", wallet_address="addr_1")
+        wallet_delta_3 = WalletDelta(block_number=2, transaction_hash="c", wallet_address="addr_2")
         add_wallet_deltas([wallet_delta_1, wallet_delta_2, wallet_delta_3], db_session)
         agents = get_all_traders(db_session).to_list()
         assert len(agents) == 2
@@ -307,21 +307,21 @@ class TestCurrentWalletInterface:
 
     def test_latest_block_number(self, db_session):
         """Testing retrieval of wallet info via interface"""
-        wallet_info_1 = CurrentWallet(blockNumber=1, value=Decimal("3.0"))
+        wallet_info_1 = CurrentWallet(block_number=1, value=Decimal("3.0"))
         add_current_wallet([wallet_info_1], db_session)
         latest_block_number = get_latest_block_number_from_table(CurrentWallet, db_session)
         assert latest_block_number == 1
-        wallet_info_2 = CurrentWallet(blockNumber=2, value=Decimal("3.2"))
-        wallet_info_3 = CurrentWallet(blockNumber=3, value=Decimal("3.4"))
+        wallet_info_2 = CurrentWallet(block_number=2, value=Decimal("3.2"))
+        wallet_info_3 = CurrentWallet(block_number=3, value=Decimal("3.4"))
         add_current_wallet([wallet_info_2, wallet_info_3], db_session)
         latest_block_number = get_latest_block_number_from_table(CurrentWallet, db_session)
         assert latest_block_number == 3
 
     def test_get_current_wallet(self, db_session):
         """Testing retrieval of walletinfo via interface"""
-        wallet_info_1 = CurrentWallet(blockNumber=0, walletAddress="a", value=Decimal("3.1"))
-        wallet_info_2 = CurrentWallet(blockNumber=1, walletAddress="b", value=Decimal("3.2"))
-        wallet_info_3 = CurrentWallet(blockNumber=2, walletAddress="c", value=Decimal("3.3"))
+        wallet_info_1 = CurrentWallet(block_number=0, wallet_address="a", value=Decimal("3.1"))
+        wallet_info_2 = CurrentWallet(block_number=1, wallet_address="b", value=Decimal("3.2"))
+        wallet_info_3 = CurrentWallet(block_number=2, wallet_address="c", value=Decimal("3.3"))
         add_current_wallet([wallet_info_1, wallet_info_2, wallet_info_3], db_session)
         wallet_info_df = get_current_wallet(db_session)
         # Sort by value to make order invariant
@@ -330,9 +330,9 @@ class TestCurrentWalletInterface:
 
     def test_block_query_wallet_info(self, db_session):
         """Testing querying by block number of wallet info via interface"""
-        wallet_info_1 = CurrentWallet(blockNumber=0, walletAddress="a", value=Decimal("3.1"))
-        wallet_info_2 = CurrentWallet(blockNumber=1, walletAddress="b", value=Decimal("3.2"))
-        wallet_info_3 = CurrentWallet(blockNumber=2, walletAddress="c", value=Decimal("3.3"))
+        wallet_info_1 = CurrentWallet(block_number=0, wallet_address="a", value=Decimal("3.1"))
+        wallet_info_2 = CurrentWallet(block_number=1, wallet_address="b", value=Decimal("3.2"))
+        wallet_info_3 = CurrentWallet(block_number=2, wallet_address="c", value=Decimal("3.3"))
         add_current_wallet([wallet_info_1, wallet_info_2, wallet_info_3], db_session)
         wallet_info_df = get_current_wallet(db_session, end_block=1)
         np.testing.assert_array_equal(wallet_info_df["value"], np.array([3.1]))
@@ -344,9 +344,9 @@ class TestCurrentWalletInterface:
     def test_current_wallet_info(self, db_session):
         """Testing helper function to get current wallet values"""
         wallet_info_1 = CurrentWallet(
-            blockNumber=0, walletAddress="addr", tokenType=BASE_TOKEN_SYMBOL, value=Decimal("3.1")
+            block_number=0, wallet_address="addr", token_type=BASE_TOKEN_SYMBOL, value=Decimal("3.1")
         )
-        wallet_info_2 = CurrentWallet(blockNumber=1, walletAddress="addr", tokenType="LP", value=Decimal("5.1"))
+        wallet_info_2 = CurrentWallet(block_number=1, wallet_address="addr", token_type="LP", value=Decimal("5.1"))
         add_current_wallet([wallet_info_1, wallet_info_2], db_session)
         wallet_info_df = get_current_wallet(db_session).reset_index()
         # Sort by value to make order invariant
@@ -355,7 +355,7 @@ class TestCurrentWalletInterface:
         np.testing.assert_array_equal(wallet_info_df["value"], [3.1, 5.1])
         # E.g., block 2, wallet base tokens gets updated to 6.1
         wallet_info_3 = CurrentWallet(
-            blockNumber=2, walletAddress="addr", tokenType=BASE_TOKEN_SYMBOL, value=Decimal("6.1")
+            block_number=2, wallet_address="addr", token_type=BASE_TOKEN_SYMBOL, value=Decimal("6.1")
         )
         add_current_wallet([wallet_info_3], db_session)
         wallet_info_df = get_current_wallet(db_session).reset_index()

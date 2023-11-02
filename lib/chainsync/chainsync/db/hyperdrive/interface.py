@@ -271,9 +271,9 @@ def get_transactions(
         end_block = get_latest_block_number_from_table(HyperdriveTransaction, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(HyperdriveTransaction.blockNumber >= start_block)
+        query = query.filter(HyperdriveTransaction.block_number >= start_block)
     if end_block is not None:
-        query = query.filter(HyperdriveTransaction.blockNumber < end_block)
+        query = query.filter(HyperdriveTransaction.block_number < end_block)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
@@ -357,9 +357,9 @@ def get_wallet_deltas(
         end_block = get_latest_block_number_from_table(WalletDelta, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(WalletDelta.blockNumber >= start_block)
+        query = query.filter(WalletDelta.block_number >= start_block)
     if end_block is not None:
-        query = query.filter(WalletDelta.blockNumber < end_block)
+        query = query.filter(WalletDelta.block_number < end_block)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
@@ -387,7 +387,7 @@ def get_all_traders(
     list[str]
         A list of addresses that have made a trade
     """
-    query = session.query(WalletDelta.walletAddress)
+    query = session.query(WalletDelta.wallet_address)
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
         start_block = get_latest_block_number_from_table(WalletDelta, session) + start_block + 1
@@ -395,9 +395,9 @@ def get_all_traders(
         end_block = get_latest_block_number_from_table(WalletDelta, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(WalletDelta.blockNumber >= start_block)
+        query = query.filter(WalletDelta.block_number >= start_block)
     if end_block is not None:
-        query = query.filter(WalletDelta.blockNumber < end_block)
+        query = query.filter(WalletDelta.block_number < end_block)
 
     if query is None:
         return pd.Series([])
@@ -475,11 +475,11 @@ def get_current_wallet(
         end_block = get_latest_block_number_from_table(CurrentWallet, session) + end_block + 1
 
     if wallet_address is not None:
-        query = query.filter(CurrentWallet.walletAddress.in_(wallet_address))
+        query = query.filter(CurrentWallet.wallet_address.in_(wallet_address))
 
-    query = query.filter(CurrentWallet.blockNumber < end_block)
-    query = query.distinct(CurrentWallet.walletAddress, CurrentWallet.tokenType)
-    query = query.order_by(CurrentWallet.walletAddress, CurrentWallet.tokenType, CurrentWallet.blockNumber.desc())
+    query = query.filter(CurrentWallet.block_number < end_block)
+    query = query.distinct(CurrentWallet.wallet_address, CurrentWallet.token_type)
+    query = query.order_by(CurrentWallet.wallet_address, CurrentWallet.token_type, CurrentWallet.block_number.desc())
     current_wallet = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
     # Rename blockNumber column to be latest_block_update, and set the new blockNumber to be the query block
@@ -537,16 +537,16 @@ def get_pool_analysis(
         end_block = get_latest_block_number_from_table(PoolAnalysis, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(PoolAnalysis.blockNumber >= start_block)
+        query = query.filter(PoolAnalysis.block_number >= start_block)
     if end_block is not None:
-        query = query.filter(PoolAnalysis.blockNumber < end_block)
+        query = query.filter(PoolAnalysis.block_number < end_block)
 
     if return_timestamp:
         # query from PoolInfo the timestamp
-        query = query.join(PoolInfo, PoolAnalysis.blockNumber == PoolInfo.block_number)
+        query = query.join(PoolInfo, PoolAnalysis.block_number == PoolInfo.block_number)
 
     # Always sort by block in order
-    query = query.order_by(PoolAnalysis.blockNumber)
+    query = query.order_by(PoolAnalysis.block_number)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
@@ -589,15 +589,15 @@ def get_ticker(
         end_block = get_latest_block_number_from_table(Ticker, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(Ticker.blockNumber >= start_block)
+        query = query.filter(Ticker.block_number >= start_block)
     if end_block is not None:
-        query = query.filter(Ticker.blockNumber < end_block)
+        query = query.filter(Ticker.block_number < end_block)
 
     if wallet_address is not None:
-        query = query.filter(Ticker.walletAddress.in_(wallet_address))
+        query = query.filter(Ticker.wallet_address.in_(wallet_address))
 
     # Always sort by block in order
-    query = query.order_by(Ticker.blockNumber)
+    query = query.order_by(Ticker.block_number)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
@@ -648,18 +648,18 @@ def get_wallet_pnl(
         end_block = get_latest_block_number_from_table(WalletPNL, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(WalletPNL.blockNumber >= start_block)
+        query = query.filter(WalletPNL.block_number >= start_block)
     if end_block is not None:
-        query = query.filter(WalletPNL.blockNumber < end_block)
+        query = query.filter(WalletPNL.block_number < end_block)
     if wallet_address is not None:
-        query = query.filter(WalletPNL.walletAddress.in_(wallet_address))
+        query = query.filter(WalletPNL.wallet_address.in_(wallet_address))
 
     if return_timestamp:
         # query from PoolInfo the timestamp
-        query = query.join(PoolInfo, WalletPNL.blockNumber == PoolInfo.block_number)
+        query = query.join(PoolInfo, WalletPNL.block_number == PoolInfo.block_number)
 
     # Always sort by block in order
-    query = query.order_by(WalletPNL.blockNumber)
+    query = query.order_by(WalletPNL.block_number)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
@@ -696,8 +696,8 @@ def get_total_wallet_pnl_over_time(
     # Do a subquery that groups wallet pnl by address and block
     # Not sure why func.sum is not callable, but it is
     subquery = session.query(
-        WalletPNL.walletAddress,
-        WalletPNL.blockNumber,
+        WalletPNL.wallet_address,
+        WalletPNL.block_number,
         func.sum(WalletPNL.pnl).label("pnl"),  # pylint: disable=not-callable
     )
 
@@ -708,16 +708,16 @@ def get_total_wallet_pnl_over_time(
         end_block = get_latest_block_number_from_table(WalletPNL, session) + end_block + 1
 
     if start_block is not None:
-        subquery = subquery.filter(WalletPNL.blockNumber >= start_block)
+        subquery = subquery.filter(WalletPNL.block_number >= start_block)
     if end_block is not None:
-        subquery = subquery.filter(WalletPNL.blockNumber < end_block)
+        subquery = subquery.filter(WalletPNL.block_number < end_block)
     if wallet_address is not None:
-        subquery = subquery.filter(WalletPNL.walletAddress.in_(wallet_address))
+        subquery = subquery.filter(WalletPNL.wallet_address.in_(wallet_address))
 
-    subquery = subquery.group_by(WalletPNL.walletAddress, WalletPNL.blockNumber)
+    subquery = subquery.group_by(WalletPNL.wallet_address, WalletPNL.block_number)
 
     # Always sort by block in order
-    subquery = subquery.order_by(WalletPNL.blockNumber).subquery()
+    subquery = subquery.order_by(WalletPNL.block_number).subquery()
 
     # Additional query to join timestamp to block number
     query = session.query(PoolInfo.timestamp, subquery)
@@ -757,9 +757,9 @@ def get_wallet_positions_over_time(
     """
     # Not sure why func.sum is not callable, but it is
     subquery = session.query(
-        WalletPNL.walletAddress,
-        WalletPNL.blockNumber,
-        WalletPNL.baseTokenType,
+        WalletPNL.wallet_address,
+        WalletPNL.block_number,
+        WalletPNL.base_token_type,
         func.sum(WalletPNL.value).label("value"),  # pylint: disable=not-callable
     )
 
@@ -770,13 +770,13 @@ def get_wallet_positions_over_time(
         end_block = get_latest_block_number_from_table(WalletPNL, session) + end_block + 1
 
     if start_block is not None:
-        subquery = subquery.filter(WalletPNL.blockNumber >= start_block)
+        subquery = subquery.filter(WalletPNL.block_number >= start_block)
     if end_block is not None:
-        subquery = subquery.filter(WalletPNL.blockNumber < end_block)
+        subquery = subquery.filter(WalletPNL.block_number < end_block)
     if wallet_address is not None:
-        subquery = subquery.filter(WalletPNL.walletAddress.in_(wallet_address))
+        subquery = subquery.filter(WalletPNL.wallet_address.in_(wallet_address))
 
-    subquery = subquery.group_by(WalletPNL.walletAddress, WalletPNL.blockNumber, WalletPNL.baseTokenType).subquery()
+    subquery = subquery.group_by(WalletPNL.wallet_address, WalletPNL.block_number, WalletPNL.base_token_type).subquery()
 
     # query from PoolInfo the timestamp
     query = session.query(PoolInfo.timestamp, subquery)
