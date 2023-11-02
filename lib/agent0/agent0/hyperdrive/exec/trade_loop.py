@@ -6,7 +6,10 @@ import logging
 from datetime import datetime
 
 from agent0.hyperdrive.agents import HyperdriveAgent
-from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
+from agent0.hyperdrive.crash_report import (
+    get_anvil_state_dump,
+    log_hyperdrive_crash_report,
+)
 from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
 from ethpy.base.errors import ContractCallException
 from ethpy.hyperdrive.api import HyperdriveInterface
@@ -57,7 +60,9 @@ def trade_if_new_block(
     latest_block_number = latest_block.get("number", None)
     latest_block_timestamp = latest_block.get("timestamp", None)
     if latest_block_number is None or latest_block_timestamp is None:
-        raise AssertionError("latest_block_number and latest_block_timestamp can not be None")
+        raise AssertionError(
+            "latest_block_number and latest_block_timestamp can not be None"
+        )
     wait_for_new_block = get_wait_for_new_block(hyperdrive.web3)
     # do trades if we don't need to wait for new block.  otherwise, wait and check for a new block
     if not wait_for_new_block or latest_block_number > last_executed_block:
@@ -66,8 +71,8 @@ def trade_if_new_block(
             "Block number: %d, Block time: %s, Price: %s, Rate: %s",
             latest_block_number,
             str(datetime.fromtimestamp(float(latest_block_timestamp))),
-            hyperdrive.spot_price,
-            hyperdrive.fixed_rate,
+            hyperdrive.calc_spot_price(),
+            hyperdrive.calc_fixed_rate(),
         )
         # To avoid jumbled print statements due to asyncio, we handle all logging and crash reporting
         # here, with inner functions returning trade results.
@@ -104,14 +109,18 @@ def trade_if_new_block(
 
                 # Crash reporting
                 if is_slippage:
-                    log_hyperdrive_crash_report(trade_result, logging.WARNING, crash_report_to_file=False)
+                    log_hyperdrive_crash_report(
+                        trade_result, logging.WARNING, crash_report_to_file=False
+                    )
                 else:
                     # We only get anvil state dump here, since it's an on chain call
                     # and we don't want to do it when e.g., slippage happens
                     if crash_report_to_file:
                         trade_result.anvil_state = get_anvil_state_dump(hyperdrive.web3)
                     # Defaults to CRITICAL
-                    log_hyperdrive_crash_report(trade_result, crash_report_to_file=crash_report_to_file)
+                    log_hyperdrive_crash_report(
+                        trade_result, crash_report_to_file=crash_report_to_file
+                    )
 
                 if halt_on_errors:
                     # Don't halt if slippage detected and halt_on_slippage is false
@@ -159,7 +168,9 @@ def check_for_slippage(trade_result) -> tuple[bool, TradeResult]:
     )
     if is_slippage:
         # Prepend slippage argument to exception args
-        trade_result.exception.args = ("Slippage detected",) + trade_result.exception.args
+        trade_result.exception.args = (
+            "Slippage detected",
+        ) + trade_result.exception.args
 
     return is_slippage, trade_result
 
@@ -225,8 +236,13 @@ def check_for_invalid_balance(trade_result: TradeResult) -> tuple[bool, TradeRes
             # TODO this catch is not guaranteed to be correct in the future.
             if (
                 isinstance(trade_result.exception, ContractCallException)
-                and isinstance(trade_result.exception.orig_exception, ContractLogicError)
-                and ("ERC20: transfer amount exceeds balance" in trade_result.exception.args[0])
+                and isinstance(
+                    trade_result.exception.orig_exception, ContractLogicError
+                )
+                and (
+                    "ERC20: transfer amount exceeds balance"
+                    in trade_result.exception.args[0]
+                )
             ):
                 invalid_balance = True
 
@@ -266,7 +282,9 @@ def check_for_invalid_balance(trade_result: TradeResult) -> tuple[bool, TradeRes
         case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
             # If we're crash reporting, pool_info should exist
             assert trade_result.pool_info is not None
-            ready_to_withdraw = trade_result.pool_info["withdrawalSharesReadyToWithdraw"]
+            ready_to_withdraw = trade_result.pool_info[
+                "withdrawalSharesReadyToWithdraw"
+            ]
             if trade_amount > wallet.withdraw_shares:
                 invalid_balance = True
                 add_arg = (
@@ -308,7 +326,9 @@ def get_wait_for_new_block(web3: Web3) -> bool:
     """
     automine = False
     try:
-        response = web3.provider.make_request(method=RPCEndpoint("anvil_getAutomine"), params=[])
+        response = web3.provider.make_request(
+            method=RPCEndpoint("anvil_getAutomine"), params=[]
+        )
         automine = bool(response.get("result", False))
     except Exception:  # pylint: disable=broad-exception-caught
         # do nothing, this will fail for non anvil nodes and we don't care.

@@ -119,7 +119,7 @@ class SmartLong(HyperdrivePolicy):
             # TODO: should we make this less time? they dont close before the agent runs out of money
             # how to intelligently pick the length? using PNL I guess.
             if (
-                interface.current_block_time - FixedPoint(long_time)
+                interface.current_pool_state.block_time - FixedPoint(long_time)
             ) >= interface.current_pool_state.pool_config.position_duration:
                 trade_amount = wallet.longs[long_time].balance  # close the whole thing
                 action_list += [
@@ -138,12 +138,12 @@ class SmartLong(HyperdrivePolicy):
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
         if (
-            interface.fixed_rate - interface.variable_rate
+            interface.calc_fixed_rate() - interface.current_pool_state.variable_rate
         ) > self.risk_threshold and not has_opened_long:
             # calculate the total number of bonds we want to see in the pool
             total_bonds_to_match_variable_apr = (
                 interface.calc_bonds_given_shares_and_rate(
-                    target_rate=interface.variable_rate
+                    target_rate=interface.current_pool_state.variable_rate
                 )
             )
             # get the delta bond amount & convert units
@@ -153,7 +153,7 @@ class SmartLong(HyperdrivePolicy):
             # calculate how many bonds we take out of the pool
             new_bonds_to_match_variable_apr = (
                 bond_reserves - total_bonds_to_match_variable_apr
-            ) * interface.spot_price
+            ) * interface.calc_spot_price()
             # calculate how much base we pay for the new bonds
             new_base_to_match_variable_apr = interface.calc_out_for_in(
                 new_bonds_to_match_variable_apr, shares_in=False

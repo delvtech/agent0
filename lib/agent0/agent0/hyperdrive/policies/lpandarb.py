@@ -426,7 +426,7 @@ def calc_reserves_to_hit_target_rate(
     total_bonds_needed = FixedPoint(0)
     # pylint: disable=logging-fstring-interpolation
     logging.debug(
-        f"Targeting {float(target_rate):.2%} from {float(interface.fixed_rate):.2%}"
+        f"Targeting {float(target_rate):.2%} from {float(interface.calc_fixed_rate()):.2%}"
     )
     while float(abs(predicted_rate - target_rate)) > TOLERANCE:
         iteration += 1
@@ -637,27 +637,31 @@ class LPandArb(HyperdrivePolicy):
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
                         trade_amount=self.lp_amount,
                         wallet=wallet,
-                        min_apr=interface.fixed_rate - self.policy_config.rate_slippage,
-                        max_apr=interface.fixed_rate + self.policy_config.rate_slippage,
+                        min_apr=interface.calc_fixed_rate()
+                        - self.policy_config.rate_slippage,
+                        max_apr=interface.calc_fixed_rate()
+                        + self.policy_config.rate_slippage,
                     ),
                 )
             )
 
         # arbitrage from here on out
         high_fixed_rate_detected = (
-            interface.fixed_rate
-            >= interface.variable_rate + self.policy_config.high_fixed_rate_thresh
+            interface.calc_fixed_rate()
+            >= interface.current_pool_state.variable_rate
+            + self.policy_config.high_fixed_rate_thresh
         )
         low_fixed_rate_detected = (
-            interface.fixed_rate
-            <= interface.variable_rate - self.policy_config.low_fixed_rate_thresh
+            interface.calc_fixed_rate()
+            <= interface.current_pool_state.variable_rate
+            - self.policy_config.low_fixed_rate_thresh
         )
         we_have_money = wallet.balance.amount >= self.minimum_trade_amount
 
         # Close longs if matured
         for maturity_time, long in wallet.longs.items():
             # If matured
-            if maturity_time < interface.current_block_time:
+            if maturity_time < interface.current_pool_state.block_time:
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
@@ -673,7 +677,7 @@ class LPandArb(HyperdrivePolicy):
         # Close shorts if matured
         for maturity_time, short in wallet.shorts.items():
             # If matured
-            if maturity_time < interface.current_block_time:
+            if maturity_time < interface.current_pool_state.block_time:
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
@@ -696,7 +700,7 @@ class LPandArb(HyperdrivePolicy):
                 iters,
                 speed,
             ) = calc_reserves_to_hit_target_rate(
-                target_rate=interface.variable_rate,
+                target_rate=interface.current_pool_state.variable_rate,
                 interface=interface,
             )
             self.convergence_iters.append(iters)
