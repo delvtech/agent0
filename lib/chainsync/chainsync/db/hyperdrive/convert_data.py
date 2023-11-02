@@ -8,13 +8,15 @@ from typing import Any
 
 from ethpy.base import get_transaction_logs
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, decode_asset_id
+from ethpy.hyperdrive.addresses import camel_to_snake
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxData
 
-from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta
+from .schema import (CheckpointInfo, HyperdriveTransaction, PoolConfig,
+                     PoolInfo, WalletDelta)
 
 
 def convert_hyperdrive_transactions_for_block(
@@ -130,7 +132,7 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> PoolConfig:
             value = pool_config_dict[key]
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
-        args_dict[key] = value
+        args_dict[camel_to_snake(key)] = value
     pool_config = PoolConfig(**args_dict)
     return pool_config
 
@@ -159,7 +161,7 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> PoolInfo:
             value = pool_info_dict[key]
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
-        args_dict[key] = value
+        args_dict[camel_to_snake(key)] = value
     block_pool_info = PoolInfo(**args_dict)
     return block_pool_info
 
@@ -187,7 +189,7 @@ def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> CheckpointI
             value = checkpoint_info_dict[key]
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
-        args_dict[key] = value
+        args_dict[camel_to_snake(key)] = value
     block_checkpoint_info = CheckpointInfo(**args_dict)
     return block_checkpoint_info
 

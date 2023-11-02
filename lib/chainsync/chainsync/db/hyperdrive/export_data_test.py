@@ -15,7 +15,7 @@ class TestExportImportData:
         """Testing retrieval of transaction via interface"""
         # Write data to database
         # Ensuring decimal format gets preserved
-        pool_config = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.22222222222222"))
+        pool_config = PoolConfig(contract_address="0", initial_share_price=Decimal("3.22222222222222"))
         add_pool_config(pool_config, db_session)
         # We need pool config as a dataframe, so we read it from the db here
         pool_config_in = get_pool_config(db_session, coerce_float=False)

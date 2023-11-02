@@ -13,13 +13,7 @@ if TYPE_CHECKING:
 def _get_block(
     cls: HyperdriveInterface, block_identifier: BlockIdentifier
 ) -> BlockData:
-    """Returns the block specified by block_identifier.
-
-    Delegates to eth_getBlockByNumber if block_identifier is an integer or
-    one of the predefined block parameters 'latest', 'earliest', 'pending', 'safe', 'finalized'.
-    Otherwise delegates to eth_getBlockByHash.
-    Throws BlockNotFound error if the block is not found.
-    """
+    """See API for documentation."""
     return cls.web3.eth.get_block(block_identifier)
 
 

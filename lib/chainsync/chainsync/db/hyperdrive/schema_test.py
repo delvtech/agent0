@@ -2,7 +2,8 @@
 from datetime import datetime
 from decimal import Decimal
 
-from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta
+from .schema import (CheckpointInfo, HyperdriveTransaction, PoolConfig,
+                     PoolInfo, WalletDelta)
 
 # These tests are using fixtures defined in conftest.py
 
@@ -53,7 +54,7 @@ class TestCheckpointTable:
     def test_create_checkpoint(self, db_session):
         """Create and entry"""
         timestamp = datetime.now()
-        checkpoint = CheckpointInfo(blockNumber=1, timestamp=timestamp)
+        checkpoint = CheckpointInfo(block_number=1, timestamp=timestamp)
         db_session.add(checkpoint)
         db_session.commit()
 
@@ -64,11 +65,11 @@ class TestCheckpointTable:
     def test_update_checkpoint(self, db_session):
         """Update an entry"""
         timestamp = datetime.now()
-        checkpoint = CheckpointInfo(blockNumber=1, timestamp=timestamp)
+        checkpoint = CheckpointInfo(block_number=1, timestamp=timestamp)
         db_session.add(checkpoint)
         db_session.commit()
 
-        checkpoint.sharePrice = Decimal("5.0")
+        checkpoint.share_price = Decimal("5.0")
         db_session.commit()
 
         updated_checkpoint = db_session.query(CheckpointInfo).filter_by(blockNumber=1).first()
@@ -77,7 +78,7 @@ class TestCheckpointTable:
     def test_delete_checkpoint(self, db_session):
         """Delete an entry"""
         timestamp = datetime.now()
-        checkpoint = CheckpointInfo(blockNumber=1, timestamp=timestamp)
+        checkpoint = CheckpointInfo(block_number=1, timestamp=timestamp)
         db_session.add(checkpoint)
         db_session.commit()
 
@@ -93,7 +94,7 @@ class TestPoolConfigTable:
 
     def test_create_pool_config(self, db_session):
         """Create and entry"""
-        pool_config = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
+        pool_config = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
         db_session.add(pool_config)
         db_session.commit()
 
@@ -103,7 +104,7 @@ class TestPoolConfigTable:
 
     def test_delete_pool_config(self, db_session):
         """Delete an entry"""
-        pool_config = PoolConfig(contractAddress="0", initialSharePrice=Decimal("3.2"))
+        pool_config = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
         db_session.add(pool_config)
         db_session.commit()
 
@@ -120,7 +121,7 @@ class TestPoolInfoTable:
     def test_create_pool_info(self, db_session):
         """Create and entry"""
         timestamp = datetime.fromtimestamp(1628472000)
-        pool_info = PoolInfo(blockNumber=1, timestamp=timestamp)
+        pool_info = PoolInfo(block_number=1, timestamp=timestamp)
         db_session.add(pool_info)
         db_session.commit()
 
@@ -131,7 +132,7 @@ class TestPoolInfoTable:
     def test_update_pool_info(self, db_session):
         """Update an entry"""
         timestamp = datetime.fromtimestamp(1628472000)
-        pool_info = PoolInfo(blockNumber=1, timestamp=timestamp)
+        pool_info = PoolInfo(block_number=1, timestamp=timestamp)
         db_session.add(pool_info)
         db_session.commit()
 
@@ -146,7 +147,7 @@ class TestPoolInfoTable:
     def test_delete_pool_info(self, db_session):
         """Delete an entry"""
         timestamp = datetime.fromtimestamp(1628472000)
-        pool_info = PoolInfo(blockNumber=1, timestamp=timestamp)
+        pool_info = PoolInfo(block_number=1, timestamp=timestamp)
         db_session.add(pool_info)
         db_session.commit()
 
