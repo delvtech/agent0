@@ -100,21 +100,21 @@ class HyperdriveInterface:
         In this case, the `eth_config.artifacts_uri` variable is not used, and these Addresses are used instead.
         """
         # Handle defaults for config and addresses
-        self.config: EthConfig = (
+        self.eth_config: EthConfig = (
             build_eth_config() if eth_config is None else eth_config
         )
         if addresses is None:
             addresses = fetch_hyperdrive_address_from_uri(
-                os.path.join(self.config.artifacts_uri, "addresses.json")
+                os.path.join(self.eth_config.artifacts_uri, "addresses.json")
             )
         self.addresses: HyperdriveAddresses = addresses
         # Setup provider for communicating with the chain
         if web3 is None:
             web3 = initialize_web3_with_http_provider(
-                self.config.rpc_uri, reset_provider=False
+                self.eth_config.rpc_uri, reset_provider=False
             )
         self.web3 = web3
-        abis = load_all_abis(self.config.abi_dir)
+        abis = load_all_abis(self.eth_config.abi_dir)
         # set up the ERC20 contract for minting base tokens
         self.base_token_contract: Contract = web3.eth.contract(
             abi=abis["ERC20Mintable"],
