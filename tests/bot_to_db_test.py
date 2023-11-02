@@ -240,7 +240,7 @@ class TestBotToDb:
             "share_adjustment",
             "lp_share_price",
             "long_exposure",
-            "long_outstanding",
+            "longs_outstanding",
             "long_average_maturity_time",
             "shorts_outstanding",
             "short_average_maturity_time",
