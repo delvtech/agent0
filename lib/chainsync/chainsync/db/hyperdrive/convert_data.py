@@ -443,13 +443,13 @@ def _build_hyperdrive_transaction_object(
     # i.e., HyperdriveTransaction(**out_dict)
     # Base transaction fields
     out_dict: dict[str, Any] = {
-        "blockNumber": transaction_dict["blockNumber"],
-        "transactionIndex": transaction_dict["transactionIndex"],
+        "block_number": transaction_dict["blockNumber"],
+        "transaction_index": transaction_dict["transactionIndex"],
         "nonce": transaction_dict["nonce"],
-        "transactionHash": transaction_dict["hash"],
+        "transaction_hash": transaction_dict["hash"],
         "txn_to": transaction_dict["to"],
         "txn_from": transaction_dict["from"],
-        "gasUsed": _convert_scaled_value_to_decimal(receipt["gasUsed"]),
+        "gas_used": _convert_scaled_value_to_decimal(receipt["gasUsed"]),
     }
     # Input solidity methods and parameters
     # TODO can the input field ever be empty or not exist?
@@ -458,14 +458,14 @@ def _build_hyperdrive_transaction_object(
     out_dict["input_params_contribution"] = _convert_scaled_value_to_decimal(input_params.get("_contribution", None))
     out_dict["input_params_apr"] = _convert_scaled_value_to_decimal(input_params.get("_apr", None))
     out_dict["input_params_destination"] = input_params.get("_destination", None)
-    out_dict["input_params_asUnderlying"] = input_params.get("_asUnderlying", None)
-    out_dict["input_params_baseAmount"] = _convert_scaled_value_to_decimal(input_params.get("_baseAmount", None))
-    out_dict["input_params_minOutput"] = _convert_scaled_value_to_decimal(input_params.get("_minOutput", None))
-    out_dict["input_params_bondAmount"] = _convert_scaled_value_to_decimal(input_params.get("_bondAmount", None))
-    out_dict["input_params_maxDeposit"] = _convert_scaled_value_to_decimal(input_params.get("_maxDeposit", None))
-    out_dict["input_params_maturityTime"] = input_params.get("_maturityTime", None)
-    out_dict["input_params_minApr"] = _convert_scaled_value_to_decimal(input_params.get("_minApr", None))
-    out_dict["input_params_maxApr"] = _convert_scaled_value_to_decimal(input_params.get("_maxApr", None))
+    out_dict["input_params_as_underlying"] = input_params.get("_asUnderlying", None)
+    out_dict["input_params_base_amount"] = _convert_scaled_value_to_decimal(input_params.get("_baseAmount", None))
+    out_dict["input_params_min_output"] = _convert_scaled_value_to_decimal(input_params.get("_minOutput", None))
+    out_dict["input_params_bond_amount"] = _convert_scaled_value_to_decimal(input_params.get("_bondAmount", None))
+    out_dict["input_params_max_deposit"] = _convert_scaled_value_to_decimal(input_params.get("_maxDeposit", None))
+    out_dict["input_params_maturity_time"] = input_params.get("_maturityTime", None)
+    out_dict["input_params_min_apr"] = _convert_scaled_value_to_decimal(input_params.get("_minApr", None))
+    out_dict["input_params_max_apr"] = _convert_scaled_value_to_decimal(input_params.get("_maxApr", None))
     out_dict["input_params_shares"] = _convert_scaled_value_to_decimal(input_params.get("_shares", None))
     # Assuming one TransferSingle per transfer
     # TODO Fix this below eventually

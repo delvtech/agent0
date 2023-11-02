@@ -454,14 +454,14 @@ def get_current_wallet(
         A DataFrame that consists of the queried wallet info data
     """
     # TODO this function might not scale, as it's looking across all blocks from the beginning of time
-    # Ways to improve: add indexes on walletAddress, tokenType, blockNumber
+    # Ways to improve: add indexes on wallet_address, token_type, block_number
 
     # Postgres SQL query (this one is fast, but isn't supported by sqlite)
-    # select distinct on (walletAddress, tokenType) * from CurrentWallet
-    # order by blockNumber DESC;
-    # This query selects distinct walletAddress and tokenType from current wallets,
-    # selecting only the first entry of each group. Since we order each group by descending blockNumber,
-    # this first entry is the latest entry of blockNumber.
+    # select distinct on (wallet_address, token_type) * from CurrentWallet
+    # order by block_number DESC;
+    # This query selects distinct wallet_address and token_type from current wallets,
+    # selecting only the first entry of each group. Since we order each group by descending block_number,
+    # this first entry is the latest entry of block_number.
 
     # Generic SQL query (this one is slow, but is database agnostic)
 
@@ -482,7 +482,7 @@ def get_current_wallet(
     query = query.order_by(CurrentWallet.wallet_address, CurrentWallet.token_type, CurrentWallet.block_number.desc())
     current_wallet = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
-    # Rename blockNumber column to be latest_block_update, and set the new blockNumber to be the query block
+    # Rename block_number column to be latest_block_update, and set the new block_number to be the query block
     current_wallet["latest_block_update"] = current_wallet["block_number"]
     current_wallet["block_number"] = end_block - 1
 
@@ -721,7 +721,7 @@ def get_total_wallet_pnl_over_time(
 
     # Additional query to join timestamp to block number
     query = session.query(PoolInfo.timestamp, subquery)
-    query = query.join(PoolInfo, subquery.c.blockNumber == PoolInfo.block_number)
+    query = query.join(PoolInfo, subquery.c.block_number == PoolInfo.block_number)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
@@ -780,7 +780,7 @@ def get_wallet_positions_over_time(
 
     # query from PoolInfo the timestamp
     query = session.query(PoolInfo.timestamp, subquery)
-    query = query.join(PoolInfo, subquery.c.blockNumber == PoolInfo.block_number)
+    query = query.join(PoolInfo, subquery.c.block_number == PoolInfo.block_number)
 
     # Always sort by block in order
     query = query.order_by(PoolInfo.timestamp)
