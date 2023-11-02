@@ -9,11 +9,13 @@ from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3.types import BlockData
 
-from .convert_data import (convert_checkpoint_info,
-                           convert_hyperdrive_transactions_for_block,
-                           convert_pool_config, convert_pool_info)
-from .interface import (add_checkpoint_infos, add_pool_config, add_pool_infos,
-                        add_transactions, add_wallet_deltas)
+from .convert_data import (
+    convert_checkpoint_info,
+    convert_hyperdrive_transactions_for_block,
+    convert_pool_config,
+    convert_pool_info,
+)
+from .interface import add_checkpoint_infos, add_pool_config, add_pool_infos, add_transactions, add_wallet_deltas
 
 
 def init_data_chain_to_db(
@@ -31,13 +33,13 @@ def init_data_chain_to_db(
     """
     pool_config_dict = asdict(hyperdrive.current_pool_state.pool_config)
     pool_config_dict["contract_address"] = hyperdrive.addresses
-    curve_fee, flat_fee, governance_fee = pool_config_dict["fees"]
-    pool_config_dict["curve_fee"] = curve_fee
-    pool_config_dict["flat_fee"] = flat_fee
-    pool_config_dict["governance_fee"] = governance_fee
+    fees = pool_config_dict["fees"]
+    pool_config_dict["curve_fee"] = fees["curve"]
+    pool_config_dict["flat_fee"] = fees["flat"]
+    pool_config_dict["governance_fee"] = fees["governance"]
     pool_config_dict["inv_time_stretch"] = FixedPoint(1) / pool_config_dict["time_stretch"]
-    pool_config_dict = convert_pool_config(pool_config_dict)
-    add_pool_config(pool_config_dict, session)
+    pool_config_db_obj = convert_pool_config(pool_config_dict)
+    add_pool_config(pool_config_db_obj, session)
 
 
 def data_chain_to_db(hyperdrive: HyperdriveInterface, block: BlockData, session: Session) -> None:
