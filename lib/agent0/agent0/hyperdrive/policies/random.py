@@ -4,8 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from agent0.hyperdrive.state import (HyperdriveActionType,
-                                     HyperdriveMarketAction)
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy import WEI
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint
@@ -89,9 +88,7 @@ class Random(HyperdrivePolicy):
         if disallowed_actions is None:
             disallowed_actions = []
         # compile a list of all actions
-        minimum_trade: FixedPoint = (
-            hyperdrive.current_pool_state.pool_config.minimum_transaction_amount
-        )
+        minimum_trade: FixedPoint = hyperdrive.current_pool_state.pool_config.minimum_transaction_amount
         if wallet.balance.amount <= minimum_trade:
             all_available_actions = []
         else:
@@ -106,31 +103,19 @@ class Random(HyperdrivePolicy):
             all_available_actions.append(HyperdriveActionType.CLOSE_SHORT)
         if wallet.lp_tokens:
             all_available_actions.append(HyperdriveActionType.REMOVE_LIQUIDITY)
-        if (
-            wallet.withdraw_shares
-            and hyperdrive.current_pool_state.pool_info.withdrawal_shares_ready_to_withdraw
-            > 0
-        ):
+        if wallet.withdraw_shares and hyperdrive.current_pool_state.pool_info.withdrawal_shares_ready_to_withdraw > 0:
             all_available_actions.append(HyperdriveActionType.REDEEM_WITHDRAW_SHARE)
         # downselect from all actions to only include allowed actions
-        return [
-            action
-            for action in all_available_actions
-            if action not in disallowed_actions
-        ]
+        return [action for action in all_available_actions if action not in disallowed_actions]
 
-    def open_short_with_random_amount(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
-    ) -> list[Trade]:
+    def open_short_with_random_amount(self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet) -> list[Trade]:
         """Open a short with a random allowable amount."""
         maximum_trade_amount = hyperdrive.calc_max_short(wallet.balance.amount)
         if maximum_trade_amount <= WEI:
             return []
 
         initial_trade_amount = FixedPoint(
-            self.rng.normal(
-                loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01
-            )
+            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
         # WEI <= trade_amount <= max_short
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
@@ -148,9 +133,7 @@ class Random(HyperdrivePolicy):
             )
         ]
 
-    def close_random_short(
-        self, wallet: HyperdriveWallet
-    ) -> list[Trade[HyperdriveMarketAction]]:
+    def close_random_short(self, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Fully close the short balance for a random mint time."""
         # choose a random short time to close
         short_time = list(wallet.shorts)[self.rng.integers(len(wallet.shorts))]
@@ -177,9 +160,7 @@ class Random(HyperdrivePolicy):
             return []
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
-            self.rng.normal(
-                loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01
-            )
+            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
         # WEI <= trade_amount <= max long
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
@@ -196,9 +177,7 @@ class Random(HyperdrivePolicy):
             )
         ]
 
-    def close_random_long(
-        self, wallet: HyperdriveWallet
-    ) -> list[Trade[HyperdriveMarketAction]]:
+    def close_random_long(self, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Fully close the long balance for a random mint time."""
         # choose a random long time to close
         long_time = list(wallet.longs)[self.rng.integers(len(wallet.longs))]
@@ -216,20 +195,14 @@ class Random(HyperdrivePolicy):
             )
         ]
 
-    def add_liquidity_with_random_amount(
-        self, wallet: HyperdriveWallet
-    ) -> list[Trade[HyperdriveMarketAction]]:
+    def add_liquidity_with_random_amount(self, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Add liquidity with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
-            self.rng.normal(
-                loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01
-            )
+            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
         # WEI <= trade_amount
-        trade_amount: FixedPoint = max(
-            WEI, min(wallet.balance.amount, initial_trade_amount)
-        )
+        trade_amount: FixedPoint = max(WEI, min(wallet.balance.amount, initial_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             Trade(
@@ -243,15 +216,11 @@ class Random(HyperdrivePolicy):
             )
         ]
 
-    def remove_liquidity_with_random_amount(
-        self, wallet: HyperdriveWallet
-    ) -> list[Trade[HyperdriveMarketAction]]:
+    def remove_liquidity_with_random_amount(self, wallet: HyperdriveWallet) -> list[Trade[HyperdriveMarketAction]]:
         """Remove liquidity with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
-            self.rng.normal(
-                loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01
-            )
+            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
         # WEI <= trade_amount <= lp_tokens
         trade_amount = max(WEI, min(wallet.lp_tokens, initial_trade_amount))
@@ -274,9 +243,7 @@ class Random(HyperdrivePolicy):
         """Redeem withdraw shares with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
-            self.rng.normal(
-                loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01
-            )
+            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
         shares_available_to_withdraw = min(
             wallet.withdraw_shares,
@@ -325,9 +292,7 @@ class Random(HyperdrivePolicy):
         """
         # pylint: disable=too-many-return-statements
         # check if the agent will trade this block or not
-        gonna_trade = self.rng.choice(
-            [True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)]
-        )
+        gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
         if not gonna_trade:
             return [], False
         # user can always open a trade, and can close a trade if one is open

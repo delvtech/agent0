@@ -7,15 +7,24 @@ import pytest
 from chainsync.db.base import get_latest_block_number_from_table
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
-from .interface import (add_checkpoint_infos, add_current_wallet,
-                        add_pool_config, add_pool_infos, add_transactions,
-                        add_wallet_deltas, get_all_traders,
-                        get_checkpoint_info, get_current_wallet,
-                        get_latest_block_number_from_pool_info_table,
-                        get_latest_block_number_from_table, get_pool_config,
-                        get_pool_info, get_transactions, get_wallet_deltas)
-from .schema import (CheckpointInfo, CurrentWallet, HyperdriveTransaction,
-                     PoolConfig, PoolInfo, WalletDelta)
+from .interface import (
+    add_checkpoint_infos,
+    add_current_wallet,
+    add_pool_config,
+    add_pool_infos,
+    add_transactions,
+    add_wallet_deltas,
+    get_all_traders,
+    get_checkpoint_info,
+    get_current_wallet,
+    get_latest_block_number_from_pool_info_table,
+    get_latest_block_number_from_table,
+    get_pool_config,
+    get_pool_info,
+    get_transactions,
+    get_wallet_deltas,
+)
+from .schema import CheckpointInfo, CurrentWallet, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta
 
 
 # These tests are using fixtures defined in conftest.py

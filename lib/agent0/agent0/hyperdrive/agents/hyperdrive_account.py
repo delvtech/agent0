@@ -7,8 +7,7 @@ from typing import TypeVar
 from agent0.base import Quantity, TokenType
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
-from agent0.hyperdrive.state import (HyperdriveActionType,
-                                     HyperdriveMarketAction, HyperdriveWallet)
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from elfpy.types import MarketType, Trade
 from eth_account.signers.local import LocalAccount
 from ethpy.hyperdrive.api import HyperdriveInterface
@@ -80,9 +79,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         """
         action_list = []
         for maturity_time, long in self.wallet.longs.items():
-            logging.debug(
-                "closing long: maturity_time=%g, balance=%s", maturity_time, long
-            )
+            logging.debug("closing long: maturity_time=%g, balance=%s", maturity_time, long)
             if long.balance > 0:
                 action_list.append(
                     Trade(
@@ -146,9 +143,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
 
     # We want to rename the argument from "interface" to "hyperdrive" to be more explicit
     # pylint: disable=arguments-renamed
-    def get_trades(
-        self, hyperdrive: HyperdriveInterface
-    ) -> list[Trade[HyperdriveMarketAction]]:
+    def get_trades(self, hyperdrive: HyperdriveInterface) -> list[Trade[HyperdriveMarketAction]]:
         """Helper function for computing a agent trade
 
         Arguments
@@ -168,10 +163,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
 
         # edit each action in place
         for action in actions:
-            if (
-                action.market_type == MarketType.HYPERDRIVE
-                and action.market_action.maturity_time is None
-            ):
+            if action.market_type == MarketType.HYPERDRIVE and action.market_action.maturity_time is None:
                 if action.market_action.trade_amount <= 0:
                     raise ValueError("Trade amount cannot be zero or negative.")
         return actions

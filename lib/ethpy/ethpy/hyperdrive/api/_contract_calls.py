@@ -4,9 +4,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from eth_utils.currency import MAX_WEI
-from ethpy.base import (async_smart_contract_transact, get_account_balance,
-                        smart_contract_preview_transaction,
-                        smart_contract_read)
+from ethpy.base import (
+    async_smart_contract_transact,
+    get_account_balance,
+    smart_contract_preview_transaction,
+    smart_contract_read,
+)
 from ethpy.hyperdrive.transactions import parse_logs
 from fixedpointmath import FixedPoint
 from web3 import Web3
@@ -21,13 +24,9 @@ if TYPE_CHECKING:
     from .api import HyperdriveInterface
 
 
-def _get_variable_rate(
-    yield_contract: Contract, block_number: BlockNumber | None = None
-) -> FixedPoint:
+def _get_variable_rate(yield_contract: Contract, block_number: BlockNumber | None = None) -> FixedPoint:
     """See API for documentation."""
-    rate = smart_contract_read(yield_contract, "getRate", block_number=block_number)[
-        "value"
-    ]
+    rate = smart_contract_read(yield_contract, "getRate", block_number=block_number)["value"]
     return FixedPoint(scaled_value=rate)
 
 
@@ -46,9 +45,7 @@ def _get_vault_shares(
     return FixedPoint(scaled_value=int(vault_shares["value"]))
 
 
-def _get_eth_base_balances(
-    cls: HyperdriveInterface, agent: LocalAccount
-) -> tuple[FixedPoint, FixedPoint]:
+def _get_eth_base_balances(cls: HyperdriveInterface, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     agent_eth_balance = get_account_balance(cls.web3, agent_checksum_address)
@@ -99,8 +96,7 @@ async def _async_open_long(
     )
     if slippage_tolerance is not None:
         min_output = (
-            FixedPoint(scaled_value=preview_result["bondProceeds"])
-            * (FixedPoint(1) - slippage_tolerance)
+            FixedPoint(scaled_value=preview_result["bondProceeds"]) * (FixedPoint(1) - slippage_tolerance)
         ).scaled_value
         fn_args = (
             trade_amount.scaled_value,
@@ -154,8 +150,7 @@ async def _async_close_long(
     )
     if slippage_tolerance:
         min_output = (
-            FixedPoint(scaled_value=preview_result["value"])
-            * (FixedPoint(1) - slippage_tolerance)
+            FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
         ).scaled_value
         fn_args = (
             maturity_time,
@@ -212,8 +207,7 @@ async def _async_open_short(
     )
     if slippage_tolerance:
         max_deposit = (
-            FixedPoint(scaled_value=preview_result["traderDeposit"])
-            * (FixedPoint(1) + slippage_tolerance)
+            FixedPoint(scaled_value=preview_result["traderDeposit"]) * (FixedPoint(1) + slippage_tolerance)
         ).scaled_value
         fn_args = (
             trade_amount.scaled_value,
@@ -267,8 +261,7 @@ async def _async_close_short(
     )
     if slippage_tolerance:
         min_output = (
-            FixedPoint(scaled_value=preview_result["value"])
-            * (FixedPoint(1) - slippage_tolerance)
+            FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
         ).scaled_value
         fn_args = (
             maturity_time,
@@ -378,9 +371,7 @@ async def _async_remove_liquidity(
             *fn_args,
             nonce=nonce,
         )
-        trade_result = parse_logs(
-            tx_receipt, cls.hyperdrive_contract, "removeLiquidity"
-        )
+        trade_result = parse_logs(tx_receipt, cls.hyperdrive_contract, "removeLiquidity")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
@@ -425,9 +416,7 @@ async def _async_redeem_withdraw_shares(
             *fn_args,
             nonce=nonce,
         )
-        trade_result = parse_logs(
-            tx_receipt, cls.hyperdrive_contract, "redeemWithdrawalShares"
-        )
+        trade_result = parse_logs(tx_receipt, cls.hyperdrive_contract, "redeemWithdrawalShares")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)

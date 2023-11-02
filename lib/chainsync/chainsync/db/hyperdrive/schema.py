@@ -5,8 +5,7 @@ from decimal import Decimal
 from typing import Union
 
 from chainsync.db.base import Base
-from sqlalchemy import (ARRAY, BigInteger, Boolean, DateTime, Integer, Numeric,
-                        String)
+from sqlalchemy import ARRAY, BigInteger, Boolean, DateTime, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 # pylint: disable=invalid-name

@@ -10,9 +10,7 @@ if TYPE_CHECKING:
     from .api import HyperdriveInterface
 
 
-def _get_block(
-    cls: HyperdriveInterface, block_identifier: BlockIdentifier
-) -> BlockData:
+def _get_block(cls: HyperdriveInterface, block_identifier: BlockIdentifier) -> BlockData:
     """See API for documentation."""
     return cls.web3.eth.get_block(block_identifier)
 
@@ -35,7 +33,5 @@ def _get_block_time(block: BlockData) -> Timestamp:
 
 def _get_checkpoint_id(cls, block_timestamp: Timestamp) -> Timestamp:
     """See API for documentation."""
-    latest_checkpoint_timestamp = block_timestamp - (
-        block_timestamp % cls.pool_config["checkpointDuration"]
-    )
+    latest_checkpoint_timestamp = block_timestamp - (block_timestamp % cls.pool_config["checkpointDuration"])
     return cast(Timestamp, latest_checkpoint_timestamp)

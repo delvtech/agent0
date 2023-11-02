@@ -6,10 +6,9 @@ import time
 from copy import copy
 from dataclasses import dataclass
 from statistics import mean
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from agent0.hyperdrive.state import (HyperdriveActionType,
-                                     HyperdriveMarketAction)
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint
 
@@ -68,12 +67,7 @@ def calc_bond_reserves(
         initial_share_price
         * (share_reserves - share_adjustment)
         * (
-            (
-                FixedPoint(1)
-                + target_rate
-                * FixedPoint(position_duration)
-                / FixedPoint(365 * 24 * 60 * 60)
-            )
+            (FixedPoint(1) + target_rate * FixedPoint(position_duration) / FixedPoint(365 * 24 * 60 * 60))
             ** inverted_time_stretch
         )
     )
@@ -108,9 +102,7 @@ def calc_spot_price_local(
         The spot price.
     """
     effective_share_reserves = share_reserves - share_adjustment
-    return (
-        initial_share_price * effective_share_reserves / bond_reserves
-    ) ** time_stretch
+    return (initial_share_price * effective_share_reserves / bond_reserves) ** time_stretch
 
 
 def calc_apr_local_dict(pool_config: PoolConfig, pool_info: PoolInfo):
@@ -156,9 +148,7 @@ def calc_apr_local(
     FixedPoint
         The APR.
     """
-    annualized_time = FixedPoint(position_duration_seconds) / FixedPoint(
-        365 * 24 * 60 * 60
-    )
+    annualized_time = FixedPoint(position_duration_seconds) / FixedPoint(365 * 24 * 60 * 60)
     spot_price = calc_spot_price_local(
         initial_share_price,
         share_reserves,
@@ -200,11 +190,9 @@ def calc_k_local(
     FixedPoint
         The AMM invariant.
     """
-    return (share_price / initial_share_price) * (
-        initial_share_price * share_reserves
-    ) ** (FixedPoint(1) - time_stretch) + bond_reserves ** (
+    return (share_price / initial_share_price) * (initial_share_price * share_reserves) ** (
         FixedPoint(1) - time_stretch
-    )
+    ) + bond_reserves ** (FixedPoint(1) - time_stretch)
 
 
 # TODO: switch over to using function in the SDK
@@ -258,9 +246,7 @@ def get_shares_in_for_bonds_out(
     z_val = (k_t - y_term) / (share_price / initial_share_price)
     z_val = z_val ** (FixedPoint(1) / (FixedPoint(1) - time_stretch))
     z_val /= initial_share_price
-    spot_price = calc_spot_price_local(
-        initial_share_price, share_reserves, FixedPoint(0), bond_reserves, time_stretch
-    )
+    spot_price = calc_spot_price_local(initial_share_price, share_reserves, FixedPoint(0), bond_reserves, time_stretch)
     amount_in_shares = z_val - share_reserves
     price_discount = FixedPoint(1) - spot_price
     curve_fee_rate = price_discount * curve_fee
@@ -326,9 +312,7 @@ def get_shares_out_for_bonds_in(
     z_val = (k_t - y_term) / (share_price / initial_share_price)
     z_val = z_val ** (FixedPoint(1) / (FixedPoint(1) - time_stretch))
     z_val /= initial_share_price
-    spot_price = calc_spot_price_local(
-        initial_share_price, share_reserves, FixedPoint(0), bond_reserves, time_stretch
-    )
+    spot_price = calc_spot_price_local(initial_share_price, share_reserves, FixedPoint(0), bond_reserves, time_stretch)
     price_discount = FixedPoint(1) - spot_price
     amount_in_shares = max(FixedPoint(0), share_reserves - z_val)
     curve_fee_rate = price_discount * curve_fee
@@ -426,9 +410,7 @@ def calc_reserves_to_hit_target_rate(
     total_shares_needed = FixedPoint(0)
     total_bonds_needed = FixedPoint(0)
     # pylint: disable=logging-fstring-interpolation
-    logging.debug(
-        f"Targeting {float(target_rate):.2%} from {float(hyperdrive.calc_fixed_rate()):.2%}"
-    )
+    logging.debug(f"Targeting {float(target_rate):.2%} from {float(hyperdrive.calc_fixed_rate()):.2%}")
     while float(abs(predicted_rate - target_rate)) > TOLERANCE:
         iteration += 1
         latest_fixed_rate = calc_apr_local_dict(pool_config, pool_info)
@@ -446,34 +428,20 @@ def calc_reserves_to_hit_target_rate(
         # value will move shares in the other direction, toward our desired ratio.
         # this guess is very bad when slippage is high, so we check how bad, then scale accordingly.
         bonds_needed = (target_bonds - pool_info.bond_reserves) / FixedPoint(2)
-        shares_needed, gov_fee = calc_shares_needed_for_bonds(
-            bonds_needed, pool_info, pool_config
-        )
+        shares_needed, gov_fee = calc_shares_needed_for_bonds(bonds_needed, pool_info, pool_config)
         # save my bad first guess to a temporary variable
-        temp_pool_info = apply_step(
-            copy(pool_info), bonds_needed, shares_needed, gov_fee
-        )
+        temp_pool_info = apply_step(copy(pool_info), bonds_needed, shares_needed, gov_fee)
         predicted_rate = calc_apr_local_dict(pool_config, temp_pool_info)
         # improve my guess by scaling up or down based on how much I overshot or undershot and try again
-        overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (
-            target_rate - latest_fixed_rate
-        )
+        overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
         # if we overshot by 2x, we adjust our guess to be 2x less, etc.
         bonds_needed /= overshoot_or_undershoot
-        shares_needed, gov_fee = calc_shares_needed_for_bonds(
-            bonds_needed, pool_info, pool_config
-        )
+        shares_needed, gov_fee = calc_shares_needed_for_bonds(bonds_needed, pool_info, pool_config)
         # save my step for real
         pool_info = apply_step(pool_info, bonds_needed, shares_needed, gov_fee)
         predicted_rate = calc_apr_local_dict(pool_config, pool_info)
-        total_shares_needed = (
-            pool_info.share_reserves
-            - hyperdrive.current_pool_state.pool_info.share_reserves
-        )
-        total_bonds_needed = (
-            pool_info.bond_reserves
-            - hyperdrive.current_pool_state.pool_info.bond_reserves
-        )
+        total_shares_needed = pool_info.share_reserves - hyperdrive.current_pool_state.pool_info.share_reserves
+        total_bonds_needed = pool_info.bond_reserves - hyperdrive.current_pool_state.pool_info.bond_reserves
         # log info about my step
         formatted_str = (
             f"iteration {iteration:3}: {float(predicted_rate):22.18%}"
@@ -640,10 +608,8 @@ class LPandArb(HyperdrivePolicy):
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
                         trade_amount=self.lp_amount,
                         wallet=wallet,
-                        min_apr=hyperdrive.calc_fixed_rate()
-                        - self.policy_config.rate_slippage,
-                        max_apr=hyperdrive.calc_fixed_rate()
-                        + self.policy_config.rate_slippage,
+                        min_apr=hyperdrive.calc_fixed_rate() - self.policy_config.rate_slippage,
+                        max_apr=hyperdrive.calc_fixed_rate() + self.policy_config.rate_slippage,
                     ),
                 )
             )
@@ -651,13 +617,11 @@ class LPandArb(HyperdrivePolicy):
         # arbitrage from here on out
         high_fixed_rate_detected = (
             hyperdrive.calc_fixed_rate()
-            >= hyperdrive.current_pool_state.variable_rate
-            + self.policy_config.high_fixed_rate_thresh
+            >= hyperdrive.current_pool_state.variable_rate + self.policy_config.high_fixed_rate_thresh
         )
         low_fixed_rate_detected = (
             hyperdrive.calc_fixed_rate()
-            <= hyperdrive.current_pool_state.variable_rate
-            - self.policy_config.low_fixed_rate_thresh
+            <= hyperdrive.current_pool_state.variable_rate - self.policy_config.low_fixed_rate_thresh
         )
         we_have_money = wallet.balance.amount >= self.minimum_trade_amount
 
@@ -721,9 +685,7 @@ class LPandArb(HyperdrivePolicy):
             if len(wallet.shorts) > 0:
                 for maturity_time, short in wallet.shorts.items():
                     max_long_bonds = hyperdrive.calc_max_long(wallet.balance.amount)
-                    reduce_short_amount = min(
-                        short.balance, bonds_needed, max_long_bonds
-                    )
+                    reduce_short_amount = min(short.balance, bonds_needed, max_long_bonds)
                     bonds_needed -= reduce_short_amount
                     logging.debug("reducing short by %s", reduce_short_amount)
                     action_list.append(
@@ -739,11 +701,7 @@ class LPandArb(HyperdrivePolicy):
                         )
                     )
             # Open a new long, if there's still a need, and we have money
-            if (
-                we_have_money
-                and bonds_needed
-                > hyperdrive.current_pool_state.pool_config.minimum_transaction_amount
-            ):
+            if we_have_money and bonds_needed > hyperdrive.current_pool_state.pool_config.minimum_transaction_amount:
                 max_long_bonds = hyperdrive.calc_max_long(wallet.balance.amount)
                 max_long_shares, _, _ = get_shares_in_for_bonds_out(
                     hyperdrive.current_pool_state.pool_info.bond_reserves,
@@ -756,10 +714,7 @@ class LPandArb(HyperdrivePolicy):
                     hyperdrive.current_pool_state.pool_config.fees.curve,
                     hyperdrive.current_pool_state.pool_config.fees.governance,
                 )
-                amount = (
-                    min(shares_needed, max_long_shares)
-                    * hyperdrive.current_pool_state.pool_info.share_price
-                )
+                amount = min(shares_needed, max_long_shares) * hyperdrive.current_pool_state.pool_info.share_price
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
@@ -777,9 +732,7 @@ class LPandArb(HyperdrivePolicy):
             if len(wallet.longs) > 0:
                 for maturity_time, long in wallet.longs.items():
                     max_short_bonds = hyperdrive.calc_max_short(wallet.balance.amount)
-                    reduce_long_amount = min(
-                        long.balance, bonds_needed, max_short_bonds
-                    )
+                    reduce_long_amount = min(long.balance, bonds_needed, max_short_bonds)
                     bonds_needed -= reduce_long_amount
                     logging.debug("reducing long by %s", reduce_long_amount)
                     action_list.append(
@@ -795,11 +748,7 @@ class LPandArb(HyperdrivePolicy):
                         )
                     )
             # Open a new short, if there's still a need, and we have money
-            if (
-                we_have_money
-                and bonds_needed
-                > hyperdrive.current_pool_state.pool_config.minimum_transaction_amount
-            ):
+            if we_have_money and bonds_needed > hyperdrive.current_pool_state.pool_config.minimum_transaction_amount:
                 max_short_bonds = hyperdrive.calc_max_short(wallet.balance.amount)
                 amount = min(bonds_needed, max_short_bonds)
                 action_list.append(

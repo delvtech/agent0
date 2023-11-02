@@ -2,27 +2,24 @@
 from __future__ import annotations
 
 import logging
-import os
 import time
 import warnings
 
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
-    data_chain_to_db, get_latest_block_number_from_pool_info_table,
-    init_data_chain_to_db)
+    data_chain_to_db,
+    get_latest_block_number_from_pool_info_table,
+    init_data_chain_to_db,
+)
 from eth_typing import BlockNumber
-from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import (HyperdriveAddresses,
-                              fetch_hyperdrive_address_from_uri,
-                              get_web3_and_hyperdrive_contracts)
+from ethpy import EthConfig
+from ethpy.hyperdrive import HyperdriveAddresses
 from ethpy.hyperdrive.api import HyperdriveInterface
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
 
-warnings.filterwarnings(
-    "ignore", category=UserWarning, module="web3.contract.base_contract"
-)
+warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
 
 
 # Lots of arguments

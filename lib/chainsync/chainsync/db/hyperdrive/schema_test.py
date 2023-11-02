@@ -2,8 +2,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from .schema import (CheckpointInfo, HyperdriveTransaction, PoolConfig,
-                     PoolInfo, WalletDelta)
+from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta
 
 # These tests are using fixtures defined in conftest.py
 
