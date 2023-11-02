@@ -140,7 +140,7 @@ class HyperdriveTransaction(Base):
     input_params_base_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     input_params_min_output: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # input_params_destination
-    # input_params_asUnderlying
+    # input_params_as_underlying
 
     # Method: openShort
     input_params_bond_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
