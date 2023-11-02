@@ -266,7 +266,7 @@ def check_for_invalid_balance(trade_result: TradeResult) -> tuple[bool, TradeRes
         case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
             # If we're crash reporting, pool_info should exist
             assert trade_result.pool_info is not None
-            ready_to_withdraw = trade_result.pool_info["withdrawalSharesReadyToWithdraw"]
+            ready_to_withdraw = trade_result.pool_info["withdrawal_shares_ready_to_withdraw"]
             if trade_amount > wallet.withdraw_shares:
                 invalid_balance = True
                 add_arg = (

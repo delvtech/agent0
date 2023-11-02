@@ -153,7 +153,7 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> PoolInfo:
     for key in PoolInfo.__annotations__:
         if key not in pool_info_dict:
             # TODO don't print warning for variable rate. The variable rate should live in a different table
-            if key != "variableRate":
+            if key != "variable_rate":
                 logging.warning("Missing %s from pool info", key)
             value = None
         else:

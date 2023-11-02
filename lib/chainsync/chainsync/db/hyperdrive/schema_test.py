@@ -72,7 +72,7 @@ class TestCheckpointTable:
         db_session.commit()
 
         updated_checkpoint = db_session.query(CheckpointInfo).filter_by(block_number=1).first()
-        assert updated_checkpoint.sharePrice == 5.0
+        assert updated_checkpoint.share_price == 5.0
 
     def test_delete_checkpoint(self, db_session):
         """Delete an entry"""
@@ -99,7 +99,7 @@ class TestPoolConfigTable:
 
         retrieved_pool_config = db_session.query(PoolConfig).filter_by(contract_address="0").first()
         assert retrieved_pool_config is not None
-        assert float(retrieved_pool_config.initialSharePrice) == 3.2
+        assert float(retrieved_pool_config.initial_share_price) == 3.2
 
     def test_delete_pool_config(self, db_session):
         """Delete an entry"""

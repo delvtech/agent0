@@ -9,8 +9,8 @@ def plot_outstanding_positions(data, axes):
     """Returns the fixed rate plot"""
     bonds_symbol = "hy" + BASE_TOKEN_SYMBOL
 
-    axes.plot(data["timestamp"], data["longsOutstanding"], label="Longs")
-    axes.plot(data["timestamp"], data["shortsOutstanding"], label="Shorts")
+    axes.plot(data["timestamp"], data["long_outstanding"], label="Longs")
+    axes.plot(data["timestamp"], data["shorts_outstanding"], label="Shorts")
     # change y-axis unit format to 0.1%
     axes.yaxis.set_label_position("right")
     axes.yaxis.tick_right()

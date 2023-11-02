@@ -87,7 +87,7 @@ def calc_single_closeout(
             out_pnl = Decimal(
                 preview_result["baseProceeds"]
                 # We assume all withdrawal shares are redeemable
-                + preview_result["withdrawalShares"] * pool_info["lpSharePrice"].values[-1]
+                + preview_result["withdrawalShares"] * pool_info["lp_share_price"].values[-1]
             ) / Decimal(1e18)
         except Exception as exception:  # pylint: disable=broad-except
             logging.warning("Exception caught, ignoring: %s", exception)
@@ -98,7 +98,7 @@ def calc_single_closeout(
             # For PNL, we assume all withdrawal shares are redeemable
             # even if there are no withdrawal shares available to withdraw
             # Hence, we don't use preview transaction here
-            out_pnl = Decimal(amount * pool_info["lpSharePrice"].values[-1]) / Decimal(1e18)
+            out_pnl = Decimal(amount * pool_info["lp_share_price"].values[-1]) / Decimal(1e18)
         except Exception as exception:  # pylint: disable=broad-except
             logging.warning("Exception caught, ignoring: %s", exception)
     else:

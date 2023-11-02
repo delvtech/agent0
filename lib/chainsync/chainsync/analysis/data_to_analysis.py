@@ -153,19 +153,19 @@ def data_to_analysis(
     # However, we need to be able to query e.g., pool_info for a specific block. Hence here, we use the
     # pool info from the db and directly call pyperdrive to get the spot price.
     spot_price = calc_spot_price(
-        pool_info["shareReserves"],
-        pool_info["shareAdjustment"],
-        pool_info["bondReserves"],
-        pool_config["initialSharePrice"],
-        pool_config["timeStretch"],
+        pool_info["share_reserves"],
+        pool_info["share_adjustment"],
+        pool_info["bond_reserves"],
+        pool_config["initial_share_price"],
+        pool_config["time_stretch"],
     )
 
     # Calculate fixed rate
-    fixed_rate = calc_fixed_rate(spot_price, pool_config["positionDuration"])
+    fixed_rate = calc_fixed_rate(spot_price, pool_config["position_duration"])
 
     # Calculate base buffer
     base_buffer = calc_base_buffer(
-        pool_info["longsOutstanding"], pool_info["sharePrice"], pool_config["minimumShareReserves"]
+        pool_info["long_outstanding"], pool_info["share_price"], pool_config["minimum_share_reserves"]
     )
 
     pool_analysis_df = pd.concat([pool_info["block_number"], spot_price, fixed_rate, base_buffer], axis=1)
