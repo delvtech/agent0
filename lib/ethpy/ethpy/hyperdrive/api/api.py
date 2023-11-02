@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from ethpy import build_eth_config
 from ethpy.base import (initialize_web3_with_http_provider, load_all_abis,
@@ -12,9 +12,10 @@ from ethpy.base import (initialize_web3_with_http_provider, load_all_abis,
 from ethpy.hyperdrive.addresses import (HyperdriveAddresses,
                                         fetch_hyperdrive_address_from_uri)
 from ethpy.hyperdrive.transactions import (
-    convert_hyperdrive_checkpoint_types, convert_hyperdrive_pool_config_types,
-    convert_hyperdrive_pool_info_types, get_hyperdrive_checkpoint,
-    get_hyperdrive_pool_config, get_hyperdrive_pool_info)
+    Checkpoint, PoolConfig, PoolInfo, convert_hyperdrive_checkpoint_types,
+    convert_hyperdrive_pool_config_types, convert_hyperdrive_pool_info_types,
+    get_hyperdrive_checkpoint, get_hyperdrive_pool_config,
+    get_hyperdrive_pool_info)
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
@@ -36,6 +37,7 @@ from ._mock_contract import (_calc_bonds_given_shares_and_rate,
 # We expect to have many instance attributes & public methods since this is a large API.
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-public-methods
+# pylint: disable=too-many-arguments
 # We only worry about protected access for anyone outside of this folder
 # pylint: disable=protected-access
 
@@ -63,25 +65,28 @@ class PoolState:
         self.block_number = _get_block_number(self.block)
         self.block_time = _get_block_time(self.block)
         self.contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
-        self.pool_config = convert_hyperdrive_pool_config_types(
-            self.contract_pool_config
-        )
-        # TODO: Get the rest of the extra process pool info values as extra attributes
+        self.pool_config = convert_hyperdrive_pool_config_types(self.contract_pool_config)
         self.contract_pool_info = get_hyperdrive_pool_info(
             self.hyperdrive_contract, self.block_number
         )
+        # TODO: Get the rest of the extra process pool info values as extra attributes
+        # These are constructed a few times in chainsync; would be nice to clean that up
+        # by computing here
         self.pool_info = convert_hyperdrive_pool_info_types(self.contract_pool_info)
         self.contract_checkpoint = get_hyperdrive_checkpoint(
             self.hyperdrive_contract,
             _calc_checkpoint_id(self, self.block_time),
         )
-        self.checkpoint = convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
         self.variable_rate = _get_variable_rate(self.yield_contract, self.block_number)
         self.vault_shares = _get_vault_shares(
             self.yield_contract,
             self.hyperdrive_contract,
             self.block_number,
         )
+        self.checkpoint = convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
+
+        
+        
 
 
 class HyperdriveInterface:
@@ -215,6 +220,7 @@ class HyperdriveInterface:
             block_identifier = cast(BlockIdentifier, "latest")
             block = self.block(block_identifier)
         return PoolState(self.hyperdrive_contract, self.yield_contract, block)
+
 
     def get_eth_base_balances(
         self, agent: LocalAccount
