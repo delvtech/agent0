@@ -128,13 +128,19 @@ class HyperdriveInterface:
             abi=abis["MockERC4626"], address=web3.to_checksum_address(self.yield_address)
         )
         # fill in initial cache
-        self.current_pool_state = self.get_hyperdrive_state()
-        self.last_state_block_number = copy.copy(self.current_pool_state.block_number)
+        self._current_pool_state = self.get_hyperdrive_state()
+        self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
 
     @property
     def current_block(self) -> BlockData:
         """The current block."""
         return self.block("latest")
+
+    @property
+    def current_pool_state(self) -> PoolState:
+        """The current state of the pool."""
+        self._ensure_current_state()
+        return self._current_pool_state
 
     def block(self, block_identifier: BlockIdentifier) -> BlockData:
         """Return the block for the provided identifier.
@@ -183,9 +189,10 @@ class HyperdriveInterface:
 
     def _ensure_current_state(self) -> None:
         """Update the cached pool info and latest checkpoint if needed."""
-        if self.current_pool_state.block_number > self.last_state_block_number:
-            self.current_pool_state = self.get_hyperdrive_state()
-            self.last_state_block_number = copy.copy(self.current_pool_state.block_number)
+        current_block = self.current_block
+        if self.block_number(current_block) > self.last_state_block_number:
+            self._current_pool_state = self.get_hyperdrive_state(current_block)
+            self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
 
     def get_hyperdrive_state(self, block: BlockData | None = None):
         """Get the hyperdrive pool and block state, given a block identifier.
@@ -440,7 +447,6 @@ class HyperdriveInterface:
             The annualized position duration
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_position_duration_in_years(self.current_pool_state)
 
@@ -462,7 +468,6 @@ class HyperdriveInterface:
             The checkpoint id, which can be used as an argument for the Hyperdrive getCheckpoint function.
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_checkpoint_id(pool_state, block_timestamp)
 
@@ -481,7 +486,6 @@ class HyperdriveInterface:
             If not provided, use the current pool state.
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_fixed_rate(pool_state)
 
@@ -500,7 +504,6 @@ class HyperdriveInterface:
             The current spot price.
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_spot_price(pool_state)
 
@@ -519,7 +522,6 @@ class HyperdriveInterface:
             The effective (aka zeta-adjusted) share reserves.
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_effective_share_reserves(pool_state)
 
@@ -540,7 +542,6 @@ class HyperdriveInterface:
             The amount of bonds purchased.
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_long_amount(pool_state, base_amount)
 
@@ -561,7 +562,6 @@ class HyperdriveInterface:
             The amount of base required to short the bonds (aka the "max loss").
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_short_deposit(
             pool_state, short_amount, _calc_spot_price(pool_state), pool_state.pool_info.share_price
@@ -588,7 +588,6 @@ class HyperdriveInterface:
             The amount out.
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_out_for_in(pool_state, amount_in, shares_in)
 
@@ -613,7 +612,6 @@ class HyperdriveInterface:
             The amount in.
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_in_for_out(pool_state, amount_out, shares_out)
 
@@ -648,7 +646,6 @@ class HyperdriveInterface:
                 Governance fee, in shares.
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_fees_out_given_bonds_in(pool_state, bonds_in, maturity_time)
 
@@ -683,7 +680,6 @@ class HyperdriveInterface:
                 Governance fee, in shares.
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_fees_out_given_shares_in(pool_state, shares_in, maturity_time)
 
@@ -716,7 +712,6 @@ class HyperdriveInterface:
             Need to fix it from the bottom up.
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_bonds_given_shares_and_rate(pool_state, target_rate, target_shares)
 
@@ -737,7 +732,6 @@ class HyperdriveInterface:
             The maximum long, in units of base.
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_max_long(pool_state, budget)
 
@@ -758,6 +752,5 @@ class HyperdriveInterface:
             The maximum short, in units of base.
         """
         if pool_state is None:
-            self._ensure_current_state()
             pool_state = self.current_pool_state
         return _calc_max_short(pool_state, budget)
