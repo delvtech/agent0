@@ -35,7 +35,7 @@ def _get_total_supply_withdrawal_shares(
         "balanceOf",
         asset_id,
         hyperdrive_contract.address,
-        block_number,
+        block_number=block_number,
     )["value"]
     return FixedPoint(scaled_value=int(total_supply_withdrawal_shares))
 
