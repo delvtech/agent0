@@ -7,49 +7,33 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 from ethpy import build_eth_config
-from ethpy.base import initialize_web3_with_http_provider, load_all_abis, smart_contract_read
+from ethpy.base import (initialize_web3_with_http_provider, load_all_abis,
+                        smart_contract_read)
 from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
-from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from ethpy.hyperdrive.addresses import (HyperdriveAddresses,
+                                        fetch_hyperdrive_address_from_uri)
 from ethpy.hyperdrive.transactions import (
-    convert_hyperdrive_checkpoint_types,
-    convert_hyperdrive_pool_config_types,
-    convert_hyperdrive_pool_info_types,
-    get_hyperdrive_checkpoint,
-    get_hyperdrive_pool_config,
-    get_hyperdrive_pool_info,
-)
+    convert_hyperdrive_checkpoint_types, convert_hyperdrive_pool_config_types,
+    convert_hyperdrive_pool_info_types, get_hyperdrive_checkpoint,
+    get_hyperdrive_pool_config, get_hyperdrive_pool_info)
 from fixedpointmath import FixedPoint
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
-from ._contract_calls import (
-    _async_add_liquidity,
-    _async_close_long,
-    _async_close_short,
-    _async_open_long,
-    _async_open_short,
-    _async_redeem_withdraw_shares,
-    _async_remove_liquidity,
-    _get_eth_base_balances,
-    _get_variable_rate,
-    _get_vault_shares,
-)
-from ._mock_contract import (
-    _calc_bonds_given_shares_and_rate,
-    _calc_checkpoint_id,
-    _calc_effective_share_reserves,
-    _calc_fees_out_given_bonds_in,
-    _calc_fees_out_given_shares_in,
-    _calc_fixed_rate,
-    _calc_in_for_out,
-    _calc_long_amount,
-    _calc_max_long,
-    _calc_max_short,
-    _calc_out_for_in,
-    _calc_position_duration_in_years,
-    _calc_short_deposit,
-    _calc_spot_price,
-)
+from ._contract_calls import (_async_add_liquidity, _async_close_long,
+                              _async_close_short, _async_open_long,
+                              _async_open_short, _async_redeem_withdraw_shares,
+                              _async_remove_liquidity, _get_eth_base_balances,
+                              _get_variable_rate, _get_vault_shares)
+from ._mock_contract import (_calc_bonds_given_shares_and_rate,
+                             _calc_checkpoint_id,
+                             _calc_effective_share_reserves,
+                             _calc_fees_out_given_bonds_in,
+                             _calc_fees_out_given_shares_in, _calc_fixed_rate,
+                             _calc_in_for_out, _calc_long_amount,
+                             _calc_max_long, _calc_max_short, _calc_out_for_in,
+                             _calc_position_duration_in_years,
+                             _calc_short_deposit, _calc_spot_price)
 
 # We expect to have many instance attributes & public methods since this is a large API.
 # pylint: disable=too-many-instance-attributes
@@ -146,9 +130,9 @@ class HyperdriveInterface:
 
     def get_current_block(self) -> BlockData:
         """Return the current block."""
-        return self.block("latest")
+        return self.get_block("latest")
 
-    def block(self, block_identifier: BlockIdentifier) -> BlockData:
+    def get_block(self, block_identifier: BlockIdentifier) -> BlockData:
         """Return the block for the provided identifier.
 
         Delegates to eth_getBlockByNumber if block_identifier is an integer or
@@ -211,7 +195,7 @@ class HyperdriveInterface:
         """
         if block is None:
             block_identifier = cast(BlockIdentifier, "latest")
-            block = self.block(block_identifier)
+            block = self.get_block(block_identifier)
         block_number = self.get_block_number(block)
         contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         contract_pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, block_number)

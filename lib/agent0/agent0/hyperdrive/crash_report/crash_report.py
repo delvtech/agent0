@@ -152,7 +152,7 @@ def build_crash_trade_result(
         }
 
     ## Get the pool state at the desired block number
-    pool_state = hyperdrive.get_hyperdrive_state(hyperdrive.block(trade_result.block_number))
+    pool_state = hyperdrive.get_hyperdrive_state(hyperdrive.get_block(trade_result.block_number))
 
     ## Get pool config
     # Pool config is static, so we can get it from the interface here

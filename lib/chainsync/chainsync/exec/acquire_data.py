@@ -7,10 +7,8 @@ import warnings
 
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
-    data_chain_to_db,
-    get_latest_block_number_from_pool_info_table,
-    init_data_chain_to_db,
-)
+    data_chain_to_db, get_latest_block_number_from_pool_info_table,
+    init_data_chain_to_db)
 from eth_typing import BlockNumber
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses
@@ -79,7 +77,7 @@ def acquire_data(
     # This if statement executes only on initial run (based on data_latest_block_number check),
     # and if the chain has executed until start_block (based on latest_mined_block check)
     if data_latest_block_number < block_number < latest_mined_block:
-        data_chain_to_db(hyperdrive, hyperdrive.block(block_number), db_session)
+        data_chain_to_db(hyperdrive, hyperdrive.get_block(block_number), db_session)
 
     # Main data loop
     # monitor for new blocks & add pool info per block
@@ -111,5 +109,5 @@ def acquire_data(
                     latest_mined_block,
                 )
                 continue
-            data_chain_to_db(hyperdrive, hyperdrive.block(block_number), db_session)
+            data_chain_to_db(hyperdrive, hyperdrive.get_block(block_number), db_session)
         time.sleep(_SLEEP_AMOUNT)
