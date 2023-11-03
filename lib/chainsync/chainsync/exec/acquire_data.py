@@ -7,8 +7,10 @@ import warnings
 
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
-    data_chain_to_db, get_latest_block_number_from_pool_info_table,
-    init_data_chain_to_db)
+    data_chain_to_db,
+    get_latest_block_number_from_pool_info_table,
+    init_data_chain_to_db,
+)
 from eth_typing import BlockNumber
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses
@@ -63,7 +65,7 @@ def acquire_data(
     block_number: BlockNumber = BlockNumber(max(start_block, data_latest_block_number))
     # Make sure to not grab current block, as the current block is subject to change
     # Current block is still being built
-    latest_mined_block = hyperdrive.block_number(hyperdrive.get_current_block())
+    latest_mined_block = hyperdrive.get_block_number(hyperdrive.get_current_block())
     lookback_block_limit = BlockNumber(lookback_block_limit)
     if (latest_mined_block - block_number) > lookback_block_limit:
         block_number = BlockNumber(latest_mined_block - lookback_block_limit)

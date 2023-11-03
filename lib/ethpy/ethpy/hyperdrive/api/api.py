@@ -7,32 +7,49 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 from ethpy import build_eth_config
-from ethpy.base import (initialize_web3_with_http_provider, load_all_abis,
-                        smart_contract_read)
+from ethpy.base import initialize_web3_with_http_provider, load_all_abis, smart_contract_read
 from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
-from ethpy.hyperdrive.addresses import (HyperdriveAddresses,
-                                        fetch_hyperdrive_address_from_uri)
+from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
 from ethpy.hyperdrive.transactions import (
-    convert_hyperdrive_checkpoint_types, convert_hyperdrive_pool_config_types,
-    convert_hyperdrive_pool_info_types, get_hyperdrive_checkpoint,
-    get_hyperdrive_pool_config, get_hyperdrive_pool_info)
+    convert_hyperdrive_checkpoint_types,
+    convert_hyperdrive_pool_config_types,
+    convert_hyperdrive_pool_info_types,
+    get_hyperdrive_checkpoint,
+    get_hyperdrive_pool_config,
+    get_hyperdrive_pool_info,
+)
+from fixedpointmath import FixedPoint
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
-from ._contract_calls import (_async_add_liquidity, _async_close_long,
-                              _async_close_short, _async_open_long,
-                              _async_open_short, _async_redeem_withdraw_shares,
-                              _async_remove_liquidity, _get_eth_base_balances,
-                              _get_variable_rate, _get_vault_shares)
-from ._mock_contract import (_calc_bonds_given_shares_and_rate,
-                             _calc_checkpoint_id,
-                             _calc_effective_share_reserves,
-                             _calc_fees_out_given_bonds_in,
-                             _calc_fees_out_given_shares_in, _calc_fixed_rate,
-                             _calc_in_for_out, _calc_long_amount,
-                             _calc_max_long, _calc_max_short, _calc_out_for_in,
-                             _calc_position_duration_in_years,
-                             _calc_short_deposit, _calc_spot_price)
+from ._contract_calls import (
+    _async_add_liquidity,
+    _async_close_long,
+    _async_close_short,
+    _async_open_long,
+    _async_open_short,
+    _async_redeem_withdraw_shares,
+    _async_remove_liquidity,
+    _get_eth_base_balances,
+    _get_variable_rate,
+    _get_vault_shares,
+)
+from ._mock_contract import (
+    _calc_bonds_given_shares_and_rate,
+    _calc_checkpoint_id,
+    _calc_effective_share_reserves,
+    _calc_fees_out_given_bonds_in,
+    _calc_fees_out_given_shares_in,
+    _calc_fixed_rate,
+    _calc_in_for_out,
+    _calc_long_amount,
+    _calc_max_long,
+    _calc_max_short,
+    _calc_out_for_in,
+    _calc_position_duration_in_years,
+    _calc_short_deposit,
+    _calc_spot_price,
+)
 
 # We expect to have many instance attributes & public methods since this is a large API.
 # pylint: disable=too-many-instance-attributes
@@ -43,10 +60,11 @@ from ._mock_contract import (_calc_bonds_given_shares_and_rate,
 
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber
     from ethpy import EthConfig
-    from fixedpointmath import FixedPoint
     from web3 import Web3
     from web3.contract.contract import Contract
     from web3.types import Nonce
@@ -57,31 +75,20 @@ if TYPE_CHECKING:
 @dataclass
 class PoolState:
     r"""A collection of stateful variables for a deployed Hyperdrive and Yield contracts."""
-    hyperdrive_contract: Contract
-    yield_contract: Contract
     block: BlockData
+    contract_pool_config: dict[str, Any]
+    contract_pool_info: dict[str, Any]
+    contract_checkpoint: dict[str, int]
+    variable_rate: FixedPoint
+    vault_shares: FixedPoint
+    total_supply_withdrawal_shares: FixedPoint
 
     def __post_init__(self):
         self.block_number = _get_block_number(self.block)
         self.block_time = _get_block_time(self.block)
-        self.contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         self.pool_config = convert_hyperdrive_pool_config_types(self.contract_pool_config)
-        self.contract_pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, self.block_number)
         self.pool_info = convert_hyperdrive_pool_info_types(self.contract_pool_info)
-        self.contract_checkpoint = get_hyperdrive_checkpoint(
-            self.hyperdrive_contract, _calc_checkpoint_id(self, self.block_time)
-        )
-        self.variable_rate = _get_variable_rate(self.yield_contract, self.block_number)
-        self.vault_shares = _get_vault_shares(self.yield_contract, self.hyperdrive_contract, self.block_number)
         self.checkpoint = convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
-        asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
-        self.total_supply_withdrawal_shares = smart_contract_read(
-            self.hyperdrive_contract,
-            "balanceOf",
-            asset_id,
-            self.hyperdrive_contract.address,
-            block_number=self.block_number,
-        )["value"]
 
 
 class HyperdriveInterface:
@@ -156,7 +163,7 @@ class HyperdriveInterface:
         """
         return _get_block(self, block_identifier)
 
-    def block_number(self, block: BlockData) -> BlockNumber:
+    def get_block_number(self, block: BlockData) -> BlockNumber:
         """Return the number for the provided block.
 
         Arguments
@@ -171,7 +178,7 @@ class HyperdriveInterface:
         """
         return _get_block_number(block)
 
-    def block_timestamp(self, block: BlockData) -> Timestamp:
+    def get_block_timestamp(self, block: BlockData) -> Timestamp:
         """Return the time for the provided block.
 
         Arguments
@@ -189,7 +196,7 @@ class HyperdriveInterface:
     def _ensure_current_state(self) -> None:
         """Update the cached pool info and latest checkpoint if needed."""
         current_block = self.get_current_block()
-        if self.block_number(current_block) > self.last_state_block_number:
+        if self.get_block_number(current_block) > self.last_state_block_number:
             self._current_pool_state = self.get_hyperdrive_state(current_block)
             self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
 
@@ -205,7 +212,34 @@ class HyperdriveInterface:
         if block is None:
             block_identifier = cast(BlockIdentifier, "latest")
             block = self.block(block_identifier)
-        return PoolState(self.hyperdrive_contract, self.yield_contract, block)
+        block_number = self.get_block_number(block)
+        contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
+        contract_pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, block_number)
+        contract_checkpoint = get_hyperdrive_checkpoint(
+            self.hyperdrive_contract,
+            _calc_checkpoint_id(contract_pool_config["checkpointDuration"], self.get_block_timestamp(block)),
+        )
+        variable_rate = _get_variable_rate(self.yield_contract, block_number)
+        vault_shares = _get_vault_shares(self.yield_contract, self.hyperdrive_contract, block_number)
+        asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
+        total_supply_withdrawal_shares = FixedPoint(
+            smart_contract_read(
+                self.hyperdrive_contract,
+                "balanceOf",
+                asset_id,
+                self.hyperdrive_contract.address,
+                block_number,
+            )["value"]
+        )
+        return PoolState(
+            block,
+            contract_pool_config,
+            contract_pool_info,
+            contract_checkpoint,
+            variable_rate,
+            vault_shares,
+            total_supply_withdrawal_shares,
+        )
 
     def get_eth_base_balances(self, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
         """Get the agent's balance on the Hyperdrive & base contracts.
@@ -468,7 +502,7 @@ class HyperdriveInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_checkpoint_id(pool_state, block_timestamp)
+        return _calc_checkpoint_id(pool_state.pool_config.checkpoint_duration, block_timestamp)
 
     def calc_fixed_rate(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the fixed rate for a given pool state.
