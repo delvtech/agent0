@@ -7,8 +7,10 @@ import warnings
 
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
-    data_chain_to_db, get_latest_block_number_from_pool_info_table,
-    init_data_chain_to_db)
+    data_chain_to_db,
+    get_latest_block_number_from_pool_info_table,
+    init_data_chain_to_db,
+)
 from eth_typing import BlockNumber
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses
