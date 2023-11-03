@@ -128,6 +128,13 @@ class HyperdriveInterface:
         self._ensure_current_state()
         return self._current_pool_state
 
+    def _ensure_current_state(self) -> None:
+        """Update the cached pool info and latest checkpoint if needed."""
+        current_block = self.get_current_block()
+        if self.get_block_number(current_block) > self.last_state_block_number:
+            self._current_pool_state = self.get_hyperdrive_state(current_block)
+            self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
+
     def get_current_block(self) -> BlockData:
         """Return the current block."""
         return self.get_block("latest")
@@ -144,6 +151,11 @@ class HyperdriveInterface:
         ---------
         block_identifier : BlockIdentifier
             Any one of the web3py types: [BlockParams, BlockNumber, Hash32, HexStr, HexBytes, int].
+
+        Returns
+        -------
+        BlockData
+            A web3py dataclass for storing block information.
         """
         return _get_block(self, block_identifier)
 
@@ -158,7 +170,7 @@ class HyperdriveInterface:
         Returns
         -------
         BlockNumber
-            The number for the corresponding block
+            The number for the corresponding block.
         """
         return _get_block_number(block)
 
@@ -177,13 +189,6 @@ class HyperdriveInterface:
         """
         return _get_block_time(block)
 
-    def _ensure_current_state(self) -> None:
-        """Update the cached pool info and latest checkpoint if needed."""
-        current_block = self.get_current_block()
-        if self.get_block_number(current_block) > self.last_state_block_number:
-            self._current_pool_state = self.get_hyperdrive_state(current_block)
-            self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
-
     def get_hyperdrive_state(self, block: BlockData | None = None):
         """Get the hyperdrive pool and block state, given a block identifier.
 
@@ -201,11 +206,11 @@ class HyperdriveInterface:
         contract_pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, block_number)
         contract_checkpoint = get_hyperdrive_checkpoint(
             self.hyperdrive_contract,
-            _calc_checkpoint_id(contract_pool_config["checkpointDuration"], self.get_block_timestamp(block)),
+            self.calc_checkpoint_id(contract_pool_config["checkpointDuration"], self.get_block_timestamp(block)),
         )
-        variable_rate = _get_variable_rate(self.yield_contract, block_number)
-        vault_shares = _get_vault_shares(self.yield_contract, self.hyperdrive_contract, block_number)
-        total_supply_withdrawal_shares = _get_total_supply_withdrawal_shares(self.hyperdrive_contract, block_number)
+        variable_rate = self.get_variable_rate(block_number)
+        vault_shares = self.get_vault_shares(block_number)
+        total_supply_withdrawal_shares = self.get_total_supply_withdrawal_shares(block_number)
         return PoolState(
             block,
             contract_pool_config,
@@ -215,6 +220,60 @@ class HyperdriveInterface:
             vault_shares,
             total_supply_withdrawal_shares,
         )
+
+    def get_total_supply_withdrawal_shares(self, block_number: BlockNumber | None) -> FixedPoint:
+        """Get the total supply of withdrrawal shares in the pool at the given block.
+
+        Arguments
+        ---------
+        block_number : BlockNumber, optional
+            The number for any minted block.
+            Defaults to the current block number
+
+        Returns
+        -------
+        FixedPoint
+            The quantity of withdrawal shares minted in the Hyperdrive pool.
+        """
+        if block_number is None:
+            block_number = self.get_block_number(self.get_current_block())
+        return _get_total_supply_withdrawal_shares(self.hyperdrive_contract, block_number)
+
+    def get_vault_shares(self, block_number: BlockNumber | None) -> FixedPoint:
+        """Get the balance of shares that the Hyperdrive pool has in the underlying yield source.
+
+        Arguments
+        ---------
+        block_number : BlockNumber, optional
+            The number for any minted block.
+            Defaults to the current block number
+
+        Returns
+        -------
+        FixedPoint
+            The quantity of vault shares for the yield source at the provided block.
+        """
+        if block_number is None:
+            block_number = self.get_block_number(self.get_current_block())
+        return _get_vault_shares(self.yield_contract, self.hyperdrive_contract, block_number)
+
+    def get_variable_rate(self, block_number: BlockNumber | None) -> FixedPoint:
+        """Get the yield source variable rate.
+
+        Arguments
+        ---------
+        block_number : BlockNumber, optional
+            The number for any minted block.
+            Defaults to the current block number
+
+        Returns
+        -------
+        FixedPoint
+            The variable rate for the yield source at the provided block.
+        """
+        if block_number is None:
+            block_number = self.get_block_number(self.get_current_block())
+        return _get_variable_rate(self.yield_contract, block_number)
 
     def get_eth_base_balances(self, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
         """Get the agent's balance on the Hyperdrive & base contracts.
@@ -458,26 +517,31 @@ class HyperdriveInterface:
             pool_state = self.current_pool_state
         return _calc_position_duration_in_years(self.current_pool_state)
 
-    def calc_checkpoint_id(self, block_timestamp: Timestamp, pool_state: PoolState | None = None) -> Timestamp:
+    def calc_checkpoint_id(
+        self, checkpoint_duration: int | None = None, block_timestamp: Timestamp | None = None
+    ) -> Timestamp:
         """Calculate the Checkpoint ID for a given timestamp.
 
         Arguments
         ---------
-        block_timestamp : Timestamp
+        checkpoint_duration : int, optional
+            The time, in seconds, between checkpoints.
+            Defaults to the current pool's checkpoint duration
+        block_timestamp : Timestamp, optional
             A timestamp for any block. Use the latest block to get the current checkpoint id,
             or a specific timestamp of a transaction's block if getting the checkpoint id for that transaction.
-        pool_state : PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            Defaults to the current block timestamp.
 
         Returns
         -------
         int
             The checkpoint id, which can be used as an argument for the Hyperdrive getCheckpoint function.
         """
-        if pool_state is None:
-            pool_state = self.current_pool_state
-        return _calc_checkpoint_id(pool_state.pool_config.checkpoint_duration, block_timestamp)
+        if checkpoint_duration is None:
+            checkpoint_duration = self.current_pool_state.pool_config.checkpoint_duration
+        if block_timestamp is None:
+            block_timestamp = self.current_pool_state.block_time
+        return _calc_checkpoint_id(checkpoint_duration, block_timestamp)
 
     def calc_fixed_rate(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the fixed rate for a given pool state.
