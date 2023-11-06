@@ -56,7 +56,7 @@ class TestHyperdriveInterface:
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
         eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
         hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
-        checkpoint_id = hyperdrive.calc_checkpoint_id(hyperdrive.current_pool_state.block_time)
+        checkpoint_id = hyperdrive.calc_checkpoint_id(block_timestamp=hyperdrive.current_pool_state.block_time)
         checkpoint = smart_contract_read(hyperdrive.hyperdrive_contract, "getCheckpoint", checkpoint_id)
         assert checkpoint == hyperdrive.current_pool_state.contract_checkpoint
 

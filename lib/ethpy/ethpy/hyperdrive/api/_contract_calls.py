@@ -10,6 +10,7 @@ from ethpy.base import (
     smart_contract_preview_transaction,
     smart_contract_read,
 )
+from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 from ethpy.hyperdrive.transactions import parse_logs
 from fixedpointmath import FixedPoint
 from web3 import Web3
@@ -22,6 +23,21 @@ if TYPE_CHECKING:
     from web3.types import Nonce
 
     from .api import HyperdriveInterface
+
+
+def _get_total_supply_withdrawal_shares(
+    hyperdrive_contract: Contract, block_number: BlockNumber | None = None
+) -> FixedPoint:
+    """See API for documentation."""
+    asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
+    total_supply_withdrawal_shares = smart_contract_read(
+        hyperdrive_contract,
+        "balanceOf",
+        asset_id,
+        hyperdrive_contract.address,
+        block_number=block_number,
+    )["value"]
+    return FixedPoint(scaled_value=int(total_supply_withdrawal_shares))
 
 
 def _get_variable_rate(yield_contract: Contract, block_number: BlockNumber | None = None) -> FixedPoint:

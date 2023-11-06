@@ -50,9 +50,9 @@ def _construct_pool_info(contract_pool_info: dict[str, Any]) -> PoolInfo:
     return PoolInfo(**contract_pool_info)
 
 
-def _calc_checkpoint_id(pool_state: PoolState, block_timestamp: Timestamp) -> Timestamp:
+def _calc_checkpoint_id(checkpoint_duration: int, block_timestamp: Timestamp) -> Timestamp:
     """See API for documentation."""
-    latest_checkpoint_timestamp = block_timestamp - (block_timestamp % pool_state.pool_config.checkpoint_duration)
+    latest_checkpoint_timestamp = block_timestamp - (block_timestamp % checkpoint_duration)
     return cast(Timestamp, latest_checkpoint_timestamp)
 
 

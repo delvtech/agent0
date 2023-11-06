@@ -65,7 +65,7 @@ def acquire_data(
     block_number: BlockNumber = BlockNumber(max(start_block, data_latest_block_number))
     # Make sure to not grab current block, as the current block is subject to change
     # Current block is still being built
-    latest_mined_block = hyperdrive.block_number(hyperdrive.current_block)
+    latest_mined_block = hyperdrive.get_block_number(hyperdrive.get_current_block())
     lookback_block_limit = BlockNumber(lookback_block_limit)
     if (latest_mined_block - block_number) > lookback_block_limit:
         block_number = BlockNumber(latest_mined_block - lookback_block_limit)
@@ -79,7 +79,7 @@ def acquire_data(
     # This if statement executes only on initial run (based on data_latest_block_number check),
     # and if the chain has executed until start_block (based on latest_mined_block check)
     if data_latest_block_number < block_number < latest_mined_block:
-        data_chain_to_db(hyperdrive, hyperdrive.block(block_number), db_session)
+        data_chain_to_db(hyperdrive, hyperdrive.get_block(block_number), db_session)
 
     # Main data loop
     # monitor for new blocks & add pool info per block
@@ -111,5 +111,5 @@ def acquire_data(
                     latest_mined_block,
                 )
                 continue
-            data_chain_to_db(hyperdrive, hyperdrive.block(block_number), db_session)
+            data_chain_to_db(hyperdrive, hyperdrive.get_block(block_number), db_session)
         time.sleep(_SLEEP_AMOUNT)
