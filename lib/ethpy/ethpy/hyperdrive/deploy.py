@@ -369,6 +369,7 @@ def _deploy_and_initialize_hyperdrive_pool(
         [],  # new bytes[](0)
         initial_liquidity.scaled_value,
         initial_fixed_rate.scaled_value,
+        bytes(0),  # new bytes(0)
     )
     tx_receipt = smart_contract_transact(
         web3,  # web3

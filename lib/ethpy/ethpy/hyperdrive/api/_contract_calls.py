@@ -91,13 +91,16 @@ async def _async_open_long(
     #   a checkpoint where negative interest has accrued.
     min_share_price = 0  # TODO: give the user access to this parameter
     min_output = 0  # TODO: give the user access to this parameter
-    as_underlying = True
+
     fn_args = (
         trade_amount.scaled_value,
         min_output,
         min_share_price,
-        agent_checksum_address,
-        as_underlying,
+        (  # IHyperdrive.Options
+            agent_checksum_address,  # destination
+            True,  # asBase
+            bytes(0),  # extraData
+        ),
     )
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
@@ -118,8 +121,11 @@ async def _async_open_long(
             trade_amount.scaled_value,
             min_output,
             min_share_price,
-            agent_checksum_address,
-            as_underlying,
+            (  # IHyperdrive.Options
+                agent_checksum_address,  # destination
+                True,  # asBase
+                bytes(0),  # extraData
+            ),
         )
     try:
         tx_receipt = await async_smart_contract_transact(
@@ -145,13 +151,15 @@ async def _async_close_long(
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
-    as_underlying = True
     fn_args = (
         maturity_time,
         trade_amount.scaled_value,
         min_output,
-        agent_checksum_address,
-        as_underlying,
+        (  # IHyperdrive.Options
+            agent_checksum_address,  # destination
+            True,  # asBase
+            bytes(0),  # extraData
+        ),
     )
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
@@ -172,8 +180,11 @@ async def _async_close_long(
             maturity_time,
             trade_amount.scaled_value,
             min_output,
-            agent_checksum_address,
-            as_underlying,
+            (  # IHyperdrive.Options
+                agent_checksum_address,  # destination
+                True,  # asBase
+                bytes(0),  # extraData
+            ),
         )
     try:
         tx_receipt = await async_smart_contract_transact(
@@ -196,7 +207,6 @@ async def _async_open_short(
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
-    as_underlying = True
     max_deposit = int(MAX_WEI)
     # min_share_price : int
     #   Minium share price at which to open the short.
@@ -207,8 +217,11 @@ async def _async_open_short(
         trade_amount.scaled_value,
         max_deposit,
         min_share_price,
-        agent_checksum_address,
-        as_underlying,
+        (  # IHyperdrive.Options
+            agent_checksum_address,  # destination
+            True,  # asBase
+            bytes(0),  # extraData
+        ),
     )
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
@@ -229,8 +242,11 @@ async def _async_open_short(
             trade_amount.scaled_value,
             max_deposit,
             min_share_price,
-            agent_checksum_address,
-            as_underlying,
+            (  # IHyperdrive.Options
+                agent_checksum_address,  # destination
+                True,  # asBase
+                bytes(0),  # extraData
+            ),
         )
     try:
         tx_receipt = await async_smart_contract_transact(
@@ -256,13 +272,15 @@ async def _async_close_short(
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
-    as_underlying = True
     fn_args = (
         maturity_time,
         trade_amount.scaled_value,
         min_output,
-        agent_checksum_address,
-        as_underlying,
+        (  # IHyperdrive.Options
+            agent_checksum_address,  # destination
+            True,  # asBase
+            bytes(0),  # extraData
+        ),
     )
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
@@ -283,8 +301,11 @@ async def _async_close_short(
             maturity_time,
             trade_amount.scaled_value,
             min_output,
-            agent_checksum_address,
-            as_underlying,
+            (  # IHyperdrive.Options
+                agent_checksum_address,  # destination
+                True,  # asBase
+                bytes(0),  # extraData
+            ),
         )
     try:
         tx_receipt = await async_smart_contract_transact(
@@ -314,13 +335,15 @@ async def _async_add_liquidity(
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
-    as_underlying = True
     fn_args = (
         trade_amount.scaled_value,
         min_apr.scaled_value,
         max_apr.scaled_value,
-        agent_checksum_address,
-        as_underlying,
+        (  # IHyperdrive.Options
+            agent_checksum_address,  # destination
+            True,  # asBase
+            bytes(0),  # extraData
+        ),
     )
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
@@ -360,12 +383,14 @@ async def _async_remove_liquidity(
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
-    as_underlying = True
     fn_args = (
         trade_amount.scaled_value,
         min_output,
-        agent_checksum_address,
-        as_underlying,
+        (  # IHyperdrive.Options
+            agent_checksum_address,  # destination
+            True,  # asBase
+            bytes(0),  # extraData
+        ),
     )
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
@@ -405,12 +430,14 @@ async def _async_redeem_withdraw_shares(
     # for now, assume an underlying vault share price of at least 1, should be higher by a bit
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = FixedPoint(scaled_value=1)
-    as_underlying = True
     fn_args = (
         trade_amount.scaled_value,
         min_output.scaled_value,
-        agent_checksum_address,
-        as_underlying,
+        (  # IHyperdrive.Options
+            agent_checksum_address,  # destination
+            True,  # asBase
+            bytes(0),  # extraData
+        ),
     )
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
