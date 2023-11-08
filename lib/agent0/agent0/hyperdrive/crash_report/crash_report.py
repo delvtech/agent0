@@ -62,6 +62,8 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return repr(o)
         if isinstance(o, Enum):
             return o.name
+        if isinstance(o, bytes):
+            return str(o)
         try:
             return o.__dict__
         except AttributeError:
