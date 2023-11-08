@@ -36,17 +36,21 @@ from ._contract_calls import (
 )
 from ._mock_contract import (
     _calc_bonds_given_shares_and_rate,
+    _calc_bonds_out_given_shares_in_down,
     _calc_checkpoint_id,
     _calc_effective_share_reserves,
     _calc_fees_out_given_bonds_in,
     _calc_fees_out_given_shares_in,
     _calc_fixed_rate,
-    _calc_in_for_out,
     _calc_long_amount,
+    _calc_max_buy,
     _calc_max_long,
+    _calc_max_sell,
     _calc_max_short,
-    _calc_out_for_in,
     _calc_position_duration_in_years,
+    _calc_shares_in_given_bonds_out_down,
+    _calc_shares_in_given_bonds_out_up,
+    _calc_shares_out_given_bonds_in_down,
     _calc_short_deposit,
     _calc_spot_price,
 )
@@ -713,10 +717,12 @@ class HyperdriveInterface:
             pool_state, bond_amount, _calc_spot_price(pool_state), pool_state.pool_info.share_price
         )
 
-    def calc_out_for_in(
-        self, amount_in: FixedPoint, shares_in: bool, pool_state: PoolState | None = None
+    def calc_bonds_out_given_shares_in_down(
+        self, amount_in: FixedPoint, pool_state: PoolState | None = None
     ) -> FixedPoint:
-        """Calculate the amount of an asset out for a given amount in of the other asset.
+        """Calculates the amount of bonds a user will receive from the pool by
+        providing a specified amount of shares. We underestimate the amount of
+        bonds.
 
         The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
         to simulate the contract outputs.
@@ -724,9 +730,7 @@ class HyperdriveInterface:
         Arguments
         ---------
         amount_in : FixedPoint
-            The amount going into the pool.
-        shares_in : bool
-            True if the asset in is shares; False if it is bonds.
+            The amount of shares going into the pool.
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
@@ -734,27 +738,25 @@ class HyperdriveInterface:
         Returns
         -------
         FixedPoint
-            The amount out.
-            The type is opposite from the amount_in and determined by the shares_in argument.
+            The amount of bonds out.
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_out_for_in(pool_state, amount_in, shares_in)
+        return _calc_bonds_out_given_shares_in_down(pool_state, amount_in)
 
-    def calc_in_for_out(
-        self, amount_out: FixedPoint, shares_out: bool, pool_state: PoolState | None = None
+    def calc_shares_in_given_bonds_out_up(
+        self, amount_in: FixedPoint, pool_state: PoolState | None = None
     ) -> FixedPoint:
-        """Calculate the amount of an asset in for a given amount out of the other asset.
+        """Calculates the amount of shares a user must provide the pool to receive
+        a specified amount of bonds. We overestimate the amount of shares in.
 
         The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
         to simulate the contract outputs.
 
         Arguments
         ---------
-        amount_out : FixedPoint
-            The amount coming out of the pool.
-        shares_out : bool
-            True if the asset out is shares, False if it is bonds.
+        amount_in : FixedPoint
+            The amount of bonds to target.
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
@@ -762,12 +764,112 @@ class HyperdriveInterface:
         Returns
         -------
         FixedPoint
-            The amount in.
-            The type is opposite from the amount_in and determined by the shares_in argument.
+            The amount of shares in to reach the target.
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_in_for_out(pool_state, amount_out, shares_out)
+        return _calc_shares_in_given_bonds_out_up(pool_state, amount_in)
+
+    def calc_shares_in_given_bonds_out_down(
+        self, amount_in: FixedPoint, pool_state: PoolState | None = None
+    ) -> FixedPoint:
+        """Calculates the amount of shares a user must provide the pool to receive
+        a specified amount of bonds. We underestimate the amount of shares in.
+
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+
+        Arguments
+        ---------
+        amount_in : FixedPoint
+            The amount of bonds to target.
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The amount of shares in to reach the target.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_shares_in_given_bonds_out_down(pool_state, amount_in)
+
+    def calc_shares_out_given_bonds_in_down(
+        self, amount_in: FixedPoint, pool_state: PoolState | None = None
+    ) -> FixedPoint:
+        """Calculates the amount of shares a user will receive from the pool by
+        providing a specified amount of bonds. We underestimate the amount of
+        shares out.
+
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+
+        Arguments
+        ---------
+        amount_in : FixedPoint
+            The amount of bonds in.
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The amount of shares out.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_shares_out_given_bonds_in_down(pool_state, amount_in)
+
+    def calc_max_buy(self, pool_state: PoolState | None = None) -> FixedPoint:
+        """Calculates the maximum amount of bonds that can be purchased with the
+        specified reserves. We round so that the max buy amount is
+        underestimated.
+
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+
+        Arguments
+        ---------
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The maximum buy amount
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_max_buy(pool_state)
+
+    def calc_max_sell(self, minimum_share_reserves: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
+        """Calculates the maximum amount of bonds that can be sold with the
+        specified reserves. We round so that the max sell amount is
+        underestimated.
+
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+
+        Arguments
+        ---------
+        minimum_share_reserves: FixedPoint
+            The minimum share reserves to target
+        pool_state : PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not provided, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The maximum sell amount
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_max_sell(pool_state, minimum_share_reserves)
 
     def calc_fees_out_given_bonds_in(
         self, bonds_in: FixedPoint, maturity_time: int | None = None, pool_state: PoolState | None = None

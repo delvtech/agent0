@@ -120,34 +120,80 @@ def _calc_short_deposit(
     return FixedPoint(scaled_value=int(short_deposit))
 
 
-def _calc_out_for_in(
+def _calc_bonds_out_given_shares_in_down(
     pool_state: PoolState,
     amount_in: FixedPoint,
-    shares_in: bool,
 ) -> FixedPoint:
     """See API for documentation."""
-    out_for_in = pyperdrive.get_out_for_in(
+    amount_out = pyperdrive.calculate_bonds_out_given_shares_in_down(
         _construct_pool_config(pool_state.contract_pool_config),
         _construct_pool_info(pool_state.contract_pool_info),
         str(amount_in.scaled_value),
-        shares_in,
     )
-    return FixedPoint(scaled_value=int(out_for_in))
+    return FixedPoint(scaled_value=int(amount_out))
 
 
-def _calc_in_for_out(
+def _calc_shares_in_given_bonds_out_up(
     pool_state: PoolState,
-    amount_out: FixedPoint,
-    shares_out: bool,
+    amount_in: FixedPoint,
 ) -> FixedPoint:
     """See API for documentation."""
-    in_for_out = pyperdrive.get_in_for_out(
+    amount_out = pyperdrive.calculate_shares_in_given_bonds_out_up(
         _construct_pool_config(pool_state.contract_pool_config),
         _construct_pool_info(pool_state.contract_pool_info),
-        str(amount_out.scaled_value),
-        shares_out,
+        str(amount_in.scaled_value),
     )
-    return FixedPoint(scaled_value=int(in_for_out))
+    return FixedPoint(scaled_value=int(amount_out))
+
+
+def _calc_shares_in_given_bonds_out_down(
+    pool_state: PoolState,
+    amount_in: FixedPoint,
+) -> FixedPoint:
+    """See API for documentation."""
+    amount_out = pyperdrive.calculate_shares_in_given_bonds_out_down(
+        _construct_pool_config(pool_state.contract_pool_config),
+        _construct_pool_info(pool_state.contract_pool_info),
+        str(amount_in.scaled_value),
+    )
+    return FixedPoint(scaled_value=int(amount_out))
+
+
+def _calc_shares_out_given_bonds_in_down(
+    pool_state: PoolState,
+    amount_in: FixedPoint,
+) -> FixedPoint:
+    """See API for documentation."""
+    amount_out = pyperdrive.calculate_shares_out_given_bonds_in_down(
+        _construct_pool_config(pool_state.contract_pool_config),
+        _construct_pool_info(pool_state.contract_pool_info),
+        str(amount_in.scaled_value),
+    )
+    return FixedPoint(scaled_value=int(amount_out))
+
+
+def _calc_max_buy(
+    pool_state: PoolState,
+) -> FixedPoint:
+    """See API for documentation."""
+    amount_out = pyperdrive.calculate_max_buy(
+        _construct_pool_config(pool_state.contract_pool_config),
+        _construct_pool_info(pool_state.contract_pool_info),
+    )
+    return FixedPoint(scaled_value=int(amount_out))
+
+
+def _calc_max_sell(
+    pool_state: PoolState,
+    minimum_share_reserves: FixedPoint,
+) -> FixedPoint:
+    """See API for documentation."""
+    amount_out = pyperdrive.calculate_max_sell(
+        _construct_pool_config(pool_state.contract_pool_config),
+        _construct_pool_info(pool_state.contract_pool_info),
+        str(minimum_share_reserves.scaled_value),
+    )
+    return FixedPoint(scaled_value=int(amount_out))
 
 
 def _calc_fees_out_given_bonds_in(
