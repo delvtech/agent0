@@ -61,7 +61,7 @@ agent_config: list[AgentConfig] = [
 account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed)
 
 # Run agents
-# If bots crash, we make rpc call to stop mining anvil
+# If bots crash, we use an RPC to stop mining anvil
 try:
     run_agents(env_config, agent_config, account_key_config, liquidate=LIQUIDATE)
 # Don't stop chain if the user interrupts
