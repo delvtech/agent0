@@ -1,4 +1,4 @@
-"""High-level interface for the Hyperdrive market."""
+"""High-level interface for a Hyperdrive pool."""
 from __future__ import annotations
 
 import copy
@@ -55,7 +55,7 @@ from ._mock_contract import (
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-public-methods
 # pylint: disable=too-many-arguments
-# We only worry about protected access for anyone outside of this folder
+# We only worry about protected access for anyone outside of this folder.
 # pylint: disable=protected-access
 
 
@@ -74,7 +74,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class PoolState:
-    r"""A collection of stateful variables for a deployed Hyperdrive and Yield contracts."""
+    r"""A collection of stateful variables for deployed Hyperdrive and Yield contracts."""
     block: BlockData
     contract_pool_config: dict[str, Any]
     contract_pool_info: dict[str, Any]
@@ -92,7 +92,7 @@ class PoolState:
 
 
 class HyperdriveInterface:
-    """End-point api for interfacing with Hyperdrive."""
+    """End-point API for interfacing with a deployed Hyperdrive pool."""
 
     def __init__(
         self,
@@ -101,32 +101,41 @@ class HyperdriveInterface:
         web3: Web3 | None = None,
     ) -> None:
         """The HyperdriveInterface API.
+        This is the primary endpoint for users to simulate as well as execute transactions on
+        the Hyperdrive smart contracts.
 
-        HyperdriveInterface requires an EthConfig to initialize.
-        If the user does not provide one, then it is constructed from environment variables.
-        The user can optionally include an `artifacts` HyperdriveAddresses object.
-        In this case, the `eth_config.artifacts_uri` variable is not used, and these Addresses are used instead.
+        Arguments
+        ---------
+        eth_config : EthConfig, optional
+            Configuration dataclass for the ethereum environment.
+            If given, then it is constructed from environment variables.
+        addresses : HyperdriveAddresses, optional
+            This is a dataclass containing addresses for deployed hyperdrive and base token contracts.
+            If given, then the `eth_config.artifacts_uri` variable is not used, and these Addresses are used instead.
+            If not given, then addresses is constructed from the `addresses.json` file at `eth_config.artifacts_uri`.
+        web3 : Web3, optional
+            web3 provider object, optional
+            If given, a web3 object is constructed using the `eth_config.rpc_uri` as the http provider.
         """
-        # Handle defaults for config and addresses
+        # Handle defaults for config and addresses.
         self.eth_config: EthConfig = build_eth_config() if eth_config is None else eth_config
         if addresses is None:
             addresses = fetch_hyperdrive_address_from_uri(os.path.join(self.eth_config.artifacts_uri, "addresses.json"))
         self.addresses: HyperdriveAddresses = addresses
-        # Setup provider for communicating with the chain
+        # Setup provider for communicating with the chain.
         if web3 is None:
             web3 = initialize_web3_with_http_provider(self.eth_config.rpc_uri, reset_provider=False)
         self.web3 = web3
         abis = load_all_abis(self.eth_config.abi_dir)
-        # set up the ERC20 contract for minting base tokens
+        # Setup the ERC20 contract for minting base tokens.
         self.base_token_contract: Contract = web3.eth.contract(
             abi=abis["ERC20Mintable"], address=web3.to_checksum_address(self.addresses.base_token)
         )
-        # set up hyperdrive contract
+        # Setup Hyperdrive and Yield (variable rate) contracts.
         self.hyperdrive_contract: Contract = web3.eth.contract(
             abi=abis["IHyperdrive"], address=web3.to_checksum_address(self.addresses.mock_hyperdrive)
         )
-        # get yield (variable rate) pool contract
-        # TODO: In the future we want to switch to a single IERC4626Hyperdrive ABI
+        # TODO: in the future we want to switch to a single IERC4626Hyperdrive ABI
         data_provider_contract: Contract = web3.eth.contract(
             abi=abis["ERC4626DataProvider"], address=web3.to_checksum_address(self.addresses.mock_hyperdrive)
         )
@@ -134,29 +143,47 @@ class HyperdriveInterface:
         self.yield_contract: Contract = web3.eth.contract(
             abi=abis["MockERC4626"], address=web3.to_checksum_address(self.yield_address)
         )
-        # fill in initial cache
+        # Fill in the initial state cache.
         self._current_pool_state = self.get_hyperdrive_state()
         self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
 
     @property
     def current_pool_state(self) -> PoolState:
-        """The current state of the pool."""
-        self._ensure_current_state()
+        """The current state of the pool.
+
+        Each time this is accessed we use an RPC to check that the pool state is synced with the current block.
+        """
+        _ = self._ensure_current_state()
         return self._current_pool_state
 
-    def _ensure_current_state(self) -> None:
-        """Update the cached pool info and latest checkpoint if needed."""
+    def _ensure_current_state(self) -> bool:
+        """Update the cached pool info and latest checkpoint if needed.
+
+        Returns
+        -------
+        bool
+            True if the state was updated.
+        """
         current_block = self.get_current_block()
-        if self.get_block_number(current_block) > self.last_state_block_number:
+        current_block_number = self.get_block_number(current_block)
+        if current_block_number > self.last_state_block_number:
             self._current_pool_state = self.get_hyperdrive_state(current_block)
-            self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
+            self.last_state_block_number = current_block_number
+            return True
+        return False
 
     def get_current_block(self) -> BlockData:
-        """Return the current block."""
+        """Use an RPC to get the current block.
+
+        Returns
+        -------
+        BlockData
+            A web3py dataclass containing information about the latest mined block.
+        """
         return self.get_block("latest")
 
     def get_block(self, block_identifier: BlockIdentifier) -> BlockData:
-        """Return the block for the provided identifier.
+        """Use an RPC to get the block for the provided identifier.
 
         Delegates to eth_getBlockByNumber if block_identifier is an integer or
         one of the predefined block parameters 'latest', 'earliest', 'pending', 'safe', 'finalized'.
@@ -171,12 +198,12 @@ class HyperdriveInterface:
         Returns
         -------
         BlockData
-            A web3py dataclass for storing block information.
+            A web3py dataclass containing block information.
         """
         return _get_block(self, block_identifier)
 
     def get_block_number(self, block: BlockData) -> BlockNumber:
-        """Return the number for the provided block.
+        """Use an RPC to get the number for the provided block.
 
         Arguments
         ---------
@@ -191,7 +218,7 @@ class HyperdriveInterface:
         return _get_block_number(block)
 
     def get_block_timestamp(self, block: BlockData) -> Timestamp:
-        """Return the time for the provided block.
+        """Use an RPC to get the time for the provided block.
 
         Arguments
         ---------
@@ -206,13 +233,19 @@ class HyperdriveInterface:
         return _get_block_time(block)
 
     def get_hyperdrive_state(self, block: BlockData | None = None):
-        """Get the hyperdrive pool and block state, given a block identifier.
+        """Use RPCs and contract calls to get the Hyperdrive pool and block state, given a block identifier.
 
         Arguments
         ---------
         block : BlockData, optional
             A web3py dataclass for storing block information.
+            Defaults to the latest block.
 
+        Returns
+        -------
+        PoolState
+            A dataclass containing PoolInfo, PoolConfig, Checkpoint, and Block
+            information that is synced to a given block number.
         """
         if block is None:
             block_identifier = cast(BlockIdentifier, "latest")
@@ -238,25 +271,25 @@ class HyperdriveInterface:
         )
 
     def get_total_supply_withdrawal_shares(self, block_number: BlockNumber | None) -> FixedPoint:
-        """Get the total supply of withdrrawal shares in the pool at the given block.
+        """Use an RPC to get the total supply of withdrawal shares in the pool at the given block.
 
         Arguments
         ---------
         block_number : BlockNumber, optional
             The number for any minted block.
-            Defaults to the current block number.
+            If not given, the latest block number is used.
 
         Returns
         -------
         FixedPoint
-            The quantity of withdrawal shares minted in the Hyperdrive pool.
+            The quantity of withdrawal shares available in the Hyperdrive pool.
         """
         if block_number is None:
             block_number = self.get_block_number(self.get_current_block())
         return _get_total_supply_withdrawal_shares(self.hyperdrive_contract, block_number)
 
     def get_vault_shares(self, block_number: BlockNumber | None) -> FixedPoint:
-        """Get the balance of shares that the Hyperdrive pool has in the underlying yield source.
+        """Use an RPC to get the balance of shares that the Hyperdrive pool has in the underlying yield source.
 
         Arguments
         ---------
@@ -274,7 +307,7 @@ class HyperdriveInterface:
         return _get_vault_shares(self.yield_contract, self.hyperdrive_contract, block_number)
 
     def get_variable_rate(self, block_number: BlockNumber | None) -> FixedPoint:
-        """Get the yield source variable rate.
+        """Use an RPC to get the yield source variable rate.
 
         Arguments
         ---------
@@ -292,7 +325,7 @@ class HyperdriveInterface:
         return _get_variable_rate(self.yield_contract, block_number)
 
     def get_eth_base_balances(self, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
-        """Get the agent's balance on the Hyperdrive & base contracts.
+        """Use an RPC to get the agent's balance on the Base & Hyperdrive contracts.
 
         Arguments
         ---------
@@ -302,7 +335,7 @@ class HyperdriveInterface:
         Returns
         -------
         tuple[FixedPoint]
-            A tuple containing the [agent_eth_balance, agent_base_balance]
+            A tuple containing the [agent_eth_balance, agent_base_balance].
         """
         return _get_eth_base_balances(self, agent)
 
@@ -317,24 +350,25 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        agent: LocalAccount
+        agent : LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
+        trade_amount : FixedPoint
             The size of the position, in base.
-        slippage_tolerance: FixedPoint | None
+        slippage_tolerance : FixedPoint, optional
             Amount of slippage allowed from the trade.
-            If None, then execute the trade regardless of the slippage.
-            If not None, then the trade will not execute unless the slippage is below this value.
-        nonce: Nonce | None
-            An optional explicit nonce to set with the transaction
+            If given, then the trade will not execute unless the slippage is below this value.
+            If not given, then execute the trade regardless of the slippage.
+        nonce : Nonce, optional
+            An optional explicit nonce to set with the transaction.
 
         Returns
         -------
         ReceiptBreakdown
-            A dataclass containing the maturity time and the absolute values for token quantities changed
+            A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
         return await _async_open_long(self, agent, trade_amount, slippage_tolerance, nonce)
 
+    # We do not control the number of arguments; this is set by hyperdrive-rs
     # pylint: disable=too-many-arguments
     async def async_close_long(
         self,
@@ -348,23 +382,23 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        agent: LocalAccount
+        agent : LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
+        trade_amount : FixedPoint
             The size of the position, in base.
-        maturity_time: int
+        maturity_time : int
             The token maturity time in seconds.
-        slippage_tolerance: FixedPoint | None
+        slippage_tolerance : FixedPoint, optional
             Amount of slippage allowed from the trade.
-            If None, then execute the trade regardless of the slippage.
-            If not None, then the trade will not execute unless the slippage is below this value.
-        nonce: Nonce | None
-            An optional explicit nonce to set with the transaction
+            If given, then the trade will not execute unless the slippage is below this value.
+            If not given, then execute the trade regardless of the slippage.
+        nonce : Nonce, optional
+            An optional explicit nonce to set with the transaction.
 
         Returns
         -------
         ReceiptBreakdown
-            A dataclass containing the maturity time and the absolute values for token quantities changed
+            A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
         return await _async_close_long(self, agent, trade_amount, maturity_time, slippage_tolerance, nonce)
 
@@ -379,24 +413,25 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        agent: LocalAccount
+        agent : LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
+        trade_amount : FixedPoint
             The size of the position, in base.
-        slippage_tolerance: FixedPoint | None
+        slippage_tolerance : FixedPoint, optional
             Amount of slippage allowed from the trade.
-            If None, then execute the trade regardless of the slippage.
-            If not None, then the trade will not execute unless the slippage is below this value.
-        nonce: Nonce | None
-            An optional explicit nonce to set with the transaction
+            If given, then the trade will not execute unless the slippage is below this value.
+            If not given, then execute the trade regardless of the slippage.
+        nonce : Nonce, optional
+            An explicit nonce to set with the transaction.
 
         Returns
         -------
         ReceiptBreakdown
-            A dataclass containing the maturity time and the absolute values for token quantities changed
+            A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
         return await _async_open_short(self, agent, trade_amount, slippage_tolerance, nonce)
 
+    # We do not control the number of arguments; this is set by hyperdrive-rs
     # pylint: disable=too-many-arguments
     async def async_close_short(
         self,
@@ -410,26 +445,27 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        agent: LocalAccount
+        agent : LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
+        trade_amount : FixedPoint
             The size of the position, in base.
-        maturity_time: int
+        maturity_time : int
             The token maturity time in seconds.
-        slippage_tolerance: FixedPoint | None
+        slippage_tolerance : FixedPoint, optional
             Amount of slippage allowed from the trade.
-            If None, then execute the trade regardless of the slippage.
-            If not None, then the trade will not execute unless the slippage is below this value.
-        nonce: Nonce | None
-            An optional explicit nonce to set with the transaction
+            If given, then the trade will not execute unless the slippage is below this value.
+            If not given, then execute the trade regardless of the slippage.
+        nonce : Nonce, optional
+            An explicit nonce to set with the transaction.
 
         Returns
         -------
         ReceiptBreakdown
-            A dataclass containing the maturity time and the absolute values for token quantities changed
+            A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
         return await _async_close_short(self, agent, trade_amount, maturity_time, slippage_tolerance, nonce)
 
+    # We do not control the number of arguments; this is set by hyperdrive-rs
     # pylint: disable=too-many-arguments
     async def async_add_liquidity(
         self,
@@ -443,21 +479,21 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        agent: LocalAccount
+        agent : LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
+        trade_amount : FixedPoint
             The size of the position, in base.
-        min_apr: FixedPoint
+        min_apr : FixedPoint
             The minimum allowable APR after liquidity is added.
-        max_apr: FixedPoint
+        max_apr : FixedPoint
             The maximum allowable APR after liquidity is added.
-        nonce: Nonce | None
-            An optional explicit nonce to set with the transaction
+        nonce : Nonce, optional
+            An explicit nonce to set with the transaction.
 
         Returns
         -------
         ReceiptBreakdown
-            A dataclass containing the absolute values for token quantities changed
+            A dataclass containing the absolute values for token quantities changed.
         """
         return await _async_add_liquidity(self, agent, trade_amount, min_apr, max_apr, nonce)
 
@@ -468,17 +504,17 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        agent: LocalAccount
+        agent : LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
+        trade_amount : FixedPoint
             The size of the position, in base.
-        nonce: Nonce | None
-            An optional explicit nonce to set with the transaction
+        nonce : Nonce, optional
+            An explicit nonce to set with the transaction.
 
         Returns
         -------
         ReceiptBreakdown
-            A dataclass containing the absolute values for token quantities changed
+            A dataclass containing the absolute values for token quantities changed.
         """
         return await _async_remove_liquidity(self, agent, trade_amount, nonce)
 
@@ -486,30 +522,29 @@ class HyperdriveInterface:
         self, agent: LocalAccount, trade_amount: FixedPoint, nonce: Nonce | None = None
     ) -> ReceiptBreakdown:
         """Contract call to redeem withdraw shares from Hyperdrive pool.
-
         This should be done after closing liquidity.
 
         .. note::
-            This is not guaranteed to redeem all shares.  The pool will try to redeem as
+            This is not guaranteed to redeem all shares. The pool will try to redeem as
             many as possible, up to the withdrawPool.readyToRedeem limit, without reverting.
-            Only a min_output that is too high will cause a revert here, or trying to
-            withdraw more shares than the user has obviously.
+            This will revert if the min_output is too high or the user is trying to withdraw
+            more shares than they have.
 
         Arguments
         ---------
-        agent: LocalAccount
+        agent : LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
+        trade_amount : FixedPoint
             The size of the position, in base.
-        min_output: FixedPoint
-            The minimum output amount
-        nonce: Nonce | None
-            An optional explicit nonce to set with the transaction
+        min_output : FixedPoint
+            The minimum output amount.
+        nonce : Nonce, optional
+            An explicit nonce to set with the transaction.
 
         Returns
         -------
         ReceiptBreakdown
-            A dataclass containing the absolute values for token quantities changed
+            A dataclass containing the absolute values for token quantities changed.
         """
         return await _async_redeem_withdraw_shares(self, agent, trade_amount, nonce)
 
@@ -517,12 +552,14 @@ class HyperdriveInterface:
         """Returns the pool config position duration as a fraction of a year.
 
         This "annualized" time value is used in some calculations, such as the Fixed APR.
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
 
         Arguments
         ---------
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            If not given, use the current pool state.
 
         Returns
         -------
@@ -537,6 +574,9 @@ class HyperdriveInterface:
         self, checkpoint_duration: int | None = None, block_timestamp: Timestamp | None = None
     ) -> Timestamp:
         """Calculate the Checkpoint ID for a given timestamp.
+
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
 
         Arguments
         ---------
@@ -560,9 +600,10 @@ class HyperdriveInterface:
         return _calc_checkpoint_id(checkpoint_duration, block_timestamp)
 
     def calc_fixed_rate(self, pool_state: PoolState | None = None) -> FixedPoint:
-        """Calculate the fixed rate for a given pool state.
+        r"""Calculate the fixed rate for a given pool state.
 
-        Follows the formula:
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs. The simulation follows the formula:
 
         .. math::
             r = ((1 / p) - 1) / t = (1 - p) / (p * t)
@@ -571,7 +612,12 @@ class HyperdriveInterface:
         ---------
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The fixed rate apr for the Hyperdrive pool state.
         """
         if pool_state is None:
             pool_state = self.current_pool_state
@@ -580,16 +626,19 @@ class HyperdriveInterface:
     def calc_spot_price(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the spot price for a given Hyperdrive pool.
 
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+
         Arguments
         ---------
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            If not given, use the current pool state.
 
         Returns
         -------
         FixedPoint
-            The current spot price.
+            The spot price for the Hyperdrive pool state.
         """
         if pool_state is None:
             pool_state = self.current_pool_state
@@ -598,11 +647,14 @@ class HyperdriveInterface:
     def calc_effective_share_reserves(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the adjusted share reserves for a given Hyperdrive pool.
 
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+
         Arguments
         ---------
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            If not given, use the current pool state.
 
         Returns
         -------
@@ -616,13 +668,16 @@ class HyperdriveInterface:
     def calc_open_long(self, base_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the long amount that will be opened for a given base amount after fees.
 
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+
         Arguments
         ---------
         base_amount : FixedPoint
             The amount to spend, in base.
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            If not given, use the current pool state.
 
         Returns
         -------
@@ -633,32 +688,38 @@ class HyperdriveInterface:
             pool_state = self.current_pool_state
         return _calc_long_amount(pool_state, base_amount)
 
-    def calc_open_short(self, short_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
+    def calc_open_short(self, bond_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the amount of base the trader will need to deposit for a short of a given size.
+
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
 
         Arguments
         ---------
-        short_amount : FixedPoint
+        bond_amount : FixedPoint
             The amount to of bonds to short.
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            If not given, use the current pool state.
 
         Returns
         -------
-        short_amount : FixedPoint
+        FixedPoint
             The amount of base required to short the bonds (aka the "max loss").
         """
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_short_deposit(
-            pool_state, short_amount, _calc_spot_price(pool_state), pool_state.pool_info.share_price
+            pool_state, bond_amount, _calc_spot_price(pool_state), pool_state.pool_info.share_price
         )
 
     def calc_out_for_in(
         self, amount_in: FixedPoint, shares_in: bool, pool_state: PoolState | None = None
     ) -> FixedPoint:
-        """Calculate the amount of an asset for a given amount in of the other.
+        """Calculate the amount of an asset out for a given amount in of the other asset.
+
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
 
         Arguments
         ---------
@@ -668,12 +729,13 @@ class HyperdriveInterface:
             True if the asset in is shares; False if it is bonds.
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            If not given, use the current pool state.
 
         Returns
         -------
         FixedPoint
             The amount out.
+            The type is opposite from the amount_in and determined by the shares_in argument.
         """
         if pool_state is None:
             pool_state = self.current_pool_state
@@ -682,7 +744,10 @@ class HyperdriveInterface:
     def calc_in_for_out(
         self, amount_out: FixedPoint, shares_out: bool, pool_state: PoolState | None = None
     ) -> FixedPoint:
-        """Calculate the amount of an asset for a given amount out of the other.
+        """Calculate the amount of an asset in for a given amount out of the other asset.
+
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
 
         Arguments
         ---------
@@ -692,12 +757,13 @@ class HyperdriveInterface:
             True if the asset out is shares, False if it is bonds.
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            If not given, use the current pool state.
 
         Returns
         -------
         FixedPoint
             The amount in.
+            The type is opposite from the amount_in and determined by the shares_in argument.
         """
         if pool_state is None:
             pool_state = self.current_pool_state
@@ -706,12 +772,17 @@ class HyperdriveInterface:
     def calc_fees_out_given_bonds_in(
         self, bonds_in: FixedPoint, maturity_time: int | None = None, pool_state: PoolState | None = None
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
-        """Calculates the fees that go to the LPs and governance.
+        r"""Calculates the fees that would be deducted for an amount of bonds entering the pool.
 
-        Implements the formula:
-            curve_fee = ((1 - p) * phi_curve * d_y * t)/c
-            gov_fee = curve_fee * phi_gov
-            flat_fee = (d_y * (1 - t) * phi_flat) / c
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs. It implements the formula:
+
+        .. math::
+            \begin{align*}
+                &\text{curve_fee} = \frac{(1 - p) * \phi_{\text{curve}} * d_y * t}{c}
+                &\text{gov_fee} = \text{curve_fee} * \phi_{\text{gov}}
+                &\text{flat_fee} = \frac{d_y * (1 - t) * \phi_{\text{flat}}}{c}
+            \end{align*}
 
         Arguments
         ---------
@@ -721,7 +792,7 @@ class HyperdriveInterface:
             The maturity timestamp of the open position, in epoch seconds.
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            If not given, use the current pool state.
 
         Returns
         -------
@@ -740,12 +811,17 @@ class HyperdriveInterface:
     def calc_fees_out_given_shares_in(
         self, shares_in: FixedPoint, maturity_time: int | None = None, pool_state: PoolState | None = None
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
-        """Calculates the fees that go to the LPs and governance.
+        r"""Calculates the fees that go to the LPs and governance.
 
-        Implements the formula:
-            curve_fee = ((1 / p) - 1) * phi_curve * c * dz
-            gov_fee = shares * phi_gov
-            flat_fee = (d_y * (1 - t) * phi_flat) / c
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs. It implements the formula:
+
+        .. math::
+            \begin{align*}
+                &\text{curve_fee} = ((1 / p) - 1) * \phi_{\text{curve}} * c * dz
+                &\text{gov_fee} = \text{shares} * \phi_{\text{gov}}
+                &\text{flat_fee} = \frac{d_y * (1 - t) * \phi_{\text{flat}}}{c}
+            \end{align*}
 
         Arguments
         ---------
@@ -755,7 +831,7 @@ class HyperdriveInterface:
             The maturity timestamp of the open position, in epoch seconds.
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            If not given, use the current pool state.
 
         Returns
         -------
@@ -777,11 +853,11 @@ class HyperdriveInterface:
         r"""Returns the bond reserves for the market share reserves
         and a given fixed rate.
 
-
-        The calculation is based on the formula:
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs. The calculation is based on the formula:
 
         .. math::
-            mu * (z - zeta) * (1 + apr * t) ** (1 / tau)
+            \mu * (z - \zeta) * (1 + \text{apr} * t)^{1 / \tau}
 
         Arguments
         ---------
@@ -791,7 +867,7 @@ class HyperdriveInterface:
             The target share reserves for the pool
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            If not given, use the current pool state.
 
         .. todo::
             This function name matches the Rust implementation, but is not preferred because
@@ -806,13 +882,16 @@ class HyperdriveInterface:
     def calc_max_long(self, budget: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the maximum allowable long for the given Hyperdrive pool and agent budget.
 
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+
         Arguments
         ---------
-        budget: FixedPoint
+        budget : FixedPoint
             How much money the agent is able to spend, in base.
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            If not given, use the current pool state.
 
         Returns
         -------
@@ -826,13 +905,16 @@ class HyperdriveInterface:
     def calc_max_short(self, budget: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the maximum allowable short for the given Hyperdrive pool and agent budget.
 
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+
         Arguments
         ---------
-        budget: FixedPoint
+        budget : FixedPoint
             How much money the agent is able to spend, in base.
         pool_state : PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
+            If not given, use the current pool state.
 
         Returns
         -------
