@@ -1,17 +1,24 @@
 """A web3.py Contract class for the ERC4626HyperdriveFactory contract."""
+
 # contracts have PascalCase names
 # pylint: disable=invalid-name
+
 # contracts control how many attributes and arguments we have in generated code
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
+
 # we don't need else statement if the other conditionals all have return,
 # but it's easier to generate
 # pylint: disable=no-else-return
-from __future__ import annotations
 
-from typing import Any, cast
+# This file is bound to get very long depending on contract sizes.
+# pylint: disable=too-many-lines
+
+from __future__ import annotations
+from typing import cast
 
 from eth_typing import ChecksumAddress
+from web3.types import ABI
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 
@@ -23,9 +30,14 @@ class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(ContractFuncti
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, _config: tuple, arg2: list[bytes], _contribution: int, _apr: int
+        self,
+        _config: tuple,
+        arg2: list[bytes],
+        _contribution: int,
+        _apr: int,
+        _initializeExtraData: bytes,
     ) -> "ERC4626HyperdriveFactoryDeployAndInitializeContractFunction":
-        super().__call__(_config, _contribution, _apr)
+        super().__call__(_config, _contribution, _apr, _initializeExtraData)
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -376,15 +388,673 @@ class ERC4626HyperdriveFactoryContractFunctions(ContractFunctions):
     versionCounter: ERC4626HyperdriveFactoryVersionCounterContractFunction
 
 
+erc4626hyperdrivefactory_abi: ABI = cast(
+    ABI,
+    [
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "governance",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "address",
+                            "name": "hyperdriveGovernance",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "address",
+                            "name": "feeCollector",
+                            "type": "address",
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "curve",
+                                    "type": "uint256",
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "flat",
+                                    "type": "uint256",
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "governance",
+                                    "type": "uint256",
+                                },
+                            ],
+                            "internalType": "struct IHyperdrive.Fees",
+                            "name": "fees",
+                            "type": "tuple",
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "curve",
+                                    "type": "uint256",
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "flat",
+                                    "type": "uint256",
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "governance",
+                                    "type": "uint256",
+                                },
+                            ],
+                            "internalType": "struct IHyperdrive.Fees",
+                            "name": "maxFees",
+                            "type": "tuple",
+                        },
+                        {
+                            "internalType": "address[]",
+                            "name": "defaultPausers",
+                            "type": "address[]",
+                        },
+                    ],
+                    "internalType": "struct HyperdriveFactory.FactoryConfig",
+                    "name": "_factoryConfig",
+                    "type": "tuple",
+                },
+                {
+                    "internalType": "contract IHyperdriveDeployer",
+                    "name": "_deployer",
+                    "type": "address",
+                },
+                {
+                    "internalType": "address",
+                    "name": "_linkerFactory",
+                    "type": "address",
+                },
+                {
+                    "internalType": "bytes32",
+                    "name": "_linkerCodeHash",
+                    "type": "bytes32",
+                },
+                {
+                    "internalType": "contract IERC4626",
+                    "name": "_pool",
+                    "type": "address",
+                },
+                {
+                    "internalType": "address[]",
+                    "name": "_sweepTargets_",
+                    "type": "address[]",
+                },
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor",
+        },
+        {"inputs": [], "name": "ApprovalFailed", "type": "error"},
+        {"inputs": [], "name": "FeeTooHigh", "type": "error"},
+        {"inputs": [], "name": "MaxFeeTooHigh", "type": "error"},
+        {"inputs": [], "name": "NonPayableInitialization", "type": "error"},
+        {"inputs": [], "name": "Unauthorized", "type": "error"},
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "uint256",
+                    "name": "version",
+                    "type": "uint256",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "address",
+                    "name": "hyperdrive",
+                    "type": "address",
+                },
+                {
+                    "components": [
+                        {
+                            "internalType": "contract IERC20",
+                            "name": "baseToken",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "initialSharePrice",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "minimumShareReserves",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "minimumTransactionAmount",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "positionDuration",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "checkpointDuration",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "timeStretch",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "address",
+                            "name": "governance",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "address",
+                            "name": "feeCollector",
+                            "type": "address",
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "curve",
+                                    "type": "uint256",
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "flat",
+                                    "type": "uint256",
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "governance",
+                                    "type": "uint256",
+                                },
+                            ],
+                            "internalType": "struct IHyperdrive.Fees",
+                            "name": "fees",
+                            "type": "tuple",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "oracleSize",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "updateGap",
+                            "type": "uint256",
+                        },
+                    ],
+                    "indexed": False,
+                    "internalType": "struct IHyperdrive.PoolConfig",
+                    "name": "config",
+                    "type": "tuple",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "address",
+                    "name": "linkerFactory",
+                    "type": "address",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "bytes32",
+                    "name": "linkerCodeHash",
+                    "type": "bytes32",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "bytes32[]",
+                    "name": "extraData",
+                    "type": "bytes32[]",
+                },
+            ],
+            "name": "Deployed",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "newFeeCollector",
+                    "type": "address",
+                }
+            ],
+            "name": "FeeCollectorUpdated",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "governance",
+                    "type": "address",
+                }
+            ],
+            "name": "GovernanceUpdated",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "hyperdriveGovernance",
+                    "type": "address",
+                }
+            ],
+            "name": "HyperdriveGovernanceUpdated",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "newDeployer",
+                    "type": "address",
+                }
+            ],
+            "name": "ImplementationUpdated",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "bytes32",
+                    "name": "newCodeHash",
+                    "type": "bytes32",
+                }
+            ],
+            "name": "LinkerCodeHashUpdated",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "newLinkerFactory",
+                    "type": "address",
+                }
+            ],
+            "name": "LinkerFactoryUpdated",
+            "type": "event",
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "contract IERC20",
+                            "name": "baseToken",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "initialSharePrice",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "minimumShareReserves",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "minimumTransactionAmount",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "positionDuration",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "checkpointDuration",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "timeStretch",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "address",
+                            "name": "governance",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "address",
+                            "name": "feeCollector",
+                            "type": "address",
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "curve",
+                                    "type": "uint256",
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "flat",
+                                    "type": "uint256",
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "governance",
+                                    "type": "uint256",
+                                },
+                            ],
+                            "internalType": "struct IHyperdrive.Fees",
+                            "name": "fees",
+                            "type": "tuple",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "oracleSize",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "updateGap",
+                            "type": "uint256",
+                        },
+                    ],
+                    "internalType": "struct IHyperdrive.PoolConfig",
+                    "name": "_config",
+                    "type": "tuple",
+                },
+                {"internalType": "bytes32[]", "name": "", "type": "bytes32[]"},
+                {
+                    "internalType": "uint256",
+                    "name": "_contribution",
+                    "type": "uint256",
+                },
+                {"internalType": "uint256", "name": "_apr", "type": "uint256"},
+                {
+                    "internalType": "bytes",
+                    "name": "_initializeExtraData",
+                    "type": "bytes",
+                },
+            ],
+            "name": "deployAndInitialize",
+            "outputs": [
+                {
+                    "internalType": "contract IHyperdrive",
+                    "name": "",
+                    "type": "address",
+                }
+            ],
+            "stateMutability": "payable",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "feeCollector",
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "fees",
+            "outputs": [
+                {"internalType": "uint256", "name": "curve", "type": "uint256"},
+                {"internalType": "uint256", "name": "flat", "type": "uint256"},
+                {
+                    "internalType": "uint256",
+                    "name": "governance",
+                    "type": "uint256",
+                },
+            ],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "getDefaultPausers",
+            "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "getSweepTargets",
+            "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "governance",
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "hyperdriveDeployer",
+            "outputs": [
+                {
+                    "internalType": "contract IHyperdriveDeployer",
+                    "name": "",
+                    "type": "address",
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "hyperdriveGovernance",
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "instance",
+                    "type": "address",
+                }
+            ],
+            "name": "isOfficial",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "version",
+                    "type": "uint256",
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "linkerCodeHash",
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "linkerFactory",
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address[]",
+                    "name": "_defaultPausers_",
+                    "type": "address[]",
+                }
+            ],
+            "name": "updateDefaultPausers",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_feeCollector",
+                    "type": "address",
+                }
+            ],
+            "name": "updateFeeCollector",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "uint256",
+                            "name": "curve",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "flat",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "governance",
+                            "type": "uint256",
+                        },
+                    ],
+                    "internalType": "struct IHyperdrive.Fees",
+                    "name": "_fees",
+                    "type": "tuple",
+                }
+            ],
+            "name": "updateFees",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_governance",
+                    "type": "address",
+                }
+            ],
+            "name": "updateGovernance",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_hyperdriveGovernance",
+                    "type": "address",
+                }
+            ],
+            "name": "updateHyperdriveGovernance",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "contract IHyperdriveDeployer",
+                    "name": "newDeployer",
+                    "type": "address",
+                }
+            ],
+            "name": "updateImplementation",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "bytes32",
+                    "name": "_linkerCodeHash",
+                    "type": "bytes32",
+                }
+            ],
+            "name": "updateLinkerCodeHash",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_linkerFactory",
+                    "type": "address",
+                }
+            ],
+            "name": "updateLinkerFactory",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address[]",
+                    "name": "_sweepTargets_",
+                    "type": "address[]",
+                }
+            ],
+            "name": "updateSweepTargets",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "versionCounter",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+    ],
+)
+
+
 class ERC4626HyperdriveFactoryContract(Contract):
     """A web3.py Contract class for the ERC4626HyperdriveFactory contract."""
 
-    def __init__(self, address: ChecksumAddress | None = None, abi=Any) -> None:
-        self.abi = abi  # type: ignore
-        # TODO: make this better, shouldn't initialize to the zero address, but the Contract's init
-        # function requires an address.
-        self.address = address if address else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
+    abi: ABI = erc4626hyperdrivefactory_abi
 
+    def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:
             # Initialize parent Contract class
             super().__init__(address=address)

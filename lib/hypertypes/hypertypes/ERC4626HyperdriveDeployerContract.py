@@ -1,17 +1,24 @@
 """A web3.py Contract class for the ERC4626HyperdriveDeployer contract."""
+
 # contracts have PascalCase names
 # pylint: disable=invalid-name
+
 # contracts control how many attributes and arguments we have in generated code
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
+
 # we don't need else statement if the other conditionals all have return,
 # but it's easier to generate
 # pylint: disable=no-else-return
-from __future__ import annotations
 
-from typing import Any, cast
+# This file is bound to get very long depending on contract sizes.
+# pylint: disable=too-many-lines
+
+from __future__ import annotations
+from typing import cast
 
 from eth_typing import ChecksumAddress
+from web3.types import ABI
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 
@@ -43,15 +50,142 @@ class ERC4626HyperdriveDeployerContractFunctions(ContractFunctions):
     deploy: ERC4626HyperdriveDeployerDeployContractFunction
 
 
+erc4626hyperdrivedeployer_abi: ABI = cast(
+    ABI,
+    [
+        {
+            "inputs": [
+                {
+                    "internalType": "contract IERC4626",
+                    "name": "_pool",
+                    "type": "address",
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor",
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "contract IERC20",
+                            "name": "baseToken",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "initialSharePrice",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "minimumShareReserves",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "minimumTransactionAmount",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "positionDuration",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "checkpointDuration",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "timeStretch",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "address",
+                            "name": "governance",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "address",
+                            "name": "feeCollector",
+                            "type": "address",
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "curve",
+                                    "type": "uint256",
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "flat",
+                                    "type": "uint256",
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "governance",
+                                    "type": "uint256",
+                                },
+                            ],
+                            "internalType": "struct IHyperdrive.Fees",
+                            "name": "fees",
+                            "type": "tuple",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "oracleSize",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "updateGap",
+                            "type": "uint256",
+                        },
+                    ],
+                    "internalType": "struct IHyperdrive.PoolConfig",
+                    "name": "_config",
+                    "type": "tuple",
+                },
+                {
+                    "internalType": "address",
+                    "name": "_dataProvider",
+                    "type": "address",
+                },
+                {
+                    "internalType": "bytes32",
+                    "name": "_linkerCodeHash",
+                    "type": "bytes32",
+                },
+                {
+                    "internalType": "address",
+                    "name": "_linkerFactory",
+                    "type": "address",
+                },
+                {
+                    "internalType": "bytes32[]",
+                    "name": "_extraData",
+                    "type": "bytes32[]",
+                },
+            ],
+            "name": "deploy",
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+    ],
+)
+
+
 class ERC4626HyperdriveDeployerContract(Contract):
     """A web3.py Contract class for the ERC4626HyperdriveDeployer contract."""
 
-    def __init__(self, address: ChecksumAddress | None = None, abi=Any) -> None:
-        self.abi = abi  # type: ignore
-        # TODO: make this better, shouldn't initialize to the zero address, but the Contract's init
-        # function requires an address.
-        self.address = address if address else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
+    abi: ABI = erc4626hyperdrivedeployer_abi
 
+    def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
