@@ -144,8 +144,8 @@ class SmartLong(HyperdrivePolicy):
                 bond_reserves - total_bonds_to_match_variable_apr
             ) * hyperdrive.calc_spot_price()
             # calculate how much base we pay for the new bonds
-            new_base_to_match_variable_apr = hyperdrive.calc_out_for_in(
-                new_bonds_to_match_variable_apr, shares_in=False
+            new_base_to_match_variable_apr = hyperdrive.calc_bonds_out_given_shares_in_down(
+                new_bonds_to_match_variable_apr
             )
             # get the maximum amount the agent can long given the market and the agent's wallet
             max_base = hyperdrive.calc_max_long(wallet.balance.amount, pool_state)
