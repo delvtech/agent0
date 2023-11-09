@@ -381,11 +381,6 @@ async def _async_send_transaction_and_wait_for_receipt(
         raise UnknownBlockError("Receipt did not return status", f"{block_number=}")
     if status == 0:
         raise UnknownBlockError("Receipt has status of 0", f"{block_number=}", f"{tx_receipt=}")
-    logs = tx_receipt.get("logs", None)
-    if logs is None:
-        raise UnknownBlockError("Receipt did not return logs", f"{block_number=}")
-    if len(logs) == 0:
-        raise UnknownBlockError("Logs have a length of 0", f"{block_number=}", f"{tx_receipt=}")
     return tx_receipt
 
 
@@ -513,11 +508,6 @@ def _send_transaction_and_wait_for_receipt(unsent_txn: TxParams, signer: LocalAc
         raise UnknownBlockError("Receipt did not return status", f"{block_number=}")
     if status == 0:
         raise UnknownBlockError("Receipt has status of 0", f"{block_number=}", f"{tx_receipt=}")
-    logs = tx_receipt.get("logs", None)
-    if logs is None:
-        raise UnknownBlockError("Receipt did not return logs", f"{block_number=}")
-    if len(logs) == 0:
-        raise UnknownBlockError("Logs have a length of 0", f"{block_number=}", f"{tx_receipt=}")
     return tx_receipt
 
 
