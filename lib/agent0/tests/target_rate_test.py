@@ -17,12 +17,11 @@ from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.api.api import HyperdriveInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
-from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
 
 @pytest.mark.parametrize("delta", [-1e5, 1e5])
-def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, db_session: Session, db_api: str, delta: float):
+def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, delta: float):
     """Ensure bot can hit target rate."""
     warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
     # Run this test with develop mode on
@@ -47,7 +46,6 @@ def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, db_sessi
     eth_config = EthConfig(
         # Artifacts_uri isn't used here, as we explicitly set addresses and passed to run_bots
         artifacts_uri="not_used",
-        database_api_uri=db_api,
         rpc_uri=rpc_uri,
         # Using default abi dir
     )
@@ -72,6 +70,7 @@ def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, db_sessi
         account_key_config=build_account_key_config_from_agent_config(agent_config, random_seed=1),
         eth_config=eth_config,
         contract_addresses=hyperdrive_contract_addresses,
+        load_wallet_state=False,
     )
 
     # One arb bot to hit the variable rate
@@ -95,6 +94,7 @@ def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, db_sessi
         account_key_config=build_account_key_config_from_agent_config(agent_config, random_seed=2),
         eth_config=eth_config,
         contract_addresses=hyperdrive_contract_addresses,
+        load_wallet_state=False,
     )
 
     hyperdrive = HyperdriveInterface(eth_config=eth_config, addresses=hyperdrive_contract_addresses)
