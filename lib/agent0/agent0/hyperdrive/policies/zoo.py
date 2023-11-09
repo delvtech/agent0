@@ -7,6 +7,7 @@ from .arbitrage import Arbitrage
 from .lpandarb import LPandArb
 from .random import Random
 from .smart_long import SmartLong
+from .deterministic import Deterministic
 
 
 # Container for all the policies
@@ -17,6 +18,7 @@ class Zoo(NamedTuple):
     arbitrage = Arbitrage
     smart_long = SmartLong
     lp_and_arb = LPandArb
+    deterministic = Deterministic
 
     def describe(self, policies: list | str | None = None) -> str:
         """Describe policies, either specific ones provided, or all of them."""
