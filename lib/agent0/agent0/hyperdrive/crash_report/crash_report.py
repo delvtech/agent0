@@ -15,10 +15,10 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
-from elfpy.utils import logs
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
+from hyperlogs import logs
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import Web3
 from web3.datastructures import AttributeDict, MutableAttributeDict

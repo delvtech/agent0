@@ -8,7 +8,6 @@ import time
 
 from agent0.base.agents import EthAgent
 from agent0.base.config import EnvironmentConfig
-from elfpy.utils import logs
 from eth_account.account import Account
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import (
@@ -20,6 +19,7 @@ from ethpy.base import (
 )
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri, get_hyperdrive_pool_config
 from fixedpointmath import FixedPoint
+from hyperlogs import logs
 from web3.contract.contract import Contract
 
 # The portion of the checkpoint that the bot will wait before attempting to

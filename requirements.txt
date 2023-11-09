@@ -1,4 +1,4 @@
-# TODO Ordering might matter here for dependency resolution
+-e lib/hyperlogs[base]
 -e lib/elfpy[base]
 -e lib/agent0[base]
 -e lib/chainsync[base]
