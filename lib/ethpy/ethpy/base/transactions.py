@@ -147,10 +147,6 @@ def smart_contract_preview_transaction(
     else:
         function = contract.get_function_by_name(function_name_or_signature)(*fn_args, **fn_kwargs)
 
-    # We build the raw transaction here in case of error. Note that we don't call `build_transaction`
-    # since it adds the nonce to the transaction, and we ignore nonce in preview
-    raw_txn = function.build_transaction({"from": signer_address})
-
     # We define the function to check the exception to retry on
     # This is the error we get when preview fails due to anvil
     def retry_preview_check(exc: Exception) -> bool:
@@ -162,7 +158,13 @@ def smart_contract_preview_transaction(
     # This is the additional transaction argument passed into function.call
     # that may contain additional call arguments such as max_gas, nonce, etc.
     transaction_kwargs = {"from": signer_address}
+    raw_txn = {}
     try:
+        # We build the raw transaction here in case of error. Note that we don't call `build_transaction`
+        # since it adds the nonce to the transaction, and we ignore nonce in preview
+        # Build transactions can fail, so we put this here in the try/catch
+        raw_txn = function.build_transaction({"from": signer_address})
+
         return_values = retry_call(
             READ_RETRY_COUNT,
             retry_preview_check,
@@ -182,7 +184,7 @@ def smart_contract_preview_transaction(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
-            raw_txn=raw_txn,
+            raw_txn=dict(raw_txn),
             block_number=block_number,
         ) from err
     except Exception as err:
@@ -193,7 +195,7 @@ def smart_contract_preview_transaction(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
-            raw_txn=raw_txn,
+            raw_txn=dict(raw_txn),
             block_number=block_number,
         ) from err
 
