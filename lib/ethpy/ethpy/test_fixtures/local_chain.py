@@ -27,7 +27,7 @@ def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1"):
     str
         The local anvil chain URI.
     """
-    anvil_process = subprocess.Popen(
+    anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
         ["anvil", "--host", host, "--port", str(anvil_port), "--code-size-limit", "9999999999"]
     )
     time.sleep(3)  # Wait for anvil chain to initialize
@@ -49,13 +49,13 @@ def local_chain() -> Iterator[str]:
 
 
 @pytest.fixture(scope="function")
-def local_hyperdrive_pool(local_chain_uri: str) -> DeployedHyperdrivePool:
+def local_hyperdrive_pool(local_chain: str) -> DeployedHyperdrivePool:
     """Fixture representing a deployed local hyperdrive pool.
 
     Arguments
     ---------
-    local_chain_uri: str
-        The URI to chain to deploy on.
+    local_chain: str
+        Fixture representing a local anvil chain.
 
     Returns
     -------
@@ -75,7 +75,8 @@ def local_hyperdrive_pool(local_chain_uri: str) -> DeployedHyperdrivePool:
         base_token_contract : Contract
             web3.py contract instance for the base token contract
     """
-    return launch_local_hyperdrive_pool(local_chain_uri)
+    # pylint: disable=redefined-outer-name
+    return launch_local_hyperdrive_pool(local_chain)
 
 
 def launch_local_hyperdrive_pool(
