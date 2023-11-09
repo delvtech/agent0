@@ -16,6 +16,14 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+[project.optional-dependencies]
+# This flag installs all dependencies and should be ran when installing this subpackage in isolation
+with-dependencies = [
+    "hyperlogs[base, lateral]"
+]
+base = []
+lateral = []
+
 [build-system]
 requires = ["flit_core>=3.2"]
 build-backend = "flit_core.buildapi"

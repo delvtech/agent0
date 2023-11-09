@@ -31,6 +31,7 @@ base = [
 ]
 lateral = [
     # Lateral dependencies across subpackages are pointing to github
+    "hyperlogs[base] @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/hyperlogs",
     "elfpy[base] @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/elfpy",
     "ethpy[base] @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/ethpy",
     "chainsync[base] @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/chainsync",
