@@ -65,7 +65,7 @@ def main() -> None:
         block_time = 1
     else:
         block_time = int(block_time)
-    # Interval between blocks, passed in anvil through RPC call `anvil_setBlockTimestampInterval`
+    # Interval between blocks, passed in anvil through RPC `anvil_setBlockTimestampInterval`
     block_timestamp_interval = os.environ.get("BLOCK_TIMESTAMP_INTERVAL")
     if block_timestamp_interval is None:
         block_timestamp_interval = 1
