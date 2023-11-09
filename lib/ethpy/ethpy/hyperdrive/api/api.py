@@ -1,6 +1,6 @@
 """High-level interface for a Hyperdrive pool."""
 
-# TODO clean up this file
+# API file is a single class with lots of options
 # pylint: disable=too-many-lines
 
 from __future__ import annotations
