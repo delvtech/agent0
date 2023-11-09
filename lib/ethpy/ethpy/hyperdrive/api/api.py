@@ -1,4 +1,8 @@
 """High-level interface for a Hyperdrive pool."""
+
+# TODO clean up this file
+# pylint: disable=too-many-lines
+
 from __future__ import annotations
 
 import copy
