@@ -32,7 +32,7 @@ logging.getLogger("matplotlib").setLevel(logging.WARNING)
 logging.getLogger().setLevel(logging.DEBUG)
 
 
-@pytest.mark.parametrize("delta", [-1e6, 1e6])
+@pytest.mark.parametrize("delta", [-1e5, 1e5])
 def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, db_session: Session, db_api: str, delta: float):
     """Ensure bot can hit target rate."""
     warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
@@ -95,6 +95,8 @@ def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, db_sessi
             policy_config=Zoo.lp_and_arb.Config(
                 lp_portion=FixedPoint("0"),  # don't LP, just arb
                 done_on_empty=True,  # exit the bot if there are no trades
+                high_fixed_rate_thresh=FixedPoint(1e-6),
+                low_fixed_rate_thresh=FixedPoint(1e-6),
             ),
         ),
     ]
@@ -130,4 +132,7 @@ def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, db_sessi
     db_pool_info: pd.DataFrame = get_pool_info(db_session, coerce_float=False)
     db_analysis: pd.DataFrame = get_pool_analysis(db_session, coerce_float=False)
     logging.log(10, "fixed rate is %s", db_analysis["fixed_rate"].iloc[-1])
-    assert db_analysis["fixed_rate"].iloc[-1] - db_pool_info["variable_rate"].iloc[-1] < Decimal(1e-6)
+    logging.log(10, "variable rate is %s", db_pool_info["variable_rate"].iloc[-1])
+    abs_diff = abs(db_analysis["fixed_rate"].iloc[-1] - db_pool_info["variable_rate"].iloc[-1])
+    logging.log(10, "difference is %s", abs_diff)
+    assert abs_diff < Decimal(1e-6)
