@@ -6,7 +6,7 @@ e.g., new wallets being added.
 import logging
 
 from chainsync.db.base import add_addr_to_username, add_username_to_user, initialize_session
-from elfpy.utils import logs as log_utils
+from hyperlogs import logs as log_utils
 
 # Force row updates if key conflicts
 FORCE_UPDATE = False

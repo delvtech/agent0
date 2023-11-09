@@ -7,7 +7,6 @@ import os
 
 from agent0 import AccountKeyConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
-from elfpy.utils import logs as log_utils
 from eth_account.account import Account
 from ethpy import EthConfig
 from ethpy.base import (
@@ -20,6 +19,7 @@ from ethpy.base import (
     smart_contract_read,
 )
 from ethpy.hyperdrive import HyperdriveAddresses
+from hyperlogs import logs as log_utils
 from web3.types import Nonce, TxReceipt
 
 RETRY_COUNT = 5
