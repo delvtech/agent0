@@ -8,20 +8,13 @@ import subprocess
 from collections import OrderedDict
 from dataclasses import asdict
 from datetime import datetime, timezone
-from enum import Enum
-from traceback import format_tb
-from types import TracebackType
 from typing import TYPE_CHECKING, Any
 
-import numpy as np
 from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
-from hexbytes import HexBytes
-from hyperlogs import logs
-from numpy.random._generator import Generator as NumpyGenerator
+from hyperlogs import ExtendedJSONEncoder, logs
 from web3 import Web3
-from web3.datastructures import AttributeDict, MutableAttributeDict
 from web3.types import RPCEndpoint
 
 if TYPE_CHECKING:
@@ -29,47 +22,6 @@ if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
     from agent0.hyperdrive.state import HyperdriveMarketAction
     from ethpy.hyperdrive.api import HyperdriveInterface
-
-
-class ExtendedJSONEncoder(json.JSONEncoder):
-    r"""Custom encoder for JSON string dumps"""
-
-    # pylint: disable=too-many-return-statements
-    # pylint: disable=too-many-branches
-    def default(self, o):
-        r"""Override default behavior"""
-        if isinstance(o, set):
-            return list(o)
-        if isinstance(o, HexBytes):
-            return o.hex()
-        if isinstance(o, (AttributeDict, MutableAttributeDict)):
-            return dict(o)
-        if isinstance(o, np.integer):
-            return int(o)
-        if isinstance(o, np.floating):
-            return float(o)
-        if isinstance(o, np.ndarray):
-            return o.tolist()
-        if isinstance(o, FixedPoint):
-            return str(o)
-        if isinstance(o, NumpyGenerator):
-            return "NumpyGenerator"
-        if isinstance(o, datetime):
-            return str(o)
-        if isinstance(o, TracebackType):
-            return format_tb(o)
-        if isinstance(o, BaseException):
-            return repr(o)
-        if isinstance(o, Enum):
-            return o.name
-        if isinstance(o, bytes):
-            return str(o)
-        try:
-            return o.__dict__
-        except AttributeError:
-            pass
-        # Let the base class default method raise the TypeError
-        return json.JSONEncoder.default(self, o)
 
 
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:

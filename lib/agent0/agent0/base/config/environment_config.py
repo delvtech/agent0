@@ -5,8 +5,7 @@ import json
 from dataclasses import dataclass
 
 from agent0.base import FrozenClass, freezable
-from elfpy import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES
-from elfpy.utils import json as output_utils
+from hyperlogs import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, ExtendedJSONEncoder
 
 DEFAULT_USERNAME = "changeme"
 
@@ -54,7 +53,7 @@ class EnvironmentConfig(FrozenClass):
 
     def __str__(self) -> str:
         # cls arg tells json how to handle numpy objects and nested dataclasses
-        return json.dumps(self.__dict__, sort_keys=True, indent=2, cls=output_utils.ExtendedJSONEncoder)
+        return json.dumps(self.__dict__, sort_keys=True, indent=2, cls=ExtendedJSONEncoder)
 
     def copy(self) -> EnvironmentConfig:
         """Returns a new copy of self"""
@@ -69,4 +68,4 @@ class EnvironmentConfig(FrozenClass):
     def save_as_json(self, json_file_location: str) -> None:
         """Save configuration settings in JSON format"""
         with open(json_file_location, mode="w", encoding="UTF-8") as file:
-            json.dump(self.__dict__, file, sort_keys=True, indent=2, cls=output_utils.ExtendedJSONEncoder)
+            json.dump(self.__dict__, file, sort_keys=True, indent=2, cls=ExtendedJSONEncoder)
