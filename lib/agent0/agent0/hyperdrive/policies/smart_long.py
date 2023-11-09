@@ -4,9 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from agent0.base import MarketType, Trade
+from agent0.base import WEI, MarketType, Trade
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
-from elfpy import WEI
 from fixedpointmath import FixedPoint, FixedPointMath
 
 from .hyperdrive_policy import HyperdrivePolicy

@@ -8,6 +8,10 @@ from typing import Any, Generic, TypeVar
 
 from fixedpointmath import FixedPoint
 
+# This is the minimum allowed value to be passed into calculations to avoid
+# problems with sign flips that occur when the floating point range is exceeded.
+WEI = FixedPoint(scaled_value=1)  # smallest denomination of ether
+
 
 class FrozenClass:
     """Config object with frozen attributes"""

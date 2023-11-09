@@ -3,13 +3,40 @@ from __future__ import annotations
 
 import copy
 import logging
+from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
 from agent0.base import Quantity, TokenType, freezable
-from elfpy import check_non_zero
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
+
+
+def check_non_zero(data: Any) -> None:
+    r"""Performs a general non-zero check on a dictionary or class that has a __dict__ attribute.
+
+    Arguments
+    ---------
+    data : Any
+        The data to check for non-zero values.
+        If it is a FixedPoint then it will be checked.
+        If it is dict-like then each key/value in the dict will be checked.
+        Otherwise it will not be checked.
+    """
+    if isinstance(data, FixedPoint) and data < FixedPoint(0):
+        raise AssertionError(f"{data=} >= 0")
+    if hasattr(data, "__dict__"):  # can be converted to a dict
+        check_non_zero(data.__dict__)
+    if isinstance(data, (dict, defaultdict)):
+        for key, value in data.items():
+            if isinstance(value, FixedPoint) and value < FixedPoint(0):
+                raise AssertionError(f"{key} attribute with {value=} must be >= 0")
+            if isinstance(value, dict):
+                check_non_zero(value)
+            elif hasattr(value, "__dict__"):  # can be converted to a dict
+                check_non_zero(value.__dict__)
+            else:
+                continue  # noop; frozen, etc
 
 
 @freezable()
