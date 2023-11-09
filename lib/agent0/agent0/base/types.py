@@ -4,9 +4,13 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from dataclasses import asdict, dataclass, is_dataclass, replace
 from enum import Enum
 from functools import wraps
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from fixedpointmath import FixedPoint
+
+# This is the minimum allowed value to be passed into calculations to avoid
+# problems with sign flips that occur when the floating point range is exceeded.
+WEI = FixedPoint(scaled_value=1)  # smallest denomination of ether
 
 
 class FrozenClass:
@@ -115,3 +119,21 @@ class Quantity:
 
     def __neg__(self):
         return Quantity(amount=-self.amount, unit=self.unit)
+
+
+class MarketType(Enum):
+    r"""A type of market"""
+
+    HYPERDRIVE = "hyperdrive"
+    BORROW = "borrow"
+
+
+MarketAction = TypeVar("MarketAction")
+
+
+@dataclass
+class Trade(Generic[MarketAction]):
+    r"""A trade for a market"""
+
+    market_type: MarketType
+    market_action: MarketAction

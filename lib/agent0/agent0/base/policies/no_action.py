@@ -8,7 +8,7 @@ from fixedpointmath import FixedPoint
 from .base import BasePolicy, MarketInterface, Wallet
 
 if TYPE_CHECKING:
-    from elfpy.types import Trade
+    from agent0.base import Trade
     from numpy.random._generator import Generator as NumpyGenerator
 
 

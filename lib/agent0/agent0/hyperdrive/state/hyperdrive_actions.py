@@ -4,10 +4,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from fixedpointmath import FixedPoint
-
 from agent0.base import freezable
-from elfpy.markets.base import BaseMarketAction
+from agent0.base.state import BaseMarketAction
+from fixedpointmath import FixedPoint
 
 from .hyperdrive_wallet import HyperdriveWallet
 

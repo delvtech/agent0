@@ -4,11 +4,10 @@ from __future__ import annotations
 import logging
 from typing import TypeVar
 
-from agent0.base import Quantity, TokenType
+from agent0.base import MarketType, Quantity, TokenType, Trade
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
-from elfpy.types import MarketType, Trade
 from eth_account.signers.local import LocalAccount
 from ethpy.hyperdrive.api import HyperdriveInterface
 from hexbytes import HexBytes
@@ -27,40 +26,12 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         """Initialize an agent and wallet account
 
         Arguments
-        ----------
+        ---------
         account : LocalAccount
             A Web3 local account for storing addresses & signing transactions.
         policy : Policy
             Elfpy policy for producing agent actions.
             If None, then a policy that executes no actions is used.
-
-        Note
-        ----
-        If you wish for your private key to be generated, then you can do so with:
-
-        .. code-block:: python
-
-            >>> from eth_account.account import Account
-            >>> from elfpy.eth.accounts.eth_account import EthAgent
-            >>> agent = EthAgent(Account().create("CHECKPOINT_BOT"))
-
-        Alternatively, you can also use the Account api to provide a pre-generated key:
-
-        .. code-block:: python
-
-            >>> from eth_account.account import Account
-            >>> from elfpy.eth.accounts.eth_account import EthAgent
-            >>> agent = EthAgent(Account().from_key(agent_private_key))
-
-        The EthAgent has the same properties as a Web3 LocalAgent.
-        For example, you can get public and private keys as well as the address:
-
-            .. code-block:: python
-
-                >>> address = agent.address
-                >>> checksum_address = agent.checksum_address
-                >>> public_key = agent.key
-                >>> private_key = bytes(agent)
 
         """
         super().__init__(account, policy)

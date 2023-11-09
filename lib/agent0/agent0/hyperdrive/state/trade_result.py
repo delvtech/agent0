@@ -7,9 +7,9 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from agent0.base import Trade
     from agent0.hyperdrive.agents import HyperdriveAgent
     from agent0.hyperdrive.state import HyperdriveMarketAction
-    from elfpy import types
 
 
 class TradeStatus(Enum):
@@ -48,7 +48,7 @@ class TradeResult:
 
     status: TradeStatus
     agent: HyperdriveAgent
-    trade_object: types.Trade[HyperdriveMarketAction]
+    trade_object: Trade[HyperdriveMarketAction]
     contract_call: dict[str, Any] | None = None
     # Optional fields for crash reporting
     # These fields are typically set as human readable versions

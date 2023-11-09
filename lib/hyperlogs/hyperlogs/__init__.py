@@ -2,6 +2,8 @@
 
 import logging
 
+from .json_encoder import ExtendedJSONEncoder
+
 # Setup barebones logging without a handler for users to adapt to their needs.
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 

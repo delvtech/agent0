@@ -10,8 +10,8 @@ from fixedpointmath import FixedPoint
 from numpy.random import default_rng
 
 if TYPE_CHECKING:
+    from agent0.base import Trade
     from agent0.base.state import EthWallet
-    from elfpy.types import Trade
     from numpy.random._generator import Generator as NumpyGenerator
 
 Wallet = TypeVar("Wallet", bound="EthWallet")
