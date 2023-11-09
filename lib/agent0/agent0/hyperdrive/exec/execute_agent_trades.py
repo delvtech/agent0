@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, NoReturn
 
-from agent0.base import Quantity, TokenType
+from agent0.base import Quantity, TokenType, Trade
 from agent0.hyperdrive.crash_report import build_crash_trade_result
 from agent0.hyperdrive.state import (
     HyperdriveActionType,
@@ -15,7 +15,6 @@ from agent0.hyperdrive.state import (
     TradeResult,
     TradeStatus,
 )
-from elfpy import types
 from ethpy.base import retry_call
 from ethpy.hyperdrive.api import HyperdriveInterface
 from web3.types import Nonce
@@ -56,9 +55,9 @@ async def async_execute_single_agent_trade(
         TradeResult handles any information about the trade, as well as any errors that the trade resulted in
     """
     if liquidate:
-        trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_liquidation_trades()
+        trades: list[Trade[HyperdriveMarketAction]] = agent.get_liquidation_trades()
     else:
-        trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(hyperdrive=hyperdrive)
+        trades: list[Trade[HyperdriveMarketAction]] = agent.get_trades(hyperdrive=hyperdrive)
 
     # Make trades async for this agent. This way, an agent can submit multiple trades for a single block
     # To do this, we need to manually set the nonce, so we get the base transaction count here
@@ -142,7 +141,7 @@ async def async_execute_agent_trades(
 async def async_match_contract_call_to_trade(
     agent: HyperdriveAgent,
     hyperdrive: HyperdriveInterface,
-    trade_envelope: types.Trade[HyperdriveMarketAction],
+    trade_envelope: Trade[HyperdriveMarketAction],
     nonce: Nonce,
 ) -> HyperdriveWalletDeltas:
     """Match statement that executes the smart contract trade based on the provided type.

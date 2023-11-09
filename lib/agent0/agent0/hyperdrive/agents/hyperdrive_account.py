@@ -4,11 +4,10 @@ from __future__ import annotations
 import logging
 from typing import TypeVar
 
-from agent0.base import Quantity, TokenType
+from agent0.base import MarketType, Quantity, TokenType, Trade
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
-from elfpy.types import MarketType, Trade
 from eth_account.signers.local import LocalAccount
 from ethpy.hyperdrive.api import HyperdriveInterface
 from hexbytes import HexBytes

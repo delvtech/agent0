@@ -25,9 +25,9 @@ from web3.datastructures import AttributeDict, MutableAttributeDict
 from web3.types import RPCEndpoint
 
 if TYPE_CHECKING:
+    from agent0.base import Trade
     from agent0.hyperdrive.agents import HyperdriveAgent
     from agent0.hyperdrive.state import HyperdriveMarketAction
-    from elfpy import types
     from ethpy.hyperdrive.api import HyperdriveInterface
 
 
@@ -95,7 +95,7 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
 def build_crash_trade_result(
     exception: BaseException,
     agent: HyperdriveAgent,
-    trade_object: types.Trade[HyperdriveMarketAction],
+    trade_object: Trade[HyperdriveMarketAction],
     hyperdrive: HyperdriveInterface,
 ) -> TradeResult:
     """Build the trade result object when a crash happens.
@@ -106,7 +106,7 @@ def build_crash_trade_result(
         The exception that was thrown
     agent : HyperdriveAgent
         Object containing a wallet address and Elfpy Agent for determining trades
-    trade_object : types.Trade[HyperdriveMarketAction]
+    trade_object : Trade[HyperdriveMarketAction]
         A trade provided by a HyperdriveAgent
     hyperdrive : HyperdriveInterface
         An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
@@ -330,12 +330,12 @@ def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
     }
 
 
-def _hyperdrive_trade_obj_to_dict(trade_obj: types.Trade[HyperdriveMarketAction]) -> dict[str, Any]:
+def _hyperdrive_trade_obj_to_dict(trade_obj: Trade[HyperdriveMarketAction]) -> dict[str, Any]:
     """Helper function to convert hyperdrive trade object to a dict
 
     Arguments
     ---------
-    trade_obj: types.Trade[HyperdriveMarketAction]
+    trade_obj: Trade[HyperdriveMarketAction]
         The trade object to convert
 
     Returns
