@@ -6,51 +6,88 @@ import time
 from typing import Iterator
 
 import pytest
-from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig
+
+from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
+
+
+def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1"):
+    """Launch a local anvil chain.
+
+    Arguments
+    ---------
+    anvil_port : int
+        Port number for the anvil chain.
+    host : str
+        Host address.
+
+    Yields
+    ------
+    str
+        The local anvil chain URI.
+    """
+    anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
+        ["anvil", "--host", host, "--port", str(anvil_port), "--code-size-limit", "9999999999"]
+    )
+    time.sleep(3)  # Wait for anvil chain to initialize
+
+    yield f"http://{host}:{anvil_port}"
+    anvil_process.kill()  # Kill anvil process at end
 
 
 @pytest.fixture(scope="function")
 def local_chain() -> Iterator[str]:
-    """Launch a local anvil chain for testing and kill the anvil chain after.
+    """Fixture representing a local anvil chain.
 
-    Returns
-    -------
-    Iterator[str]
-        Yields the local anvil chain URI
+    Yields
+    ------
+    str
+        The local anvil chain URI.
     """
-    anvil_port = 9999
-    host = "127.0.0.1"  # localhost
-
-    # Assuming anvil command is accessible in path
-    # running into issue with contract size without --code-size-limit arg
-
-    # Using context manager here seems to make CI hang, so explicitly killing process at the end of yield
-    # pylint: disable=consider-using-with
-    anvil_process = subprocess.Popen(
-        ["anvil", "--host", "127.0.0.1", "--port", str(anvil_port), "--code-size-limit", "9999999999"]
-    )
-
-    local_chain_ = "http://" + host + ":" + str(anvil_port)
-
-    # TODO Hack, wait for anvil chain to initialize
-    time.sleep(3)
-
-    yield local_chain_
-
-    # Kill anvil process at end
-    anvil_process.kill()
+    yield from launch_local_chain()
 
 
 @pytest.fixture(scope="function")
-def local_hyperdrive_pool(local_chain: str) -> DeployedHyperdrivePool:  # pylint: disable=redefined-outer-name
-    """Initializes hyperdrive on a local anvil chain for testing.
+def local_hyperdrive_pool(local_chain: str) -> DeployedHyperdrivePool:
+    """Fixture representing a deployed local hyperdrive pool.
 
     Arguments
     ---------
     local_chain: str
-        The `local_chain` test fixture that binds to the local anvil chain rpc URI
+        Fixture representing a local anvil chain.
+
+    Returns
+    -------
+    LocalHyperdriveChain
+        A tuple with the following key - value fields:
+
+        web3: Web3
+            web3 provider object
+        deploy_account: LocalAccount
+            The local account that deploys and initializes hyperdrive
+        hyperdrive_contract_addresses: HyperdriveAddresses
+            The hyperdrive contract addresses
+        hyperdrive_contract : Contract
+            web3.py contract instance for the hyperdrive contract
+        hyperdrive_factory_contract : Contract
+            web3.py contract instance for the hyperdrive factory contract
+        base_token_contract : Contract
+            web3.py contract instance for the base token contract
+    """
+    # pylint: disable=redefined-outer-name
+    return launch_local_hyperdrive_pool(local_chain)
+
+
+def launch_local_hyperdrive_pool(
+    local_chain_uri: str,
+) -> DeployedHyperdrivePool:  # pylint: disable=redefined-outer-name
+    """Initialize hyperdrive on a local chain for testing.
+
+    Arguments
+    ---------
+    local_chain_uri: str
+        The URI to chain to deploy on.
 
     Returns
     -------
@@ -115,7 +152,7 @@ def local_hyperdrive_pool(local_chain: str) -> DeployedHyperdrivePool:  # pylint
         update_gap,
     )
     return deploy_hyperdrive_from_factory(
-        local_chain,
+        local_chain_uri,
         abi_folder,
         deployer_private_key,
         initial_liquidity,
