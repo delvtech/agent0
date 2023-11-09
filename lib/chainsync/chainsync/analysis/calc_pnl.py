@@ -12,9 +12,7 @@ from fixedpointmath import FixedPoint
 from web3.contract.contract import Contract
 
 
-def calc_single_closeout(
-    position: pd.Series, contract: Contract, pool_info: pd.DataFrame, min_output: int, as_underlying: bool
-) -> Decimal:
+def calc_single_closeout(position: pd.Series, contract: Contract, pool_info: pd.DataFrame, min_output: int) -> Decimal:
     """Calculate the closeout pnl for a single position.
 
     Arguments
@@ -58,7 +56,16 @@ def calc_single_closeout(
     out_pnl = Decimal("nan")
 
     if tokentype == "LONG":
-        fn_args = (maturity, amount, min_output, address, as_underlying)
+        fn_args = (
+            maturity,
+            amount,
+            min_output,
+            (  # IHyperdrive.Options
+                address,  # destination
+                True,  # asBase
+                bytes(0),  # extraData
+            ),
+        )
         try:
             preview_result = smart_contract_preview_transaction(
                 contract, sender, "closeLong", *fn_args, block_number=position["block_number"]
@@ -68,7 +75,16 @@ def calc_single_closeout(
             logging.warning("Exception caught, ignoring: %s", exception)
 
     elif tokentype == "SHORT":
-        fn_args = (maturity, amount, min_output, address, as_underlying)
+        fn_args = (
+            maturity,
+            amount,
+            min_output,
+            (  # IHyperdrive.Options
+                address,  # destination
+                True,  # asBase
+                bytes(0),  # extraData
+            ),
+        )
         try:
             preview_result = smart_contract_preview_transaction(
                 contract, sender, "closeShort", *fn_args, block_number=position["block_number"]
@@ -78,7 +94,15 @@ def calc_single_closeout(
             logging.warning("Exception caught, ignoring: %s", exception)
 
     elif tokentype == "LP":
-        fn_args = (amount, min_output, address, as_underlying)
+        fn_args = (
+            amount,
+            min_output,
+            (  # IHyperdrive.Options
+                address,  # destination
+                True,  # asBase
+                bytes(0),  # extraData
+            ),
+        )
         # If this fails, keep as nan and continue iterating
         try:
             preview_result = smart_contract_preview_transaction(
@@ -93,7 +117,15 @@ def calc_single_closeout(
             logging.warning("Exception caught, ignoring: %s", exception)
 
     elif tokentype == "WITHDRAWAL_SHARE":
-        fn_args = (amount, min_output, address, as_underlying)
+        fn_args = (
+            amount,
+            min_output,
+            (  # IHyperdrive.Options
+                address,  # destination
+                True,  # asBase
+                bytes(0),  # extraData
+            ),
+        )
         try:
             # For PNL, we assume all withdrawal shares are redeemable
             # even if there are no withdrawal shares available to withdraw
@@ -133,7 +165,6 @@ def calc_closeout_pnl(
         contract=hyperdrive_contract,
         pool_info=pool_info,
         min_output=0,
-        as_underlying=True,
         axis=1,
     )
 

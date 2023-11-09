@@ -308,7 +308,14 @@ class TestBotToDb:
                 lp_delta = lp_delta_df.iloc[0]
                 base_delta = base_delta_df.iloc[0]
                 # 11111 base for...
-                assert base_delta["delta"] == -Decimal(11111)
+                # TODO there's a bug in Hyperdrive's emitted event for addLiquidity
+                # that introduces a rounding issue in the base amount spent for this
+                # Change this back to direct equality check when this gets fixed
+                # https://github.com/delvtech/elf-simulations/issues/1077
+
+                # assert base_delta["delta"] == -Decimal(11111)
+                assert abs(base_delta["delta"] - (-Decimal(11111))) < Decimal("1e-14")
+
                 # TODO check LP delta
                 # TODO check wallet info matches the deltas
                 # TODO check pool info after this tx

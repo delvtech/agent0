@@ -1,17 +1,24 @@
 """A web3.py Contract class for the MockERC4626 contract."""
+
 # contracts have PascalCase names
 # pylint: disable=invalid-name
+
 # contracts control how many attributes and arguments we have in generated code
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
+
 # we don't need else statement if the other conditionals all have return,
 # but it's easier to generate
 # pylint: disable=no-else-return
-from __future__ import annotations
 
-from typing import Any, cast
+# This file is bound to get very long depending on contract sizes.
+# pylint: disable=too-many-lines
+
+from __future__ import annotations
+from typing import cast
 
 from eth_typing import ChecksumAddress
+from web3.types import ABI
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 
@@ -261,6 +268,20 @@ class MockERC4626IsCapabilityPublicContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self, arg1: bytes) -> "MockERC4626IsCapabilityPublicContractFunction":
+        super().__call__()
+        return self
+
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
+
+class MockERC4626IsCompetitionModeContractFunction(ContractFunction):
+    """ContractFunction for the isCompetitionMode method."""
+
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    def __call__(self) -> "MockERC4626IsCompetitionModeContractFunction":
         super().__call__()
         return self
 
@@ -694,6 +715,8 @@ class MockERC4626ContractFunctions(ContractFunctions):
 
     isCapabilityPublic: MockERC4626IsCapabilityPublicContractFunction
 
+    isCompetitionMode: MockERC4626IsCompetitionModeContractFunction
+
     maxDeposit: MockERC4626MaxDepositContractFunction
 
     maxMint: MockERC4626MaxMintContractFunction
@@ -749,15 +772,794 @@ class MockERC4626ContractFunctions(ContractFunctions):
     withdraw: MockERC4626WithdrawContractFunction
 
 
+mockerc4626_abi: ABI = cast(
+    ABI,
+    [
+        {
+            "inputs": [
+                {
+                    "internalType": "contract ERC20Mintable",
+                    "name": "_asset",
+                    "type": "address",
+                },
+                {"internalType": "string", "name": "_name", "type": "string"},
+                {"internalType": "string", "name": "_symbol", "type": "string"},
+                {
+                    "internalType": "uint256",
+                    "name": "_initialRate",
+                    "type": "uint256",
+                },
+                {
+                    "internalType": "address",
+                    "name": "_admin",
+                    "type": "address",
+                },
+                {
+                    "internalType": "bool",
+                    "name": "_isCompetitionMode",
+                    "type": "bool",
+                },
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "owner",
+                    "type": "address",
+                },
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "spender",
+                    "type": "address",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256",
+                },
+            ],
+            "name": "Approval",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "user",
+                    "type": "address",
+                },
+                {
+                    "indexed": True,
+                    "internalType": "contract Authority",
+                    "name": "newAuthority",
+                    "type": "address",
+                },
+            ],
+            "name": "AuthorityUpdated",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "caller",
+                    "type": "address",
+                },
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "owner",
+                    "type": "address",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "uint256",
+                    "name": "assets",
+                    "type": "uint256",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "uint256",
+                    "name": "shares",
+                    "type": "uint256",
+                },
+            ],
+            "name": "Deposit",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "user",
+                    "type": "address",
+                },
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "newOwner",
+                    "type": "address",
+                },
+            ],
+            "name": "OwnershipTransferred",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "bytes4",
+                    "name": "functionSig",
+                    "type": "bytes4",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "bool",
+                    "name": "enabled",
+                    "type": "bool",
+                },
+            ],
+            "name": "PublicCapabilityUpdated",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "uint8",
+                    "name": "role",
+                    "type": "uint8",
+                },
+                {
+                    "indexed": True,
+                    "internalType": "bytes4",
+                    "name": "functionSig",
+                    "type": "bytes4",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "bool",
+                    "name": "enabled",
+                    "type": "bool",
+                },
+            ],
+            "name": "RoleCapabilityUpdated",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "target",
+                    "type": "address",
+                },
+                {
+                    "indexed": True,
+                    "internalType": "contract Authority",
+                    "name": "authority",
+                    "type": "address",
+                },
+            ],
+            "name": "TargetCustomAuthorityUpdated",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "from",
+                    "type": "address",
+                },
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "to",
+                    "type": "address",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256",
+                },
+            ],
+            "name": "Transfer",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "user",
+                    "type": "address",
+                },
+                {
+                    "indexed": True,
+                    "internalType": "uint8",
+                    "name": "role",
+                    "type": "uint8",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "bool",
+                    "name": "enabled",
+                    "type": "bool",
+                },
+            ],
+            "name": "UserRoleUpdated",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "caller",
+                    "type": "address",
+                },
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "receiver",
+                    "type": "address",
+                },
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "owner",
+                    "type": "address",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "uint256",
+                    "name": "assets",
+                    "type": "uint256",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "uint256",
+                    "name": "shares",
+                    "type": "uint256",
+                },
+            ],
+            "name": "Withdraw",
+            "type": "event",
+        },
+        {
+            "inputs": [],
+            "name": "DOMAIN_SEPARATOR",
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {"internalType": "address", "name": "", "type": "address"},
+                {"internalType": "address", "name": "", "type": "address"},
+            ],
+            "name": "allowance",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "spender",
+                    "type": "address",
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256",
+                },
+            ],
+            "name": "approve",
+            "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "asset",
+            "outputs": [
+                {
+                    "internalType": "contract ERC20",
+                    "name": "",
+                    "type": "address",
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "authority",
+            "outputs": [
+                {
+                    "internalType": "contract Authority",
+                    "name": "",
+                    "type": "address",
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "name": "balanceOf",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {"internalType": "address", "name": "user", "type": "address"},
+                {
+                    "internalType": "address",
+                    "name": "target",
+                    "type": "address",
+                },
+                {
+                    "internalType": "bytes4",
+                    "name": "functionSig",
+                    "type": "bytes4",
+                },
+            ],
+            "name": "canCall",
+            "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "uint256", "name": "shares", "type": "uint256"}],
+            "name": "convertToAssets",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "uint256", "name": "assets", "type": "uint256"}],
+            "name": "convertToShares",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "decimals",
+            "outputs": [{"internalType": "uint8", "name": "", "type": "uint8"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "_assets",
+                    "type": "uint256",
+                },
+                {
+                    "internalType": "address",
+                    "name": "_receiver",
+                    "type": "address",
+                },
+            ],
+            "name": "deposit",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {"internalType": "uint8", "name": "role", "type": "uint8"},
+                {
+                    "internalType": "bytes4",
+                    "name": "functionSig",
+                    "type": "bytes4",
+                },
+            ],
+            "name": "doesRoleHaveCapability",
+            "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {"internalType": "address", "name": "user", "type": "address"},
+                {"internalType": "uint8", "name": "role", "type": "uint8"},
+            ],
+            "name": "doesUserHaveRole",
+            "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "getRate",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "bytes4", "name": "", "type": "bytes4"}],
+            "name": "getRolesWithCapability",
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "name": "getTargetCustomAuthority",
+            "outputs": [
+                {
+                    "internalType": "contract Authority",
+                    "name": "",
+                    "type": "address",
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "name": "getUserRoles",
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "bytes4", "name": "", "type": "bytes4"}],
+            "name": "isCapabilityPublic",
+            "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "isCompetitionMode",
+            "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "name": "maxDeposit",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "name": "maxMint",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
+            "name": "maxRedeem",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
+            "name": "maxWithdraw",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "_shares",
+                    "type": "uint256",
+                },
+                {
+                    "internalType": "address",
+                    "name": "_receiver",
+                    "type": "address",
+                },
+            ],
+            "name": "mint",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "name",
+            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "name": "nonces",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "owner",
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {"internalType": "address", "name": "owner", "type": "address"},
+                {
+                    "internalType": "address",
+                    "name": "spender",
+                    "type": "address",
+                },
+                {"internalType": "uint256", "name": "value", "type": "uint256"},
+                {
+                    "internalType": "uint256",
+                    "name": "deadline",
+                    "type": "uint256",
+                },
+                {"internalType": "uint8", "name": "v", "type": "uint8"},
+                {"internalType": "bytes32", "name": "r", "type": "bytes32"},
+                {"internalType": "bytes32", "name": "s", "type": "bytes32"},
+            ],
+            "name": "permit",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "uint256", "name": "assets", "type": "uint256"}],
+            "name": "previewDeposit",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "uint256", "name": "shares", "type": "uint256"}],
+            "name": "previewMint",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "uint256", "name": "shares", "type": "uint256"}],
+            "name": "previewRedeem",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "uint256", "name": "assets", "type": "uint256"}],
+            "name": "previewWithdraw",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "_shares",
+                    "type": "uint256",
+                },
+                {
+                    "internalType": "address",
+                    "name": "_receiver",
+                    "type": "address",
+                },
+                {
+                    "internalType": "address",
+                    "name": "_owner",
+                    "type": "address",
+                },
+            ],
+            "name": "redeem",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "contract Authority",
+                    "name": "newAuthority",
+                    "type": "address",
+                }
+            ],
+            "name": "setAuthority",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "bytes4",
+                    "name": "functionSig",
+                    "type": "bytes4",
+                },
+                {"internalType": "bool", "name": "enabled", "type": "bool"},
+            ],
+            "name": "setPublicCapability",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [{"internalType": "uint256", "name": "_rate_", "type": "uint256"}],
+            "name": "setRate",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {"internalType": "uint8", "name": "role", "type": "uint8"},
+                {
+                    "internalType": "bytes4",
+                    "name": "functionSig",
+                    "type": "bytes4",
+                },
+                {"internalType": "bool", "name": "enabled", "type": "bool"},
+            ],
+            "name": "setRoleCapability",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "target",
+                    "type": "address",
+                },
+                {
+                    "internalType": "contract Authority",
+                    "name": "customAuthority",
+                    "type": "address",
+                },
+            ],
+            "name": "setTargetCustomAuthority",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {"internalType": "address", "name": "user", "type": "address"},
+                {"internalType": "uint8", "name": "role", "type": "uint8"},
+                {"internalType": "bool", "name": "enabled", "type": "bool"},
+            ],
+            "name": "setUserRole",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "symbol",
+            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "totalAssets",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "totalSupply",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {"internalType": "address", "name": "to", "type": "address"},
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256",
+                },
+            ],
+            "name": "transfer",
+            "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {"internalType": "address", "name": "from", "type": "address"},
+                {"internalType": "address", "name": "to", "type": "address"},
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256",
+                },
+            ],
+            "name": "transferFrom",
+            "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "newOwner",
+                    "type": "address",
+                }
+            ],
+            "name": "transferOwnership",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "_assets",
+                    "type": "uint256",
+                },
+                {
+                    "internalType": "address",
+                    "name": "_receiver",
+                    "type": "address",
+                },
+                {
+                    "internalType": "address",
+                    "name": "_owner",
+                    "type": "address",
+                },
+            ],
+            "name": "withdraw",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        },
+    ],
+)
+
+
 class MockERC4626Contract(Contract):
     """A web3.py Contract class for the MockERC4626 contract."""
 
-    def __init__(self, address: ChecksumAddress | None = None, abi=Any) -> None:
-        self.abi = abi  # type: ignore
-        # TODO: make this better, shouldn't initialize to the zero address, but the Contract's init
-        # function requires an address.
-        self.address = address if address else cast(ChecksumAddress, "0x0000000000000000000000000000000000000000")
+    abi: ABI = mockerc4626_abi
 
+    def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
