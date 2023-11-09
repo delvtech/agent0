@@ -219,6 +219,51 @@ def smart_contract_preview_transaction(
     return {f"value{idx}": value for idx, value in enumerate(return_values)}
 
 
+def wait_for_transaction_receipt(
+    web3: Web3, transaction_hash: HexBytes, timeout: float = 30, start_latency: float = 1, backoff: float = 2
+) -> TxReceipt:
+    """wait_for_transaction_receipt with exponential backoff
+    This function is copied from `web3.eth.wait_for_transaction_receipt`, but using exp backoff.
+
+    Arguments
+    ---------
+    web3: Web3
+        web3 provider object
+    transaction_hash: HexBytes
+        The hash of the transaction
+    timeout: float
+        The amount of time in seconds to time out the connection
+    poll_latency: float
+        The amount of time in seconds to wait between polls
+
+    Returns
+    -------
+    TxReceipt
+        The transaction receipt
+    """
+    try:
+        with Timeout(timeout) as _timeout:
+            poll_latency = start_latency + random.uniform(0, 1)
+            while True:
+                try:
+                    tx_receipt = web3.eth.get_transaction_receipt(transaction_hash)
+                except TransactionNotFound:
+                    tx_receipt = None
+                if tx_receipt is not None:
+                    break
+                _timeout.sleep(poll_latency)
+                # Exp backoff
+                poll_latency *= backoff
+                # Add random latency to avoid collisions
+                poll_latency += random.uniform(0, 1)
+        return tx_receipt
+
+    except Timeout as exc:
+        raise TimeExhausted(
+            f"Transaction {HexBytes(transaction_hash) !r} is not in the chain " f"after {timeout} seconds"
+        ) from exc
+
+
 async def async_wait_for_transaction_receipt(
     web3: Web3, transaction_hash: HexBytes, timeout: float = 30, start_latency: float = 1, backoff: float = 2
 ) -> TxReceipt:
@@ -455,7 +500,7 @@ def _send_transaction_and_wait_for_receipt(unsent_txn: TxParams, signer: LocalAc
     """
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    tx_receipt = wait_for_transaction_receipt(web3, tx_hash)
 
     # Error checking when transaction doesn't throw an error, but instead
     # has errors in the tx_receipt
@@ -754,6 +799,8 @@ def _contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> lis
         for output in function_outputs:
             return_names_and_types.append(_get_name_and_type_from_abi(output))
         return return_names_and_types
+    if len(function_outputs) == 0:  # No function arguments returned from preview
+        return None
     if (
         function_outputs[0].get("type") == "tuple" and function_outputs[0].get("components") is not None
     ):  # multiple named outputs were returned in a struct
