@@ -4,7 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from dataclasses import asdict, dataclass, is_dataclass, replace
 from enum import Enum
 from functools import wraps
-from typing import Any, Type
+from typing import Any
 
 from fixedpointmath import FixedPoint
 
@@ -30,10 +30,10 @@ class FrozenClass:
         return NotImplemented
 
 
-def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
+def freezable(frozen: bool = False, no_new_attribs: bool = False):
     r"""A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed"""
 
-    def decorator(cls: Type) -> Type:
+    def decorator(cls):
         # this decorator should only be placed atop a dataclass
         if not is_dataclass(cls):
             raise TypeError("The class must be a data class.")
