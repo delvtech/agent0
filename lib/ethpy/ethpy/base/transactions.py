@@ -233,8 +233,10 @@ def wait_for_transaction_receipt(
         The hash of the transaction
     timeout: float
         The amount of time in seconds to time out the connection
-    poll_latency: float
-        The amount of time in seconds to wait between polls
+    start_latency: float
+        The starting amount of time in seconds to wait between polls
+    backoff: float
+        The backoff factor for the exponential backoff
 
     Returns
     -------
@@ -279,8 +281,10 @@ async def async_wait_for_transaction_receipt(
         The hash of the transaction
     timeout: float
         The amount of time in seconds to time out the connection
-    poll_latency: float
-        The amount of time in seconds to wait between polls
+    start_latency: float
+        The starting amount of time in seconds to wait between polls
+    backoff: float
+        The backoff factor for the exponential backoff
 
     Returns
     -------
