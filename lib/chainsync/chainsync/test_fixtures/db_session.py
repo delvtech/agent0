@@ -28,10 +28,9 @@ def psql_docker() -> Iterator[PostgresConfig]:
     """
     # Attempt to use the default socket if it exists
     try:
-        client = docker.from_env()
         try:
-            client.ping()
-        except:  # pylint: disable=bare-except
+            client = docker.from_env()
+        except Exception:  # pylint: disable=broad-exception-caught
             home_dir = os.path.expanduser("~")
             socket_path = Path(f"{home_dir}") / ".docker" / "desktop" / "docker.sock"
             if socket_path.exists():
