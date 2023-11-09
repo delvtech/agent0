@@ -771,6 +771,8 @@ def _get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunction
 
 # TODO: add ability to parse function_signature as well
 def _contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list[tuple[str, str]] | None:
+    # TODO clean this function up
+    # pylint: disable=too-many-return-statements
     """Parse the function abi to get the name and type for each output"""
     function_abi = None
     # find the first function matching the function_name
