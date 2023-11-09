@@ -6,11 +6,11 @@ if [ $# -ne 1 ]; then
 fi
 
 # Docker image details
-image_name="elfpy"
+image_name="elfsims"
 tag=$1
 
 # Paths are relative to where the script was run from;
-# it is assumed to be run from the elfpy root
+# it is assumed to be run from the elf-sims root
 docker build --no-cache -f Dockerfile -t $image_name:$tag .
 
 echo "Docker image built and tagged as $image_name:$tag."

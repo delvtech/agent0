@@ -1,4 +1,4 @@
-"""Script for loading ETH & Elfpy agents with trading policies"""
+"""Script for loading agents with trading policies."""
 from __future__ import annotations
 
 import asyncio
@@ -48,7 +48,7 @@ def get_agent_accounts(
     Returns
     -------
     list[Agent]
-        A list of Agent objects that contain a wallet address and Elfpy Agent for determining trades
+        A list of Agent objects that contain a wallet address and Agent for determining trades
     """
     # TODO: raise issue on failure by looking at `rpc_response`, `tx_receipt` returned from function
     #   Do this for `set_anvil_account_balance`, `smart_contract_transact(mint)`, `smart_contract_transact(approve)`

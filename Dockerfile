@@ -10,7 +10,7 @@ WORKDIR /app
 # copy everything in elf-simulations
 COPY . ./
 
-# install elfpy in one step, adding build tools, then removing them
+# install packages in one step, adding build tools, then removing them
 # https://stackoverflow.com/questions/58300046/how-to-make-lightweight-docker-image-for-python-app-with-pipenv
 RUN apt-get update && \
   apt-get install -y --no-install-recommends gcc python3-dev libssl-dev git && \

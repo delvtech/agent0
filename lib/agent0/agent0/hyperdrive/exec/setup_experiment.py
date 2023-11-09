@@ -41,7 +41,7 @@ def setup_experiment(
     tuple[HyperdriveInterface, list[HyperdriveAgent]]
         A tuple containing:
             - The Hyperdrive interface API object
-            - A list of HyperdriveAgent objects that contain a wallet address and Elfpy Agent for determining trades
+            - A list of HyperdriveAgent objects that contain a wallet address and Agent for determining trades
     """
     # this random number generator should be used everywhere so that the experiment is repeatable
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point

@@ -57,7 +57,7 @@ def build_crash_trade_result(
     exception : Exception
         The exception that was thrown
     agent : HyperdriveAgent
-        Object containing a wallet address and Elfpy Agent for determining trades
+        Object containing a wallet address and Agent for determining trades
     trade_object : Trade[HyperdriveMarketAction]
         A trade provided by a HyperdriveAgent
     hyperdrive : HyperdriveInterface

@@ -15,7 +15,6 @@ This monorepo houses internal packages that are still under development. They ar
 - agent0 ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/agent0/README.md))
 - chainsync ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/chainsync/README.md))
 - ethpy ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/ethpy/README.md))
-- elfpy (**WILL BE DEPRECATED NOV 2023** [README](https://github.com/delvtech/elf-simulations/tree/main/lib/elfpy/README.md))
 
 We also utilize internal packages that are "in production," which is to say they live in their own repo:
 
@@ -76,7 +75,7 @@ If you want the integer scaled representation, which can be useful for communica
 Conversely, if you want to initialize a FixedPoint variable using the scaled integer representation, then you need to instantiate the variable using the `scaled_value` argument, e.g. `FixedPoint(scaled_value=8)`.
 In that example, the internal representation is `8`, so casting it to a float would produce a small value: `float(FixedPoint(scaled_value=8)) == 8e-18`.
 
-To understand more, we recommend that you study the fixed point tests and source implementation in `elfpy/math/`.
+To understand more, we recommend that you study the fixed point tests and source implementation in `delvtech/fixedpointmath/`.
 
 Warning! Using floating point as a constructor to FixedPoint can cause loss of precision. For example,
 
@@ -106,5 +105,5 @@ POSTGRES_PORT=5432
 The data script can be then ran using the following command:
 
 ```bash
-python elfpy/data/acquire_data.py
+python lib/chainsync/chainsync/exec/acquire_data.py
 ```

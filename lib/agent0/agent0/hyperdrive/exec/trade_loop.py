@@ -37,7 +37,7 @@ def trade_if_new_block(
     hyperdrive : HyperdriveInterface
         The Hyperdrive API interface object
     agent_accounts : list[HyperdriveAgent]]
-        A list of HyperdriveAgent objects that contain a wallet address and Elfpy Agent for determining trades
+        A list of HyperdriveAgent objects that contain a wallet address and Agent for determining trades
     halt_on_errors : bool
         If true, raise an exception if a trade reverts. Otherwise, log a warning and move on.
     halt_on_slippage: bool

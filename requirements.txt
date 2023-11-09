@@ -1,5 +1,4 @@
 -e lib/hyperlogs[base]
--e lib/elfpy[base]
 -e lib/agent0[base]
 -e lib/chainsync[base]
 -e lib/ethpy[base]

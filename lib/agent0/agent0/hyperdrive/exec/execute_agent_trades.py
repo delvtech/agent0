@@ -149,7 +149,7 @@ async def async_match_contract_call_to_trade(
     Arguments
     ---------
     agent : HyperdriveAgent
-        Object containing a wallet address and Elfpy Agent for determining trades
+        Object containing a wallet address and Agent for determining trades
     hyperdrive : HyperdriveInterface
         The Hyperdrive API interface object
     trade_object : Trade

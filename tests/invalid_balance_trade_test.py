@@ -6,11 +6,11 @@ import os
 from typing import TYPE_CHECKING, Type, cast
 
 from agent0 import build_account_key_config_from_agent_config
+from agent0.base import MarketType, Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
-from elfpy.types import MarketType, Trade
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base.errors import ContractCallException

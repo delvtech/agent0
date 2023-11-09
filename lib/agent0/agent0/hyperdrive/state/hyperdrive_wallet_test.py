@@ -3,7 +3,6 @@ from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 
-import elfpy.types as types
 from agent0.base import Quantity, TokenType
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
@@ -36,7 +35,7 @@ class TestWallet(unittest.TestCase):
             "90.0"
         ), f"{example_wallet.balance.amount=} should be 100-10=90."
         new_example_deltas = HyperdriveWalletDeltas(
-            balance=types.Quantity(amount=FixedPoint("-5.0"), unit=types.TokenType.BASE),
+            balance=Quantity(amount=FixedPoint("-5.0"), unit=TokenType.BASE),
             longs={FixedPoint(0): Long(FixedPoint("8.0"))},
         )
         example_wallet.update(new_example_deltas)
