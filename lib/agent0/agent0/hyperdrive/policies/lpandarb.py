@@ -8,17 +8,19 @@ from dataclasses import dataclass
 from statistics import mean
 from typing import TYPE_CHECKING
 
+from fixedpointmath import FixedPoint
+
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from elfpy.types import MarketType, Trade
-from fixedpointmath import FixedPoint
 
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.state import HyperdriveWallet
     from ethpy.hyperdrive import PoolConfig, PoolInfo
     from ethpy.hyperdrive.api import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
+
+    from agent0.hyperdrive.state import HyperdriveWallet
 
 # pylint: disable=too-many-arguments, too-many-locals
 
@@ -514,18 +516,21 @@ class LPandArb(HyperdrivePolicy):
 
         Attributes
         ----------
-        high_fixed_rate_thresh: FixedPoint
+        high_fixed_rate_thresh : FixedPoint
             Amount over variable rate to arbitrage.
-        low_fixed_rate_thresh: FixedPoint
-            Amount below variable rate to arbitrage
-        lp_portion: FixedPoint
-            The portion of capital assigned to LP
+        low_fixed_rate_thresh : FixedPoint
+            Amount below variable rate to arbitrage.
+        lp_portion : FixedPoint
+            The portion of capital assigned to LP.
+        done_on_empty : bool
+            Whether to exit the bot if there are no trades.
         """
 
         lp_portion: FixedPoint = FixedPoint("0.5")
         high_fixed_rate_thresh: FixedPoint = FixedPoint("0.01")
         low_fixed_rate_thresh: FixedPoint = FixedPoint("0.01")
         rate_slippage: FixedPoint = FixedPoint("0.01")
+        done_on_empty: bool = False
 
         @property
         def arb_portion(self) -> FixedPoint:
@@ -543,13 +548,13 @@ class LPandArb(HyperdrivePolicy):
 
         Arguments
         ---------
-        budget: FixedPoint
+        budget : FixedPoint
             The budget of this policy
-        rng: NumpyGenerator | None
+        rng : NumpyGenerator | None
             Random number generator
-        slippage_tolerance: FixedPoint | None
+        slippage_tolerance : FixedPoint | None
             Slippage tolerance of trades
-        policy_config: Config | None
+        policy_config : Config | None
             The custom arguments for this policy
         """
         # Defaults
@@ -588,7 +593,7 @@ class LPandArb(HyperdrivePolicy):
         action_list = []
 
         # Initial conditions, open LP position
-        if wallet.lp_tokens == FixedPoint(0):
+        if wallet.lp_tokens == FixedPoint(0) and self.lp_amount > FixedPoint(0):
             # Add liquidity
             action_list.append(
                 Trade(
@@ -746,4 +751,6 @@ class LPandArb(HyperdrivePolicy):
                     )
                 )
 
+        if self.policy_config.done_on_empty and len(action_list) == 0:
+            return [], True
         return action_list, False
