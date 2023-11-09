@@ -443,13 +443,20 @@ async def _async_redeem_withdraw_shares(
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
     current_block = cls.current_pool_state.block_number
-    _ = smart_contract_preview_transaction(
+    preview_result = smart_contract_preview_transaction(
         cls.hyperdrive_contract,
         agent_checksum_address,
         "redeemWithdrawalShares",
         *fn_args,
         block_number=current_block,
     )
+
+    # Here, a preview call of redeem withdrawal shares will still be successful without logs if
+    # the amount of shares to redeem is larger than what's in the wallet. We want to catch this error
+    # here with a useful error message, so we check that explicitly here
+    if preview_result["sharesRedeemed"] == 0 and trade_amount > 0:
+        raise ValueError("Preview call for redeem withdrawal shares returned 0 for non-zero input trade amount")
+
     try:
         tx_receipt = await async_smart_contract_transact(
             cls.web3,

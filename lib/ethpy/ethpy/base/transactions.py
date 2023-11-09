@@ -147,10 +147,6 @@ def smart_contract_preview_transaction(
     else:
         function = contract.get_function_by_name(function_name_or_signature)(*fn_args, **fn_kwargs)
 
-    # We build the raw transaction here in case of error. Note that we don't call `build_transaction`
-    # since it adds the nonce to the transaction, and we ignore nonce in preview
-    raw_txn = function.build_transaction({"from": signer_address})
-
     # We define the function to check the exception to retry on
     # This is the error we get when preview fails due to anvil
     def retry_preview_check(exc: Exception) -> bool:
@@ -162,7 +158,13 @@ def smart_contract_preview_transaction(
     # This is the additional transaction argument passed into function.call
     # that may contain additional call arguments such as max_gas, nonce, etc.
     transaction_kwargs = {"from": signer_address}
+    raw_txn = {}
     try:
+        # We build the raw transaction here in case of error. Note that we don't call `build_transaction`
+        # since it adds the nonce to the transaction, and we ignore nonce in preview
+        # Build transactions can fail, so we put this here in the try/catch
+        raw_txn = function.build_transaction({"from": signer_address})
+
         return_values = retry_call(
             READ_RETRY_COUNT,
             retry_preview_check,
@@ -182,7 +184,7 @@ def smart_contract_preview_transaction(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
-            raw_txn=raw_txn,
+            raw_txn=dict(raw_txn),
             block_number=block_number,
         ) from err
     except Exception as err:
@@ -193,7 +195,7 @@ def smart_contract_preview_transaction(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
-            raw_txn=raw_txn,
+            raw_txn=dict(raw_txn),
             block_number=block_number,
         ) from err
 
@@ -219,6 +221,53 @@ def smart_contract_preview_transaction(
     return {f"value{idx}": value for idx, value in enumerate(return_values)}
 
 
+def wait_for_transaction_receipt(
+    web3: Web3, transaction_hash: HexBytes, timeout: float = 30, start_latency: float = 1, backoff: float = 2
+) -> TxReceipt:
+    """wait_for_transaction_receipt with exponential backoff
+    This function is copied from `web3.eth.wait_for_transaction_receipt`, but using exp backoff.
+
+    Arguments
+    ---------
+    web3: Web3
+        web3 provider object
+    transaction_hash: HexBytes
+        The hash of the transaction
+    timeout: float
+        The amount of time in seconds to time out the connection
+    start_latency: float
+        The starting amount of time in seconds to wait between polls
+    backoff: float
+        The backoff factor for the exponential backoff
+
+    Returns
+    -------
+    TxReceipt
+        The transaction receipt
+    """
+    try:
+        with Timeout(timeout) as _timeout:
+            poll_latency = start_latency + random.uniform(0, 1)
+            while True:
+                try:
+                    tx_receipt = web3.eth.get_transaction_receipt(transaction_hash)
+                except TransactionNotFound:
+                    tx_receipt = None
+                if tx_receipt is not None:
+                    break
+                _timeout.sleep(poll_latency)
+                # Exp backoff
+                poll_latency *= backoff
+                # Add random latency to avoid collisions
+                poll_latency += random.uniform(0, 1)
+        return tx_receipt
+
+    except Timeout as exc:
+        raise TimeExhausted(
+            f"Transaction {HexBytes(transaction_hash) !r} is not in the chain " f"after {timeout} seconds"
+        ) from exc
+
+
 async def async_wait_for_transaction_receipt(
     web3: Web3, transaction_hash: HexBytes, timeout: float = 30, start_latency: float = 1, backoff: float = 2
 ) -> TxReceipt:
@@ -234,8 +283,10 @@ async def async_wait_for_transaction_receipt(
         The hash of the transaction
     timeout: float
         The amount of time in seconds to time out the connection
-    poll_latency: float
-        The amount of time in seconds to wait between polls
+    start_latency: float
+        The starting amount of time in seconds to wait between polls
+    backoff: float
+        The backoff factor for the exponential backoff
 
     Returns
     -------
@@ -336,11 +387,6 @@ async def _async_send_transaction_and_wait_for_receipt(
         raise UnknownBlockError("Receipt did not return status", f"{block_number=}")
     if status == 0:
         raise UnknownBlockError("Receipt has status of 0", f"{block_number=}", f"{tx_receipt=}")
-    logs = tx_receipt.get("logs", None)
-    if logs is None:
-        raise UnknownBlockError("Receipt did not return logs", f"{block_number=}")
-    if len(logs) == 0:
-        raise UnknownBlockError("Logs have a length of 0", f"{block_number=}", f"{tx_receipt=}")
     return tx_receipt
 
 
@@ -455,7 +501,7 @@ def _send_transaction_and_wait_for_receipt(unsent_txn: TxParams, signer: LocalAc
     """
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    tx_receipt = wait_for_transaction_receipt(web3, tx_hash)
 
     # Error checking when transaction doesn't throw an error, but instead
     # has errors in the tx_receipt
@@ -468,11 +514,6 @@ def _send_transaction_and_wait_for_receipt(unsent_txn: TxParams, signer: LocalAc
         raise UnknownBlockError("Receipt did not return status", f"{block_number=}")
     if status == 0:
         raise UnknownBlockError("Receipt has status of 0", f"{block_number=}", f"{tx_receipt=}")
-    logs = tx_receipt.get("logs", None)
-    if logs is None:
-        raise UnknownBlockError("Receipt did not return logs", f"{block_number=}")
-    if len(logs) == 0:
-        raise UnknownBlockError("Logs have a length of 0", f"{block_number=}", f"{tx_receipt=}")
     return tx_receipt
 
 
@@ -732,6 +773,8 @@ def _get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunction
 
 # TODO: add ability to parse function_signature as well
 def _contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list[tuple[str, str]] | None:
+    # TODO clean this function up
+    # pylint: disable=too-many-return-statements
     """Parse the function abi to get the name and type for each output"""
     function_abi = None
     # find the first function matching the function_name
@@ -754,6 +797,8 @@ def _contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> lis
         for output in function_outputs:
             return_names_and_types.append(_get_name_and_type_from_abi(output))
         return return_names_and_types
+    if len(function_outputs) == 0:  # No function arguments returned from preview
+        return None
     if (
         function_outputs[0].get("type") == "tuple" and function_outputs[0].get("components") is not None
     ):  # multiple named outputs were returned in a struct
