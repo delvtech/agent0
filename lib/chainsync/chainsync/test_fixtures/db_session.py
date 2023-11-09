@@ -8,13 +8,12 @@ from typing import Iterator
 
 import docker
 import pytest
+from chainsync import PostgresConfig
+from chainsync.db.base import Base, initialize_engine
 from docker.errors import DockerException
 from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
-
-from chainsync import PostgresConfig
-from chainsync.db.base import Base, initialize_engine
 
 
 @pytest.fixture(scope="session")
@@ -77,7 +76,10 @@ def psql_docker() -> Iterator[PostgresConfig]:
     yield postgres_config
 
     # Docker doesn't play nice with types
+    # Remove the container along with volume
     container.kill()  # type:ignore
+    # Prune volumes
+    client.volumes.prune()
 
 
 @pytest.fixture(scope="session")
