@@ -4,32 +4,21 @@ from __future__ import annotations
 import logging
 import os
 import warnings
-from decimal import Decimal
 from typing import cast
 
-import pandas as pd
 import pytest
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies.zoo import Zoo
-from chainsync.db.hyperdrive.interface import get_pool_analysis, get_pool_info
-from chainsync.exec import acquire_data, data_analysis
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
+from ethpy.hyperdrive.api.api import HyperdriveInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
-
-# To suppress only the MismatchedABI warnings
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.getLogger("web3").setLevel(logging.WARNING)
-logging.getLogger("asyncio").setLevel(logging.WARNING)
-logging.getLogger("PIL").setLevel(logging.WARNING)
-logging.getLogger("matplotlib").setLevel(logging.WARNING)
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 @pytest.mark.parametrize("delta", [-1e5, 1e5])
@@ -85,7 +74,7 @@ def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, db_sessi
         contract_addresses=hyperdrive_contract_addresses,
     )
 
-    # One deterministic bot to hit the variable rate
+    # One arb bot to hit the variable rate
     agent_config: list[AgentConfig] = [
         AgentConfig(
             policy=Zoo.lp_and_arb,
@@ -108,31 +97,11 @@ def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, db_sessi
         contract_addresses=hyperdrive_contract_addresses,
     )
 
-    # Run acquire data to get data from chain to db
-    acquire_data(
-        start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
-        eth_config=eth_config,
-        db_session=db_session,
-        contract_addresses=hyperdrive_contract_addresses,
-        # Exit the script after catching up to the chain
-        exit_on_catch_up=True,
-    )
-
-    # Run data analysis to calculate various analysis values
-    data_analysis(
-        start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
-        eth_config=eth_config,
-        db_session=db_session,
-        contract_addresses=hyperdrive_contract_addresses,
-        # Exit the script after catching up to the chain
-        exit_on_catch_up=True,
-    )
-
-    # Get pool config and pool info from the db, in exact decimal values.
-    db_pool_info: pd.DataFrame = get_pool_info(db_session, coerce_float=False)
-    db_analysis: pd.DataFrame = get_pool_analysis(db_session, coerce_float=False)
-    logging.log(10, "fixed rate is %s", db_analysis["fixed_rate"].iloc[-1])
-    logging.log(10, "variable rate is %s", db_pool_info["variable_rate"].iloc[-1])
-    abs_diff = abs(db_analysis["fixed_rate"].iloc[-1] - db_pool_info["variable_rate"].iloc[-1])
+    hyperdrive = HyperdriveInterface(eth_config=eth_config, addresses=hyperdrive_contract_addresses)
+    fixed_rate = hyperdrive.calc_fixed_rate()
+    variable_rate = hyperdrive.current_pool_state.variable_rate
+    logging.log(10, "fixed rate is %s", fixed_rate)
+    logging.log(10, "variable rate is %s", variable_rate)
+    abs_diff = abs(fixed_rate - variable_rate)
     logging.log(10, "difference is %s", abs_diff)
-    assert abs_diff < Decimal(1e-6)
+    assert abs_diff < FixedPoint(1e-6)
