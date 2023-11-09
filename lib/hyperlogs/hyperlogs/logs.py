@@ -46,7 +46,6 @@ def setup_logging(
         Whether to keep previous handlers. Defaults to False.
 
     .. todo::
-        - Fix the docstring
         - Test the various optional input combinations
     """
     # pylint: disable=too-many-arguments
@@ -112,20 +111,16 @@ def prepare_log_path(log_filename: str) -> tuple[str, str]:
             Name of the log file.
     """
     log_dir, log_name = os.path.split(log_filename)
-
     # Append ".log" extension if necessary
     if not log_name.endswith(".log"):
         log_name += ".log"
-
     # Use default log directory if log_dir is not provided
     if log_dir == "":
         base_folder = os.path.dirname(os.path.dirname(os.path.abspath(hyperlogs.__file__)))
         log_dir = os.path.join(base_folder, ".logging")
-
     # Create log directory if necessary
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-
     return log_dir, log_name
 
 
