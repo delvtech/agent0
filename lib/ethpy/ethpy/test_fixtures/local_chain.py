@@ -15,8 +15,8 @@ from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_fact
 def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1"):
     """Launch a local anvil chain.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     anvil_port : int
         Port number for the anvil chain.
     host : str
