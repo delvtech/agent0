@@ -20,31 +20,31 @@ class TestWallet(unittest.TestCase):
         )
         example_deltas = HyperdriveWalletDeltas(
             balance=Quantity(amount=FixedPoint("-10.0"), unit=TokenType.BASE),
-            longs={FixedPoint(0): Long(FixedPoint("15.0"))},
+            longs={0: Long(FixedPoint("15.0"))},
         )
         example_wallet.update(example_deltas)
-        assert id(example_wallet.longs[FixedPoint(0)]) != id(example_deltas.longs[FixedPoint(0)]), (
+        assert id(example_wallet.longs[0]) != id(example_deltas.longs[0]), (
             f"{example_wallet.longs=} should not hold a reference to {example_deltas.longs=},"
-            f"but have the same ids: {id(example_wallet.longs[FixedPoint(0)])=}, "
-            f"{id(example_deltas.longs[FixedPoint(0)])=}."
+            f"but have the same ids: {id(example_wallet.longs[0])=}, "
+            f"{id(example_deltas.longs[0])=}."
         )
-        assert example_wallet.longs[FixedPoint(0)].balance == FixedPoint(
+        assert example_wallet.longs[0].balance == FixedPoint(
             "15.0"
-        ), f"{example_wallet.longs[FixedPoint(0)].balance=} should equal the delta amount, 15."
+        ), f"{example_wallet.longs[0].balance=} should equal the delta amount, 15."
         assert example_wallet.balance.amount == FixedPoint(
             "90.0"
         ), f"{example_wallet.balance.amount=} should be 100-10=90."
         new_example_deltas = HyperdriveWalletDeltas(
             balance=Quantity(amount=FixedPoint("-5.0"), unit=TokenType.BASE),
-            longs={FixedPoint(0): Long(FixedPoint("8.0"))},
+            longs={0: Long(FixedPoint("8.0"))},
         )
         example_wallet.update(new_example_deltas)
-        assert example_wallet.longs[FixedPoint(0)].balance == FixedPoint(
+        assert example_wallet.longs[0].balance == FixedPoint(
             "23.0"
-        ), f"{example_wallet.longs[FixedPoint(0)].balance=} should equal 15+8=23."
+        ), f"{example_wallet.longs[0].balance=} should equal 15+8=23."
         assert example_wallet.balance.amount == FixedPoint(
             "85.0"
         ), f"{example_wallet.balance.amount=} should be 100-10-5=85."
-        assert example_deltas.longs[FixedPoint(0)].balance == FixedPoint(
+        assert example_deltas.longs[0].balance == FixedPoint(
             "15.0"
-        ), f"{example_deltas.longs[FixedPoint(0)].balance=} should be unchanged and equal 15."
+        ), f"{example_deltas.longs[0].balance=} should be unchanged and equal 15."
