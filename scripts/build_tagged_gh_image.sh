@@ -10,7 +10,7 @@ repo_owner="delvtech"
 repo_name="elf-simulations"
 
 # Docker image details
-image_name="elfpy"
+image_name="elfsims"
 tag=$1
 
 docker build --no-cache -t $image_name:$tag https://github.com/$repo_owner/$repo_name.git#$tag

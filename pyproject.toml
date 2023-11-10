@@ -19,7 +19,6 @@ authors = [
 minversion = "6.0"
 addopts = ["--tb=short"]
 norecursedirs = ".git examples hyperdrive_solidity"
-# TODO remove test_*.py, which is only used by elfpy
 python_files = "*_test.py test_*.py"
 
 

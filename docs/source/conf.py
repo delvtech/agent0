@@ -16,9 +16,9 @@ import requests
 import tomli
 
 # list all packages
-packages = ["agent0", "chainsync", "elfpy", "ethpy"]
+packages = ["agent0", "chainsync", "ethpy"]
 
-# indicate where the elfpy Python package lives
+# indicate where the Python packages lives
 package_root = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 sys.path.insert(0, os.path.abspath("."))
 for package in packages:

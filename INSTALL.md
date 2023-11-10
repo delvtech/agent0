@@ -68,7 +68,7 @@ pip install agent0[lateral] # Installs dependent sub-packages from git (e.g., et
 # Working with smart contracts
 
 We run tests and offer utilities that depend on executing bytecode compiled from Hyperdrive solidity contracts.
-This is not required to use elfpy.
+This is not required to use the elf-simulations libraries.
 
 NOTE: The Hyperdrive solidity implementation is currently under security review, and thus is not available publicly.
 The following instructions will not work for anyone who is not a member of Delv.

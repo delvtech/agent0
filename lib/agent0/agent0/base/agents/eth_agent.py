@@ -27,7 +27,7 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
         account : LocalAccount
             A Web3 local account for storing addresses & signing transactions.
         policy : Policy
-            Elfpy policy for producing agent actions.
+            Policy for producing agent actions.
             If None, then a policy that executes no actions is used.
 
         Note
