@@ -34,7 +34,7 @@ jobs:
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
 
       - name: run black
-        run: python -m black --check --diff .
+        run: python -m black --config pyproject.toml --check --diff .
 
       - name: get all Python files
         id: list_files
