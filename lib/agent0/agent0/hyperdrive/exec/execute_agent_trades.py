@@ -15,8 +15,9 @@ from agent0.hyperdrive.state import (
     TradeResult,
     TradeStatus,
 )
-from ethpy.base import retry_call
+from ethpy.base import retry_call, smart_contract_read
 from ethpy.hyperdrive.api import HyperdriveInterface
+from fixedpointmath import FixedPoint
 from web3.types import Nonce
 
 if TYPE_CHECKING:
@@ -102,6 +103,18 @@ async def async_execute_single_agent_trade(
             # TODO: use match statement and assert_never(result)
             raise AssertionError("invalid result type")
         trade_results.append(trade_result)
+
+    # For debugging, check the agent wallet's base against what's on the chain
+    # There may be a race condition here, may need to do this asap after the calls succeeds
+    # Ignoring for now as we're testing in slow "12 seconds per block" mode
+    # TODO wrap this check in a debug flag
+    base_from_agent_wallet = agent.wallet.balance.amount
+    base_amount: dict[str, int] = smart_contract_read(
+        hyperdrive.base_token_contract, "balanceOf", agent.checksum_address
+    )
+    assert "value" in base_amount
+    base_from_chain = FixedPoint(scaled_value=base_amount["value"])
+    assert base_from_agent_wallet == base_from_chain
 
     return trade_results
 
