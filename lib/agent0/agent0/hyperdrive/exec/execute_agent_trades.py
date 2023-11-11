@@ -16,6 +16,7 @@ from agent0.hyperdrive.state import (
     TradeStatus,
 )
 from ethpy.base import retry_call, smart_contract_read
+from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from web3.types import Nonce
@@ -107,16 +108,69 @@ async def async_execute_single_agent_trade(
     # For debugging, check the agent wallet's base against what's on the chain
     # There may be a race condition here, may need to do this asap after the calls succeeds
     # Ignoring for now as we're testing in slow "12 seconds per block" mode
-    # TODO wrap this check in a debug flag
-    base_from_agent_wallet = agent.wallet.balance.amount
-    base_amount: dict[str, int] = smart_contract_read(
-        hyperdrive.base_token_contract, "balanceOf", agent.checksum_address
-    )
-    assert "value" in base_amount
-    base_from_chain = FixedPoint(scaled_value=base_amount["value"])
-    assert base_from_agent_wallet == base_from_chain
+    # TODO move this outside of this function to outer loop
+    # TODO wrap this check in a debug flag or put into a test
+    ensure_agent_wallet_is_correct(agent, hyperdrive)
 
     return trade_results
+
+
+def ensure_agent_wallet_is_correct(agent: HyperdriveAgent, hyperdrive: HyperdriveInterface) -> None:
+    """Function to check that the agent's wallet matches what's reported from the chain.
+    Will assert that balances match
+
+    Arguments
+    ---------
+    agent: HyperdriveAgent
+        The HyperdriveAgent to check
+    hyperdrive: HyperdriveInterface
+        The Hyperdrive API interface object
+    """
+    # Check base
+    base_from_chain = smart_contract_read(hyperdrive.base_token_contract, "balanceOf", agent.checksum_address)["value"]
+    assert agent.wallet.balance.amount == FixedPoint(scaled_value=base_from_chain)
+
+    # Check lp positions
+    asset_id = encode_asset_id(AssetIdPrefix.LP, 0)
+    lp_from_chain = smart_contract_read(
+        hyperdrive.hyperdrive_contract,
+        "balanceOf",
+        asset_id,
+        agent.checksum_address,
+    )["value"]
+    assert agent.wallet.lp_tokens == FixedPoint(scaled_value=lp_from_chain)
+
+    # Check withdrawal positions
+    asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
+    withdrawal_from_chain = smart_contract_read(
+        hyperdrive.hyperdrive_contract,
+        "balanceOf",
+        asset_id,
+        agent.checksum_address,
+    )["value"]
+    assert agent.wallet.withdraw_shares == FixedPoint(scaled_value=withdrawal_from_chain)
+
+    # Check long positions
+    for long_time, long_amount in agent.wallet.longs.items():
+        asset_id = encode_asset_id(AssetIdPrefix.LONG, long_time)
+        long_from_chain = smart_contract_read(
+            hyperdrive.hyperdrive_contract,
+            "balanceOf",
+            asset_id,
+            agent.checksum_address,
+        )["value"]
+        assert long_amount.balance == FixedPoint(scaled_value=long_from_chain)
+
+    # Check short positions
+    for short_time, short_amount in agent.wallet.shorts.items():
+        asset_id = encode_asset_id(AssetIdPrefix.SHORT, short_time)
+        short_from_chain = smart_contract_read(
+            hyperdrive.hyperdrive_contract,
+            "balanceOf",
+            asset_id,
+            agent.checksum_address,
+        )["value"]
+        assert short_amount.balance == FixedPoint(scaled_value=short_from_chain)
 
 
 async def async_execute_agent_trades(
