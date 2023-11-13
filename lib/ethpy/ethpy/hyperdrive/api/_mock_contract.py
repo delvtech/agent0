@@ -23,9 +23,12 @@ def _construct_pool_config(contract_pool_config: dict[str, Any]) -> PoolConfig:
     """
     return PoolConfig(
         baseToken=contract_pool_config["baseToken"],
+        linkerFactory=contract_pool_config["linkerFactory"],
+        linkerCodeHash=contract_pool_config["linkerCodeHash"],
         initialSharePrice=contract_pool_config["initialSharePrice"],
         minimumShareReserves=contract_pool_config["minimumShareReserves"],
         minimumTransactionAmount=contract_pool_config["minimumTransactionAmount"],
+        precisionThreshold=contract_pool_config["precisionThreshold"],
         positionDuration=contract_pool_config["positionDuration"],
         checkpointDuration=contract_pool_config["checkpointDuration"],
         timeStretch=contract_pool_config["timeStretch"],
@@ -36,8 +39,6 @@ def _construct_pool_config(contract_pool_config: dict[str, Any]) -> PoolConfig:
             flat=contract_pool_config["fees"][1],
             governance=contract_pool_config["fees"][2],
         ),
-        oracleSize=contract_pool_config["oracleSize"],
-        updateGap=contract_pool_config["updateGap"],
     )
 
 
