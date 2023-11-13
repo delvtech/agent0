@@ -260,21 +260,18 @@ def _deploy_hyperdrive_factory(
         abi=abis["ERC4626HyperdriveDeployer"],
         bytecode=bytecodes["ERC4626HyperdriveDeployer"],
         deploy_account_addr=deploy_account_addr,
-        args=[pool_contract_addr],
     )
     target_0_deployer_addr, _ = deploy_contract(
         web3,
         abi=abis["ERC4626Target0Deployer"],
         bytecode=bytecodes["ERC4626Target0Deployer"],
         deploy_account_addr=deploy_account_addr,
-        args=[pool_contract_addr],
     )
     target_1_deployer_addr, _ = deploy_contract(
         web3,
         abi=abis["ERC4626Target1Deployer"],
         bytecode=bytecodes["ERC4626Target1Deployer"],
         deploy_account_addr=deploy_account_addr,
-        args=[pool_contract_addr],
     )
 
     _, factory_contract = deploy_contract(
