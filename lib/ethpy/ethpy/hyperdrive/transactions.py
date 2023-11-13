@@ -31,7 +31,7 @@ class Checkpoint:
     """Checkpoint struct."""
 
     share_price: FixedPoint
-    long_exposure: FixedPoint
+    exposure: FixedPoint
 
 
 @dataclass
@@ -196,7 +196,7 @@ def convert_hyperdrive_checkpoint_types(checkpoint: dict[str, int]) -> Checkpoin
     Returns
     -------
     Checkpoint
-        A dataclass containing the checkpoint share_price and long_exposure fields converted to FixedPoint.
+        A dataclass containing the checkpoint share_price and exposure fields converted to FixedPoint.
     """
     return Checkpoint(**{camel_to_snake(key): FixedPoint(scaled_value=value) for key, value in checkpoint.items()})
 
