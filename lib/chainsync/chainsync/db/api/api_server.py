@@ -72,8 +72,13 @@ def balance_of():
     session = initialize_session()
     try:
         logging.debug("Querying wallet_addrs=%s for balances}", wallet_addrs)
-        current_wallet = get_current_wallet(session, wallet_address=wallet_addrs, coerce_float=False)
-        # Cast decimal to string, then convert to json and return
+        current_wallet = get_current_wallet(session, wallet_address=wallet_addrs, coerce_float=False).copy()
+        # Avoid exp notation for value field
+        # Need a function here to pass to apply, so we use format instead of f-string
+        current_wallet["value"] = current_wallet["value"].apply(
+            "{:f}".format  # pylint: disable=consider-using-f-string
+        )
+        # Convert everything else to strings, then convert to json
         data = current_wallet.astype(str).to_json()
 
         # Convert dataframe to json
