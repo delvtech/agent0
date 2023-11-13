@@ -12,7 +12,8 @@ hyperdrive_event_objs = hyperdrive.hyperdrive_contract.events
 hyperdrive_events = [event for key, event in hyperdrive_event_objs.__dict__.items() if key not in ("abi", "_events")]
 
 # Iterate through each event class and get previous logs for each event
-out_events = []
+# This is meant to be a standalone script, no need for global upper_case naming style
+out_events = []  # pylint: disable=invalid-name
 for event_obj in hyperdrive_events:
     events = event_obj.get_logs(fromBlock=1)
     # Parse through event data into dict
