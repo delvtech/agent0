@@ -135,12 +135,10 @@ def launch_local_hyperdrive_pool(
     time_stretch = FixedPoint(1) / (
         FixedPoint("5.24592") / (FixedPoint("0.04665") * (initial_fixed_rate * FixedPoint(100)))
     )
-    oracle_size = 10
-    update_gap = 3600  # 1 hour
     pool_config = PoolConfig(
         "",  # will be determined in the deploy function
-        "",
-        bytes(32),
+        "0x0000000000000000000000000000000000000000",  # address(0), this address needs to be in a valid address format
+        bytes(32),  # bytes32(0)
         initial_share_price.scaled_value,
         minimum_share_reserves.scaled_value,
         minimum_transaction_amount.scaled_value,
