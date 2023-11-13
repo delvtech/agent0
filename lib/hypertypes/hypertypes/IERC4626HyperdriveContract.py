@@ -37,6 +37,20 @@ class IERC4626HyperdriveDOMAIN_SEPARATORContractFunction(ContractFunction):
     # def call()
 
 
+class IERC4626HyperdrivePERMIT_TYPEHASHContractFunction(ContractFunction):
+    """ContractFunction for the PERMIT_TYPEHASH method."""
+
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    def __call__(self) -> "IERC4626HyperdrivePERMIT_TYPEHASHContractFunction":
+        super().__call__()
+        return self
+
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
+
 class IERC4626HyperdriveAddLiquidityContractFunction(ContractFunction):
     """ContractFunction for the addLiquidity method."""
 
@@ -159,34 +173,6 @@ class IERC4626HyperdriveCollectGovernanceFeeContractFunction(ContractFunction):
 
     def __call__(self, _options: tuple) -> "IERC4626HyperdriveCollectGovernanceFeeContractFunction":
         super().__call__(_options)
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IERC4626HyperdriveDataProviderContractFunction(ContractFunction):
-    """ContractFunction for the dataProvider method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(self) -> "IERC4626HyperdriveDataProviderContractFunction":
-        super().__call__()
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IERC4626HyperdriveFactoryContractFunction(ContractFunction):
-    """ContractFunction for the factory method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(self) -> "IERC4626HyperdriveFactoryContractFunction":
-        super().__call__()
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -317,20 +303,6 @@ class IERC4626HyperdriveIsSweepableContractFunction(ContractFunction):
 
     def __call__(self, _target: str) -> "IERC4626HyperdriveIsSweepableContractFunction":
         super().__call__(_target)
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IERC4626HyperdriveLinkerCodeHashContractFunction(ContractFunction):
-    """ContractFunction for the linkerCodeHash method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(self) -> "IERC4626HyperdriveLinkerCodeHashContractFunction":
-        super().__call__()
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -580,8 +552,8 @@ class IERC4626HyperdriveSetPauserContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _who: str, _status: bool) -> "IERC4626HyperdriveSetPauserContractFunction":
-        super().__call__(_who, _status)
+    def __call__(self, who: str, status: bool) -> "IERC4626HyperdriveSetPauserContractFunction":
+        super().__call__(who, status)
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -610,6 +582,34 @@ class IERC4626HyperdriveSymbolContractFunction(ContractFunction):
 
     def __call__(self, _id: int) -> "IERC4626HyperdriveSymbolContractFunction":
         super().__call__(_id)
+        return self
+
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
+
+class IERC4626HyperdriveTarget0ContractFunction(ContractFunction):
+    """ContractFunction for the target0 method."""
+
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    def __call__(self) -> "IERC4626HyperdriveTarget0ContractFunction":
+        super().__call__()
+        return self
+
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
+
+class IERC4626HyperdriveTarget1ContractFunction(ContractFunction):
+    """ContractFunction for the target1 method."""
+
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    def __call__(self) -> "IERC4626HyperdriveTarget1ContractFunction":
+        super().__call__()
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -667,6 +667,8 @@ class IERC4626HyperdriveContractFunctions(ContractFunctions):
 
     DOMAIN_SEPARATOR: IERC4626HyperdriveDOMAIN_SEPARATORContractFunction
 
+    PERMIT_TYPEHASH: IERC4626HyperdrivePERMIT_TYPEHASHContractFunction
+
     addLiquidity: IERC4626HyperdriveAddLiquidityContractFunction
 
     balanceOf: IERC4626HyperdriveBalanceOfContractFunction
@@ -682,10 +684,6 @@ class IERC4626HyperdriveContractFunctions(ContractFunctions):
     closeShort: IERC4626HyperdriveCloseShortContractFunction
 
     collectGovernanceFee: IERC4626HyperdriveCollectGovernanceFeeContractFunction
-
-    dataProvider: IERC4626HyperdriveDataProviderContractFunction
-
-    factory: IERC4626HyperdriveFactoryContractFunction
 
     getCheckpoint: IERC4626HyperdriveGetCheckpointContractFunction
 
@@ -704,8 +702,6 @@ class IERC4626HyperdriveContractFunctions(ContractFunctions):
     isApprovedForAll: IERC4626HyperdriveIsApprovedForAllContractFunction
 
     isSweepable: IERC4626HyperdriveIsSweepableContractFunction
-
-    linkerCodeHash: IERC4626HyperdriveLinkerCodeHashContractFunction
 
     load: IERC4626HyperdriveLoadContractFunction
 
@@ -743,6 +739,10 @@ class IERC4626HyperdriveContractFunctions(ContractFunctions):
 
     symbol: IERC4626HyperdriveSymbolContractFunction
 
+    target0: IERC4626HyperdriveTarget0ContractFunction
+
+    target1: IERC4626HyperdriveTarget1ContractFunction
+
     totalSupply: IERC4626HyperdriveTotalSupplyContractFunction
 
     transferFrom: IERC4626HyperdriveTransferFromContractFunction
@@ -776,6 +776,7 @@ ierc4626hyperdrive_abi: ABI = cast(
             "name": "CallFailed",
             "type": "error",
         },
+        {"inputs": [], "name": "EndIndexTooLarge", "type": "error"},
         {"inputs": [], "name": "ExpiredDeadline", "type": "error"},
         {"inputs": [], "name": "FeeTooHigh", "type": "error"},
         {
@@ -801,6 +802,7 @@ ierc4626hyperdrive_abi: ABI = cast(
         {"inputs": [], "name": "InvalidFeeAmounts", "type": "error"},
         {"inputs": [], "name": "InvalidFeeDestination", "type": "error"},
         {"inputs": [], "name": "InvalidForwarderAddress", "type": "error"},
+        {"inputs": [], "name": "InvalidIndexes", "type": "error"},
         {"inputs": [], "name": "InvalidInitialSharePrice", "type": "error"},
         {"inputs": [], "name": "InvalidMaturityTime", "type": "error"},
         {"inputs": [], "name": "InvalidMinimumShareReserves", "type": "error"},
@@ -1320,6 +1322,13 @@ ierc4626hyperdrive_abi: ABI = cast(
             "type": "function",
         },
         {
+            "inputs": [],
+            "name": "PERMIT_TYPEHASH",
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
             "inputs": [
                 {
                     "internalType": "uint256",
@@ -1551,20 +1560,6 @@ ierc4626hyperdrive_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [],
-            "name": "dataProvider",
-            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-            "stateMutability": "view",
-            "type": "function",
-        },
-        {
-            "inputs": [],
-            "name": "factory",
-            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-            "stateMutability": "view",
-            "type": "function",
-        },
-        {
             "inputs": [
                 {
                     "internalType": "uint256",
@@ -1583,7 +1578,7 @@ ierc4626hyperdrive_abi: ABI = cast(
                         },
                         {
                             "internalType": "int128",
-                            "name": "longExposure",
+                            "name": "exposure",
                             "type": "int128",
                         },
                     ],
@@ -1672,6 +1667,16 @@ ierc4626hyperdrive_abi: ABI = cast(
                             "type": "address",
                         },
                         {
+                            "internalType": "address",
+                            "name": "linkerFactory",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "bytes32",
+                            "name": "linkerCodeHash",
+                            "type": "bytes32",
+                        },
+                        {
                             "internalType": "uint256",
                             "name": "initialSharePrice",
                             "type": "uint256",
@@ -1684,6 +1689,11 @@ ierc4626hyperdrive_abi: ABI = cast(
                         {
                             "internalType": "uint256",
                             "name": "minimumTransactionAmount",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "precisionThreshold",
                             "type": "uint256",
                         },
                         {
@@ -1732,16 +1742,6 @@ ierc4626hyperdrive_abi: ABI = cast(
                             "internalType": "struct IHyperdrive.Fees",
                             "name": "fees",
                             "type": "tuple",
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "oracleSize",
-                            "type": "uint256",
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "updateGap",
-                            "type": "uint256",
                         },
                     ],
                     "internalType": "struct IHyperdrive.PoolConfig",
@@ -1930,13 +1930,6 @@ ierc4626hyperdrive_abi: ABI = cast(
             ],
             "name": "isSweepable",
             "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-            "stateMutability": "view",
-            "type": "function",
-        },
-        {
-            "inputs": [],
-            "name": "linkerCodeHash",
-            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -2317,8 +2310,8 @@ ierc4626hyperdrive_abi: ABI = cast(
         },
         {
             "inputs": [
-                {"internalType": "address", "name": "_who", "type": "address"},
-                {"internalType": "bool", "name": "_status", "type": "bool"},
+                {"internalType": "address", "name": "who", "type": "address"},
+                {"internalType": "bool", "name": "status", "type": "bool"},
             ],
             "name": "setPauser",
             "outputs": [],
@@ -2342,6 +2335,20 @@ ierc4626hyperdrive_abi: ABI = cast(
             "inputs": [{"internalType": "uint256", "name": "id", "type": "uint256"}],
             "name": "symbol",
             "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "target0",
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "target1",
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },

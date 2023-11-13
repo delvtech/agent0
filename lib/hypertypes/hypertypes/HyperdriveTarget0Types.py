@@ -1,4 +1,4 @@
-"""Dataclasses for all structs in the IERC4626Hyperdrive contract."""
+"""Dataclasses for all structs in the HyperdriveTarget0 contract."""
 # super() call methods are generic, while our version adds values & types
 # pylint: disable=arguments-differ
 # contracts have PascalCase names
@@ -176,8 +176,7 @@ CollectGovernanceFee = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=True, name="collector", type="address"),
-        ABIEventParams(indexed=False, name="baseFees", type="uint256"),
-        ABIEventParams(indexed=False, name="sharePrice", type="uint256"),
+        ABIEventParams(indexed=False, name="fees", type="uint256"),
     ],
     name="CollectGovernanceFee",
     type="event",
@@ -193,6 +192,15 @@ CreateCheckpoint = ABIEvent(
         ABIEventParams(indexed=False, name="lpSharePrice", type="uint256"),
     ],
     name="CreateCheckpoint",
+    type="event",
+)
+
+GovernanceUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="newGovernance", type="address"),
+    ],
+    name="GovernanceUpdated",
     type="event",
 )
 
@@ -234,6 +242,15 @@ OpenShort = ABIEvent(
         ABIEventParams(indexed=False, name="bondAmount", type="uint256"),
     ],
     name="OpenShort",
+    type="event",
+)
+
+PauserUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="newPauser", type="address"),
+    ],
+    name="PauserUpdated",
     type="event",
 )
 

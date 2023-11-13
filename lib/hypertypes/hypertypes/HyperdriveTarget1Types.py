@@ -1,4 +1,4 @@
-"""Dataclasses for all structs in the IERC4626Hyperdrive contract."""
+"""Dataclasses for all structs in the HyperdriveTarget1 contract."""
 # super() call methods are generic, while our version adds values & types
 # pylint: disable=arguments-differ
 # contracts have PascalCase names
@@ -28,85 +28,6 @@ class Options:
     destination: str
     asBase: bool
     extraData: bytes
-
-
-@dataclass
-class Checkpoint:
-    """Checkpoint struct."""
-
-    sharePrice: int
-    exposure: int
-
-
-@dataclass
-class MarketState:
-    """MarketState struct."""
-
-    shareReserves: int
-    bondReserves: int
-    shareAdjustment: int
-    longExposure: int
-    longsOutstanding: int
-    shortsOutstanding: int
-    longAverageMaturityTime: int
-    shortAverageMaturityTime: int
-    isInitialized: bool
-    isPaused: bool
-
-
-@dataclass
-class Fees:
-    """Fees struct."""
-
-    curve: int
-    flat: int
-    governance: int
-
-
-@dataclass
-class PoolConfig:
-    """PoolConfig struct."""
-
-    baseToken: str
-    linkerFactory: str
-    linkerCodeHash: bytes
-    initialSharePrice: int
-    minimumShareReserves: int
-    minimumTransactionAmount: int
-    precisionThreshold: int
-    positionDuration: int
-    checkpointDuration: int
-    timeStretch: int
-    governance: str
-    feeCollector: str
-    fees: Fees
-
-
-@dataclass
-class PoolInfo:
-    """PoolInfo struct."""
-
-    shareReserves: int
-    shareAdjustment: int
-    bondReserves: int
-    lpTotalSupply: int
-    sharePrice: int
-    longsOutstanding: int
-    longAverageMaturityTime: int
-    shortsOutstanding: int
-    shortAverageMaturityTime: int
-    withdrawalSharesReadyToWithdraw: int
-    withdrawalSharesProceeds: int
-    lpSharePrice: int
-    longExposure: int
-
-
-@dataclass
-class WithdrawPool:
-    """WithdrawPool struct."""
-
-    readyToWithdraw: int
-    proceeds: int
 
 
 AddLiquidity = ABIEvent(
@@ -176,8 +97,7 @@ CollectGovernanceFee = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=True, name="collector", type="address"),
-        ABIEventParams(indexed=False, name="baseFees", type="uint256"),
-        ABIEventParams(indexed=False, name="sharePrice", type="uint256"),
+        ABIEventParams(indexed=False, name="fees", type="uint256"),
     ],
     name="CollectGovernanceFee",
     type="event",
@@ -193,6 +113,15 @@ CreateCheckpoint = ABIEvent(
         ABIEventParams(indexed=False, name="lpSharePrice", type="uint256"),
     ],
     name="CreateCheckpoint",
+    type="event",
+)
+
+GovernanceUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="newGovernance", type="address"),
+    ],
+    name="GovernanceUpdated",
     type="event",
 )
 
@@ -234,6 +163,15 @@ OpenShort = ABIEvent(
         ABIEventParams(indexed=False, name="bondAmount", type="uint256"),
     ],
     name="OpenShort",
+    type="event",
+)
+
+PauserUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="newPauser", type="address"),
+    ],
+    name="PauserUpdated",
     type="event",
 )
 

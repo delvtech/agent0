@@ -36,10 +36,15 @@ class FactoryConfig:
 
     governance: str
     hyperdriveGovernance: str
+    defaultPausers: list[str]
     feeCollector: str
     fees: Fees
     maxFees: Fees
-    defaultPausers: list[str]
+    hyperdriveDeployer: str
+    target0Deployer: str
+    target1Deployer: str
+    linkerFactory: str
+    linkerCodeHash: bytes
 
 
 @dataclass
@@ -47,17 +52,18 @@ class PoolConfig:
     """PoolConfig struct."""
 
     baseToken: str
+    linkerFactory: str
+    linkerCodeHash: bytes
     initialSharePrice: int
     minimumShareReserves: int
     minimumTransactionAmount: int
+    precisionThreshold: int
     positionDuration: int
     checkpointDuration: int
     timeStretch: int
     governance: str
     feeCollector: str
     fees: Fees
-    oracleSize: int
-    updateGap: int
 
 
 Deployed = ABIEvent(
@@ -66,8 +72,6 @@ Deployed = ABIEvent(
         ABIEventParams(indexed=True, name="version", type="uint256"),
         ABIEventParams(indexed=False, name="hyperdrive", type="address"),
         ABIEventParams(indexed=False, name="config", type="tuple"),
-        ABIEventParams(indexed=False, name="linkerFactory", type="address"),
-        ABIEventParams(indexed=False, name="linkerCodeHash", type="bytes32"),
         ABIEventParams(indexed=False, name="extraData", type="bytes32[]"),
     ],
     name="Deployed",
@@ -113,7 +117,7 @@ ImplementationUpdated = ABIEvent(
 LinkerCodeHashUpdated = ABIEvent(
     anonymous=False,
     inputs=[
-        ABIEventParams(indexed=True, name="newCodeHash", type="bytes32"),
+        ABIEventParams(indexed=True, name="newLinkerCodeHash", type="bytes32"),
     ],
     name="LinkerCodeHashUpdated",
     type="event",
