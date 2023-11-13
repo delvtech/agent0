@@ -15,7 +15,7 @@ hyperdrive_events = [event for key, event in hyperdrive_event_objs.__dict__.item
 # This is meant to be a standalone script, no need for global upper_case naming style
 out_events = []  # pylint: disable=invalid-name
 for event_obj in hyperdrive_events:
-    events = event_obj.get_logs(fromBlock=1)
+    events = event_obj.get_logs(fromBlock=0)
     # Parse through event data into dict
     for event in events:
         parsed_event = {
