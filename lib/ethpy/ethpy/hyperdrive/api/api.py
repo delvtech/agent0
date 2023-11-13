@@ -143,9 +143,8 @@ class HyperdriveInterface:
         self.hyperdrive_contract: Contract = web3.eth.contract(
             abi=abis["IHyperdrive"], address=web3.to_checksum_address(self.addresses.mock_hyperdrive)
         )
-        # TODO: in the future we want to switch to a single IERC4626Hyperdrive ABI
         data_provider_contract: Contract = web3.eth.contract(
-            abi=abis["ERC4626DataProvider"], address=web3.to_checksum_address(self.addresses.mock_hyperdrive)
+            abi=abis["IERC4626Hyperdrive"], address=web3.to_checksum_address(self.addresses.mock_hyperdrive)
         )
         self.yield_address = smart_contract_read(data_provider_contract, "pool")["value"]
         self.yield_contract: Contract = web3.eth.contract(
