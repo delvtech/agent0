@@ -371,7 +371,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
                     ),
                 )
             )
-        # Valid open long + short
+        # Valid open long
         elif self.counter == 1:
             # Open Long
             action_list.append(
@@ -384,18 +384,6 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
                         wallet=wallet,
                     ),
                 ),
-            )
-            # Open Short
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_SHORT,
-                        trade_amount=FixedPoint(10000),
-                        slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
-                    ),
-                )
             )
         # Valid remove liquidity
         elif self.counter == 2:
@@ -468,7 +456,7 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
                     ),
                 )
             )
-        # Valid open long + short
+        # Valid open long
         elif self.counter == 1:
             # Open Long
             action_list.append(
@@ -481,18 +469,6 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
                         wallet=wallet,
                     ),
                 ),
-            )
-            # Open Short
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_SHORT,
-                        trade_amount=FixedPoint(10000),
-                        slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
-                    ),
-                )
             )
         # Valid remove liquidity
         elif self.counter == 2:
