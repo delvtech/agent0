@@ -17,7 +17,7 @@ from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import HTTPProvider
-from web3.exceptions import ContractPanicError
+from web3.exceptions import ContractLogicError, ContractPanicError
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -647,12 +647,10 @@ class TestInvalidTrades:
             assert "Invalid balance:" in exc.args[0]
             # Fails on add liquidity
             assert exc.function_name_or_signature == "addLiquidity"
-            # This throws panic error under the hood
+            # This throws a contract logic error under the hood
             assert exc.orig_exception is not None
-            assert isinstance(exc.orig_exception, ContractPanicError)
-            assert (
-                exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
-            )
+            assert isinstance(exc.orig_exception, ContractLogicError)
+            assert exc.orig_exception.args[0] == "execution reverted: TRANSFER_FROM_FAILED"
 
     def test_invalid_remove_liquidity_from_zero(
         self,
