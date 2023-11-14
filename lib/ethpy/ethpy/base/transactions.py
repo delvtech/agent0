@@ -160,16 +160,21 @@ def smart_contract_preview_transaction(
     # This is the additional transaction argument passed into function.call
     # that may contain additional call arguments such as max_gas, nonce, etc.
     transaction_kwargs = {"from": signer_address}
-    raw_txn = {}
-    try:
-        # We build the raw transaction here in case of error. Note that we don't call `build_transaction`
-        # since it adds the nonce to the transaction, and we ignore nonce in preview
-        # Build transactions can fail, so we put this here in the try/catch
-        # Building transactions can also fail, so we add retries here
-        raw_txn = retry_call(
-            READ_RETRY_COUNT, _retry_preview_check, function.build_transaction, {"from": signer_address}
-        )
 
+    raw_txn = {}
+    # We build the raw transaction here in case of error, where we want to attach the raw txn to the crash report.
+    # Note that we don't call `build_transaction`
+    # since it adds the nonce to the transaction, and we ignore nonce in preview
+    # This is a best attempt at building a transaction for the preview call, because
+    # this function doesn't accept a block_number as an argument,
+    # so there's a race condition if a new trade comes in and this preview call is no longer valid
+    # Hence, we wrap this in a try/catch, and ignore if it fails
+    try:
+        raw_txn = function.build_transaction({"from": signer_address})
+    except Exception:  # pylint: disable=broad-except
+        pass
+
+    try:
         return_values = retry_call(
             READ_RETRY_COUNT,
             _retry_preview_check,
