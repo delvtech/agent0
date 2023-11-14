@@ -188,7 +188,7 @@ class TestBotToDb:
 
         # Run acquire data to get data from chain to db
         acquire_data(
-            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            start_block=10,  # First 9 blocks are deploying hyperdrive, ignore
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -198,7 +198,7 @@ class TestBotToDb:
 
         # Run data analysis to calculate various analysis values
         data_analysis(
-            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            start_block=10,  # First 9 blocks are deploying hyperdrive, ignore
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
