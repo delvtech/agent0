@@ -9,6 +9,7 @@ import pytest
 from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig
+from web3.constants import ADDRESS_ZERO
 
 
 def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1"):
@@ -137,7 +138,7 @@ def launch_local_hyperdrive_pool(
     )
     pool_config = PoolConfig(
         "",  # will be determined in the deploy function
-        "0x0000000000000000000000000000000000000000",  # address(0), this address needs to be in a valid address format
+        ADDRESS_ZERO,  # address(0), this address needs to be in a valid address format
         bytes(32),  # bytes32(0)
         initial_share_price.scaled_value,
         minimum_share_reserves.scaled_value,
