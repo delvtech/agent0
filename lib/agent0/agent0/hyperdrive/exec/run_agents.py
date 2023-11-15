@@ -89,7 +89,13 @@ def run_agents(
         )  # uses env variables created above as inputs
     # get hyperdrive interface object and agents
     hyperdrive, agent_accounts = setup_experiment(
-        eth_config, environment_config, agent_config, account_key_config, contract_addresses
+        eth_config,
+        environment_config,
+        agent_config,
+        account_key_config,
+        contract_addresses,
+        environment_config.read_retry_count,
+        environment_config.write_retry_count,
     )
     wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
     # set up database

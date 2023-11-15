@@ -40,6 +40,8 @@ env_config = EnvironmentConfig(
     # TODO this should be able to accept None to allow for random
     random_seed=random.randint(0, 10000000),
     username=USERNAME,
+    # Fuzz bots retries smart contract transactions 3 times
+    write_retry_count=3,
 )
 
 agent_config: list[AgentConfig] = [

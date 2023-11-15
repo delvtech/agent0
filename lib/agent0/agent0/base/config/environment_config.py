@@ -44,6 +44,11 @@ class EnvironmentConfig(FrozenClass):
     max_bytes: int = DEFAULT_LOG_MAXBYTES  # int(2e6) or 2MB
     # int to be used for the random seed
     random_seed: int = 1
+    # retry arguments for read/write smart contract calls
+    # Defaults to what's being used in ethpy, which is
+    # 5 read retries, 1 write retry
+    read_retry_count: int | None = None
+    write_retry_count: int | None = None
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)

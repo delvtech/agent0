@@ -112,6 +112,7 @@ async def _async_open_long(
         "openLong",
         *fn_args,
         block_number=current_block,
+        read_retry_count=interface.read_retry_count,
     )
     if slippage_tolerance is not None:
         min_output = (
@@ -129,7 +130,14 @@ async def _async_open_long(
         )
     try:
         tx_receipt = await async_smart_contract_transact(
-            interface.web3, interface.hyperdrive_contract, agent, "openLong", *fn_args, nonce=nonce
+            interface.web3,
+            interface.hyperdrive_contract,
+            agent,
+            "openLong",
+            *fn_args,
+            nonce=nonce,
+            read_retry_count=interface.read_retry_count,
+            write_retry_count=interface.write_retry_count,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openLong")
     except Exception as exc:
@@ -171,6 +179,7 @@ async def _async_close_long(
         "closeLong",
         *fn_args,
         block_number=current_block,
+        read_retry_count=interface.read_retry_count,
     )
     if slippage_tolerance:
         min_output = (
@@ -188,7 +197,14 @@ async def _async_close_long(
         )
     try:
         tx_receipt = await async_smart_contract_transact(
-            interface.web3, interface.hyperdrive_contract, agent, "closeLong", *fn_args, nonce=nonce
+            interface.web3,
+            interface.hyperdrive_contract,
+            agent,
+            "closeLong",
+            *fn_args,
+            nonce=nonce,
+            read_retry_count=interface.read_retry_count,
+            write_retry_count=interface.write_retry_count,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "closeLong")
     except Exception as exc:
@@ -233,6 +249,7 @@ async def _async_open_short(
         "openShort",
         *fn_args,
         block_number=current_block,
+        read_retry_count=interface.read_retry_count,
     )
     if slippage_tolerance:
         max_deposit = (
@@ -250,7 +267,14 @@ async def _async_open_short(
         )
     try:
         tx_receipt = await async_smart_contract_transact(
-            interface.web3, interface.hyperdrive_contract, agent, "openShort", *fn_args, nonce=nonce
+            interface.web3,
+            interface.hyperdrive_contract,
+            agent,
+            "openShort",
+            *fn_args,
+            nonce=nonce,
+            read_retry_count=interface.read_retry_count,
+            write_retry_count=interface.write_retry_count,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openShort")
     except Exception as exc:
@@ -292,6 +316,7 @@ async def _async_close_short(
         "closeShort",
         *fn_args,
         block_number=current_block,
+        read_retry_count=interface.read_retry_count,
     )
     if slippage_tolerance:
         min_output = (
@@ -315,6 +340,8 @@ async def _async_close_short(
             "closeShort",
             *fn_args,
             nonce=nonce,
+            read_retry_count=interface.read_retry_count,
+            write_retry_count=interface.write_retry_count,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "closeShort")
     except Exception as exc:
@@ -355,6 +382,7 @@ async def _async_add_liquidity(
         "addLiquidity",
         *fn_args,
         block_number=current_block,
+        read_retry_count=interface.read_retry_count,
     )
     # TODO add slippage controls for add liquidity
     try:
@@ -365,6 +393,8 @@ async def _async_add_liquidity(
             "addLiquidity",
             *fn_args,
             nonce=nonce,
+            read_retry_count=interface.read_retry_count,
+            write_retry_count=interface.write_retry_count,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "addLiquidity")
     except Exception as exc:
@@ -402,6 +432,7 @@ async def _async_remove_liquidity(
         "removeLiquidity",
         *fn_args,
         block_number=current_block,
+        read_retry_count=interface.read_retry_count,
     )
     try:
         tx_receipt = await async_smart_contract_transact(
@@ -411,6 +442,8 @@ async def _async_remove_liquidity(
             "removeLiquidity",
             *fn_args,
             nonce=nonce,
+            read_retry_count=interface.read_retry_count,
+            write_retry_count=interface.write_retry_count,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "removeLiquidity")
     except Exception as exc:
@@ -449,6 +482,7 @@ async def _async_redeem_withdraw_shares(
         "redeemWithdrawalShares",
         *fn_args,
         block_number=current_block,
+        read_retry_count=interface.read_retry_count,
     )
 
     # Here, a preview call of redeem withdrawal shares will still be successful without logs if
@@ -465,6 +499,8 @@ async def _async_redeem_withdraw_shares(
             "redeemWithdrawalShares",
             *fn_args,
             nonce=nonce,
+            read_retry_count=interface.read_retry_count,
+            write_retry_count=interface.write_retry_count,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "redeemWithdrawalShares")
     except Exception as exc:
