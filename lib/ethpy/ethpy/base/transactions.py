@@ -127,6 +127,7 @@ def smart_contract_read(
 
 # TODO cleanup
 # pylint: disable=too-many-locals
+# pylint: disable=too-many-branches
 def smart_contract_preview_transaction(
     contract: Contract,
     signer_address: ChecksumAddress,
@@ -890,7 +891,7 @@ def _contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> lis
     ):  # multiple named outputs were returned in a struct
         abi_components = function_outputs[0].get("components")
         if abi_components is None:
-            logging.warning("function abi output componenets are not a included")
+            logging.warning("function abi output components are not a included")
             return None
         return_names_and_types = []
         for component in abi_components:

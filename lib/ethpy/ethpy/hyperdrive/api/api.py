@@ -107,6 +107,8 @@ class HyperdriveInterface:
         eth_config: EthConfig | None = None,
         addresses: HyperdriveAddresses | None = None,
         web3: Web3 | None = None,
+        read_retry_count: int | None = None,
+        write_retry_count: int | None = None,
     ) -> None:
         """The HyperdriveInterface API.
         This is the primary endpoint for users to simulate as well as execute transactions on
@@ -150,6 +152,11 @@ class HyperdriveInterface:
         # Fill in the initial state cache.
         self._current_pool_state = self.get_hyperdrive_state()
         self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
+        # Set the retry count for contract calls using the interface when previewing/transacting
+        # TODO these parameters are currently only used for trades against hyperdrive
+        # and uses defaults for other smart_contract_read functions, e.g., get_pool_info.
+        self.read_retry_count = read_retry_count
+        self.write_retry_count = write_retry_count
 
     @property
     def current_pool_state(self) -> PoolState:

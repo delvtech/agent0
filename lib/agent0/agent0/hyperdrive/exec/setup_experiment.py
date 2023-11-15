@@ -14,12 +14,16 @@ from hyperlogs import logs
 from .get_agent_accounts import get_agent_accounts
 
 
+# TODO: clean up arguments
+# pylint: disable=too-many-arguments
 def setup_experiment(
     eth_config: EthConfig,
     environment_config: EnvironmentConfig,
     agent_config: list[AgentConfig],
     account_key_config: AccountKeyConfig,
-    contract_addresses: HyperdriveAddresses | None,
+    contract_addresses: HyperdriveAddresses | None = None,
+    read_retry_count: int | None = None,
+    write_retry_count: int | None = None,
 ) -> tuple[HyperdriveInterface, list[HyperdriveAgent]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
@@ -35,6 +39,10 @@ def setup_experiment(
         Configuration linking to the env file for storing private keys and initial budgets.
     contract_addresses: HyperdriveAddresses, optional
         Configuration for defining various contract addresses.
+    read_retry_count: BlockNumber | None
+        The number of times to retry the read call if it fails. Defaults to 5.
+    write_retry_count: BlockNumber | None
+        The number of times to retry the transact call if it fails. Defaults to no retries.
 
     Returns
     -------
@@ -57,7 +65,9 @@ def setup_experiment(
     )
     setup_hyperdrive_crash_report_logging()
     # create hyperdrive interface object
-    hyperdrive = HyperdriveInterface(eth_config, contract_addresses)
+    hyperdrive = HyperdriveInterface(
+        eth_config, contract_addresses, read_retry_count=read_retry_count, write_retry_count=write_retry_count
+    )
     # load agent policies
     # rng is shared by the agents and can be accessed via `agent_accounts[idx].policy.rng`
     agent_accounts = get_agent_accounts(
