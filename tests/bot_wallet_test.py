@@ -30,8 +30,8 @@ def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, hyperdrive: Hyperdr
 
     Arguments
     ---------
-    agent: HyperdriveAgent
-        The HyperdriveAgent to check
+    wallet: HyperdriveWallet
+        The HyperdriveWallet object to check against the chain
     hyperdrive: HyperdriveInterface
         The Hyperdrive API interface object
     """
