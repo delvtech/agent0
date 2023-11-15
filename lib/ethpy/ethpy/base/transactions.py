@@ -58,6 +58,8 @@ def smart_contract_read(
         The arguments passed to the contract method.
     block_number: BlockNumber | None
         If set, will query the chain on the specified block
+    read_retry_count: BlockNumber | None
+        The number of times to retry the read call if it fails. Defaults to 5.
     **fn_kwargs : Unknown
         The keyword arguments passed to the contract method.
 
@@ -148,6 +150,8 @@ def smart_contract_preview_transaction(
         The arguments passed to the contract method.
     block_number: BlockNumber | None
         If set, will query the chain on the specified block
+    read_retry_count: BlockNumber | None
+        The number of times to retry the read call if it fails. Defaults to 5.
     **fn_kwargs : Unknown
         The keyword arguments passed to the contract method.
 
@@ -356,7 +360,12 @@ def build_transaction(
         The function to call
     signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction
+    web3: Web3
+        web3 container object
     nonce: Nonce | None
+        The nonce to use for this transaction. Defaults to setting it to the result of `get_transaction_count`.
+    read_retry_count: BlockNumber | None
+        The number of times to retry the read call if it fails. Defaults to 5.
     """
     if read_retry_count is None:
         read_retry_count = DEFAULT_READ_RETRY_COUNT
@@ -448,9 +457,13 @@ async def async_smart_contract_transact(
     function_name_or_signature : str
         This function must exist in the compiled contract's ABI
     *fn_args : Unknown
-        All remaining arguments will be passed to the contract function in the order received
+        The positional arguments passed to the contract method.
     nonce: Nonce | None
         If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
+    read_retry_count: BlockNumber | None
+        The number of times to retry the read call if it fails. Defaults to 5.
+    write_retry_count: BlockNumber | None
+        The number of times to retry the transact call if it fails. Defaults to no retries.
     **fn_kwargs : Unknown
         The keyword arguments passed to the contract method.
 
@@ -581,10 +594,16 @@ def smart_contract_transact(
         The LocalAccount that will be used to pay for the gas & sign the transaction
     function_name_or_signature : str
         This function must exist in the compiled contract's ABI
-    fn_args : ordered list
-        All remaining arguments will be passed to the contract function in the order received
+    *fn_args : Unknown
+        The positional arguments passed to the contract method.
     nonce: Nonce | None
         If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
+    read_retry_count: BlockNumber | None
+        The number of times to retry the read call if it fails. Defaults to 5.
+    write_retry_count: BlockNumber | None
+        The number of times to retry the transact call if it fails. Defaults to no retries.
+    **fn_kwargs : Unknown
+        The keyword arguments passed to the contract method.
 
     Returns
     -------
@@ -679,6 +698,8 @@ async def async_eth_transfer(
         Amount of tip to provide to the miner when a block is mined
     nonce: Nonce | None
         If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
+    read_retry_count: BlockNumber | None
+        The number of times to retry the read call if it fails. Defaults to 5.
 
     Returns
     -------
@@ -745,6 +766,8 @@ def eth_transfer(
         Amount of tip to provide to the miner when a block is mined
     nonce: Nonce | None
         If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
+    read_retry_count: BlockNumber | None
+        The number of times to retry the read call if it fails. Defaults to 5.
 
     Returns
     -------
@@ -793,6 +816,8 @@ def fetch_contract_transactions_for_block(
         The contract to query the pool info from
     block_number: BlockNumber
         The block number to query from the chain
+    read_retry_count: BlockNumber | None
+        The number of times to retry the read call if it fails. Defaults to 5.
 
     Returns
     -------
