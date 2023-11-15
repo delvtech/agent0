@@ -13,7 +13,7 @@ from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from web3.types import RPCEndpoint
 
-STOP_CHAIN_ON_CRASH = False
+STOP_CHAIN_ON_CRASH = True
 
 # NOTE be sure to adjust `eth.env` to connect to a specific chain
 
