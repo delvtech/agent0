@@ -88,12 +88,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
     @dataclass
     class Config(HyperdrivePolicy.Config):
         """Custom config arguments for this policy
-
-        Attributes
-        ----------
-        rerun: bool
-            Determines if this policy is being reran
-            The second run should be doing assertions for this test
+        This policy doesn't have any config
         """
 
     def __init__(
