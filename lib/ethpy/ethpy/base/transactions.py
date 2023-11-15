@@ -18,8 +18,8 @@ from .errors.errors import ContractCallException, ContractCallType, decode_error
 from .errors.types import UnknownBlockError
 from .retry_utils import retry_call
 
-# TODO these should be parameterized so the caller controls how many times to retry
-READ_RETRY_COUNT = 5
+DEFAULT_READ_RETRY_COUNT = 5
+DEFAULT_WRITE_RETRY_COUNT = 1
 
 
 # We define the function to check the exception to retry on
@@ -37,6 +37,7 @@ def smart_contract_read(
     function_name_or_signature: str,
     *fn_args,
     block_number: BlockNumber | None = None,
+    read_retry_count: int | None = None,
     **fn_kwargs,
 ) -> dict[str, Any]:
     """Return from a smart contract read call
@@ -65,6 +66,9 @@ def smart_contract_read(
         function to dynamically assign types to output variables
             would be cool if this also put stuff into FixedPoint
     """
+    if read_retry_count is None:
+        read_retry_count = DEFAULT_READ_RETRY_COUNT
+
     # get the callable contract function from function_name & call it
     if "(" in function_name_or_signature:
         function = contract.get_function_by_signature(function_name_or_signature)(*fn_args, **fn_kwargs)
@@ -72,7 +76,7 @@ def smart_contract_read(
         function = contract.get_function_by_name(function_name_or_signature)(*fn_args, **fn_kwargs)
     try:
         # Call function with retries
-        return_values = retry_call(READ_RETRY_COUNT, None, function.call, block_identifier=block_number)
+        return_values = retry_call(read_retry_count, None, function.call, block_identifier=block_number)
     except Exception as err:
         # Add additional information to the exception
         # This field is passed in if smart_contract_read is called with an explicit block
@@ -121,6 +125,7 @@ def smart_contract_preview_transaction(
     function_name_or_signature: str,
     *fn_args,
     block_number: BlockNumber | None = None,
+    read_retry_count: int | None = None,
     **fn_kwargs,
 ) -> dict[str, Any]:
     """Returns the values from a transaction without actually submitting the transaction.
@@ -151,6 +156,9 @@ def smart_contract_preview_transaction(
         function to dynamically assign types to output variables
             would be cool if this also put stuff into FixedPoint
     """
+    if read_retry_count is None:
+        read_retry_count = DEFAULT_READ_RETRY_COUNT
+
     # get the callable contract function from function_name & call it
     if "(" in function_name_or_signature:
         function = contract.get_function_by_signature(function_name_or_signature)(*fn_args, **fn_kwargs)
@@ -176,7 +184,7 @@ def smart_contract_preview_transaction(
 
     try:
         return_values = retry_call(
-            READ_RETRY_COUNT,
+            read_retry_count,
             _retry_preview_check,
             function.call,
             transaction_kwargs,
@@ -327,7 +335,11 @@ async def async_wait_for_transaction_receipt(
 
 
 def build_transaction(
-    func_handle: ContractFunction, signer: LocalAccount, web3: Web3, nonce: Nonce | None = None
+    func_handle: ContractFunction,
+    signer: LocalAccount,
+    web3: Web3,
+    nonce: Nonce | None = None,
+    read_retry_count: int | None = None,
 ) -> TxParams:
     """
     Builds a transaction for the given function.
@@ -340,9 +352,11 @@ def build_transaction(
         The LocalAccount that will be used to pay for the gas & sign the transaction
     nonce: Nonce | None
     """
+    if read_retry_count is None:
+        read_retry_count = DEFAULT_READ_RETRY_COUNT
     signer_checksum_address = Web3.to_checksum_address(signer.address)
     # TODO figure out which exception here to retry on
-    base_nonce = retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address)
+    base_nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address)
     if nonce is None:
         nonce = base_nonce
     # We explicitly check to ensure explicit nonce is larger than what web3 is reporting
@@ -359,7 +373,7 @@ def build_transaction(
         }
     )
     # Building transactions can also fail, so we add retry here
-    unsent_txn = retry_call(READ_RETRY_COUNT, _retry_preview_check, func_handle.build_transaction, transaction_kwargs)
+    unsent_txn = retry_call(read_retry_count, _retry_preview_check, func_handle.build_transaction, transaction_kwargs)
     return unsent_txn
 
 
@@ -621,6 +635,7 @@ async def async_eth_transfer(
     amount_wei: int,
     max_priority_fee: int | None = None,
     nonce: Nonce | None = None,
+    read_retry_count: int | None = None,
 ) -> TxReceipt:
     """Execute a generic Ethereum transaction to move ETH from one account to another.
 
@@ -644,8 +659,10 @@ async def async_eth_transfer(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
+    if read_retry_count is None:
+        read_retry_count = DEFAULT_READ_RETRY_COUNT
     signer_checksum_address = Web3.to_checksum_address(signer.address)
-    base_nonce = retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address)
+    base_nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address)
     if nonce is None:
         nonce = base_nonce
     # We explicitly check to ensure explicit nonce is larger than what web3 is reporting
@@ -684,6 +701,7 @@ def eth_transfer(
     amount_wei: int,
     max_priority_fee: int | None = None,
     nonce: Nonce | None = None,
+    read_retry_count: int | None = None,
 ) -> TxReceipt:
     """Execute a generic Ethereum transaction to move ETH from one account to another.
 
@@ -707,10 +725,12 @@ def eth_transfer(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
+    if read_retry_count is None:
+        read_retry_count = DEFAULT_READ_RETRY_COUNT
     signer_checksum_address = Web3.to_checksum_address(signer.address)
     if nonce is None:
         # TODO figure out which exception here to retry on
-        nonce = retry_call(READ_RETRY_COUNT, None, web3.eth.get_transaction_count, signer_checksum_address)
+        nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address)
     unsent_txn: TxParams = {
         "from": signer_checksum_address,
         "to": to_address,
@@ -734,7 +754,9 @@ def eth_transfer(
     return web3.eth.wait_for_transaction_receipt(tx_hash)
 
 
-def fetch_contract_transactions_for_block(web3: Web3, contract: Contract, block_number: BlockNumber) -> list[TxData]:
+def fetch_contract_transactions_for_block(
+    web3: Web3, contract: Contract, block_number: BlockNumber, read_retry_count: int | None = None
+) -> list[TxData]:
     """Fetch transactions related to a contract for a given block number.
 
     Arguments
@@ -752,8 +774,10 @@ def fetch_contract_transactions_for_block(web3: Web3, contract: Contract, block_
         A list of Transaction objects ready to be inserted into Postgres, and
         a list of wallet delta objects ready to be inserted into Postgres
     """
+    if read_retry_count is None:
+        read_retry_count = DEFAULT_READ_RETRY_COUNT
     # TODO figure out which exception here to retry on
-    block: BlockData = retry_call(READ_RETRY_COUNT, None, web3.eth.get_block, block_number, full_transactions=True)
+    block: BlockData = retry_call(read_retry_count, None, web3.eth.get_block, block_number, full_transactions=True)
     all_transactions = block.get("transactions")
 
     if not all_transactions:
