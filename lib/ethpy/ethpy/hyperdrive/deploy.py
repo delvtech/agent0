@@ -221,8 +221,8 @@ def _deploy_hyperdrive_factory(
 
     Returns
     -------
-    (base_token_contract, factory_token_contract) : tuple[Contract, Contract]
-        Containing he deployed base token and factory contracts.
+    (base_token_contract, factory_token_contract, pool_contract_address) : tuple[Contract, Contract, ChecksumAddress]
+        Containing the deployed base token, factory, and the pool contracts/addresses.
     """
     # args = [name, symbol, decimals, admin_addr, isCompetitionMode]
     args = ["Base", "BASE", 18, ADDRESS_ZERO, False]
@@ -368,6 +368,8 @@ def _deploy_and_initialize_hyperdrive_pool(
         The amount of money to be provided by the `deploy_account` for initial pool liquidity.
     initial_fixed_rate : FixedPoint
         The fixed rate of the pool on initialization.
+    pool_contract_addr : ChecksumAddress
+        The address of the pool contract.
     pool_config : PoolConfig
         The configuration for initializing hyperdrive.
         The type is generated from the Hyperdrive ABI using Pypechain.
