@@ -26,10 +26,16 @@ DEFAULT_WRITE_RETRY_COUNT = 1
 # for preview calls.
 # This is the error we get when preview fails due to anvil
 def _retry_preview_check(exc: Exception) -> bool:
+    """The exception to retry on for preview calls"""
     return (
         isinstance(exc, ContractPanicError)
         and exc.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
     )
+
+
+def _retry_txn_check(exc: Exception) -> bool:
+    """The exception to retry on for transaction calls"""
+    return isinstance(exc, UnknownBlockError) and exc.args[0] == "Receipt has status of 0"
 
 
 def smart_contract_read(
@@ -424,6 +430,8 @@ async def async_smart_contract_transact(
     function_name_or_signature: str,
     *fn_args,
     nonce: Nonce | None = None,
+    read_retry_count: int | None = None,
+    write_retry_count: int | None = None,
     **fn_kwargs,
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
@@ -451,6 +459,12 @@ async def async_smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
+
+    if read_retry_count is None:
+        read_retry_count = DEFAULT_READ_RETRY_COUNT
+    if write_retry_count is None:
+        write_retry_count = DEFAULT_WRITE_RETRY_COUNT
+
     if "(" in function_name_or_signature:
         func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args, **fn_kwargs)
     else:
@@ -460,8 +474,10 @@ async def async_smart_contract_transact(
     try:
         # Build transaction
         # Building transaction can fail when transaction itself isn't correct
-        unsent_txn = build_transaction(func_handle, signer, web3, nonce=nonce)
-        return await _async_send_transaction_and_wait_for_receipt(unsent_txn, signer, web3)
+        unsent_txn = build_transaction(func_handle, signer, web3, nonce=nonce, read_retry_count=read_retry_count)
+        return await retry_call(
+            write_retry_count, _retry_txn_check, _async_send_transaction_and_wait_for_receipt, unsent_txn, signer, web3
+        )
 
     # Wraps the exception with a contract call exception, adding additional information
     # Other than UnknownBlockError, which gets the block number from the transaction receipt,
@@ -549,6 +565,8 @@ def smart_contract_transact(
     function_name_or_signature: str,
     *fn_args,
     nonce: Nonce | None = None,
+    read_retry_count: int | None = None,
+    write_retry_count: int | None = None,
     **fn_kwargs,
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
@@ -573,6 +591,12 @@ def smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
+
+    if read_retry_count is None:
+        read_retry_count = DEFAULT_READ_RETRY_COUNT
+    if write_retry_count is None:
+        write_retry_count = DEFAULT_WRITE_RETRY_COUNT
+
     if "(" in function_name_or_signature:
         func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args, **fn_kwargs)
     else:
@@ -582,8 +606,10 @@ def smart_contract_transact(
     try:
         # Build transaction
         # Building transaction can fail when transaction itself isn't correct
-        unsent_txn = build_transaction(func_handle, signer, web3, nonce=nonce)
-        return _send_transaction_and_wait_for_receipt(unsent_txn, signer, web3)
+        unsent_txn = build_transaction(func_handle, signer, web3, nonce=nonce, read_retry_count=read_retry_count)
+        return retry_call(
+            write_retry_count, _retry_txn_check, _send_transaction_and_wait_for_receipt, unsent_txn, signer, web3
+        )
 
     # Wraps the exception with a contract call exception, adding additional information
     # Other than UnknownBlockError, which gets the block number from the transaction receipt,
