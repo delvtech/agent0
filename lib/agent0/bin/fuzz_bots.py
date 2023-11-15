@@ -13,6 +13,8 @@ from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from web3.types import RPCEndpoint
 
+STOP_CHAIN_ON_CRASH = False
+
 # NOTE be sure to adjust `eth.env` to connect to a specific chain
 
 # Define the unique env filename to use for this script
@@ -69,6 +71,7 @@ except KeyboardInterrupt:
     sys.exit()
 except Exception as exc:  # pylint: disable=broad-exception-caught
     # create hyperdrive interface object
-    hyperdrive = HyperdriveInterface()
-    hyperdrive.web3.provider.make_request(method=RPCEndpoint("evm_setIntervalMining"), params=[0])
+    if STOP_CHAIN_ON_CRASH:
+        hyperdrive = HyperdriveInterface()
+        hyperdrive.web3.provider.make_request(method=RPCEndpoint("evm_setIntervalMining"), params=[0])
     raise exc
