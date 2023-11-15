@@ -136,7 +136,7 @@ def deploy_hyperdrive_from_factory(
             mock_hyperdrive=hyperdrive_checksum_address,
             mock_hyperdrive_math=None,
         ),
-        hyperdrive_contract=web3.eth.contract(address=hyperdrive_checksum_address, abi=abis["IHyperdrive"]),
+        hyperdrive_contract=web3.eth.contract(address=hyperdrive_checksum_address, abi=abis["IERC4626Hyperdrive"]),
         hyperdrive_factory_contract=factory_contract,
         base_token_contract=base_token_contract,
     )

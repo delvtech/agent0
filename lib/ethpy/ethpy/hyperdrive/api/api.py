@@ -141,12 +141,9 @@ class HyperdriveInterface:
         )
         # Setup Hyperdrive and Yield (variable rate) contracts.
         self.hyperdrive_contract: Contract = web3.eth.contract(
-            abi=abis["IHyperdrive"], address=web3.to_checksum_address(self.addresses.mock_hyperdrive)
-        )
-        data_provider_contract: Contract = web3.eth.contract(
             abi=abis["IERC4626Hyperdrive"], address=web3.to_checksum_address(self.addresses.mock_hyperdrive)
         )
-        self.yield_address = smart_contract_read(data_provider_contract, "pool")["value"]
+        self.yield_address = smart_contract_read(self.hyperdrive_contract, "pool")["value"]
         self.yield_contract: Contract = web3.eth.contract(
             abi=abis["MockERC4626"], address=web3.to_checksum_address(self.yield_address)
         )

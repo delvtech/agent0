@@ -218,9 +218,9 @@ def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddress
     Contract
         The contract object returned from the query
     """
-    if "IHyperdrive" not in abis:
-        raise AssertionError("IHyperdrive ABI was not provided")
-    state_abi = abis["IHyperdrive"]
+    if "IERC4626Hyperdrive" not in abis:
+        raise AssertionError("IERC4626Hyperdrive ABI was not provided")
+    state_abi = abis["IERC4626Hyperdrive"]
     # get contract instance of hyperdrive
     hyperdrive_contract: Contract = web3.eth.contract(
         address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
