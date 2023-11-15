@@ -10,10 +10,12 @@ import docker
 import pytest
 from chainsync import PostgresConfig
 from chainsync.db.base import Base, initialize_engine
-from docker.errors import DockerException
+from docker.errors import DockerException, NotFound
 from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
+
+TEST_POSTGRES_NAME = "postgres_test"
 
 
 @pytest.fixture(scope="session")
@@ -57,6 +59,15 @@ def psql_docker() -> Iterator[PostgresConfig]:
         POSTGRES_PORT=5555,
     )
 
+    # Kill the test container if it already exists
+    try:
+        existing_container = client.containers.get(TEST_POSTGRES_NAME)
+    except NotFound:
+        # Container doesn't exist, ignore
+        existing_container = None
+    if existing_container is not None:
+        existing_container.remove(v=True, force=True)  # type:ignore
+
     container = client.containers.run(
         image="postgres",
         auto_remove=True,
@@ -64,7 +75,7 @@ def psql_docker() -> Iterator[PostgresConfig]:
             "POSTGRES_USER": postgres_config.POSTGRES_USER,
             "POSTGRES_PASSWORD": postgres_config.POSTGRES_PASSWORD,
         },
-        name="test_postgres",
+        name=TEST_POSTGRES_NAME,
         ports={"5432/tcp": ("127.0.0.1", postgres_config.POSTGRES_PORT)},
         detach=True,
         remove=True,
