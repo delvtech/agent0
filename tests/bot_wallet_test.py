@@ -243,7 +243,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
         return action_list, done_trading
 
 
-class TestBotToDb:
+class TestWalletAgainstChain:
     """Tests pipeline from bots making trades to viewing the trades in the db"""
 
     # TODO split this up into different functions that work with tests
