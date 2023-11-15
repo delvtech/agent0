@@ -32,12 +32,12 @@ class ERC4626HyperdriveDeployerDeployContractFunction(ContractFunction):
     def __call__(
         self,
         _config: tuple,
-        _dataProvider: str,
-        _linkerCodeHash: bytes,
-        _linkerFactory: str,
+        _target0: str,
+        _target1: str,
         _extraData: list[bytes],
+        _pool: str,
     ) -> "ERC4626HyperdriveDeployerDeployContractFunction":
-        super().__call__(_config, _dataProvider, _linkerCodeHash, _linkerFactory, _extraData)
+        super().__call__(_config, _target0, _target1, _extraData, _pool)
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -56,22 +56,21 @@ erc4626hyperdrivedeployer_abi: ABI = cast(
         {
             "inputs": [
                 {
-                    "internalType": "contract IERC4626",
-                    "name": "_pool",
-                    "type": "address",
-                }
-            ],
-            "stateMutability": "nonpayable",
-            "type": "constructor",
-        },
-        {
-            "inputs": [
-                {
                     "components": [
                         {
                             "internalType": "contract IERC20",
                             "name": "baseToken",
                             "type": "address",
+                        },
+                        {
+                            "internalType": "address",
+                            "name": "linkerFactory",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "bytes32",
+                            "name": "linkerCodeHash",
+                            "type": "bytes32",
                         },
                         {
                             "internalType": "uint256",
@@ -86,6 +85,11 @@ erc4626hyperdrivedeployer_abi: ABI = cast(
                         {
                             "internalType": "uint256",
                             "name": "minimumTransactionAmount",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "precisionThreshold",
                             "type": "uint256",
                         },
                         {
@@ -135,16 +139,6 @@ erc4626hyperdrivedeployer_abi: ABI = cast(
                             "name": "fees",
                             "type": "tuple",
                         },
-                        {
-                            "internalType": "uint256",
-                            "name": "oracleSize",
-                            "type": "uint256",
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "updateGap",
-                            "type": "uint256",
-                        },
                     ],
                     "internalType": "struct IHyperdrive.PoolConfig",
                     "name": "_config",
@@ -152,17 +146,12 @@ erc4626hyperdrivedeployer_abi: ABI = cast(
                 },
                 {
                     "internalType": "address",
-                    "name": "_dataProvider",
+                    "name": "_target0",
                     "type": "address",
                 },
                 {
-                    "internalType": "bytes32",
-                    "name": "_linkerCodeHash",
-                    "type": "bytes32",
-                },
-                {
                     "internalType": "address",
-                    "name": "_linkerFactory",
+                    "name": "_target1",
                     "type": "address",
                 },
                 {
@@ -170,12 +159,13 @@ erc4626hyperdrivedeployer_abi: ABI = cast(
                     "name": "_extraData",
                     "type": "bytes32[]",
                 },
+                {"internalType": "address", "name": "_pool", "type": "address"},
             ],
             "name": "deploy",
             "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "nonpayable",
             "type": "function",
-        },
+        }
     ],
 )
 

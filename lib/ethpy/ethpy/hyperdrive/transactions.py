@@ -31,7 +31,7 @@ class Checkpoint:
     """Checkpoint struct."""
 
     share_price: FixedPoint
-    long_exposure: FixedPoint
+    exposure: FixedPoint
 
 
 @dataclass
@@ -48,9 +48,12 @@ class PoolConfig:
     """PoolConfig struct."""
 
     base_token: str
+    linker_factory: str
+    linker_code_hash: bytes
     initial_share_price: FixedPoint
     minimum_share_reserves: FixedPoint
     minimum_transaction_amount: FixedPoint
+    precision_threshold: int
     position_duration: int
     checkpoint_duration: int
     time_stretch: FixedPoint
@@ -59,8 +62,6 @@ class PoolConfig:
     # TODO: Pyright:
     # Declaration "fees" is obscured by a declaration of the same name here but not elsewhere
     fees: Fees | Sequence  # type: ignore
-    oracle_size: int
-    update_gap: int
 
     def __post_init__(self):
         if isinstance(self.fees, Sequence):
@@ -195,7 +196,7 @@ def convert_hyperdrive_checkpoint_types(checkpoint: dict[str, int]) -> Checkpoin
     Returns
     -------
     Checkpoint
-        A dataclass containing the checkpoint share_price and long_exposure fields converted to FixedPoint.
+        A dataclass containing the checkpoint share_price and exposure fields converted to FixedPoint.
     """
     return Checkpoint(**{camel_to_snake(key): FixedPoint(scaled_value=value) for key, value in checkpoint.items()})
 
@@ -217,9 +218,9 @@ def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddress
     Contract
         The contract object returned from the query
     """
-    if "IHyperdrive" not in abis:
-        raise AssertionError("IHyperdrive ABI was not provided")
-    state_abi = abis["IHyperdrive"]
+    if "IERC4626Hyperdrive" not in abis:
+        raise AssertionError("IERC4626Hyperdrive ABI was not provided")
+    state_abi = abis["IERC4626Hyperdrive"]
     # get contract instance of hyperdrive
     hyperdrive_contract: Contract = web3.eth.contract(
         address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi

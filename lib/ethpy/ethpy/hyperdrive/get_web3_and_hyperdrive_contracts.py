@@ -48,14 +48,9 @@ def get_web3_and_hyperdrive_contracts(
     )
     # set up hyperdrive contract
     hyperdrive_contract: Contract = web3.eth.contract(
-        abi=abis["IHyperdrive"],
-        address=web3.to_checksum_address(contract_addresses.mock_hyperdrive),
+        abi=abis["IERC4626Hyperdrive"], address=web3.to_checksum_address(contract_addresses.mock_hyperdrive)
     )
-
-    data_provider_contract: Contract = web3.eth.contract(
-        abi=abis["ERC4626DataProvider"], address=web3.to_checksum_address(contract_addresses.mock_hyperdrive)
-    )
-    yield_address = smart_contract_read(data_provider_contract, "pool")["value"]
+    yield_address = smart_contract_read(hyperdrive_contract, "pool")["value"]
     yield_contract: Contract = web3.eth.contract(
         abi=abis["MockERC4626"], address=web3.to_checksum_address(yield_address)
     )

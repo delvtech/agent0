@@ -22,6 +22,16 @@ from .retry_utils import retry_call
 READ_RETRY_COUNT = 5
 
 
+# We define the function to check the exception to retry on
+# for preview calls.
+# This is the error we get when preview fails due to anvil
+def _retry_preview_check(exc: Exception) -> bool:
+    return (
+        isinstance(exc, ContractPanicError)
+        and exc.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
+    )
+
+
 def smart_contract_read(
     contract: Contract,
     function_name_or_signature: str,
@@ -147,27 +157,27 @@ def smart_contract_preview_transaction(
     else:
         function = contract.get_function_by_name(function_name_or_signature)(*fn_args, **fn_kwargs)
 
-    # We define the function to check the exception to retry on
-    # This is the error we get when preview fails due to anvil
-    def retry_preview_check(exc: Exception) -> bool:
-        return (
-            isinstance(exc, ContractPanicError)
-            and exc.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
-        )
-
     # This is the additional transaction argument passed into function.call
     # that may contain additional call arguments such as max_gas, nonce, etc.
     transaction_kwargs = {"from": signer_address}
-    raw_txn = {}
-    try:
-        # We build the raw transaction here in case of error. Note that we don't call `build_transaction`
-        # since it adds the nonce to the transaction, and we ignore nonce in preview
-        # Build transactions can fail, so we put this here in the try/catch
-        raw_txn = function.build_transaction({"from": signer_address})
 
+    raw_txn = {}
+    # We build the raw transaction here in case of error, where we want to attach the raw txn to the crash report.
+    # Note that we don't call `build_transaction`
+    # since it adds the nonce to the transaction, and we ignore nonce in preview
+    # This is a best attempt at building a transaction for the preview call, because
+    # this function doesn't accept a block_number as an argument,
+    # so there's a race condition if a new trade comes in and this preview call is no longer valid
+    # Hence, we wrap this in a try/catch, and ignore if it fails
+    try:
+        raw_txn = function.build_transaction({"from": signer_address})
+    except Exception:  # pylint: disable=broad-except
+        pass
+
+    try:
         return_values = retry_call(
             READ_RETRY_COUNT,
-            retry_preview_check,
+            _retry_preview_check,
             function.call,
             transaction_kwargs,
             block_identifier=block_number,
@@ -348,7 +358,8 @@ def build_transaction(
             "nonce": nonce,
         }
     )
-    unsent_txn = func_handle.build_transaction(transaction_kwargs)
+    # Building transactions can also fail, so we add retry here
+    unsent_txn = retry_call(READ_RETRY_COUNT, _retry_preview_check, func_handle.build_transaction, transaction_kwargs)
     return unsent_txn
 
 

@@ -27,10 +27,13 @@ class PoolConfig(Base):
     __tablename__ = "pool_config"
 
     contract_address: Mapped[str] = mapped_column(String, primary_key=True)
+    linker_factory: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    # Ignoring linker_code_hash field
     base_token: Mapped[Union[str, None]] = mapped_column(String, default=None)
     initial_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     minimum_share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     minimum_transaction_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    precision_threshold: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
     position_duration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     checkpoint_duration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     time_stretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -39,10 +42,7 @@ class PoolConfig(Base):
     curve_fee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     flat_fee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     governance_fee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    oracle_size: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
-    update_gap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     inv_time_stretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    update_gap: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
 
 
 class CheckpointInfo(Base):
@@ -53,7 +53,7 @@ class CheckpointInfo(Base):
     block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime)
     share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    long_exposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    exposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
 class PoolInfo(Base):

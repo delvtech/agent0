@@ -43,8 +43,8 @@ class ForwarderFactoryCreateContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, token: str, tokenId: int) -> "ForwarderFactoryCreateContractFunction":
-        super().__call__(token, tokenId)
+    def __call__(self, __token: str, __tokenId: int) -> "ForwarderFactoryCreateContractFunction":
+        super().__call__(__token, __tokenId)
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -71,8 +71,8 @@ class ForwarderFactoryGetForwarderContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, token: str, tokenId: int) -> "ForwarderFactoryGetForwarderContractFunction":
-        super().__call__(token, tokenId)
+    def __call__(self, __token: str, __tokenId: int) -> "ForwarderFactoryGetForwarderContractFunction":
+        super().__call__(__token, __tokenId)
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -94,7 +94,6 @@ class ForwarderFactoryContractFunctions(ContractFunctions):
 forwarderfactory_abi: ABI = cast(
     ABI,
     [
-        {"inputs": [], "stateMutability": "nonpayable", "type": "constructor"},
         {"inputs": [], "name": "InvalidForwarderAddress", "type": "error"},
         {
             "inputs": [],
@@ -107,12 +106,12 @@ forwarderfactory_abi: ABI = cast(
             "inputs": [
                 {
                     "internalType": "contract IMultiToken",
-                    "name": "token",
+                    "name": "__token",
                     "type": "address",
                 },
                 {
                     "internalType": "uint256",
-                    "name": "tokenId",
+                    "name": "__tokenId",
                     "type": "uint256",
                 },
             ],
@@ -145,12 +144,12 @@ forwarderfactory_abi: ABI = cast(
             "inputs": [
                 {
                     "internalType": "contract IMultiToken",
-                    "name": "token",
+                    "name": "__token",
                     "type": "address",
                 },
                 {
                     "internalType": "uint256",
-                    "name": "tokenId",
+                    "name": "__tokenId",
                     "type": "uint256",
                 },
             ],

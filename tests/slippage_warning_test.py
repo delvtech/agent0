@@ -34,11 +34,6 @@ class TestSlippageWarning:
         """Runs the entire pipeline and checks the database at the end.
         All arguments are fixtures.
         """
-        # TODO local_hyperdrive_pool is currently being run with automining. Hence, multiple trades
-        # per block can't be tested until we can parameterize anvil running without automining.
-        # For now, this is simply testing that the introduction of async trades doesn't break
-        # when automining.
-
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
 

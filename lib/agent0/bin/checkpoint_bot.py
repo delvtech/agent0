@@ -91,10 +91,11 @@ def main() -> None:
     logging.info("Successfully funded the sender=%s.", sender.address)
 
     # Get the Hyperdrive contract.
+    # TODO replace this with the hyperdrive interface
     hyperdrive_abis = load_all_abis(eth_config.abi_dir)
     addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
     hyperdrive_contract: Contract = web3.eth.contract(
-        abi=hyperdrive_abis["IHyperdrive"],
+        abi=hyperdrive_abis["IERC4626Hyperdrive"],
         address=web3.to_checksum_address(addresses.mock_hyperdrive),
     )
 

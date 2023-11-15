@@ -1,4 +1,4 @@
-"""A web3.py Contract class for the IHyperdrive contract."""
+"""A web3.py Contract class for the HyperdriveTarget0 contract."""
 
 # contracts have PascalCase names
 # pylint: disable=invalid-name
@@ -23,71 +23,27 @@ from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 
 
-class IHyperdriveDOMAIN_SEPARATORContractFunction(ContractFunction):
-    """ContractFunction for the DOMAIN_SEPARATOR method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(self) -> "IHyperdriveDOMAIN_SEPARATORContractFunction":
-        super().__call__()
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdrivePERMIT_TYPEHASHContractFunction(ContractFunction):
-    """ContractFunction for the PERMIT_TYPEHASH method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(self) -> "IHyperdrivePERMIT_TYPEHASHContractFunction":
-        super().__call__()
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdriveAddLiquidityContractFunction(ContractFunction):
-    """ContractFunction for the addLiquidity method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(
-        self, _contribution: int, _minApr: int, _maxApr: int, _options: tuple
-    ) -> "IHyperdriveAddLiquidityContractFunction":
-        super().__call__(_contribution, _minApr, _maxApr, _options)
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdriveBalanceOfContractFunction(ContractFunction):
+class HyperdriveTarget0BalanceOfContractFunction(ContractFunction):
     """ContractFunction for the balanceOf method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, tokenId: int, owner: str) -> "IHyperdriveBalanceOfContractFunction":
-        super().__call__(tokenId, owner)
+    def __call__(self, tokenId: int, account: str) -> "HyperdriveTarget0BalanceOfContractFunction":
+        super().__call__(tokenId, account)
         return self
 
     # TODO: add call def so we can get return types for the calls
     # def call()
 
 
-class IHyperdriveBaseTokenContractFunction(ContractFunction):
+class HyperdriveTarget0BaseTokenContractFunction(ContractFunction):
     """ContractFunction for the baseToken method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self) -> "IHyperdriveBaseTokenContractFunction":
+    def __call__(self) -> "HyperdriveTarget0BaseTokenContractFunction":
         super().__call__()
         return self
 
@@ -95,7 +51,7 @@ class IHyperdriveBaseTokenContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveBatchTransferFromContractFunction(ContractFunction):
+class HyperdriveTarget0BatchTransferFromContractFunction(ContractFunction):
     """ContractFunction for the batchTransferFrom method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -103,7 +59,7 @@ class IHyperdriveBatchTransferFromContractFunction(ContractFunction):
 
     def __call__(
         self, _from: str, to: str, ids: list[int], values: list[int]
-    ) -> "IHyperdriveBatchTransferFromContractFunction":
+    ) -> "HyperdriveTarget0BatchTransferFromContractFunction":
         super().__call__(_from, to, ids, values)
         return self
 
@@ -111,67 +67,13 @@ class IHyperdriveBatchTransferFromContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveCheckpointContractFunction(ContractFunction):
-    """ContractFunction for the checkpoint method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(self, _checkpointTime: int) -> "IHyperdriveCheckpointContractFunction":
-        super().__call__(_checkpointTime)
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdriveCloseLongContractFunction(ContractFunction):
-    """ContractFunction for the closeLong method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(
-        self,
-        _maturityTime: int,
-        _bondAmount: int,
-        _minOutput: int,
-        _options: tuple,
-    ) -> "IHyperdriveCloseLongContractFunction":
-        super().__call__(_maturityTime, _bondAmount, _minOutput, _options)
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdriveCloseShortContractFunction(ContractFunction):
-    """ContractFunction for the closeShort method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(
-        self,
-        _maturityTime: int,
-        _bondAmount: int,
-        _minOutput: int,
-        _options: tuple,
-    ) -> "IHyperdriveCloseShortContractFunction":
-        super().__call__(_maturityTime, _bondAmount, _minOutput, _options)
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdriveCollectGovernanceFeeContractFunction(ContractFunction):
+class HyperdriveTarget0CollectGovernanceFeeContractFunction(ContractFunction):
     """ContractFunction for the collectGovernanceFee method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _options: tuple) -> "IHyperdriveCollectGovernanceFeeContractFunction":
+    def __call__(self, _options: tuple) -> "HyperdriveTarget0CollectGovernanceFeeContractFunction":
         super().__call__(_options)
         return self
 
@@ -179,13 +81,13 @@ class IHyperdriveCollectGovernanceFeeContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveGetCheckpointContractFunction(ContractFunction):
+class HyperdriveTarget0GetCheckpointContractFunction(ContractFunction):
     """ContractFunction for the getCheckpoint method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _checkpointId: int) -> "IHyperdriveGetCheckpointContractFunction":
+    def __call__(self, _checkpointId: int) -> "HyperdriveTarget0GetCheckpointContractFunction":
         super().__call__(_checkpointId)
         return self
 
@@ -193,13 +95,13 @@ class IHyperdriveGetCheckpointContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveGetMarketStateContractFunction(ContractFunction):
+class HyperdriveTarget0GetMarketStateContractFunction(ContractFunction):
     """ContractFunction for the getMarketState method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self) -> "IHyperdriveGetMarketStateContractFunction":
+    def __call__(self) -> "HyperdriveTarget0GetMarketStateContractFunction":
         super().__call__()
         return self
 
@@ -207,13 +109,13 @@ class IHyperdriveGetMarketStateContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveGetPoolConfigContractFunction(ContractFunction):
+class HyperdriveTarget0GetPoolConfigContractFunction(ContractFunction):
     """ContractFunction for the getPoolConfig method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self) -> "IHyperdriveGetPoolConfigContractFunction":
+    def __call__(self) -> "HyperdriveTarget0GetPoolConfigContractFunction":
         super().__call__()
         return self
 
@@ -221,13 +123,13 @@ class IHyperdriveGetPoolConfigContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveGetPoolInfoContractFunction(ContractFunction):
+class HyperdriveTarget0GetPoolInfoContractFunction(ContractFunction):
     """ContractFunction for the getPoolInfo method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self) -> "IHyperdriveGetPoolInfoContractFunction":
+    def __call__(self) -> "HyperdriveTarget0GetPoolInfoContractFunction":
         super().__call__()
         return self
 
@@ -235,7 +137,7 @@ class IHyperdriveGetPoolInfoContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveGetUncollectedGovernanceFeesContractFunction(ContractFunction):
+class HyperdriveTarget0GetUncollectedGovernanceFeesContractFunction(ContractFunction):
     """ContractFunction for the getUncollectedGovernanceFees method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -243,7 +145,7 @@ class IHyperdriveGetUncollectedGovernanceFeesContractFunction(ContractFunction):
 
     def __call__(
         self,
-    ) -> "IHyperdriveGetUncollectedGovernanceFeesContractFunction":
+    ) -> "HyperdriveTarget0GetUncollectedGovernanceFeesContractFunction":
         super().__call__()
         return self
 
@@ -251,13 +153,13 @@ class IHyperdriveGetUncollectedGovernanceFeesContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveGetWithdrawPoolContractFunction(ContractFunction):
+class HyperdriveTarget0GetWithdrawPoolContractFunction(ContractFunction):
     """ContractFunction for the getWithdrawPool method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self) -> "IHyperdriveGetWithdrawPoolContractFunction":
+    def __call__(self) -> "HyperdriveTarget0GetWithdrawPoolContractFunction":
         super().__call__()
         return self
 
@@ -265,41 +167,27 @@ class IHyperdriveGetWithdrawPoolContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveInitializeContractFunction(ContractFunction):
-    """ContractFunction for the initialize method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(self, _contribution: int, _apr: int, _options: tuple) -> "IHyperdriveInitializeContractFunction":
-        super().__call__(_contribution, _apr, _options)
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdriveIsApprovedForAllContractFunction(ContractFunction):
+class HyperdriveTarget0IsApprovedForAllContractFunction(ContractFunction):
     """ContractFunction for the isApprovedForAll method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, owner: str, spender: str) -> "IHyperdriveIsApprovedForAllContractFunction":
-        super().__call__(owner, spender)
+    def __call__(self, account: str, operator: str) -> "HyperdriveTarget0IsApprovedForAllContractFunction":
+        super().__call__(account, operator)
         return self
 
     # TODO: add call def so we can get return types for the calls
     # def call()
 
 
-class IHyperdriveLoadContractFunction(ContractFunction):
+class HyperdriveTarget0LoadContractFunction(ContractFunction):
     """ContractFunction for the load method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _slots: list[int]) -> "IHyperdriveLoadContractFunction":
+    def __call__(self, _slots: list[int]) -> "HyperdriveTarget0LoadContractFunction":
         super().__call__(_slots)
         return self
 
@@ -307,81 +195,41 @@ class IHyperdriveLoadContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveNameContractFunction(ContractFunction):
+class HyperdriveTarget0NameContractFunction(ContractFunction):
     """ContractFunction for the name method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _id: int) -> "IHyperdriveNameContractFunction":
-        super().__call__(_id)
+    def __call__(self, tokenId: int) -> "HyperdriveTarget0NameContractFunction":
+        super().__call__(tokenId)
         return self
 
     # TODO: add call def so we can get return types for the calls
     # def call()
 
 
-class IHyperdriveNoncesContractFunction(ContractFunction):
+class HyperdriveTarget0NoncesContractFunction(ContractFunction):
     """ContractFunction for the nonces method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, owner: str) -> "IHyperdriveNoncesContractFunction":
-        super().__call__(owner)
+    def __call__(self, account: str) -> "HyperdriveTarget0NoncesContractFunction":
+        super().__call__(account)
         return self
 
     # TODO: add call def so we can get return types for the calls
     # def call()
 
 
-class IHyperdriveOpenLongContractFunction(ContractFunction):
-    """ContractFunction for the openLong method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(
-        self,
-        _baseAmount: int,
-        _minOutput: int,
-        _minSharePrice: int,
-        _options: tuple,
-    ) -> "IHyperdriveOpenLongContractFunction":
-        super().__call__(_baseAmount, _minOutput, _minSharePrice, _options)
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdriveOpenShortContractFunction(ContractFunction):
-    """ContractFunction for the openShort method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(
-        self,
-        _bondAmount: int,
-        _maxDeposit: int,
-        _minSharePrice: int,
-        _options: tuple,
-    ) -> "IHyperdriveOpenShortContractFunction":
-        super().__call__(_bondAmount, _maxDeposit, _minSharePrice, _options)
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdrivePauseContractFunction(ContractFunction):
+class HyperdriveTarget0PauseContractFunction(ContractFunction):
     """ContractFunction for the pause method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _status: bool) -> "IHyperdrivePauseContractFunction":
+    def __call__(self, _status: bool) -> "HyperdriveTarget0PauseContractFunction":
         super().__call__(_status)
         return self
 
@@ -389,80 +237,29 @@ class IHyperdrivePauseContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdrivePerTokenApprovalsContractFunction(ContractFunction):
+class HyperdriveTarget0PerTokenApprovalsContractFunction(ContractFunction):
     """ContractFunction for the perTokenApprovals method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, tokenId: int, owner: str, spender: str) -> "IHyperdrivePerTokenApprovalsContractFunction":
-        super().__call__(tokenId, owner, spender)
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdrivePermitForAllContractFunction(ContractFunction):
-    """ContractFunction for the permitForAll method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
     def __call__(
-        self,
-        owner: str,
-        spender: str,
-        _approved: bool,
-        deadline: int,
-        v: int,
-        r: bytes,
-        s: bytes,
-    ) -> "IHyperdrivePermitForAllContractFunction":
-        super().__call__(owner, spender, _approved, deadline, v, r, s)
+        self, tokenId: int, account: str, spender: str
+    ) -> "HyperdriveTarget0PerTokenApprovalsContractFunction":
+        super().__call__(tokenId, account, spender)
         return self
 
     # TODO: add call def so we can get return types for the calls
     # def call()
 
 
-class IHyperdriveRedeemWithdrawalSharesContractFunction(ContractFunction):
-    """ContractFunction for the redeemWithdrawalShares method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(
-        self, _shares: int, _minOutput: int, _options: tuple
-    ) -> "IHyperdriveRedeemWithdrawalSharesContractFunction":
-        super().__call__(_shares, _minOutput, _options)
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdriveRemoveLiquidityContractFunction(ContractFunction):
-    """ContractFunction for the removeLiquidity method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(self, _shares: int, _minOutput: int, _options: tuple) -> "IHyperdriveRemoveLiquidityContractFunction":
-        super().__call__(_shares, _minOutput, _options)
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdriveSetApprovalContractFunction(ContractFunction):
+class HyperdriveTarget0SetApprovalContractFunction(ContractFunction):
     """ContractFunction for the setApproval method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, tokenID: int, operator: str, amount: int) -> "IHyperdriveSetApprovalContractFunction":
+    def __call__(self, tokenID: int, operator: str, amount: int) -> "HyperdriveTarget0SetApprovalContractFunction":
         super().__call__(tokenID, operator, amount)
         return self
 
@@ -470,7 +267,7 @@ class IHyperdriveSetApprovalContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveSetApprovalBridgeContractFunction(ContractFunction):
+class HyperdriveTarget0SetApprovalBridgeContractFunction(ContractFunction):
     """ContractFunction for the setApprovalBridge method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -478,7 +275,7 @@ class IHyperdriveSetApprovalBridgeContractFunction(ContractFunction):
 
     def __call__(
         self, tokenID: int, operator: str, amount: int, caller: str
-    ) -> "IHyperdriveSetApprovalBridgeContractFunction":
+    ) -> "HyperdriveTarget0SetApprovalBridgeContractFunction":
         super().__call__(tokenID, operator, amount, caller)
         return self
 
@@ -486,13 +283,13 @@ class IHyperdriveSetApprovalBridgeContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveSetApprovalForAllContractFunction(ContractFunction):
+class HyperdriveTarget0SetApprovalForAllContractFunction(ContractFunction):
     """ContractFunction for the setApprovalForAll method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, operator: str, approved: bool) -> "IHyperdriveSetApprovalForAllContractFunction":
+    def __call__(self, operator: str, approved: bool) -> "HyperdriveTarget0SetApprovalForAllContractFunction":
         super().__call__(operator, approved)
         return self
 
@@ -500,13 +297,13 @@ class IHyperdriveSetApprovalForAllContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveSetGovernanceContractFunction(ContractFunction):
+class HyperdriveTarget0SetGovernanceContractFunction(ContractFunction):
     """ContractFunction for the setGovernance method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _who: str) -> "IHyperdriveSetGovernanceContractFunction":
+    def __call__(self, _who: str) -> "HyperdriveTarget0SetGovernanceContractFunction":
         super().__call__(_who)
         return self
 
@@ -514,13 +311,13 @@ class IHyperdriveSetGovernanceContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveSetPauserContractFunction(ContractFunction):
+class HyperdriveTarget0SetPauserContractFunction(ContractFunction):
     """ContractFunction for the setPauser method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, who: str, status: bool) -> "IHyperdriveSetPauserContractFunction":
+    def __call__(self, who: str, status: bool) -> "HyperdriveTarget0SetPauserContractFunction":
         super().__call__(who, status)
         return self
 
@@ -528,69 +325,43 @@ class IHyperdriveSetPauserContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveSymbolContractFunction(ContractFunction):
+class HyperdriveTarget0SymbolContractFunction(ContractFunction):
     """ContractFunction for the symbol method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _id: int) -> "IHyperdriveSymbolContractFunction":
-        super().__call__(_id)
+    def __call__(self, tokenId: int) -> "HyperdriveTarget0SymbolContractFunction":
+        super().__call__(tokenId)
         return self
 
     # TODO: add call def so we can get return types for the calls
     # def call()
 
 
-class IHyperdriveTarget0ContractFunction(ContractFunction):
-    """ContractFunction for the target0 method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(self) -> "IHyperdriveTarget0ContractFunction":
-        super().__call__()
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdriveTarget1ContractFunction(ContractFunction):
-    """ContractFunction for the target1 method."""
-
-    # super() call methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    def __call__(self) -> "IHyperdriveTarget1ContractFunction":
-        super().__call__()
-        return self
-
-    # TODO: add call def so we can get return types for the calls
-    # def call()
-
-
-class IHyperdriveTotalSupplyContractFunction(ContractFunction):
+class HyperdriveTarget0TotalSupplyContractFunction(ContractFunction):
     """ContractFunction for the totalSupply method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _id: int) -> "IHyperdriveTotalSupplyContractFunction":
-        super().__call__(_id)
+    def __call__(self, tokenId: int) -> "HyperdriveTarget0TotalSupplyContractFunction":
+        super().__call__(tokenId)
         return self
 
     # TODO: add call def so we can get return types for the calls
     # def call()
 
 
-class IHyperdriveTransferFromContractFunction(ContractFunction):
+class HyperdriveTarget0TransferFromContractFunction(ContractFunction):
     """ContractFunction for the transferFrom method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, tokenID: int, _from: str, to: str, amount: int) -> "IHyperdriveTransferFromContractFunction":
+    def __call__(
+        self, tokenID: int, _from: str, to: str, amount: int
+    ) -> "HyperdriveTarget0TransferFromContractFunction":
         super().__call__(tokenID, _from, to, amount)
         return self
 
@@ -598,7 +369,7 @@ class IHyperdriveTransferFromContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveTransferFromBridgeContractFunction(ContractFunction):
+class HyperdriveTarget0TransferFromBridgeContractFunction(ContractFunction):
     """ContractFunction for the transferFromBridge method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -606,7 +377,7 @@ class IHyperdriveTransferFromBridgeContractFunction(ContractFunction):
 
     def __call__(
         self, tokenID: int, _from: str, to: str, amount: int, caller: str
-    ) -> "IHyperdriveTransferFromBridgeContractFunction":
+    ) -> "HyperdriveTarget0TransferFromBridgeContractFunction":
         super().__call__(tokenID, _from, to, amount, caller)
         return self
 
@@ -614,183 +385,85 @@ class IHyperdriveTransferFromBridgeContractFunction(ContractFunction):
     # def call()
 
 
-class IHyperdriveContractFunctions(ContractFunctions):
-    """ContractFunctions for the IHyperdrive contract."""
+class HyperdriveTarget0ContractFunctions(ContractFunctions):
+    """ContractFunctions for the HyperdriveTarget0 contract."""
 
-    DOMAIN_SEPARATOR: IHyperdriveDOMAIN_SEPARATORContractFunction
+    balanceOf: HyperdriveTarget0BalanceOfContractFunction
 
-    PERMIT_TYPEHASH: IHyperdrivePERMIT_TYPEHASHContractFunction
+    baseToken: HyperdriveTarget0BaseTokenContractFunction
 
-    addLiquidity: IHyperdriveAddLiquidityContractFunction
+    batchTransferFrom: HyperdriveTarget0BatchTransferFromContractFunction
 
-    balanceOf: IHyperdriveBalanceOfContractFunction
+    collectGovernanceFee: HyperdriveTarget0CollectGovernanceFeeContractFunction
 
-    baseToken: IHyperdriveBaseTokenContractFunction
+    getCheckpoint: HyperdriveTarget0GetCheckpointContractFunction
 
-    batchTransferFrom: IHyperdriveBatchTransferFromContractFunction
+    getMarketState: HyperdriveTarget0GetMarketStateContractFunction
 
-    checkpoint: IHyperdriveCheckpointContractFunction
+    getPoolConfig: HyperdriveTarget0GetPoolConfigContractFunction
 
-    closeLong: IHyperdriveCloseLongContractFunction
+    getPoolInfo: HyperdriveTarget0GetPoolInfoContractFunction
 
-    closeShort: IHyperdriveCloseShortContractFunction
+    getUncollectedGovernanceFees: HyperdriveTarget0GetUncollectedGovernanceFeesContractFunction
 
-    collectGovernanceFee: IHyperdriveCollectGovernanceFeeContractFunction
+    getWithdrawPool: HyperdriveTarget0GetWithdrawPoolContractFunction
 
-    getCheckpoint: IHyperdriveGetCheckpointContractFunction
+    isApprovedForAll: HyperdriveTarget0IsApprovedForAllContractFunction
 
-    getMarketState: IHyperdriveGetMarketStateContractFunction
+    load: HyperdriveTarget0LoadContractFunction
 
-    getPoolConfig: IHyperdriveGetPoolConfigContractFunction
+    name: HyperdriveTarget0NameContractFunction
 
-    getPoolInfo: IHyperdriveGetPoolInfoContractFunction
+    nonces: HyperdriveTarget0NoncesContractFunction
 
-    getUncollectedGovernanceFees: IHyperdriveGetUncollectedGovernanceFeesContractFunction
+    pause: HyperdriveTarget0PauseContractFunction
 
-    getWithdrawPool: IHyperdriveGetWithdrawPoolContractFunction
+    perTokenApprovals: HyperdriveTarget0PerTokenApprovalsContractFunction
 
-    initialize: IHyperdriveInitializeContractFunction
+    setApproval: HyperdriveTarget0SetApprovalContractFunction
 
-    isApprovedForAll: IHyperdriveIsApprovedForAllContractFunction
+    setApprovalBridge: HyperdriveTarget0SetApprovalBridgeContractFunction
 
-    load: IHyperdriveLoadContractFunction
+    setApprovalForAll: HyperdriveTarget0SetApprovalForAllContractFunction
 
-    name: IHyperdriveNameContractFunction
+    setGovernance: HyperdriveTarget0SetGovernanceContractFunction
 
-    nonces: IHyperdriveNoncesContractFunction
+    setPauser: HyperdriveTarget0SetPauserContractFunction
 
-    openLong: IHyperdriveOpenLongContractFunction
+    symbol: HyperdriveTarget0SymbolContractFunction
 
-    openShort: IHyperdriveOpenShortContractFunction
+    totalSupply: HyperdriveTarget0TotalSupplyContractFunction
 
-    pause: IHyperdrivePauseContractFunction
+    transferFrom: HyperdriveTarget0TransferFromContractFunction
 
-    perTokenApprovals: IHyperdrivePerTokenApprovalsContractFunction
-
-    permitForAll: IHyperdrivePermitForAllContractFunction
-
-    redeemWithdrawalShares: IHyperdriveRedeemWithdrawalSharesContractFunction
-
-    removeLiquidity: IHyperdriveRemoveLiquidityContractFunction
-
-    setApproval: IHyperdriveSetApprovalContractFunction
-
-    setApprovalBridge: IHyperdriveSetApprovalBridgeContractFunction
-
-    setApprovalForAll: IHyperdriveSetApprovalForAllContractFunction
-
-    setGovernance: IHyperdriveSetGovernanceContractFunction
-
-    setPauser: IHyperdriveSetPauserContractFunction
-
-    symbol: IHyperdriveSymbolContractFunction
-
-    target0: IHyperdriveTarget0ContractFunction
-
-    target1: IHyperdriveTarget1ContractFunction
-
-    totalSupply: IHyperdriveTotalSupplyContractFunction
-
-    transferFrom: IHyperdriveTransferFromContractFunction
-
-    transferFromBridge: IHyperdriveTransferFromBridgeContractFunction
+    transferFromBridge: HyperdriveTarget0TransferFromBridgeContractFunction
 
 
-ihyperdrive_abi: ABI = cast(
+hyperdrivetarget0_abi: ABI = cast(
     ABI,
     [
-        {"inputs": [], "name": "AlreadyClosed", "type": "error"},
-        {"inputs": [], "name": "ApprovalFailed", "type": "error"},
-        {
-            "inputs": [],
-            "name": "BaseBufferExceedsShareReserves",
-            "type": "error",
-        },
         {"inputs": [], "name": "BatchInputLengthMismatch", "type": "error"},
-        {"inputs": [], "name": "BelowMinimumContribution", "type": "error"},
-        {"inputs": [], "name": "BelowMinimumShareReserves", "type": "error"},
-        {"inputs": [], "name": "BondMatured", "type": "error"},
-        {"inputs": [], "name": "BondNotMatured", "type": "error"},
-        {
-            "inputs": [
-                {
-                    "internalType": "bytes4",
-                    "name": "underlyingError",
-                    "type": "bytes4",
-                }
-            ],
-            "name": "CallFailed",
-            "type": "error",
-        },
-        {"inputs": [], "name": "EndIndexTooLarge", "type": "error"},
-        {"inputs": [], "name": "ExpiredDeadline", "type": "error"},
-        {"inputs": [], "name": "FeeTooHigh", "type": "error"},
         {
             "inputs": [],
             "name": "FixedPointMath_InvalidExponent",
             "type": "error",
         },
         {"inputs": [], "name": "FixedPointMath_InvalidInput", "type": "error"},
-        {"inputs": [], "name": "FixedPointMath_NegativeInput", "type": "error"},
-        {
-            "inputs": [],
-            "name": "FixedPointMath_NegativeOrZeroInput",
-            "type": "error",
-        },
-        {"inputs": [], "name": "InputLengthMismatch", "type": "error"},
-        {"inputs": [], "name": "InsufficientPrice", "type": "error"},
-        {"inputs": [], "name": "InvalidApr", "type": "error"},
-        {"inputs": [], "name": "InvalidBaseToken", "type": "error"},
         {"inputs": [], "name": "InvalidCheckpointDuration", "type": "error"},
-        {"inputs": [], "name": "InvalidCheckpointTime", "type": "error"},
-        {"inputs": [], "name": "InvalidContribution", "type": "error"},
         {"inputs": [], "name": "InvalidERC20Bridge", "type": "error"},
         {"inputs": [], "name": "InvalidFeeAmounts", "type": "error"},
         {"inputs": [], "name": "InvalidFeeDestination", "type": "error"},
-        {"inputs": [], "name": "InvalidForwarderAddress", "type": "error"},
-        {"inputs": [], "name": "InvalidIndexes", "type": "error"},
-        {"inputs": [], "name": "InvalidInitialSharePrice", "type": "error"},
-        {"inputs": [], "name": "InvalidMaturityTime", "type": "error"},
         {"inputs": [], "name": "InvalidMinimumShareReserves", "type": "error"},
         {"inputs": [], "name": "InvalidPositionDuration", "type": "error"},
-        {"inputs": [], "name": "InvalidShareReserves", "type": "error"},
-        {"inputs": [], "name": "InvalidSignature", "type": "error"},
-        {"inputs": [], "name": "InvalidTimestamp", "type": "error"},
-        {"inputs": [], "name": "InvalidToken", "type": "error"},
         {"inputs": [], "name": "InvalidTradeSize", "type": "error"},
-        {"inputs": [], "name": "MaxFeeTooHigh", "type": "error"},
-        {"inputs": [], "name": "MinimumSharePrice", "type": "error"},
-        {"inputs": [], "name": "MinimumTransactionAmount", "type": "error"},
-        {"inputs": [], "name": "MintPercentTooHigh", "type": "error"},
-        {"inputs": [], "name": "NegativeInterest", "type": "error"},
         {"inputs": [], "name": "NegativePresentValue", "type": "error"},
-        {"inputs": [], "name": "NoAssetsToWithdraw", "type": "error"},
-        {"inputs": [], "name": "NonPayableInitialization", "type": "error"},
-        {"inputs": [], "name": "NotPayable", "type": "error"},
-        {"inputs": [], "name": "OutputLimit", "type": "error"},
-        {"inputs": [], "name": "Paused", "type": "error"},
-        {"inputs": [], "name": "PoolAlreadyInitialized", "type": "error"},
-        {"inputs": [], "name": "QueryOutOfRange", "type": "error"},
         {"inputs": [], "name": "RestrictedZeroAddress", "type": "error"},
         {
             "inputs": [{"internalType": "bytes", "name": "data", "type": "bytes"}],
             "name": "ReturnData",
             "type": "error",
         },
-        {
-            "inputs": [],
-            "name": "ShareReservesDeltaExceedsBondReservesDelta",
-            "type": "error",
-        },
-        {"inputs": [], "name": "TransferFailed", "type": "error"},
         {"inputs": [], "name": "Unauthorized", "type": "error"},
-        {"inputs": [], "name": "UnexpectedAssetId", "type": "error"},
-        {"inputs": [], "name": "UnexpectedSender", "type": "error"},
-        {"inputs": [], "name": "UnexpectedSuccess", "type": "error"},
-        {"inputs": [], "name": "UnsafeCastToInt128", "type": "error"},
-        {"inputs": [], "name": "UnsafeCastToUint128", "type": "error"},
-        {"inputs": [], "name": "UnsupportedToken", "type": "error"},
-        {"inputs": [], "name": "ZeroLpTotalSupply", "type": "error"},
         {
             "anonymous": False,
             "inputs": [
@@ -976,13 +649,7 @@ ihyperdrive_abi: ABI = cast(
                 {
                     "indexed": False,
                     "internalType": "uint256",
-                    "name": "baseFees",
-                    "type": "uint256",
-                },
-                {
-                    "indexed": False,
-                    "internalType": "uint256",
-                    "name": "sharePrice",
+                    "name": "fees",
                     "type": "uint256",
                 },
             ],
@@ -1024,6 +691,19 @@ ihyperdrive_abi: ABI = cast(
                 },
             ],
             "name": "CreateCheckpoint",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "newGovernance",
+                    "type": "address",
+                }
+            ],
+            "name": "GovernanceUpdated",
             "type": "event",
         },
         {
@@ -1155,6 +835,19 @@ ihyperdrive_abi: ABI = cast(
                 {
                     "indexed": True,
                     "internalType": "address",
+                    "name": "newPauser",
+                    "type": "address",
+                }
+            ],
+            "name": "PauserUpdated",
+            "type": "event",
+        },
+        {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "address",
                     "name": "provider",
                     "type": "address",
                 },
@@ -1261,78 +954,17 @@ ihyperdrive_abi: ABI = cast(
             "type": "event",
         },
         {
-            "inputs": [],
-            "name": "DOMAIN_SEPARATOR",
-            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
-            "stateMutability": "view",
-            "type": "function",
-        },
-        {
-            "inputs": [],
-            "name": "PERMIT_TYPEHASH",
-            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
-            "stateMutability": "view",
-            "type": "function",
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "_contribution",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_minApr",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_maxApr",
-                    "type": "uint256",
-                },
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "destination",
-                            "type": "address",
-                        },
-                        {
-                            "internalType": "bool",
-                            "name": "asBase",
-                            "type": "bool",
-                        },
-                        {
-                            "internalType": "bytes",
-                            "name": "extraData",
-                            "type": "bytes",
-                        },
-                    ],
-                    "internalType": "struct IHyperdrive.Options",
-                    "name": "_options",
-                    "type": "tuple",
-                },
-            ],
-            "name": "addLiquidity",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "lpShares",
-                    "type": "uint256",
-                }
-            ],
-            "stateMutability": "payable",
-            "type": "function",
-        },
-        {
             "inputs": [
                 {
                     "internalType": "uint256",
                     "name": "tokenId",
                     "type": "uint256",
                 },
-                {"internalType": "address", "name": "owner", "type": "address"},
+                {
+                    "internalType": "address",
+                    "name": "account",
+                    "type": "address",
+                },
             ],
             "name": "balanceOf",
             "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
@@ -1363,109 +995,6 @@ ihyperdrive_abi: ABI = cast(
             ],
             "name": "batchTransferFrom",
             "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function",
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "_checkpointTime",
-                    "type": "uint256",
-                }
-            ],
-            "name": "checkpoint",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function",
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "_maturityTime",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_bondAmount",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_minOutput",
-                    "type": "uint256",
-                },
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "destination",
-                            "type": "address",
-                        },
-                        {
-                            "internalType": "bool",
-                            "name": "asBase",
-                            "type": "bool",
-                        },
-                        {
-                            "internalType": "bytes",
-                            "name": "extraData",
-                            "type": "bytes",
-                        },
-                    ],
-                    "internalType": "struct IHyperdrive.Options",
-                    "name": "_options",
-                    "type": "tuple",
-                },
-            ],
-            "name": "closeLong",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-            "stateMutability": "nonpayable",
-            "type": "function",
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "_maturityTime",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_bondAmount",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_minOutput",
-                    "type": "uint256",
-                },
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "destination",
-                            "type": "address",
-                        },
-                        {
-                            "internalType": "bool",
-                            "name": "asBase",
-                            "type": "bool",
-                        },
-                        {
-                            "internalType": "bytes",
-                            "name": "extraData",
-                            "type": "bytes",
-                        },
-                    ],
-                    "internalType": "struct IHyperdrive.Options",
-                    "name": "_options",
-                    "type": "tuple",
-                },
-            ],
-            "name": "closeShort",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "nonpayable",
             "type": "function",
         },
@@ -1813,51 +1342,13 @@ ihyperdrive_abi: ABI = cast(
         {
             "inputs": [
                 {
-                    "internalType": "uint256",
-                    "name": "_contribution",
-                    "type": "uint256",
+                    "internalType": "address",
+                    "name": "account",
+                    "type": "address",
                 },
-                {"internalType": "uint256", "name": "_apr", "type": "uint256"},
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "destination",
-                            "type": "address",
-                        },
-                        {
-                            "internalType": "bool",
-                            "name": "asBase",
-                            "type": "bool",
-                        },
-                        {
-                            "internalType": "bytes",
-                            "name": "extraData",
-                            "type": "bytes",
-                        },
-                    ],
-                    "internalType": "struct IHyperdrive.Options",
-                    "name": "_options",
-                    "type": "tuple",
-                },
-            ],
-            "name": "initialize",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "lpShares",
-                    "type": "uint256",
-                }
-            ],
-            "stateMutability": "payable",
-            "type": "function",
-        },
-        {
-            "inputs": [
-                {"internalType": "address", "name": "owner", "type": "address"},
                 {
                     "internalType": "address",
-                    "name": "spender",
+                    "name": "operator",
                     "type": "address",
                 },
             ],
@@ -1880,129 +1371,29 @@ ihyperdrive_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "id", "type": "uint256"}],
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "tokenId",
+                    "type": "uint256",
+                }
+            ],
             "name": "name",
             "outputs": [{"internalType": "string", "name": "", "type": "string"}],
-            "stateMutability": "view",
+            "stateMutability": "pure",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "account",
+                    "type": "address",
+                }
+            ],
             "name": "nonces",
             "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
-            "type": "function",
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "_baseAmount",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_minOutput",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_minSharePrice",
-                    "type": "uint256",
-                },
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "destination",
-                            "type": "address",
-                        },
-                        {
-                            "internalType": "bool",
-                            "name": "asBase",
-                            "type": "bool",
-                        },
-                        {
-                            "internalType": "bytes",
-                            "name": "extraData",
-                            "type": "bytes",
-                        },
-                    ],
-                    "internalType": "struct IHyperdrive.Options",
-                    "name": "_options",
-                    "type": "tuple",
-                },
-            ],
-            "name": "openLong",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "maturityTime",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "bondProceeds",
-                    "type": "uint256",
-                },
-            ],
-            "stateMutability": "payable",
-            "type": "function",
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "_bondAmount",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_maxDeposit",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_minSharePrice",
-                    "type": "uint256",
-                },
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "destination",
-                            "type": "address",
-                        },
-                        {
-                            "internalType": "bool",
-                            "name": "asBase",
-                            "type": "bool",
-                        },
-                        {
-                            "internalType": "bytes",
-                            "name": "extraData",
-                            "type": "bytes",
-                        },
-                    ],
-                    "internalType": "struct IHyperdrive.Options",
-                    "name": "_options",
-                    "type": "tuple",
-                },
-            ],
-            "name": "openShort",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "maturityTime",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "traderDeposit",
-                    "type": "uint256",
-                },
-            ],
-            "stateMutability": "payable",
             "type": "function",
         },
         {
@@ -2019,7 +1410,11 @@ ihyperdrive_abi: ABI = cast(
                     "name": "tokenId",
                     "type": "uint256",
                 },
-                {"internalType": "address", "name": "owner", "type": "address"},
+                {
+                    "internalType": "address",
+                    "name": "account",
+                    "type": "address",
+                },
                 {
                     "internalType": "address",
                     "name": "spender",
@@ -2029,131 +1424,6 @@ ihyperdrive_abi: ABI = cast(
             "name": "perTokenApprovals",
             "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
-            "type": "function",
-        },
-        {
-            "inputs": [
-                {"internalType": "address", "name": "owner", "type": "address"},
-                {
-                    "internalType": "address",
-                    "name": "spender",
-                    "type": "address",
-                },
-                {"internalType": "bool", "name": "_approved", "type": "bool"},
-                {
-                    "internalType": "uint256",
-                    "name": "deadline",
-                    "type": "uint256",
-                },
-                {"internalType": "uint8", "name": "v", "type": "uint8"},
-                {"internalType": "bytes32", "name": "r", "type": "bytes32"},
-                {"internalType": "bytes32", "name": "s", "type": "bytes32"},
-            ],
-            "name": "permitForAll",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function",
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "_shares",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_minOutput",
-                    "type": "uint256",
-                },
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "destination",
-                            "type": "address",
-                        },
-                        {
-                            "internalType": "bool",
-                            "name": "asBase",
-                            "type": "bool",
-                        },
-                        {
-                            "internalType": "bytes",
-                            "name": "extraData",
-                            "type": "bytes",
-                        },
-                    ],
-                    "internalType": "struct IHyperdrive.Options",
-                    "name": "_options",
-                    "type": "tuple",
-                },
-            ],
-            "name": "redeemWithdrawalShares",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "proceeds",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "sharesRedeemed",
-                    "type": "uint256",
-                },
-            ],
-            "stateMutability": "nonpayable",
-            "type": "function",
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "_shares",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_minOutput",
-                    "type": "uint256",
-                },
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "destination",
-                            "type": "address",
-                        },
-                        {
-                            "internalType": "bool",
-                            "name": "asBase",
-                            "type": "bool",
-                        },
-                        {
-                            "internalType": "bytes",
-                            "name": "extraData",
-                            "type": "bytes",
-                        },
-                    ],
-                    "internalType": "struct IHyperdrive.Options",
-                    "name": "_options",
-                    "type": "tuple",
-                },
-            ],
-            "name": "removeLiquidity",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "baseProceeds",
-                    "type": "uint256",
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "withdrawalShares",
-                    "type": "uint256",
-                },
-            ],
-            "stateMutability": "nonpayable",
             "type": "function",
         },
         {
@@ -2239,28 +1509,26 @@ ihyperdrive_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "id", "type": "uint256"}],
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "tokenId",
+                    "type": "uint256",
+                }
+            ],
             "name": "symbol",
             "outputs": [{"internalType": "string", "name": "", "type": "string"}],
-            "stateMutability": "view",
+            "stateMutability": "pure",
             "type": "function",
         },
         {
-            "inputs": [],
-            "name": "target0",
-            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-            "stateMutability": "view",
-            "type": "function",
-        },
-        {
-            "inputs": [],
-            "name": "target1",
-            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-            "stateMutability": "view",
-            "type": "function",
-        },
-        {
-            "inputs": [{"internalType": "uint256", "name": "id", "type": "uint256"}],
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "tokenId",
+                    "type": "uint256",
+                }
+            ],
             "name": "totalSupply",
             "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
@@ -2315,10 +1583,10 @@ ihyperdrive_abi: ABI = cast(
 )
 
 
-class IHyperdriveContract(Contract):
-    """A web3.py Contract class for the IHyperdrive contract."""
+class HyperdriveTarget0Contract(Contract):
+    """A web3.py Contract class for the HyperdriveTarget0 contract."""
 
-    abi: ABI = ihyperdrive_abi
+    abi: ABI = hyperdrivetarget0_abi
 
     def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:
@@ -2331,4 +1599,4 @@ class IHyperdriveContract(Contract):
     # TODO: add events
     # events: ERC20ContractEvents
 
-    functions: IHyperdriveContractFunctions
+    functions: HyperdriveTarget0ContractFunctions

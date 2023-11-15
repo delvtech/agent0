@@ -106,7 +106,7 @@ class TestBotToDb:
 
         # Run acquire data to get data from chain to db
         acquire_data(
-            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            start_block=10,  # First 9 blocks are deploying hyperdrive, ignore
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -116,7 +116,7 @@ class TestBotToDb:
 
         # Run data analysis to calculate various analysis values
         data_analysis(
-            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            start_block=10,  # First 9 blocks are deploying hyperdrive, ignore
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -148,7 +148,7 @@ class TestBotToDb:
 
         # Run acquire data to get data from chain to db
         acquire_data(
-            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            start_block=10,  # First 9 blocks are deploying hyperdrive, ignore
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -158,7 +158,7 @@ class TestBotToDb:
 
         # Run data analysis to calculate various analysis values
         data_analysis(
-            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            start_block=10,  # First 9 blocks are deploying hyperdrive, ignore
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -194,12 +194,16 @@ class TestBotToDb:
         expected_timestretch = _to_unscaled_decimal(expected_timestretch_fp)
         expected_inv_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
 
+        # Ignore linker factory since we don't know the target address
+        db_pool_config_df = db_pool_config_df.drop(columns=["linker_factory"])
+
         expected_pool_config = {
             "contract_address": hyperdrive_contract_addresses.mock_hyperdrive,
             "base_token": hyperdrive_contract_addresses.base_token,
             "initial_share_price": _to_unscaled_decimal(FixedPoint("1")),
             "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
             "minimum_transaction_amount": _to_unscaled_decimal(FixedPoint("0.001")),
+            "precision_threshold": int(1e14),
             "position_duration": 604800,  # 1 week
             "checkpoint_duration": 3600,  # 1 hour
             "time_stretch": expected_timestretch,
@@ -208,8 +212,6 @@ class TestBotToDb:
             "curve_fee": _to_unscaled_decimal(FixedPoint("0.1")),  # 10%
             "flat_fee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05%
             "governance_fee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%
-            "oracle_size": 10,
-            "update_gap": 3600,  # TODO don't know where this is getting set
             "inv_time_stretch": expected_inv_timestretch,
         }
 

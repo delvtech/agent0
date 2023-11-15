@@ -23,9 +23,12 @@ def _construct_pool_config(contract_pool_config: dict[str, Any]) -> PoolConfig:
     """
     return PoolConfig(
         baseToken=contract_pool_config["baseToken"],
+        linkerFactory=contract_pool_config["linkerFactory"],
+        linkerCodeHash=contract_pool_config["linkerCodeHash"],
         initialSharePrice=contract_pool_config["initialSharePrice"],
         minimumShareReserves=contract_pool_config["minimumShareReserves"],
         minimumTransactionAmount=contract_pool_config["minimumTransactionAmount"],
+        precisionThreshold=contract_pool_config["precisionThreshold"],
         positionDuration=contract_pool_config["positionDuration"],
         checkpointDuration=contract_pool_config["checkpointDuration"],
         timeStretch=contract_pool_config["timeStretch"],
@@ -36,8 +39,6 @@ def _construct_pool_config(contract_pool_config: dict[str, Any]) -> PoolConfig:
             flat=contract_pool_config["fees"][1],
             governance=contract_pool_config["fees"][2],
         ),
-        oracleSize=contract_pool_config["oracleSize"],
-        updateGap=contract_pool_config["updateGap"],
     )
 
 
@@ -275,7 +276,7 @@ def _calc_max_long(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
                 _construct_pool_config(pool_state.contract_pool_config),
                 _construct_pool_info(pool_state.contract_pool_info),
                 str(budget.scaled_value),
-                checkpoint_exposure=str(pool_state.checkpoint.long_exposure.scaled_value),
+                checkpoint_exposure=str(pool_state.checkpoint.exposure.scaled_value),
                 maybe_max_iterations=None,
             )
         )
@@ -291,7 +292,7 @@ def _calc_max_short(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
                 pool_info=_construct_pool_info(pool_state.contract_pool_info),
                 budget=str(budget.scaled_value),
                 open_share_price=str(pool_state.pool_info.share_price.scaled_value),
-                checkpoint_exposure=str(pool_state.checkpoint.long_exposure.scaled_value),
+                checkpoint_exposure=str(pool_state.checkpoint.exposure.scaled_value),
                 maybe_conservative_price=None,
                 maybe_max_iterations=None,
             )

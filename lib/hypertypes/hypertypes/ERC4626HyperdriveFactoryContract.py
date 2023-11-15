@@ -32,12 +32,13 @@ class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(ContractFuncti
     def __call__(
         self,
         _config: tuple,
-        arg2: list[bytes],
         _contribution: int,
         _apr: int,
         _initializeExtraData: bytes,
+        arg5: list[bytes],
+        _pool: str,
     ) -> "ERC4626HyperdriveFactoryDeployAndInitializeContractFunction":
-        super().__call__(_config, _contribution, _apr, _initializeExtraData)
+        super().__call__(_config, _contribution, _apr, _initializeExtraData, _pool)
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -83,6 +84,50 @@ class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(ContractFunction
     def __call__(
         self,
     ) -> "ERC4626HyperdriveFactoryGetDefaultPausersContractFunction":
+        super().__call__()
+        return self
+
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
+
+class ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction(ContractFunction):
+    """ContractFunction for the getInstanceAtIndex method."""
+
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    def __call__(self, index: int) -> "ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction":
+        super().__call__(index)
+        return self
+
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
+
+class ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction(ContractFunction):
+    """ContractFunction for the getInstancesInRange method."""
+
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    def __call__(self, startIndex: int, endIndex: int) -> "ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction":
+        super().__call__(startIndex, endIndex)
+        return self
+
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
+
+class ERC4626HyperdriveFactoryGetNumberOfInstancesContractFunction(ContractFunction):
+    """ContractFunction for the getNumberOfInstances method."""
+
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    def __call__(
+        self,
+    ) -> "ERC4626HyperdriveFactoryGetNumberOfInstancesContractFunction":
         super().__call__()
         return self
 
@@ -152,6 +197,20 @@ class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(ContractFunct
     # def call()
 
 
+class ERC4626HyperdriveFactoryIsInstanceContractFunction(ContractFunction):
+    """ContractFunction for the isInstance method."""
+
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    def __call__(self, arg1: str) -> "ERC4626HyperdriveFactoryIsInstanceContractFunction":
+        super().__call__()
+        return self
+
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
+
 class ERC4626HyperdriveFactoryIsOfficialContractFunction(ContractFunction):
     """ContractFunction for the isOfficial method."""
 
@@ -191,6 +250,38 @@ class ERC4626HyperdriveFactoryLinkerFactoryContractFunction(ContractFunction):
     def __call__(
         self,
     ) -> "ERC4626HyperdriveFactoryLinkerFactoryContractFunction":
+        super().__call__()
+        return self
+
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
+
+class ERC4626HyperdriveFactoryTarget0DeployerContractFunction(ContractFunction):
+    """ContractFunction for the target0Deployer method."""
+
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    def __call__(
+        self,
+    ) -> "ERC4626HyperdriveFactoryTarget0DeployerContractFunction":
+        super().__call__()
+        return self
+
+    # TODO: add call def so we can get return types for the calls
+    # def call()
+
+
+class ERC4626HyperdriveFactoryTarget1DeployerContractFunction(ContractFunction):
+    """ContractFunction for the target1Deployer method."""
+
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    def __call__(
+        self,
+    ) -> "ERC4626HyperdriveFactoryTarget1DeployerContractFunction":
         super().__call__()
         return self
 
@@ -318,8 +409,8 @@ class ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction(ContractFunctio
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _sweepTargets_: list[str]) -> "ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction":
-        super().__call__(_sweepTargets_)
+    def __call__(self, __sweepTargets: list[str]) -> "ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction":
+        super().__call__(__sweepTargets)
         return self
 
     # TODO: add call def so we can get return types for the calls
@@ -353,6 +444,12 @@ class ERC4626HyperdriveFactoryContractFunctions(ContractFunctions):
 
     getDefaultPausers: ERC4626HyperdriveFactoryGetDefaultPausersContractFunction
 
+    getInstanceAtIndex: ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction
+
+    getInstancesInRange: ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction
+
+    getNumberOfInstances: ERC4626HyperdriveFactoryGetNumberOfInstancesContractFunction
+
     getSweepTargets: ERC4626HyperdriveFactoryGetSweepTargetsContractFunction
 
     governance: ERC4626HyperdriveFactoryGovernanceContractFunction
@@ -361,11 +458,17 @@ class ERC4626HyperdriveFactoryContractFunctions(ContractFunctions):
 
     hyperdriveGovernance: ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction
 
+    isInstance: ERC4626HyperdriveFactoryIsInstanceContractFunction
+
     isOfficial: ERC4626HyperdriveFactoryIsOfficialContractFunction
 
     linkerCodeHash: ERC4626HyperdriveFactoryLinkerCodeHashContractFunction
 
     linkerFactory: ERC4626HyperdriveFactoryLinkerFactoryContractFunction
+
+    target0Deployer: ERC4626HyperdriveFactoryTarget0DeployerContractFunction
+
+    target1Deployer: ERC4626HyperdriveFactoryTarget1DeployerContractFunction
 
     updateDefaultPausers: ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction
 
@@ -404,6 +507,11 @@ erc4626hyperdrivefactory_abi: ABI = cast(
                             "internalType": "address",
                             "name": "hyperdriveGovernance",
                             "type": "address",
+                        },
+                        {
+                            "internalType": "address[]",
+                            "name": "defaultPausers",
+                            "type": "address[]",
                         },
                         {
                             "internalType": "address",
@@ -455,9 +563,29 @@ erc4626hyperdrivefactory_abi: ABI = cast(
                             "type": "tuple",
                         },
                         {
-                            "internalType": "address[]",
-                            "name": "defaultPausers",
-                            "type": "address[]",
+                            "internalType": "contract IHyperdriveDeployer",
+                            "name": "hyperdriveDeployer",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "contract IHyperdriveTargetDeployer",
+                            "name": "target0Deployer",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "contract IHyperdriveTargetDeployer",
+                            "name": "target1Deployer",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "address",
+                            "name": "linkerFactory",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "bytes32",
+                            "name": "linkerCodeHash",
+                            "type": "bytes32",
                         },
                     ],
                     "internalType": "struct HyperdriveFactory.FactoryConfig",
@@ -465,28 +593,8 @@ erc4626hyperdrivefactory_abi: ABI = cast(
                     "type": "tuple",
                 },
                 {
-                    "internalType": "contract IHyperdriveDeployer",
-                    "name": "_deployer",
-                    "type": "address",
-                },
-                {
-                    "internalType": "address",
-                    "name": "_linkerFactory",
-                    "type": "address",
-                },
-                {
-                    "internalType": "bytes32",
-                    "name": "_linkerCodeHash",
-                    "type": "bytes32",
-                },
-                {
-                    "internalType": "contract IERC4626",
-                    "name": "_pool",
-                    "type": "address",
-                },
-                {
                     "internalType": "address[]",
-                    "name": "_sweepTargets_",
+                    "name": "__sweepTargets",
                     "type": "address[]",
                 },
             ],
@@ -494,7 +602,9 @@ erc4626hyperdrivefactory_abi: ABI = cast(
             "type": "constructor",
         },
         {"inputs": [], "name": "ApprovalFailed", "type": "error"},
+        {"inputs": [], "name": "EndIndexTooLarge", "type": "error"},
         {"inputs": [], "name": "FeeTooHigh", "type": "error"},
+        {"inputs": [], "name": "InvalidIndexes", "type": "error"},
         {"inputs": [], "name": "MaxFeeTooHigh", "type": "error"},
         {"inputs": [], "name": "NonPayableInitialization", "type": "error"},
         {"inputs": [], "name": "Unauthorized", "type": "error"},
@@ -521,6 +631,16 @@ erc4626hyperdrivefactory_abi: ABI = cast(
                             "type": "address",
                         },
                         {
+                            "internalType": "address",
+                            "name": "linkerFactory",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "bytes32",
+                            "name": "linkerCodeHash",
+                            "type": "bytes32",
+                        },
+                        {
                             "internalType": "uint256",
                             "name": "initialSharePrice",
                             "type": "uint256",
@@ -533,6 +653,11 @@ erc4626hyperdrivefactory_abi: ABI = cast(
                         {
                             "internalType": "uint256",
                             "name": "minimumTransactionAmount",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "precisionThreshold",
                             "type": "uint256",
                         },
                         {
@@ -582,33 +707,11 @@ erc4626hyperdrivefactory_abi: ABI = cast(
                             "name": "fees",
                             "type": "tuple",
                         },
-                        {
-                            "internalType": "uint256",
-                            "name": "oracleSize",
-                            "type": "uint256",
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "updateGap",
-                            "type": "uint256",
-                        },
                     ],
                     "indexed": False,
                     "internalType": "struct IHyperdrive.PoolConfig",
                     "name": "config",
                     "type": "tuple",
-                },
-                {
-                    "indexed": False,
-                    "internalType": "address",
-                    "name": "linkerFactory",
-                    "type": "address",
-                },
-                {
-                    "indexed": False,
-                    "internalType": "bytes32",
-                    "name": "linkerCodeHash",
-                    "type": "bytes32",
                 },
                 {
                     "indexed": False,
@@ -678,7 +781,7 @@ erc4626hyperdrivefactory_abi: ABI = cast(
                 {
                     "indexed": True,
                     "internalType": "bytes32",
-                    "name": "newCodeHash",
+                    "name": "newLinkerCodeHash",
                     "type": "bytes32",
                 }
             ],
@@ -708,6 +811,16 @@ erc4626hyperdrivefactory_abi: ABI = cast(
                             "type": "address",
                         },
                         {
+                            "internalType": "address",
+                            "name": "linkerFactory",
+                            "type": "address",
+                        },
+                        {
+                            "internalType": "bytes32",
+                            "name": "linkerCodeHash",
+                            "type": "bytes32",
+                        },
+                        {
                             "internalType": "uint256",
                             "name": "initialSharePrice",
                             "type": "uint256",
@@ -720,6 +833,11 @@ erc4626hyperdrivefactory_abi: ABI = cast(
                         {
                             "internalType": "uint256",
                             "name": "minimumTransactionAmount",
+                            "type": "uint256",
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "precisionThreshold",
                             "type": "uint256",
                         },
                         {
@@ -769,22 +887,11 @@ erc4626hyperdrivefactory_abi: ABI = cast(
                             "name": "fees",
                             "type": "tuple",
                         },
-                        {
-                            "internalType": "uint256",
-                            "name": "oracleSize",
-                            "type": "uint256",
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "updateGap",
-                            "type": "uint256",
-                        },
                     ],
                     "internalType": "struct IHyperdrive.PoolConfig",
                     "name": "_config",
                     "type": "tuple",
                 },
-                {"internalType": "bytes32[]", "name": "", "type": "bytes32[]"},
                 {
                     "internalType": "uint256",
                     "name": "_contribution",
@@ -796,6 +903,8 @@ erc4626hyperdrivefactory_abi: ABI = cast(
                     "name": "_initializeExtraData",
                     "type": "bytes",
                 },
+                {"internalType": "bytes32[]", "name": "", "type": "bytes32[]"},
+                {"internalType": "address", "name": "_pool", "type": "address"},
             ],
             "name": "deployAndInitialize",
             "outputs": [
@@ -838,6 +947,44 @@ erc4626hyperdrivefactory_abi: ABI = cast(
             "type": "function",
         },
         {
+            "inputs": [{"internalType": "uint256", "name": "index", "type": "uint256"}],
+            "name": "getInstanceAtIndex",
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "startIndex",
+                    "type": "uint256",
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "endIndex",
+                    "type": "uint256",
+                },
+            ],
+            "name": "getInstancesInRange",
+            "outputs": [
+                {
+                    "internalType": "address[]",
+                    "name": "range",
+                    "type": "address[]",
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "getNumberOfInstances",
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
             "inputs": [],
             "name": "getSweepTargets",
             "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
@@ -872,6 +1019,13 @@ erc4626hyperdrivefactory_abi: ABI = cast(
             "type": "function",
         },
         {
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "name": "isInstance",
+            "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
             "inputs": [
                 {
                     "internalType": "address",
@@ -901,6 +1055,32 @@ erc4626hyperdrivefactory_abi: ABI = cast(
             "inputs": [],
             "name": "linkerFactory",
             "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "target0Deployer",
+            "outputs": [
+                {
+                    "internalType": "contract IHyperdriveTargetDeployer",
+                    "name": "",
+                    "type": "address",
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [],
+            "name": "target1Deployer",
+            "outputs": [
+                {
+                    "internalType": "contract IHyperdriveTargetDeployer",
+                    "name": "",
+                    "type": "address",
+                }
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1029,7 +1209,7 @@ erc4626hyperdrivefactory_abi: ABI = cast(
             "inputs": [
                 {
                     "internalType": "address[]",
-                    "name": "_sweepTargets_",
+                    "name": "__sweepTargets",
                     "type": "address[]",
                 }
             ],

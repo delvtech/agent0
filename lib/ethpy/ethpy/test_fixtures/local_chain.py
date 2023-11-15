@@ -6,10 +6,10 @@ import time
 from typing import Iterator
 
 import pytest
+from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig
-
-from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
+from web3.constants import ADDRESS_ZERO
 
 
 def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1"):
@@ -130,26 +130,26 @@ def launch_local_hyperdrive_pool(
     initial_share_price = FixedPoint(1)
     minimum_share_reserves = FixedPoint(10)
     minimum_transaction_amount = FixedPoint("0.001")
+    precision_threshold = int(1e14)
     position_duration = 604800  # 1 week
     checkpoint_duration = 3600  # 1 hour
     time_stretch = FixedPoint(1) / (
         FixedPoint("5.24592") / (FixedPoint("0.04665") * (initial_fixed_rate * FixedPoint(100)))
     )
-    oracle_size = 10
-    update_gap = 3600  # 1 hour
     pool_config = PoolConfig(
         "",  # will be determined in the deploy function
+        ADDRESS_ZERO,  # address(0), this address needs to be in a valid address format
+        bytes(32),  # bytes32(0)
         initial_share_price.scaled_value,
         minimum_share_reserves.scaled_value,
         minimum_transaction_amount.scaled_value,
+        precision_threshold,
         position_duration,
         checkpoint_duration,
         time_stretch.scaled_value,
         "",  # will be determined in the deploy function
         "",  # will be determined in the deploy function
         fees,
-        oracle_size,
-        update_gap,
     )
     return deploy_hyperdrive_from_factory(
         local_chain_uri,

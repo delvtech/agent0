@@ -35,7 +35,7 @@ class Checkpoint:
     """Checkpoint struct."""
 
     sharePrice: int
-    longExposure: int
+    exposure: int
 
 
 @dataclass
@@ -68,17 +68,18 @@ class PoolConfig:
     """PoolConfig struct."""
 
     baseToken: str
+    linkerFactory: str
+    linkerCodeHash: bytes
     initialSharePrice: int
     minimumShareReserves: int
     minimumTransactionAmount: int
+    precisionThreshold: int
     positionDuration: int
     checkpointDuration: int
     timeStretch: int
     governance: str
     feeCollector: str
     fees: Fees
-    oracleSize: int
-    updateGap: int
 
 
 @dataclass
