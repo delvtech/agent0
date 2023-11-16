@@ -151,7 +151,7 @@ def data_to_analysis(
     # Calculate spot price
     # TODO ideally we would call hyperdrive interface directly to get the spot price and fixed rate.
     # However, we need to be able to query e.g., pool_info for a specific block. Hence here, we use the
-    # pool info from the db and directly call pyperdrive to get the spot price.
+    # pool info from the db and directly call hyperdrivepy to get the spot price.
     spot_price = calc_spot_price(
         pool_info["share_reserves"],
         pool_info["share_adjustment"],
