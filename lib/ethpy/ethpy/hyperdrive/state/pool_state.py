@@ -10,10 +10,10 @@ from web3.types import BlockData
 from ..api._block_getters import _get_block_number, _get_block_time
 from .checkpoint import Checkpoint
 from .conversions import (
-    convert_hyperdrive_checkpoint_types,
-    convert_hyperdrive_pool_config_types,
-    convert_hyperdrive_pool_info_types,
     dataclass_to_dict,
+    fixedpoint_checkpoint_to_hypertypes,
+    fixedpoint_pool_config_to_hypertypes,
+    fixedpoint_pool_info_to_hypertypes,
 )
 from .pool_config import PoolConfig
 from .pool_info import PoolInfo
@@ -23,9 +23,9 @@ from .pool_info import PoolInfo
 class PoolState:
     r"""A collection of stateful variables for deployed Hyperdrive and Yield contracts."""
     block: BlockData
-    contract_pool_config: dict[str, Any]
-    contract_pool_info: dict[str, Any]
-    contract_checkpoint: dict[str, int]
+    pool_config: PoolConfig
+    pool_info: PoolInfo
+    checkpoint: Checkpoint
     variable_rate: FixedPoint
     vault_shares: FixedPoint
     total_supply_withdrawal_shares: FixedPoint
@@ -35,31 +35,16 @@ class PoolState:
         self.block_time = _get_block_time(self.block)
 
     @property
-    def pool_info(self) -> PoolInfo:
+    def contract_pool_info(self) -> dict[str, Any]:
         """Get the pool_info property."""
-        return convert_hyperdrive_pool_info_types(self.contract_pool_info)
-
-    @pool_info.setter
-    def pool_info(self, value: PoolInfo) -> None:
-        """Set the pool_info property."""
-        self.contract_pool_info = dataclass_to_dict(value)
+        return dataclass_to_dict(fixedpoint_pool_info_to_hypertypes(self.pool_info))
 
     @property
-    def pool_config(self) -> PoolConfig:
+    def contract_pool_config(self) -> dict[str, Any]:
         """Get the pool_config property."""
-        return convert_hyperdrive_pool_config_types(self.contract_pool_config)
-
-    @pool_config.setter
-    def pool_config(self, value: PoolConfig) -> None:
-        """Set the pool_config property."""
-        self.contract_pool_config = dataclass_to_dict(value)
+        return dataclass_to_dict(fixedpoint_pool_config_to_hypertypes(self.pool_config))
 
     @property
-    def checkpoint(self) -> PoolConfig:
+    def contract_checkpoint(self) -> dict[str, Any]:
         """Get the checkpoint property."""
-        return convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
-
-    @checkpoint.setter
-    def checkpoint(self, value: Checkpoint) -> None:
-        """Set the checkpoint property."""
-        self.contract_checkpoint = dataclass_to_dict(value)
+        return dataclass_to_dict(fixedpoint_checkpoint_to_hypertypes(self.checkpoint))

@@ -6,8 +6,6 @@ import logging
 import os
 import time
 
-from agent0.base.agents import EthAgent
-from agent0.base.config import EnvironmentConfig
 from eth_account.account import Account
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import (
@@ -21,6 +19,9 @@ from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri, get_hyperdrive_p
 from fixedpointmath import FixedPoint
 from hyperlogs import logs
 from web3.contract.contract import Contract
+
+from agent0.base.agents import EthAgent
+from agent0.base.config import EnvironmentConfig
 
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.
@@ -103,7 +104,7 @@ def main() -> None:
     # every checkpoint after a waiting period. It will poll very infrequently
     # to reduce the probability of needing to mint a checkpoint.
     config = get_hyperdrive_pool_config(hyperdrive_contract)
-    checkpoint_duration = config["checkpointDuration"]
+    checkpoint_duration = config.checkpoint_duration
 
     logging.info(
         "Checkpoint Duration: %s; Block time: %s; Block timestamp interval: %s",

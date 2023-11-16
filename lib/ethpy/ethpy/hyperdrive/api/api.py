@@ -238,20 +238,20 @@ class HyperdriveInterface:
             block_identifier = cast(BlockIdentifier, "latest")
             block = self.get_block(block_identifier)
         block_number = self.get_block_number(block)
-        contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
-        contract_pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, block_number)
-        contract_checkpoint = get_hyperdrive_checkpoint(
+        pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
+        pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, block_number)
+        checkpoint = get_hyperdrive_checkpoint(
             self.hyperdrive_contract,
-            self.calc_checkpoint_id(contract_pool_config["checkpointDuration"], self.get_block_timestamp(block)),
+            self.calc_checkpoint_id(pool_config.checkpoint_duration, self.get_block_timestamp(block)),
         )
         variable_rate = self.get_variable_rate(block_number)
         vault_shares = self.get_vault_shares(block_number)
         total_supply_withdrawal_shares = self.get_total_supply_withdrawal_shares(block_number)
         return PoolState(
             block,
-            contract_pool_config,
-            contract_pool_info,
-            contract_checkpoint,
+            pool_config,
+            pool_info,
+            checkpoint,
             variable_rate,
             vault_shares,
             total_supply_withdrawal_shares,
@@ -555,7 +555,7 @@ class HyperdriveInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_position_duration_in_years(self.current_pool_state)
+        return _calc_position_duration_in_years(pool_state)
 
     def calc_checkpoint_id(
         self, checkpoint_duration: int | None = None, block_timestamp: Timestamp | None = None
