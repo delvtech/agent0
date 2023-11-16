@@ -10,9 +10,10 @@ from fixedpointmath import FixedPoint
 from numpy.random import default_rng
 
 if TYPE_CHECKING:
+    from numpy.random._generator import Generator as NumpyGenerator
+
     from agent0.base import Trade
     from agent0.base.state import EthWallet
-    from numpy.random._generator import Generator as NumpyGenerator
 
 Wallet = TypeVar("Wallet", bound="EthWallet")
 MarketInterface = TypeVar("MarketInterface")
@@ -33,7 +34,7 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         # TODO should we pass in policy_config here in the base class constructor?
     ):
         # TODO budget should have a flag to allow for "the budget is however much this wallet has"
-        # https://github.com/delvtech/elf-simulations/issues/827
+        # https://github.com/delvtech/agent0/issues/827
         if not isinstance(budget, FixedPoint):
             raise TypeError(f"{budget=} must be of type `FixedPoint`")
         self.budget: FixedPoint = budget
@@ -82,4 +83,5 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
             )
         dedented_text = dedent(raw_description).strip()
         indented_text = indent(dedented_text, "  ")  # Adding 2-space indent
+        return indented_text
         return indented_text

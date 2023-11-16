@@ -1,14 +1,14 @@
 # Install -- overview
 
-All `elf-simulations` packages should be accessed from Python 3.10.
+All `agent0` packages should be accessed from Python 3.10.
 The following outlines our recommended install workflow, although alternatives are listed below.
 
-## 1. Clone the `elf-simulations` repo
+## 1. Clone the `agent0` monorepo
 
 Clone the repo into a <repo_location> of your choice.
 
 ```bash
-git clone git@github.com:delvtech/elf-simulations.git <repo_location>
+git clone git@github.com:delvtech/agent0.git <repo_location>
 ```
 
 ## 2. Install Pyenv
@@ -27,9 +27,9 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-## 4. Install `elf-simulations` packages and requirements
+## 4. Install `agent0` packages and requirements
 
-All of the elf-simulations packages can be installed from `requirements.txt`:
+All of the agent0 packages can be installed from `requirements.txt`:
 
 ```bash
 python -m pip install --upgrade pip
@@ -68,7 +68,7 @@ pip install agent0[lateral] # Installs dependent sub-packages from git (e.g., et
 # Working with smart contracts
 
 We run tests and offer utilities that depend on executing bytecode compiled from Hyperdrive solidity contracts.
-This is not required to use the elf-simulations libraries.
+This is not required to use the agent0 libraries.
 
 NOTE: The Hyperdrive solidity implementation is currently under security review, and thus is not available publicly.
 The following instructions will not work for anyone who is not a member of Delv.
@@ -81,14 +81,15 @@ Clone the hyperdrive repo:
 git clone git@github.com:delvtech/hyperdrive.git ../hyperdrive
 ```
 
-## 2. Install Hyperdrive
+## 2. Install and Build Hyperdrive
 
 Complete the steps in Hyperdrive's [Pre-requisites](https://github.com/delvtech/hyperdrive#pre-requisites) and [Build](https://github.com/delvtech/hyperdrive#build) sections.
 
 ## 3. Copy ABI & bytecode files
+
 Copy the contract `sol` folders from the generated `out` directory in the `hyperdrive` repository root.
 These folder should contain the ABI JSON and bytecode files for each contract.
-Paste the folders into `elf-simulations/packages/hyperdrive/src/abis/`.
+Paste the folders into `agnet0/packages/hyperdrive/src/abis/`.
 
 ```bash
 cp -R ../hyperdrive/out/*.sol packages/hyperdrive/src/abis/
@@ -102,6 +103,7 @@ ERC4626DataProvider.sol/
 ERC4626HyperdriveDeployer.sol/
 ERC4626HyperdriveFactory.sol/
 ForwarderFactory.sol/
+IERC4626Hyperdrive.sol/
 IHyperdrive.sol/
 MockERC4626.sol/
 ```

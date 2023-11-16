@@ -7,7 +7,9 @@ from typing import Any, NamedTuple
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
-from ethpy.base import get_transaction_logs, initialize_web3_with_http_provider, load_all_abis, smart_contract_transact
+from ethpy.base import (get_transaction_logs,
+                        initialize_web3_with_http_provider, load_all_abis,
+                        smart_contract_transact)
 from ethpy.base.contract import deploy_contract
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig
@@ -181,7 +183,7 @@ def _initialize_deployment_account(web3: Web3, account_private_key: str) -> Loca
 
     .. todo::
         get private key for `account_private_key` of this account programmatically
-        https://github.com/delvtech/elf-simulations/issues/816
+        https://github.com/delvtech/agent0/issues/816
         This is the private key of account 0 of the anvil pre-funded account
     """
     account: LocalAccount = Account().from_key(account_private_key)
@@ -402,5 +404,7 @@ def _deploy_and_initialize_hyperdrive_pool(
         if log["event"] == "GovernanceUpdated":
             hyperdrive_address = log["address"]
     if hyperdrive_address is None:
+        raise AssertionError("Generating hyperdrive contract didn't return address")
+    return hyperdrive_address
         raise AssertionError("Generating hyperdrive contract didn't return address")
     return hyperdrive_address

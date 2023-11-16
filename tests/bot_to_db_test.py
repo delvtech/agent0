@@ -1,4 +1,4 @@
-"""System test for end to end testing of elf-simulations"""
+"""System test for end to end usage of agent0 libraries."""
 from __future__ import annotations
 
 import logging
@@ -8,18 +8,11 @@ from typing import Type, cast
 
 import numpy as np
 import pandas as pd
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.test_fixtures import CycleTradesPolicy
-from chainsync.db.hyperdrive.interface import (
-    get_current_wallet,
-    get_pool_analysis,
-    get_pool_config,
-    get_pool_info,
-    get_transactions,
-    get_wallet_deltas,
-)
+from chainsync.db.hyperdrive.interface import (get_current_wallet,
+                                               get_pool_analysis,
+                                               get_pool_config, get_pool_info,
+                                               get_transactions,
+                                               get_wallet_deltas)
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI
@@ -31,6 +24,11 @@ from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
+
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.test_fixtures import CycleTradesPolicy
 
 
 def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
@@ -313,7 +311,7 @@ class TestBotToDb:
                 # TODO there's a bug in Hyperdrive's emitted event for addLiquidity
                 # that introduces a rounding issue in the base amount spent for this
                 # Change this back to direct equality check when this gets fixed
-                # https://github.com/delvtech/elf-simulations/issues/1077
+                # https://github.com/delvtech/agent0/issues/1077
 
                 # assert base_delta["delta"] == -Decimal(11111)
                 assert abs(base_delta["delta"] - (-Decimal(11111))) < Decimal("1e-14")

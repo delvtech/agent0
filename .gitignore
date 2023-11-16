@@ -29,10 +29,6 @@ __pypackages__/
 # output directory for saved notebook figures
 figs
 
-# other Delv packages
-hyperdrive_solidity
-agent_0
-
 # ape, compiler, pytest cache
 .cache
 __pycache__/

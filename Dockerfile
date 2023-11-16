@@ -7,7 +7,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# copy everything in elf-simulations
+# copy everything in agent0
 COPY . ./
 
 # install packages in one step, adding build tools, then removing them

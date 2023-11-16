@@ -31,9 +31,9 @@ base = [
 ]
 lateral = [
     # Lateral dependencies across subpackages are pointing to github
-    "hyperlogs[base] @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/hyperlogs",
-    "ethpy[base] @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/ethpy",
-    "chainsync[base] @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/chainsync",
+    "hyperlogs[base] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/hyperlogs",
+    "ethpy[base] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/ethpy",
+    "chainsync[base] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/chainsync",
 ]
 
 
@@ -42,5 +42,5 @@ requires = ["flit_core>=3.2"]
 build-backend = "flit_core.buildapi"
 
 [project.urls]
-"Homepage" = "https://github.com/delvtech/elf-simulations"
-"Bug Tracker" = "https://github.com/delvtech/elf-simulations/issues"
+"Homepage" = "https://github.com/delvtech/agent0"
+"Bug Tracker" = "https://github.com/delvtech/agent0/issues"
