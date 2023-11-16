@@ -7,7 +7,6 @@ from typing import Any
 from fixedpointmath import FixedPoint
 from web3.types import BlockData
 
-from ..api._block_getters import _get_block_number, _get_block_time
 from .checkpoint import Checkpoint
 from .conversions import (
     dataclass_to_dict,
@@ -31,8 +30,17 @@ class PoolState:
     total_supply_withdrawal_shares: FixedPoint
 
     def __post_init__(self):
-        self.block_number = _get_block_number(self.block)
-        self.block_time = _get_block_time(self.block)
+        ## TODO: Get these using the api getter functions without creating a circular import
+        # Get the block number
+        block_number = self.block.get("number", None)
+        if block_number is None:
+            raise AssertionError("The provided block has no number")
+        self.block_number = block_number
+        # Get the block timestamp
+        block_timestamp = self.block.get("timestamp", None)
+        if block_timestamp is None:
+            raise AssertionError("The provided block has no timestamp")
+        self.block_time = block_timestamp
 
     @property
     def contract_pool_info(self) -> dict[str, Any]:
