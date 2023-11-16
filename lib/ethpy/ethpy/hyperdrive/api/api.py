@@ -7,16 +7,13 @@ from __future__ import annotations
 
 import copy
 import os
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 from ethpy import build_eth_config
 from ethpy.base import initialize_web3_with_http_provider, load_all_abis, smart_contract_read
 from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from ethpy.hyperdrive.state import PoolState
 from ethpy.hyperdrive.transactions import (
-    convert_hyperdrive_checkpoint_types,
-    convert_hyperdrive_pool_config_types,
-    convert_hyperdrive_pool_info_types,
     get_hyperdrive_checkpoint,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
@@ -68,8 +65,6 @@ from ._mock_contract import (
 
 
 if TYPE_CHECKING:
-    from typing import Any
-
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber
     from ethpy import EthConfig
@@ -78,25 +73,6 @@ if TYPE_CHECKING:
     from web3.types import Nonce
 
     from ..receipt_breakdown import ReceiptBreakdown
-
-
-@dataclass
-class PoolState:
-    r"""A collection of stateful variables for deployed Hyperdrive and Yield contracts."""
-    block: BlockData
-    contract_pool_config: dict[str, Any]
-    contract_pool_info: dict[str, Any]
-    contract_checkpoint: dict[str, int]
-    variable_rate: FixedPoint
-    vault_shares: FixedPoint
-    total_supply_withdrawal_shares: FixedPoint
-
-    def __post_init__(self):
-        self.block_number = _get_block_number(self.block)
-        self.block_time = _get_block_time(self.block)
-        self.pool_config = convert_hyperdrive_pool_config_types(self.contract_pool_config)
-        self.pool_info = convert_hyperdrive_pool_info_types(self.contract_pool_info)
-        self.checkpoint = convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
 
 
 class HyperdriveInterface:

@@ -8,17 +8,20 @@ from dataclasses import dataclass
 from statistics import mean
 from typing import TYPE_CHECKING
 
-from agent0.base import MarketType, Trade
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from fixedpointmath import FixedPoint
+
+from agent0.base import MarketType, Trade
+from agent0.hyperdrive.state import (HyperdriveActionType,
+                                     HyperdriveMarketAction)
 
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.state import HyperdriveWallet
-    from ethpy.hyperdrive import PoolConfig, PoolInfo
     from ethpy.hyperdrive.api import HyperdriveInterface
+    from ethpy.hyperdrive.state import PoolConfig, PoolInfo
     from numpy.random._generator import Generator as NumpyGenerator
+
+    from agent0.hyperdrive.state import HyperdriveWallet
 
 # pylint: disable=too-many-arguments, too-many-locals
 

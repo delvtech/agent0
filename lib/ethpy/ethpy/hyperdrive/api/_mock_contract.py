@@ -9,7 +9,7 @@ from hypertypes.IHyperdriveTypes import Fees, PoolConfig, PoolInfo
 from web3.types import Timestamp
 
 if TYPE_CHECKING:
-    from .api import PoolState
+    from ..state import PoolState
 
 # We only worry about protected access for users outside of this folder
 # pylint: disable=protected-access

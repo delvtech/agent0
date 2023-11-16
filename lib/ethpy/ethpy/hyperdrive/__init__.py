@@ -6,13 +6,6 @@ from .errors import HyperdriveErrors, lookup_hyperdrive_error_selector
 from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
 from .receipt_breakdown import ReceiptBreakdown
 from .transactions import (
-    Checkpoint,
-    Fees,
-    PoolConfig,
-    PoolInfo,
-    convert_hyperdrive_checkpoint_types,
-    convert_hyperdrive_pool_config_types,
-    convert_hyperdrive_pool_info_types,
     get_event_history_from_chain,
     get_hyperdrive_checkpoint,
     get_hyperdrive_pool_config,
