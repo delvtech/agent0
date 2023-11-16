@@ -691,17 +691,7 @@ class LPandArb(HyperdrivePolicy):
             # Open a new long, if there's still a need, and we have money
             if we_have_money and bonds_needed > hyperdrive.current_pool_state.pool_config.minimum_transaction_amount:
                 max_long_bonds = hyperdrive.calc_max_long(wallet.balance.amount)
-                max_long_shares, _, _ = get_shares_in_for_bonds_out(
-                    hyperdrive.current_pool_state.pool_info.bond_reserves,
-                    hyperdrive.current_pool_state.pool_info.share_price,
-                    hyperdrive.current_pool_state.pool_config.initial_share_price,
-                    hyperdrive.current_pool_state.pool_info.share_reserves
-                    - hyperdrive.current_pool_state.pool_info.share_reserves,
-                    max_long_bonds,
-                    hyperdrive.current_pool_state.pool_config.time_stretch,
-                    hyperdrive.current_pool_state.pool_config.fees.curve,
-                    hyperdrive.current_pool_state.pool_config.fees.governance,
-                )
+                max_long_shares = hyperdrive.calc_shares_in_given_bonds_out_down(max_long_bonds)
                 amount = min(shares_needed, max_long_shares) * hyperdrive.current_pool_state.pool_info.share_price
                 action_list.append(
                     Trade(
