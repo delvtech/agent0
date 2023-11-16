@@ -181,7 +181,7 @@ def _initialize_deployment_account(web3: Web3, account_private_key: str) -> Loca
 
     .. todo::
         get private key for `account_private_key` of this account programmatically
-        https://github.com/delvtech/elf-simulations/issues/816
+        https://github.com/delvtech/agent0/issues/816
         This is the private key of account 0 of the anvil pre-funded account
     """
     account: LocalAccount = Account().from_key(account_private_key)

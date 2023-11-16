@@ -1,33 +1,35 @@
-[![](https://codecov.io/gh/delvtech/elf-simulations/branch/main/graph/badge.svg?token=1S60MD42ZP)](https://app.codecov.io/gh/delvtech/elf-simulations?displayType=list)
+[![](https://codecov.io/gh/delvtech/agent0/branch/main/graph/badge.svg?token=1S60MD42ZP)](https://app.codecov.io/gh/delvtech/agent0?displayType=list)
 [![](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![](https://img.shields.io/badge/testing-pytest-blue.svg)](https://docs.pytest.org/en/latest/contents.html)
-<br><a href="https://app.codecov.io/gh/delvtech/elf-simulations?displayType=list"><img height="50px" src="https://codecov.io/gh/delvtech/elf-simulations/branch/main/graphs/sunburst.svg?token=1S60MD42ZP"><a>
+<br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="50px" src="https://codecov.io/gh/delvtech/agent0/branch/main/graphs/sunburst.svg?token=1S60MD42ZP"><a>
 
-# [DELV](https://delv.tech) market simulation and analysis
+# [DELV](https://delv.tech) monorepo for market simulation and analysis
 
 This project is a work-in-progress. All code is provided as is and without guarantee.
 The language used in this code and documentation is not intended to, and does not, have any particular financial, legal, or regulatory significance.
+
+This docs page can be found via [https://agent0.readthedocs.io/en/latest/](https://agent0.readthedocs.io/en/latest/).
 
 ## Packages
 
 This monorepo houses internal packages that are still under development. They are:
 
-- agent0 ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/agent0/README.md))
-- chainsync ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/chainsync/README.md))
-- ethpy ([README](https://github.com/delvtech/elf-simulations/tree/main/lib/ethpy/README.md))
+- agent0 ([README](lib/agent0/README.md))
+- chainsync ([README](lib/chainsync/README.md))
+- ethpy ([README](lib/ethpy/README.md))
 
 We also utilize internal packages that are "in production," which is to say they live in their own repo:
 
 - pypechain ([README](https://github.com/delvtech/pypechain/tree/main#readme), [pypi](https://pypi.org/project/pypechain/))
-- fixedpointmath ([README](https://github.com/delvtech/agent_0/tree/main/lib/fixedpointmath#readme), [pypi](https://pypi.org/project/fixedpointmath/))
+- fixedpointmath ([README](https://github.com/delvtech/fixedpointmath#readme), [pypi](https://pypi.org/project/fixedpointmath/))
 
 ## Install
 
-Please refer to [INSTALL.md](https://github.com/delvtech/elf-simulations/blob/main/INSTALL.md).
+Please refer to [INSTALL.md](INSTALL.md).
 
 ## Deployment
 
-Please refer to [BUILD.md](https://github.com/delvtech/elf-simulations/blob/main/BUILD.md).
+Please refer to [BUILD.md](BUILD.md).
 
 ## Testing
 
@@ -55,40 +57,11 @@ The Jupyter notebooks contained in `examples/notebooks/` should be run locally u
 
 ## Contributions
 
-Please refer to [CONTRIBUTING.md](https://github.com/delvtech/elf-simulations/blob/main/CONTRIBUTING.md).
-
-## Number format
-
-Internally we frequently utilize 18-decimal fixed-point precision numbers for arithmetic.
-Briefly, this means our representation for unity, "one", is `1 * 10 ** 18`, which would be `1.0` when cast to a float.
-Unlike typical floats, a FixedPoint numeric always supports 18 decimal digits of precision, regardless of the scale of the number.
-
-This can lead to confusion when additionally dealing with standard Python floats and ints.
-As such, we have purposefully constrained support for mixed-type operations that include the FixedPoint type.
-Due to a lack of known precision, operations against Python floats are not allowed (e.g. `float * FixedPoint` will raise an error).
-However, operations against `int` are allowed.
-In this case, the `int` _argument_ is assumed to be "unscaled", i.e. if you write `int(8) * FixedPoint(8)` we will scale up the first variable return a `FixedPoint` number that represents the float `64.0` in 18-decimal FixedPoint format.
-So in this example the internal representation of that operation would be `64*10**18`.
-If you cast FixedPoint numbers to ints or floats you will get "unscaled" representation, e.g. `float(FixedPoint("8.0")) == 8.0` and `int(FixedPoint("8.528")) == 8`.
-
-If you want the integer scaled representation, which can be useful for communicating with Solidity contracts, you must ask for it explicitly, e.g. `FixedPoint("8.52").scaled_value == 8520000000000000000`.
-Conversely, if you want to initialize a FixedPoint variable using the scaled integer representation, then you need to instantiate the variable using the `scaled_value` argument, e.g. `FixedPoint(scaled_value=8)`.
-In that example, the internal representation is `8`, so casting it to a float would produce a small value: `float(FixedPoint(scaled_value=8)) == 8e-18`.
-
-To understand more, we recommend that you study the fixed point tests and source implementation in `delvtech/fixedpointmath/`.
-
-Warning! Using floating point as a constructor to FixedPoint can cause loss of precision. For example,
-
-```
->>> FixedPoint(1e18)
-FixedPoint("1000000000000000042.420637374017961984")
-```
-
-Allowing floating point in the constructor of FixedPoint will be removed in a future version of `fixedpointmath`.
+Please refer to [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Modifying configuration for agent deployment
 
-Follow `lib/agent0/README.md` for agent deployment.
+Follow [`lib/agent0/README.md`](lib/agent0/README.md) for agent deployment.
 
 ## Data pipeline
 
@@ -107,3 +80,7 @@ The data script can be then ran using the following command:
 ```bash
 python lib/chainsync/chainsync/exec/acquire_data.py
 ```
+
+## Number format
+
+We frequently use 18-decimal [fixed-point precision numbers](https://github.com/delvtech/fixedpointmath#readme) for arithmetic.

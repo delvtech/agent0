@@ -1,5 +1,5 @@
 [project]
-name = "elf-simulations"
+name = "agent0"
 version = "0.8.3"
 # Authors are the current, primary stuards of the repo
 # contributors can be found on github
@@ -30,13 +30,13 @@ line-length = "120"
 extend-exclude = "\\.ipynb"
 
 [tool.pylint]
-exclude = ["agent_0", "hyperdrive_solidity", ".venv", ".vscode", "docs"]
+exclude = [".venv", ".vscode", "docs"]
 
 [tool.pylance]
-exclude = ["agent_0", "hyperdrive_solidity", ".venv", ".vscode", "docs"]
+exclude = [".venv", ".vscode", "docs"]
 
 [tool.pyright]
-exclude = ["agent_0", "hyperdrive_solidity", ".venv", ".vscode", "docs"]
+exclude = [".venv", ".vscode", "docs"]
 
 [tool.ruff]
 # Default is: pycodestyle (E) and Pyflakes (F)
@@ -70,6 +70,4 @@ exclude = [
     ".venv",
     ".vscode",
     "docs",
-    "hyperdrive_solidity/.venv",
-    "hyperdrive_solidity",
 ]

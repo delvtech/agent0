@@ -183,7 +183,7 @@ def create_max_bytes(max_bytes: int | None = None) -> int:
 
 
 def get_root_logger(root_logger: logging.Logger | None = None) -> logging.Logger:
-    """Retrieve root logger used for elf-simulations, isolated from other loggers (like pytest).
+    """Retrieve root logger, isolated from other loggers (like pytest).
 
     Arguments
     ---------

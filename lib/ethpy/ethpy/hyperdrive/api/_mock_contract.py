@@ -1,9 +1,9 @@
-"""Mock function calls using Pyperdrive."""
+"""Mock function calls using hyperdrivepy."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-import pyperdrive
+import hyperdrivepy
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig, PoolInfo
 from web3.types import Timestamp
@@ -64,7 +64,7 @@ def _calc_position_duration_in_years(pool_state: PoolState) -> FixedPoint:
 
 def _calc_fixed_rate(pool_state: PoolState) -> FixedPoint:
     """See API for documentation."""
-    spot_rate = pyperdrive.get_spot_rate(
+    spot_rate = hyperdrivepy.get_spot_rate(
         _construct_pool_config(pool_state.contract_pool_config),
         _construct_pool_info(pool_state.contract_pool_info),
     )
@@ -73,7 +73,7 @@ def _calc_fixed_rate(pool_state: PoolState) -> FixedPoint:
 
 def _calc_effective_share_reserves(pool_state: PoolState) -> FixedPoint:
     """See API for documentation."""
-    effective_share_reserves = pyperdrive.get_effective_share_reserves(
+    effective_share_reserves = hyperdrivepy.get_effective_share_reserves(
         str(pool_state.pool_info.share_reserves.scaled_value),
         str(pool_state.pool_info.share_adjustment.scaled_value),
     )
@@ -82,7 +82,7 @@ def _calc_effective_share_reserves(pool_state: PoolState) -> FixedPoint:
 
 def _calc_spot_price(pool_state: PoolState):
     """See API for documentation."""
-    spot_price = pyperdrive.get_spot_price(
+    spot_price = hyperdrivepy.get_spot_price(
         _construct_pool_config(pool_state.contract_pool_config),
         _construct_pool_info(pool_state.contract_pool_info),
     )
@@ -91,7 +91,7 @@ def _calc_spot_price(pool_state: PoolState):
 
 def _calc_long_amount(pool_state: PoolState, base_amount: FixedPoint) -> FixedPoint:
     """See API for documentation."""
-    long_amount = pyperdrive.get_long_amount(
+    long_amount = hyperdrivepy.get_long_amount(
         _construct_pool_config(pool_state.contract_pool_config),
         _construct_pool_info(pool_state.contract_pool_info),
         str(base_amount.scaled_value),
@@ -111,7 +111,7 @@ def _calc_short_deposit(
         open_share_price_str = None
     else:  # convert FixedPoint to string
         open_share_price_str = str(open_share_price.scaled_value)
-    short_deposit = pyperdrive.get_short_deposit(
+    short_deposit = hyperdrivepy.get_short_deposit(
         _construct_pool_config(pool_state.contract_pool_config),
         _construct_pool_info(pool_state.contract_pool_info),
         str(short_amount.scaled_value),
@@ -126,7 +126,7 @@ def _calc_bonds_out_given_shares_in_down(
     amount_in: FixedPoint,
 ) -> FixedPoint:
     """See API for documentation."""
-    amount_out = pyperdrive.calculate_bonds_out_given_shares_in_down(
+    amount_out = hyperdrivepy.calculate_bonds_out_given_shares_in_down(
         _construct_pool_config(pool_state.contract_pool_config),
         _construct_pool_info(pool_state.contract_pool_info),
         str(amount_in.scaled_value),
@@ -139,7 +139,7 @@ def _calc_shares_in_given_bonds_out_up(
     amount_in: FixedPoint,
 ) -> FixedPoint:
     """See API for documentation."""
-    amount_out = pyperdrive.calculate_shares_in_given_bonds_out_up(
+    amount_out = hyperdrivepy.calculate_shares_in_given_bonds_out_up(
         _construct_pool_config(pool_state.contract_pool_config),
         _construct_pool_info(pool_state.contract_pool_info),
         str(amount_in.scaled_value),
@@ -152,7 +152,7 @@ def _calc_shares_in_given_bonds_out_down(
     amount_in: FixedPoint,
 ) -> FixedPoint:
     """See API for documentation."""
-    amount_out = pyperdrive.calculate_shares_in_given_bonds_out_down(
+    amount_out = hyperdrivepy.calculate_shares_in_given_bonds_out_down(
         _construct_pool_config(pool_state.contract_pool_config),
         _construct_pool_info(pool_state.contract_pool_info),
         str(amount_in.scaled_value),
@@ -165,7 +165,7 @@ def _calc_shares_out_given_bonds_in_down(
     amount_in: FixedPoint,
 ) -> FixedPoint:
     """See API for documentation."""
-    amount_out = pyperdrive.calculate_shares_out_given_bonds_in_down(
+    amount_out = hyperdrivepy.calculate_shares_out_given_bonds_in_down(
         _construct_pool_config(pool_state.contract_pool_config),
         _construct_pool_info(pool_state.contract_pool_info),
         str(amount_in.scaled_value),
@@ -177,7 +177,7 @@ def _calc_max_buy(
     pool_state: PoolState,
 ) -> FixedPoint:
     """See API for documentation."""
-    amount_out = pyperdrive.calculate_max_buy(
+    amount_out = hyperdrivepy.calculate_max_buy(
         _construct_pool_config(pool_state.contract_pool_config),
         _construct_pool_info(pool_state.contract_pool_info),
     )
@@ -189,7 +189,7 @@ def _calc_max_sell(
     minimum_share_reserves: FixedPoint,
 ) -> FixedPoint:
     """See API for documentation."""
-    amount_out = pyperdrive.calculate_max_sell(
+    amount_out = hyperdrivepy.calculate_max_sell(
         _construct_pool_config(pool_state.contract_pool_config),
         _construct_pool_info(pool_state.contract_pool_info),
         str(minimum_share_reserves.scaled_value),
@@ -257,7 +257,7 @@ def _calc_bonds_given_shares_and_rate(
         target_shares = _calc_effective_share_reserves(pool_state)
     return FixedPoint(
         scaled_value=int(
-            pyperdrive.calculate_bonds_given_shares_and_rate(
+            hyperdrivepy.calculate_bonds_given_shares_and_rate(
                 str(target_shares.scaled_value),
                 str(pool_state.pool_config.initial_share_price.scaled_value),
                 str(target_rate.scaled_value),
@@ -272,7 +272,7 @@ def _calc_max_long(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
     """See API for documentation."""
     return FixedPoint(
         scaled_value=int(
-            pyperdrive.get_max_long(
+            hyperdrivepy.get_max_long(
                 _construct_pool_config(pool_state.contract_pool_config),
                 _construct_pool_info(pool_state.contract_pool_info),
                 str(budget.scaled_value),
@@ -287,7 +287,7 @@ def _calc_max_short(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
     """See API for documentation."""
     return FixedPoint(
         scaled_value=int(
-            pyperdrive.get_max_short(
+            hyperdrivepy.get_max_short(
                 pool_config=_construct_pool_config(pool_state.contract_pool_config),
                 pool_info=_construct_pool_info(pool_state.contract_pool_info),
                 budget=str(budget.scaled_value),

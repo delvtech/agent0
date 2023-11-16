@@ -1,6 +1,6 @@
-.. elf-simulations documentation master file
+.. agent0 documentation master file
 
-Welcome to the documentation for elf-simulations packages!
+Welcome to the documentation for the agent0 monorepo!
 =================================
 
 .. include:: ../../README.md

@@ -5,20 +5,19 @@ import asyncio
 import logging
 import os
 
-from agent0 import build_account_config_from_env
-from agent0.hyperdrive.agents import HyperdriveAgent
-from agent0.hyperdrive.exec import async_fund_agents
 from eth_account.account import Account
 from ethpy import build_eth_config
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
+
+from agent0 import build_account_config_from_env
+from agent0.hyperdrive.agents import HyperdriveAgent
+from agent0.hyperdrive.exec import async_fund_agents
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="fund_agents_from_user_key",
         description="Script for funding agents from a user key, given a written env file.",
-        epilog=(
-            "See the README on https://github.com/delvtech/elf-simulations/agent0/ for more implementation details"
-        ),
+        epilog=("See https://github.com/delvtech/agent0/lib/agent0/README.md for more details."),
     )
     parser.add_argument(
         "-u",
@@ -57,4 +56,5 @@ if __name__ == "__main__":
     # User key could have been passed in here, rewrite the accounts env file
     if user_key is not None:
         with open(env_file, "w", encoding="UTF-8") as file:
+            file.write(account_key_config.to_env_str())
             file.write(account_key_config.to_env_str())

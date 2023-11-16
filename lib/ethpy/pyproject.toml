@@ -22,22 +22,19 @@ with-dependencies = [
     "ethpy[base, lateral]"
 ]
 base = [
-    "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
-    # TODO figure out the dependencies below
-    "matplotlib",
+    "fixedpointmath @ git+https://github.com/delvtech/fixedpointmath.git/#subdirectory=lib/fixedpointmath",
     "numpy",
-    "pandas",
     "python-dotenv",
     "web3",
 ]
 lateral = [
     # Lateral dependencies across subpackages are pointing to github
-    "hypertypes[base] @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/hypertypes",
+    "hypertypes[base] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/hypertypes",
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/delvtech/elf-simulations"
-"Bug Tracker" = "https://github.com/delvtech/elf-simulations/issues"
+"Homepage" = "https://github.com/delvtech/agent0"
+"Bug Tracker" = "https://github.com/delvtech/agent0/issues"
 
 [build-system]
 requires = ["flit_core>=3.2"]

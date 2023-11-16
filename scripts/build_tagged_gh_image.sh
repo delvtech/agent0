@@ -7,10 +7,10 @@ fi
 
 # GitHub repository details
 repo_owner="delvtech"
-repo_name="elf-simulations"
+repo_name="agent0"
 
 # Docker image details
-image_name="elfsims"
+image_name="agent0"
 tag=$1
 
 docker build --no-cache -t $image_name:$tag https://github.com/$repo_owner/$repo_name.git#$tag

@@ -1,4 +1,4 @@
-"""System test for end to end testing of elf-simulations"""
+"""System test for end to end usage of agent0 libraries."""
 from __future__ import annotations
 
 import logging
@@ -6,12 +6,6 @@ import os
 from typing import TYPE_CHECKING, cast
 
 import pandas as pd
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from chainsync.db.hyperdrive.interface import get_ticker, get_transactions, get_wallet_deltas
 from chainsync.exec import acquire_data, data_analysis
 from eth_typing import URI
@@ -20,6 +14,13 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
+
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base import MarketType, Trade
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.policies import HyperdrivePolicy
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -217,5 +218,12 @@ class TestMultiTradePerBlock:
 
         wallet_deltas: pd.DataFrame = get_wallet_deltas(db_session, coerce_float=False)
         # Ensure deltas only exist for valid trades
+        # 2 for each trade
+        assert len(wallet_deltas) == 6
+        # Ensure deltas only exist for valid trades
+        # 2 for each trade
+        assert len(wallet_deltas) == 6
+        # 2 for each trade
+        assert len(wallet_deltas) == 6
         # 2 for each trade
         assert len(wallet_deltas) == 6

@@ -20,9 +20,9 @@ if [[ "$TAG" == "default" ]]; then
 fi
 echo "Tag: $TAG"
 
-docker tag $IMAGE_ID ghcr.io/delvtech/elf-simulations/$TAG
-docker image push ghcr.io/delvtech/elf-simulations/$TAG
+docker tag $IMAGE_ID ghcr.io/delvtech/agent0/$TAG
+docker image push ghcr.io/delvtech/agent0/$TAG
 
-echo "Tag pushed to ghcr.io/delvtech/elf-simulations/$TAG"
+echo "Tag pushed to ghcr.io/delvtech/agent0/$TAG"
 echo "Run the following command to retrieve the image:"
-echo "docker image pull ghcr.io/delvtech/elf-simulations/$TAG"
+echo "docker image pull ghcr.io/delvtech/agent0/$TAG"

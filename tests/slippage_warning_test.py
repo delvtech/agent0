@@ -1,19 +1,20 @@
-"""System test for end to end testing of elf-simulations"""
+"""System test for end to end usage of agent0 libraries."""
 from __future__ import annotations
 
 import logging
 import os
 from typing import TYPE_CHECKING, Type, cast
 
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.test_fixtures import CycleTradesPolicy
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
+
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.test_fixtures import CycleTradesPolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -111,4 +112,5 @@ class TestSlippageWarning:
                 load_wallet_state=False,
             )
         except ContractCallException as exc:
+            assert "Slippage detected" in exc.args[0]
             assert "Slippage detected" in exc.args[0]

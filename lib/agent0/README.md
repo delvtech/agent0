@@ -5,15 +5,15 @@ Each user must provide an SSH key to log in to the EC2 and deploy their bot.
 
 Alternatively, you’re welcome to run bots on your own server, where you can skip directly to step 3.
 
-## Step 1: Install elf-simulations
+## Step 1: Install agent0
 
 1.1.
 **Optional**, if you want the ability to PR new bots into our repo:
 
-Make a fork of the delvtech/elf-simulations repo. ([repo link](https://github.com/delvtech/elf-simulations), [GitHub fork instructions](https://docs.github.com/en/get-started/quickstart/fork-a-repo?tool=webui&platform=mac)).
+Make a fork of the delvtech/agent0 repo. ([repo link](https://github.com/delvtech/agent0), [GitHub fork instructions](https://docs.github.com/en/get-started/quickstart/fork-a-repo?tool=webui&platform=mac)).
 
 1.2.
-Install elf-simulations packages by following the installation instructions found [on github](https://github.com/delvtech/elf-simulations/blob/main/INSTALL.md).
+Install agent0 packages by following the installation instructions found [on github](https://github.com/delvtech/agent0/blob/main/INSTALL.md).
 
     >**💡NOTE:**
     >
@@ -24,13 +24,13 @@ Install elf-simulations packages by following the installation instructions foun
     >**git clone the correct repo:**
     >
     >You’ll want to clone your fork,
-    >e.g.: `git clone https://github.com/[YOUR_USERNAME]/elf-simulations.git elf-simulations`
+    >e.g.: `git clone https://github.com/[YOUR_USERNAME]/agent0.git agent0`
     >
     >You’ll probably also want to also configure the remote (`delvtech`) repository.
-    >Once you’ve made the fork and cloned it, navigate inside (`cd elf-simulations`), and run
+    >Once you’ve made the fork and cloned it, navigate inside (`cd agent0`), and run
     >
     >```bash
-    >git remote add upstream git@github.com:delvtech/elf-simulations.git
+    >git remote add upstream git@github.com:delvtech/agent0.git
     >```
     >
     >to sync up an `upstream` repository.
@@ -47,10 +47,10 @@ Install elf-simulations packages by following the installation instructions foun
     >
 
 1.3.
-Navigate to the `elf-simulations` folder: `cd elf-simulations/`
+Navigate to the `agent0` folder: `cd agent0/`
 
 1.4.
-Run the elf-simulations tests to verify that everything installed correctly by executing `python -m pytest`. Make sure you have enabled the correct Python environment, and installed the `requirements-dev.txt` file first.
+Run the agent0 tests to verify that everything installed correctly by executing `python -m pytest`. Make sure you have enabled the correct Python environment, and installed the `requirements-dev.txt` file first.
 
 ## Step 2: Set your configuration
 
