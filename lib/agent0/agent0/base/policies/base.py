@@ -84,4 +84,3 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         dedented_text = dedent(raw_description).strip()
         indented_text = indent(dedented_text, "  ")  # Adding 2-space indent
         return indented_text
-        return indented_text

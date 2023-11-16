@@ -22,8 +22,7 @@ from agent0.base import MarketType, Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import (HyperdriveActionType,
-                                     HyperdriveMarketAction, HyperdriveWallet)
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 
 
 class WalletTestPolicy(HyperdrivePolicy):
@@ -227,7 +226,5 @@ class TestBotToDb:
             agent_config,
             account_key_config,
             eth_config=eth_config,
-            contract_addresses=hyperdrive_contract_addresses,
-        )
             contract_addresses=hyperdrive_contract_addresses,
         )

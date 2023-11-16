@@ -8,11 +8,14 @@ from typing import Type, cast
 
 import numpy as np
 import pandas as pd
-from chainsync.db.hyperdrive.interface import (get_current_wallet,
-                                               get_pool_analysis,
-                                               get_pool_config, get_pool_info,
-                                               get_transactions,
-                                               get_wallet_deltas)
+from chainsync.db.hyperdrive.interface import (
+    get_current_wallet,
+    get_pool_analysis,
+    get_pool_config,
+    get_pool_info,
+    get_transactions,
+    get_wallet_deltas,
+)
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI
