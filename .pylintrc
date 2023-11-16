@@ -48,7 +48,7 @@ ignore=CVS
 # ignore-list. The regex matches against paths and can be in Posix or Windows
 # format. Because '\' represents the directory delimiter on Windows systems, it
 # can't be used as an escape character.
-ignore-paths=docs,.venv,hyperdrive_solidity/.venv
+ignore-paths=docs,.venv
 
 # Files or directories matching the regular expression patterns are skipped.
 # The regex matches against base names, not paths. The default value ignores
@@ -148,7 +148,10 @@ confidence=HIGH,
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable=raw-checker-failed,
+
+disable=too-few-public-methods,
+        wrong-import-order,
+        raw-checker-failed,
         duplicate-code,
         bad-inline-option,
         locally-disabled,
@@ -204,8 +207,7 @@ spelling-store-unknown-words=no
 [MISCELLANEOUS]
 
 # List of note tags to take in consideration, separated by a comma.
-notes=FIXME,
-      XXX
+notes=FIXME
 
 # Regular expression of note tags to take in consideration.
 notes-rgx=
@@ -641,6 +643,3 @@ variable-naming-style=snake_case
 # If the docstring type cannot be guessed the
 # specified docstring type will be used.
 # default-docstring-type = numpy
-
-#disable = missing-param-doc, missing-return-doc, missing-return-type-doc, too-few-public-methods, missing-type-doc
-disable = too-few-public-methods
