@@ -1,6 +1,7 @@
 """Pytest fixture that creates an in memory db session and creates the base db schema"""
 import logging
 import os
+import re
 import subprocess
 import time
 from pathlib import Path
@@ -84,6 +85,13 @@ def psql_docker() -> Iterator[PostgresConfig]:
     # Wait for the container to start
     time.sleep(3)
 
+    # Get version of postgres
+    version_out = container.exec_run("postgres -V")[1]  # type:ignore
+    postgres_version = re.search(r"[0-9]+\.[0-9]+", str(version_out))
+    if postgres_version is None:
+        raise ValueError("Could not find postgres version")
+    postgres_config.POSTGRES_VERSION = postgres_version[0]
+
     yield postgres_config
 
     # Docker doesn't play nice with types
@@ -110,12 +118,15 @@ def database_engine(psql_docker: PostgresConfig) -> Iterator[Engine]:  # pylint:
     # Using default postgres info
     # Renaming variable to match what it actually is, i.e., the postgres config
     postgres_config = psql_docker
+    if postgres_config.POSTGRES_VERSION is None:
+        postgres_config.POSTGRES_VERSION = "latest"
+
     with DatabaseJanitor(
         user=postgres_config.POSTGRES_USER,
         host="127.0.0.1",
         port=postgres_config.POSTGRES_PORT,
         dbname=postgres_config.POSTGRES_DB,
-        version="latest",
+        version=postgres_config.POSTGRES_VERSION,
         password=postgres_config.POSTGRES_PASSWORD,
     ):
         engine = initialize_engine(postgres_config)
