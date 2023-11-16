@@ -1,4 +1,5 @@
 """Defines the postgres configuration from env vars."""
+from __future__ import annotations
 
 import os
 from dataclasses import dataclass
@@ -34,6 +35,7 @@ class PostgresConfig:
     POSTGRES_DB: str = "postgres_db"
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
+    POSTGRES_VERSION: str | None = None
 
 
 def build_postgres_config() -> PostgresConfig:
