@@ -29,7 +29,7 @@ base = [
 ]
 lateral = [
     # Lateral dependencies across subpackages are pointing to github
-    "hypertypes[base] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/hypertypes",
+    "hypertypes[with-dependencies] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/hypertypes",
 ]
 
 [project.urls]
