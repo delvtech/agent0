@@ -22,7 +22,7 @@ with-dependencies = [
     "agent0[base, lateral]"
 ]
 base = [
-    "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
+    "fixedpointmath @ git+https://github.com/delvtech/fixedpointmath.git/#subdirectory=lib/fixedpointmath",
     "numpy",
     "python-dotenv",
     "web3", # will include eth- packages

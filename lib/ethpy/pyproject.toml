@@ -22,11 +22,8 @@ with-dependencies = [
     "ethpy[base, lateral]"
 ]
 base = [
-    "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
-    # TODO figure out the dependencies below
-    "matplotlib",
+    "fixedpointmath @ git+https://github.com/delvtech/fixedpointmath.git/#subdirectory=lib/fixedpointmath",
     "numpy",
-    "pandas",
     "python-dotenv",
     "web3",
 ]
