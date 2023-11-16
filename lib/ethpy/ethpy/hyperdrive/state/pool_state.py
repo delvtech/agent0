@@ -8,6 +8,7 @@ from fixedpointmath import FixedPoint
 from web3.types import BlockData
 
 from ..api._block_getters import _get_block_number, _get_block_time
+from .checkpoint import Checkpoint
 from .conversions import (
     convert_hyperdrive_checkpoint_types,
     convert_hyperdrive_pool_config_types,
@@ -32,28 +33,33 @@ class PoolState:
     def __post_init__(self):
         self.block_number = _get_block_number(self.block)
         self.block_time = _get_block_time(self.block)
-        self._pool_config = convert_hyperdrive_pool_config_types(self.contract_pool_config)
-        self._pool_info = convert_hyperdrive_pool_info_types(self.contract_pool_info)
-        self.checkpoint = convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
 
     @property
     def pool_info(self) -> PoolInfo:
         """Get the pool_info property."""
-        return self._pool_info
+        return convert_hyperdrive_pool_info_types(self.contract_pool_info)
 
     @pool_info.setter
     def pool_info(self, value: PoolInfo) -> None:
         """Set the pool_info property."""
-        self._pool_info = value
-        self.contract_pool_info = dataclass_to_dict(self._pool_info)
+        self.contract_pool_info = dataclass_to_dict(value)
 
     @property
     def pool_config(self) -> PoolConfig:
         """Get the pool_config property."""
-        return self._pool_config
+        return convert_hyperdrive_pool_config_types(self.contract_pool_config)
 
     @pool_config.setter
     def pool_config(self, value: PoolConfig) -> None:
         """Set the pool_config property."""
-        self._pool_config = value
-        self.contract_pool_config = dataclass_to_dict(self._pool_config)
+        self.contract_pool_config = dataclass_to_dict(value)
+
+    @property
+    def checkpoint(self) -> PoolConfig:
+        """Get the checkpoint property."""
+        return convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
+
+    @checkpoint.setter
+    def checkpoint(self, value: Checkpoint) -> None:
+        """Set the checkpoint property."""
+        self.contract_checkpoint = dataclass_to_dict(value)

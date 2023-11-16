@@ -9,6 +9,16 @@ from fixedpointmath import FixedPoint
 from .fees import Fees
 
 
+# TODO: These dataclasses are similar to pypechain except for
+#  - snake_case attributes instead of camelCase
+#  - FixedPoint types instead of int
+#  - nested dataclasses (PoolConfig) include a __post_init__ that allows for
+#  instantiation with a nested dictionary
+#
+# We'd like to rely on the pypechain classes as much as possible.
+# One solution could be to build our own interface wrapper that pulls in the pypechain
+# dataclass and makes this fixed set of changes?
+# pylint: disable=too-many-instance-attributes
 @dataclass
 class PoolConfig:
     """PoolConfig struct."""
