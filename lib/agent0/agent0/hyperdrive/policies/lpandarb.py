@@ -393,8 +393,8 @@ def calc_reserves_to_hit_target_rate(
     """
     # variables
     predicted_rate = FixedPoint(0)
-    pool_config = copy(hyperdrive.current_pool_state.pool_config)
-    pool_info = copy(hyperdrive.current_pool_state.pool_info)
+    pool_state = copy(hyperdrive.current_pool_state)
+    current_pool_state = copy(hyperdrive.current_pool_state)
 
     iteration = 0
     start_time = time.time()
@@ -404,35 +404,45 @@ def calc_reserves_to_hit_target_rate(
     logging.debug(f"Targeting {float(target_rate):.2%} from {float(hyperdrive.calc_fixed_rate()):.2%}")
     while float(abs(predicted_rate - target_rate)) > TOLERANCE:
         iteration += 1
-        latest_fixed_rate = calc_apr_local_dict(pool_config, pool_info)
+        latest_fixed_rate = calc_apr_local_dict(pool_state.pool_config, pool_state.pool_info)
         target_bonds = calc_bond_reserves(
-            pool_info.share_reserves,
-            pool_info.share_adjustment,
-            pool_config.initial_share_price,
+            pool_state.pool_info.share_reserves,
+            pool_state.pool_info.share_adjustment,
+            pool_state.pool_config.initial_share_price,
             target_rate,
-            FixedPoint(pool_config.position_duration),
-            FixedPoint(1) / pool_config.time_stretch,
+            FixedPoint(pool_state.pool_config.position_duration),
+            FixedPoint(1) / pool_state.pool_config.time_stretch,
         )
         # bonds_needed tells us the number of bonds to hit the desired reserves ratio, keeping shares constant.
         # however trades modify both bonds and shares in amounts of equal value.
         # we modify bonds by only half of bonds_needed, knowing that an amount of equal
         # value will move shares in the other direction, toward our desired ratio.
         # this guess is very bad when slippage is high, so we check how bad, then scale accordingly.
-        bonds_needed = (target_bonds - pool_info.bond_reserves) / FixedPoint(2)
-        shares_needed, gov_fee = calc_shares_needed_for_bonds(bonds_needed, pool_info, pool_config)
+        bonds_needed = (target_bonds - pool_state.pool_info.bond_reserves) / FixedPoint(2)
+        shares_needed, gov_fee = calc_shares_needed_for_bonds(bonds_needed, pool_state.pool_info, pool_state.pool_config)
         # save my bad first guess to a temporary variable
-        temp_pool_info = apply_step(copy(pool_info), bonds_needed, shares_needed, gov_fee)
-        predicted_rate = calc_apr_local_dict(pool_config, temp_pool_info)
+        temp_pool_info = apply_step(copy(pool_state.pool_info), bonds_needed, shares_needed, gov_fee)
+        predicted_rate = calc_apr_local_dict(pool_state.pool_config, temp_pool_info)
         # improve my guess by scaling up or down based on how much I overshot or undershot and try again
         overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
+        print(f"{overshoot_or_undershoot=}")
         # if we overshot by 2x, we adjust our guess to be 2x less, etc.
         bonds_needed /= overshoot_or_undershoot
-        shares_needed, gov_fee = calc_shares_needed_for_bonds(bonds_needed, pool_info, pool_config)
+        shares_needed, gov_fee = calc_shares_needed_for_bonds(bonds_needed, pool_state.pool_info, pool_state.pool_config)
         # save my step for real
-        pool_info = apply_step(pool_info, bonds_needed, shares_needed, gov_fee)
-        predicted_rate = calc_apr_local_dict(pool_config, pool_info)
-        total_shares_needed = pool_info.share_reserves - hyperdrive.current_pool_state.pool_info.share_reserves
-        total_bonds_needed = pool_info.bond_reserves - hyperdrive.current_pool_state.pool_info.bond_reserves
+        # pool_state.pool_info = apply_step(pool_state.pool_info, bonds_needed, shares_needed, gov_fee)
+
+        # apply_step update
+        if bonds_needed > 0:  # short case
+            pool_state.pool_info.share_reserves += -shares_needed - gov_fee
+        else:  # long case
+            pool_state.pool_info.share_reserves += shares_needed - gov_fee
+        pool_state.pool_info.bond_reserves += bonds_needed
+        # end
+
+        predicted_rate = calc_apr_local_dict(pool_state.pool_config, pool_state.pool_info)
+        total_shares_needed = pool_state.pool_info.share_reserves - current_pool_state.pool_info.share_reserves
+        total_bonds_needed = pool_state.pool_info.bond_reserves - current_pool_state.pool_info.bond_reserves
         # log info about my step
         formatted_str = (
             f"iteration {iteration:3}: {float(predicted_rate):22.18%}"
