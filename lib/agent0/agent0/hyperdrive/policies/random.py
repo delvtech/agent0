@@ -1,7 +1,7 @@
 """User strategy that opens or closes a random position with a random allowed amount."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
@@ -51,15 +51,17 @@ class Random(HyperdrivePolicy):
         """
 
         trade_chance: FixedPoint = FixedPoint("1.0")
-        allowable_actions: list[HyperdriveActionType] = [
-            HyperdriveActionType.OPEN_LONG,
-            HyperdriveActionType.OPEN_SHORT,
-            HyperdriveActionType.ADD_LIQUIDITY,
-            HyperdriveActionType.CLOSE_LONG,
-            HyperdriveActionType.CLOSE_SHORT,
-            HyperdriveActionType.REMOVE_LIQUIDITY,
-            HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
-        ]
+        allowable_actions: list[HyperdriveActionType] = field(
+            default_factory=lambda: [
+                HyperdriveActionType.OPEN_LONG,
+                HyperdriveActionType.OPEN_SHORT,
+                HyperdriveActionType.ADD_LIQUIDITY,
+                HyperdriveActionType.CLOSE_LONG,
+                HyperdriveActionType.CLOSE_SHORT,
+                HyperdriveActionType.REMOVE_LIQUIDITY,
+                HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
+            ]
+        )
 
     def __init__(
         self,
@@ -309,6 +311,8 @@ class Random(HyperdrivePolicy):
         pool_state = hyperdrive.current_pool_state
         # user can always open a trade, and can close a trade if one is open
         available_actions = self.get_available_actions(wallet, pool_state)
+        if not available_actions:  # it's possible that no actions are available at this time
+            return [], False
         # randomly choose one of the possible actions
         action_type = available_actions[self.rng.integers(len(available_actions))]
         # trade amount is also randomly chosen to be close to 10% of the agent's budget
