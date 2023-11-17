@@ -17,10 +17,28 @@
 from __future__ import annotations
 from typing import cast
 
-from eth_typing import ChecksumAddress
-from web3.types import ABI
+from eth_typing import ChecksumAddress, HexStr
+from hexbytes import HexBytes
+from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
+
+from .IERC4626HyperdriveTypes import (
+    Options,
+    Options,
+    Options,
+    Options,
+    Checkpoint,
+    MarketState,
+    PoolConfig,
+    PoolInfo,
+    WithdrawPool,
+    Options,
+    Options,
+    Options,
+    Options,
+    Options,
+)
 
 
 class IERC4626HyperdriveDOMAIN_SEPARATORContractFunction(ContractFunction):
@@ -33,8 +51,17 @@ class IERC4626HyperdriveDOMAIN_SEPARATORContractFunction(ContractFunction):
         super().__call__()
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> bytes:
+        """returns bytes"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdrivePERMIT_TYPEHASHContractFunction(ContractFunction):
@@ -47,8 +74,17 @@ class IERC4626HyperdrivePERMIT_TYPEHASHContractFunction(ContractFunction):
         super().__call__()
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> bytes:
+        """returns bytes"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveAddLiquidityContractFunction(ContractFunction):
@@ -58,13 +94,22 @@ class IERC4626HyperdriveAddLiquidityContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, _contribution: int, _minApr: int, _maxApr: int, _options: tuple
+        self, _contribution: int, _minApr: int, _maxApr: int, _options: Options
     ) -> "IERC4626HyperdriveAddLiquidityContractFunction":
         super().__call__(_contribution, _minApr, _maxApr, _options)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveBalanceOfContractFunction(ContractFunction):
@@ -73,12 +118,23 @@ class IERC4626HyperdriveBalanceOfContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, tokenId: int, owner: str) -> "IERC4626HyperdriveBalanceOfContractFunction":
+    def __call__(
+        self, tokenId: int, owner: str
+    ) -> "IERC4626HyperdriveBalanceOfContractFunction":
         super().__call__(tokenId, owner)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveBaseTokenContractFunction(ContractFunction):
@@ -91,8 +147,17 @@ class IERC4626HyperdriveBaseTokenContractFunction(ContractFunction):
         super().__call__()
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveBatchTransferFromContractFunction(ContractFunction):
@@ -107,8 +172,17 @@ class IERC4626HyperdriveBatchTransferFromContractFunction(ContractFunction):
         super().__call__(_from, to, ids, values)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveCheckpointContractFunction(ContractFunction):
@@ -117,12 +191,23 @@ class IERC4626HyperdriveCheckpointContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _checkpointTime: int) -> "IERC4626HyperdriveCheckpointContractFunction":
+    def __call__(
+        self, _checkpointTime: int
+    ) -> "IERC4626HyperdriveCheckpointContractFunction":
         super().__call__(_checkpointTime)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveCloseLongContractFunction(ContractFunction):
@@ -136,13 +221,22 @@ class IERC4626HyperdriveCloseLongContractFunction(ContractFunction):
         _maturityTime: int,
         _bondAmount: int,
         _minOutput: int,
-        _options: tuple,
+        _options: Options,
     ) -> "IERC4626HyperdriveCloseLongContractFunction":
         super().__call__(_maturityTime, _bondAmount, _minOutput, _options)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveCloseShortContractFunction(ContractFunction):
@@ -156,13 +250,22 @@ class IERC4626HyperdriveCloseShortContractFunction(ContractFunction):
         _maturityTime: int,
         _bondAmount: int,
         _minOutput: int,
-        _options: tuple,
+        _options: Options,
     ) -> "IERC4626HyperdriveCloseShortContractFunction":
         super().__call__(_maturityTime, _bondAmount, _minOutput, _options)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveCollectGovernanceFeeContractFunction(ContractFunction):
@@ -171,12 +274,23 @@ class IERC4626HyperdriveCollectGovernanceFeeContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _options: tuple) -> "IERC4626HyperdriveCollectGovernanceFeeContractFunction":
+    def __call__(
+        self, _options: Options
+    ) -> "IERC4626HyperdriveCollectGovernanceFeeContractFunction":
         super().__call__(_options)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveGetCheckpointContractFunction(ContractFunction):
@@ -185,12 +299,23 @@ class IERC4626HyperdriveGetCheckpointContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _checkpointId: int) -> "IERC4626HyperdriveGetCheckpointContractFunction":
+    def __call__(
+        self, _checkpointId: int
+    ) -> "IERC4626HyperdriveGetCheckpointContractFunction":
         super().__call__(_checkpointId)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> Checkpoint:
+        """returns Checkpoint"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveGetMarketStateContractFunction(ContractFunction):
@@ -203,8 +328,17 @@ class IERC4626HyperdriveGetMarketStateContractFunction(ContractFunction):
         super().__call__()
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> MarketState:
+        """returns MarketState"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveGetPoolConfigContractFunction(ContractFunction):
@@ -217,8 +351,17 @@ class IERC4626HyperdriveGetPoolConfigContractFunction(ContractFunction):
         super().__call__()
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> PoolConfig:
+        """returns PoolConfig"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveGetPoolInfoContractFunction(ContractFunction):
@@ -231,11 +374,22 @@ class IERC4626HyperdriveGetPoolInfoContractFunction(ContractFunction):
         super().__call__()
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> PoolInfo:
+        """returns PoolInfo"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
-class IERC4626HyperdriveGetUncollectedGovernanceFeesContractFunction(ContractFunction):
+class IERC4626HyperdriveGetUncollectedGovernanceFeesContractFunction(
+    ContractFunction
+):
     """ContractFunction for the getUncollectedGovernanceFees method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -247,8 +401,17 @@ class IERC4626HyperdriveGetUncollectedGovernanceFeesContractFunction(ContractFun
         super().__call__()
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveGetWithdrawPoolContractFunction(ContractFunction):
@@ -261,8 +424,17 @@ class IERC4626HyperdriveGetWithdrawPoolContractFunction(ContractFunction):
         super().__call__()
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> WithdrawPool:
+        """returns WithdrawPool"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveInitializeContractFunction(ContractFunction):
@@ -272,13 +444,22 @@ class IERC4626HyperdriveInitializeContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, _contribution: int, _apr: int, _options: tuple
+        self, _contribution: int, _apr: int, _options: Options
     ) -> "IERC4626HyperdriveInitializeContractFunction":
         super().__call__(_contribution, _apr, _options)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveIsApprovedForAllContractFunction(ContractFunction):
@@ -287,12 +468,23 @@ class IERC4626HyperdriveIsApprovedForAllContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, owner: str, spender: str) -> "IERC4626HyperdriveIsApprovedForAllContractFunction":
+    def __call__(
+        self, owner: str, spender: str
+    ) -> "IERC4626HyperdriveIsApprovedForAllContractFunction":
         super().__call__(owner, spender)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> bool:
+        """returns bool"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveIsSweepableContractFunction(ContractFunction):
@@ -301,12 +493,23 @@ class IERC4626HyperdriveIsSweepableContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _target: str) -> "IERC4626HyperdriveIsSweepableContractFunction":
+    def __call__(
+        self, _target: str
+    ) -> "IERC4626HyperdriveIsSweepableContractFunction":
         super().__call__(_target)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> bool:
+        """returns bool"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveLoadContractFunction(ContractFunction):
@@ -315,12 +518,23 @@ class IERC4626HyperdriveLoadContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _slots: list[int]) -> "IERC4626HyperdriveLoadContractFunction":
+    def __call__(
+        self, _slots: list[int]
+    ) -> "IERC4626HyperdriveLoadContractFunction":
         super().__call__(_slots)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> list[bytes]:
+        """returns list[bytes]"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveNameContractFunction(ContractFunction):
@@ -333,8 +547,17 @@ class IERC4626HyperdriveNameContractFunction(ContractFunction):
         super().__call__(_id)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveNoncesContractFunction(ContractFunction):
@@ -343,12 +566,23 @@ class IERC4626HyperdriveNoncesContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, owner: str) -> "IERC4626HyperdriveNoncesContractFunction":
+    def __call__(
+        self, owner: str
+    ) -> "IERC4626HyperdriveNoncesContractFunction":
         super().__call__(owner)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveOpenLongContractFunction(ContractFunction):
@@ -362,13 +596,22 @@ class IERC4626HyperdriveOpenLongContractFunction(ContractFunction):
         _baseAmount: int,
         _minOutput: int,
         _minSharePrice: int,
-        _options: tuple,
+        _options: Options,
     ) -> "IERC4626HyperdriveOpenLongContractFunction":
         super().__call__(_baseAmount, _minOutput, _minSharePrice, _options)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> tuple[int, int]:
+        """returns (int, int)"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveOpenShortContractFunction(ContractFunction):
@@ -382,13 +625,22 @@ class IERC4626HyperdriveOpenShortContractFunction(ContractFunction):
         _bondAmount: int,
         _maxDeposit: int,
         _minSharePrice: int,
-        _options: tuple,
+        _options: Options,
     ) -> "IERC4626HyperdriveOpenShortContractFunction":
         super().__call__(_bondAmount, _maxDeposit, _minSharePrice, _options)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> tuple[int, int]:
+        """returns (int, int)"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdrivePauseContractFunction(ContractFunction):
@@ -397,12 +649,23 @@ class IERC4626HyperdrivePauseContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _status: bool) -> "IERC4626HyperdrivePauseContractFunction":
+    def __call__(
+        self, _status: bool
+    ) -> "IERC4626HyperdrivePauseContractFunction":
         super().__call__(_status)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdrivePerTokenApprovalsContractFunction(ContractFunction):
@@ -411,12 +674,23 @@ class IERC4626HyperdrivePerTokenApprovalsContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, tokenId: int, owner: str, spender: str) -> "IERC4626HyperdrivePerTokenApprovalsContractFunction":
+    def __call__(
+        self, tokenId: int, owner: str, spender: str
+    ) -> "IERC4626HyperdrivePerTokenApprovalsContractFunction":
         super().__call__(tokenId, owner, spender)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdrivePermitForAllContractFunction(ContractFunction):
@@ -438,8 +712,17 @@ class IERC4626HyperdrivePermitForAllContractFunction(ContractFunction):
         super().__call__(owner, spender, _approved, deadline, v, r, s)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdrivePoolContractFunction(ContractFunction):
@@ -452,24 +735,44 @@ class IERC4626HyperdrivePoolContractFunction(ContractFunction):
         super().__call__()
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
-class IERC4626HyperdriveRedeemWithdrawalSharesContractFunction(ContractFunction):
+class IERC4626HyperdriveRedeemWithdrawalSharesContractFunction(
+    ContractFunction
+):
     """ContractFunction for the redeemWithdrawalShares method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, _shares: int, _minOutput: int, _options: tuple
+        self, _shares: int, _minOutput: int, _options: Options
     ) -> "IERC4626HyperdriveRedeemWithdrawalSharesContractFunction":
         super().__call__(_shares, _minOutput, _options)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> tuple[int, int]:
+        """returns (int, int)"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveRemoveLiquidityContractFunction(ContractFunction):
@@ -479,13 +782,22 @@ class IERC4626HyperdriveRemoveLiquidityContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(
-        self, _shares: int, _minOutput: int, _options: tuple
+        self, _shares: int, _minOutput: int, _options: Options
     ) -> "IERC4626HyperdriveRemoveLiquidityContractFunction":
         super().__call__(_shares, _minOutput, _options)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> tuple[int, int]:
+        """returns (int, int)"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveSetApprovalContractFunction(ContractFunction):
@@ -494,12 +806,23 @@ class IERC4626HyperdriveSetApprovalContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, tokenID: int, operator: str, amount: int) -> "IERC4626HyperdriveSetApprovalContractFunction":
+    def __call__(
+        self, tokenID: int, operator: str, amount: int
+    ) -> "IERC4626HyperdriveSetApprovalContractFunction":
         super().__call__(tokenID, operator, amount)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveSetApprovalBridgeContractFunction(ContractFunction):
@@ -514,8 +837,17 @@ class IERC4626HyperdriveSetApprovalBridgeContractFunction(ContractFunction):
         super().__call__(tokenID, operator, amount, caller)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveSetApprovalForAllContractFunction(ContractFunction):
@@ -524,12 +856,23 @@ class IERC4626HyperdriveSetApprovalForAllContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, operator: str, approved: bool) -> "IERC4626HyperdriveSetApprovalForAllContractFunction":
+    def __call__(
+        self, operator: str, approved: bool
+    ) -> "IERC4626HyperdriveSetApprovalForAllContractFunction":
         super().__call__(operator, approved)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveSetGovernanceContractFunction(ContractFunction):
@@ -538,12 +881,23 @@ class IERC4626HyperdriveSetGovernanceContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _who: str) -> "IERC4626HyperdriveSetGovernanceContractFunction":
+    def __call__(
+        self, _who: str
+    ) -> "IERC4626HyperdriveSetGovernanceContractFunction":
         super().__call__(_who)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveSetPauserContractFunction(ContractFunction):
@@ -552,12 +906,23 @@ class IERC4626HyperdriveSetPauserContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, who: str, status: bool) -> "IERC4626HyperdriveSetPauserContractFunction":
+    def __call__(
+        self, who: str, status: bool
+    ) -> "IERC4626HyperdriveSetPauserContractFunction":
         super().__call__(who, status)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveSweepContractFunction(ContractFunction):
@@ -566,12 +931,23 @@ class IERC4626HyperdriveSweepContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _target: str) -> "IERC4626HyperdriveSweepContractFunction":
+    def __call__(
+        self, _target: str
+    ) -> "IERC4626HyperdriveSweepContractFunction":
         super().__call__(_target)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveSymbolContractFunction(ContractFunction):
@@ -584,8 +960,17 @@ class IERC4626HyperdriveSymbolContractFunction(ContractFunction):
         super().__call__(_id)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveTarget0ContractFunction(ContractFunction):
@@ -598,8 +983,17 @@ class IERC4626HyperdriveTarget0ContractFunction(ContractFunction):
         super().__call__()
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveTarget1ContractFunction(ContractFunction):
@@ -612,8 +1006,17 @@ class IERC4626HyperdriveTarget1ContractFunction(ContractFunction):
         super().__call__()
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveTotalSupplyContractFunction(ContractFunction):
@@ -622,12 +1025,23 @@ class IERC4626HyperdriveTotalSupplyContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _id: int) -> "IERC4626HyperdriveTotalSupplyContractFunction":
+    def __call__(
+        self, _id: int
+    ) -> "IERC4626HyperdriveTotalSupplyContractFunction":
         super().__call__(_id)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveTransferFromContractFunction(ContractFunction):
@@ -642,8 +1056,17 @@ class IERC4626HyperdriveTransferFromContractFunction(ContractFunction):
         super().__call__(tokenID, _from, to, amount)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveTransferFromBridgeContractFunction(ContractFunction):
@@ -658,8 +1081,17 @@ class IERC4626HyperdriveTransferFromBridgeContractFunction(ContractFunction):
         super().__call__(tokenID, _from, to, amount, caller)
         return self
 
-    # TODO: add call def so we can get return types for the calls
-    # def call()
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        return super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
 
 
 class IERC4626HyperdriveContractFunctions(ContractFunctions):
@@ -827,7 +1259,9 @@ ierc4626hyperdrive_abi: ABI = cast(
         {"inputs": [], "name": "QueryOutOfRange", "type": "error"},
         {"inputs": [], "name": "RestrictedZeroAddress", "type": "error"},
         {
-            "inputs": [{"internalType": "bytes", "name": "data", "type": "bytes"}],
+            "inputs": [
+                {"internalType": "bytes", "name": "data", "type": "bytes"}
+            ],
             "name": "ReturnData",
             "type": "error",
         },
@@ -1317,14 +1751,18 @@ ierc4626hyperdrive_abi: ABI = cast(
         {
             "inputs": [],
             "name": "DOMAIN_SEPARATOR",
-            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "outputs": [
+                {"internalType": "bytes32", "name": "", "type": "bytes32"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "PERMIT_TYPEHASH",
-            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "outputs": [
+                {"internalType": "bytes32", "name": "", "type": "bytes32"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1389,14 +1827,18 @@ ierc4626hyperdrive_abi: ABI = cast(
                 {"internalType": "address", "name": "owner", "type": "address"},
             ],
             "name": "balanceOf",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "baseToken",
-            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "outputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1474,7 +1916,9 @@ ierc4626hyperdrive_abi: ABI = cast(
                 },
             ],
             "name": "closeLong",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "nonpayable",
             "type": "function",
         },
@@ -1519,7 +1963,9 @@ ierc4626hyperdrive_abi: ABI = cast(
                 },
             ],
             "name": "closeShort",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "nonpayable",
             "type": "function",
         },
@@ -1835,7 +2281,9 @@ ierc4626hyperdrive_abi: ABI = cast(
         {
             "inputs": [],
             "name": "getUncollectedGovernanceFees",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1942,21 +2390,31 @@ ierc4626hyperdrive_abi: ABI = cast(
                 }
             ],
             "name": "load",
-            "outputs": [{"internalType": "bytes32[]", "name": "", "type": "bytes32[]"}],
+            "outputs": [
+                {"internalType": "bytes32[]", "name": "", "type": "bytes32[]"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "id", "type": "uint256"}],
+            "inputs": [
+                {"internalType": "uint256", "name": "id", "type": "uint256"}
+            ],
             "name": "name",
-            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+            "outputs": [
+                {"internalType": "string", "name": "", "type": "string"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "owner", "type": "address"}
+            ],
             "name": "nonces",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -2073,7 +2531,9 @@ ierc4626hyperdrive_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "bool", "name": "_status", "type": "bool"}],
+            "inputs": [
+                {"internalType": "bool", "name": "_status", "type": "bool"}
+            ],
             "name": "pause",
             "outputs": [],
             "stateMutability": "nonpayable",
@@ -2094,7 +2554,9 @@ ierc4626hyperdrive_abi: ABI = cast(
                 },
             ],
             "name": "perTokenApprovals",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -2302,7 +2764,9 @@ ierc4626hyperdrive_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "_who", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "_who", "type": "address"}
+            ],
             "name": "setGovernance",
             "outputs": [],
             "stateMutability": "nonpayable",
@@ -2332,30 +2796,42 @@ ierc4626hyperdrive_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "id", "type": "uint256"}],
+            "inputs": [
+                {"internalType": "uint256", "name": "id", "type": "uint256"}
+            ],
             "name": "symbol",
-            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+            "outputs": [
+                {"internalType": "string", "name": "", "type": "string"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "target0",
-            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "outputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "target1",
-            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "outputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "id", "type": "uint256"}],
+            "inputs": [
+                {"internalType": "uint256", "name": "id", "type": "uint256"}
+            ],
             "name": "totalSupply",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -2406,12 +2882,15 @@ ierc4626hyperdrive_abi: ABI = cast(
         },
     ],
 )
+# pylint: disable=line-too-long
+ierc4626hyperdrive_bytecode = HexStr("0x")
 
 
 class IERC4626HyperdriveContract(Contract):
     """A web3.py Contract class for the IERC4626Hyperdrive contract."""
 
     abi: ABI = ierc4626hyperdrive_abi
+    bytecode: bytes = HexBytes(ierc4626hyperdrive_bytecode)
 
     def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:
