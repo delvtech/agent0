@@ -51,6 +51,15 @@ class Random(HyperdrivePolicy):
         """
 
         trade_chance: FixedPoint = FixedPoint("1.0")
+        allowable_actions: list[HyperdriveActionType] = [
+            HyperdriveActionType.OPEN_LONG,
+            HyperdriveActionType.OPEN_SHORT,
+            HyperdriveActionType.ADD_LIQUIDITY,
+            HyperdriveActionType.CLOSE_LONG,
+            HyperdriveActionType.CLOSE_SHORT,
+            HyperdriveActionType.REMOVE_LIQUIDITY,
+            HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
+        ]
 
     def __init__(
         self,
@@ -77,18 +86,16 @@ class Random(HyperdrivePolicy):
             policy_config = self.Config()
 
         self.trade_chance = policy_config.trade_chance
+        self.allowable_actions = policy_config.allowable_actions
         super().__init__(budget, rng, slippage_tolerance)
 
     def get_available_actions(
         self,
         wallet: HyperdriveWallet,
         pool_state: PoolState,
-        disallowed_actions: list[HyperdriveActionType] | None = None,
     ) -> list[HyperdriveActionType]:
-        """Get all available actions, excluding those listed in disallowed_actions."""
+        """Get all available actions."""
         # prevent accidental override
-        if disallowed_actions is None:
-            disallowed_actions = []
         # compile a list of all actions
         minimum_trade: FixedPoint = pool_state.pool_config.minimum_transaction_amount
         if wallet.balance.amount <= minimum_trade:
@@ -108,7 +115,7 @@ class Random(HyperdrivePolicy):
         if wallet.withdraw_shares and pool_state.pool_info.withdrawal_shares_ready_to_withdraw > 0:
             all_available_actions.append(HyperdriveActionType.REDEEM_WITHDRAW_SHARE)
         # downselect from all actions to only include allowed actions
-        return [action for action in all_available_actions if action not in disallowed_actions]
+        return [action for action in all_available_actions if action in self.allowable_actions]
 
     def open_short_with_random_amount(
         self, hyperdrive: HyperdriveInterface, pool_state: PoolState, wallet: HyperdriveWallet
