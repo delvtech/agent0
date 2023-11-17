@@ -10,9 +10,10 @@ from agent0.hyperdrive.state import Long
 local_chain_config = LocalChain.Config(
     block_time=None,  # If None, mines per transaction. Otherwise mines every `block_time` seconds.
     block_timestamp_interval=None,  # Number of seconds to advance time for every mined block. Uses real time if None.
-    port=10000,  # The port to bind for the anvil chain. Will fail if this port is being used.
 )
 # Launches a local chain in a subprocess
+# This also launches a local postgres docker container for data under the hood, attached to the chain.
+# Each hyperdrive pool will have it's own database within this container
 # NOTE: LocalChain is a subclass of Chain
 # TODO can also implement functionality such as save/load state here
 chain = LocalChain(local_chain_config)
@@ -21,8 +22,6 @@ chain = LocalChain(local_chain_config)
 
 # Initialize the interactive object with specified initial pool parameters and the chain to launch hyperdrive on
 # An "admin" user (as provided by the Chain object) is launched/funded here for deploying hyperdrive
-# Also runs a database under the hood. Will use docker to run postgres on first call.
-# Each hyperdrive pool will have its own database under the same postgres container.
 
 # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
 initial_pool_config = InteractiveHyperdrive.Config()
