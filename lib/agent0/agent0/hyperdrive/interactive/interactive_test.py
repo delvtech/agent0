@@ -1,3 +1,5 @@
+import datetime
+
 import pandas as pd
 from fixedpointmath import FixedPoint
 
@@ -53,8 +55,8 @@ open_long_event_2 = hyperdrive_agent0.open_long(FixedPoint(22222))
 print(hyperdrive_agent0.wallet)
 
 # NOTE these calls are chainwide calls, so all pools connected to this chain gets affected.
-# Advance time, following datetime's timedelta format, defaulting to seconds if not specified
-chain.advance_time(weeks=52)
+# Advance time, accepts timedelta or seconds
+chain.advance_time(datetime.timedelta(weeks=52))
 # Can also access the chain through the pool, but beware this call can affect other pools using the same pool
 interactive_hyperdrive.chain.advance_time(3600)  # 1 hour
 
