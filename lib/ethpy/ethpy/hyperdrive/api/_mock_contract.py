@@ -109,6 +109,7 @@ def _calc_shares_in_given_bonds_out_up(
         fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
         str(amount_in.scaled_value),
     )
+
     return FixedPoint(scaled_value=int(amount_out))
 
 
@@ -117,11 +118,14 @@ def _calc_shares_in_given_bonds_out_down(
     amount_in: FixedPoint,
 ) -> FixedPoint:
     """See API for documentation."""
+    print("before hyperdrivepy.calculate_shares_in_given_bonds_out_down")
+    print(f"{str(amount_in.scaled_value)=}")
     amount_out = hyperdrivepy.calculate_shares_in_given_bonds_out_down(
         fixedpoint_pool_config_to_hypertypes(pool_state.pool_config),
         fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
         str(amount_in.scaled_value),
     )
+    print(f"{amount_out=}")
     return FixedPoint(scaled_value=int(amount_out))
 
 
