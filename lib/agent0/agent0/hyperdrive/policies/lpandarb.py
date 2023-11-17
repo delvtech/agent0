@@ -11,8 +11,7 @@ from typing import TYPE_CHECKING
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade
-from agent0.hyperdrive.state import (HyperdriveActionType,
-                                     HyperdriveMarketAction)
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 from .hyperdrive_policy import HyperdrivePolicy
 

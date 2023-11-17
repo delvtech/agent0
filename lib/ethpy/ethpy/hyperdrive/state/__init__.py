@@ -1,3 +1,4 @@
+"""Hyperdrive state classes and conversion helper functions."""
 from .checkpoint import Checkpoint
 from .fees import Fees
 from .pool_config import PoolConfig

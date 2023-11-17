@@ -1,8 +1,6 @@
 """Helper functions for interfacing with hyperdrive."""
 from __future__ import annotations
 
-from typing import Any
-
 from eth_typing import BlockNumber
 from eth_utils import address
 from ethpy.base import UnknownBlockError, get_transaction_logs, smart_contract_read

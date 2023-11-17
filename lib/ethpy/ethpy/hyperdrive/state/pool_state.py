@@ -17,6 +17,8 @@ from .conversions import (
 from .pool_config import PoolConfig
 from .pool_info import PoolInfo
 
+# pylint: disable=too-many-instance-attributes
+
 
 @dataclass
 class PoolState:
