@@ -4,8 +4,12 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, NoReturn
 
+from ethpy.base import retry_call
+from ethpy.hyperdrive.api import HyperdriveInterface
+from web3.types import Nonce
+
 from agent0.base import Quantity, TokenType, Trade
-from agent0.hyperdrive.crash_report import build_crash_trade_result
+from agent0.hyperdrive.crash_report import build_crash_trade_result, check_for_invalid_balance, check_for_slippage
 from agent0.hyperdrive.state import (
     HyperdriveActionType,
     HyperdriveMarketAction,
@@ -15,9 +19,6 @@ from agent0.hyperdrive.state import (
     TradeResult,
     TradeStatus,
 )
-from ethpy.base import retry_call
-from ethpy.hyperdrive.api import HyperdriveInterface
-from web3.types import Nonce
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
@@ -135,6 +136,21 @@ async def async_execute_agent_trades(
     )
     # Flatten list of lists, since agent information is already in TradeResult
     trade_results = [item for sublist in gathered_trade_results for item in sublist]
+
+    # Iterate through trade results, checking for known errors
+    for trade_result in trade_results:
+        if trade_result.status == TradeStatus.FAIL:
+            # Here, we check for common errors and allow for custom handling of various errors
+
+            # These functions adjust the trade_result.exception object to add
+            # additional arguments describing these detected errors for crash reporting
+            # These functions also return a boolean to determine if they detected
+            # these issues
+            is_invalid_balance, trade_result = check_for_invalid_balance(trade_result)
+            is_slippage, trade_result = check_for_slippage(trade_result)
+            trade_result.is_invalid_balance = is_invalid_balance
+            trade_result.is_slippage = is_slippage
+
     return trade_results
 
 

@@ -50,6 +50,9 @@ class TradeResult:
     agent: HyperdriveAgent
     trade_object: Trade[HyperdriveMarketAction]
     contract_call: dict[str, Any] | None = None
+    # Flags for known errors
+    is_slippage: bool = False
+    is_invalid_balance: bool = False
     # Optional fields for crash reporting
     # These fields are typically set as human readable versions
     block_number: int | None = None
