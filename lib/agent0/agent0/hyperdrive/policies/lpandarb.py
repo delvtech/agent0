@@ -12,9 +12,8 @@ from ethpy.hyperdrive.api.api import PoolState
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade
+from agent0.hyperdrive.policies.hyperdrive_policy import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
-
-from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.api import HyperdriveInterface
@@ -346,39 +345,9 @@ def calc_fees_from_zval(_shares_to_pool: FixedPoint, pool_state: PoolState, hype
     return _shares_to_user, _shares_to_gov
 
 
-# def calc_shares_needed_for_bonds(
-#     bonds_needed: FixedPoint, pool_state: PoolState, hyperdrive: HyperdriveInterface
-# ) -> tuple[FixedPoint, FixedPoint]:
-#     """Calculate the shares needed to trade a certain amount of bonds, and the associate governance fee.
-
-#     Arguments
-#     ---------
-#     bonds_needed : FixedPoint
-#         The given amount of bonds that is going to be traded.
-#     pool_state : PoolState
-#         The hyperdrive pool state.
-#     hyperdrive : HyperdriveInterface
-#         The Hyperdrive API interface object.
-
-
-#     Returns
-#     -------
-#     tuple[FixedPoint, FixedPoint] containing:
-#         _shares_to_pool : FixedPoint
-#             The change in shares in the pool for the given amount of bonds.
-#         _shares_to_gov : FixedPoint
-#             The associated shares going to governance.
-#     """
-#     _shares_to_pool = hyperdrive.calc_shares_out_given_bonds_in_down(
-#         bonds_needed * (-1 if bonds_needed < 0 else 1),
-#         pool_state)
-#     spot_price = hyperdrive.calc_spot_price(pool_state)
-#     price_discount = FixedPoint(1) - spot_price
-#     _shares_to_gov = _shares_to_pool * price_discount * pool_state.pool_config.fees.curve * pool_state.pool_config.fees.governance
-#     _shares_to_pool -= _shares_to_gov
-#     return _shares_to_pool, _shares_to_gov
-
-def calc_shares_needed_for_bonds(bonds_needed: FixedPoint, pool_state: PoolState) -> tuple[FixedPoint, FixedPoint]:
+def calc_shares_needed_for_bonds(
+    bonds_needed: FixedPoint, pool_state: PoolState, hyperdrive: HyperdriveInterface
+) -> tuple[FixedPoint, FixedPoint]:
     """Calculate the shares needed to trade a certain amount of bonds, and the associate governance fee.
 
     Arguments
@@ -387,39 +356,26 @@ def calc_shares_needed_for_bonds(bonds_needed: FixedPoint, pool_state: PoolState
         The given amount of bonds that is going to be traded.
     pool_state : PoolState
         The hyperdrive pool state.
+    hyperdrive : HyperdriveInterface
+        The Hyperdrive API interface object.
 
 
     Returns
     -------
     tuple[FixedPoint, FixedPoint] containing:
-        shares_needed : FixedPoint
-            The amount of shares needed to trade the given amount of bonds.
-        gov_fee : FixedPoint
-            The associated governance fee.
+        _shares_to_pool : FixedPoint
+            The change in shares in the pool for the given amount of bonds.
+        _shares_to_gov : FixedPoint
+            The associated shares going to governance.
     """
-    if bonds_needed > 0:  # handle the short case
-        shares_needed, _, gov_fee = get_shares_out_for_bonds_in(
-            pool_state.pool_info.bond_reserves,
-            pool_state.pool_info.share_price,
-            pool_state.pool_config.initial_share_price,
-            pool_state.pool_info.share_reserves - pool_state.pool_info.share_adjustment,
-            bonds_needed,
-            pool_state.pool_config.time_stretch,
-            pool_state.pool_config.fees.curve,
-            pool_state.pool_config.fees.governance,
-        )
-    else:  # handle the long case
-        shares_needed, _, gov_fee = get_shares_in_for_bonds_out(
-            pool_state.pool_info.bond_reserves,
-            pool_state.pool_info.share_price,
-            pool_state.pool_config.initial_share_price,
-            pool_state.pool_info.share_reserves - pool_state.pool_info.share_adjustment,
-            -bonds_needed,
-            pool_state.pool_config.time_stretch,
-            pool_state.pool_config.fees.curve,
-            pool_state.pool_config.fees.governance,
-        )
-    return shares_needed, gov_fee
+    _shares_to_pool = hyperdrive.calc_shares_out_given_bonds_in_down(
+        abs(bonds_needed),
+        pool_state)
+    spot_price = hyperdrive.calc_spot_price(pool_state)
+    price_discount = FixedPoint(1) - spot_price
+    _shares_to_gov = _shares_to_pool * price_discount * pool_state.pool_config.fees.curve * pool_state.pool_config.fees.governance
+    _shares_to_pool -= _shares_to_gov
+    return _shares_to_pool, _shares_to_gov
 
 # TODO: switch over to using function in the SDK
 def calc_reserves_to_hit_target_rate(
@@ -480,7 +436,7 @@ def calc_reserves_to_hit_target_rate(
         # value will move shares in the other direction, toward our desired ratio.
         # this guess is very bad when slippage is high, so we check how bad, then scale accordingly.
         bonds_needed = (target_bonds - pool_state.pool_info.bond_reserves) / FixedPoint(2)
-        shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state)
+        shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, hyperdrive)
         # save my bad first guess to a temporary variable
         temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool, shares_to_gov)
         # predicted_rate = calc_apr_local_dict(pool_state.pool_config, temp_pool_state.pool_info)
@@ -489,7 +445,7 @@ def calc_reserves_to_hit_target_rate(
         overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
         # if we overshot by 2x, we adjust our guess to be 2x less, etc.
         bonds_needed /= overshoot_or_undershoot
-        shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state)
+        shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, hyperdrive)
         # save my step for real
         pool_state = apply_step(pool_state, bonds_needed, shares_to_pool, shares_to_gov)
         # predicted_rate = calc_apr_local_dict(pool_state.pool_config, pool_state.pool_info)
