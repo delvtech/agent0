@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 TOLERANCE = 1e-16
 MAX_ITER = 50
 
+
 def calc_shares_needed_for_bonds(
     bonds_needed: FixedPoint, pool_state: PoolState, hyperdrive: HyperdriveInterface
 ) -> tuple[FixedPoint, FixedPoint]:
@@ -51,14 +52,15 @@ def calc_shares_needed_for_bonds(
         _shares_to_gov : FixedPoint
             The associated shares going to governance.
     """
-    _shares_to_pool = hyperdrive.calc_shares_out_given_bonds_in_down(
-        abs(bonds_needed),
-        pool_state)
+    _shares_to_pool = hyperdrive.calc_shares_out_given_bonds_in_down(abs(bonds_needed), pool_state)
     spot_price = hyperdrive.calc_spot_price(pool_state)
     price_discount = FixedPoint(1) - spot_price
-    _shares_to_gov = _shares_to_pool * price_discount * pool_state.pool_config.fees.curve * pool_state.pool_config.fees.governance
+    _shares_to_gov = (
+        _shares_to_pool * price_discount * pool_state.pool_config.fees.curve * pool_state.pool_config.fees.governance
+    )
     _shares_to_pool -= _shares_to_gov
     return _shares_to_pool, _shares_to_gov
+
 
 def calc_reserves_to_hit_target_rate(
     target_rate: FixedPoint, hyperdrive: HyperdriveInterface
@@ -86,21 +88,18 @@ def calc_reserves_to_hit_target_rate(
     """
     predicted_rate = FixedPoint(0)
     pool_state = deepcopy(hyperdrive.current_pool_state)
-    starting_pool_state = deepcopy(hyperdrive.current_pool_state)
 
     iteration = 0
     start_time = time.time()
     total_shares_needed = FixedPoint(0)
     total_bonds_needed = FixedPoint(0)
-    # pylint: disable=logging-fstring-interpolation (needed for formatting)
+    # pylint: disable=logging-fstring-interpolation
     logging.debug(f"Targeting {float(target_rate):.2%} from {float(hyperdrive.calc_fixed_rate()):.2%}")
     while float(abs(predicted_rate - target_rate)) > TOLERANCE:
         iteration += 1
         latest_fixed_rate = hyperdrive.calc_fixed_rate(pool_state)
         target_bonds = hyperdrive.calc_bonds_given_shares_and_rate(
-            target_rate,
-            pool_state.pool_info.share_reserves,
-            pool_state
+            target_rate, pool_state.pool_info.share_reserves, pool_state
         )
         # bonds_needed tells us the number of bonds to hit the desired reserves ratio, keeping shares constant.
         # however trades modify both bonds and shares in amounts of equal value.
@@ -112,16 +111,18 @@ def calc_reserves_to_hit_target_rate(
         # save bad first guess to a temporary variable
         temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool, shares_to_gov)
         predicted_rate = hyperdrive.calc_fixed_rate(temp_pool_state)
-        # improve guess by scaling up or down based on how much I overshot or undershot and try again
-        overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
         # adjust guess up or down based on how much the first guess overshot or undershot
+        overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
         bonds_needed /= overshoot_or_undershoot
         shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, hyperdrive)
         # update pool state with second guess and continue from there
         pool_state = apply_step(pool_state, bonds_needed, shares_to_pool, shares_to_gov)
         predicted_rate = hyperdrive.calc_fixed_rate(pool_state)
-        total_shares_needed = pool_state.pool_info.share_reserves - starting_pool_state.pool_info.share_reserves
-        total_bonds_needed = pool_state.pool_info.bond_reserves - starting_pool_state.pool_info.bond_reserves
+        # update running totals
+        total_shares_needed = (
+            pool_state.pool_info.share_reserves - hyperdrive.current_pool_state.pool_info.share_reserves
+        )
+        total_bonds_needed = pool_state.pool_info.bond_reserves - hyperdrive.current_pool_state.pool_info.bond_reserves
         # log info about the completed step
         formatted_str = (
             f"iteration {iteration:3}: {float(predicted_rate):22.18%}"
