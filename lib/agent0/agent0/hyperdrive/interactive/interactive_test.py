@@ -46,6 +46,7 @@ hyperdrive_agent0.add_funds(eth=FixedPoint(100), base=FixedPoint(100000))
 open_long_event_1 = hyperdrive_agent0.open_long(base=FixedPoint(11111))
 
 # Allow for creating checkpoints on the fly
+# TODO double check we can do this in hyperdrive
 checkpoint_event = hyperdrive_agent0.create_checkpoint()
 
 # Another long with a different maturity time
@@ -61,7 +62,7 @@ chain.advance_time(3600)
 
 # Close previous longs
 close_long_event_1 = hyperdrive_agent0.close_long(
-    maturity_time=open_long_event_1.maturity_time, bonds=open_long_event_1.value
+    maturity_time=open_long_event_1.maturity_time, bonds=open_long_event_1.balance
 )
 
 # TODO `agent0/hyperdrive/state/hyperdrive_wallet` needs to add a `maturity_time` field to the object
@@ -72,7 +73,7 @@ close_long_event_2 = hyperdrive_agent0.close_long(
 
 # Shorts
 short_event = hyperdrive_agent1.open_short(bonds=FixedPoint(33333))
-hyperdrive_agent1.close_short(maturity_time=short_event.maturity_time, bonds=short_event.value)
+hyperdrive_agent1.close_short(maturity_time=short_event.maturity_time, bonds=short_event.balance)
 
 # LP
 add_lp_event = hyperdrive_agent2.add_liquidity(base=FixedPoint(44444))
