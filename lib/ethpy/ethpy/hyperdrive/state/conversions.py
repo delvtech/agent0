@@ -38,15 +38,19 @@ def dataclass_to_dict(
     for key, val in asdict(cls).items():
         match val:
             case FixedPoint():
-                out_dict[key] = str(val.scaled_value)
+                out_dict[key] = val.scaled_value
+            case Fees():
+                out_dict[key] = (val.curve, val.flat, val.governance)
+            case dict():
+                out_dict[key] = (val["curve"], val["flat"], val["governance"])
             case int():
-                out_dict[key] = str(val)
+                out_dict[key] = val
             case str():
                 out_dict[key] = val
-            case Fees():
-                out_dict[key] = (str(val.curve), str(val.flat), str(val.governance))
+            case bytes():
+                out_dict[key] = val
             case _:
-                raise TypeError("Unsupported type.")
+                raise TypeError(f"Unsupported type for {key}={val}, with {type(val)=}.")
     return out_dict
 
 
@@ -97,7 +101,11 @@ def hypertypes_pool_config_to_fixedpoint(hypertypes_pool_config: HtPoolConfig) -
         if key in fixedpoint_keys:
             dict_pool_config[key] = FixedPoint(scaled_value=dict_pool_config[key])
         elif key == "fees":
-            dict_pool_config[key] = [FixedPoint(scaled_value=fee) for fee in dict_pool_config[key]]
+            dict_pool_config[key] = (
+                FixedPoint(scaled_value=dict_pool_config[key]["curve"]),
+                FixedPoint(scaled_value=dict_pool_config[key]["flat"]),
+                FixedPoint(scaled_value=dict_pool_config[key]["governance"]),
+            )
     return PoolConfig(**dict_pool_config)
 
 
@@ -115,12 +123,16 @@ def fixedpoint_pool_config_to_hypertypes(fixedpoint_pool_config: PoolConfig) -> 
         A dataclass containing the Hyperdrive pool config with types specified by the ABI via Pypechain
     """
     dict_pool_config = {snake_to_camel(key): value for key, value in asdict(fixedpoint_pool_config).items()}
-    fixedpoint_keys = ["initial_share_price", "minimum_share_reserves", "minimum_transaction_amount", "time_stretch"]
+    fixedpoint_keys = ["initialSharePrice", "minimumShareReserves", "minimumTransactionAmount", "timeStretch"]
     for key in dict_pool_config:
         if key in fixedpoint_keys:
             dict_pool_config[key] = dict_pool_config[key].scaled_value
         elif key == "fees":
-            dict_pool_config[key] = [fee.scaled_value for fee in dict_pool_config[key]]
+            dict_pool_config[key] = (
+                dict_pool_config[key]["curve"].scaled_value,
+                dict_pool_config[key]["flat"].scaled_value,
+                dict_pool_config[key]["governance"].scaled_value,
+            )
     return HtPoolConfig(
         baseToken=dict_pool_config["baseToken"],
         linkerFactory=dict_pool_config["linkerFactory"],
