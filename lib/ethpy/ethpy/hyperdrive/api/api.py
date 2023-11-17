@@ -7,16 +7,13 @@ from __future__ import annotations
 
 import copy
 import os
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 from ethpy import build_eth_config
 from ethpy.base import initialize_web3_with_http_provider, load_all_abis, smart_contract_read
 from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from ethpy.hyperdrive.state import PoolState
 from ethpy.hyperdrive.transactions import (
-    convert_hyperdrive_checkpoint_types,
-    convert_hyperdrive_pool_config_types,
-    convert_hyperdrive_pool_info_types,
     get_hyperdrive_checkpoint,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
@@ -68,8 +65,6 @@ from ._mock_contract import (
 
 
 if TYPE_CHECKING:
-    from typing import Any
-
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber
     from ethpy import EthConfig
@@ -78,25 +73,6 @@ if TYPE_CHECKING:
     from web3.types import Nonce
 
     from ..receipt_breakdown import ReceiptBreakdown
-
-
-@dataclass
-class PoolState:
-    r"""A collection of stateful variables for deployed Hyperdrive and Yield contracts."""
-    block: BlockData
-    contract_pool_config: dict[str, Any]
-    contract_pool_info: dict[str, Any]
-    contract_checkpoint: dict[str, int]
-    variable_rate: FixedPoint
-    vault_shares: FixedPoint
-    total_supply_withdrawal_shares: FixedPoint
-
-    def __post_init__(self):
-        self.block_number = _get_block_number(self.block)
-        self.block_time = _get_block_time(self.block)
-        self.pool_config = convert_hyperdrive_pool_config_types(self.contract_pool_config)
-        self.pool_info = convert_hyperdrive_pool_info_types(self.contract_pool_info)
-        self.checkpoint = convert_hyperdrive_checkpoint_types(self.contract_checkpoint)
 
 
 class HyperdriveInterface:
@@ -262,20 +238,20 @@ class HyperdriveInterface:
             block_identifier = cast(BlockIdentifier, "latest")
             block = self.get_block(block_identifier)
         block_number = self.get_block_number(block)
-        contract_pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
-        contract_pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, block_number)
-        contract_checkpoint = get_hyperdrive_checkpoint(
+        pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
+        pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, block_number)
+        checkpoint = get_hyperdrive_checkpoint(
             self.hyperdrive_contract,
-            self.calc_checkpoint_id(contract_pool_config["checkpointDuration"], self.get_block_timestamp(block)),
+            self.calc_checkpoint_id(pool_config.checkpoint_duration, self.get_block_timestamp(block)),
         )
         variable_rate = self.get_variable_rate(block_number)
         vault_shares = self.get_vault_shares(block_number)
         total_supply_withdrawal_shares = self.get_total_supply_withdrawal_shares(block_number)
         return PoolState(
             block,
-            contract_pool_config,
-            contract_pool_info,
-            contract_checkpoint,
+            pool_config,
+            pool_info,
+            checkpoint,
             variable_rate,
             vault_shares,
             total_supply_withdrawal_shares,
@@ -579,7 +555,7 @@ class HyperdriveInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_position_duration_in_years(self.current_pool_state)
+        return _calc_position_duration_in_years(pool_state)
 
     def calc_checkpoint_id(
         self, checkpoint_duration: int | None = None, block_timestamp: Timestamp | None = None

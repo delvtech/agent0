@@ -8,7 +8,7 @@ from typing import Any
 
 from ethpy.base import get_transaction_logs
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveAddresses, decode_asset_id
-from ethpy.hyperdrive.addresses import camel_to_snake
+from ethpy.hyperdrive.state.conversions import camel_to_snake
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3

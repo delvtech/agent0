@@ -1,93 +1,28 @@
 """Helper functions for interfacing with hyperdrive."""
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Sequence
-
 from eth_typing import BlockNumber
 from eth_utils import address
 from ethpy.base import UnknownBlockError, get_transaction_logs, smart_contract_read
+from ethpy.hyperdrive.state.conversions import (
+    contract_checkpoint_to_hypertypes,
+    contract_pool_config_to_hypertypes,
+    contract_pool_info_to_hypertypes,
+    hypertypes_checkpoint_to_fixedpoint,
+    hypertypes_pool_config_to_fixedpoint,
+    hypertypes_pool_info_to_fixedpoint,
+)
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import Timestamp, TxReceipt
 
-from .addresses import HyperdriveAddresses, camel_to_snake
+from .addresses import HyperdriveAddresses
 from .receipt_breakdown import ReceiptBreakdown
+from .state import Checkpoint, PoolConfig, PoolInfo
 
 
-# TODO: These dataclasses are similar to pypechain except for
-#  - snake_case attributes instead of camelCase
-#  - FixedPoint types instead of int
-#  - nested dataclasses (PoolConfig) include a __post_init__ that allows for
-#  instantiation with a nested dictionary
-#
-# We'd like to rely on the pypechain classes as much as possible.
-# One solution could be to build our own interface wrapper that pulls in the pypechain
-# dataclass and makes this fixed set of changes?
-# pylint: disable=too-many-instance-attributes
-@dataclass
-class Checkpoint:
-    """Checkpoint struct."""
-
-    share_price: FixedPoint
-    exposure: FixedPoint
-
-
-@dataclass
-class Fees:
-    """Fees struct."""
-
-    curve: FixedPoint
-    flat: FixedPoint
-    governance: FixedPoint
-
-
-@dataclass
-class PoolConfig:
-    """PoolConfig struct."""
-
-    base_token: str
-    linker_factory: str
-    linker_code_hash: bytes
-    initial_share_price: FixedPoint
-    minimum_share_reserves: FixedPoint
-    minimum_transaction_amount: FixedPoint
-    precision_threshold: int
-    position_duration: int
-    checkpoint_duration: int
-    time_stretch: FixedPoint
-    governance: str
-    fee_collector: str
-    # TODO: Pyright:
-    # Declaration "fees" is obscured by a declaration of the same name here but not elsewhere
-    fees: Fees | Sequence  # type: ignore
-
-    def __post_init__(self):
-        if isinstance(self.fees, Sequence):
-            self.fees: Fees = Fees(*self.fees)
-
-
-@dataclass
-class PoolInfo:
-    """PoolInfo struct."""
-
-    share_reserves: FixedPoint
-    share_adjustment: FixedPoint
-    bond_reserves: FixedPoint
-    lp_total_supply: FixedPoint
-    share_price: FixedPoint
-    longs_outstanding: FixedPoint
-    long_average_maturity_time: FixedPoint
-    shorts_outstanding: FixedPoint
-    short_average_maturity_time: FixedPoint
-    withdrawal_shares_ready_to_withdraw: FixedPoint
-    withdrawal_shares_proceeds: FixedPoint
-    lp_share_price: FixedPoint
-    long_exposure: FixedPoint
-
-
-def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> dict[str, Any]:
+def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> PoolConfig:
     """Get the hyperdrive config from a deployed hyperdrive contract.
 
     Arguments
@@ -100,37 +35,12 @@ def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> dict[str, Any]:
     dict[str, Any]
         The hyperdrive pool config.
     """
-    return smart_contract_read(hyperdrive_contract, "getPoolConfig")
+    return hypertypes_pool_config_to_fixedpoint(
+        contract_pool_config_to_hypertypes(smart_contract_read(hyperdrive_contract, "getPoolConfig"))
+    )
 
 
-def convert_hyperdrive_pool_config_types(pool_config: dict[str, Any]) -> PoolConfig:
-    """Convert the pool_config types from what solidity returns to FixedPoint
-
-    Arguments
-    ----------
-    pool_config : dict[str, Any]
-        The hyperdrive pool config.
-
-    Returns
-    -------
-    PoolConfig
-        A dataclass containing the Hyperdrive pool config with modified types.
-        This dataclass has the same attributes as the Hyperdrive ABI, with these changes:
-          - The attribute names are converted to snake_case.
-          - FixedPoint types are used if the type was FixedPoint in the underlying contract.
-    """
-    # Adjust the pool_config to use snake case here
-    # Dict comp is a copy
-    pool_config = {camel_to_snake(key): value for key, value in pool_config.items()}
-    fixedpoint_keys = ["initial_share_price", "minimum_share_reserves", "minimum_transaction_amount", "time_stretch"]
-    for key in pool_config:
-        if key in fixedpoint_keys:
-            pool_config[key] = FixedPoint(scaled_value=pool_config[key])
-    pool_config["fees"] = [FixedPoint(scaled_value=fee) for fee in pool_config["fees"]]
-    return PoolConfig(**pool_config)
-
-
-def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockNumber) -> dict[str, Any]:
+def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:
     """Get the block pool info from the Hyperdrive contract.
 
     Arguments
@@ -145,29 +55,14 @@ def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockN
     dict[str, Any]
         A dictionary containing the Hyperdrive pool info returned from the smart contract.
     """
-    return smart_contract_read(hyperdrive_contract, "getPoolInfo", block_number=block_number)
+    return hypertypes_pool_info_to_fixedpoint(
+        contract_pool_info_to_hypertypes(
+            smart_contract_read(hyperdrive_contract, "getPoolInfo", block_number=block_number)
+        )
+    )
 
 
-def convert_hyperdrive_pool_info_types(pool_info: dict[str, Any]) -> PoolInfo:
-    """Convert the pool info types from what solidity returns to FixedPoint.
-
-    Arguments
-    ---------
-    pool_info : dict[str, Any]
-        The hyperdrive pool info.
-
-    Returns
-    -------
-    PoolInfo
-        A dataclass containing the Hyperdrive pool info with modified types.
-        This dataclass has the same attributes as the Hyperdrive ABI, with these changes:
-          - The attribute names are converted to snake_case.
-          - FixedPoint types are used if the type was FixedPoint in the underlying contract.
-    """
-    return PoolInfo(**{camel_to_snake(key): FixedPoint(scaled_value=value) for (key, value) in pool_info.items()})
-
-
-def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_timestamp: Timestamp) -> dict[str, int]:
+def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_timestamp: Timestamp) -> Checkpoint:
     """Get the checkpoint info for the Hyperdrive contract at a given block.
 
     Arguments
@@ -182,23 +77,9 @@ def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_timestamp: Ti
     dict[str, int]
         A dictionary containing the checkpoint details.
     """
-    return smart_contract_read(hyperdrive_contract, "getCheckpoint", block_timestamp)
-
-
-def convert_hyperdrive_checkpoint_types(checkpoint: dict[str, int]) -> Checkpoint:
-    """Convert the checkpoint types from what solidity returns to FixedPoint.
-
-    Arguments
-    ---------
-    checkpoint : dict[str, int]
-        A dictionary containing the checkpoint details.
-
-    Returns
-    -------
-    Checkpoint
-        A dataclass containing the checkpoint share_price and exposure fields converted to FixedPoint.
-    """
-    return Checkpoint(**{camel_to_snake(key): FixedPoint(scaled_value=value) for key, value in checkpoint.items()})
+    return hypertypes_checkpoint_to_fixedpoint(
+        contract_checkpoint_to_hypertypes(smart_contract_read(hyperdrive_contract, "getCheckpoint", block_timestamp))
+    )
 
 
 def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses) -> Contract:

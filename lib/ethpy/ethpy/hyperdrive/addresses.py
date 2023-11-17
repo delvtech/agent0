@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import logging
-import re
 import time
 
 import attr
 import requests
 from eth_typing import Address, ChecksumAddress
+
+from .state.conversions import camel_to_snake
 
 
 @attr.s
@@ -20,11 +21,6 @@ class HyperdriveAddresses:
     hyperdrive_factory: Address | ChecksumAddress = attr.ib()
     mock_hyperdrive: Address | ChecksumAddress = attr.ib()
     mock_hyperdrive_math: Address | ChecksumAddress | None = attr.ib()
-
-
-def camel_to_snake(snake_string: str) -> str:
-    """Convert camel case string to snake case string."""
-    return re.sub(r"(?<!^)(?=[A-Z])", "_", snake_string).lower()
 
 
 def fetch_hyperdrive_address_from_uri(contracts_uri: str) -> HyperdriveAddresses:
