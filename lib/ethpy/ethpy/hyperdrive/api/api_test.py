@@ -17,48 +17,48 @@ from .api import HyperdriveInterface
 class TestHyperdriveInterface:
     """Tests for the HyperdriveInterface api class."""
 
-    #    def test_pool_config(self, local_hyperdrive_pool: DeployedHyperdrivePool):
-    #        """Checks that the Hyperdrive pool_config matches what is returned from the smart contract.
-    #
-    #        All arguments are fixtures.
-    #        """
-    #        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
-    #        rpc_uri = uri if uri else URI("http://localhost:8545")
-    #        abi_dir = "./packages/hyperdrive/src/abis"
-    #        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
-    #        eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
-    #        hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
-    #        pool_config = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolConfig")
-    #        assert pool_config == hyperdrive.current_pool_state.contract_pool_config
-    #
-    #    def test_pool_info(self, local_hyperdrive_pool: DeployedHyperdrivePool):
-    #        """Checks that the Hyperdrive pool_info matches what is returned from the smart contract.
-    #
-    #        All arguments are fixtures.
-    #        """
-    #        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
-    #        rpc_uri = uri if uri else URI("http://localhost:8545")
-    #        abi_dir = "./packages/hyperdrive/src/abis"
-    #        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
-    #        eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
-    #        hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
-    #        pool_info = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolInfo")
-    #        assert pool_info == hyperdrive.current_pool_state.contract_pool_info
-    #
-    #    def test_checkpoint(self, local_hyperdrive_pool: DeployedHyperdrivePool):
-    #        """Checks that the Hyperdrive checkpoint matches what is returned from the smart contract.
-    #
-    #        All arguments are fixtures.
-    #        """
-    #        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
-    #        rpc_uri = uri if uri else URI("http://localhost:8545")
-    #        abi_dir = "./packages/hyperdrive/src/abis"
-    #        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
-    #        eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
-    #        hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
-    #        checkpoint_id = hyperdrive.calc_checkpoint_id(block_timestamp=hyperdrive.current_pool_state.block_time)
-    #        checkpoint = smart_contract_read(hyperdrive.hyperdrive_contract, "getCheckpoint", checkpoint_id)
-    #        assert checkpoint == hyperdrive.current_pool_state.contract_checkpoint
+    def test_pool_config(self, local_hyperdrive_pool: DeployedHyperdrivePool):
+        """Checks that the Hyperdrive pool_config matches what is returned from the smart contract.
+
+        All arguments are fixtures.
+        """
+        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
+        rpc_uri = uri if uri else URI("http://localhost:8545")
+        abi_dir = "./packages/hyperdrive/src/abis"
+        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+        eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
+        hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
+        pool_config = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolConfig")
+        assert pool_config == hyperdrive.current_pool_state.contract_pool_config
+
+    def test_pool_info(self, local_hyperdrive_pool: DeployedHyperdrivePool):
+        """Checks that the Hyperdrive pool_info matches what is returned from the smart contract.
+
+        All arguments are fixtures.
+        """
+        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
+        rpc_uri = uri if uri else URI("http://localhost:8545")
+        abi_dir = "./packages/hyperdrive/src/abis"
+        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+        eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
+        hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
+        pool_info = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolInfo")
+        assert pool_info == hyperdrive.current_pool_state.contract_pool_info
+
+    def test_checkpoint(self, local_hyperdrive_pool: DeployedHyperdrivePool):
+        """Checks that the Hyperdrive checkpoint matches what is returned from the smart contract.
+
+        All arguments are fixtures.
+        """
+        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
+        rpc_uri = uri if uri else URI("http://localhost:8545")
+        abi_dir = "./packages/hyperdrive/src/abis"
+        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+        eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
+        hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
+        checkpoint_id = hyperdrive.calc_checkpoint_id(block_timestamp=hyperdrive.current_pool_state.block_time)
+        checkpoint = smart_contract_read(hyperdrive.hyperdrive_contract, "getCheckpoint", checkpoint_id)
+        assert checkpoint == hyperdrive.current_pool_state.contract_checkpoint
 
     def test_spot_price_and_fixed_rate(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Checks that the Hyperdrive spot price and fixed rate match computing it by hand.
@@ -92,26 +92,24 @@ class TestHyperdriveInterface:
         fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * hyperdrive.calc_position_duration_in_years())
         assert abs(fixed_rate - hyperdrive.calc_fixed_rate()) <= FixedPoint(scaled_value=100)
 
+    def test_misc(self, local_hyperdrive_pool: DeployedHyperdrivePool):
+        """Placeholder for additional tests.
 
-#    def test_misc(self, local_hyperdrive_pool: DeployedHyperdrivePool):
-#        """Placeholder for additional tests.
-#
-#        These are only verifying that the attributes exist and functions can be called.
-#        All arguments are fixtures.
-#        """
-#        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
-#        rpc_uri = uri if uri else URI("http://localhost:8545")
-#        abi_dir = "./packages/hyperdrive/src/abis"
-#        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
-#        eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
-#        hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
-#        _ = hyperdrive.current_pool_state
-#        _ = hyperdrive.current_pool_state.variable_rate
-#        _ = hyperdrive.current_pool_state.vault_shares
-#        _ = hyperdrive.calc_open_long(FixedPoint(100))
-#        _ = hyperdrive.calc_open_short(FixedPoint(100))
-#        _ = hyperdrive.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
-#        _ = hyperdrive.calc_max_long(FixedPoint(1000))
-#        _ = hyperdrive.calc_max_short(FixedPoint(1000))
-#        # TODO: need an agent address to mock up trades
-#
+        These are only verifying that the attributes exist and functions can be called.
+        All arguments are fixtures.
+        """
+        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
+        rpc_uri = uri if uri else URI("http://localhost:8545")
+        abi_dir = "./packages/hyperdrive/src/abis"
+        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+        eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
+        hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
+        _ = hyperdrive.current_pool_state
+        _ = hyperdrive.current_pool_state.variable_rate
+        _ = hyperdrive.current_pool_state.vault_shares
+        _ = hyperdrive.calc_open_long(FixedPoint(100))
+        _ = hyperdrive.calc_open_short(FixedPoint(100))
+        _ = hyperdrive.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
+        _ = hyperdrive.calc_max_long(FixedPoint(1000))
+        _ = hyperdrive.calc_max_short(FixedPoint(1000))
+        # TODO: need an agent address to mock up trades

@@ -33,7 +33,7 @@ def snake_to_camel(snake_string: str) -> str:
 def dataclass_to_dict(
     cls: HtPoolInfo | PoolInfo | HtPoolConfig | PoolConfig | HtCheckpoint | Checkpoint,
 ) -> dict[str, Any]:
-    """Convert a pool state dataclass into a dictionary."""
+    """Convert a state dataclass into a dictionary."""
     out_dict = {}
     for key, val in asdict(cls).items():
         match val:
@@ -55,7 +55,7 @@ def dataclass_to_dict(
 
 
 def contract_pool_config_to_hypertypes(contract_pool_config: dict[str, Any]) -> HtPoolConfig:
-    """Convert the contract call return value into a proper PoolConfig object."""
+    """Convert the contract call returned pool config into a HyperTypes PoolConfig object."""
     return HtPoolConfig(
         baseToken=contract_pool_config["baseToken"],
         linkerFactory=contract_pool_config["linkerFactory"],
@@ -78,7 +78,7 @@ def contract_pool_config_to_hypertypes(contract_pool_config: dict[str, Any]) -> 
 
 
 def hypertypes_pool_config_to_fixedpoint(hypertypes_pool_config: HtPoolConfig) -> PoolConfig:
-    """Convert the pool_config types from what solidity returns to FixedPoint.
+    """Convert the HyperTypes PoolConfig attributes from what Solidity returns to FixedPoint.
 
     Arguments
     ----------
@@ -93,9 +93,7 @@ def hypertypes_pool_config_to_fixedpoint(hypertypes_pool_config: HtPoolConfig) -
           - The attribute names are converted to snake_case.
           - FixedPoint types are used if the type was FixedPoint in the underlying contract.
     """
-    dict_pool_config = {
-        camel_to_snake(key): value for key, value in asdict(hypertypes_pool_config).items()
-    }  # dict comp is a copy
+    dict_pool_config = {camel_to_snake(key): value for key, value in asdict(hypertypes_pool_config).items()}
     fixedpoint_keys = ["initial_share_price", "minimum_share_reserves", "minimum_transaction_amount", "time_stretch"]
     for key in dict_pool_config:
         if key in fixedpoint_keys:
@@ -110,7 +108,7 @@ def hypertypes_pool_config_to_fixedpoint(hypertypes_pool_config: HtPoolConfig) -
 
 
 def fixedpoint_pool_config_to_hypertypes(fixedpoint_pool_config: PoolConfig) -> HtPoolConfig:
-    """Convert the pool_config types from FixedPoint to what the Solidity ABI specifies.
+    """Convert the PoolConfig attribute types from FixedPoint to what the Solidity ABI specifies.
 
     Arguments
     ----------
@@ -120,7 +118,7 @@ def fixedpoint_pool_config_to_hypertypes(fixedpoint_pool_config: PoolConfig) -> 
     Returns
     -------
     hypertypes.IHyperdriveTypes.PoolConfig
-        A dataclass containing the Hyperdrive pool config with types specified by the ABI via Pypechain
+        A dataclass containing the Hyperdrive PoolConfig with types specified by the ABI via Pypechain
     """
     dict_pool_config = {snake_to_camel(key): value for key, value in asdict(fixedpoint_pool_config).items()}
     fixedpoint_keys = ["initialSharePrice", "minimumShareReserves", "minimumTransactionAmount", "timeStretch"]
@@ -155,12 +153,12 @@ def fixedpoint_pool_config_to_hypertypes(fixedpoint_pool_config: PoolConfig) -> 
 
 
 def contract_pool_info_to_hypertypes(contract_pool_info: dict[str, Any]) -> HtPoolInfo:
-    """Convert the contract call return value into a proper PoolInfo object."""
+    """Convert the contract call return value into a HyperTypes PoolInfo object."""
     return HtPoolInfo(**contract_pool_info)
 
 
 def hypertypes_pool_info_to_fixedpoint(hypertypes_pool_info: HtPoolInfo) -> PoolInfo:
-    """Convert the pool info types from what solidity returns to FixedPoint.
+    """Convert the Hypertypes PoolInfo attribute types from what solidity returns to FixedPoint.
 
     Arguments
     ---------
@@ -181,7 +179,7 @@ def hypertypes_pool_info_to_fixedpoint(hypertypes_pool_info: HtPoolInfo) -> Pool
 
 
 def fixedpoint_pool_info_to_hypertypes(fixedpoint_pool_info: PoolInfo) -> HtPoolInfo:
-    """Convert the FixedPoint PoolInfo object to HyperTypes.
+    """Convert the PoolInfo attribute types from FixedPoint to what the Solidity ABI specifies.
 
     Arguments
     ---------
@@ -199,12 +197,12 @@ def fixedpoint_pool_info_to_hypertypes(fixedpoint_pool_info: PoolInfo) -> HtPool
 
 
 def contract_checkpoint_to_hypertypes(contract_checkpoint: dict[str, Any]) -> HtCheckpoint:
-    """Convert the contract call return value into a proper PoolInfo object."""
+    """Convert the contract call return value into a HyperTypes Checkpoint object."""
     return HtCheckpoint(**contract_checkpoint)
 
 
 def hypertypes_checkpoint_to_fixedpoint(hypertypes_checkpoint: HtCheckpoint) -> Checkpoint:
-    """Convert the checkpoint types from what solidity returns to FixedPoint.
+    """Convert the HyperTypes Checkpoint attribute types from what Solidity returns to FixedPoint.
 
     Arguments
     ---------
@@ -222,7 +220,7 @@ def hypertypes_checkpoint_to_fixedpoint(hypertypes_checkpoint: HtCheckpoint) -> 
 
 
 def fixedpoint_checkpoint_to_hypertypes(fixedpoint_checkpoint: Checkpoint) -> HtCheckpoint:
-    """Convert the checkpoint types from FixedPoint to what the Solidity ABI specifies.
+    """Convert the Checkpoint attribute types from FixedPoint to what the Solidity ABI specifies.
 
     Arguments
     ---------
