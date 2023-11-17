@@ -165,14 +165,11 @@ def apply_step(
         # shares_needed is what the user takes OUT: curve_fee less due to fees.
         # gov_fee of that doesn't stay in the pool, going OUT to governance (same direction as user flow).
         pool_state.pool_info.share_reserves += -shares_needed - gov_fee
-        pool_state.contract_pool_info["shareReserves"] = str((FixedPoint(scaled_value=int(pool_state.contract_pool_info["shareReserves"])) -shares_needed - gov_fee).scaled_value)
     else:  # long case
         # shares_needed is what the user pays IN: curve_fee more due to fees.
         # gov_fee of that doesn't go to the pool, going OUT to governance (opposite direction of user flow).
         pool_state.pool_info.share_reserves += shares_needed - gov_fee
-        pool_state.contract_pool_info["shareReserves"] = str((FixedPoint(scaled_value=int(pool_state.contract_pool_info["shareReserves"])) +shares_needed - gov_fee).scaled_value)
     pool_state.pool_info.bond_reserves += bonds_needed
-    pool_state.contract_pool_info["bondReserves"] = str((FixedPoint(scaled_value=int(pool_state.contract_pool_info["bondReserves"])) +bonds_needed).scaled_value)
     return pool_state
 
 
