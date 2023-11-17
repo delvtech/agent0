@@ -676,7 +676,7 @@ class HyperdriveInterface:
         return _calc_long_amount(pool_state, base_amount)
 
     def calc_open_short(self, bond_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
-        """Calculate the amount of base the trader will need to deposit for a short of a given size.
+        """Calculate the amount of base the trader will need to deposit for a short of a given size, after fees.
 
         The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
         to simulate the contract outputs.
@@ -705,7 +705,7 @@ class HyperdriveInterface:
     ) -> FixedPoint:
         """Calculates the amount of bonds a user will receive from the pool by
         providing a specified amount of shares. We underestimate the amount of
-        bonds.
+        bonds. The amount returned is before fees are applied.
 
         The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
         to simulate the contract outputs.
@@ -732,6 +732,7 @@ class HyperdriveInterface:
     ) -> FixedPoint:
         """Calculates the amount of shares a user must provide the pool to receive
         a specified amount of bonds. We overestimate the amount of shares in.
+        The amount returned is before fees are applied.
 
         The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
         to simulate the contract outputs.
@@ -758,6 +759,7 @@ class HyperdriveInterface:
     ) -> FixedPoint:
         """Calculates the amount of shares a user must provide the pool to receive
         a specified amount of bonds. We underestimate the amount of shares in.
+        The amount returned is before fees are applied.
 
         The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
         to simulate the contract outputs.
@@ -784,7 +786,7 @@ class HyperdriveInterface:
     ) -> FixedPoint:
         """Calculates the amount of shares a user will receive from the pool by
         providing a specified amount of bonds. We underestimate the amount of
-        shares out.
+        shares out. The amount returned is before fees are applied.
 
         The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
         to simulate the contract outputs.

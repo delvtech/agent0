@@ -109,6 +109,7 @@ def _calc_shares_in_given_bonds_out_up(
         fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
         str(amount_in.scaled_value),
     )
+
     return FixedPoint(scaled_value=int(amount_out))
 
 
