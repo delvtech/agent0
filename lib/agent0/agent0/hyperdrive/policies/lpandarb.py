@@ -28,323 +28,6 @@ if TYPE_CHECKING:
 TOLERANCE = 1e-16
 MAX_ITER = 50
 
-
-# functions
-# TODO: switch over to using function in the SDK
-def calc_bond_reserves(
-    share_reserves: FixedPoint,
-    share_adjustment: FixedPoint,
-    initial_share_price: FixedPoint,
-    target_rate: FixedPoint,
-    position_duration: FixedPoint,
-    inverted_time_stretch: FixedPoint,
-):
-    r"""Calculate the amount of bonds that hit the target rate for the given shares.
-
-    The calculation is based on the formula: .. math::
-            mu * (z - zeta) * (1 + apr * t) ** (1 / time_stretch)
-
-
-    Arguments
-    ---------
-    share_reserves : FixedPoint
-        The amount of share reserves in the Hyperdrive pool.
-    share_adjustment : FixedPoint
-        The zeta adjustment to share reserves, which gives us effective share reserves (z - zeta).
-    initial_share_price : FixedPoint
-        The initial price of a share in the yield source, from the original pool configurartion.
-    target_rate : FixedPoint
-        The target rate the pool will have after the calculated change in bonds and shares.
-    position_duration : FixedPoint
-        The term of the pool in seconds.
-    inverted_time_stretch : FixedPoint
-        The inverse of the time stretch factor, from the original pool configurartion.
-
-    Returns
-    -------
-    FixedPoint
-        The amount of bonds that hit the target rate.
-    """
-    return (
-        initial_share_price
-        * (share_reserves - share_adjustment)
-        * ((FixedPoint(1) + target_rate * position_duration / FixedPoint(365 * 24 * 60 * 60)) ** inverted_time_stretch)
-    )
-
-
-# TODO: switch over to using function in the SDK
-def calc_spot_price_local(
-    initial_share_price: FixedPoint,
-    share_reserves: FixedPoint,
-    share_adjustment: FixedPoint,
-    bond_reserves: FixedPoint,
-    time_stretch: FixedPoint,
-) -> FixedPoint:
-    """Calculate spot price.
-
-    Arguments
-    ---------
-    initial_share_price : FixedPoint
-        The initial price of a share in the yield source.
-    share_reserves : FixedPoint
-        The amount of share reserves in the Hyperdrive pool.
-    share_adjustment : FixedPoint
-        The zeta adjustment to share reserves, which gives us effective share reserves (z - zeta).
-    bond_reserves : FixedPoint
-        The amount of bond reserves in the Hyperdrive pool.
-    time_stretch : FixedPoint
-        The time stretch factor, from the original pool configurartion.
-
-    Returns
-    -------
-    FixedPoint
-        The spot price.
-    """
-    effective_share_reserves = share_reserves - share_adjustment
-    return (initial_share_price * effective_share_reserves / bond_reserves) ** time_stretch
-
-
-def calc_apr_local_dict(pool_config: PoolConfig, pool_info: PoolInfo):
-    """Calculate APR by passing in the pool config and pool info as dicts."""
-    return calc_apr_local(
-        pool_info.share_reserves,
-        pool_info.share_adjustment,
-        pool_info.bond_reserves,
-        pool_config.initial_share_price,
-        FixedPoint(pool_config.position_duration),
-        pool_config.time_stretch,
-    )
-
-
-# TODO: switch over to using function in the SDK
-def calc_apr_local(
-    share_reserves: FixedPoint,
-    share_adjustment: FixedPoint,
-    bond_reserves: FixedPoint,
-    initial_share_price: FixedPoint,
-    position_duration_seconds: FixedPoint,
-    time_stretch: FixedPoint,
-) -> FixedPoint:
-    """Calculate APR.
-
-    Arguments
-    ---------
-    share_reserves : FixedPoint
-        The amount of share reserves in the Hyperdrive pool.
-    share_adjustment : FixedPoint
-        The zeta adjustment to share reserves, which gives us effective share reserves (z - zeta).
-    bond_reserves : FixedPoint
-        The amount of bond reserves in the Hyperdrive pool.
-    initial_share_price : FixedPoint
-        The initial price of a share in the yield source, from the original pool configurartion.
-    position_duration_seconds : FixedPoint
-        The duration of the position, in seconds.
-    time_stretch : FixedPoint
-        The time stretch factor, from the original pool configurartion.
-
-    Returns
-    -------
-    FixedPoint
-        The APR.
-    """
-    annualized_time = position_duration_seconds / FixedPoint(365 * 24 * 60 * 60)
-    spot_price = calc_spot_price_local(
-        initial_share_price, share_reserves, share_adjustment, bond_reserves, time_stretch
-    )
-    return (FixedPoint(1) - spot_price) / (spot_price * annualized_time)
-
-
-# TODO: switch over to using function in the SDK
-def calc_k_local(
-    share_price: FixedPoint,
-    initial_share_price: FixedPoint,
-    share_reserves: FixedPoint,
-    bond_reserves: FixedPoint,
-    time_stretch: FixedPoint,
-) -> FixedPoint:
-    """Calculate the AMM invariant.
-
-    Uses the following equation:
-        k_t = (c / mu) * (mu * z) ** (1 - t) + y ** (1 - t)
-
-    Arguments
-    ---------
-    share_price : FixedPoint
-        The price of a share in the yield source.
-    initial_share_price : FixedPoint
-        The initial price of a share in the yield source, from the original pool configurartion.
-    share_reserves : FixedPoint
-        The amount of share reserves in the Hyperdrive pool.
-    bond_reserves : FixedPoint
-        The amount of bond reserves in the Hyperdrive pool.
-    time_stretch : FixedPoint
-        The time stretch factor, from the original pool configurartion.
-
-    Returns
-    -------
-    FixedPoint
-        The AMM invariant.
-    """
-    return (share_price / initial_share_price) * (initial_share_price * share_reserves) ** (
-        FixedPoint(1) - time_stretch
-    ) + bond_reserves ** (FixedPoint(1) - time_stretch)
-
-
-# TODO: switch over to using function in the SDK
-def get_shares_in_for_bonds_out(
-    bond_reserves: FixedPoint,
-    share_price: FixedPoint,
-    initial_share_price: FixedPoint,
-    share_reserves: FixedPoint,
-    bonds_out: FixedPoint,
-    time_stretch: FixedPoint,
-    curve_fee: FixedPoint,
-    gov_fee: FixedPoint,
-) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
-    """Calculate the amount of shares a user will receive from the pool by providing a specified amount of bonds.
-
-    Implements the formula:
-        y_term = (y - out) ** (1 - t)
-        z_val = (k_t - y_term) / (c / mu)
-        z_val = z_val ** (1 / (1 - t))
-        z_val /= mu
-        return z_val - z
-
-    Arguments
-    ---------
-    bond_reserves : FixedPoint
-        The amount of bond reserves in the Hyperdrive pool.
-    share_price : FixedPoint
-        The price of a share in the yield source.
-    initial_share_price : FixedPoint
-        The initial price of a share in the yield source, from the original pool configurartion.
-    share_reserves : FixedPoint
-        The amount of share reserves in the Hyperdrive pool.
-    bonds_out : FixedPoint
-        The amount of bonds exiting the pool.
-    time_stretch : FixedPoint
-        The time stretch factor, from the original pool configurartion.
-    curve_fee : FixedPoint
-        The curve fee, as a percentage of the price discount, from pool config.
-    gov_fee : FixedPoint
-        The governance fee, as a percentage of the flat+curve fee, from pool config.
-    """
-    # pylint: disable=too-many-arguments
-    k_t = calc_k_local(
-        share_price,
-        initial_share_price,
-        share_reserves,
-        bond_reserves,
-        time_stretch,
-    )
-    y_term = (bond_reserves - bonds_out) ** (FixedPoint(1) - time_stretch)
-    z_val = (k_t - y_term) / (share_price / initial_share_price)
-    z_val = z_val ** (FixedPoint(1) / (FixedPoint(1) - time_stretch))
-    z_val /= initial_share_price
-    spot_price = calc_spot_price_local(initial_share_price, share_reserves, FixedPoint(0), bond_reserves, time_stretch)
-    amount_in_shares = z_val - share_reserves
-    price_discount = FixedPoint(1) - spot_price
-    curve_fee_rate = price_discount * curve_fee
-    curve_fee_amount_in_shares = amount_in_shares * curve_fee_rate
-    gov_fee_amount_in_shares = curve_fee_amount_in_shares * gov_fee
-    # applying fees means you pay MORE shares in for the same amount of bonds OUT
-    amount_from_user_in_shares = amount_in_shares + curve_fee_amount_in_shares
-    return (amount_from_user_in_shares, curve_fee_amount_in_shares, gov_fee_amount_in_shares)
-
-
-# TODO: switch over to using function in the SDK
-def get_shares_out_for_bonds_in(
-    bond_reserves: FixedPoint,
-    share_price: FixedPoint,
-    initial_share_price: FixedPoint,
-    share_reserves: FixedPoint,
-    bonds_in: FixedPoint,
-    time_stretch: FixedPoint,
-    curve_fee: FixedPoint,
-    gov_fee: FixedPoint,
-):
-    """Calculate the amount of shares a user will receive from the pool by providing a specified amount of bonds.
-
-    Implements the formula:
-        y_term = (y + in_) ** (1 - t)
-        z_val = (k_t - y_term) / (c / mu)
-        z_val = z_val ** (1 / (1 - t))
-        z_val /= mu
-        return z - z_val if z > z_val else 0.0
-
-    Arguments
-    ---------
-    bond_reserves : FixedPoint
-        The amount of bond reserves in the Hyperdrive pool.
-    share_price : FixedPoint
-        The price of a share in the yield source.
-    initial_share_price : FixedPoint
-        The initial price of a share in the yield source, from the original pool configurartion.
-    share_reserves : FixedPoint
-        The amount of share reserves in the Hyperdrive pool.
-    bonds_in : FixedPoint
-        The amount of bonds entering the pool.
-    time_stretch : FixedPoint
-        The time stretch factor, from the original pool configurartion.
-    curve_fee : FixedPoint
-        The curve fee, as a percentage of the price discount, from pool config.
-    gov_fee : FixedPoint
-        The governance fee, as a percentage of the flat+curve fee, from pool config.
-    """
-    # pylint: disable=too-many-arguments
-    k_t = calc_k_local(
-        share_price,
-        initial_share_price,
-        share_reserves,
-        bond_reserves,
-        time_stretch,
-    )
-    y_term = (bond_reserves + bonds_in) ** (FixedPoint(1) - time_stretch)
-    z_val = (k_t - y_term) / (share_price / initial_share_price)
-    z_val = z_val ** (FixedPoint(1) / (FixedPoint(1) - time_stretch))
-    z_val /= initial_share_price
-    spot_price = calc_spot_price_local(initial_share_price, share_reserves, FixedPoint(0), bond_reserves, time_stretch)
-    price_discount = FixedPoint(1) - spot_price
-    amount_in_shares = max(FixedPoint(0), share_reserves - z_val)
-    curve_fee_rate = price_discount * curve_fee
-    curve_fee_amount_in_shares = amount_in_shares * curve_fee_rate
-    gov_fee_amount_in_shares = curve_fee_amount_in_shares * gov_fee
-    # applying fee means you get LESS shares out for the same amount of bonds IN
-    amount_to_user_in_shares = amount_in_shares - curve_fee_amount_in_shares
-    return (
-        amount_to_user_in_shares,
-        curve_fee_amount_in_shares,
-        gov_fee_amount_in_shares,
-    )
-
-def calc_fees_from_shares_to_user(_shares_to_user: FixedPoint, pool_state: PoolState, hyperdrive: HyperdriveInterface):
-    """Calculate amount going to pool and governance from the amount going to the user."""
-    spot_price = hyperdrive.calc_spot_price(pool_state)
-    # spot_price = calc_spot_price_local(initial_share_price, share_reserves, FixedPoint(0), bond_reserves, time_stretch)
-    price_discount = FixedPoint(1) - spot_price
-    curve_fee_rate = price_discount * pool_state.pool_config.fees.curve
-    # applying fee means you get LESS shares out for the same amount of bonds IN
-    # shares_to_user = shares_to_pool * (1 - curve_fee_rate)
-    # shares_to_pool = shares_to_user / (1 - curve_fee_rate)
-    _shares_to_pool = _shares_to_user / (1 - curve_fee_rate)
-    curve_fee_amount_in_shares = _shares_to_pool * curve_fee_rate
-    _shares_to_gov = curve_fee_amount_in_shares * pool_state.pool_config.fees.governance
-    return _shares_to_pool, _shares_to_gov
-
-def calc_fees_from_zval(_shares_to_pool: FixedPoint, pool_state: PoolState, hyperdrive: HyperdriveInterface):
-    """Calculate amount going to pool and governance from the amount going to the user."""
-    spot_price = hyperdrive.calc_spot_price(pool_state)
-    # spot_price = calc_spot_price_local(initial_share_price, share_reserves, FixedPoint(0), bond_reserves, time_stretch)
-    price_discount = FixedPoint(1) - spot_price
-    curve_fee_rate = price_discount * pool_state.pool_config.fees.curve
-    # applying fee means you get LESS shares out for the same amount of bonds IN
-    # shares_to_user = shares_to_pool * (1 - curve_fee_rate)
-    _shares_to_user = _shares_to_pool * (1 - curve_fee_rate)
-    curve_fee_amount_in_shares = _shares_to_pool * curve_fee_rate
-    _shares_to_gov = curve_fee_amount_in_shares * pool_state.pool_config.fees.governance
-    return _shares_to_user, _shares_to_gov
-
-
 def calc_shares_needed_for_bonds(
     bonds_needed: FixedPoint, pool_state: PoolState, hyperdrive: HyperdriveInterface
 ) -> tuple[FixedPoint, FixedPoint]:
@@ -377,7 +60,6 @@ def calc_shares_needed_for_bonds(
     _shares_to_pool -= _shares_to_gov
     return _shares_to_pool, _shares_to_gov
 
-# TODO: switch over to using function in the SDK
 def calc_reserves_to_hit_target_rate(
     target_rate: FixedPoint, hyperdrive: HyperdriveInterface
 ) -> tuple[FixedPoint, FixedPoint, int, float]:
@@ -402,7 +84,6 @@ def calc_reserves_to_hit_target_rate(
         convergence_speed : float
             The amount of time it took to converge, in seconds.
     """
-    # variables
     predicted_rate = FixedPoint(0)
     pool_state = deepcopy(hyperdrive.current_pool_state)
     starting_pool_state = deepcopy(hyperdrive.current_pool_state)
@@ -411,20 +92,11 @@ def calc_reserves_to_hit_target_rate(
     start_time = time.time()
     total_shares_needed = FixedPoint(0)
     total_bonds_needed = FixedPoint(0)
-    # pylint: disable=logging-fstring-interpolation
+    # pylint: disable=logging-fstring-interpolation (needed for formatting)
     logging.debug(f"Targeting {float(target_rate):.2%} from {float(hyperdrive.calc_fixed_rate()):.2%}")
     while float(abs(predicted_rate - target_rate)) > TOLERANCE:
         iteration += 1
-        # latest_fixed_rate = calc_apr_local_dict(pool_state.pool_config, pool_state.pool_info)
         latest_fixed_rate = hyperdrive.calc_fixed_rate(pool_state)
-        # target_bonds = calc_bond_reserves(
-        #     pool_state.pool_info.share_reserves,
-        #     pool_state.pool_info.share_adjustment,
-        #     pool_state.pool_config.initial_share_price,
-        #     target_rate,
-        #     FixedPoint(pool_state.pool_config.position_duration),
-        #     FixedPoint(1) / pool_state.pool_config.time_stretch,
-        # )
         target_bonds = hyperdrive.calc_bonds_given_shares_and_rate(
             target_rate,
             pool_state.pool_info.share_reserves,
@@ -437,22 +109,20 @@ def calc_reserves_to_hit_target_rate(
         # this guess is very bad when slippage is high, so we check how bad, then scale accordingly.
         bonds_needed = (target_bonds - pool_state.pool_info.bond_reserves) / FixedPoint(2)
         shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, hyperdrive)
-        # save my bad first guess to a temporary variable
+        # save bad first guess to a temporary variable
         temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool, shares_to_gov)
-        # predicted_rate = calc_apr_local_dict(pool_state.pool_config, temp_pool_state.pool_info)
         predicted_rate = hyperdrive.calc_fixed_rate(temp_pool_state)
-        # improve my guess by scaling up or down based on how much I overshot or undershot and try again
+        # improve guess by scaling up or down based on how much I overshot or undershot and try again
         overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
-        # if we overshot by 2x, we adjust our guess to be 2x less, etc.
+        # adjust guess up or down based on how much the first guess overshot or undershot
         bonds_needed /= overshoot_or_undershoot
         shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, hyperdrive)
-        # save my step for real
+        # update pool state with second guess and continue from there
         pool_state = apply_step(pool_state, bonds_needed, shares_to_pool, shares_to_gov)
-        # predicted_rate = calc_apr_local_dict(pool_state.pool_config, pool_state.pool_info)
         predicted_rate = hyperdrive.calc_fixed_rate(pool_state)
         total_shares_needed = pool_state.pool_info.share_reserves - starting_pool_state.pool_info.share_reserves
         total_bonds_needed = pool_state.pool_info.bond_reserves - starting_pool_state.pool_info.bond_reserves
-        # log info about my step
+        # log info about the completed step
         formatted_str = (
             f"iteration {iteration:3}: {float(predicted_rate):22.18%}"
             + f" d_bonds={float(total_bonds_needed):27,.18f} d_shares={float(total_shares_needed):27,.18f}"
