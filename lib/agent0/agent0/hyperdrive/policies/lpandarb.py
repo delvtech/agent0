@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from statistics import mean
 from typing import TYPE_CHECKING
 
-from ethpy.hyperdrive.api.api import PoolState
+from ethpy.hyperdrive.state import PoolState
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade
