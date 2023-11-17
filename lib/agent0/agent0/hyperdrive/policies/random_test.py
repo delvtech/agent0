@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
-import warnings
 from typing import TYPE_CHECKING, cast
 
 from eth_typing import URI
@@ -26,6 +24,8 @@ from agent0.hyperdrive.state import HyperdriveActionType
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
     from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
+
+# pylint: disable=too-many-locals
 
 
 class TestRandomPolicy:
@@ -94,7 +94,7 @@ class TestRandomPolicy:
 
         # Do a handful of trades
         for _ in range(10):
-            trade_results = asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts, liquidate))
+            _ = asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts, liquidate))
 
     def test_random_policy_trades(
         self,
@@ -178,5 +178,5 @@ class TestRandomPolicy:
         ]
         for trade_sequence in hyperdrive_trade_actions:
             for trade in trade_sequence:
-                agent_accounts[0].allowable_actions = [trade]
-                trade_results = asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts, liquidate))
+                agent_accounts[0].allowable_actions = [trade]  # type: ignore
+                _ = asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts, liquidate))
