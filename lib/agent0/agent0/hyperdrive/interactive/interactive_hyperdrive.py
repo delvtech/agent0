@@ -4,8 +4,26 @@ from __future__ import annotations
 import asyncio
 from dataclasses import asdict, dataclass
 
+import pandas as pd
 from chainsync import PostgresConfig
-from chainsync.db.base import initialize_session
+from chainsync.db.base import add_addr_to_username, initialize_session
+from chainsync.db.hyperdrive import (
+    get_all_traders,
+    get_checkpoint_info,
+    get_current_wallet,
+    get_latest_block_number_from_analysis_table,
+    get_latest_block_number_from_pool_info_table,
+    get_latest_block_number_from_table,
+    get_pool_analysis,
+    get_pool_config,
+    get_pool_info,
+    get_ticker,
+    get_total_wallet_pnl_over_time,
+    get_transactions,
+    get_wallet_deltas,
+    get_wallet_pnl,
+    get_wallet_positions_over_time,
+)
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_utils.address import to_checksum_address
@@ -172,7 +190,40 @@ class InteractiveHyperdrive:
         out_agent = InteractiveHyperdriveAgent(base=base, eth=eth, name=name, pool=self)
         return out_agent
 
-    ### Agent methods
+    ### Database methods ###
+
+    def get_pool_config(self, coerce_float: bool = True) -> pd.DataFrame:
+        return get_pool_config(self.db_session, coerce_float=coerce_float)
+
+    def get_pool_info(self, coerce_float: bool = True) -> pd.DataFrame:
+        return get_pool_info(self.db_session, coerce_float=coerce_float)
+
+    def get_checkpoint_info(self, coerce_float: bool = True) -> pd.DataFrame:
+        return get_checkpoint_info(self.db_session, coerce_float=coerce_float)
+
+    def get_wallet_deltas(self, coerce_float: bool = True) -> pd.DataFrame:
+        return get_wallet_deltas(self.db_session, coerce_float=coerce_float)
+
+    def get_current_wallet(self, coerce_float: bool = True) -> pd.DataFrame:
+        return get_current_wallet(self.db_session, coerce_float=coerce_float)
+
+    def get_pool_analysis(self, coerce_float: bool = True) -> pd.DataFrame:
+        return get_pool_analysis(self.db_session, coerce_float=coerce_float)
+
+    def get_ticker(self, coerce_float: bool = True) -> pd.DataFrame:
+        return get_ticker(self.db_session, coerce_float=coerce_float)
+
+    def get_wallet_pnl(self, coerce_float: bool = True) -> pd.DataFrame:
+        return get_wallet_pnl(self.db_session, coerce_float=coerce_float)
+
+    def get_total_wallet_pnl_over_time(self, coerce_float: bool = True) -> pd.DataFrame:
+        return get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
+
+    def get_wallet_positions_over_time(self, coerce_float: bool = True) -> pd.DataFrame:
+        return get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
+
+    ### Private agent methods ###
+
     def _init_agent(self, base: FixedPoint, eth: FixedPoint, name: str | None) -> HyperdriveAgent:
         agent_private_key = make_private_key()
         # Setting the budget to 0 here, `_add_funds` will take care of updating the wallet
@@ -193,6 +244,10 @@ class InteractiveHyperdrive:
                 str(self.hyperdrive_interface.hyperdrive_contract.address),
             )
         )
+
+        # Register the username if it was provided
+        if name is not None:
+            add_addr_to_username(name, [agent.address], self.db_session)
         return agent
 
     def _add_funds(self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint) -> None:

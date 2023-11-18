@@ -89,8 +89,12 @@ if __name__ == "__main__":
     # Get data from database under the hood
     pool_info_history: pd.DataFrame = interactive_hyperdrive.get_pool_info()
     wallet_positions: pd.DataFrame = interactive_hyperdrive.get_current_wallet()
-    wallet_pnls: pd.DataFrame = interactive_hyperdrive.get_wallet_pnl()
+    pnl_over_time: pd.DataFrame = interactive_hyperdrive.get_total_wallet_pnl_over_time()
 
     # Plot pretty plots
-    pool_info_history.plot(x="block_time", y="outstanding_longs", kind="line")
-    wallet_pnls.plot()
+    # TODO these should be in a notebook for plotting
+    pool_info_history.plot(x="timestamp", y="longs_outstanding", kind="line")
+    # Change wallet_address to be columns for plotting
+    pnl_over_time.pivot(index="timestamp", columns="wallet_address", values="pnl").plot()
+
+    # TODO figure out clean up, currently crashes on script exit
