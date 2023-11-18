@@ -19,6 +19,7 @@ from web3.constants import ADDRESS_ZERO
 
 from agent0.base.make_key import make_private_key
 from agent0.hyperdrive.agents import HyperdriveAgent
+from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
 from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
 
@@ -217,6 +218,11 @@ class InteractiveHyperdrive:
         if trade_result.status == TradeStatus.FAIL:
             assert trade_result.exception is not None
             # TODO when we allow for async, we likely would want to ignore slippage checks here
+            # We only get anvil state dump here, since it's an on chain call
+            # and we don't want to do it when e.g., slippage happens
+            trade_result.anvil_state = get_anvil_state_dump(self.hyperdrive_interface.web3)
+            # Defaults to CRITICAL
+            log_hyperdrive_crash_report(trade_result, crash_report_to_file=True)
             raise trade_result.exception
         assert trade_result.status == TradeStatus.SUCCESS
         assert len(trade_results) == 1
