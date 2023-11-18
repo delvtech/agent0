@@ -11,6 +11,8 @@ from pathlib import Path
 import docker
 from chainsync import PostgresConfig
 from docker.errors import NotFound
+from ethpy.base import initialize_web3_with_http_provider
+from web3.types import RPCEndpoint
 
 
 class Chain:
@@ -36,6 +38,8 @@ class Chain:
         if config is None:
             config = self.Config()
         self.rpc_uri = rpc_uri
+        # Initialize web3 here for rpc calls
+        self._web3 = initialize_web3_with_http_provider(self.rpc_uri, reset_provider=False)
         # Remove protocol and replace . and : with dashes
         formatted_rpc_url = (
             self.rpc_uri.replace("http://", "").replace("https://", "").replace(".", "-").replace(":", "-")
@@ -51,8 +55,11 @@ class Chain:
         self.postgres_container.kill()  # type: ignore
 
     def advance_time(self, time_delta: int | timedelta) -> None:
-        # TODO use the `evm_increaseTime` or "evm_setNextBlockTimestamp` RPC call here to advance time
-        raise NotImplementedError
+        # Use the `evm_increaseTime` RPC call here to advance time
+        if isinstance(time_delta, timedelta):
+            time_delta = int(time_delta.total_seconds())
+        # Need web3 connection here
+        self._web3.provider.make_request(method=RPCEndpoint("evm_increaseTime"), params=[time_delta])
 
     def get_deployer_account_private_key(self):
         raise NotImplementedError
