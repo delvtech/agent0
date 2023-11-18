@@ -72,8 +72,10 @@ if __name__ == "__main__":
     )
 
     # Shorts
-    short_event = hyperdrive_agent1.open_short(bonds=FixedPoint(33333))
-    hyperdrive_agent1.close_short(maturity_time=short_event.maturity_time, bonds=short_event.balance)
+    open_short_event = hyperdrive_agent1.open_short(bonds=FixedPoint(33333))
+    close_short_event = hyperdrive_agent1.close_short(
+        maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
+    )
 
     # LP
     add_lp_event = hyperdrive_agent2.add_liquidity(base=FixedPoint(44444))
