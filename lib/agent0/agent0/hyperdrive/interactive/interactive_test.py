@@ -66,8 +66,7 @@ if __name__ == "__main__":
         maturity_time=open_long_event_1.maturity_time, bonds=open_long_event_1.bond_amount
     )
 
-    # TODO `agent0/hyperdrive/state/hyperdrive_wallet` needs to add a `maturity_time` field to the object
-    agent0_longs: list[Long] = hyperdrive_agent0.wallet.longs.values()
+    agent0_longs: list[Long] = list(hyperdrive_agent0.wallet.longs.values())
     close_long_event_2 = hyperdrive_agent0.close_long(
         maturity_time=agent0_longs[0].maturity_time, bonds=agent0_longs[0].balance
     )

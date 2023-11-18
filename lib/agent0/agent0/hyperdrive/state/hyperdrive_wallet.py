@@ -6,9 +6,10 @@ import logging
 from dataclasses import dataclass, field
 from typing import Iterable
 
+from fixedpointmath import FixedPoint
+
 from agent0.base import freezable
 from agent0.base.state import EthWallet, EthWalletDeltas
-from fixedpointmath import FixedPoint
 
 
 @freezable()
@@ -54,6 +55,7 @@ class Long:
     """
 
     balance: FixedPoint  # bonds
+    maturity_time: int
 
 
 @dataclass
@@ -67,6 +69,7 @@ class Short:
     """
 
     balance: FixedPoint
+    maturity_time: int
 
 
 @dataclass(kw_only=True)

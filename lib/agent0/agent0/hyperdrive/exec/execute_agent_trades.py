@@ -189,7 +189,11 @@ async def async_match_contract_call_to_trade(
                     amount=-trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                longs={trade_result.maturity_time_seconds: Long(trade_result.bond_amount)},
+                longs={
+                    trade_result.maturity_time_seconds: Long(
+                        balance=trade_result.bond_amount, maturity_time=trade_result.maturity_time_seconds
+                    )
+                },
             )
 
         case HyperdriveActionType.CLOSE_LONG:
@@ -203,7 +207,11 @@ async def async_match_contract_call_to_trade(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                longs={trade.maturity_time: Long(-trade_result.bond_amount)},
+                longs={
+                    trade.maturity_time: Long(
+                        balance=-trade_result.bond_amount, maturity_time=trade_result.maturity_time_seconds
+                    )
+                },
             )
 
         case HyperdriveActionType.OPEN_SHORT:
@@ -215,7 +223,11 @@ async def async_match_contract_call_to_trade(
                     amount=-trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                shorts={trade_result.maturity_time_seconds: Short(balance=trade_result.bond_amount)},
+                shorts={
+                    trade_result.maturity_time_seconds: Short(
+                        balance=trade_result.bond_amount, maturity_time=trade_result.maturity_time_seconds
+                    )
+                },
             )
 
         case HyperdriveActionType.CLOSE_SHORT:
@@ -229,7 +241,11 @@ async def async_match_contract_call_to_trade(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                shorts={trade.maturity_time: Short(balance=-trade_result.bond_amount)},
+                shorts={
+                    trade.maturity_time: Short(
+                        balance=-trade_result.bond_amount, maturity_time=trade_result.maturity_time_seconds
+                    )
+                },
             )
 
         case HyperdriveActionType.ADD_LIQUIDITY:
