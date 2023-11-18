@@ -201,25 +201,31 @@ class InteractiveHyperdrive:
     def get_checkpoint_info(self, coerce_float: bool = True) -> pd.DataFrame:
         return get_checkpoint_info(self.db_session, coerce_float=coerce_float)
 
-    def get_wallet_deltas(self, coerce_float: bool = True) -> pd.DataFrame:
-        return get_wallet_deltas(self.db_session, coerce_float=coerce_float)
-
-    def get_current_wallet(self, coerce_float: bool = True) -> pd.DataFrame:
-        return get_current_wallet(self.db_session, coerce_float=coerce_float)
-
     def get_pool_analysis(self, coerce_float: bool = True) -> pd.DataFrame:
         return get_pool_analysis(self.db_session, coerce_float=coerce_float)
 
+    def get_wallet_deltas(self, coerce_float: bool = True) -> pd.DataFrame:
+        # TODO do username lookup here
+        return get_wallet_deltas(self.db_session, coerce_float=coerce_float)
+
+    def get_current_wallet(self, coerce_float: bool = True) -> pd.DataFrame:
+        # TODO do username lookup here
+        return get_current_wallet(self.db_session, coerce_float=coerce_float)
+
     def get_ticker(self, coerce_float: bool = True) -> pd.DataFrame:
+        # TODO do username lookup here
         return get_ticker(self.db_session, coerce_float=coerce_float)
 
     def get_wallet_pnl(self, coerce_float: bool = True) -> pd.DataFrame:
+        # TODO do username lookup here
         return get_wallet_pnl(self.db_session, coerce_float=coerce_float)
 
     def get_total_wallet_pnl_over_time(self, coerce_float: bool = True) -> pd.DataFrame:
+        # TODO do username lookup here
         return get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
 
     def get_wallet_positions_over_time(self, coerce_float: bool = True) -> pd.DataFrame:
+        # TODO do username lookup here
         return get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
 
     ### Private agent methods ###
