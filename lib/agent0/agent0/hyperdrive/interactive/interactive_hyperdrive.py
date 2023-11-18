@@ -338,6 +338,69 @@ class InteractiveHyperdrive:
             bond_amount=tx_receipt.bond_amount,
         )
 
+    def _add_liquidity(self, agent: HyperdriveAgent, base: FixedPoint) -> AddLiquidity:
+        # Set the next action to open a long
+        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        agent.policy.set_next_action(HyperdriveActionType.ADD_LIQUIDITY, base)
+        # TODO expose async here to the caller eventually
+        trade_results: list[TradeResult] = asyncio.run(
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+        )
+        tx_receipt = self._handle_trade_result(trade_results)
+        # TODO running the data pipeline here may be slow, perhaps we should
+        # do it in the background or have an explicit call to load the db
+        self._run_data_pipeline()
+        # Build open long event from trade_result
+        return AddLiquidity(
+            provider=to_checksum_address(tx_receipt.provider),
+            lp_amount=tx_receipt.lp_amount,
+            base_amount=tx_receipt.base_amount,
+            share_price=tx_receipt.share_price,
+            lp_share_price=tx_receipt.lp_share_price,
+        )
+
+    def _remove_liquidity(self, agent: HyperdriveAgent, shares: FixedPoint) -> RemoveLiquidity:
+        # Set the next action to open a long
+        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        agent.policy.set_next_action(HyperdriveActionType.REMOVE_LIQUIDITY, shares)
+        # TODO expose async here to the caller eventually
+        trade_results: list[TradeResult] = asyncio.run(
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+        )
+        tx_receipt = self._handle_trade_result(trade_results)
+        # TODO running the data pipeline here may be slow, perhaps we should
+        # do it in the background or have an explicit call to load the db
+        self._run_data_pipeline()
+        # Build open long event from trade_result
+        return RemoveLiquidity(
+            provider=to_checksum_address(tx_receipt.provider),
+            lp_amount=tx_receipt.lp_amount,
+            base_amount=tx_receipt.base_amount,
+            share_price=tx_receipt.share_price,
+            withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
+            lp_share_price=tx_receipt.lp_share_price,
+        )
+
+    def _redeem_withdraw_share(self, agent: HyperdriveAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
+        # Set the next action to open a long
+        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        agent.policy.set_next_action(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, shares)
+        # TODO expose async here to the caller eventually
+        trade_results: list[TradeResult] = asyncio.run(
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+        )
+        tx_receipt = self._handle_trade_result(trade_results)
+        # TODO running the data pipeline here may be slow, perhaps we should
+        # do it in the background or have an explicit call to load the db
+        self._run_data_pipeline()
+        # Build open long event from trade_result
+        return RedeemWithdrawalShares(
+            provider=to_checksum_address(tx_receipt.provider),
+            withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
+            base_amount=tx_receipt.base_amount,
+            share_price=tx_receipt.share_price,
+        )
+
     def _create_checkpoint(self, agent: HyperdriveAgent, checkpoint_time: int | None = None) -> CreateCheckpoint:
         # TODO need to figure out how to mint checkpoints on demand
         raise NotImplementedError

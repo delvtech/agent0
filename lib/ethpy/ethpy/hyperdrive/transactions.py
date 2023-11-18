@@ -147,6 +147,8 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
     trade_result = ReceiptBreakdown()
     if "trader" in log_args:
         trade_result.trader = log_args["trader"]
+    if "provider" in log_args:
+        trade_result.provider = log_args["provider"]
     if "assetId" in log_args:
         trade_result.asset_id = log_args["assetId"]
     if "maturityTime" in log_args:

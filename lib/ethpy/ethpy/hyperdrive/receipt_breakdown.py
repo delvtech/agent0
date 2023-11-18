@@ -10,6 +10,7 @@ from fixedpointmath import FixedPoint
 class ReceiptBreakdown:
     r"""A granular breakdown of important values in a trade receipt."""
     trader: str = ""
+    provider: str = ""
     asset_id: int = 0
     maturity_time_seconds: int = 0
     base_amount: FixedPoint = FixedPoint(0)

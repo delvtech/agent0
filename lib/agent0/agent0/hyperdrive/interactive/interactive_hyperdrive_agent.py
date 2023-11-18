@@ -69,8 +69,8 @@ class InteractiveHyperdriveAgent:
     def add_liquidity(self, base: FixedPoint) -> AddLiquidity:
         return self._pool._add_liquidity(self.agent, base)
 
-    def remove_liquidity(self, bonds: FixedPoint) -> RemoveLiquidity:
-        return self._pool._remove_liquidity(self.agent, bonds)
+    def remove_liquidity(self, shares: FixedPoint) -> RemoveLiquidity:
+        return self._pool._remove_liquidity(self.agent, shares)
 
-    def redeem_withdraw_shares(self, shares: FixedPoint) -> RedeemWithdrawalShares:
-        return self._pool._redeem_withdraw_shares(self.agent, shares)
+    def redeem_withdraw_share(self, shares: FixedPoint) -> RedeemWithdrawalShares:
+        return self._pool._redeem_withdraw_share(self.agent, shares)

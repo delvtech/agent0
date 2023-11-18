@@ -79,8 +79,12 @@ if __name__ == "__main__":
 
     # LP
     add_lp_event = hyperdrive_agent2.add_liquidity(base=FixedPoint(44444))
-    remove_lp_event = hyperdrive_agent2.remove_liquidity(bonds=hyperdrive_agent2.wallet.lp_tokens)
-    withdraw_shares_event = hyperdrive_agent2.redeem_withdraw_shares(shares=hyperdrive_agent2.wallet.withdraw_shares)
+    # Add a long to ensure there are withdraw shares to withdraw
+    open_long_event = hyperdrive_agent2.open_long(base=FixedPoint(55555))
+    remove_lp_event = hyperdrive_agent2.remove_liquidity(shares=hyperdrive_agent2.wallet.lp_tokens)
+    # Close the long to ensure the withdrawal share is ready to withdraw
+    hyperdrive_agent2.close_long(maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount)
+    withdraw_shares_event = hyperdrive_agent2.redeem_withdraw_share(shares=hyperdrive_agent2.wallet.withdraw_shares)
 
     # Get data from database under the hood
     pool_info_history: pd.DataFrame = interactive_hyperdrive.get_pool_info()
