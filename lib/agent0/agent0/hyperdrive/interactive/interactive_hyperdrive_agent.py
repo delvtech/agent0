@@ -6,6 +6,8 @@ if TYPE_CHECKING:
     from eth_typing import ChecksumAddress
     from fixedpointmath import FixedPoint
 
+    from agent0.hyperdrive.state import HyperdriveWallet
+
     from .event_types import (
         AddLiquidity,
         CloseLong,
@@ -37,6 +39,10 @@ class InteractiveHyperdriveAgent:
         # TODO
         self.agent = self._pool._init_agent(base, eth, name)
 
+    @property
+    def wallet(self) -> HyperdriveWallet:
+        return self.agent.wallet
+
     def add_funds(self, base: FixedPoint | None = None, eth: FixedPoint | None = None) -> None:
         """Adds additional funds to the agent."""
         if base is None:
@@ -45,8 +51,8 @@ class InteractiveHyperdriveAgent:
             eth = FixedPoint(0)
         return self._pool._add_funds(self.agent, base, eth)
 
-    def create_checkpoint(self, base: FixedPoint) -> CreateCheckpoint:
-        return self._pool._create_checkpoint(self.agent, base)
+    def create_checkpoint(self, checkpoint_time: int | None = None) -> CreateCheckpoint:
+        return self._pool._create_checkpoint(self.agent, checkpoint_time)
 
     def open_long(self, base: FixedPoint) -> OpenLong:
         return self._pool._open_long(self.agent, base)

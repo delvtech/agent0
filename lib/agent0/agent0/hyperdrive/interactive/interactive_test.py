@@ -47,8 +47,8 @@ if __name__ == "__main__":
     open_long_event_1 = hyperdrive_agent0.open_long(base=FixedPoint(11111))
 
     # Allow for creating checkpoints on the fly
-    # TODO double check we can do this in hyperdrive
-    checkpoint_event = hyperdrive_agent0.create_checkpoint()
+    # TODO Need to figure out how to mint checkpoints on the fly
+    # checkpoint_event = hyperdrive_agent0.create_checkpoint()
 
     # Another long with a different maturity time
     open_long_event_2 = hyperdrive_agent0.open_long(FixedPoint(22222))

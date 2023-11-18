@@ -69,4 +69,5 @@ class InteractiveHyperdrivePolicy(HyperdrivePolicy):
                 ),
             )
         ]
-        return trades, True
+        # Since we're executing trade by trade, this bot is never "done" trading
+        return trades, False

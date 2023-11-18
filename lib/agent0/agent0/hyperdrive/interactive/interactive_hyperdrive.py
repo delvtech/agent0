@@ -211,7 +211,6 @@ class InteractiveHyperdrive:
         )
         # Update the agent's wallet balance
         agent.wallet.balance.amount += base
-        pass
 
         # TODO do we want to report a status here?
 
@@ -261,6 +260,8 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
+        # TODO running the data pipeline here is slow, perhaps we should
+        # do it in the background or have an explicit call to load the db
         self._run_data_pipeline()
         # Build open long event from trade_result
         return OpenLong(
@@ -271,3 +272,20 @@ class InteractiveHyperdrive:
             share_price=tx_receipt.share_price,
             bond_amount=tx_receipt.bond_amount,
         )
+
+    def _create_checkpoint(self, agent: HyperdriveAgent, checkpoint_time: int | None = None) -> CreateCheckpoint:
+        # TODO need to figure out how to mint checkpoints on demand
+        raise NotImplementedError
+        # if checkpoint_time is None:
+        #    checkpoint_time = int(
+        #        self.hyperdrive_interface.get_block_timestamp(self.hyperdrive_interface.get_current_block())
+        #    )
+
+        # receipt = smart_contract_transact(
+        #    self.hyperdrive_interface.web3,
+        #    self.hyperdrive_interface.hyperdrive_contract,
+        #    agent,
+        #    "checkpoint",
+        #    (checkpoint_time),
+        # )
+        # pass
