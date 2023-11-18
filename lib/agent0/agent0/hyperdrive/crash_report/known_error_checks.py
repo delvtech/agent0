@@ -1,8 +1,8 @@
 from ethpy.base.errors import ContractCallException
 from web3.exceptions import ContractCustomError, ContractLogicError
 
-from agent0.hyperdrive.exec.execute_agent_trades import assert_never
 from agent0.hyperdrive.state import HyperdriveActionType, TradeResult
+from agent0.utils import assert_never
 
 
 def check_for_invalid_balance(trade_result: TradeResult) -> tuple[bool, TradeResult]:

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING
 
 from ethpy.base import retry_call
 from ethpy.hyperdrive.api import HyperdriveInterface
@@ -19,19 +19,10 @@ from agent0.hyperdrive.state import (
     TradeResult,
     TradeStatus,
 )
+from agent0.utils import assert_never
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
-
-
-def assert_never(arg: NoReturn) -> NoReturn:
-    """Helper function for exhaustive matching on ENUMS.
-
-    .. note::
-        This ensures that all ENUM values are checked, via an exhaustive match:
-        https://github.com/microsoft/pyright/issues/2569
-    """
-    assert False, f"Unhandled type: {type(arg).__name__}"
 
 
 async def async_execute_single_agent_trade(
