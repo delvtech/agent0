@@ -260,7 +260,7 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        # TODO running the data pipeline here is slow, perhaps we should
+        # TODO running the data pipeline here may be slow, perhaps we should
         # do it in the background or have an explicit call to load the db
         self._run_data_pipeline()
         # Build open long event from trade_result
