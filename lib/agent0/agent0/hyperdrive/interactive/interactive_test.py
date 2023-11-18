@@ -39,7 +39,7 @@ if __name__ == "__main__":
     hyperdrive_agent2 = interactive_hyperdrive.init_agent(base=FixedPoint(100000))
 
     # Add funds to an agent
-    hyperdrive_agent0.add_funds(eth=FixedPoint(100), base=FixedPoint(100000))
+    hyperdrive_agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
 
     # Here, we execute a trade, where it's calling agent0 + gather data from data pipeline
     # under the hood to allow for error handling and data management

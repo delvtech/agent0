@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 
 from chainsync import PostgresConfig
 from chainsync.db.base import initialize_session
+from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_utils.address import to_checksum_address
 from ethpy import EthConfig
@@ -106,7 +107,7 @@ class InteractiveHyperdrive:
         postgres_config = PostgresConfig(**asdict(chain.postgres_config))
         # Update the database field to use a unique name for this pool using the hyperdrive contract address
         postgres_config.POSTGRES_DB = "interactive-hyperdrive-" + str(
-            self.hyperdrive_interface.addresses.mock_hyperdrive
+            self.hyperdrive_interface.hyperdrive_contract.address
         )
 
         self.db_session = initialize_session(postgres_config, ensure_database_created=True)
@@ -167,10 +168,10 @@ class InteractiveHyperdrive:
             eth = FixedPoint(100)
         if base is None:
             base = FixedPoint(0)
-        agent = InteractiveHyperdriveAgent(name=name, pool=self)
+        out_agent = InteractiveHyperdriveAgent(name=name, pool=self)
         if eth > 0 or base > 0:
-            agent.add_funds(base, eth)
-        return agent
+            out_agent.add_funds(base, eth)
+        return out_agent
 
     ### Agent methods
     def _init_agent(self, name: str | None) -> HyperdriveAgent:
@@ -184,7 +185,7 @@ class InteractiveHyperdrive:
                 [agent],
                 self.hyperdrive_interface.web3,
                 self.hyperdrive_interface.base_token_contract,
-                str(self.hyperdrive_interface.addresses.mock_hyperdrive),
+                str(self.hyperdrive_interface.hyperdrive_contract.address),
             )
         )
         return agent
@@ -201,8 +202,12 @@ class InteractiveHyperdrive:
             agent,
             "mint(address,uint256)",
             agent.checksum_address,
-            base,
+            base.scaled_value,
         )
+        # Update the agent's wallet balance
+        agent.wallet.balance.amount += base
+        pass
+
         # TODO do we want to report a status here?
 
     def _handle_trade_result(self, trade_results: list[TradeResult]) -> ReceiptBreakdown:
@@ -220,10 +225,21 @@ class InteractiveHyperdrive:
         return tx_receipt
 
     def _run_data_pipeline(self) -> None:
-        # acquire_data(
-        #    start_block=self._deploy_block_number,  # Start block is the block hyperdrive was deployed
-        #    eth_config = self.eth_config,
-        #    db_session =
+        # TODO these functions are not thread safe, need to fix if we expose async functions
+        acquire_data(
+            start_block=self._deploy_block_number,  # Start block is the block hyperdrive was deployed
+            eth_config=self.eth_config,
+            db_session=self.db_session,
+            contract_addresses=self.hyperdrive_interface.addresses,
+            exit_on_catch_up=True,
+        )
+        data_analysis(
+            start_block=self._deploy_block_number,
+            eth_config=self.eth_config,
+            db_session=self.db_session,
+            contract_addresses=self.hyperdrive_interface.addresses,
+            exit_on_catch_up=True,
+        )
         pass
 
     def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
@@ -235,6 +251,7 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
+        self._run_data_pipeline()
         # Build open long event from trade_result
         return OpenLong(
             trader=to_checksum_address(tx_receipt.trader),
