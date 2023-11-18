@@ -5,9 +5,6 @@ import asyncio
 import logging
 
 import eth_utils
-from agent0 import AccountKeyConfig
-from agent0.base.config import AgentConfig
-from agent0.hyperdrive.agents import HyperdriveAgent
 from eth_account.account import Account
 from ethpy.base import async_smart_contract_transact, get_account_balance
 from fixedpointmath import FixedPoint
@@ -15,6 +12,10 @@ from numpy.random._generator import Generator as NumpyGenerator
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxReceipt
+
+from agent0 import AccountKeyConfig
+from agent0.base.config import AgentConfig
+from agent0.hyperdrive.agents import HyperdriveAgent
 
 RETRY_COUNT = 5
 
@@ -106,6 +107,7 @@ async def set_max_approval(
     """
 
     agents_left = list(agents)
+    exception = None
     for attempt in range(RETRY_COUNT):
         approval_calls = [
             async_smart_contract_transact(
@@ -121,16 +123,22 @@ async def set_max_approval(
         gather_results: list[TxReceipt | BaseException] = await asyncio.gather(*approval_calls, return_exceptions=True)
 
         # Rebuild accounts_left list if the result errored out for next iteration
-        agents_left = []
+        out_agents_left = []
         for agent, result in zip(agents_left, gather_results):
-            if isinstance(result, Exception):
-                agents_left.append(agent)
+            if isinstance(result, BaseException):
+                out_agents_left.append(agent)
                 logging.warning(
                     "Retry attempt %s out of %s: Base approval failed with exception %s",
                     attempt,
                     RETRY_COUNT,
                     repr(result),
                 )
+                exception = result
+        agents_left = out_agents_left
         # If successful, break retry loop
         if len(agents_left) == 0:
             break
+
+    if len(agents_left) > 0:
+        assert exception is not None
+        raise exception

@@ -31,11 +31,11 @@ class InteractiveHyperdriveAgent:
     wrappers here for ease of use.
     """
 
-    def __init__(self, name: str | None, pool: InteractiveHyperdrive):
+    def __init__(self, base: FixedPoint, eth: FixedPoint, name: str | None, pool: InteractiveHyperdrive):
         self._pool = pool
         self.name = name
         # TODO
-        self.agent = self._pool._init_agent(name)
+        self.agent = self._pool._init_agent(base, eth, name)
 
     def add_funds(self, base: FixedPoint | None = None, eth: FixedPoint | None = None) -> None:
         """Adds additional funds to the agent."""
