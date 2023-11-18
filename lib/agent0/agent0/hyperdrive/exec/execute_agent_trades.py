@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 
 from ethpy.base import retry_call
+from ethpy.hyperdrive import ReceiptBreakdown
 from ethpy.hyperdrive.api import HyperdriveInterface
 from web3.types import Nonce
 
@@ -60,7 +61,9 @@ async def async_execute_single_agent_trade(
     # TODO preliminary search shows async tasks has very low overhead:
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
     # However, should probably test what the limit number of trades an agent can make in one block
-    wallet_deltas_or_exception: list[HyperdriveWalletDeltas | BaseException] = await asyncio.gather(
+    wallet_deltas_or_exception: list[
+        Tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException
+    ] = await asyncio.gather(
         *[
             async_match_contract_call_to_trade(agent, hyperdrive, trade_object, nonce=Nonce(base_nonce + i))
             for i, trade_object in enumerate(trades)
@@ -85,14 +88,18 @@ async def async_execute_single_agent_trade(
     # as long as the transaction went through.
     trade_results = []
     for result, trade_object in zip(wallet_deltas_or_exception, trades):
-        if isinstance(result, HyperdriveWalletDeltas):
-            agent.wallet.update(result)
-            trade_result = TradeResult(status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object)
-        elif isinstance(result, BaseException):
+        if isinstance(result, BaseException):
             trade_result = build_crash_trade_result(result, agent, trade_object, hyperdrive)
-        else:  # Should never get here
-            # TODO: use match statement and assert_never(result)
-            raise AssertionError("invalid result type")
+        else:
+            assert isinstance(result, tuple)
+            assert len(result) == 2
+            wallet_delta, tx_receipt = result
+            assert isinstance(wallet_delta, HyperdriveWalletDeltas)
+            assert isinstance(tx_receipt, ReceiptBreakdown)
+            agent.wallet.update(wallet_delta)
+            trade_result = TradeResult(
+                status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object, tx_receipt=tx_receipt
+            )
         trade_results.append(trade_result)
 
     return trade_results
@@ -150,7 +157,7 @@ async def async_match_contract_call_to_trade(
     hyperdrive: HyperdriveInterface,
     trade_envelope: Trade[HyperdriveMarketAction],
     nonce: Nonce,
-) -> HyperdriveWalletDeltas:
+) -> Tuple[HyperdriveWalletDeltas, ReceiptBreakdown]:
     """Match statement that executes the smart contract trade based on the provided type.
 
     Arguments
@@ -264,4 +271,4 @@ async def async_match_contract_call_to_trade(
 
         case _:
             assert_never(trade.action_type)
-    return wallet_deltas
+    return wallet_deltas, trade_result

@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
+from ethpy.hyperdrive import ReceiptBreakdown
+
 if TYPE_CHECKING:
     from agent0.base import Trade
     from agent0.hyperdrive.agents import HyperdriveAgent
@@ -49,6 +51,7 @@ class TradeResult:
     status: TradeStatus
     agent: HyperdriveAgent
     trade_object: Trade[HyperdriveMarketAction]
+    tx_receipt: ReceiptBreakdown | None = None
     contract_call: dict[str, Any] | None = None
     # Flags for known errors
     is_slippage: bool = False

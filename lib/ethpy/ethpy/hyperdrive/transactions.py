@@ -145,6 +145,8 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
         raise AssertionError("Too many logs found")
     log_args = hyperdrive_event_logs[0]["args"]
     trade_result = ReceiptBreakdown()
+    if "trader" in log_args:
+        trade_result.trader = log_args["trader"]
     if "assetId" in log_args:
         trade_result.asset_id = log_args["assetId"]
     if "maturityTime" in log_args:
@@ -157,6 +159,10 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
         trade_result.lp_amount = FixedPoint(scaled_value=log_args["lpAmount"])
     if "withdrawalShareAmount" in log_args:
         trade_result.withdrawal_share_amount = FixedPoint(scaled_value=log_args["withdrawalShareAmount"])
+    if "sharePrice" in log_args:
+        trade_result.share_price = FixedPoint(scaled_value=log_args["sharePrice"])
+    if "lpSharePrice" in log_args:
+        trade_result.lp_share_price = FixedPoint(scaled_value=log_args["lpSharePrice"])
     return trade_result
 
 
