@@ -249,7 +249,6 @@ class InteractiveHyperdrive:
             contract_addresses=self.hyperdrive_interface.addresses,
             exit_on_catch_up=True,
         )
-        pass
 
     def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
         # Set the next action to open a long
@@ -265,6 +264,28 @@ class InteractiveHyperdrive:
         self._run_data_pipeline()
         # Build open long event from trade_result
         return OpenLong(
+            trader=to_checksum_address(tx_receipt.trader),
+            asset_id=tx_receipt.asset_id,
+            maturity_time=tx_receipt.maturity_time_seconds,
+            base_amount=tx_receipt.base_amount,
+            share_price=tx_receipt.share_price,
+            bond_amount=tx_receipt.bond_amount,
+        )
+
+    def _close_long(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
+        # Set the next action to open a long
+        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        agent.policy.set_next_action(HyperdriveActionType.CLOSE_LONG, bonds, maturity_time)
+        # TODO expose async here to the caller eventually
+        trade_results: list[TradeResult] = asyncio.run(
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+        )
+        tx_receipt = self._handle_trade_result(trade_results)
+        # TODO running the data pipeline here may be slow, perhaps we should
+        # do it in the background or have an explicit call to load the db
+        self._run_data_pipeline()
+        # Build open long event from trade_result
+        return CloseLong(
             trader=to_checksum_address(tx_receipt.trader),
             asset_id=tx_receipt.asset_id,
             maturity_time=tx_receipt.maturity_time_seconds,
