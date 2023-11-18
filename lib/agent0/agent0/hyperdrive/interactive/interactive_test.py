@@ -8,11 +8,8 @@ from agent0.hyperdrive.state import Long
 
 # TODO change this to be a test
 if __name__ == "__main__":
-    # Parameters for local chain initialization
-    local_chain_config = LocalChain.Config(
-        block_time=None,  # If None, mines per transaction. Otherwise mines every `block_time` seconds.
-        block_timestamp_interval=None,  # Number of seconds to advance time for every mined block. Uses real time if None.
-    )
+    # Parameters for local chain initialization, defines defaults in constructor
+    local_chain_config = LocalChain.Config()
     # Launches a local chain in a subprocess
     # This also launches a local postgres docker container for data under the hood, attached to the chain.
     # Each hyperdrive pool will have it's own database within this container
@@ -34,7 +31,7 @@ if __name__ == "__main__":
     # Generate funded trading agents from the interactive object
     # Names are reflected on output data frames and plots later
     hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="alice")
-    hyperdrive_agent1 = interactive_hyperdrive.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="bob")
+    hyperdrive_agent1 = interactive_hyperdrive_2.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="bob")
     # Omission of name defaults to wallet address
     hyperdrive_agent2 = interactive_hyperdrive.init_agent(base=FixedPoint(100000))
 
@@ -87,6 +84,11 @@ if __name__ == "__main__":
     withdraw_shares_event = hyperdrive_agent2.redeem_withdraw_share(shares=hyperdrive_agent2.wallet.withdraw_shares)
 
     # Get data from database under the hood
+    ticker: pd.DataFrame = interactive_hyperdrive.get_ticker()
+    ticker_2: pd.DataFrame = interactive_hyperdrive_2.get_ticker()
+    print(ticker)
+    print(ticker_2)
+
     pool_info_history: pd.DataFrame = interactive_hyperdrive.get_pool_info()
     wallet_positions: pd.DataFrame = interactive_hyperdrive.get_current_wallet()
     pnl_over_time: pd.DataFrame = interactive_hyperdrive.get_total_wallet_pnl_over_time()
