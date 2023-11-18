@@ -4,18 +4,19 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 
-from eth_typing import ChecksumAddress
+from eth_account.account import Account
 from eth_utils.address import to_checksum_address
 from ethpy import EthConfig
-from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
+from ethpy.hyperdrive import DeployedHyperdrivePool, ReceiptBreakdown, deploy_hyperdrive_from_factory
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig
 from web3.constants import ADDRESS_ZERO
 
+from agent0.base.make_key import make_private_key
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.exec import async_execute_agent_trades
-from agent0.hyperdrive.state import TradeResult, TradeStatus
+from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
 
 from .chain import Chain
 from .event_types import (
@@ -29,6 +30,7 @@ from .event_types import (
     RemoveLiquidity,
 )
 from .interactive_hyperdrive_agent import InteractiveHyperdriveAgent
+from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
 
 
 class InteractiveHyperdrive:
@@ -136,14 +138,15 @@ class InteractiveHyperdrive:
         Arguments
         ---------
         eth: FixedPoint
-            The amount of ETH to fund the agent with. Defaults to 0.
+            The amount of ETH to fund the agent with. Defaults to 10.
         base: FixedPoint
             The amount of base to fund the agent with. Defaults to 0.
         name: str
             The name of the agent. Defaults to the wallet address.
         """
         if eth is None:
-            eth = FixedPoint(0)
+            # We need eth to, at minimum, approve, hence, we start with a non-zero amount
+            eth = FixedPoint(10)
         if base is None:
             base = FixedPoint(0)
         agent = InteractiveHyperdriveAgent(name=name, pool=self)
@@ -152,8 +155,16 @@ class InteractiveHyperdrive:
         return agent
 
     ### Agent methods
+    def _init_agent(self, name: str | None) -> HyperdriveAgent:
+        agent_private_key = make_private_key()
+        return HyperdriveAgent(
+            Account().from_key(agent_private_key), policy=InteractiveHyperdrivePolicy(budget=FixedPoint(0))
+        )
 
-    def _handle_trade_result(self, trade_results: list[TradeResult]) -> None:
+    def _add_funds(self, agent: HyperdriveAgent, eth: FixedPoint, base: FixedPoint) -> None:
+        pass
+
+    def _handle_trade_result(self, trade_results: list[TradeResult]) -> ReceiptBreakdown:
         # Sanity check, should only be one trade result
         assert len(trade_results) == 1
         trade_result = trade_results[0]
@@ -161,24 +172,22 @@ class InteractiveHyperdrive:
             assert trade_result.exception is not None
             # TODO when we allow for async, we likely would want to ignore slippage checks here
             raise trade_result.exception
-
-    def _init_agent(self, name: str | None) -> HyperdriveAgent:
-        pass
-
-    def _add_funds(self, address: ChecksumAddress, eth: FixedPoint, base: FixedPoint) -> None:
-        pass
+        assert trade_result.status == TradeStatus.SUCCESS
+        assert len(trade_results) == 1
+        tx_receipt = trade_results[0].tx_receipt
+        assert tx_receipt is not None
+        return tx_receipt
 
     def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
-        # TODO execute this trade via the policy
-
+        # Set the next action to open a long
+        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        agent.policy.set_next_action(HyperdriveActionType.OPEN_LONG, base)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
+        tx_receipt = self._handle_trade_result(trade_results)
         # Build open long event from trade_result
-        assert len(trade_results) == 1
-        tx_receipt = trade_results[0].tx_receipt
-        assert tx_receipt is not None
         return OpenLong(
             trader=to_checksum_address(tx_receipt.trader),
             asset_id=tx_receipt.asset_id,

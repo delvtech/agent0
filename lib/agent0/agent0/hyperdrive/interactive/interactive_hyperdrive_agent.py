@@ -37,7 +37,11 @@ class InteractiveHyperdriveAgent:
         # TODO
         self.agent = self._pool._init_agent(name)
 
-    def add_funds(self, eth: FixedPoint, base: FixedPoint) -> None:
+    def add_funds(self, eth: FixedPoint | None = None, base: FixedPoint | None = None) -> None:
+        if eth is None:
+            eth = FixedPoint(0)
+        if base is None:
+            base = FixedPoint(0)
         return self._pool._add_funds(self.agent, eth, base)
 
     def create_checkpoint(self, base: FixedPoint) -> CreateCheckpoint:
