@@ -93,9 +93,9 @@ def data_analysis(
         latest_data_block_number = get_latest_data_block(db_session)
         # Only execute if we are on a new block
         if latest_data_block_number <= block_number:
-            time.sleep(_SLEEP_AMOUNT)
             if exit_on_catch_up:
                 break
+            time.sleep(_SLEEP_AMOUNT)
             continue
         # Does batch analysis on range(analysis_start_block, latest_data_block_number) blocks
         # TODO do regular batching to sample for wallet information
@@ -104,7 +104,6 @@ def data_analysis(
         logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
         data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
         block_number = latest_data_block_number
-        time.sleep(_SLEEP_AMOUNT)
 
 
 def get_latest_data_block(db_session: Session):

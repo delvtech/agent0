@@ -88,9 +88,9 @@ def acquire_data(
         latest_mined_block = hyperdrive.web3.eth.get_block_number()
         # Only execute if we are on a new block
         if latest_mined_block <= block_number:
-            time.sleep(_SLEEP_AMOUNT)
             if exit_on_catch_up:
                 break
+            time.sleep(_SLEEP_AMOUNT)
             continue
         # Backfilling for blocks that need updating
         for block_int in range(block_number + 1, latest_mined_block + 1):
@@ -112,4 +112,3 @@ def acquire_data(
                 )
                 continue
             data_chain_to_db(hyperdrive, hyperdrive.get_block(block_number), db_session)
-        time.sleep(_SLEEP_AMOUNT)
