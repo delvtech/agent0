@@ -1,14 +1,34 @@
 """Defines the interactive hyperdrive class for a hyperdrive pool."""
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 
+from eth_typing import ChecksumAddress
+from eth_utils.address import to_checksum_address
+from ethpy import EthConfig
 from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
+from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig
 from web3.constants import ADDRESS_ZERO
 
+from agent0.hyperdrive.agents import HyperdriveAgent
+from agent0.hyperdrive.exec import async_execute_agent_trades
+from agent0.hyperdrive.state import TradeResult, TradeStatus
+
 from .chain import Chain
+from .event_types import (
+    AddLiquidity,
+    CloseLong,
+    CloseShort,
+    CreateCheckpoint,
+    OpenLong,
+    OpenShort,
+    RedeemWithdrawalShares,
+    RemoveLiquidity,
+)
+from .interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 
 
 class InteractiveHyperdrive:
@@ -21,6 +41,7 @@ class InteractiveHyperdrive:
 
         Attributes
         ----------
+        TODO
         """
 
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
@@ -49,18 +70,27 @@ class InteractiveHyperdrive:
                 )
 
     def __init__(self, config: Config, chain: Chain):
-        # Deploys a hyperdrive factory + pool on the chain
-        self._deployed_hyperdrive = self._deploy_hyperdrive(config, chain)
-        # Initializes the db session
-        # The db container name is a combination of the rpc url and the address of the hyperdrive pool
-        # This ensures the name to be unique
-        # Initialize agent0 configurations
+        """Constructor for the interactive hyperdrive agent.
 
-    def _deploy_hyperdrive(self, config: Config, chain: Chain) -> DeployedHyperdrivePool:
+        Arguments
+        ---------
+        config: Config
+            The configuration for the initial pool configuration
+        chain: Chain
+            The chain object to launch hyperdrive on
+        """
+        # Define agent0 configs with this setup
         # TODO this very likely needs to reference an absolute path
         # as if we're importing this package from another repo, this path won't work
-        abi_folder = "packages/hyperdrive/src/abis/"
+        eth_config = EthConfig(artifacts_uri="not_used", rpc_uri=chain.rpc_uri, abi_dir="packages/hyperdrive/src/abis/")
+        # Deploys a hyperdrive factory + pool on the chain
+        self._deployed_hyperdrive = self._deploy_hyperdrive(config, chain, eth_config.abi_dir)
+        self.hyperdrive_interface = HyperdriveInterface(
+            eth_config,
+            self._deployed_hyperdrive.hyperdrive_contract_addresses,
+        )
 
+    def _deploy_hyperdrive(self, config: Config, chain: Chain, abi_dir) -> DeployedHyperdrivePool:
         # sanity check (also for type checking), should get set in __post_init__
         assert config.time_stretch is not None
 
@@ -85,12 +115,75 @@ class InteractiveHyperdrive:
         )
 
         return deploy_hyperdrive_from_factory(
-            chain.rpc_url,
-            abi_folder,
+            chain.rpc_uri,
+            abi_dir,
             chain.get_deployer_account_private_key(),
             config.initial_liquidity,
             config.initial_variable_rate,
             config.initial_fixed_rate,
             initial_pool_config,
             max_fees,
+        )
+
+    def init_agent(
+        self,
+        eth: FixedPoint | None = None,
+        base: FixedPoint | None = None,
+        name: str | None = None,
+    ) -> InteractiveHyperdriveAgent:
+        """Initializes an agent with initial funding and a logical name.
+
+        Arguments
+        ---------
+        eth: FixedPoint
+            The amount of ETH to fund the agent with. Defaults to 0.
+        base: FixedPoint
+            The amount of base to fund the agent with. Defaults to 0.
+        name: str
+            The name of the agent. Defaults to the wallet address.
+        """
+        if eth is None:
+            eth = FixedPoint(0)
+        if base is None:
+            base = FixedPoint(0)
+        agent = InteractiveHyperdriveAgent(name=name, pool=self)
+        if eth > 0 or base > 0:
+            agent.add_funds(eth, base)
+        return agent
+
+    ### Agent methods
+
+    def _handle_trade_result(self, trade_results: list[TradeResult]) -> None:
+        # Sanity check, should only be one trade result
+        assert len(trade_results) == 1
+        trade_result = trade_results[0]
+        if trade_result.status == TradeStatus.FAIL:
+            assert trade_result.exception is not None
+            # TODO when we allow for async, we likely would want to ignore slippage checks here
+            raise trade_result.exception
+
+    def _init_agent(self, name: str | None) -> HyperdriveAgent:
+        pass
+
+    def _add_funds(self, address: ChecksumAddress, eth: FixedPoint, base: FixedPoint) -> None:
+        pass
+
+    def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
+        # TODO execute this trade via the policy
+
+        # TODO expose async here to the caller eventually
+        trade_results: list[TradeResult] = asyncio.run(
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+        )
+        # Build open long event from trade_result
+        assert len(trade_results) == 1
+        tx_receipt = trade_results[0].tx_receipt
+        assert tx_receipt is not None
+        return OpenLong(
+            trader=to_checksum_address(tx_receipt.trader),
+            asset_id=tx_receipt.asset_id,
+            maturity_time=tx_receipt.maturity_time_seconds,
+            base_amount=tx_receipt.base_amount,
+            share_price=tx_receipt.share_price,
+            bond_amount=tx_receipt.bond_amount,
         )
