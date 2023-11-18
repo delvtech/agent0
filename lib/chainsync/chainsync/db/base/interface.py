@@ -81,7 +81,7 @@ def initialize_engine(postgres_config: PostgresConfig | None = None, ensure_data
 
     if ensure_database_created:
         if not database_exists(engine.url):
-            logging.info(f"Database {postgres_config.POSTGRES_DB} does not exist, creating")
+            logging.info("Database %s does not exist, creating", postgres_config.POSTGRES_DB)
             create_database(engine.url)
 
     exception = None
