@@ -148,8 +148,8 @@ class InteractiveHyperdrive:
 
     def init_agent(
         self,
-        eth: FixedPoint | None = None,
         base: FixedPoint | None = None,
+        eth: FixedPoint | None = None,
         name: str | None = None,
     ) -> InteractiveHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
@@ -169,7 +169,7 @@ class InteractiveHyperdrive:
             base = FixedPoint(0)
         agent = InteractiveHyperdriveAgent(name=name, pool=self)
         if eth > 0 or base > 0:
-            agent.add_funds(eth, base)
+            agent.add_funds(base, eth)
         return agent
 
     ### Agent methods
