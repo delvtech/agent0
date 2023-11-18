@@ -51,7 +51,7 @@ class Chain:
         self.postgres_container.kill()  # type: ignore
 
     def advance_time(self, time_delta: int | timedelta) -> None:
-        # TODO
+        # TODO use the `evm_increaseTime` or "evm_setNextBlockTimestamp` RPC call here to advance time
         raise NotImplementedError
 
     def get_deployer_account_private_key(self):

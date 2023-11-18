@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     # Close previous longs
     close_long_event_1 = hyperdrive_agent0.close_long(
-        maturity_time=open_long_event_1.maturity_time, bonds=open_long_event_1.balance
+        maturity_time=open_long_event_1.maturity_time, bonds=open_long_event_1.bond_amount
     )
 
     # TODO `agent0/hyperdrive/state/hyperdrive_wallet` needs to add a `maturity_time` field to the object
