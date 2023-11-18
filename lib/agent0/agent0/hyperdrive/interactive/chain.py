@@ -32,13 +32,13 @@ class Chain:
         db_port: int = 5432
         remove_existing_db_container: bool = True
 
-    def __init__(self, rpc_url: str, config: Config | None = None):
+    def __init__(self, rpc_uri: str, config: Config | None = None):
         if config is None:
             config = self.Config()
-        self.rpc_url = rpc_url
+        self.rpc_uri = rpc_uri
         # Remove protocol and replace . and : with dashes
         formatted_rpc_url = (
-            self.rpc_url.replace("http://", "").replace("https://", "").replace(".", "-").replace(":", "-")
+            self.rpc_uri.replace("http://", "").replace("https://", "").replace(".", "-").replace(":", "-")
         )
         db_container_name = "postgres-interactive-hyperdrive-" + formatted_rpc_url
         self.postgres_config, self.postgres_container = self._initialize_postgres_container(
