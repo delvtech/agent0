@@ -33,10 +33,10 @@ if __name__ == "__main__":
 
     # Generate funded trading agents from the interactive object
     # Names are reflected on output data frames and plots later
-    hyperdrive_agent0 = interactive_hyperdrive.init_agent(eth=FixedPoint(100), base=FixedPoint(100000), name="alice")
-    hyperdrive_agent1 = interactive_hyperdrive.init_agent(eth=FixedPoint(100), base=FixedPoint(100000), name="bob")
+    hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="alice")
+    hyperdrive_agent1 = interactive_hyperdrive.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="bob")
     # Omission of name defaults to wallet address
-    hyperdrive_agent2 = interactive_hyperdrive.init_agent(eth=FixedPoint(100), base=FixedPoint(100000))
+    hyperdrive_agent2 = interactive_hyperdrive.init_agent(base=FixedPoint(100000))
 
     # Add funds to an agent
     hyperdrive_agent0.add_funds(eth=FixedPoint(100), base=FixedPoint(100000))

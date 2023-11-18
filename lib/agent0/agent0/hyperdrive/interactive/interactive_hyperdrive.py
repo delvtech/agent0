@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
+from chainsync import PostgresConfig
+from chainsync.db.base import initialize_session
 from eth_account.account import Account
 from eth_utils.address import to_checksum_address
 from ethpy import EthConfig
+from ethpy.base import set_anvil_account_balance, smart_contract_transact
 from ethpy.hyperdrive import DeployedHyperdrivePool, ReceiptBreakdown, deploy_hyperdrive_from_factory
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
@@ -15,7 +18,7 @@ from web3.constants import ADDRESS_ZERO
 
 from agent0.base.make_key import make_private_key
 from agent0.hyperdrive.agents import HyperdriveAgent
-from agent0.hyperdrive.exec import async_execute_agent_trades
+from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
 from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
 
 from .chain import Chain
@@ -84,13 +87,29 @@ class InteractiveHyperdrive:
         # Define agent0 configs with this setup
         # TODO this very likely needs to reference an absolute path
         # as if we're importing this package from another repo, this path won't work
-        eth_config = EthConfig(artifacts_uri="not_used", rpc_uri=chain.rpc_uri, abi_dir="packages/hyperdrive/src/abis/")
+        self.eth_config = EthConfig(
+            artifacts_uri="not_used", rpc_uri=chain.rpc_uri, abi_dir="packages/hyperdrive/src/abis/"
+        )
         # Deploys a hyperdrive factory + pool on the chain
-        self._deployed_hyperdrive = self._deploy_hyperdrive(config, chain, eth_config.abi_dir)
+        self._deployed_hyperdrive = self._deploy_hyperdrive(config, chain, self.eth_config.abi_dir)
         self.hyperdrive_interface = HyperdriveInterface(
-            eth_config,
+            self.eth_config,
             self._deployed_hyperdrive.hyperdrive_contract_addresses,
         )
+        # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
+        # for the data pipeline
+        self._deploy_block_number = self.hyperdrive_interface.get_block_number(
+            self.hyperdrive_interface.get_current_block()
+        )
+
+        # Make a copy of the dataclass to avoid changing the base class
+        postgres_config = PostgresConfig(**asdict(chain.postgres_config))
+        # Update the database field to use a unique name for this pool using the hyperdrive contract address
+        postgres_config.POSTGRES_DB = "interactive-hyperdrive-" + str(
+            self.hyperdrive_interface.addresses.mock_hyperdrive
+        )
+
+        self.db_session = initialize_session(postgres_config, ensure_database_created=True)
 
     def _deploy_hyperdrive(self, config: Config, chain: Chain, abi_dir) -> DeployedHyperdrivePool:
         # sanity check (also for type checking), should get set in __post_init__
@@ -145,8 +164,7 @@ class InteractiveHyperdrive:
             The name of the agent. Defaults to the wallet address.
         """
         if eth is None:
-            # We need eth to, at minimum, approve, hence, we start with a non-zero amount
-            eth = FixedPoint(10)
+            eth = FixedPoint(100)
         if base is None:
             base = FixedPoint(0)
         agent = InteractiveHyperdriveAgent(name=name, pool=self)
@@ -157,12 +175,35 @@ class InteractiveHyperdrive:
     ### Agent methods
     def _init_agent(self, name: str | None) -> HyperdriveAgent:
         agent_private_key = make_private_key()
-        return HyperdriveAgent(
+        agent = HyperdriveAgent(
             Account().from_key(agent_private_key), policy=InteractiveHyperdrivePolicy(budget=FixedPoint(0))
         )
+        # establish max approval for the hyperdrive contract
+        asyncio.run(
+            set_max_approval(
+                [agent],
+                self.hyperdrive_interface.web3,
+                self.hyperdrive_interface.base_token_contract,
+                str(self.hyperdrive_interface.addresses.mock_hyperdrive),
+            )
+        )
+        return agent
 
-    def _add_funds(self, agent: HyperdriveAgent, eth: FixedPoint, base: FixedPoint) -> None:
-        pass
+    def _add_funds(self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint) -> None:
+        # Eth is a set balance call
+        eth_balance, _ = self.hyperdrive_interface.get_eth_base_balances(agent)
+        new_eth_balance = eth_balance + eth
+        _ = set_anvil_account_balance(self.hyperdrive_interface.web3, agent.address, new_eth_balance.scaled_value)
+        # We mint base
+        _ = smart_contract_transact(
+            self.hyperdrive_interface.web3,
+            self.hyperdrive_interface.base_token_contract,
+            agent,
+            "mint(address,uint256)",
+            agent.checksum_address,
+            base,
+        )
+        # TODO do we want to report a status here?
 
     def _handle_trade_result(self, trade_results: list[TradeResult]) -> ReceiptBreakdown:
         # Sanity check, should only be one trade result
@@ -177,6 +218,13 @@ class InteractiveHyperdrive:
         tx_receipt = trade_results[0].tx_receipt
         assert tx_receipt is not None
         return tx_receipt
+
+    def _run_data_pipeline(self) -> None:
+        # acquire_data(
+        #    start_block=self._deploy_block_number,  # Start block is the block hyperdrive was deployed
+        #    eth_config = self.eth_config,
+        #    db_session =
+        pass
 
     def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
         # Set the next action to open a long

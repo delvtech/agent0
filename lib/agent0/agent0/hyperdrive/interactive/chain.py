@@ -29,7 +29,7 @@ class Chain:
             Whether to remove the existing container if it exists on container launch
         """
 
-        db_port: int = 5432
+        db_port: int = 5433
         remove_existing_db_container: bool = True
 
     def __init__(self, rpc_uri: str, config: Config | None = None):
