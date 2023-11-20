@@ -23,8 +23,8 @@ if __name__ == "__main__":
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     initial_pool_config = InteractiveHyperdrive.Config()
     # Launches 2 pools on the same local chain
-    interactive_hyperdrive = InteractiveHyperdrive(initial_pool_config, chain)
-    interactive_hyperdrive_2 = InteractiveHyperdrive(initial_pool_config, chain)
+    interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive_2 = InteractiveHyperdrive(chain, initial_pool_config)
 
     # Generate funded trading agents from the interactive object
     # Names are reflected on output data frames and plots later

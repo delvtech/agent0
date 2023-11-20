@@ -1,4 +1,5 @@
 """Tests interactive hyperdrive end to end"""
+import datetime
 
 from fixedpointmath import FixedPoint
 
@@ -68,8 +69,8 @@ class TestInteractiveHyperdrive:
         # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
         initial_pool_config = InteractiveHyperdrive.Config()
         # Launches 2 pools on the same local chain
-        interactive_hyperdrive = InteractiveHyperdrive(initial_pool_config, chain)
-        interactive_hyperdrive_2 = InteractiveHyperdrive(initial_pool_config, chain)
+        interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
+        interactive_hyperdrive_2 = InteractiveHyperdrive(chain, initial_pool_config)
 
         # Generate funded trading agents from the interactive object
         # Names are reflected on output data frames and plots later
@@ -165,16 +166,15 @@ class TestInteractiveHyperdrive:
         assert hyperdrive_agent0.wallet.withdraw_shares == FixedPoint(0)
         self._ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
-    # def test_advance_time(self):
-    #    """Tests interactive hyperdrive end to end"""
-    #    # Construct chain object
-    #    local_chain_config = LocalChain.Config()
-    #    chain = LocalChain(local_chain_config)
+    def test_advance_time(self):
+        """Tests interactive hyperdrive end to end"""
+        # Construct chain object
+        local_chain_config = LocalChain.Config()
+        chain = LocalChain(local_chain_config)
 
-    #    # NOTE these calls are chainwide calls, so all pools connected to this chain gets affected.
-    #    # Advance time, accepts timedelta or seconds
-    #    chain.advance_time(datetime.timedelta(weeks=52))
-    #    chain.advance_time(3600)
+        # Advance time, accepts timedelta or seconds
+        chain.advance_time(datetime.timedelta(weeks=52))
+        chain.advance_time(3600)
 
     #    # Get data from database under the hood
     #    pool_config = interactive_hyperdrive.get_pool_config()

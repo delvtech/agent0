@@ -121,16 +121,19 @@ class InteractiveHyperdrive:
                     FixedPoint("5.24592") / (FixedPoint("0.04665") * (self.initial_fixed_rate * FixedPoint(100)))
                 )
 
-    def __init__(self, config: Config, chain: Chain):
+    def __init__(self, chain: Chain, config: Config | None = None):
         """Constructor for the interactive hyperdrive agent.
 
         Arguments
         ---------
-        config: Config
-            The configuration for the initial pool configuration
         chain: Chain
             The chain object to launch hyperdrive on
+        config: Config | None
+            The configuration for the initial pool configuration
         """
+        if config is None:
+            config = self.Config()
+
         # Define agent0 configs with this setup
         # TODO this very likely needs to reference an absolute path
         # as if we're importing this package from another repo, this path won't work
