@@ -9,9 +9,9 @@ from ethpy.base.transactions import smart_contract_read
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.api import HyperdriveInterface
 from ethpy.hyperdrive.deploy import DeployedHyperdrivePool
-from hypertypes.IERC4626HyperdriveTypes import Checkpoint as HtCheckpoint
-from hypertypes.IERC4626HyperdriveTypes import PoolConfig as HtPoolConfig
-from hypertypes.IERC4626HyperdriveTypes import PoolInfo as HtPoolInfo
+from hypertypes import Checkpoint as HtCheckpoint
+from hypertypes import PoolConfig as HtPoolConfig
+from hypertypes import PoolInfo as HtPoolInfo
 from web3 import HTTPProvider
 
 from .conversions import (

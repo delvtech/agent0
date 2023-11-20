@@ -19,7 +19,7 @@ from ethpy.hyperdrive.transactions import (
     get_hyperdrive_pool_info,
 )
 from fixedpointmath import FixedPoint
-from hypertypes.IERC4626HyperdriveContract import IERC4626HyperdriveContract
+from hypertypes import IERC4626HyperdriveContract
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time

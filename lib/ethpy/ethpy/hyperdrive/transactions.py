@@ -9,7 +9,7 @@ from ethpy.hyperdrive.state.conversions import (
     hypertypes_pool_info_to_fixedpoint,
 )
 from fixedpointmath import FixedPoint
-from hypertypes.IERC4626HyperdriveContract import IERC4626HyperdriveContract
+from hypertypes import IERC4626HyperdriveContract
 from web3.contract.contract import Contract
 from web3.types import Timestamp, TxReceipt
 
