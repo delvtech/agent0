@@ -15,30 +15,16 @@
 # pylint: disable=too-many-lines
 
 from __future__ import annotations
+
 from typing import cast
 
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
-from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
+from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
 
-from .IERC4626HyperdriveTypes import (
-    Options,
-    Options,
-    Options,
-    Options,
-    Checkpoint,
-    MarketState,
-    PoolConfig,
-    PoolInfo,
-    WithdrawPool,
-    Options,
-    Options,
-    Options,
-    Options,
-    Options,
-)
+from .IERC4626HyperdriveTypes import Checkpoint, MarketState, Options, PoolConfig, PoolInfo, WithdrawPool
 
 
 class IERC4626HyperdriveDOMAIN_SEPARATORContractFunction(ContractFunction):
