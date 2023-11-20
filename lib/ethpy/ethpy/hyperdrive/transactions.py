@@ -3,16 +3,14 @@ from __future__ import annotations
 
 from eth_typing import BlockNumber
 from eth_utils import address
-from ethpy.base import UnknownBlockError, get_transaction_logs, smart_contract_read
+from ethpy.base import UnknownBlockError, get_transaction_logs
 from ethpy.hyperdrive.state.conversions import (
-    contract_checkpoint_to_hypertypes,
-    contract_pool_config_to_hypertypes,
-    contract_pool_info_to_hypertypes,
     hypertypes_checkpoint_to_fixedpoint,
     hypertypes_pool_config_to_fixedpoint,
     hypertypes_pool_info_to_fixedpoint,
 )
 from fixedpointmath import FixedPoint
+from hypertypes.IERC4626HyperdriveContract import IERC4626HyperdriveContract
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import Timestamp, TxReceipt
@@ -22,7 +20,7 @@ from .receipt_breakdown import ReceiptBreakdown
 from .state import Checkpoint, PoolConfig, PoolInfo
 
 
-def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> PoolConfig:
+def get_hyperdrive_pool_config(hyperdrive_contract: IERC4626HyperdriveContract) -> PoolConfig:
     """Get the hyperdrive config from a deployed hyperdrive contract.
 
     Arguments
@@ -35,12 +33,11 @@ def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> PoolConfig:
     dict[str, Any]
         The hyperdrive pool config.
     """
-    return hypertypes_pool_config_to_fixedpoint(
-        contract_pool_config_to_hypertypes(smart_contract_read(hyperdrive_contract, "getPoolConfig"))
-    )
+    pool_config = hyperdrive_contract.functions.getPoolConfig().call()
+    return hypertypes_pool_config_to_fixedpoint(pool_config)
 
 
-def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:
+def get_hyperdrive_pool_info(hyperdrive_contract: IERC4626HyperdriveContract, block_number: BlockNumber) -> PoolInfo:
     """Get the block pool info from the Hyperdrive contract.
 
     Arguments
@@ -55,14 +52,13 @@ def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockN
     dict[str, Any]
         A dictionary containing the Hyperdrive pool info returned from the smart contract.
     """
-    return hypertypes_pool_info_to_fixedpoint(
-        contract_pool_info_to_hypertypes(
-            smart_contract_read(hyperdrive_contract, "getPoolInfo", block_number=block_number)
-        )
-    )
+    pool_info = hyperdrive_contract.functions.getPoolInfo().call(None, block_number)
+    return hypertypes_pool_info_to_fixedpoint(pool_info)
 
 
-def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_timestamp: Timestamp) -> Checkpoint:
+def get_hyperdrive_checkpoint(
+    hyperdrive_contract: IERC4626HyperdriveContract, block_timestamp: Timestamp
+) -> Checkpoint:
     """Get the checkpoint info for the Hyperdrive contract at a given block.
 
     Arguments
@@ -77,9 +73,8 @@ def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_timestamp: Ti
     dict[str, int]
         A dictionary containing the checkpoint details.
     """
-    return hypertypes_checkpoint_to_fixedpoint(
-        contract_checkpoint_to_hypertypes(smart_contract_read(hyperdrive_contract, "getCheckpoint", block_timestamp))
-    )
+    checkpoint = hyperdrive_contract.functions.getCheckpoint(block_timestamp).call()
+    return hypertypes_checkpoint_to_fixedpoint(checkpoint)
 
 
 def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses) -> Contract:
