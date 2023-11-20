@@ -10,9 +10,9 @@ if TYPE_CHECKING:
     from .api import HyperdriveInterface
 
 
-def _get_block(interface: HyperdriveInterface, block_identifier: BlockIdentifier) -> BlockData:
+def _get_block(hyperdrive: HyperdriveInterface, block_identifier: BlockIdentifier) -> BlockData:
     """See API for documentation."""
-    return interface.web3.eth.get_block(block_identifier)
+    return hyperdrive.web3.eth.get_block(block_identifier)
 
 
 def _get_block_number(block: BlockData) -> BlockNumber:
