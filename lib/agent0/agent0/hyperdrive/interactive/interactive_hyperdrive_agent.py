@@ -41,36 +41,152 @@ class InteractiveHyperdriveAgent:
 
     @property
     def wallet(self) -> HyperdriveWallet:
+        """Returns the agent's current wallet.
+
+        Returns
+        -------
+        HyperdriveWallet
+            The agent's current wallet.
+        """
         return self.agent.wallet
 
     def add_funds(self, base: FixedPoint | None = None, eth: FixedPoint | None = None) -> None:
-        """Adds additional funds to the agent."""
+        """Adds additional funds to the agent.
+
+        Arguments
+        ---------
+        base : FixedPoint
+            The amount of base to fund the agent with. Defaults to 0.
+        eth : FixedPoint
+            The amount of ETH to fund the agent with. Defaults to 0.
+        """
         if base is None:
             base = FixedPoint(0)
         if eth is None:
             eth = FixedPoint(0)
-        return self._pool._add_funds(self.agent, base, eth)
+        self._pool._add_funds(self.agent, base, eth)
 
     def create_checkpoint(self, checkpoint_time: int | None = None) -> CreateCheckpoint:
+        """Creates a checkpoint, originating from the agent.
+
+        Arguments
+        ---------
+        checkpoint_time : int
+            The checkpoint time to mint
+
+        Returns
+        -------
+        CreateCheckpoint
+            The emitted event of the checkpoint call.
+        """
+        # TODO underlying function will raise NotImplementedError, fix
         return self._pool._create_checkpoint(self.agent, checkpoint_time)
 
     def open_long(self, base: FixedPoint) -> OpenLong:
+        """Opens a long for this agent.
+
+        Arguments
+        ---------
+        base : FixedPoint
+            The amount of longs to open in units of base.
+
+        Returns
+        -------
+        OpenLong
+            The emitted event of the open long call.
+        """
         return self._pool._open_long(self.agent, base)
 
     def close_long(self, maturity_time: int, bonds: FixedPoint) -> CloseLong:
+        """Closes a long for this agent.
+
+        Arguments
+        ---------
+        maturity_time : int
+            The maturity time of the bonds to close. This is the identifier of the long tokens.
+        bonds : FixedPoint
+            The amount of longs to close in units of bonds.
+
+        Returns
+        -------
+        CloseLong
+            The emitted event of the close long call.
+        """
         return self._pool._close_long(self.agent, maturity_time, bonds)
 
     def open_short(self, bonds: FixedPoint) -> OpenShort:
+        """Opens a short for this agent.
+
+        Arguments
+        ---------
+        bonds : FixedPoint
+            The amount of shorts to open in units of bonds.
+
+        Returns
+        -------
+        OpenShort
+            The emitted event of the open short call.
+        """
         return self._pool._open_short(self.agent, bonds)
 
     def close_short(self, maturity_time: int, bonds: FixedPoint) -> CloseShort:
+        """Closes a short for this agent.
+
+        Arguments
+        ---------
+        maturity_time : int
+            The maturity time of the bonds to close. This is the identifier of the short tokens.
+        bonds : FixedPoint
+            The amount of shorts to close in units of bonds.
+
+        Returns
+        -------
+        CloseLong
+            The emitted event of the close short call.
+        """
         return self._pool._close_short(self.agent, maturity_time, bonds)
 
     def add_liquidity(self, base: FixedPoint) -> AddLiquidity:
+        """Adds liquidity for this agent.
+
+        Arguments
+        ---------
+        base: FixedPoint
+            The amount of liquidity to add in units of base.
+
+        Returns
+        -------
+        AddLiquidity
+            The emitted event of the add liquidity call.
+        """
         return self._pool._add_liquidity(self.agent, base)
 
     def remove_liquidity(self, shares: FixedPoint) -> RemoveLiquidity:
+        """Removes liquidity for this agent.
+
+        Arguments
+        ---------
+        shares: FixedPoint
+            The amount of liquidity to remove in units of shares.
+
+        Returns
+        -------
+        AddLiquidity
+            The emitted event of the remove liquidity call.
+        """
         return self._pool._remove_liquidity(self.agent, shares)
 
     def redeem_withdraw_share(self, shares: FixedPoint) -> RedeemWithdrawalShares:
+        """Redeems withdrawal shares for this agent.
+
+        Arguments
+        ---------
+        shares: FixedPoint
+            The amount of withdrawal shares to redeem in units of shares.
+
+        Returns
+        -------
+        AddLiquidity
+            The emitted event of the remove liquidity call.
+        """
         return self._pool._redeem_withdraw_share(self.agent, shares)

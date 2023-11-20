@@ -425,21 +425,24 @@ class InteractiveHyperdrive:
         return agent
 
     def _add_funds(self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint) -> None:
-        # Eth is a set balance call
-        eth_balance, _ = self.hyperdrive_interface.get_eth_base_balances(agent)
-        new_eth_balance = eth_balance + eth
-        _ = set_anvil_account_balance(self.hyperdrive_interface.web3, agent.address, new_eth_balance.scaled_value)
-        # We mint base
-        _ = smart_contract_transact(
-            self.hyperdrive_interface.web3,
-            self.hyperdrive_interface.base_token_contract,
-            agent,
-            "mint(address,uint256)",
-            agent.checksum_address,
-            base.scaled_value,
-        )
-        # Update the agent's wallet balance
-        agent.wallet.balance.amount += base
+        if eth > FixedPoint(0):
+            # Eth is a set balance call
+            eth_balance, _ = self.hyperdrive_interface.get_eth_base_balances(agent)
+            new_eth_balance = eth_balance + eth
+            _ = set_anvil_account_balance(self.hyperdrive_interface.web3, agent.address, new_eth_balance.scaled_value)
+
+        if base > FixedPoint(0):
+            # We mint base
+            _ = smart_contract_transact(
+                self.hyperdrive_interface.web3,
+                self.hyperdrive_interface.base_token_contract,
+                agent,
+                "mint(address,uint256)",
+                agent.checksum_address,
+                base.scaled_value,
+            )
+            # Update the agent's wallet balance
+            agent.wallet.balance.amount += base
 
         # TODO do we want to report a status here?
 
