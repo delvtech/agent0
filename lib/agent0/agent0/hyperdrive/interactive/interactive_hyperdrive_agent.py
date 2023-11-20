@@ -1,3 +1,4 @@
+"""The hyperdrive agent object that encapsulates an agent."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -34,6 +35,21 @@ class InteractiveHyperdriveAgent:
     """
 
     def __init__(self, base: FixedPoint, eth: FixedPoint, name: str | None, pool: InteractiveHyperdrive):
+        """Constructor for the interactive hyperdrive agent.
+        NOTE: this constructor shouldn't be called directly, but rather from InteractiveHyperdrive's
+        `init_agent` method.
+
+        Arguments
+        ---------
+        base: FixedPoint
+            The amount of base to fund the agent with.
+        eth: FixedPoint
+            The amount of ETH to fund the agent with.
+        name: str
+            The name of the agent. Defaults to the wallet address.
+        pool: InteractiveHyperdrive
+            The pool object that this agent belongs to.
+        """
         self._pool = pool
         self.name = name
         # TODO

@@ -1,4 +1,4 @@
-"""Defines the interactive hyperdrive class for a hyperdrive pool."""
+"""Defines the interactive hyperdrive class that encapsulates a hyperdrive pool."""
 from __future__ import annotations
 
 import asyncio

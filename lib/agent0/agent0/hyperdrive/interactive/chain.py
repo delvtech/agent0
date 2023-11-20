@@ -1,4 +1,4 @@
-"""The chain objects for launching/connecting to a chain."""
+"""The chain objects that encapsulates a chain."""
 from __future__ import annotations
 
 import logging
@@ -20,13 +20,12 @@ class Chain:
 
     @dataclass
     class Config:
-        """
-        The configuration for launching a local anvil node in a subprocess
+        """The configuration for launching a local anvil node in a subprocess.
 
         Attributes
         ----------
         db_port: int
-            The port to bind for the postgres container . Will fail if this port is being used.
+            The port to bind for the postgres container. Will fail if this port is being used.
         remove_existing_db_container: bool
             Whether to remove the existing container if it exists on container launch
         """
@@ -35,6 +34,16 @@ class Chain:
         remove_existing_db_container: bool = True
 
     def __init__(self, rpc_uri: str, config: Config | None = None):
+        """The constructor for the Chain class that connects to an existing chain. Also launches
+        a postgres docker container for gathering data.
+
+        Attributes
+        ----------
+        rpc_uri: str
+            The uri for the chain to connect to, e.g., `http://127.0.0.1:8545`.
+        config: Config | None
+            The chain configuration.
+        """
         if config is None:
             config = self.Config()
         self.rpc_uri = rpc_uri
@@ -55,6 +64,14 @@ class Chain:
         self.postgres_container.kill()  # type: ignore
 
     def advance_time(self, time_delta: int | timedelta) -> None:
+        """Advances time for this chain.
+        NOTE: this advances the chain for all pool connected to this chain.
+
+        Attributes
+        ----------
+        time_delta: int | timedelta
+            The amount of time to advance. Can either be a `datetime.timedelta` object or an integer in seconds.
+        """
         # Use the `evm_increaseTime` RPC call here to advance time
         if isinstance(time_delta, timedelta):
             time_delta = int(time_delta.total_seconds())
@@ -62,6 +79,10 @@ class Chain:
         self._web3.provider.make_request(method=RPCEndpoint("evm_increaseTime"), params=[time_delta])
 
     def get_deployer_account_private_key(self):
+        """Gets the private key of the deployer account."""
+        # TODO this function only makes sense in the context of the LocalChain object,
+        # need to support allowing an argument in deploy hyperdrive for specifying the deployer.
+        # Will implement once we find a use case for connecting to an existing chain.
         raise NotImplementedError
 
     def _initialize_postgres_container(self, container_name: str, db_port: int, remove_existing_db_container: bool):
@@ -136,6 +157,14 @@ class LocalChain(Chain):
         chain_port: int = 10000
 
     def __init__(self, config: Config | None = None):
+        """The constructor for the Chain class that connects to an existing chain. Also launches
+        a postgres docker container for gathering data.
+
+        Attributes
+        ----------
+        config: Config | None
+            The local chain configuration.
+        """
         if config is None:
             config = self.Config()
 
@@ -167,5 +196,6 @@ class LocalChain(Chain):
         super().__del__()
 
     def get_deployer_account_private_key(self):
-        # TODO this is the deployed account for anvil, get this programatically
+        """Gets the private key of the deployer account."""
+        # TODO this is the deployed account for anvil, get this programmatically
         return "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
