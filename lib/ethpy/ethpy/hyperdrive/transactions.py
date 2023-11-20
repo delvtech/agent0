@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from eth_typing import BlockNumber
-from eth_utils import address
 from ethpy.base import UnknownBlockError, get_transaction_logs
 from ethpy.hyperdrive.state.conversions import (
     hypertypes_checkpoint_to_fixedpoint,
@@ -11,11 +10,9 @@ from ethpy.hyperdrive.state.conversions import (
 )
 from fixedpointmath import FixedPoint
 from hypertypes.IERC4626HyperdriveContract import IERC4626HyperdriveContract
-from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import Timestamp, TxReceipt
 
-from .addresses import HyperdriveAddresses
 from .receipt_breakdown import ReceiptBreakdown
 from .state import Checkpoint, PoolConfig, PoolInfo
 
@@ -77,35 +74,6 @@ def get_hyperdrive_checkpoint(
     return hypertypes_checkpoint_to_fixedpoint(checkpoint)
 
 
-def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses) -> Contract:
-    """Get the hyperdrive contract given abis.
-
-    Arguments
-    ---------
-    web3: Web3
-        web3 provider object
-    abis: dict
-        A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
-    addresses: HyperdriveAddressesJson
-        The block number to query from the chain
-
-    Returns
-    -------
-    Contract
-        The contract object returned from the query
-    """
-    if "IERC4626Hyperdrive" not in abis:
-        raise AssertionError("IERC4626Hyperdrive ABI was not provided")
-    state_abi = abis["IERC4626Hyperdrive"]
-    # get contract instance of hyperdrive
-    hyperdrive_contract: Contract = web3.eth.contract(
-        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
-    )
-    return hyperdrive_contract
-
-
-# Looking for lots of event variables
-# pylint: disable=too-many-branches
 def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> ReceiptBreakdown:
     """Decode a Hyperdrive contract transaction receipt to get the changes to the agent's funds.
 
