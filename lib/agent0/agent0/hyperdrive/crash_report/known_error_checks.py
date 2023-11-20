@@ -1,3 +1,4 @@
+"""Helper functions for checking for known errors in contract calls."""
 from ethpy.base.errors import ContractCallException
 from web3.exceptions import ContractCustomError, ContractLogicError
 

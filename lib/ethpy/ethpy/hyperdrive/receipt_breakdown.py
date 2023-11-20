@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from fixedpointmath import FixedPoint
 
 
+# Lots of attributes for dataclass
+# pylint: disable=too-many-instance-attributes
 @dataclass
 class ReceiptBreakdown:
     r"""A granular breakdown of important values in a trade receipt."""
@@ -21,6 +23,8 @@ class ReceiptBreakdown:
     lp_share_price: FixedPoint = FixedPoint(0)
 
     def __post_init__(self):
+        # lots of attributes to check
+        # pylint: disable=too-many-boolean-expressions
         if (
             self.base_amount < 0
             or self.bond_amount < 0

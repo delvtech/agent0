@@ -63,7 +63,8 @@ class Chain:
         # Docker doesn't play nice with types
         try:
             self.postgres_container.kill()  # type: ignore
-        except Exception:
+        # Never throw exception in destructor
+        except Exception:  # pylint: disable=broad-except
             pass
 
     def advance_time(self, time_delta: int | timedelta) -> RPCResponse:
@@ -80,8 +81,9 @@ class Chain:
         if isinstance(time_delta, timedelta):
             time_delta = int(time_delta.total_seconds())
 
-        # We explicitly set the next block timestamp to be exactly time_delta seconds after the previous block
-        # Hence, we first get the current block, followed by an explicit set of the next block timestamp, followed by a mine.
+        # We explicitly set the next block timestamp to be exactly time_delta seconds
+        # after the previous block. Hence, we first get the current block, followed by
+        # an explicit set of the next block timestamp, followed by a mine.
         latest_blocktime = self._web3.eth.get_block("latest").get("timestamp", None)
         if latest_blocktime is None:
             raise AssertionError("The provided block has no timestamp")
@@ -205,7 +207,8 @@ class LocalChain(Chain):
         # Kill subprocess in this class' destructor.
         try:
             self.anvil_process.kill()
-        except Exception:
+        # Never throw exception in destructor
+        except Exception:  # pylint: disable=broad-except
             pass
         super().__del__()
 

@@ -60,6 +60,9 @@ class TestInteractiveHyperdrive:
             assert False
         assert check_value == agent_wallet.withdraw_shares
 
+    # Lots of things to test
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-statements
     def test_funding_and_trades(self):
         """Tests interactive hyperdrive end to end"""
         # Construct chain object

@@ -109,6 +109,8 @@ def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddress
     return hyperdrive_contract
 
 
+# Looking for lots of event variables
+# pylint: disable=too-many-branches
 def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> ReceiptBreakdown:
     """Decode a Hyperdrive contract transaction receipt to get the changes to the agent's funds.
 

@@ -55,6 +55,8 @@ from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
 class InteractiveHyperdrive:
     """Hyperdrive class that supports an interactive interface for running tests and experiments."""
 
+    # Lots of attributes in config
+    # pylint: disable=too-many-instance-attributes
     @dataclass
     class Config:
         """
@@ -166,7 +168,8 @@ class InteractiveHyperdrive:
         # These functions will raise errors if the session is already closed
         try:
             self.db_session.close()
-        except Exception:
+        # Never throw exception in destructor
+        except Exception:  # pylint: disable=broad-except
             pass
 
     def _deploy_hyperdrive(self, config: Config, chain: Chain, abi_dir) -> DeployedHyperdrivePool:
