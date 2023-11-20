@@ -1,19 +1,20 @@
 """Conversion for hypertypes to fixedpoint"""
+from __future__ import annotations
+
 from dataclasses import asdict
 from typing import Any
 
 from ethpy.hyperdrive.state.checkpoint import Checkpoint
 from ethpy.hyperdrive.state.conversions import camel_to_snake, snake_to_camel
-from ethpy.hyperdrive.state.pool_config import PoolConfig
-from ethpy.hyperdrive.state.pool_info import PoolInfo
 from fixedpointmath import FixedPoint
 from hypertypes import Checkpoint as HtCheckpoint
 from hypertypes import Fees as HtFees
 from hypertypes import PoolConfig as HtPoolConfig
 from hypertypes import PoolInfo as HtPoolInfo
+from hypertypes.fixedpoint_types import PoolConfigFP, PoolInfoFP
 
 
-def hypertypes_pool_info_to_fixedpoint(hypertypes_pool_info: HtPoolInfo) -> PoolInfo:
+def hypertypes_pool_info_to_fixedpoint(hypertypes_pool_info: HtPoolInfo) -> PoolInfoFP:
     """Convert the Hypertypes PoolInfo attribute types from what solidity returns to FixedPoint.
 
     Arguments
@@ -29,12 +30,12 @@ def hypertypes_pool_info_to_fixedpoint(hypertypes_pool_info: HtPoolInfo) -> Pool
           - The attribute names are converted to snake_case.
           - FixedPoint types are used if the type was FixedPoint in the underlying contract.
     """
-    return PoolInfo(
+    return PoolInfoFP(
         **{camel_to_snake(key): FixedPoint(scaled_value=value) for (key, value) in asdict(hypertypes_pool_info).items()}
     )
 
 
-def fixedpoint_pool_info_to_hypertypes(fixedpoint_pool_info: PoolInfo) -> HtPoolInfo:
+def fixedpoint_pool_info_to_hypertypes(fixedpoint_pool_info: PoolInfoFP) -> HtPoolInfo:
     """Convert the PoolInfo attribute types from FixedPoint to what the Solidity ABI specifies.
 
     Arguments
@@ -121,7 +122,7 @@ def contract_pool_config_to_hypertypes(contract_pool_config: dict[str, Any]) -> 
     )
 
 
-def hypertypes_pool_config_to_fixedpoint(hypertypes_pool_config: HtPoolConfig) -> PoolConfig:
+def hypertypes_pool_config_to_fixedpoint(hypertypes_pool_config: HtPoolConfig) -> PoolConfigFP:
     """Convert the HyperTypes PoolConfig attributes from what Solidity returns to FixedPoint.
 
     Arguments
@@ -148,10 +149,10 @@ def hypertypes_pool_config_to_fixedpoint(hypertypes_pool_config: HtPoolConfig) -
                 FixedPoint(scaled_value=dict_pool_config[key]["flat"]),
                 FixedPoint(scaled_value=dict_pool_config[key]["governance"]),
             )
-    return PoolConfig(**dict_pool_config)
+    return PoolConfigFP(**dict_pool_config)
 
 
-def fixedpoint_pool_config_to_hypertypes(fixedpoint_pool_config: PoolConfig) -> HtPoolConfig:
+def fixedpoint_pool_config_to_hypertypes(fixedpoint_pool_config: PoolConfigFP) -> HtPoolConfig:
     """Convert the PoolConfig attribute types from FixedPoint to what the Solidity ABI specifies.
 
     Arguments

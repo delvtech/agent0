@@ -5,17 +5,16 @@ from dataclasses import dataclass
 from typing import Any
 
 from fixedpointmath import FixedPoint
-from web3.types import BlockData
-
-from .....hypertypes.hypertypes.utilities.conversions import (
+from hypertypes.fixedpoint_types import PoolConfigFP, PoolInfoFP
+from hypertypes.utilities.conversions import (
     fixedpoint_checkpoint_to_hypertypes,
     fixedpoint_pool_config_to_hypertypes,
     fixedpoint_pool_info_to_hypertypes,
 )
+from web3.types import BlockData
+
 from .checkpoint import Checkpoint
 from .conversions import dataclass_to_dict
-from .pool_config import PoolConfig
-from .pool_info import PoolInfo
 
 # pylint: disable=too-many-instance-attributes
 
@@ -24,8 +23,8 @@ from .pool_info import PoolInfo
 class PoolState:
     r"""A collection of stateful variables for deployed Hyperdrive and Yield contracts."""
     block: BlockData
-    pool_config: PoolConfig
-    pool_info: PoolInfo
+    pool_config: PoolConfigFP
+    pool_info: PoolInfoFP
     checkpoint: Checkpoint
     variable_rate: FixedPoint
     vault_shares: FixedPoint

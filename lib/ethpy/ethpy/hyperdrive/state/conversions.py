@@ -9,11 +9,9 @@ from fixedpointmath import FixedPoint
 from hypertypes import Checkpoint as HtCheckpoint
 from hypertypes import PoolConfig as HtPoolConfig
 from hypertypes import PoolInfo as HtPoolInfo
+from hypertypes.fixedpoint_types import FeesFP, PoolConfigFP, PoolInfoFP
 
 from .checkpoint import Checkpoint
-from .fees import Fees
-from .pool_config import PoolConfig
-from .pool_info import PoolInfo
 
 
 def camel_to_snake(snake_string: str) -> str:
@@ -30,7 +28,7 @@ def snake_to_camel(snake_string: str) -> str:
 
 
 def dataclass_to_dict(
-    cls: HtPoolInfo | PoolInfo | HtPoolConfig | PoolConfig | HtCheckpoint | Checkpoint,
+    cls: HtPoolInfo | PoolInfoFP | HtPoolConfig | PoolConfigFP | HtCheckpoint | Checkpoint,
 ) -> dict[str, Any]:
     """Convert a state dataclass into a dictionary."""
     out_dict = {}
@@ -38,7 +36,7 @@ def dataclass_to_dict(
         match val:
             case FixedPoint():
                 out_dict[key] = val.scaled_value
-            case Fees():
+            case FeesFP():
                 out_dict[key] = (val.curve, val.flat, val.governance)
             case dict():
                 out_dict[key] = (val["curve"], val["flat"], val["governance"])

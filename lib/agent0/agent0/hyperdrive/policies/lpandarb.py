@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 from ethpy.hyperdrive.state import PoolState
 from fixedpointmath import FixedPoint
+from hypertypes.fixedpoint_types import PoolInfoFP
 
 from agent0.base import MarketType, Trade
 from agent0.hyperdrive.policies.hyperdrive_policy import HyperdrivePolicy
@@ -17,7 +18,7 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.api import HyperdriveInterface
-    from ethpy.hyperdrive.state import PoolConfig, PoolInfo
+    from hypertypes.fixedpoint_types import PoolConfigFP
     from numpy.random._generator import Generator as NumpyGenerator
 
     from agent0.hyperdrive.state import HyperdriveWallet
@@ -145,22 +146,36 @@ def apply_step(
 ) -> PoolState:
     """Save a single convergence step into the pool info.
 
-    Arguments
-    ---------
-    pool_state : PoolState
-        The current pool state.
-    bonds_needed : FixedPoint
-        The amount of bonds that is going to be traded.
-    shares_needed : FixedPoint
-        The amount of shares that is going to be traded.
-    gov_fee : FixedPoint
-        The associated governance fee.
+        Arguments
+        ---------
 
 
-    Returns
-    -------
-    pool_state : PoolState
-        The updated pool state.
+
+
+    # TODO: These dataclasses are similar to pypechain except for
+    #  - snake_case attributes instead of camelCase
+    #  - FixedPoint types instead of int
+    #  - nested dataclasses (PoolConfig) include a __post_init__ that allows for
+    #  instantiation with a nested dictionary
+    #
+    # We'd like to rely on the pypechain classes as much as possible.
+    # One solution could be to build our own interface wrapper that pulls in the pypechain
+    # dataclass and makes this fixed set of changes?
+    # pylint: disable=too-many-instance-attributes
+        pool_state : PoolState
+            The current pool state.
+        bonds_needed : FixedPoint
+            The amount of bonds that is going to be traded.
+        shares_needed : FixedPoint
+            The amount of shares that is going to be traded.
+        gov_fee : FixedPoint
+            The associated governance fee.
+
+
+        Returns
+        -------
+        pool_state : PoolState
+            The updated pool state.
     """
     if bonds_needed > 0:  # short case
         # shares_needed is what the user takes OUT: curve_fee less due to fees.
