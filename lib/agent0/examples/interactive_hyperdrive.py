@@ -1,12 +1,11 @@
+"""Example script for using interactive hyperdrive."""
 import datetime
 
-import pandas as pd
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.state import Long
 
-# TODO change this to be a test
 if __name__ == "__main__":
     # Parameters for local chain initialization, defines defaults in constructor
     local_chain_config = LocalChain.Config()
