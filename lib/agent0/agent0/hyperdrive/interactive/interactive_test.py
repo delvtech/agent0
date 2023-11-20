@@ -86,7 +86,7 @@ if __name__ == "__main__":
     # Get data from database under the hood
     pool_config = interactive_hyperdrive.get_pool_config()
     pool_info_history = interactive_hyperdrive.get_pool_info()
-    # TODO wallet_pnl is currently bugged, fix
+    # TODO checkpoint info is currently bugged, fix
     checkpoint_info = interactive_hyperdrive.get_checkpoint_info()
     pool_analysis = interactive_hyperdrive.get_pool_analysis()
     wallet_deltas = interactive_hyperdrive.get_wallet_deltas()
