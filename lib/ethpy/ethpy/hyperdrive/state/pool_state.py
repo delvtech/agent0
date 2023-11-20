@@ -7,13 +7,12 @@ from typing import Any
 from fixedpointmath import FixedPoint
 from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
 from hypertypes.utilities.conversions import (
+    dataclass_to_dict,
     fixedpoint_checkpoint_to_hypertypes,
     fixedpoint_pool_config_to_hypertypes,
     fixedpoint_pool_info_to_hypertypes,
 )
 from web3.types import BlockData
-
-from .....hypertypes.hypertypes.utilities.conversions import dataclass_to_dict
 
 # pylint: disable=too-many-instance-attributes
 

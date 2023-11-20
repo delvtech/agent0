@@ -15,15 +15,15 @@
 # pylint: disable=too-many-lines
 
 from __future__ import annotations
+
 from typing import cast
 
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
-from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
+from multimethod import multimethod
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
-
-from multimethod import multimethod
+from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
 
 
 class ERC20MintableDOMAIN_SEPARATORContractFunction(ContractFunction):
@@ -143,23 +143,11 @@ class ERC20MintableBurnContractFunction(ContractFunction):
         return self
 
     @multimethod
-    def call(  # type: ignore
-        self,
-        transaction: TxParams | None = None,
-        block_identifier: BlockIdentifier = "latest",
-        state_override: CallOverride | None = None,
-        ccip_read_enabled: bool | None = None,
-    ):
-        """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-
-    @multimethod
     def __call__(self, destination: str, amount: int) -> "ERC20MintableBurnContractFunction":  # type: ignore
         super().__call__(destination, amount)
         return self
 
-    @multimethod
-    def call(  # type: ignore
+    def call(
         self,
         transaction: TxParams | None = None,
         block_identifier: BlockIdentifier = "latest",
@@ -371,23 +359,11 @@ class ERC20MintableMintContractFunction(ContractFunction):
         return self
 
     @multimethod
-    def call(  # type: ignore
-        self,
-        transaction: TxParams | None = None,
-        block_identifier: BlockIdentifier = "latest",
-        state_override: CallOverride | None = None,
-        ccip_read_enabled: bool | None = None,
-    ):
-        """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-
-    @multimethod
     def __call__(self, amount: int) -> "ERC20MintableMintContractFunction":  # type: ignore
         super().__call__(amount)
         return self
 
-    @multimethod
-    def call(  # type: ignore
+    def call(
         self,
         transaction: TxParams | None = None,
         block_identifier: BlockIdentifier = "latest",
