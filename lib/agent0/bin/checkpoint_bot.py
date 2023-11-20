@@ -10,7 +10,6 @@ from eth_account.account import Account
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import (
     initialize_web3_with_http_provider,
-    load_all_abis,
     set_anvil_account_balance,
     smart_contract_read,
     smart_contract_transact,
@@ -18,7 +17,7 @@ from ethpy.base import (
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri, get_hyperdrive_pool_config
 from fixedpointmath import FixedPoint
 from hyperlogs import logs
-from hypertypes.types import IERC4626HyperdriveContract
+from hypertypes import IERC4626HyperdriveContract
 from web3.contract.contract import Contract
 
 from agent0.base.agents import EthAgent
