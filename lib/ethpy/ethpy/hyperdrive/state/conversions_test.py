@@ -12,13 +12,12 @@ from ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 from hypertypes import Checkpoint as HtCheckpoint
 from hypertypes import PoolConfig as HtPoolConfig
 from hypertypes import PoolInfo as HtPoolInfo
-from web3 import HTTPProvider
-
-from .conversions import (
+from hypertypes.utilities.conversions import (
     contract_checkpoint_to_hypertypes,
     contract_pool_config_to_hypertypes,
     contract_pool_info_to_hypertypes,
 )
+from web3 import HTTPProvider
 
 
 class TestHyperdriveInterface:

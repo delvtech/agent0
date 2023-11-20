@@ -3,13 +3,13 @@ from __future__ import annotations
 
 from eth_typing import BlockNumber
 from ethpy.base import UnknownBlockError, get_transaction_logs
-from ethpy.hyperdrive.state.conversions import (
+from fixedpointmath import FixedPoint
+from hypertypes import IERC4626HyperdriveContract
+from hypertypes.utilities.conversions import (
     hypertypes_checkpoint_to_fixedpoint,
     hypertypes_pool_config_to_fixedpoint,
     hypertypes_pool_info_to_fixedpoint,
 )
-from fixedpointmath import FixedPoint
-from hypertypes import IERC4626HyperdriveContract
 from web3.contract.contract import Contract
 from web3.types import Timestamp, TxReceipt
 

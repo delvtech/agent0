@@ -7,13 +7,13 @@ from typing import Any
 from fixedpointmath import FixedPoint
 from web3.types import BlockData
 
-from .checkpoint import Checkpoint
-from .conversions import (
-    dataclass_to_dict,
+from .....hypertypes.hypertypes.utilities.conversions import (
     fixedpoint_checkpoint_to_hypertypes,
     fixedpoint_pool_config_to_hypertypes,
     fixedpoint_pool_info_to_hypertypes,
 )
+from .checkpoint import Checkpoint
+from .conversions import dataclass_to_dict
 from .pool_config import PoolConfig
 from .pool_info import PoolInfo
 
