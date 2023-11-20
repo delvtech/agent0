@@ -8,7 +8,7 @@ from typing import Iterator
 import pytest
 from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 from fixedpointmath import FixedPoint
-from hypertypes.IHyperdriveTypes import Fees, PoolConfig
+from hypertypes.IERC4626HyperdriveTypes import Fees, PoolConfig
 from web3.constants import ADDRESS_ZERO
 
 

@@ -6,10 +6,10 @@ from dataclasses import asdict
 from typing import Any
 
 from fixedpointmath import FixedPoint
-from hypertypes.IHyperdriveTypes import Checkpoint as HtCheckpoint
-from hypertypes.IHyperdriveTypes import Fees as HtFees
-from hypertypes.IHyperdriveTypes import PoolConfig as HtPoolConfig
-from hypertypes.IHyperdriveTypes import PoolInfo as HtPoolInfo
+from hypertypes.IERC4626HyperdriveTypes import Checkpoint as HtCheckpoint
+from hypertypes.IERC4626HyperdriveTypes import Fees as HtFees
+from hypertypes.IERC4626HyperdriveTypes import PoolConfig as HtPoolConfig
+from hypertypes.IERC4626HyperdriveTypes import PoolInfo as HtPoolInfo
 
 from .checkpoint import Checkpoint
 from .fees import Fees
