@@ -10,7 +10,7 @@ from hypertypes import Checkpoint as HtCheckpoint
 from hypertypes import Fees as HtFees
 from hypertypes import PoolConfig as HtPoolConfig
 from hypertypes import PoolInfo as HtPoolInfo
-from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
+from hypertypes.fixedpoint_types import CheckpointFP, FeesFP, PoolConfigFP, PoolInfoFP
 
 
 def camel_to_snake(snake_string: str) -> str:
@@ -207,3 +207,27 @@ def fixedpoint_pool_config_to_hypertypes(fixedpoint_pool_config: PoolConfigFP) -
             governance=dict_pool_config["fees"][2],
         ),
     )
+
+
+def dataclass_to_dict(
+    cls: HtPoolInfo | PoolInfoFP | HtPoolConfig | PoolConfigFP | HtCheckpoint | CheckpointFP,
+) -> dict[str, Any]:
+    """Convert a state dataclass into a dictionary."""
+    out_dict = {}
+    for key, val in asdict(cls).items():
+        match val:
+            case FixedPoint():
+                out_dict[key] = val.scaled_value
+            case FeesFP():
+                out_dict[key] = (val.curve, val.flat, val.governance)
+            case dict():
+                out_dict[key] = (val["curve"], val["flat"], val["governance"])
+            case int():
+                out_dict[key] = val
+            case str():
+                out_dict[key] = val
+            case bytes():
+                out_dict[key] = val
+            case _:
+                raise TypeError(f"Unsupported type for {key}={val}, with {type(val)=}.")
+    return out_dict

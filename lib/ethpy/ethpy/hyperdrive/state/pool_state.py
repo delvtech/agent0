@@ -13,7 +13,7 @@ from hypertypes.utilities.conversions import (
 )
 from web3.types import BlockData
 
-from .conversions import dataclass_to_dict
+from .....hypertypes.hypertypes.utilities.conversions import dataclass_to_dict
 
 # pylint: disable=too-many-instance-attributes
 

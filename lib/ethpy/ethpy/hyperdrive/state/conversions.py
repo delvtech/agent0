@@ -2,14 +2,6 @@
 from __future__ import annotations
 
 import re
-from dataclasses import asdict
-from typing import Any
-
-from fixedpointmath import FixedPoint
-from hypertypes import Checkpoint as HtCheckpoint
-from hypertypes import PoolConfig as HtPoolConfig
-from hypertypes import PoolInfo as HtPoolInfo
-from hypertypes.fixedpoint_types import CheckpointFP, FeesFP, PoolConfigFP, PoolInfoFP
 
 
 def camel_to_snake(snake_string: str) -> str:
@@ -23,27 +15,3 @@ def snake_to_camel(snake_string: str) -> str:
     camel_string = re.sub(r"_([a-z])", lambda x: x.group(1).upper(), snake_string)
     # Ensure the first character is lowercase to achieve lowerCamelCase
     return camel_string[0].lower() + camel_string[1:] if camel_string else camel_string
-
-
-def dataclass_to_dict(
-    cls: HtPoolInfo | PoolInfoFP | HtPoolConfig | PoolConfigFP | HtCheckpoint | CheckpointFP,
-) -> dict[str, Any]:
-    """Convert a state dataclass into a dictionary."""
-    out_dict = {}
-    for key, val in asdict(cls).items():
-        match val:
-            case FixedPoint():
-                out_dict[key] = val.scaled_value
-            case FeesFP():
-                out_dict[key] = (val.curve, val.flat, val.governance)
-            case dict():
-                out_dict[key] = (val["curve"], val["flat"], val["governance"])
-            case int():
-                out_dict[key] = val
-            case str():
-                out_dict[key] = val
-            case bytes():
-                out_dict[key] = val
-            case _:
-                raise TypeError(f"Unsupported type for {key}={val}, with {type(val)=}.")
-    return out_dict
