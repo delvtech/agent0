@@ -51,9 +51,7 @@ class ERC4626HyperdriveDeployerDeployContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveDeployerContractFunctions(ContractFunctions):
@@ -174,9 +172,7 @@ erc4626hyperdrivedeployer_abi: ABI = cast(
                 {"internalType": "address", "name": "_pool", "type": "address"},
             ],
             "name": "deploy",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "nonpayable",
             "type": "function",
         }

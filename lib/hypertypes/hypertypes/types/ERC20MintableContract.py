@@ -44,9 +44,7 @@ class ERC20MintableDOMAIN_SEPARATORContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableAllowanceContractFunction(ContractFunction):
@@ -55,9 +53,7 @@ class ERC20MintableAllowanceContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: str, arg2: str
-    ) -> "ERC20MintableAllowanceContractFunction":
+    def __call__(self, arg1: str, arg2: str) -> "ERC20MintableAllowanceContractFunction":
         super().__call__(arg1, arg2)
         return self
 
@@ -69,9 +65,7 @@ class ERC20MintableAllowanceContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableApproveContractFunction(ContractFunction):
@@ -80,9 +74,7 @@ class ERC20MintableApproveContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, spender: str, amount: int
-    ) -> "ERC20MintableApproveContractFunction":
+    def __call__(self, spender: str, amount: int) -> "ERC20MintableApproveContractFunction":
         super().__call__(spender, amount)
         return self
 
@@ -94,9 +86,7 @@ class ERC20MintableApproveContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableAuthorityContractFunction(ContractFunction):
@@ -117,9 +107,7 @@ class ERC20MintableAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableBalanceOfContractFunction(ContractFunction):
@@ -140,9 +128,7 @@ class ERC20MintableBalanceOfContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableBurnContractFunction(ContractFunction):
@@ -165,9 +151,7 @@ class ERC20MintableBurnContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
     @multimethod
     def __call__(self, destination: str, amount: int) -> "ERC20MintableBurnContractFunction":  # type: ignore
@@ -183,9 +167,7 @@ class ERC20MintableBurnContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableCanCallContractFunction(ContractFunction):
@@ -194,9 +176,7 @@ class ERC20MintableCanCallContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, user: str, target: str, functionSig: bytes
-    ) -> "ERC20MintableCanCallContractFunction":
+    def __call__(self, user: str, target: str, functionSig: bytes) -> "ERC20MintableCanCallContractFunction":
         super().__call__(user, target, functionSig)
         return self
 
@@ -208,9 +188,7 @@ class ERC20MintableCanCallContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableDecimalsContractFunction(ContractFunction):
@@ -231,9 +209,7 @@ class ERC20MintableDecimalsContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableDoesRoleHaveCapabilityContractFunction(ContractFunction):
@@ -242,9 +218,7 @@ class ERC20MintableDoesRoleHaveCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, role: int, functionSig: bytes
-    ) -> "ERC20MintableDoesRoleHaveCapabilityContractFunction":
+    def __call__(self, role: int, functionSig: bytes) -> "ERC20MintableDoesRoleHaveCapabilityContractFunction":
         super().__call__(role, functionSig)
         return self
 
@@ -256,9 +230,7 @@ class ERC20MintableDoesRoleHaveCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableDoesUserHaveRoleContractFunction(ContractFunction):
@@ -267,9 +239,7 @@ class ERC20MintableDoesUserHaveRoleContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, user: str, role: int
-    ) -> "ERC20MintableDoesUserHaveRoleContractFunction":
+    def __call__(self, user: str, role: int) -> "ERC20MintableDoesUserHaveRoleContractFunction":
         super().__call__(user, role)
         return self
 
@@ -281,9 +251,7 @@ class ERC20MintableDoesUserHaveRoleContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableGetRolesWithCapabilityContractFunction(ContractFunction):
@@ -292,9 +260,7 @@ class ERC20MintableGetRolesWithCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: bytes
-    ) -> "ERC20MintableGetRolesWithCapabilityContractFunction":
+    def __call__(self, arg1: bytes) -> "ERC20MintableGetRolesWithCapabilityContractFunction":
         super().__call__(arg1)
         return self
 
@@ -306,9 +272,7 @@ class ERC20MintableGetRolesWithCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableGetTargetCustomAuthorityContractFunction(ContractFunction):
@@ -317,9 +281,7 @@ class ERC20MintableGetTargetCustomAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: str
-    ) -> "ERC20MintableGetTargetCustomAuthorityContractFunction":
+    def __call__(self, arg1: str) -> "ERC20MintableGetTargetCustomAuthorityContractFunction":
         super().__call__(arg1)
         return self
 
@@ -331,9 +293,7 @@ class ERC20MintableGetTargetCustomAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableGetUserRolesContractFunction(ContractFunction):
@@ -342,9 +302,7 @@ class ERC20MintableGetUserRolesContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: str
-    ) -> "ERC20MintableGetUserRolesContractFunction":
+    def __call__(self, arg1: str) -> "ERC20MintableGetUserRolesContractFunction":
         super().__call__(arg1)
         return self
 
@@ -356,9 +314,7 @@ class ERC20MintableGetUserRolesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableIsCapabilityPublicContractFunction(ContractFunction):
@@ -367,9 +323,7 @@ class ERC20MintableIsCapabilityPublicContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: bytes
-    ) -> "ERC20MintableIsCapabilityPublicContractFunction":
+    def __call__(self, arg1: bytes) -> "ERC20MintableIsCapabilityPublicContractFunction":
         super().__call__(arg1)
         return self
 
@@ -381,9 +335,7 @@ class ERC20MintableIsCapabilityPublicContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableIsCompetitionModeContractFunction(ContractFunction):
@@ -404,9 +356,7 @@ class ERC20MintableIsCompetitionModeContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableMintContractFunction(ContractFunction):
@@ -429,9 +379,7 @@ class ERC20MintableMintContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
     @multimethod
     def __call__(self, amount: int) -> "ERC20MintableMintContractFunction":  # type: ignore
@@ -447,9 +395,7 @@ class ERC20MintableMintContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableNameContractFunction(ContractFunction):
@@ -470,9 +416,7 @@ class ERC20MintableNameContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableNoncesContractFunction(ContractFunction):
@@ -493,9 +437,7 @@ class ERC20MintableNoncesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableOwnerContractFunction(ContractFunction):
@@ -516,9 +458,7 @@ class ERC20MintableOwnerContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintablePermitContractFunction(ContractFunction):
@@ -548,9 +488,7 @@ class ERC20MintablePermitContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableSetAuthorityContractFunction(ContractFunction):
@@ -559,9 +497,7 @@ class ERC20MintableSetAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, newAuthority: str
-    ) -> "ERC20MintableSetAuthorityContractFunction":
+    def __call__(self, newAuthority: str) -> "ERC20MintableSetAuthorityContractFunction":
         super().__call__(newAuthority)
         return self
 
@@ -573,9 +509,7 @@ class ERC20MintableSetAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableSetPublicCapabilityContractFunction(ContractFunction):
@@ -584,9 +518,7 @@ class ERC20MintableSetPublicCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, functionSig: bytes, enabled: bool
-    ) -> "ERC20MintableSetPublicCapabilityContractFunction":
+    def __call__(self, functionSig: bytes, enabled: bool) -> "ERC20MintableSetPublicCapabilityContractFunction":
         super().__call__(functionSig, enabled)
         return self
 
@@ -598,9 +530,7 @@ class ERC20MintableSetPublicCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableSetRoleCapabilityContractFunction(ContractFunction):
@@ -623,9 +553,7 @@ class ERC20MintableSetRoleCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableSetTargetCustomAuthorityContractFunction(ContractFunction):
@@ -634,9 +562,7 @@ class ERC20MintableSetTargetCustomAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, target: str, customAuthority: str
-    ) -> "ERC20MintableSetTargetCustomAuthorityContractFunction":
+    def __call__(self, target: str, customAuthority: str) -> "ERC20MintableSetTargetCustomAuthorityContractFunction":
         super().__call__(target, customAuthority)
         return self
 
@@ -648,9 +574,7 @@ class ERC20MintableSetTargetCustomAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableSetUserRoleContractFunction(ContractFunction):
@@ -659,9 +583,7 @@ class ERC20MintableSetUserRoleContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, user: str, role: int, enabled: bool
-    ) -> "ERC20MintableSetUserRoleContractFunction":
+    def __call__(self, user: str, role: int, enabled: bool) -> "ERC20MintableSetUserRoleContractFunction":
         super().__call__(user, role, enabled)
         return self
 
@@ -673,9 +595,7 @@ class ERC20MintableSetUserRoleContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableSymbolContractFunction(ContractFunction):
@@ -696,9 +616,7 @@ class ERC20MintableSymbolContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableTotalSupplyContractFunction(ContractFunction):
@@ -719,9 +637,7 @@ class ERC20MintableTotalSupplyContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableTransferContractFunction(ContractFunction):
@@ -730,9 +646,7 @@ class ERC20MintableTransferContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, to: str, amount: int
-    ) -> "ERC20MintableTransferContractFunction":
+    def __call__(self, to: str, amount: int) -> "ERC20MintableTransferContractFunction":
         super().__call__(to, amount)
         return self
 
@@ -744,9 +658,7 @@ class ERC20MintableTransferContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableTransferFromContractFunction(ContractFunction):
@@ -755,9 +667,7 @@ class ERC20MintableTransferFromContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _from: str, to: str, amount: int
-    ) -> "ERC20MintableTransferFromContractFunction":
+    def __call__(self, _from: str, to: str, amount: int) -> "ERC20MintableTransferFromContractFunction":
         super().__call__(_from, to, amount)
         return self
 
@@ -769,9 +679,7 @@ class ERC20MintableTransferFromContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableTransferOwnershipContractFunction(ContractFunction):
@@ -780,9 +688,7 @@ class ERC20MintableTransferOwnershipContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, newOwner: str
-    ) -> "ERC20MintableTransferOwnershipContractFunction":
+    def __call__(self, newOwner: str) -> "ERC20MintableTransferOwnershipContractFunction":
         super().__call__(newOwner)
         return self
 
@@ -794,9 +700,7 @@ class ERC20MintableTransferOwnershipContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableContractFunctions(ContractFunctions):
@@ -1060,9 +964,7 @@ erc20mintable_abi: ABI = cast(
         {
             "inputs": [],
             "name": "DOMAIN_SEPARATOR",
-            "outputs": [
-                {"internalType": "bytes32", "name": "", "type": "bytes32"}
-            ],
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1072,9 +974,7 @@ erc20mintable_abi: ABI = cast(
                 {"internalType": "address", "name": "", "type": "address"},
             ],
             "name": "allowance",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1110,20 +1010,14 @@ erc20mintable_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
             "name": "balanceOf",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "uint256", "name": "amount", "type": "uint256"}
-            ],
+            "inputs": [{"internalType": "uint256", "name": "amount", "type": "uint256"}],
             "name": "burn",
             "outputs": [],
             "stateMutability": "nonpayable",
@@ -1198,20 +1092,14 @@ erc20mintable_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "bytes4", "name": "", "type": "bytes4"}
-            ],
+            "inputs": [{"internalType": "bytes4", "name": "", "type": "bytes4"}],
             "name": "getRolesWithCapability",
-            "outputs": [
-                {"internalType": "bytes32", "name": "", "type": "bytes32"}
-            ],
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
             "name": "getTargetCustomAuthority",
             "outputs": [
                 {
@@ -1224,20 +1112,14 @@ erc20mintable_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
             "name": "getUserRoles",
-            "outputs": [
-                {"internalType": "bytes32", "name": "", "type": "bytes32"}
-            ],
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "bytes4", "name": "", "type": "bytes4"}
-            ],
+            "inputs": [{"internalType": "bytes4", "name": "", "type": "bytes4"}],
             "name": "isCapabilityPublic",
             "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
             "stateMutability": "view",
@@ -1269,9 +1151,7 @@ erc20mintable_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "uint256", "name": "amount", "type": "uint256"}
-            ],
+            "inputs": [{"internalType": "uint256", "name": "amount", "type": "uint256"}],
             "name": "mint",
             "outputs": [],
             "stateMutability": "nonpayable",
@@ -1280,29 +1160,21 @@ erc20mintable_abi: ABI = cast(
         {
             "inputs": [],
             "name": "name",
-            "outputs": [
-                {"internalType": "string", "name": "", "type": "string"}
-            ],
+            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
             "name": "nonces",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "owner",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1403,18 +1275,14 @@ erc20mintable_abi: ABI = cast(
         {
             "inputs": [],
             "name": "symbol",
-            "outputs": [
-                {"internalType": "string", "name": "", "type": "string"}
-            ],
+            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "totalSupply",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },

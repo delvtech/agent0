@@ -42,9 +42,7 @@ class MockERC4626DOMAIN_SEPARATORContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626AllowanceContractFunction(ContractFunction):
@@ -53,9 +51,7 @@ class MockERC4626AllowanceContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: str, arg2: str
-    ) -> "MockERC4626AllowanceContractFunction":
+    def __call__(self, arg1: str, arg2: str) -> "MockERC4626AllowanceContractFunction":
         super().__call__(arg1, arg2)
         return self
 
@@ -67,9 +63,7 @@ class MockERC4626AllowanceContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626ApproveContractFunction(ContractFunction):
@@ -78,9 +72,7 @@ class MockERC4626ApproveContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, spender: str, amount: int
-    ) -> "MockERC4626ApproveContractFunction":
+    def __call__(self, spender: str, amount: int) -> "MockERC4626ApproveContractFunction":
         super().__call__(spender, amount)
         return self
 
@@ -92,9 +84,7 @@ class MockERC4626ApproveContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626AssetContractFunction(ContractFunction):
@@ -115,9 +105,7 @@ class MockERC4626AssetContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626AuthorityContractFunction(ContractFunction):
@@ -138,9 +126,7 @@ class MockERC4626AuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626BalanceOfContractFunction(ContractFunction):
@@ -161,9 +147,7 @@ class MockERC4626BalanceOfContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626CanCallContractFunction(ContractFunction):
@@ -172,9 +156,7 @@ class MockERC4626CanCallContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, user: str, target: str, functionSig: bytes
-    ) -> "MockERC4626CanCallContractFunction":
+    def __call__(self, user: str, target: str, functionSig: bytes) -> "MockERC4626CanCallContractFunction":
         super().__call__(user, target, functionSig)
         return self
 
@@ -186,9 +168,7 @@ class MockERC4626CanCallContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626ConvertToAssetsContractFunction(ContractFunction):
@@ -197,9 +177,7 @@ class MockERC4626ConvertToAssetsContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, shares: int
-    ) -> "MockERC4626ConvertToAssetsContractFunction":
+    def __call__(self, shares: int) -> "MockERC4626ConvertToAssetsContractFunction":
         super().__call__(shares)
         return self
 
@@ -211,9 +189,7 @@ class MockERC4626ConvertToAssetsContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626ConvertToSharesContractFunction(ContractFunction):
@@ -222,9 +198,7 @@ class MockERC4626ConvertToSharesContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, assets: int
-    ) -> "MockERC4626ConvertToSharesContractFunction":
+    def __call__(self, assets: int) -> "MockERC4626ConvertToSharesContractFunction":
         super().__call__(assets)
         return self
 
@@ -236,9 +210,7 @@ class MockERC4626ConvertToSharesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626DecimalsContractFunction(ContractFunction):
@@ -259,9 +231,7 @@ class MockERC4626DecimalsContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626DepositContractFunction(ContractFunction):
@@ -270,9 +240,7 @@ class MockERC4626DepositContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _assets: int, _receiver: str
-    ) -> "MockERC4626DepositContractFunction":
+    def __call__(self, _assets: int, _receiver: str) -> "MockERC4626DepositContractFunction":
         super().__call__(_assets, _receiver)
         return self
 
@@ -284,9 +252,7 @@ class MockERC4626DepositContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626DoesRoleHaveCapabilityContractFunction(ContractFunction):
@@ -295,9 +261,7 @@ class MockERC4626DoesRoleHaveCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, role: int, functionSig: bytes
-    ) -> "MockERC4626DoesRoleHaveCapabilityContractFunction":
+    def __call__(self, role: int, functionSig: bytes) -> "MockERC4626DoesRoleHaveCapabilityContractFunction":
         super().__call__(role, functionSig)
         return self
 
@@ -309,9 +273,7 @@ class MockERC4626DoesRoleHaveCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626DoesUserHaveRoleContractFunction(ContractFunction):
@@ -320,9 +282,7 @@ class MockERC4626DoesUserHaveRoleContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, user: str, role: int
-    ) -> "MockERC4626DoesUserHaveRoleContractFunction":
+    def __call__(self, user: str, role: int) -> "MockERC4626DoesUserHaveRoleContractFunction":
         super().__call__(user, role)
         return self
 
@@ -334,9 +294,7 @@ class MockERC4626DoesUserHaveRoleContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626GetRateContractFunction(ContractFunction):
@@ -357,9 +315,7 @@ class MockERC4626GetRateContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626GetRolesWithCapabilityContractFunction(ContractFunction):
@@ -368,9 +324,7 @@ class MockERC4626GetRolesWithCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: bytes
-    ) -> "MockERC4626GetRolesWithCapabilityContractFunction":
+    def __call__(self, arg1: bytes) -> "MockERC4626GetRolesWithCapabilityContractFunction":
         super().__call__(arg1)
         return self
 
@@ -382,9 +336,7 @@ class MockERC4626GetRolesWithCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626GetTargetCustomAuthorityContractFunction(ContractFunction):
@@ -393,9 +345,7 @@ class MockERC4626GetTargetCustomAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: str
-    ) -> "MockERC4626GetTargetCustomAuthorityContractFunction":
+    def __call__(self, arg1: str) -> "MockERC4626GetTargetCustomAuthorityContractFunction":
         super().__call__(arg1)
         return self
 
@@ -407,9 +357,7 @@ class MockERC4626GetTargetCustomAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626GetUserRolesContractFunction(ContractFunction):
@@ -430,9 +378,7 @@ class MockERC4626GetUserRolesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626IsCapabilityPublicContractFunction(ContractFunction):
@@ -441,9 +387,7 @@ class MockERC4626IsCapabilityPublicContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: bytes
-    ) -> "MockERC4626IsCapabilityPublicContractFunction":
+    def __call__(self, arg1: bytes) -> "MockERC4626IsCapabilityPublicContractFunction":
         super().__call__(arg1)
         return self
 
@@ -455,9 +399,7 @@ class MockERC4626IsCapabilityPublicContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626IsCompetitionModeContractFunction(ContractFunction):
@@ -478,9 +420,7 @@ class MockERC4626IsCompetitionModeContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626MaxDepositContractFunction(ContractFunction):
@@ -501,9 +441,7 @@ class MockERC4626MaxDepositContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626MaxMintContractFunction(ContractFunction):
@@ -524,9 +462,7 @@ class MockERC4626MaxMintContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626MaxRedeemContractFunction(ContractFunction):
@@ -547,9 +483,7 @@ class MockERC4626MaxRedeemContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626MaxWithdrawContractFunction(ContractFunction):
@@ -570,9 +504,7 @@ class MockERC4626MaxWithdrawContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626MintContractFunction(ContractFunction):
@@ -581,9 +513,7 @@ class MockERC4626MintContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _shares: int, _receiver: str
-    ) -> "MockERC4626MintContractFunction":
+    def __call__(self, _shares: int, _receiver: str) -> "MockERC4626MintContractFunction":
         super().__call__(_shares, _receiver)
         return self
 
@@ -595,9 +525,7 @@ class MockERC4626MintContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626NameContractFunction(ContractFunction):
@@ -618,9 +546,7 @@ class MockERC4626NameContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626NoncesContractFunction(ContractFunction):
@@ -641,9 +567,7 @@ class MockERC4626NoncesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626OwnerContractFunction(ContractFunction):
@@ -664,9 +588,7 @@ class MockERC4626OwnerContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626PermitContractFunction(ContractFunction):
@@ -696,9 +618,7 @@ class MockERC4626PermitContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626PreviewDepositContractFunction(ContractFunction):
@@ -707,9 +627,7 @@ class MockERC4626PreviewDepositContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, assets: int
-    ) -> "MockERC4626PreviewDepositContractFunction":
+    def __call__(self, assets: int) -> "MockERC4626PreviewDepositContractFunction":
         super().__call__(assets)
         return self
 
@@ -721,9 +639,7 @@ class MockERC4626PreviewDepositContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626PreviewMintContractFunction(ContractFunction):
@@ -744,9 +660,7 @@ class MockERC4626PreviewMintContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626PreviewRedeemContractFunction(ContractFunction):
@@ -755,9 +669,7 @@ class MockERC4626PreviewRedeemContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, shares: int
-    ) -> "MockERC4626PreviewRedeemContractFunction":
+    def __call__(self, shares: int) -> "MockERC4626PreviewRedeemContractFunction":
         super().__call__(shares)
         return self
 
@@ -769,9 +681,7 @@ class MockERC4626PreviewRedeemContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626PreviewWithdrawContractFunction(ContractFunction):
@@ -780,9 +690,7 @@ class MockERC4626PreviewWithdrawContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, assets: int
-    ) -> "MockERC4626PreviewWithdrawContractFunction":
+    def __call__(self, assets: int) -> "MockERC4626PreviewWithdrawContractFunction":
         super().__call__(assets)
         return self
 
@@ -794,9 +702,7 @@ class MockERC4626PreviewWithdrawContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626RedeemContractFunction(ContractFunction):
@@ -805,9 +711,7 @@ class MockERC4626RedeemContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _shares: int, _receiver: str, _owner: str
-    ) -> "MockERC4626RedeemContractFunction":
+    def __call__(self, _shares: int, _receiver: str, _owner: str) -> "MockERC4626RedeemContractFunction":
         super().__call__(_shares, _receiver, _owner)
         return self
 
@@ -819,9 +723,7 @@ class MockERC4626RedeemContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626SetAuthorityContractFunction(ContractFunction):
@@ -830,9 +732,7 @@ class MockERC4626SetAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, newAuthority: str
-    ) -> "MockERC4626SetAuthorityContractFunction":
+    def __call__(self, newAuthority: str) -> "MockERC4626SetAuthorityContractFunction":
         super().__call__(newAuthority)
         return self
 
@@ -844,9 +744,7 @@ class MockERC4626SetAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626SetPublicCapabilityContractFunction(ContractFunction):
@@ -855,9 +753,7 @@ class MockERC4626SetPublicCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, functionSig: bytes, enabled: bool
-    ) -> "MockERC4626SetPublicCapabilityContractFunction":
+    def __call__(self, functionSig: bytes, enabled: bool) -> "MockERC4626SetPublicCapabilityContractFunction":
         super().__call__(functionSig, enabled)
         return self
 
@@ -869,9 +765,7 @@ class MockERC4626SetPublicCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626SetRateContractFunction(ContractFunction):
@@ -892,9 +786,7 @@ class MockERC4626SetRateContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626SetRoleCapabilityContractFunction(ContractFunction):
@@ -903,9 +795,7 @@ class MockERC4626SetRoleCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, role: int, functionSig: bytes, enabled: bool
-    ) -> "MockERC4626SetRoleCapabilityContractFunction":
+    def __call__(self, role: int, functionSig: bytes, enabled: bool) -> "MockERC4626SetRoleCapabilityContractFunction":
         super().__call__(role, functionSig, enabled)
         return self
 
@@ -917,9 +807,7 @@ class MockERC4626SetRoleCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626SetTargetCustomAuthorityContractFunction(ContractFunction):
@@ -928,9 +816,7 @@ class MockERC4626SetTargetCustomAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, target: str, customAuthority: str
-    ) -> "MockERC4626SetTargetCustomAuthorityContractFunction":
+    def __call__(self, target: str, customAuthority: str) -> "MockERC4626SetTargetCustomAuthorityContractFunction":
         super().__call__(target, customAuthority)
         return self
 
@@ -942,9 +828,7 @@ class MockERC4626SetTargetCustomAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626SetUserRoleContractFunction(ContractFunction):
@@ -953,9 +837,7 @@ class MockERC4626SetUserRoleContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, user: str, role: int, enabled: bool
-    ) -> "MockERC4626SetUserRoleContractFunction":
+    def __call__(self, user: str, role: int, enabled: bool) -> "MockERC4626SetUserRoleContractFunction":
         super().__call__(user, role, enabled)
         return self
 
@@ -967,9 +849,7 @@ class MockERC4626SetUserRoleContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626SymbolContractFunction(ContractFunction):
@@ -990,9 +870,7 @@ class MockERC4626SymbolContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626TotalAssetsContractFunction(ContractFunction):
@@ -1013,9 +891,7 @@ class MockERC4626TotalAssetsContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626TotalSupplyContractFunction(ContractFunction):
@@ -1036,9 +912,7 @@ class MockERC4626TotalSupplyContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626TransferContractFunction(ContractFunction):
@@ -1047,9 +921,7 @@ class MockERC4626TransferContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, to: str, amount: int
-    ) -> "MockERC4626TransferContractFunction":
+    def __call__(self, to: str, amount: int) -> "MockERC4626TransferContractFunction":
         super().__call__(to, amount)
         return self
 
@@ -1061,9 +933,7 @@ class MockERC4626TransferContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626TransferFromContractFunction(ContractFunction):
@@ -1072,9 +942,7 @@ class MockERC4626TransferFromContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _from: str, to: str, amount: int
-    ) -> "MockERC4626TransferFromContractFunction":
+    def __call__(self, _from: str, to: str, amount: int) -> "MockERC4626TransferFromContractFunction":
         super().__call__(_from, to, amount)
         return self
 
@@ -1086,9 +954,7 @@ class MockERC4626TransferFromContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626TransferOwnershipContractFunction(ContractFunction):
@@ -1097,9 +963,7 @@ class MockERC4626TransferOwnershipContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, newOwner: str
-    ) -> "MockERC4626TransferOwnershipContractFunction":
+    def __call__(self, newOwner: str) -> "MockERC4626TransferOwnershipContractFunction":
         super().__call__(newOwner)
         return self
 
@@ -1111,9 +975,7 @@ class MockERC4626TransferOwnershipContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626WithdrawContractFunction(ContractFunction):
@@ -1122,9 +984,7 @@ class MockERC4626WithdrawContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _assets: int, _receiver: str, _owner: str
-    ) -> "MockERC4626WithdrawContractFunction":
+    def __call__(self, _assets: int, _receiver: str, _owner: str) -> "MockERC4626WithdrawContractFunction":
         super().__call__(_assets, _receiver, _owner)
         return self
 
@@ -1136,9 +996,7 @@ class MockERC4626WithdrawContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626ContractFunctions(ContractFunctions):
@@ -1515,9 +1373,7 @@ mockerc4626_abi: ABI = cast(
         {
             "inputs": [],
             "name": "DOMAIN_SEPARATOR",
-            "outputs": [
-                {"internalType": "bytes32", "name": "", "type": "bytes32"}
-            ],
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1527,9 +1383,7 @@ mockerc4626_abi: ABI = cast(
                 {"internalType": "address", "name": "", "type": "address"},
             ],
             "name": "allowance",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1578,13 +1432,9 @@ mockerc4626_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
             "name": "balanceOf",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1608,24 +1458,16 @@ mockerc4626_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "uint256", "name": "shares", "type": "uint256"}
-            ],
+            "inputs": [{"internalType": "uint256", "name": "shares", "type": "uint256"}],
             "name": "convertToAssets",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "uint256", "name": "assets", "type": "uint256"}
-            ],
+            "inputs": [{"internalType": "uint256", "name": "assets", "type": "uint256"}],
             "name": "convertToShares",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1650,9 +1492,7 @@ mockerc4626_abi: ABI = cast(
                 },
             ],
             "name": "deposit",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "nonpayable",
             "type": "function",
         },
@@ -1683,27 +1523,19 @@ mockerc4626_abi: ABI = cast(
         {
             "inputs": [],
             "name": "getRate",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "bytes4", "name": "", "type": "bytes4"}
-            ],
+            "inputs": [{"internalType": "bytes4", "name": "", "type": "bytes4"}],
             "name": "getRolesWithCapability",
-            "outputs": [
-                {"internalType": "bytes32", "name": "", "type": "bytes32"}
-            ],
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
             "name": "getTargetCustomAuthority",
             "outputs": [
                 {
@@ -1716,20 +1548,14 @@ mockerc4626_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
             "name": "getUserRoles",
-            "outputs": [
-                {"internalType": "bytes32", "name": "", "type": "bytes32"}
-            ],
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "bytes4", "name": "", "type": "bytes4"}
-            ],
+            "inputs": [{"internalType": "bytes4", "name": "", "type": "bytes4"}],
             "name": "isCapabilityPublic",
             "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
             "stateMutability": "view",
@@ -1743,46 +1569,30 @@ mockerc4626_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
             "name": "maxDeposit",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
             "name": "maxMint",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "owner", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
             "name": "maxRedeem",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "owner", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
             "name": "maxWithdraw",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1800,38 +1610,28 @@ mockerc4626_abi: ABI = cast(
                 },
             ],
             "name": "mint",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "nonpayable",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "name",
-            "outputs": [
-                {"internalType": "string", "name": "", "type": "string"}
-            ],
+            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
             "name": "nonces",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "owner",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1859,46 +1659,30 @@ mockerc4626_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "uint256", "name": "assets", "type": "uint256"}
-            ],
+            "inputs": [{"internalType": "uint256", "name": "assets", "type": "uint256"}],
             "name": "previewDeposit",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "uint256", "name": "shares", "type": "uint256"}
-            ],
+            "inputs": [{"internalType": "uint256", "name": "shares", "type": "uint256"}],
             "name": "previewMint",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "uint256", "name": "shares", "type": "uint256"}
-            ],
+            "inputs": [{"internalType": "uint256", "name": "shares", "type": "uint256"}],
             "name": "previewRedeem",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "uint256", "name": "assets", "type": "uint256"}
-            ],
+            "inputs": [{"internalType": "uint256", "name": "assets", "type": "uint256"}],
             "name": "previewWithdraw",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1921,9 +1705,7 @@ mockerc4626_abi: ABI = cast(
                 },
             ],
             "name": "redeem",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "nonpayable",
             "type": "function",
         },
@@ -1955,9 +1737,7 @@ mockerc4626_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "uint256", "name": "_rate_", "type": "uint256"}
-            ],
+            "inputs": [{"internalType": "uint256", "name": "_rate_", "type": "uint256"}],
             "name": "setRate",
             "outputs": [],
             "stateMutability": "nonpayable",
@@ -2010,27 +1790,21 @@ mockerc4626_abi: ABI = cast(
         {
             "inputs": [],
             "name": "symbol",
-            "outputs": [
-                {"internalType": "string", "name": "", "type": "string"}
-            ],
+            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "totalAssets",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "totalSupply",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -2095,9 +1869,7 @@ mockerc4626_abi: ABI = cast(
                 },
             ],
             "name": "withdraw",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "nonpayable",
             "type": "function",
         },

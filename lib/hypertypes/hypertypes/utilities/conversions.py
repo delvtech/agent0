@@ -70,7 +70,9 @@ def contract_checkpoint_to_hypertypes(contract_checkpoint: dict[str, Any]) -> Ht
     return HtCheckpoint(**contract_checkpoint)
 
 
-def hypertypes_checkpoint_to_fixedpoint(hypertypes_checkpoint: HtCheckpoint) -> CheckpointFP:
+def hypertypes_checkpoint_to_fixedpoint(
+    hypertypes_checkpoint: HtCheckpoint,
+) -> CheckpointFP:
     """Convert the HyperTypes Checkpoint attribute types from what Solidity returns to FixedPoint.
 
     Arguments
@@ -88,7 +90,9 @@ def hypertypes_checkpoint_to_fixedpoint(hypertypes_checkpoint: HtCheckpoint) -> 
     )
 
 
-def fixedpoint_checkpoint_to_hypertypes(fixedpoint_checkpoint: CheckpointFP) -> HtCheckpoint:
+def fixedpoint_checkpoint_to_hypertypes(
+    fixedpoint_checkpoint: CheckpointFP,
+) -> HtCheckpoint:
     """Convert the Checkpoint attribute types from FixedPoint to what the Solidity ABI specifies.
 
     Arguments
@@ -134,7 +138,9 @@ def contract_pool_config_to_hypertypes(contract_pool_config: dict[str, Any]) -> 
     )
 
 
-def hypertypes_pool_config_to_fixedpoint(hypertypes_pool_config: HtPoolConfig) -> PoolConfigFP:
+def hypertypes_pool_config_to_fixedpoint(
+    hypertypes_pool_config: HtPoolConfig,
+) -> PoolConfigFP:
     """Convert the HyperTypes PoolConfig attributes from what Solidity returns to FixedPoint.
 
     Arguments
@@ -151,7 +157,12 @@ def hypertypes_pool_config_to_fixedpoint(hypertypes_pool_config: HtPoolConfig) -
           - FixedPoint types are used if the type was FixedPoint in the underlying contract.
     """
     dict_pool_config = {camel_to_snake(key): value for key, value in asdict(hypertypes_pool_config).items()}
-    fixedpoint_keys = ["initial_share_price", "minimum_share_reserves", "minimum_transaction_amount", "time_stretch"]
+    fixedpoint_keys = [
+        "initial_share_price",
+        "minimum_share_reserves",
+        "minimum_transaction_amount",
+        "time_stretch",
+    ]
     for key in dict_pool_config:
         if key in fixedpoint_keys:
             dict_pool_config[key] = FixedPoint(scaled_value=dict_pool_config[key])
@@ -164,7 +175,9 @@ def hypertypes_pool_config_to_fixedpoint(hypertypes_pool_config: HtPoolConfig) -
     return PoolConfigFP(**dict_pool_config)
 
 
-def fixedpoint_pool_config_to_hypertypes(fixedpoint_pool_config: PoolConfigFP) -> HtPoolConfig:
+def fixedpoint_pool_config_to_hypertypes(
+    fixedpoint_pool_config: PoolConfigFP,
+) -> HtPoolConfig:
     """Convert the PoolConfig attribute types from FixedPoint to what the Solidity ABI specifies.
 
     Arguments
@@ -178,7 +191,12 @@ def fixedpoint_pool_config_to_hypertypes(fixedpoint_pool_config: PoolConfigFP) -
         A dataclass containing the Hyperdrive PoolConfig with types specified by the ABI via Pypechain
     """
     dict_pool_config = {snake_to_camel(key): value for key, value in asdict(fixedpoint_pool_config).items()}
-    fixedpoint_keys = ["initialSharePrice", "minimumShareReserves", "minimumTransactionAmount", "timeStretch"]
+    fixedpoint_keys = [
+        "initialSharePrice",
+        "minimumShareReserves",
+        "minimumTransactionAmount",
+        "timeStretch",
+    ]
     for key in dict_pool_config:
         if key in fixedpoint_keys:
             dict_pool_config[key] = dict_pool_config[key].scaled_value

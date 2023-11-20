@@ -42,9 +42,7 @@ class ForwarderFactoryERC20LINK_HASHContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ForwarderFactoryCreateContractFunction(ContractFunction):
@@ -53,9 +51,7 @@ class ForwarderFactoryCreateContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, __token: str, __tokenId: int
-    ) -> "ForwarderFactoryCreateContractFunction":
+    def __call__(self, __token: str, __tokenId: int) -> "ForwarderFactoryCreateContractFunction":
         super().__call__(__token, __tokenId)
         return self
 
@@ -67,9 +63,7 @@ class ForwarderFactoryCreateContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ForwarderFactoryGetDeployDetailsContractFunction(ContractFunction):
@@ -90,9 +84,7 @@ class ForwarderFactoryGetDeployDetailsContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> tuple[str, int]:
         """returns (str, int)"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ForwarderFactoryGetForwarderContractFunction(ContractFunction):
@@ -101,9 +93,7 @@ class ForwarderFactoryGetForwarderContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, __token: str, __tokenId: int
-    ) -> "ForwarderFactoryGetForwarderContractFunction":
+    def __call__(self, __token: str, __tokenId: int) -> "ForwarderFactoryGetForwarderContractFunction":
         super().__call__(__token, __tokenId)
         return self
 
@@ -115,9 +105,7 @@ class ForwarderFactoryGetForwarderContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ForwarderFactoryContractFunctions(ContractFunctions):
@@ -139,9 +127,7 @@ forwarderfactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "ERC20LINK_HASH",
-            "outputs": [
-                {"internalType": "bytes32", "name": "", "type": "bytes32"}
-            ],
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -197,9 +183,7 @@ forwarderfactory_abi: ABI = cast(
                 },
             ],
             "name": "getForwarder",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },

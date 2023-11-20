@@ -26,9 +26,7 @@ from web3.exceptions import FallbackNotFound
 from .ERC4626HyperdriveFactoryTypes import PoolConfig, Fees
 
 
-class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(ContractFunction):
     """ContractFunction for the deployAndInitialize method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -43,9 +41,7 @@ class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(
         arg5: list[bytes],
         _pool: str,
     ) -> "ERC4626HyperdriveFactoryDeployAndInitializeContractFunction":
-        super().__call__(
-            _config, _contribution, _apr, _initializeExtraData, arg5, _pool
-        )
+        super().__call__(_config, _contribution, _apr, _initializeExtraData, arg5, _pool)
         return self
 
     def call(
@@ -56,9 +52,7 @@ class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveFactoryFeeCollectorContractFunction(ContractFunction):
@@ -81,9 +75,7 @@ class ERC4626HyperdriveFactoryFeeCollectorContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveFactoryFeesContractFunction(ContractFunction):
@@ -104,14 +96,10 @@ class ERC4626HyperdriveFactoryFeesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> tuple[int, int, int]:
         """returns (int, int, int)"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(ContractFunction):
     """ContractFunction for the getDefaultPausers method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -131,22 +119,16 @@ class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> list[str]:
         """returns list[str]"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction(ContractFunction):
     """ContractFunction for the getInstanceAtIndex method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, index: int
-    ) -> "ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction":
+    def __call__(self, index: int) -> "ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction":
         super().__call__(index)
         return self
 
@@ -158,22 +140,16 @@ class ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction(ContractFunction):
     """ContractFunction for the getInstancesInRange method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, startIndex: int, endIndex: int
-    ) -> "ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction":
+    def __call__(self, startIndex: int, endIndex: int) -> "ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction":
         super().__call__(startIndex, endIndex)
         return self
 
@@ -185,14 +161,10 @@ class ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> list[str]:
         """returns list[str]"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryGetNumberOfInstancesContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryGetNumberOfInstancesContractFunction(ContractFunction):
     """ContractFunction for the getNumberOfInstances method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -212,9 +184,7 @@ class ERC4626HyperdriveFactoryGetNumberOfInstancesContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveFactoryGetSweepTargetsContractFunction(ContractFunction):
@@ -237,9 +207,7 @@ class ERC4626HyperdriveFactoryGetSweepTargetsContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> list[str]:
         """returns list[str]"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveFactoryGovernanceContractFunction(ContractFunction):
@@ -260,14 +228,10 @@ class ERC4626HyperdriveFactoryGovernanceContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(ContractFunction):
     """ContractFunction for the hyperdriveDeployer method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -287,14 +251,10 @@ class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(ContractFunction):
     """ContractFunction for the hyperdriveGovernance method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -314,9 +274,7 @@ class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveFactoryIsInstanceContractFunction(ContractFunction):
@@ -325,9 +283,7 @@ class ERC4626HyperdriveFactoryIsInstanceContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: str
-    ) -> "ERC4626HyperdriveFactoryIsInstanceContractFunction":
+    def __call__(self, arg1: str) -> "ERC4626HyperdriveFactoryIsInstanceContractFunction":
         super().__call__(arg1)
         return self
 
@@ -339,9 +295,7 @@ class ERC4626HyperdriveFactoryIsInstanceContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveFactoryIsOfficialContractFunction(ContractFunction):
@@ -350,9 +304,7 @@ class ERC4626HyperdriveFactoryIsOfficialContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, instance: str
-    ) -> "ERC4626HyperdriveFactoryIsOfficialContractFunction":
+    def __call__(self, instance: str) -> "ERC4626HyperdriveFactoryIsOfficialContractFunction":
         super().__call__(instance)
         return self
 
@@ -364,9 +316,7 @@ class ERC4626HyperdriveFactoryIsOfficialContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveFactoryLinkerCodeHashContractFunction(ContractFunction):
@@ -389,9 +339,7 @@ class ERC4626HyperdriveFactoryLinkerCodeHashContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveFactoryLinkerFactoryContractFunction(ContractFunction):
@@ -414,9 +362,7 @@ class ERC4626HyperdriveFactoryLinkerFactoryContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveFactoryTarget0DeployerContractFunction(ContractFunction):
@@ -439,9 +385,7 @@ class ERC4626HyperdriveFactoryTarget0DeployerContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveFactoryTarget1DeployerContractFunction(ContractFunction):
@@ -464,22 +408,16 @@ class ERC4626HyperdriveFactoryTarget1DeployerContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(ContractFunction):
     """ContractFunction for the updateDefaultPausers method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _defaultPausers_: list[str]
-    ) -> "ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction":
+    def __call__(self, _defaultPausers_: list[str]) -> "ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction":
         super().__call__(_defaultPausers_)
         return self
 
@@ -491,22 +429,16 @@ class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction(ContractFunction):
     """ContractFunction for the updateFeeCollector method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _feeCollector: str
-    ) -> "ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction":
+    def __call__(self, _feeCollector: str) -> "ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction":
         super().__call__(_feeCollector)
         return self
 
@@ -518,9 +450,7 @@ class ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction(
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveFactoryUpdateFeesContractFunction(ContractFunction):
@@ -529,9 +459,7 @@ class ERC4626HyperdriveFactoryUpdateFeesContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _fees: Fees
-    ) -> "ERC4626HyperdriveFactoryUpdateFeesContractFunction":
+    def __call__(self, _fees: Fees) -> "ERC4626HyperdriveFactoryUpdateFeesContractFunction":
         super().__call__(_fees)
         return self
 
@@ -543,22 +471,16 @@ class ERC4626HyperdriveFactoryUpdateFeesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryUpdateGovernanceContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateGovernanceContractFunction(ContractFunction):
     """ContractFunction for the updateGovernance method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _governance: str
-    ) -> "ERC4626HyperdriveFactoryUpdateGovernanceContractFunction":
+    def __call__(self, _governance: str) -> "ERC4626HyperdriveFactoryUpdateGovernanceContractFunction":
         super().__call__(_governance)
         return self
 
@@ -570,14 +492,10 @@ class ERC4626HyperdriveFactoryUpdateGovernanceContractFunction(
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryUpdateHyperdriveGovernanceContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateHyperdriveGovernanceContractFunction(ContractFunction):
     """ContractFunction for the updateHyperdriveGovernance method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -597,22 +515,16 @@ class ERC4626HyperdriveFactoryUpdateHyperdriveGovernanceContractFunction(
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(ContractFunction):
     """ContractFunction for the updateImplementation method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, newDeployer: str
-    ) -> "ERC4626HyperdriveFactoryUpdateImplementationContractFunction":
+    def __call__(self, newDeployer: str) -> "ERC4626HyperdriveFactoryUpdateImplementationContractFunction":
         super().__call__(newDeployer)
         return self
 
@@ -624,22 +536,16 @@ class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(ContractFunction):
     """ContractFunction for the updateLinkerCodeHash method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _linkerCodeHash: bytes
-    ) -> "ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction":
+    def __call__(self, _linkerCodeHash: bytes) -> "ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction":
         super().__call__(_linkerCodeHash)
         return self
 
@@ -651,22 +557,16 @@ class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(ContractFunction):
     """ContractFunction for the updateLinkerFactory method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _linkerFactory: str
-    ) -> "ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction":
+    def __call__(self, _linkerFactory: str) -> "ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction":
         super().__call__(_linkerFactory)
         return self
 
@@ -678,22 +578,16 @@ class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
-class ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction(ContractFunction):
     """ContractFunction for the updateSweepTargets method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, __sweepTargets: list[str]
-    ) -> "ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction":
+    def __call__(self, __sweepTargets: list[str]) -> "ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction":
         super().__call__(__sweepTargets)
         return self
 
@@ -705,9 +599,7 @@ class ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction(
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveFactoryVersionCounterContractFunction(ContractFunction):
@@ -730,9 +622,7 @@ class ERC4626HyperdriveFactoryVersionCounterContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC4626HyperdriveFactoryContractFunctions(ContractFunctions):
@@ -1222,9 +1112,7 @@ erc4626hyperdrivefactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "feeCollector",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1246,20 +1134,14 @@ erc4626hyperdrivefactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "getDefaultPausers",
-            "outputs": [
-                {"internalType": "address[]", "name": "", "type": "address[]"}
-            ],
+            "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "uint256", "name": "index", "type": "uint256"}
-            ],
+            "inputs": [{"internalType": "uint256", "name": "index", "type": "uint256"}],
             "name": "getInstanceAtIndex",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1290,27 +1172,21 @@ erc4626hyperdrivefactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "getNumberOfInstances",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "getSweepTargets",
-            "outputs": [
-                {"internalType": "address[]", "name": "", "type": "address[]"}
-            ],
+            "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "governance",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1330,16 +1206,12 @@ erc4626hyperdrivefactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "hyperdriveGovernance",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
             "name": "isInstance",
             "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
             "stateMutability": "view",
@@ -1367,18 +1239,14 @@ erc4626hyperdrivefactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "linkerCodeHash",
-            "outputs": [
-                {"internalType": "bytes32", "name": "", "type": "bytes32"}
-            ],
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "linkerFactory",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1545,9 +1413,7 @@ erc4626hyperdrivefactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "versionCounter",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
