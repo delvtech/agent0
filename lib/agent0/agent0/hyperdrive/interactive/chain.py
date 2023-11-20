@@ -12,7 +12,7 @@ import docker
 from chainsync import PostgresConfig
 from docker.errors import NotFound
 from ethpy.base import initialize_web3_with_http_provider
-from web3.types import RPCEndpoint
+from web3.types import RPCEndpoint, RPCResponse
 
 
 class Chain:
@@ -66,8 +66,10 @@ class Chain:
         except Exception:
             pass
 
-    def advance_time(self, time_delta: int | timedelta) -> None:
-        """Advances time for this chain.
+    def advance_time(self, time_delta: int | timedelta) -> RPCResponse:
+        """Advances time for this chain using the `evm_mine` RPC call.
+        This function looks at the timestamp of the current block, then
+        mines a block explicitly setting the timestamp to the current block timestamp + time_delta
         NOTE: this advances the chain for all pool connected to this chain.
 
         Attributes
@@ -75,11 +77,17 @@ class Chain:
         time_delta: int | timedelta
             The amount of time to advance. Can either be a `datetime.timedelta` object or an integer in seconds.
         """
-        # Use the `evm_increaseTime` RPC call here to advance time
         if isinstance(time_delta, timedelta):
             time_delta = int(time_delta.total_seconds())
-        # Need web3 connection here
-        self._web3.provider.make_request(method=RPCEndpoint("evm_increaseTime"), params=[time_delta])
+
+        # We explicitly set the next block timestamp to be exactly time_delta seconds after the previous block
+        # Hence, we first get the current block, followed by an explicit set of the next block timestamp, followed by a mine.
+        latest_blocktime = self._web3.eth.get_block("latest").get("timestamp", None)
+        if latest_blocktime is None:
+            raise AssertionError("The provided block has no timestamp")
+        next_blocktime = latest_blocktime + time_delta
+
+        return self._web3.provider.make_request(method=RPCEndpoint("evm_mine"), params=[next_blocktime])
 
     def get_deployer_account_private_key(self):
         """Gets the private key of the deployer account."""

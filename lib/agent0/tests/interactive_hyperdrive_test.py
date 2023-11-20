@@ -171,10 +171,20 @@ class TestInteractiveHyperdrive:
         # Construct chain object
         local_chain_config = LocalChain.Config()
         chain = LocalChain(local_chain_config)
+        # We need the underlying hyperdrive interface here to test time
+        interactive_hyperdrive = InteractiveHyperdrive(chain)
+        hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
 
-        # Advance time, accepts timedelta or seconds
-        chain.advance_time(datetime.timedelta(weeks=52))
+        current_time_1 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+        # Testing passing in seconds
         chain.advance_time(3600)
+        current_time_2 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+        # Testing passing in timedelta
+        chain.advance_time(datetime.timedelta(weeks=1))
+        current_time_3 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+
+        assert current_time_2 - current_time_1 == 3600
+        assert current_time_3 - current_time_2 == 3600 * 24 * 7
 
     #    # Get data from database under the hood
     #    pool_config = interactive_hyperdrive.get_pool_config()
