@@ -80,9 +80,20 @@ def initialize_engine(postgres_config: PostgresConfig | None = None, ensure_data
     engine = create_engine(url_object)
 
     if ensure_database_created:
-        if not database_exists(engine.url):
-            logging.info("Database %s does not exist, creating", postgres_config.POSTGRES_DB)
-            create_database(engine.url)
+        exception = None
+        for _ in range(10):
+            try:
+                if not database_exists(engine.url):
+                    logging.info("Database %s does not exist, creating", postgres_config.POSTGRES_DB)
+                    create_database(engine.url)
+                exception = None
+                break
+            except OperationalError as ex:
+                logging.warning("No postgres connection, retrying")
+                exception = ex
+                time.sleep(1)
+        if exception is not None:
+            raise exception
 
     exception = None
     for _ in range(10):

@@ -161,6 +161,14 @@ class InteractiveHyperdrive:
 
         self.db_session = initialize_session(postgres_config, ensure_database_created=True)
 
+    def __del__(self):
+        # Attempt to close the session
+        # These functions will raise errors if the session is already closed
+        try:
+            self.db_session.close()
+        except Exception:
+            pass
+
     def _deploy_hyperdrive(self, config: Config, chain: Chain, abi_dir) -> DeployedHyperdrivePool:
         # sanity check (also for type checking), should get set in __post_init__
         assert config.time_stretch is not None

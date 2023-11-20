@@ -61,7 +61,10 @@ class Chain:
     def __del__(self):
         # Kill postgres container in this class' destructor.
         # Docker doesn't play nice with types
-        self.postgres_container.kill()  # type: ignore
+        try:
+            self.postgres_container.kill()  # type: ignore
+        except Exception:
+            pass
 
     def advance_time(self, time_delta: int | timedelta) -> None:
         """Advances time for this chain.
@@ -192,7 +195,10 @@ class LocalChain(Chain):
 
     def __del__(self):
         # Kill subprocess in this class' destructor.
-        self.anvil_process.kill()
+        try:
+            self.anvil_process.kill()
+        except Exception:
+            pass
         super().__del__()
 
     def get_deployer_account_private_key(self):

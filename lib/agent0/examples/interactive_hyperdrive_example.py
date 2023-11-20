@@ -102,5 +102,3 @@ if __name__ == "__main__":
     pool_info_history.plot(x="timestamp", y="longs_outstanding", kind="line")
     # Change wallet_address to be columns for plotting
     total_wallet_pnl_over_time.pivot(index="timestamp", columns="wallet_address", values="pnl").plot()
-
-    # TODO figure out clean up, currently crashes on script exit
