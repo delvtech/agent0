@@ -5,12 +5,6 @@ import logging
 import os
 from typing import TYPE_CHECKING, Type, cast
 
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base.errors import ContractCallException
@@ -18,6 +12,13 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import HTTPProvider
 from web3.exceptions import ContractLogicError, ContractPanicError
+
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base import MarketType, Trade
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.policies import HyperdrivePolicy
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -38,13 +39,13 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, _: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []
@@ -108,13 +109,13 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, _: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []
@@ -144,13 +145,13 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, _: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []
@@ -178,7 +179,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
@@ -186,7 +187,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, _: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []
@@ -230,7 +231,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
@@ -238,7 +239,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, _: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []
@@ -259,7 +260,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
         elif self.counter == 1:
             # Closing existent long for more than I have
             assert len(wallet.longs) == 1
-            for long_time, _ in wallet.longs.items():
+            for long_time in wallet.longs.keys():
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
@@ -287,7 +288,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
@@ -295,7 +296,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, _: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []
@@ -316,7 +317,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
         elif self.counter == 1:
             # Closing existent short for more than I have
             assert len(wallet.shorts) == 1
-            for short_time, _ in wallet.shorts.items():
+            for short_time in wallet.shorts.keys():
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
@@ -344,7 +345,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
@@ -352,7 +353,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, _: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []
