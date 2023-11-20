@@ -84,19 +84,25 @@ if __name__ == "__main__":
     withdraw_shares_event = hyperdrive_agent2.redeem_withdraw_share(shares=hyperdrive_agent2.wallet.withdraw_shares)
 
     # Get data from database under the hood
-    ticker: pd.DataFrame = interactive_hyperdrive.get_ticker()
-    ticker_2: pd.DataFrame = interactive_hyperdrive_2.get_ticker()
-    print(ticker)
-    print(ticker_2)
-
-    pool_info_history: pd.DataFrame = interactive_hyperdrive.get_pool_info()
-    wallet_positions: pd.DataFrame = interactive_hyperdrive.get_current_wallet()
-    pnl_over_time: pd.DataFrame = interactive_hyperdrive.get_total_wallet_pnl_over_time()
+    pool_config = interactive_hyperdrive.get_pool_config()
+    pool_info_history = interactive_hyperdrive.get_pool_info()
+    # TODO wallet_pnl is currently bugged, fix
+    checkpoint_info = interactive_hyperdrive.get_checkpoint_info()
+    pool_analysis = interactive_hyperdrive.get_pool_analysis()
+    wallet_deltas = interactive_hyperdrive.get_wallet_deltas()
+    # TODO current_wallet is currently bugged, fix
+    current_wallet = interactive_hyperdrive.get_current_wallet()
+    ticker = interactive_hyperdrive.get_ticker()
+    # TODO wallet_pnl is currently bugged, fix
+    wallet_pnl = interactive_hyperdrive.get_wallet_pnl()
+    total_wallet_pnl_over_time = interactive_hyperdrive.get_total_wallet_pnl_over_time()
+    # TODO wallet positions over time is bugged, fix
+    wallet_positions_over_time = interactive_hyperdrive.get_wallet_positions_over_time()
 
     # Plot pretty plots
     # TODO these should be in a notebook for plotting
     pool_info_history.plot(x="timestamp", y="longs_outstanding", kind="line")
     # Change wallet_address to be columns for plotting
-    pnl_over_time.pivot(index="timestamp", columns="wallet_address", values="pnl").plot()
+    total_wallet_pnl_over_time.pivot(index="timestamp", columns="wallet_address", values="pnl").plot()
 
     # TODO figure out clean up, currently crashes on script exit

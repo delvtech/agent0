@@ -6,20 +6,16 @@ from dataclasses import asdict, dataclass
 
 import pandas as pd
 from chainsync import PostgresConfig
-from chainsync.db.base import add_addr_to_username, initialize_session
+from chainsync.dashboard.usernames import build_user_mapping
+from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
 from chainsync.db.hyperdrive import (
-    get_all_traders,
     get_checkpoint_info,
     get_current_wallet,
-    get_latest_block_number_from_analysis_table,
-    get_latest_block_number_from_pool_info_table,
-    get_latest_block_number_from_table,
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
     get_ticker,
     get_total_wallet_pnl_over_time,
-    get_transactions,
     get_wallet_deltas,
     get_wallet_pnl,
     get_wallet_positions_over_time,
@@ -66,7 +62,38 @@ class InteractiveHyperdrive:
 
         Attributes
         ----------
-        TODO
+        initial_liquidity : FixedPoint
+            The amount of money to be provided by the `deploy_account` for initial pool liquidity.
+        initial_variable_rate: FixedPoint
+            The starting variable rate for an underlying yield source.
+        initial_fixed_rate : FixedPoint
+            The fixed rate of the pool on initialization.
+        initial_share_price : FixedPoint
+            The initial share price
+        minimum_share_reserves : FixedPoint
+            The minimum share reserves
+        minimum_transaction_amount : FixedPoint
+            The minimum amount of tokens that a position can be opened or closed with.
+        precision_threshold : int
+            The amount of precision expected to lose due to exponentiation implementation.
+        position_duration: int
+            The duration of a position prior to maturity (in seconds)
+        checkpoint_duration: int
+            The duration of a checkpoint (in seconds)
+        time_stretch: FixedPoint
+            A parameter which decreases slippage around a target rate
+        curve_fee: FixedPoint
+            The LP fee applied to the curve portion of a trade.
+        flat_fee: FixedPoint
+            The LP fee applied to the flat portion of a trade.
+        governance_fee: FixedPoint
+            The portion of the LP fee that goes to governance.
+        max_curve_fee: FixedPoint
+            The upper bound on the curve fee that governance can set.
+        max_flat_fee: FixedPoint
+            The upper bound on the flat fee that governance can set.
+        max_governance_fee: FixedPoint
+            The upper bound on the governance fee that governance can set.
         """
 
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
@@ -176,10 +203,10 @@ class InteractiveHyperdrive:
 
         Arguments
         ---------
-        eth: FixedPoint
-            The amount of ETH to fund the agent with. Defaults to 10.
         base: FixedPoint
             The amount of base to fund the agent with. Defaults to 0.
+        eth: FixedPoint
+            The amount of ETH to fund the agent with. Defaults to 10.
         name: str
             The name of the agent. Defaults to the wallet address.
         """
@@ -190,43 +217,184 @@ class InteractiveHyperdrive:
         out_agent = InteractiveHyperdriveAgent(base=base, eth=eth, name=name, pool=self)
         return out_agent
 
-    ### Database methods ###
+    ### Database methods
+    # These methods expose the underlying chainsync getter methods with minimal processing
+    # TODO expand in docstrings the columns of the output dataframe
 
-    def get_pool_config(self, coerce_float: bool = True) -> pd.DataFrame:
-        return get_pool_config(self.db_session, coerce_float=coerce_float)
+    def get_pool_config(self, coerce_float: bool = True) -> pd.Series:
+        """Get the pool config and returns as a pandas series.
+
+        Arguments
+        ---------
+        coerce_float : bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Series
+            A pandas series that consists of the deployed pool config.
+        """
+        # Underlying function returns a dataframe, but this is assuming there's a single
+        # pool config for this object.
+        return get_pool_config(self.db_session, coerce_float=coerce_float).iloc[0]
 
     def get_pool_info(self, coerce_float: bool = True) -> pd.DataFrame:
+        """Get the pool info per block and returns as a pandas dataframe.
+
+        Arguments
+        ---------
+        coerce_float : bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A pandas dataframe that consists of the pool info per block.
+        """
         return get_pool_info(self.db_session, coerce_float=coerce_float)
 
     def get_checkpoint_info(self, coerce_float: bool = True) -> pd.DataFrame:
+        """Get the previous checkpoint infos per block and returns as a pandas dataframe.
+
+        Arguments
+        ---------
+        coerce_float : bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A pandas dataframe that consists of the checkpoint info per block.
+        """
+        # TODO the data itself looks a bit weird here, perhaps to accelerating time
+        # Look into this
         return get_checkpoint_info(self.db_session, coerce_float=coerce_float)
 
     def get_pool_analysis(self, coerce_float: bool = True) -> pd.DataFrame:
+        """Get the pool analysis per block and returns as a pandas dataframe.
+
+        Arguments
+        ---------
+        coerce_float : bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A pandas dataframe that consists of the pool analysis per block.
+        """
         return get_pool_analysis(self.db_session, coerce_float=coerce_float)
 
+    def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
+        addr_to_username = get_addr_to_username(self.db_session)
+        username_to_user = get_username_to_user(self.db_session)
+
+        # Get corresponding usernames
+        usernames = build_user_mapping(df[addr_column], addr_to_username, username_to_user)["username"]
+        df.insert(df.columns.get_loc(addr_column), "username", usernames)
+        return df
+
     def get_wallet_deltas(self, coerce_float: bool = True) -> pd.DataFrame:
-        # TODO do username lookup here
-        return get_wallet_deltas(self.db_session, coerce_float=coerce_float)
+        """Get all token deltas and returns as a pandas dataframe.
+
+        Arguments
+        ---------
+        coerce_float : bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A pandas dataframe that consists of all token deltas.
+        """
+        out = get_wallet_deltas(self.db_session, coerce_float=coerce_float)
+        return self._add_username_to_dataframe(out, "wallet_address")
 
     def get_current_wallet(self, coerce_float: bool = True) -> pd.DataFrame:
-        # TODO do username lookup here
-        return get_current_wallet(self.db_session, coerce_float=coerce_float)
+        """Gets the current wallet positions of all agents and returns as a pandas dataframe.
+
+        Arguments
+        ---------
+        coerce_float : bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A pandas dataframe that consists of the current wallet positions.
+        """
+        # TODO this currently doesn't store the starting base value
+        # need to add the known base to rows with `WETH` as the token type
+        out = get_current_wallet(self.db_session, coerce_float=coerce_float)
+        return self._add_username_to_dataframe(out, "wallet_address")
 
     def get_ticker(self, coerce_float: bool = True) -> pd.DataFrame:
-        # TODO do username lookup here
-        return get_ticker(self.db_session, coerce_float=coerce_float)
+        """Gets the ticker history of all trades and the corresponding token deltas for each trade.
+
+        Arguments
+        ---------
+        coerce_float : bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A pandas dataframe that consists of the ticker.
+        """
+        out = get_ticker(self.db_session, coerce_float=coerce_float)
+        return self._add_username_to_dataframe(out, "wallet_address")
 
     def get_wallet_pnl(self, coerce_float: bool = True) -> pd.DataFrame:
-        # TODO do username lookup here
-        return get_wallet_pnl(self.db_session, coerce_float=coerce_float)
+        """Gets wallet pnls of all trades and the corresponding token deltas for each trade.
+        Here, each row consists of the position of the token at that time (`value`) and the corresponding PNL
+        of that token at that time (`pnl`). A row will only exist if a position delta occurred at that block.
+
+        Arguments
+        ---------
+        coerce_float : bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A pandas dataframe that consists of all token pnls.
+        """
+        # TODO pnls here are missing zero value positions, fix
+        out = get_wallet_pnl(self.db_session, coerce_float=coerce_float)
+        return self._add_username_to_dataframe(out, "wallet_address")
 
     def get_total_wallet_pnl_over_time(self, coerce_float: bool = True) -> pd.DataFrame:
-        # TODO do username lookup here
-        return get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
+        """Gets total pnl for each wallet for each block, aggregated across all open positions.
+
+        Arguments
+        ---------
+        coerce_float : bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A pandas dataframe that consists of wallet pnls for each wallet over time.
+        """
+        out = get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
+        return self._add_username_to_dataframe(out, "wallet_address")
 
     def get_wallet_positions_over_time(self, coerce_float: bool = True) -> pd.DataFrame:
-        # TODO do username lookup here
-        return get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
+        """Gets wallet positions for each wallet for each block.
+
+        Arguments
+        ---------
+        coerce_float : bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A pandas dataframe that consists of wallet positions for each wallet over time.
+        """
+        # TODO pnls here are missing zero value positions, fix
+        out = get_wallet_positions_over_time(self.db_session, coerce_float=coerce_float)
+        return self._add_username_to_dataframe(out, "wallet_address")
 
     ### Private agent methods ###
 
