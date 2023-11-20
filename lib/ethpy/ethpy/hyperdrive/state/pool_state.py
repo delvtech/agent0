@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from fixedpointmath import FixedPoint
-from hypertypes.fixedpoint_types import PoolConfigFP, PoolInfoFP
+from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
 from hypertypes.utilities.conversions import (
     fixedpoint_checkpoint_to_hypertypes,
     fixedpoint_pool_config_to_hypertypes,
@@ -13,7 +13,6 @@ from hypertypes.utilities.conversions import (
 )
 from web3.types import BlockData
 
-from .checkpoint import Checkpoint
 from .conversions import dataclass_to_dict
 
 # pylint: disable=too-many-instance-attributes
@@ -25,7 +24,7 @@ class PoolState:
     block: BlockData
     pool_config: PoolConfigFP
     pool_info: PoolInfoFP
-    checkpoint: Checkpoint
+    checkpoint: CheckpointFP
     variable_rate: FixedPoint
     vault_shares: FixedPoint
     total_supply_withdrawal_shares: FixedPoint

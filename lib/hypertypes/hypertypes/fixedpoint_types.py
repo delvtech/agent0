@@ -68,3 +68,11 @@ class PoolConfigFP:
     def __post_init__(self):
         if isinstance(self.fees, Sequence):
             self.fees: FeesFP = FeesFP(*self.fees)
+
+
+@dataclass
+class CheckpointFP:
+    """Checkpoint struct."""
+
+    share_price: FixedPoint
+    exposure: FixedPoint

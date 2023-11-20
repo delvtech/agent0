@@ -9,9 +9,7 @@ from fixedpointmath import FixedPoint
 from hypertypes import Checkpoint as HtCheckpoint
 from hypertypes import PoolConfig as HtPoolConfig
 from hypertypes import PoolInfo as HtPoolInfo
-from hypertypes.fixedpoint_types import FeesFP, PoolConfigFP, PoolInfoFP
-
-from .checkpoint import Checkpoint
+from hypertypes.fixedpoint_types import CheckpointFP, FeesFP, PoolConfigFP, PoolInfoFP
 
 
 def camel_to_snake(snake_string: str) -> str:
@@ -28,7 +26,7 @@ def snake_to_camel(snake_string: str) -> str:
 
 
 def dataclass_to_dict(
-    cls: HtPoolInfo | PoolInfoFP | HtPoolConfig | PoolConfigFP | HtCheckpoint | Checkpoint,
+    cls: HtPoolInfo | PoolInfoFP | HtPoolConfig | PoolConfigFP | HtCheckpoint | CheckpointFP,
 ) -> dict[str, Any]:
     """Convert a state dataclass into a dictionary."""
     out_dict = {}

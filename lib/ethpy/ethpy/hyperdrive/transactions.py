@@ -5,7 +5,7 @@ from eth_typing import BlockNumber
 from ethpy.base import UnknownBlockError, get_transaction_logs
 from fixedpointmath import FixedPoint
 from hypertypes import IERC4626HyperdriveContract
-from hypertypes.fixedpoint_types import PoolConfigFP, PoolInfoFP
+from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
 from hypertypes.utilities.conversions import (
     hypertypes_checkpoint_to_fixedpoint,
     hypertypes_pool_config_to_fixedpoint,
@@ -15,7 +15,6 @@ from web3.contract.contract import Contract
 from web3.types import Timestamp, TxReceipt
 
 from .receipt_breakdown import ReceiptBreakdown
-from .state import Checkpoint
 
 
 def get_hyperdrive_pool_config(hyperdrive_contract: IERC4626HyperdriveContract) -> PoolConfigFP:
@@ -56,7 +55,7 @@ def get_hyperdrive_pool_info(hyperdrive_contract: IERC4626HyperdriveContract, bl
 
 def get_hyperdrive_checkpoint(
     hyperdrive_contract: IERC4626HyperdriveContract, block_timestamp: Timestamp
-) -> Checkpoint:
+) -> CheckpointFP:
     """Get the checkpoint info for the Hyperdrive contract at a given block.
 
     Arguments

@@ -1,17 +1,29 @@
 """Conversion for hypertypes to fixedpoint"""
 from __future__ import annotations
 
+import re
 from dataclasses import asdict
 from typing import Any
 
-from ethpy.hyperdrive.state.checkpoint import Checkpoint
-from ethpy.hyperdrive.state.conversions import camel_to_snake, snake_to_camel
 from fixedpointmath import FixedPoint
 from hypertypes import Checkpoint as HtCheckpoint
 from hypertypes import Fees as HtFees
 from hypertypes import PoolConfig as HtPoolConfig
 from hypertypes import PoolInfo as HtPoolInfo
-from hypertypes.fixedpoint_types import PoolConfigFP, PoolInfoFP
+from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
+
+
+def camel_to_snake(snake_string: str) -> str:
+    """Convert camel case string to snake case string."""
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", snake_string).lower()
+
+
+def snake_to_camel(snake_string: str) -> str:
+    """Convert snake case string to camel case string."""
+    # First capitalize the letters following the underscores and remove underscores
+    camel_string = re.sub(r"_([a-z])", lambda x: x.group(1).upper(), snake_string)
+    # Ensure the first character is lowercase to achieve lowerCamelCase
+    return camel_string[0].lower() + camel_string[1:] if camel_string else camel_string
 
 
 def hypertypes_pool_info_to_fixedpoint(hypertypes_pool_info: HtPoolInfo) -> PoolInfoFP:
@@ -58,7 +70,7 @@ def contract_checkpoint_to_hypertypes(contract_checkpoint: dict[str, Any]) -> Ht
     return HtCheckpoint(**contract_checkpoint)
 
 
-def hypertypes_checkpoint_to_fixedpoint(hypertypes_checkpoint: HtCheckpoint) -> Checkpoint:
+def hypertypes_checkpoint_to_fixedpoint(hypertypes_checkpoint: HtCheckpoint) -> CheckpointFP:
     """Convert the HyperTypes Checkpoint attribute types from what Solidity returns to FixedPoint.
 
     Arguments
@@ -71,12 +83,12 @@ def hypertypes_checkpoint_to_fixedpoint(hypertypes_checkpoint: HtCheckpoint) -> 
     ethpy.hyperdrive.state.Checkpoint
         A dataclass containing the checkpoint share_price and exposure fields converted to FixedPoint.
     """
-    return Checkpoint(
+    return CheckpointFP(
         **{camel_to_snake(key): FixedPoint(scaled_value=value) for key, value in asdict(hypertypes_checkpoint).items()}
     )
 
 
-def fixedpoint_checkpoint_to_hypertypes(fixedpoint_checkpoint: Checkpoint) -> HtCheckpoint:
+def fixedpoint_checkpoint_to_hypertypes(fixedpoint_checkpoint: CheckpointFP) -> HtCheckpoint:
     """Convert the Checkpoint attribute types from FixedPoint to what the Solidity ABI specifies.
 
     Arguments
