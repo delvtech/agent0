@@ -325,6 +325,8 @@ class InteractiveHyperdrive:
         """
         # TODO this currently doesn't store the starting base value
         # need to add the known base to rows with `WETH` as the token type
+        # TODO potential improvement is to pivot the table so that columns are the token type
+        # Makes this data easier to work with
         out = get_current_wallet(self.db_session, coerce_float=coerce_float)
         return self._add_username_to_dataframe(out, "wallet_address")
 
