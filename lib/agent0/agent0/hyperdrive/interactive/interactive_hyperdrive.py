@@ -227,7 +227,7 @@ class InteractiveHyperdrive:
         if base is None:
             base = FixedPoint(0)
         if eth is None:
-            eth = FixedPoint(100)
+            eth = FixedPoint(10)
         out_agent = InteractiveHyperdriveAgent(base=base, eth=eth, name=name, pool=self)
         return out_agent
 
