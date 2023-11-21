@@ -157,7 +157,7 @@ class InteractiveHyperdriveAgent:
 
         Returns
         -------
-        CloseLong
+        CloseShort
             The emitted event of the close short call.
         """
         return self._pool._close_short(self.agent, maturity_time, bonds)
@@ -187,7 +187,7 @@ class InteractiveHyperdriveAgent:
 
         Returns
         -------
-        AddLiquidity
+        RemoveLiquidity
             The emitted event of the remove liquidity call.
         """
         return self._pool._remove_liquidity(self.agent, shares)
@@ -202,7 +202,7 @@ class InteractiveHyperdriveAgent:
 
         Returns
         -------
-        AddLiquidity
-            The emitted event of the remove liquidity call.
+        RedeemWithdrawalShares
+            The emitted event of the redeem withdrawal shares call.
         """
         return self._pool._redeem_withdraw_share(self.agent, shares)
