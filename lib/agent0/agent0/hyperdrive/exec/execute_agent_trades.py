@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING
 
 from ethpy.base import retry_call
 from ethpy.hyperdrive import ReceiptBreakdown
@@ -62,7 +62,7 @@ async def async_execute_single_agent_trade(
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
     # However, should probably test what the limit number of trades an agent can make in one block
     wallet_deltas_or_exception: list[
-        Tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException
+        tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException
     ] = await asyncio.gather(
         *[
             async_match_contract_call_to_trade(agent, hyperdrive, trade_object, nonce=Nonce(base_nonce + i))
@@ -157,7 +157,7 @@ async def async_match_contract_call_to_trade(
     hyperdrive: HyperdriveInterface,
     trade_envelope: Trade[HyperdriveMarketAction],
     nonce: Nonce,
-) -> Tuple[HyperdriveWalletDeltas, ReceiptBreakdown]:
+) -> tuple[HyperdriveWalletDeltas, ReceiptBreakdown]:
     """Match statement that executes the smart contract trade based on the provided type.
 
     Arguments
