@@ -52,7 +52,6 @@ class InteractiveHyperdriveAgent:
         """
         self._pool = pool
         self.name = name
-        # TODO
         self.agent = self._pool._init_agent(base, eth, name)
 
     @property
