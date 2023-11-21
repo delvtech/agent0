@@ -326,7 +326,11 @@ def get_checkpoint_info(
 
 
 def get_wallet_deltas(
-    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
+    session: Session,
+    start_block: int | None = None,
+    end_block: int | None = None,
+    return_timestamp: bool = True,
+    coerce_float=True,
 ) -> pd.DataFrame:
     """Get all wallet_delta data in history and returns as a pandas dataframe.
 
@@ -340,6 +344,8 @@ def get_wallet_deltas(
     end_block : int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
+    return_timestamp : bool, optional
+        Gets timestamps when looking at pool analysis. Defaults to True
     coerce_float : bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
@@ -348,7 +354,10 @@ def get_wallet_deltas(
     DataFrame
         A DataFrame that consists of the queried wallet info data
     """
-    query = session.query(WalletDelta)
+    if return_timestamp:
+        query = session.query(PoolInfo.timestamp, WalletDelta)
+    else:
+        query = session.query(WalletDelta)
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
@@ -360,6 +369,10 @@ def get_wallet_deltas(
         query = query.filter(WalletDelta.block_number >= start_block)
     if end_block is not None:
         query = query.filter(WalletDelta.block_number < end_block)
+
+    if return_timestamp:
+        # query from PoolInfo the timestamp
+        query = query.join(PoolInfo, WalletDelta.block_number == PoolInfo.block_number)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 

@@ -313,22 +313,6 @@ class InteractiveHyperdrive:
         df.insert(df.columns.get_loc(addr_column), "username", usernames)
         return df
 
-    def get_wallet_deltas(self, coerce_float: bool = True) -> pd.DataFrame:
-        """Get all token deltas and returns as a pandas dataframe.
-
-        Arguments
-        ---------
-        coerce_float : bool
-            If True, will coerce underlying Decimals to floats.
-
-        Returns
-        -------
-        pd.Dataframe
-            A pandas dataframe that consists of all token deltas.
-        """
-        out = get_wallet_deltas(self.db_session, coerce_float=coerce_float)
-        return self._add_username_to_dataframe(out, "wallet_address")
-
     def get_current_wallet(self, coerce_float: bool = True) -> pd.DataFrame:
         """Gets the current wallet positions of all agents and returns as a pandas dataframe.
 
@@ -373,10 +357,9 @@ class InteractiveHyperdrive:
         out = get_ticker(self.db_session, coerce_float=coerce_float)
         return self._add_username_to_dataframe(out, "wallet_address")
 
-    def get_wallet_pnl(self, coerce_float: bool = True) -> pd.DataFrame:
-        """Gets wallet pnls of all trades and the corresponding token deltas for each trade.
-        Here, each row consists of the position of the token at that time (`value`) and the corresponding PNL
-        of that token at that time (`pnl`). A row will only exist if a position delta occurred at that block.
+    def get_wallet_positions(self, coerce_float: bool = True) -> pd.DataFrame:
+        """Get a dataframe summarizing all wallet deltas and positions
+        and returns as a pandas dataframe.
 
         Arguments
         ---------
@@ -386,12 +369,47 @@ class InteractiveHyperdrive:
         Returns
         -------
         pd.Dataframe
-            A pandas dataframe that consists of all token pnls.
+            timestamp : pd.Timestamp
+                The block timestamp of the entry.
+            block_number : int
+                The block number of the entry.
+            username : str
+                The username of the entry.
+            wallet_address : str
+                The wallet address of the entry.
+            token_type : str
+                A string specifying the token type. Longs and shorts are encoded as `LONG-{maturity_time}`.
+            position : Decimal | float
+                The current value of the token of the agent at the specified block number.
+            delta: Decimal | float
+                The change in value of the token of the agent at the specified block number.
+            maturity_time : Decimal | float
+                The maturity time of the token in epoch seconds. Can be NaN to denote not applicable.
+            transaction_hash: str
+                The transaction hash that resulted in the deltas.
+
         """
-        # TODO pnls here are missing zero value positions, fix
-        # https://github.com/delvtech/agent0/issues/1106
-        out = get_wallet_pnl(self.db_session, coerce_float=coerce_float)
-        return self._add_username_to_dataframe(out, "wallet_address")
+        # We gather all deltas and calculate the current positions here
+        # If computing this is too slow, we can get current positions from
+        # the wallet_pnl table and left merge with the deltas
+        out = get_wallet_deltas(self.db_session, coerce_float=coerce_float)
+        out["position"] = out.groupby(["wallet_address", "token_type"])["delta"].transform(pd.Series.cumsum)
+        out = self._add_username_to_dataframe(out, "wallet_address")
+        # Select a subset of columns in order for output
+        out = out[
+            [
+                "timestamp",
+                "block_number",
+                "username",
+                "wallet_address",
+                "token_type",
+                "position",
+                "delta",
+                "maturity_time",
+                "transaction_hash",
+            ]
+        ]
+        return out
 
     def get_total_wallet_pnl_over_time(self, coerce_float: bool = True) -> pd.DataFrame:
         """Gets total pnl for each wallet for each block, aggregated across all open positions.
@@ -407,24 +425,6 @@ class InteractiveHyperdrive:
             A pandas dataframe that consists of wallet pnls for each wallet over time.
         """
         out = get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
-        return self._add_username_to_dataframe(out, "wallet_address")
-
-    def get_wallet_positions_over_time(self, coerce_float: bool = True) -> pd.DataFrame:
-        """Gets wallet positions for each wallet for each block.
-
-        Arguments
-        ---------
-        coerce_float : bool
-            If True, will coerce underlying Decimals to floats.
-
-        Returns
-        -------
-        pd.Dataframe
-            A pandas dataframe that consists of wallet positions for each wallet over time.
-        """
-        # TODO pnls here are missing zero value positions, fix
-        # https://github.com/delvtech/agent0/issues/1106
-        out = get_wallet_positions_over_time(self.db_session, coerce_float=coerce_float)
         return self._add_username_to_dataframe(out, "wallet_address")
 
     ### Private agent methods ###

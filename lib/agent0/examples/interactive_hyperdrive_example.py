@@ -93,15 +93,10 @@ pool_info_history = interactive_hyperdrive.get_pool_info()
 # TODO checkpoint info is currently bugged, fix
 checkpoint_info = interactive_hyperdrive.get_checkpoint_info()
 pool_analysis = interactive_hyperdrive.get_pool_analysis()
-wallet_deltas = interactive_hyperdrive.get_wallet_deltas()
-# TODO current_wallet is currently bugged, fix
+wallet_positions = interactive_hyperdrive.get_wallet_positions(coerce_float=False)
 current_wallet = interactive_hyperdrive.get_current_wallet()
 ticker = interactive_hyperdrive.get_ticker()
-# TODO wallet_pnl is currently bugged, fix
-wallet_pnl = interactive_hyperdrive.get_wallet_pnl()
 total_wallet_pnl_over_time = interactive_hyperdrive.get_total_wallet_pnl_over_time()
-# TODO wallet positions over time is bugged, fix
-wallet_positions_over_time = interactive_hyperdrive.get_wallet_positions_over_time()
 
 # %%
 
