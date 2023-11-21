@@ -6,12 +6,6 @@ import os
 from dataclasses import dataclass
 from typing import cast
 
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base import smart_contract_read
@@ -22,6 +16,13 @@ from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import HTTPProvider
+
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base import MarketType, Trade
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.policies import HyperdrivePolicy
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 
 
 def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, hyperdrive: HyperdriveInterface) -> None:
@@ -243,7 +244,7 @@ class TestWalletAgainstChain:
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
-    def test_bot_to_db(
+    def test_wallet_against_chain(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
