@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import asdict, dataclass
+from decimal import Decimal
 
 import pandas as pd
 from chainsync import PostgresConfig
@@ -22,10 +23,11 @@ from chainsync.db.hyperdrive import (
 )
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
+from eth_typing import ChecksumAddress
 from eth_utils.address import to_checksum_address
 from ethpy import EthConfig
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
-from ethpy.hyperdrive import DeployedHyperdrivePool, ReceiptBreakdown, deploy_hyperdrive_from_factory
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, DeployedHyperdrivePool, ReceiptBreakdown, deploy_hyperdrive_from_factory
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig
@@ -162,6 +164,9 @@ class InteractiveHyperdrive:
         )
 
         self.db_session = initialize_session(postgres_config, ensure_database_created=True)
+
+        # Keep track of how much base have been minted per agent
+        self._initial_funds: dict[ChecksumAddress, FixedPoint] = {}
 
     def __del__(self):
         # Attempt to close the session
@@ -337,12 +342,19 @@ class InteractiveHyperdrive:
         pd.Dataframe
             A pandas dataframe that consists of the current wallet positions.
         """
-        # TODO this currently doesn't store the starting base value
-        # need to add the known base to rows with `WETH` as the token type
         # TODO potential improvement is to pivot the table so that columns are the token type
         # Makes this data easier to work with
         # https://github.com/delvtech/agent0/issues/1106
         out = get_current_wallet(self.db_session, coerce_float=coerce_float)
+        # DB only stores final delta for base, we calculate actual base based on how much funds
+        # were added in all
+        for address, initial_balance in self._initial_funds.items():
+            row_idxs = (out["wallet_address"] == address) & (out["base_token_type"] == BASE_TOKEN_SYMBOL)
+            if coerce_float:
+                out.loc[row_idxs, "value"] += float(initial_balance)
+            else:
+                out.loc[row_idxs, "value"] += Decimal(str(initial_balance))
+
         return self._add_username_to_dataframe(out, "wallet_address")
 
     def get_ticker(self, coerce_float: bool = True) -> pd.DataFrame:
@@ -462,6 +474,12 @@ class InteractiveHyperdrive:
             )
             # Update the agent's wallet balance
             agent.wallet.balance.amount += base
+
+            # Keep track of how much base has been minted for each agent
+            if agent.address in self._initial_funds:
+                self._initial_funds[agent.address] += base
+            else:
+                self._initial_funds[agent.address] = base
 
         # TODO do we want to report a status here?
 

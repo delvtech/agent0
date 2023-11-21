@@ -1,6 +1,7 @@
 """Tests interactive hyperdrive end to end"""
 import datetime
 
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.state import HyperdriveWallet
@@ -22,13 +23,9 @@ class TestInteractiveHyperdrive:
         # Test against db
         current_wallet_df = interactive_hyperdrive.get_current_wallet(coerce_float=False)
 
-        # Check base
-        # TODO when current wallet gets fixed to represent current position, we can check base
-        # https://github.com/delvtech/agent0/pull/1101
-
-        # base_wallet_df = current_wallet_df[current_wallet_df["base_token_type"] == "WETH"]
-        # assert len(base_wallet_df) == 1
-        # assert agent_wallet.balance == FixedPoint(base_wallet_df.iloc[0]["value"])
+        base_wallet_df = current_wallet_df[current_wallet_df["base_token_type"] == BASE_TOKEN_SYMBOL]
+        assert len(base_wallet_df) == 1
+        assert agent_wallet.balance.amount == FixedPoint(base_wallet_df.iloc[0]["value"])
 
         # Check lp
         lp_wallet_df = current_wallet_df[current_wallet_df["base_token_type"] == "LP"]
