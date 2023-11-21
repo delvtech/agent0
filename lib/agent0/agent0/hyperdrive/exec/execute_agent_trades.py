@@ -20,7 +20,7 @@ from agent0.hyperdrive.state import (
     TradeResult,
     TradeStatus,
 )
-from agent0.utils import assert_never
+from agent0.test_utils import assert_never
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
