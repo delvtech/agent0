@@ -1,9 +1,12 @@
 """Script to showcase setting up and running custom agents"""
+# %%
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+
+from fixedpointmath import FixedPoint
 
 from agent0 import initialize_accounts
 from agent0.base import MarketType, Trade
@@ -11,13 +14,14 @@ from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
-from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.state import HyperdriveWallet
     from ethpy.hyperdrive.api import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
 
+    from agent0.hyperdrive.state import HyperdriveWallet
+
+# %%
 # Define the unique agent env filename to use for this script
 ENV_FILE = "custom_agent.account.env"
 # Username binding for bots
@@ -31,6 +35,7 @@ SLIPPAGE_TOLERANCE = FixedPoint("0.0001")  # 0.1% slippage
 LIQUIDATE = False
 
 
+# %%
 # Build custom policy
 # Simple agent, opens a set of all trades for a fixed amount and closes them after
 # TODO this bot is almost identical to the one defined in test_fixtures for system tests
@@ -191,6 +196,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
         return action_list, False
 
 
+# %%
 # Build environment config
 env_config = EnvironmentConfig(
     delete_previous_logs=False,
@@ -215,6 +221,7 @@ agent_config: list[AgentConfig] = [
         ),
     ),
 ]
+# %%
 
 # Build accounts env var
 # This function writes a user defined env file location.

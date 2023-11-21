@@ -3,9 +3,10 @@ from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 
-from agent0.base import Quantity, TokenType
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
+
+from agent0.base import Quantity, TokenType
 
 from .hyperdrive_wallet import HyperdriveWallet, HyperdriveWalletDeltas, Long
 
@@ -20,7 +21,7 @@ class TestWallet(unittest.TestCase):
         )
         example_deltas = HyperdriveWalletDeltas(
             balance=Quantity(amount=FixedPoint("-10.0"), unit=TokenType.BASE),
-            longs={0: Long(FixedPoint("15.0"))},
+            longs={0: Long(FixedPoint("15.0"), maturity_time=0)},
         )
         example_wallet.update(example_deltas)
         assert id(example_wallet.longs[0]) != id(example_deltas.longs[0]), (
@@ -36,7 +37,7 @@ class TestWallet(unittest.TestCase):
         ), f"{example_wallet.balance.amount=} should be 100-10=90."
         new_example_deltas = HyperdriveWalletDeltas(
             balance=Quantity(amount=FixedPoint("-5.0"), unit=TokenType.BASE),
-            longs={0: Long(FixedPoint("8.0"))},
+            longs={0: Long(FixedPoint("8.0"), maturity_time=0)},
         )
         example_wallet.update(new_example_deltas)
         assert example_wallet.longs[0].balance == FixedPoint(

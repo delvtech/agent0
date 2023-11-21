@@ -14,6 +14,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql import text
+from sqlalchemy_utils import create_database, database_exists
 
 from .schema import AddrToUsername, Base, UsernameToUser
 
@@ -57,7 +58,7 @@ def drop_table(session: Session, table_name: str) -> None:
     table.drop(checkfirst=True, bind=bind)
 
 
-def initialize_engine(postgres_config: PostgresConfig | None = None) -> Engine:
+def initialize_engine(postgres_config: PostgresConfig | None = None, ensure_database_created: bool = False) -> Engine:
     """Initializes the postgres engine from config
 
     Returns
@@ -77,6 +78,23 @@ def initialize_engine(postgres_config: PostgresConfig | None = None) -> Engine:
         database=postgres_config.POSTGRES_DB,
     )
     engine = create_engine(url_object)
+
+    if ensure_database_created:
+        exception = None
+        for _ in range(10):
+            try:
+                if not database_exists(engine.url):
+                    logging.info("Database %s does not exist, creating", postgres_config.POSTGRES_DB)
+                    create_database(engine.url)
+                exception = None
+                break
+            except OperationalError as ex:
+                logging.warning("No postgres connection, retrying")
+                exception = ex
+                time.sleep(1)
+        if exception is not None:
+            raise exception
+
     exception = None
     for _ in range(10):
         try:
@@ -90,10 +108,13 @@ def initialize_engine(postgres_config: PostgresConfig | None = None) -> Engine:
             time.sleep(1)
     if exception is not None:
         raise exception
+
     return engine
 
 
-def initialize_session(drop: bool = False) -> Session:
+def initialize_session(
+    postgres_config: PostgresConfig | None = None, drop: bool = False, ensure_database_created: bool = False
+) -> Session:
     """Initialize the database if not already initialized.
 
     Arguments
@@ -107,7 +128,7 @@ def initialize_session(drop: bool = False) -> Session:
         The initialized session object
     """
 
-    engine = initialize_engine()
+    engine = initialize_engine(postgres_config, ensure_database_created)
 
     # create a configured "Session" class
     session_class = sessionmaker(bind=engine)

@@ -109,6 +109,8 @@ def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddress
     return hyperdrive_contract
 
 
+# Looking for lots of event variables
+# pylint: disable=too-many-branches
 def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> ReceiptBreakdown:
     """Decode a Hyperdrive contract transaction receipt to get the changes to the agent's funds.
 
@@ -145,6 +147,10 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
         raise AssertionError("Too many logs found")
     log_args = hyperdrive_event_logs[0]["args"]
     trade_result = ReceiptBreakdown()
+    if "trader" in log_args:
+        trade_result.trader = log_args["trader"]
+    if "provider" in log_args:
+        trade_result.provider = log_args["provider"]
     if "assetId" in log_args:
         trade_result.asset_id = log_args["assetId"]
     if "maturityTime" in log_args:
@@ -157,6 +163,10 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
         trade_result.lp_amount = FixedPoint(scaled_value=log_args["lpAmount"])
     if "withdrawalShareAmount" in log_args:
         trade_result.withdrawal_share_amount = FixedPoint(scaled_value=log_args["withdrawalShareAmount"])
+    if "sharePrice" in log_args:
+        trade_result.share_price = FixedPoint(scaled_value=log_args["sharePrice"])
+    if "lpSharePrice" in log_args:
+        trade_result.lp_share_price = FixedPoint(scaled_value=log_args["lpSharePrice"])
     return trade_result
 
 

@@ -33,6 +33,7 @@ base = [
     "flask-expects-json",
     "psycopg[binary]",
     "sqlalchemy",
+    "sqlalchemy-utils",
     "pandas-stubs",
     "requests",
 ]

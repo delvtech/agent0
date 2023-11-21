@@ -9,10 +9,6 @@ import time
 import warnings
 
 import pandas as pd
-from agent0 import AccountKeyConfig
-from agent0.base import Quantity, TokenType
-from agent0.base.config import DEFAULT_USERNAME, AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.state import HyperdriveWallet, Long, Short
 from chainsync.db.api import balance_of, register_username
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
@@ -21,6 +17,11 @@ from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3.contract.contract import Contract
+
+from agent0 import AccountKeyConfig
+from agent0.base import Quantity, TokenType
+from agent0.base.config import DEFAULT_USERNAME, AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.state import HyperdriveWallet, Long, Short
 
 from .create_and_fund_user_account import create_and_fund_user_account
 from .fund_agents import async_fund_agents
@@ -190,13 +191,15 @@ def build_wallet_positions_from_data(
     long_obj = {}
     # Casting maturity_time to int due to values getting encoded as strings
     for _, row in long_balances.iterrows():
-        long_obj[int(row["maturity_time"])] = Long(balance=FixedPoint(row["value"]))
+        maturity_time = int(row["maturity_time"])
+        long_obj[maturity_time] = Long(balance=FixedPoint(row["value"]), maturity_time=maturity_time)
 
     short_balances = wallet_balances[wallet_balances["base_token_type"] == "SHORT"]
     short_obj = {}
     # Casting maturity_time to int due to values getting encoded as strings
     for _, row in short_balances.iterrows():
-        short_obj[int(row["maturity_time"])] = Short(balance=FixedPoint(row["value"]))
+        maturity_time = int(row["maturity_time"])
+        short_obj[maturity_time] = Short(balance=FixedPoint(row["value"]), maturity_time=maturity_time)
 
     lp_balances = wallet_balances[wallet_balances["base_token_type"] == "LP"]
     assert len(lp_balances) <= 1

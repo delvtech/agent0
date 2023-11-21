@@ -2,10 +2,15 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING
+
+from ethpy.base import retry_call
+from ethpy.hyperdrive import ReceiptBreakdown
+from ethpy.hyperdrive.api import HyperdriveInterface
+from web3.types import Nonce
 
 from agent0.base import Quantity, TokenType, Trade
-from agent0.hyperdrive.crash_report import build_crash_trade_result
+from agent0.hyperdrive.crash_report import build_crash_trade_result, check_for_invalid_balance, check_for_slippage
 from agent0.hyperdrive.state import (
     HyperdriveActionType,
     HyperdriveMarketAction,
@@ -15,22 +20,10 @@ from agent0.hyperdrive.state import (
     TradeResult,
     TradeStatus,
 )
-from ethpy.base import retry_call
-from ethpy.hyperdrive.api import HyperdriveInterface
-from web3.types import Nonce
+from agent0.test_utils import assert_never
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
-
-
-def assert_never(arg: NoReturn) -> NoReturn:
-    """Helper function for exhaustive matching on ENUMS.
-
-    .. note::
-        This ensures that all ENUM values are checked, via an exhaustive match:
-        https://github.com/microsoft/pyright/issues/2569
-    """
-    assert False, f"Unhandled type: {type(arg).__name__}"
 
 
 async def async_execute_single_agent_trade(
@@ -68,7 +61,9 @@ async def async_execute_single_agent_trade(
     # TODO preliminary search shows async tasks has very low overhead:
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
     # However, should probably test what the limit number of trades an agent can make in one block
-    wallet_deltas_or_exception: list[HyperdriveWalletDeltas | BaseException] = await asyncio.gather(
+    wallet_deltas_or_exception: list[
+        tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException
+    ] = await asyncio.gather(
         *[
             async_match_contract_call_to_trade(agent, hyperdrive, trade_object, nonce=Nonce(base_nonce + i))
             for i, trade_object in enumerate(trades)
@@ -93,14 +88,18 @@ async def async_execute_single_agent_trade(
     # as long as the transaction went through.
     trade_results = []
     for result, trade_object in zip(wallet_deltas_or_exception, trades):
-        if isinstance(result, HyperdriveWalletDeltas):
-            agent.wallet.update(result)
-            trade_result = TradeResult(status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object)
-        elif isinstance(result, BaseException):
+        if isinstance(result, BaseException):
             trade_result = build_crash_trade_result(result, agent, trade_object, hyperdrive)
-        else:  # Should never get here
-            # TODO: use match statement and assert_never(result)
-            raise AssertionError("invalid result type")
+        else:
+            assert isinstance(result, tuple)
+            assert len(result) == 2
+            wallet_delta, tx_receipt = result
+            assert isinstance(wallet_delta, HyperdriveWalletDeltas)
+            assert isinstance(tx_receipt, ReceiptBreakdown)
+            agent.wallet.update(wallet_delta)
+            trade_result = TradeResult(
+                status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object, tx_receipt=tx_receipt
+            )
         trade_results.append(trade_result)
 
     return trade_results
@@ -135,6 +134,21 @@ async def async_execute_agent_trades(
     )
     # Flatten list of lists, since agent information is already in TradeResult
     trade_results = [item for sublist in gathered_trade_results for item in sublist]
+
+    # Iterate through trade results, checking for known errors
+    for trade_result in trade_results:
+        if trade_result.status == TradeStatus.FAIL:
+            # Here, we check for common errors and allow for custom handling of various errors
+
+            # These functions adjust the trade_result.exception object to add
+            # additional arguments describing these detected errors for crash reporting
+            # These functions also return a boolean to determine if they detected
+            # these issues
+            is_invalid_balance, trade_result = check_for_invalid_balance(trade_result)
+            is_slippage, trade_result = check_for_slippage(trade_result)
+            trade_result.is_invalid_balance = is_invalid_balance
+            trade_result.is_slippage = is_slippage
+
     return trade_results
 
 
@@ -143,7 +157,7 @@ async def async_match_contract_call_to_trade(
     hyperdrive: HyperdriveInterface,
     trade_envelope: Trade[HyperdriveMarketAction],
     nonce: Nonce,
-) -> HyperdriveWalletDeltas:
+) -> tuple[HyperdriveWalletDeltas, ReceiptBreakdown]:
     """Match statement that executes the smart contract trade based on the provided type.
 
     Arguments
@@ -175,7 +189,11 @@ async def async_match_contract_call_to_trade(
                     amount=-trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                longs={trade_result.maturity_time_seconds: Long(trade_result.bond_amount)},
+                longs={
+                    trade_result.maturity_time_seconds: Long(
+                        balance=trade_result.bond_amount, maturity_time=trade_result.maturity_time_seconds
+                    )
+                },
             )
 
         case HyperdriveActionType.CLOSE_LONG:
@@ -189,7 +207,11 @@ async def async_match_contract_call_to_trade(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                longs={trade.maturity_time: Long(-trade_result.bond_amount)},
+                longs={
+                    trade.maturity_time: Long(
+                        balance=-trade_result.bond_amount, maturity_time=trade_result.maturity_time_seconds
+                    )
+                },
             )
 
         case HyperdriveActionType.OPEN_SHORT:
@@ -201,7 +223,11 @@ async def async_match_contract_call_to_trade(
                     amount=-trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                shorts={trade_result.maturity_time_seconds: Short(balance=trade_result.bond_amount)},
+                shorts={
+                    trade_result.maturity_time_seconds: Short(
+                        balance=trade_result.bond_amount, maturity_time=trade_result.maturity_time_seconds
+                    )
+                },
             )
 
         case HyperdriveActionType.CLOSE_SHORT:
@@ -215,7 +241,11 @@ async def async_match_contract_call_to_trade(
                     amount=trade_result.base_amount,
                     unit=TokenType.BASE,
                 ),
-                shorts={trade.maturity_time: Short(balance=-trade_result.bond_amount)},
+                shorts={
+                    trade.maturity_time: Short(
+                        balance=-trade_result.bond_amount, maturity_time=trade_result.maturity_time_seconds
+                    )
+                },
             )
 
         case HyperdriveActionType.ADD_LIQUIDITY:
@@ -257,4 +287,4 @@ async def async_match_contract_call_to_trade(
 
         case _:
             assert_never(trade.action_type)
-    return wallet_deltas
+    return wallet_deltas, trade_result

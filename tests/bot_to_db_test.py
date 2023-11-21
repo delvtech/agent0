@@ -31,7 +31,7 @@ from web3 import HTTPProvider
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
-from agent0.test_fixtures import CycleTradesPolicy
+from agent0.test_utils import CycleTradesPolicy
 
 
 def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
