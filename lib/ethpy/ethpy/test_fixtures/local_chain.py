@@ -27,8 +27,11 @@ def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1"):
     str
         The local anvil chain URI.
     """
+    # Supress output of anvil
     anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
-        ["anvil", "--host", host, "--port", str(anvil_port), "--code-size-limit", "9999999999"]
+        ["anvil", "--host", host, "--port", str(anvil_port), "--code-size-limit", "9999999999"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
     )
     time.sleep(3)  # Wait for anvil chain to initialize
 
