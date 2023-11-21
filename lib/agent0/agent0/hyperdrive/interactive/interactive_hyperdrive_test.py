@@ -3,8 +3,10 @@ import datetime
 
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.state import HyperdriveWallet
+
+from .chain import LocalChain
+from .interactive_hyperdrive import InteractiveHyperdrive
 
 
 class TestInteractiveHyperdrive:
