@@ -94,7 +94,8 @@ class InteractiveHyperdriveAgent:
         CreateCheckpoint
             The emitted event of the checkpoint call.
         """
-        # TODO underlying function will raise NotImplementedError, fix
+        # TODO underlying function will raise NotImplementedError
+        # https://github.com/delvtech/agent0/issues/1105
         return self._pool._create_checkpoint(self.agent, checkpoint_time)
 
     def open_long(self, base: FixedPoint) -> OpenLong:

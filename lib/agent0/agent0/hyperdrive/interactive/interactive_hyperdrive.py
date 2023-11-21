@@ -651,17 +651,5 @@ class InteractiveHyperdrive:
 
     def _create_checkpoint(self, agent: HyperdriveAgent, checkpoint_time: int | None = None) -> CreateCheckpoint:
         # TODO need to figure out how to mint checkpoints on demand
+        # https://github.com/delvtech/agent0/issues/1105
         raise NotImplementedError
-        # if checkpoint_time is None:
-        #    checkpoint_time = int(
-        #        self.hyperdrive_interface.get_block_timestamp(self.hyperdrive_interface.get_current_block())
-        #    )
-
-        # receipt = smart_contract_transact(
-        #    self.hyperdrive_interface.web3,
-        #    self.hyperdrive_interface.hyperdrive_contract,
-        #    agent,
-        #    "checkpoint",
-        #    (checkpoint_time),
-        # )
-        # pass
