@@ -24,6 +24,8 @@ class TestInteractiveHyperdrive:
 
         # Check base
         # TODO when current wallet gets fixed to represent current position, we can check base
+        # https://github.com/delvtech/agent0/pull/1101
+
         # base_wallet_df = current_wallet_df[current_wallet_df["base_token_type"] == "WETH"]
         # assert len(base_wallet_df) == 1
         # assert agent_wallet.balance == FixedPoint(base_wallet_df.iloc[0]["value"])
