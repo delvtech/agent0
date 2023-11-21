@@ -281,7 +281,7 @@ class InteractiveHyperdrive:
             A pandas dataframe that consists of the checkpoint info per block.
         """
         # TODO the data itself looks a bit weird here, perhaps to accelerating time
-        # Look into this
+        # https://github.com/delvtech/agent0/issues/1106
         return get_checkpoint_info(self.db_session, coerce_float=coerce_float)
 
     def get_pool_analysis(self, coerce_float: bool = True) -> pd.DataFrame:
@@ -341,6 +341,7 @@ class InteractiveHyperdrive:
         # need to add the known base to rows with `WETH` as the token type
         # TODO potential improvement is to pivot the table so that columns are the token type
         # Makes this data easier to work with
+        # https://github.com/delvtech/agent0/issues/1106
         out = get_current_wallet(self.db_session, coerce_float=coerce_float)
         return self._add_username_to_dataframe(out, "wallet_address")
 
@@ -376,6 +377,7 @@ class InteractiveHyperdrive:
             A pandas dataframe that consists of all token pnls.
         """
         # TODO pnls here are missing zero value positions, fix
+        # https://github.com/delvtech/agent0/issues/1106
         out = get_wallet_pnl(self.db_session, coerce_float=coerce_float)
         return self._add_username_to_dataframe(out, "wallet_address")
 
@@ -409,6 +411,7 @@ class InteractiveHyperdrive:
             A pandas dataframe that consists of wallet positions for each wallet over time.
         """
         # TODO pnls here are missing zero value positions, fix
+        # https://github.com/delvtech/agent0/issues/1106
         out = get_wallet_positions_over_time(self.db_session, coerce_float=coerce_float)
         return self._add_username_to_dataframe(out, "wallet_address")
 

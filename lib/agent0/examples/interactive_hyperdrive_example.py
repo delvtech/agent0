@@ -87,6 +87,7 @@ withdraw_shares_event = hyperdrive_agent2.redeem_withdraw_share(shares=hyperdriv
 
 # %%
 # Get data from database under the hood
+# TODO: https://github.com/delvtech/agent0/issues/1106
 pool_config = interactive_hyperdrive.get_pool_config()
 pool_info_history = interactive_hyperdrive.get_pool_info()
 # TODO checkpoint info is currently bugged, fix
