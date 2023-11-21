@@ -1,4 +1,5 @@
 """Script to showcase running default implemented agents."""
+# %%
 from __future__ import annotations
 
 import logging
@@ -9,6 +10,8 @@ from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import Zoo
+
+# %%
 
 # NOTE be sure to adjust `eth.env` to connect to a specific chain
 
@@ -24,6 +27,7 @@ SLIPPAGE_TOLERANCE = FixedPoint("0.0001")  # 0.1% slippage
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 
+# %%
 # Build configuration
 env_config = EnvironmentConfig(
     delete_previous_logs=True,
@@ -73,13 +77,13 @@ agent_config: list[AgentConfig] = [
     ),
 ]
 
-if __name__ == "__main__":
-    # Build accounts env var
-    # This function writes a user defined env file location.
-    # If it doesn't exist, create it based on agent_config
-    # (If os.environ["DEVELOP"] is False, will clean exit and print instructions on how to fund agent)
-    # If it does exist, read it in and use it
-    account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed)
+# %%
+# Build accounts env var
+# This function writes a user defined env file location.
+# If it doesn't exist, create it based on agent_config
+# (If os.environ["DEVELOP"] is False, will clean exit and print instructions on how to fund agent)
+# If it does exist, read it in and use it
+account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed)
 
-    # Run agents
-    run_agents(env_config, agent_config, account_key_config, liquidate=LIQUIDATE)
+# Run agents
+run_agents(env_config, agent_config, account_key_config, liquidate=LIQUIDATE)
