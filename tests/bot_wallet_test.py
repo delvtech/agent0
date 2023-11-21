@@ -210,7 +210,6 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                             trade_amount=short.balance,
                             slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
-                            # TODO is this actually maturity time? Not mint time?
                             maturity_time=short_time,
                         ),
                     )

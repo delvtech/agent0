@@ -194,10 +194,14 @@ class LocalChain(Chain):
             anvil_launch_args.append("--block-time")
             anvil_launch_args.append(str(config.block_time))
 
-        # Suppressing output of anvil
-        self.anvil_process = subprocess.Popen(
-            anvil_launch_args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT
-        )  # pylint: disable=consider-using-with
+        # This process never stops, so we run this in the background and
+        # explicitly clean up later
+        self.anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
+            # Suppressing output of anvil
+            anvil_launch_args,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
+        )
 
         rpc_url = "http://127.0.0.1:" + str(config.chain_port)
         super().__init__(rpc_url, config)
