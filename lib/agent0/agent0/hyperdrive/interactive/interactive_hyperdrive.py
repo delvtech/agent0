@@ -313,8 +313,19 @@ class InteractiveHyperdrive:
         df.insert(df.columns.get_loc(addr_column), "username", usernames)
         return df
 
+    def _adjust_base_positions(self, in_df: pd.DataFrame, value_column: str, coerce_float: bool):
+        out_df = in_df.copy()
+        for address, initial_balance in self._initial_funds.items():
+            row_idxs = (out_df["wallet_address"] == address) & (out_df["base_token_type"] == BASE_TOKEN_SYMBOL)
+            if coerce_float:
+                out_df.loc[row_idxs, value_column] += float(initial_balance)
+            else:
+                out_df.loc[row_idxs, value_column] += Decimal(str(initial_balance))
+        return out_df
+
     def get_current_wallet(self, coerce_float: bool = True) -> pd.DataFrame:
-        """Gets the current wallet positions of all agents and returns as a pandas dataframe.
+        """Gets the current wallet positions of all agents and their corresponding pnl
+        and returns as a pandas dataframe.
 
         Arguments
         ---------
@@ -332,12 +343,7 @@ class InteractiveHyperdrive:
         out = get_current_wallet(self.db_session, coerce_float=coerce_float)
         # DB only stores final delta for base, we calculate actual base based on how much funds
         # were added in all
-        for address, initial_balance in self._initial_funds.items():
-            row_idxs = (out["wallet_address"] == address) & (out["base_token_type"] == BASE_TOKEN_SYMBOL)
-            if coerce_float:
-                out.loc[row_idxs, "value"] += float(initial_balance)
-            else:
-                out.loc[row_idxs, "value"] += Decimal(str(initial_balance))
+        out = self._adjust_base_positions(out, "value", coerce_float)
 
         return self._add_username_to_dataframe(out, "wallet_address")
 
@@ -394,6 +400,11 @@ class InteractiveHyperdrive:
         # the wallet_pnl table and left merge with the deltas
         out = get_wallet_deltas(self.db_session, coerce_float=coerce_float)
         out["position"] = out.groupby(["wallet_address", "token_type"])["delta"].transform(pd.Series.cumsum)
+
+        # DB only stores final delta for base, we calculate actual base based on how much funds
+        # were added in all
+        out = self._adjust_base_positions(out, "position", coerce_float)
+
         out = self._add_username_to_dataframe(out, "wallet_address")
         # Select a subset of columns in order for output
         out = out[
