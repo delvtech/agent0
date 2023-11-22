@@ -4,6 +4,11 @@
 [![](https://img.shields.io/badge/testing-pytest-blue.svg)](https://docs.pytest.org/en/latest/contents.html)
 <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="50px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a>
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="icons/agent0-dark.svg">
+  <img alt="Agent 0" src="icons/agent0-light.svg">
+</picture>
+
 # [DELV](https://delv.tech) monorepo for market simulation and analysis
 
 This project is a work-in-progress. All code is provided as is and without guarantee.
