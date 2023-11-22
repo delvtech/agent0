@@ -6,10 +6,7 @@ from dataclasses import asdict
 from typing import Any
 
 from fixedpointmath import FixedPoint
-from hypertypes import Checkpoint as HtCheckpoint
-from hypertypes import Fees as HtFees
-from hypertypes import PoolConfig as HtPoolConfig
-from hypertypes import PoolInfo as HtPoolInfo
+from hypertypes import Checkpoint, Fees, PoolConfig, PoolInfo
 from hypertypes.fixedpoint_types import CheckpointFP, FeesFP, PoolConfigFP, PoolInfoFP
 
 
@@ -26,7 +23,7 @@ def snake_to_camel(snake_string: str) -> str:
     return camel_string[0].lower() + camel_string[1:] if camel_string else camel_string
 
 
-def hypertypes_pool_info_to_fixedpoint(hypertypes_pool_info: HtPoolInfo) -> PoolInfoFP:
+def hypertypes_pool_info_to_fixedpoint(hypertypes_pool_info: PoolInfo) -> PoolInfoFP:
     """Convert the Hypertypes PoolInfo attribute types from what solidity returns to FixedPoint.
 
     Arguments
@@ -47,7 +44,7 @@ def hypertypes_pool_info_to_fixedpoint(hypertypes_pool_info: HtPoolInfo) -> Pool
     )
 
 
-def fixedpoint_pool_info_to_hypertypes(fixedpoint_pool_info: PoolInfoFP) -> HtPoolInfo:
+def fixedpoint_pool_info_to_hypertypes(fixedpoint_pool_info: PoolInfoFP) -> PoolInfo:
     """Convert the PoolInfo attribute types from FixedPoint to what the Solidity ABI specifies.
 
     Arguments
@@ -60,18 +57,18 @@ def fixedpoint_pool_info_to_hypertypes(fixedpoint_pool_info: PoolInfoFP) -> HtPo
     hypertypes.IHyperdriveTypes.PoolInfo
         A dataclass containing the Hyperdrive pool info with derived types from Pypechain.
     """
-    return HtPoolInfo(
+    return PoolInfo(
         **{snake_to_camel(key): value.scaled_value for (key, value) in asdict(fixedpoint_pool_info).items()}
     )
 
 
-def contract_checkpoint_to_hypertypes(contract_checkpoint: dict[str, Any]) -> HtCheckpoint:
+def contract_checkpoint_to_hypertypes(contract_checkpoint: dict[str, Any]) -> Checkpoint:
     """Convert the contract call return value into a HyperTypes Checkpoint object."""
-    return HtCheckpoint(**contract_checkpoint)
+    return Checkpoint(**contract_checkpoint)
 
 
 def hypertypes_checkpoint_to_fixedpoint(
-    hypertypes_checkpoint: HtCheckpoint,
+    hypertypes_checkpoint: Checkpoint,
 ) -> CheckpointFP:
     """Convert the HyperTypes Checkpoint attribute types from what Solidity returns to FixedPoint.
 
@@ -92,7 +89,7 @@ def hypertypes_checkpoint_to_fixedpoint(
 
 def fixedpoint_checkpoint_to_hypertypes(
     fixedpoint_checkpoint: CheckpointFP,
-) -> HtCheckpoint:
+) -> Checkpoint:
     """Convert the Checkpoint attribute types from FixedPoint to what the Solidity ABI specifies.
 
     Arguments
@@ -105,19 +102,19 @@ def fixedpoint_checkpoint_to_hypertypes(
     hypertypes.IHyperdriveTypes.Checkpoint
         A dataclass containing the checkpoint share_price and exposure fields converted to integers.
     """
-    return HtCheckpoint(
+    return Checkpoint(
         **{snake_to_camel(key): value.scaled_value for key, value in asdict(fixedpoint_checkpoint).items()}
     )
 
 
-def contract_pool_info_to_hypertypes(contract_pool_info: dict[str, Any]) -> HtPoolInfo:
+def contract_pool_info_to_hypertypes(contract_pool_info: dict[str, Any]) -> PoolInfo:
     """Convert the contract call return value into a HyperTypes PoolInfo object."""
-    return HtPoolInfo(**contract_pool_info)
+    return PoolInfo(**contract_pool_info)
 
 
-def contract_pool_config_to_hypertypes(contract_pool_config: dict[str, Any]) -> HtPoolConfig:
+def contract_pool_config_to_hypertypes(contract_pool_config: dict[str, Any]) -> PoolConfig:
     """Convert the contract call returned pool config into a HyperTypes PoolConfig object."""
-    return HtPoolConfig(
+    return PoolConfig(
         baseToken=contract_pool_config["baseToken"],
         linkerFactory=contract_pool_config["linkerFactory"],
         linkerCodeHash=contract_pool_config["linkerCodeHash"],
@@ -130,7 +127,7 @@ def contract_pool_config_to_hypertypes(contract_pool_config: dict[str, Any]) -> 
         timeStretch=contract_pool_config["timeStretch"],
         governance=contract_pool_config["governance"],
         feeCollector=contract_pool_config["feeCollector"],
-        fees=HtFees(
+        fees=Fees(
             curve=contract_pool_config["fees"][0],
             flat=contract_pool_config["fees"][1],
             governance=contract_pool_config["fees"][2],
@@ -139,7 +136,7 @@ def contract_pool_config_to_hypertypes(contract_pool_config: dict[str, Any]) -> 
 
 
 def hypertypes_pool_config_to_fixedpoint(
-    hypertypes_pool_config: HtPoolConfig,
+    hypertypes_pool_config: PoolConfig,
 ) -> PoolConfigFP:
     """Convert the HyperTypes PoolConfig attributes from what Solidity returns to FixedPoint.
 
@@ -177,7 +174,7 @@ def hypertypes_pool_config_to_fixedpoint(
 
 def fixedpoint_pool_config_to_hypertypes(
     fixedpoint_pool_config: PoolConfigFP,
-) -> HtPoolConfig:
+) -> PoolConfig:
     """Convert the PoolConfig attribute types from FixedPoint to what the Solidity ABI specifies.
 
     Arguments
@@ -206,7 +203,7 @@ def fixedpoint_pool_config_to_hypertypes(
                 dict_pool_config[key]["flat"].scaled_value,
                 dict_pool_config[key]["governance"].scaled_value,
             )
-    return HtPoolConfig(
+    return PoolConfig(
         baseToken=dict_pool_config["baseToken"],
         linkerFactory=dict_pool_config["linkerFactory"],
         linkerCodeHash=dict_pool_config["linkerCodeHash"],
@@ -219,7 +216,7 @@ def fixedpoint_pool_config_to_hypertypes(
         timeStretch=dict_pool_config["timeStretch"],
         governance=dict_pool_config["governance"],
         feeCollector=dict_pool_config["feeCollector"],
-        fees=HtFees(
+        fees=Fees(
             curve=dict_pool_config["fees"][0],
             flat=dict_pool_config["fees"][1],
             governance=dict_pool_config["fees"][2],
@@ -228,7 +225,7 @@ def fixedpoint_pool_config_to_hypertypes(
 
 
 def dataclass_to_dict(
-    cls: HtPoolInfo | PoolInfoFP | HtPoolConfig | PoolConfigFP | HtCheckpoint | CheckpointFP,
+    cls: PoolInfo | PoolInfoFP | PoolConfig | PoolConfigFP | Checkpoint | CheckpointFP,
 ) -> dict[str, Any]:
     """Convert a state dataclass into a dictionary."""
     out_dict = {}
