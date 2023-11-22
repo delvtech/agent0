@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING, cast
 
 import hyperdrivepy
 from fixedpointmath import FixedPoint
+from hypertypes.utilities.conversions import fixedpoint_pool_config_to_hypertypes, fixedpoint_pool_info_to_hypertypes
 from web3.types import Timestamp
-
-from ..state.conversions import fixedpoint_pool_config_to_hypertypes, fixedpoint_pool_info_to_hypertypes
 
 if TYPE_CHECKING:
     from ..state import PoolState

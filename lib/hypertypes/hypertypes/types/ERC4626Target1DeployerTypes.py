@@ -1,4 +1,4 @@
-"""Dataclasses for all structs in the ForwarderFactory contract."""
+"""Dataclasses for all structs in the ERC4626Target1Deployer contract."""
 # super() call methods are generic, while our version adds values & types
 # pylint: disable=arguments-differ
 # contracts have PascalCase names
@@ -12,3 +12,34 @@
 # but it's easier to generate
 # pylint: disable=no-else-return
 from __future__ import annotations
+
+
+from dataclasses import dataclass
+
+
+@dataclass
+class Fees:
+    """Fees struct."""
+
+    curve: int
+    flat: int
+    governance: int
+
+
+@dataclass
+class PoolConfig:
+    """PoolConfig struct."""
+
+    baseToken: str
+    linkerFactory: str
+    linkerCodeHash: bytes
+    initialSharePrice: int
+    minimumShareReserves: int
+    minimumTransactionAmount: int
+    precisionThreshold: int
+    positionDuration: int
+    checkpointDuration: int
+    timeStretch: int
+    governance: str
+    feeCollector: str
+    fees: Fees

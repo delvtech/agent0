@@ -17,7 +17,6 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.api import HyperdriveInterface
-    from ethpy.hyperdrive.state import PoolConfig, PoolInfo
     from numpy.random._generator import Generator as NumpyGenerator
 
     from agent0.hyperdrive.state import HyperdriveWallet

@@ -1,28 +1,26 @@
 """Helper functions for interfacing with hyperdrive."""
 from __future__ import annotations
 
+from typing import Any, cast
+
 from eth_typing import BlockNumber
-from eth_utils import address
-from ethpy.base import UnknownBlockError, get_transaction_logs, smart_contract_read
-from ethpy.hyperdrive.state.conversions import (
-    contract_checkpoint_to_hypertypes,
-    contract_pool_config_to_hypertypes,
-    contract_pool_info_to_hypertypes,
+from ethpy.base import UnknownBlockError, get_transaction_logs
+from fixedpointmath import FixedPoint
+from hypertypes import IERC4626HyperdriveContract
+from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
+from hypertypes.utilities.conversions import (
+    camel_to_snake,
     hypertypes_checkpoint_to_fixedpoint,
     hypertypes_pool_config_to_fixedpoint,
     hypertypes_pool_info_to_fixedpoint,
 )
-from fixedpointmath import FixedPoint
-from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import Timestamp, TxReceipt
 
-from .addresses import HyperdriveAddresses
 from .receipt_breakdown import ReceiptBreakdown
-from .state import Checkpoint, PoolConfig, PoolInfo
 
 
-def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> PoolConfig:
+def get_hyperdrive_pool_config(hyperdrive_contract: IERC4626HyperdriveContract) -> PoolConfigFP:
     """Get the hyperdrive config from a deployed hyperdrive contract.
 
     Arguments
@@ -35,12 +33,11 @@ def get_hyperdrive_pool_config(hyperdrive_contract: Contract) -> PoolConfig:
     dict[str, Any]
         The hyperdrive pool config.
     """
-    return hypertypes_pool_config_to_fixedpoint(
-        contract_pool_config_to_hypertypes(smart_contract_read(hyperdrive_contract, "getPoolConfig"))
-    )
+    pool_config = hyperdrive_contract.functions.getPoolConfig().call()
+    return hypertypes_pool_config_to_fixedpoint(cast(Any, pool_config))
 
 
-def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockNumber) -> PoolInfo:
+def get_hyperdrive_pool_info(hyperdrive_contract: IERC4626HyperdriveContract, block_number: BlockNumber) -> PoolInfoFP:
     """Get the block pool info from the Hyperdrive contract.
 
     Arguments
@@ -55,14 +52,13 @@ def get_hyperdrive_pool_info(hyperdrive_contract: Contract, block_number: BlockN
     dict[str, Any]
         A dictionary containing the Hyperdrive pool info returned from the smart contract.
     """
-    return hypertypes_pool_info_to_fixedpoint(
-        contract_pool_info_to_hypertypes(
-            smart_contract_read(hyperdrive_contract, "getPoolInfo", block_number=block_number)
-        )
-    )
+    pool_info = hyperdrive_contract.functions.getPoolInfo().call(None, block_number)
+    return hypertypes_pool_info_to_fixedpoint(pool_info)
 
 
-def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_timestamp: Timestamp) -> Checkpoint:
+def get_hyperdrive_checkpoint(
+    hyperdrive_contract: IERC4626HyperdriveContract, block_timestamp: Timestamp
+) -> CheckpointFP:
     """Get the checkpoint info for the Hyperdrive contract at a given block.
 
     Arguments
@@ -77,40 +73,10 @@ def get_hyperdrive_checkpoint(hyperdrive_contract: Contract, block_timestamp: Ti
     dict[str, int]
         A dictionary containing the checkpoint details.
     """
-    return hypertypes_checkpoint_to_fixedpoint(
-        contract_checkpoint_to_hypertypes(smart_contract_read(hyperdrive_contract, "getCheckpoint", block_timestamp))
-    )
+    checkpoint = hyperdrive_contract.functions.getCheckpoint(block_timestamp).call()
+    return hypertypes_checkpoint_to_fixedpoint(checkpoint)
 
 
-def get_hyperdrive_contract(web3: Web3, abis: dict, addresses: HyperdriveAddresses) -> Contract:
-    """Get the hyperdrive contract given abis.
-
-    Arguments
-    ---------
-    web3: Web3
-        web3 provider object
-    abis: dict
-        A dictionary that contains all abis keyed by the abi name, returned from `load_all_abis`
-    addresses: HyperdriveAddressesJson
-        The block number to query from the chain
-
-    Returns
-    -------
-    Contract
-        The contract object returned from the query
-    """
-    if "IERC4626Hyperdrive" not in abis:
-        raise AssertionError("IERC4626Hyperdrive ABI was not provided")
-    state_abi = abis["IERC4626Hyperdrive"]
-    # get contract instance of hyperdrive
-    hyperdrive_contract: Contract = web3.eth.contract(
-        address=address.to_checksum_address(addresses.mock_hyperdrive), abi=state_abi
-    )
-    return hyperdrive_contract
-
-
-# Looking for lots of event variables
-# pylint: disable=too-many-branches
 def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> ReceiptBreakdown:
     """Decode a Hyperdrive contract transaction receipt to get the changes to the agent's funds.
 
@@ -146,27 +112,22 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
     if len(hyperdrive_event_logs) > 1:
         raise AssertionError("Too many logs found")
     log_args = hyperdrive_event_logs[0]["args"]
+
     trade_result = ReceiptBreakdown()
-    if "trader" in log_args:
-        trade_result.trader = log_args["trader"]
-    if "provider" in log_args:
-        trade_result.provider = log_args["provider"]
-    if "assetId" in log_args:
-        trade_result.asset_id = log_args["assetId"]
+    values = ["trader", "provider", "assetId"]
+    fixedpoint_values = ["baseAmount", "bondAmount", "lpAmount", "withdrawalShareAmount", "sharePrice", "lpSharePrice"]
+
     if "maturityTime" in log_args:
         trade_result.maturity_time_seconds = log_args["maturityTime"]
-    if "baseAmount" in log_args:
-        trade_result.base_amount = FixedPoint(scaled_value=log_args["baseAmount"])
-    if "bondAmount" in log_args:
-        trade_result.bond_amount = FixedPoint(scaled_value=log_args["bondAmount"])
-    if "lpAmount" in log_args:
-        trade_result.lp_amount = FixedPoint(scaled_value=log_args["lpAmount"])
-    if "withdrawalShareAmount" in log_args:
-        trade_result.withdrawal_share_amount = FixedPoint(scaled_value=log_args["withdrawalShareAmount"])
-    if "sharePrice" in log_args:
-        trade_result.share_price = FixedPoint(scaled_value=log_args["sharePrice"])
-    if "lpSharePrice" in log_args:
-        trade_result.lp_share_price = FixedPoint(scaled_value=log_args["lpSharePrice"])
+
+    for value in values:
+        if value in log_args and hasattr(trade_result, camel_to_snake(value)):
+            setattr(trade_result, camel_to_snake(value), log_args[value])
+
+    for value in fixedpoint_values:
+        if value in log_args and hasattr(trade_result, camel_to_snake(value)):
+            setattr(trade_result, camel_to_snake(value), FixedPoint(scaled_value=log_args[value]))
+
     return trade_result
 
 

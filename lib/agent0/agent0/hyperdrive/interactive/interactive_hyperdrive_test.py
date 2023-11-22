@@ -1,6 +1,8 @@
 """Tests interactive hyperdrive end to end"""
 import datetime
 
+import pytest
+from docker.errors import DockerException
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from fixedpointmath import FixedPoint
 
@@ -12,6 +14,26 @@ from .interactive_hyperdrive import InteractiveHyperdrive
 
 class TestInteractiveHyperdrive:
     """Tests interactive hyperdrive end to end"""
+
+    # pylint: disable=redefined-outer-name
+
+    @pytest.fixture()
+    def chain(self) -> LocalChain:
+        """Creates a local chain connected to a local database hosted in docker.
+
+        Returns
+        -------
+        LocalChain
+            local chain instance.
+        """
+        # Construct chain object
+        try:
+            local_chain_config = LocalChain.Config()
+            chain = LocalChain(local_chain_config)
+        except DockerException:
+            pytest.skip("Docker not found")
+
+        return chain
 
     def _ensure_db_wallet_matches_agent_wallet(
         self,
@@ -64,11 +86,8 @@ class TestInteractiveHyperdrive:
     # Lots of things to test
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
-    def test_funding_and_trades(self):
+    def test_funding_and_trades(self, chain):
         """Tests interactive hyperdrive end to end"""
-        # Construct chain object
-        local_chain_config = LocalChain.Config()
-        chain = LocalChain(local_chain_config)
 
         # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
         initial_pool_config = InteractiveHyperdrive.Config()
@@ -170,11 +189,8 @@ class TestInteractiveHyperdrive:
         assert hyperdrive_agent0.wallet.withdraw_shares == FixedPoint(0)
         self._ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
-    def test_advance_time(self):
+    def test_advance_time(self, chain):
         """Tests interactive hyperdrive end to end"""
-        # Construct chain object
-        local_chain_config = LocalChain.Config()
-        chain = LocalChain(local_chain_config)
         # We need the underlying hyperdrive interface here to test time
         interactive_hyperdrive = InteractiveHyperdrive(chain)
         hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface

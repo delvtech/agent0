@@ -10,7 +10,6 @@ from eth_account.account import Account
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import (
     initialize_web3_with_http_provider,
-    load_all_abis,
     set_anvil_account_balance,
     smart_contract_read,
     smart_contract_transact,
@@ -18,6 +17,7 @@ from ethpy.base import (
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri, get_hyperdrive_pool_config
 from fixedpointmath import FixedPoint
 from hyperlogs import logs
+from hypertypes import IERC4626HyperdriveContract
 from web3.contract.contract import Contract
 
 from agent0.base.agents import EthAgent
@@ -93,11 +93,10 @@ def main() -> None:
 
     # Get the Hyperdrive contract.
     # TODO replace this with the hyperdrive interface
-    hyperdrive_abis = load_all_abis(eth_config.abi_dir)
     addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
-    hyperdrive_contract: Contract = web3.eth.contract(
-        abi=hyperdrive_abis["IERC4626Hyperdrive"],
-        address=web3.to_checksum_address(addresses.mock_hyperdrive),
+    hyperdrive_contract_address = web3.to_checksum_address(addresses.mock_hyperdrive)
+    hyperdrive_contract: IERC4626HyperdriveContract = IERC4626HyperdriveContract.factory(w3=web3)(
+        hyperdrive_contract_address
     )
 
     # Run the checkpoint bot. This bot will attempt to mint a new checkpoint

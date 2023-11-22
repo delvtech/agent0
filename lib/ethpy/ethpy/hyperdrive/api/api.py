@@ -19,6 +19,7 @@ from ethpy.hyperdrive.transactions import (
     get_hyperdrive_pool_info,
 )
 from fixedpointmath import FixedPoint
+from hypertypes import IERC4626HyperdriveContract
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
@@ -118,8 +119,8 @@ class HyperdriveInterface:
             abi=abis["ERC20Mintable"], address=web3.to_checksum_address(self.addresses.base_token)
         )
         # Setup Hyperdrive and Yield (variable rate) contracts.
-        self.hyperdrive_contract: Contract = web3.eth.contract(
-            abi=abis["IERC4626Hyperdrive"], address=web3.to_checksum_address(self.addresses.mock_hyperdrive)
+        self.hyperdrive_contract: IERC4626HyperdriveContract = IERC4626HyperdriveContract.factory(w3=self.web3)(
+            web3.to_checksum_address(self.addresses.mock_hyperdrive)
         )
         self.yield_address = smart_contract_read(self.hyperdrive_contract, "pool")["value"]
         self.yield_contract: Contract = web3.eth.contract(

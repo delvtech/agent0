@@ -5,12 +5,6 @@ import logging
 import os
 from typing import TYPE_CHECKING, Type, cast
 
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base.errors import ContractCallException
@@ -18,6 +12,13 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import HTTPProvider
 from web3.exceptions import ContractLogicError, ContractPanicError
+
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base import MarketType, Trade
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.policies import HyperdrivePolicy
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -259,7 +260,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
         elif self.counter == 1:
             # Closing existent long for more than I have
             assert len(wallet.longs) == 1
-            for long_time, _ in wallet.longs.items():
+            for long_time in wallet.longs.keys():
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
@@ -316,7 +317,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
         elif self.counter == 1:
             # Closing existent short for more than I have
             assert len(wallet.shorts) == 1
-            for short_time, _ in wallet.shorts.items():
+            for short_time in wallet.shorts.keys():
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
