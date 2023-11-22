@@ -15,12 +15,14 @@
 # pylint: disable=too-many-lines
 
 from __future__ import annotations
-from typing import Any, Tuple, Type, TypeVar, cast
-from typing_extensions import Self
+
 from dataclasses import fields, is_dataclass
+from typing import Any, Tuple, Type, TypeVar, cast
 
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
+
+from typing_extensions import Self
 from web3 import Web3
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
@@ -1474,13 +1476,12 @@ class MockERC4626PermitContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1784,13 +1785,12 @@ class MockERC4626SetAuthorityContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1836,13 +1836,12 @@ class MockERC4626SetPublicCapabilityContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1886,13 +1885,12 @@ class MockERC4626SetRateContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1938,13 +1936,12 @@ class MockERC4626SetRoleCapabilityContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1990,13 +1987,12 @@ class MockERC4626SetTargetCustomAuthorityContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -2042,13 +2038,12 @@ class MockERC4626SetUserRoleContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -2348,13 +2343,12 @@ class MockERC4626TransferOwnershipContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 

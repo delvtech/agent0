@@ -15,17 +15,18 @@
 # pylint: disable=too-many-lines
 
 from __future__ import annotations
-from typing import Any, Tuple, Type, TypeVar, cast
-from typing_extensions import Self
+
 from dataclasses import fields, is_dataclass
+from typing import Any, Tuple, Type, TypeVar, cast
 
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
+
+from typing_extensions import Self
 from web3 import Web3
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
-
 from .IERC4626HyperdriveTypes import (
     Options,
     Checkpoint,
@@ -364,13 +365,12 @@ class IERC4626HyperdriveBatchTransferFromContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -416,13 +416,12 @@ class IERC4626HyperdriveCheckpointContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1368,13 +1367,12 @@ class IERC4626HyperdrivePauseContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1479,13 +1477,12 @@ class IERC4626HyperdrivePermitForAllContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1687,13 +1684,12 @@ class IERC4626HyperdriveSetApprovalContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1739,13 +1735,12 @@ class IERC4626HyperdriveSetApprovalBridgeContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1791,13 +1786,12 @@ class IERC4626HyperdriveSetApprovalForAllContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1843,13 +1837,12 @@ class IERC4626HyperdriveSetGovernanceContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1895,13 +1888,12 @@ class IERC4626HyperdriveSetPauserContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1947,13 +1939,12 @@ class IERC4626HyperdriveSweepContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -2201,13 +2192,12 @@ class IERC4626HyperdriveTransferFromContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -2253,13 +2243,12 @@ class IERC4626HyperdriveTransferFromBridgeContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 

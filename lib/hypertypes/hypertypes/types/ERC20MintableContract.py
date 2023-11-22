@@ -15,18 +15,18 @@
 # pylint: disable=too-many-lines
 
 from __future__ import annotations
-from typing import Any, Tuple, Type, TypeVar, cast
-from typing_extensions import Self
+
 from dataclasses import fields, is_dataclass
+from typing import Any, Tuple, Type, TypeVar, cast
 
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
+from multimethod import multimethod
+from typing_extensions import Self
 from web3 import Web3
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
-
-from multimethod import multimethod
 
 
 T = TypeVar("T")
@@ -343,43 +343,24 @@ class ERC20MintableBurnContractFunction(ContractFunction):
         return self
 
     @multimethod
-    def call(  # type: ignore
-        self,
-        transaction: TxParams | None = None,
-        block_identifier: BlockIdentifier = "latest",
-        state_override: CallOverride | None = None,
-        ccip_read_enabled: bool | None = None,
-    ):
-        """No return value"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
-        # Define the expected return types from the smart contract call
-        return_types = None
-
-        return None
-
-    @multimethod
     def __call__(self, destination: str, amount: int) -> "ERC20MintableBurnContractFunction":  # type: ignore
         clone = super().__call__(destination, amount)
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
 
-    @multimethod
-    def call(  # type: ignore
+    def call(
         self,
         transaction: TxParams | None = None,
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -883,43 +864,24 @@ class ERC20MintableMintContractFunction(ContractFunction):
         return self
 
     @multimethod
-    def call(  # type: ignore
-        self,
-        transaction: TxParams | None = None,
-        block_identifier: BlockIdentifier = "latest",
-        state_override: CallOverride | None = None,
-        ccip_read_enabled: bool | None = None,
-    ):
-        """No return value"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
-        # Define the expected return types from the smart contract call
-        return_types = None
-
-        return None
-
-    @multimethod
     def __call__(self, amount: int) -> "ERC20MintableMintContractFunction":  # type: ignore
         clone = super().__call__(amount)
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
 
-    @multimethod
-    def call(  # type: ignore
+    def call(
         self,
         transaction: TxParams | None = None,
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1122,13 +1084,12 @@ class ERC20MintablePermitContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1174,13 +1135,12 @@ class ERC20MintableSetAuthorityContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1226,13 +1186,12 @@ class ERC20MintableSetPublicCapabilityContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1278,13 +1237,12 @@ class ERC20MintableSetRoleCapabilityContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1330,13 +1288,12 @@ class ERC20MintableSetTargetCustomAuthorityContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1382,13 +1339,12 @@ class ERC20MintableSetUserRoleContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
@@ -1638,13 +1594,12 @@ class ERC20MintableTransferOwnershipContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ):
+    ) -> None:
         """No return value"""
-        raw_values = super().call(
+        super().call(
             transaction, block_identifier, state_override, ccip_read_enabled
         )
         # Define the expected return types from the smart contract call
-        return_types = None
 
         return None
 
