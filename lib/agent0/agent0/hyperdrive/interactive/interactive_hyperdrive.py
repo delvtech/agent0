@@ -2,16 +2,17 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 
+import nest_asyncio
 import pandas as pd
 from chainsync import PostgresConfig
 from chainsync.dashboard.usernames import build_user_mapping
 from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
 from chainsync.db.hyperdrive import (
     get_checkpoint_info,
-    get_current_wallet,
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
@@ -19,7 +20,6 @@ from chainsync.db.hyperdrive import (
     get_total_wallet_pnl_over_time,
     get_wallet_deltas,
     get_wallet_pnl,
-    get_wallet_positions_over_time,
 )
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
@@ -52,6 +52,10 @@ from .event_types import (
 )
 from .interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
+
+# In order to support both scripts and jupyter notebooks with underlying async functions,
+# we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
+nest_asyncio.apply()
 
 
 class InteractiveHyperdrive:
@@ -139,11 +143,15 @@ class InteractiveHyperdrive:
             config = self.Config()
 
         # Define agent0 configs with this setup
-        # TODO this very likely needs to reference an absolute path
-        # as if we're importing this package from another repo, this path won't work
-        self.eth_config = EthConfig(
-            artifacts_uri="not_used", rpc_uri=chain.rpc_uri, abi_dir="packages/hyperdrive/src/abis/"
-        )
+        # TODO currently getting the path based on this file's path
+        # This requires the entire monorepo to be check out, and will likely not work when
+        # installing agent0 by itself.
+        # This should get fixed when abis are exported in hypertypes.
+        full_path = os.path.realpath(__file__)
+        current_file_dir, _ = os.path.split(full_path)
+        abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
+
+        self.eth_config = EthConfig(artifacts_uri="not_used", rpc_uri=chain.rpc_uri, abi_dir=abi_dir)
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(config, chain, self.eth_config.abi_dir)
         self.hyperdrive_interface = HyperdriveInterface(
@@ -523,7 +531,7 @@ class InteractiveHyperdrive:
             self._add_funds(agent, base, eth)
 
         # establish max approval for the hyperdrive contract
-        asyncio.run(
+        asyncio.gather(
             set_max_approval(
                 [agent],
                 self.hyperdrive_interface.web3,
