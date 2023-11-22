@@ -288,7 +288,8 @@ class InteractiveHyperdrive:
         pd.Dataframe
             A pandas dataframe that consists of the checkpoint info per block.
         """
-        # TODO the data itself looks a bit weird here, perhaps to accelerating time
+        # TODO checkpoint info doesn't play nice with advancing time.
+        # This is because we don't create checkpoints when we advance time.
         # https://github.com/delvtech/agent0/issues/1106
         out = get_checkpoint_info(self.db_session, coerce_float=coerce_float)
         return out
