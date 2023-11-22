@@ -8,7 +8,6 @@ from typing import cast
 
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.base import smart_contract_read
 from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.api import HyperdriveInterface
@@ -37,49 +36,35 @@ def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, hyperdrive: Hyperdr
         The Hyperdrive API interface object
     """
     # Check base
-    base_from_chain = smart_contract_read(hyperdrive.base_token_contract, "balanceOf", wallet.address)["value"]
+    base_from_chain = hyperdrive.base_token_contract.functions.balanceOf(
+        hyperdrive.web3.to_checksum_address(wallet.address.hex())
+    ).call()
     assert wallet.balance.amount == FixedPoint(scaled_value=base_from_chain)
 
     # Check lp positions
     asset_id = encode_asset_id(AssetIdPrefix.LP, 0)
-    lp_from_chain = smart_contract_read(
-        hyperdrive.hyperdrive_contract,
-        "balanceOf",
-        asset_id,
-        wallet.address,
-    )["value"]
+    address = hyperdrive.web3.to_checksum_address(wallet.address.hex())
+    lp_from_chain = hyperdrive.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
     assert wallet.lp_tokens == FixedPoint(scaled_value=lp_from_chain)
 
     # Check withdrawal positions
     asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
-    withdrawal_from_chain = smart_contract_read(
-        hyperdrive.hyperdrive_contract,
-        "balanceOf",
-        asset_id,
-        wallet.address,
-    )["value"]
+    address = hyperdrive.web3.to_checksum_address(wallet.address.hex())
+    withdrawal_from_chain = hyperdrive.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
     assert wallet.withdraw_shares == FixedPoint(scaled_value=withdrawal_from_chain)
 
     # Check long positions
     for long_time, long_amount in wallet.longs.items():
         asset_id = encode_asset_id(AssetIdPrefix.LONG, long_time)
-        long_from_chain = smart_contract_read(
-            hyperdrive.hyperdrive_contract,
-            "balanceOf",
-            asset_id,
-            wallet.address,
-        )["value"]
+        address = hyperdrive.web3.to_checksum_address(wallet.address.hex())
+        long_from_chain = hyperdrive.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
         assert long_amount.balance == FixedPoint(scaled_value=long_from_chain)
 
     # Check short positions
     for short_time, short_amount in wallet.shorts.items():
         asset_id = encode_asset_id(AssetIdPrefix.SHORT, short_time)
-        short_from_chain = smart_contract_read(
-            hyperdrive.hyperdrive_contract,
-            "balanceOf",
-            asset_id,
-            wallet.address,
-        )["value"]
+        address = hyperdrive.web3.to_checksum_address(wallet.address.hex())
+        short_from_chain = hyperdrive.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
         assert short_amount.balance == FixedPoint(scaled_value=short_from_chain)
 
 

@@ -4,15 +4,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from eth_utils.currency import MAX_WEI
-from ethpy.base import (
-    async_smart_contract_transact,
-    get_account_balance,
-    smart_contract_preview_transaction,
-    smart_contract_read,
-)
+from ethpy.base import async_smart_contract_transact, get_account_balance, smart_contract_preview_transaction
 from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 from ethpy.hyperdrive.transactions import parse_logs
 from fixedpointmath import FixedPoint
+from hypertypes.types import IERC4626HyperdriveContract, MockERC4626Contract
 from web3 import Web3
 
 if TYPE_CHECKING:
@@ -26,50 +22,39 @@ if TYPE_CHECKING:
 
 
 def _get_total_supply_withdrawal_shares(
-    hyperdrive_contract: Contract, block_number: BlockNumber | None = None
+    hyperdrive_contract: IERC4626HyperdriveContract, block_number: BlockNumber | None = None
 ) -> FixedPoint:
     """See API for documentation."""
     asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
-    total_supply_withdrawal_shares = smart_contract_read(
-        hyperdrive_contract,
-        "balanceOf",
-        asset_id,
-        hyperdrive_contract.address,
-        block_number=block_number,
-    )["value"]
+    total_supply_withdrawal_shares = hyperdrive_contract.functions.balanceOf(
+        asset_id, hyperdrive_contract.address
+    ).call(block_identifier=block_number or "latest")
     return FixedPoint(scaled_value=int(total_supply_withdrawal_shares))
 
 
-def _get_variable_rate(yield_contract: Contract, block_number: BlockNumber | None = None) -> FixedPoint:
+def _get_variable_rate(yield_contract: MockERC4626Contract, block_number: BlockNumber | None = None) -> FixedPoint:
     """See API for documentation."""
-    rate = smart_contract_read(yield_contract, "getRate", block_number=block_number)["value"]
+    rate = yield_contract.functions.getRate().call(block_identifier=block_number or "latest")
     return FixedPoint(scaled_value=rate)
 
 
 def _get_vault_shares(
-    yield_contract: Contract,
-    hyperdrive_contract: Contract,
+    yield_contract: MockERC4626Contract,
+    hyperdrive_contract: IERC4626HyperdriveContract,
     block_number: BlockNumber | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
-    vault_shares = smart_contract_read(
-        yield_contract,
-        "balanceOf",
-        (hyperdrive_contract.address),
-        block_number=block_number,
+    vault_shares = yield_contract.functions.balanceOf(hyperdrive_contract.address).call(
+        block_identifier=block_number or "latest"
     )
-    return FixedPoint(scaled_value=int(vault_shares["value"]))
+    return FixedPoint(scaled_value=vault_shares)
 
 
 def _get_eth_base_balances(hyperdrive: HyperdriveInterface, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     agent_eth_balance = get_account_balance(hyperdrive.web3, agent_checksum_address)
-    agent_base_balance = smart_contract_read(
-        hyperdrive.base_token_contract,
-        "balanceOf",
-        agent_checksum_address,
-    )["value"]
+    agent_base_balance = hyperdrive.base_token_contract.functions.balanceOf(agent_checksum_address).call()
     return (
         FixedPoint(scaled_value=agent_eth_balance),
         FixedPoint(scaled_value=agent_base_balance),

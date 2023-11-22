@@ -12,11 +12,10 @@ import pandas as pd
 from chainsync.db.api import balance_of, register_username
 from eth_typing import BlockNumber
 from ethpy import EthConfig, build_eth_config
-from ethpy.base import smart_contract_read
 from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
-from web3.contract.contract import Contract
+from hypertypes.types import ERC20MintableContract
 
 from agent0 import AccountKeyConfig
 from agent0.base import Quantity, TokenType
@@ -159,7 +158,7 @@ def run_agents(
 
 
 def build_wallet_positions_from_data(
-    wallet_addr: str, db_balances: pd.DataFrame, base_contract: Contract
+    wallet_addr: str, db_balances: pd.DataFrame, base_contract: ERC20MintableContract
 ) -> HyperdriveWallet:
     """Builds a wallet position based on gathered data.
 
@@ -178,10 +177,9 @@ def build_wallet_positions_from_data(
         The wallet object build from the provided data
     """
     # Contract call to get base balance
-    base_amount: dict[str, int] = smart_contract_read(base_contract, "balanceOf", wallet_addr)
+    base_amount: int = base_contract.functions.balanceOf(wallet_addr).call()
     # TODO do we need to do error checking here?
-    assert "value" in base_amount
-    base_obj = Quantity(amount=FixedPoint(scaled_value=base_amount["value"]), unit=TokenType.BASE)
+    base_obj = Quantity(amount=FixedPoint(scaled_value=base_amount), unit=TokenType.BASE)
 
     # TODO We can also get lp and withdraw shares from chain?
     wallet_balances = db_balances[db_balances["wallet_address"] == wallet_addr]
