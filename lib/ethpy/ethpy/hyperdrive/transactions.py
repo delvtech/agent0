@@ -9,6 +9,7 @@ from fixedpointmath import FixedPoint
 from hypertypes import IERC4626HyperdriveContract
 from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
 from hypertypes.utilities.conversions import (
+    camel_to_snake,
     hypertypes_checkpoint_to_fixedpoint,
     hypertypes_pool_config_to_fixedpoint,
     hypertypes_pool_info_to_fixedpoint,
@@ -111,27 +112,17 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
     if len(hyperdrive_event_logs) > 1:
         raise AssertionError("Too many logs found")
     log_args = hyperdrive_event_logs[0]["args"]
+
     trade_result = ReceiptBreakdown()
-    if "trader" in log_args:
-        trade_result.trader = log_args["trader"]
-    if "provider" in log_args:
-        trade_result.provider = log_args["provider"]
-    if "assetId" in log_args:
-        trade_result.asset_id = log_args["assetId"]
-    if "maturityTime" in log_args:
-        trade_result.maturity_time_seconds = log_args["maturityTime"]
-    if "baseAmount" in log_args:
-        trade_result.base_amount = FixedPoint(scaled_value=log_args["baseAmount"])
-    if "bondAmount" in log_args:
-        trade_result.bond_amount = FixedPoint(scaled_value=log_args["bondAmount"])
-    if "lpAmount" in log_args:
-        trade_result.lp_amount = FixedPoint(scaled_value=log_args["lpAmount"])
-    if "withdrawalShareAmount" in log_args:
-        trade_result.withdrawal_share_amount = FixedPoint(scaled_value=log_args["withdrawalShareAmount"])
-    if "sharePrice" in log_args:
-        trade_result.share_price = FixedPoint(scaled_value=log_args["sharePrice"])
-    if "lpSharePrice" in log_args:
-        trade_result.lp_share_price = FixedPoint(scaled_value=log_args["lpSharePrice"])
+    values = ["trader", "provider", "assetId", "maturityTime"]
+    fixedpoint_values = ["baseAmount", "bondAmount", "lpAmount", "withdrawalShareAmount", "sharePrice", "lpSharePrice"]
+
+    for value in values:
+        setattr(trade_result, camel_to_snake(value), log_args[value])
+
+    for value in fixedpoint_values:
+        setattr(trade_result, camel_to_snake(value), FixedPoint(scaled_value=log_args[value]))
+
     return trade_result
 
 

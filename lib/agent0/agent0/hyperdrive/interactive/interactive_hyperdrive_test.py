@@ -29,9 +29,11 @@ class TestInteractiveHyperdrive:
         # Construct chain object
         try:
             local_chain_config = LocalChain.Config()
-            return LocalChain(local_chain_config)
+            chain = LocalChain(local_chain_config)
         except DockerException:
             pytest.skip("Docker not found")
+
+        return chain
 
     def _ensure_db_wallet_matches_agent_wallet(
         self,
