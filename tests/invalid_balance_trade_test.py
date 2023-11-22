@@ -39,7 +39,7 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
         super().__init__(budget, rng, slippage_tolerance)
@@ -109,7 +109,7 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
         super().__init__(budget, rng, slippage_tolerance)
@@ -145,7 +145,7 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
         super().__init__(budget, rng, slippage_tolerance)
@@ -179,7 +179,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
@@ -231,7 +231,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
@@ -288,7 +288,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
@@ -345,7 +345,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
-        _: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
+        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
