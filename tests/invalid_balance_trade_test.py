@@ -45,7 +45,7 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, _: HyperdriveInterface, wallet: HyperdriveWallet
+        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []
@@ -115,7 +115,7 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, _: HyperdriveInterface, wallet: HyperdriveWallet
+        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []
@@ -151,7 +151,7 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, _: HyperdriveInterface, wallet: HyperdriveWallet
+        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []
@@ -187,7 +187,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, _: HyperdriveInterface, wallet: HyperdriveWallet
+        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []
@@ -239,7 +239,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, _: HyperdriveInterface, wallet: HyperdriveWallet
+        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []
@@ -296,7 +296,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, _: HyperdriveInterface, wallet: HyperdriveWallet
+        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []
@@ -353,7 +353,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, _: HyperdriveInterface, wallet: HyperdriveWallet
+        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         # pylint: disable=unused-argument
         action_list = []

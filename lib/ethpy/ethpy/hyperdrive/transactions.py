@@ -114,8 +114,11 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
     log_args = hyperdrive_event_logs[0]["args"]
 
     trade_result = ReceiptBreakdown()
-    values = ["trader", "provider", "assetId", "maturityTime"]
+    values = ["trader", "provider", "assetId"]
     fixedpoint_values = ["baseAmount", "bondAmount", "lpAmount", "withdrawalShareAmount", "sharePrice", "lpSharePrice"]
+
+    if "maturityTime" in log_args:
+        trade_result.maturity_time_seconds = log_args["maturityTime"]
 
     for value in values:
         if value in log_args and hasattr(trade_result, camel_to_snake(value)):
