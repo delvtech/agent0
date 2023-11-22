@@ -8,7 +8,7 @@ import attr
 import requests
 from eth_typing import Address, ChecksumAddress
 
-from .state.conversions import camel_to_snake
+from ..base.conversions import camel_to_snake
 
 
 @attr.s
