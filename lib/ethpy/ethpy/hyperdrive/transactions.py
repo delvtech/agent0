@@ -10,9 +10,9 @@ from hypertypes import IERC4626HyperdriveContract
 from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
 from hypertypes.utilities.conversions import (
     camel_to_snake,
-    hypertypes_checkpoint_to_fixedpoint,
-    hypertypes_pool_config_to_fixedpoint,
-    hypertypes_pool_info_to_fixedpoint,
+    checkpoint_to_fixedpoint,
+    pool_config_to_fixedpoint,
+    pool_info_to_fixedpoint,
 )
 from web3.contract.contract import Contract
 from web3.types import Timestamp, TxReceipt
@@ -34,7 +34,7 @@ def get_hyperdrive_pool_config(hyperdrive_contract: IERC4626HyperdriveContract) 
         The hyperdrive pool config.
     """
     pool_config = hyperdrive_contract.functions.getPoolConfig().call()
-    return hypertypes_pool_config_to_fixedpoint(cast(Any, pool_config))
+    return pool_config_to_fixedpoint(cast(Any, pool_config))
 
 
 def get_hyperdrive_pool_info(hyperdrive_contract: IERC4626HyperdriveContract, block_number: BlockNumber) -> PoolInfoFP:
@@ -53,7 +53,7 @@ def get_hyperdrive_pool_info(hyperdrive_contract: IERC4626HyperdriveContract, bl
         A dictionary containing the Hyperdrive pool info returned from the smart contract.
     """
     pool_info = hyperdrive_contract.functions.getPoolInfo().call(None, block_number)
-    return hypertypes_pool_info_to_fixedpoint(pool_info)
+    return pool_info_to_fixedpoint(pool_info)
 
 
 def get_hyperdrive_checkpoint(
@@ -74,7 +74,7 @@ def get_hyperdrive_checkpoint(
         A dictionary containing the checkpoint details.
     """
     checkpoint = hyperdrive_contract.functions.getCheckpoint(block_timestamp).call()
-    return hypertypes_checkpoint_to_fixedpoint(checkpoint)
+    return checkpoint_to_fixedpoint(checkpoint)
 
 
 def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> ReceiptBreakdown:

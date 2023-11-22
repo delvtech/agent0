@@ -8,9 +8,9 @@ from fixedpointmath import FixedPoint
 from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
 from hypertypes.utilities.conversions import (
     dataclass_to_dict,
-    fixedpoint_checkpoint_to_hypertypes,
-    fixedpoint_pool_config_to_hypertypes,
-    fixedpoint_pool_info_to_hypertypes,
+    fixedpoint_to_checkpoint,
+    fixedpoint_to_pool_config,
+    fixedpoint_to_pool_info,
 )
 from web3.types import BlockData
 
@@ -44,14 +44,14 @@ class PoolState:
     @property
     def contract_pool_info(self) -> dict[str, Any]:
         """Get the pool_info property."""
-        return dataclass_to_dict(fixedpoint_pool_info_to_hypertypes(self.pool_info))
+        return dataclass_to_dict(fixedpoint_to_pool_info(self.pool_info))
 
     @property
     def contract_pool_config(self) -> dict[str, Any]:
         """Get the pool_config property."""
-        return dataclass_to_dict(fixedpoint_pool_config_to_hypertypes(self.pool_config))
+        return dataclass_to_dict(fixedpoint_to_pool_config(self.pool_config))
 
     @property
     def contract_checkpoint(self) -> dict[str, Any]:
         """Get the checkpoint property."""
-        return dataclass_to_dict(fixedpoint_checkpoint_to_hypertypes(self.checkpoint))
+        return dataclass_to_dict(fixedpoint_to_checkpoint(self.checkpoint))

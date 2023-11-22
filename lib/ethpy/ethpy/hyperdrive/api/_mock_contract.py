@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, cast
 
 import hyperdrivepy
 from fixedpointmath import FixedPoint
-from hypertypes.utilities.conversions import fixedpoint_pool_config_to_hypertypes, fixedpoint_pool_info_to_hypertypes
+from hypertypes.utilities.conversions import fixedpoint_to_pool_config, fixedpoint_to_pool_info
 from web3.types import Timestamp
 
 if TYPE_CHECKING:
@@ -29,8 +29,8 @@ def _calc_position_duration_in_years(pool_state: PoolState) -> FixedPoint:
 def _calc_fixed_rate(pool_state: PoolState) -> FixedPoint:
     """See API for documentation."""
     spot_rate = hyperdrivepy.get_spot_rate(
-        fixedpoint_pool_config_to_hypertypes(pool_state.pool_config),
-        fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
     )
     return FixedPoint(scaled_value=int(spot_rate))
 
@@ -47,8 +47,8 @@ def _calc_effective_share_reserves(pool_state: PoolState) -> FixedPoint:
 def _calc_spot_price(pool_state: PoolState):
     """See API for documentation."""
     spot_price = hyperdrivepy.get_spot_price(
-        fixedpoint_pool_config_to_hypertypes(pool_state.pool_config),
-        fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
     )
     return FixedPoint(scaled_value=int(spot_price))
 
@@ -56,8 +56,8 @@ def _calc_spot_price(pool_state: PoolState):
 def _calc_long_amount(pool_state: PoolState, base_amount: FixedPoint) -> FixedPoint:
     """See API for documentation."""
     long_amount = hyperdrivepy.get_long_amount(
-        fixedpoint_pool_config_to_hypertypes(pool_state.pool_config),
-        fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
         str(base_amount.scaled_value),
     )
     return FixedPoint(scaled_value=int(long_amount))
@@ -76,8 +76,8 @@ def _calc_short_deposit(
     else:  # convert FixedPoint to string
         open_share_price_str = str(open_share_price.scaled_value)
     short_deposit = hyperdrivepy.get_short_deposit(
-        fixedpoint_pool_config_to_hypertypes(pool_state.pool_config),
-        fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
         str(short_amount.scaled_value),
         str(spot_price.scaled_value),
         open_share_price_str,  # str | None
@@ -91,8 +91,8 @@ def _calc_bonds_out_given_shares_in_down(
 ) -> FixedPoint:
     """See API for documentation."""
     amount_out = hyperdrivepy.calculate_bonds_out_given_shares_in_down(
-        fixedpoint_pool_config_to_hypertypes(pool_state.pool_config),
-        fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
         str(amount_in.scaled_value),
     )
     return FixedPoint(scaled_value=int(amount_out))
@@ -104,8 +104,8 @@ def _calc_shares_in_given_bonds_out_up(
 ) -> FixedPoint:
     """See API for documentation."""
     amount_out = hyperdrivepy.calculate_shares_in_given_bonds_out_up(
-        fixedpoint_pool_config_to_hypertypes(pool_state.pool_config),
-        fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
         str(amount_in.scaled_value),
     )
 
@@ -118,8 +118,8 @@ def _calc_shares_in_given_bonds_out_down(
 ) -> FixedPoint:
     """See API for documentation."""
     amount_out = hyperdrivepy.calculate_shares_in_given_bonds_out_down(
-        fixedpoint_pool_config_to_hypertypes(pool_state.pool_config),
-        fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
         str(amount_in.scaled_value),
     )
     return FixedPoint(scaled_value=int(amount_out))
@@ -131,8 +131,8 @@ def _calc_shares_out_given_bonds_in_down(
 ) -> FixedPoint:
     """See API for documentation."""
     amount_out = hyperdrivepy.calculate_shares_out_given_bonds_in_down(
-        fixedpoint_pool_config_to_hypertypes(pool_state.pool_config),
-        fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
         str(amount_in.scaled_value),
     )
     return FixedPoint(scaled_value=int(amount_out))
@@ -143,8 +143,8 @@ def _calc_max_buy(
 ) -> FixedPoint:
     """See API for documentation."""
     amount_out = hyperdrivepy.calculate_max_buy(
-        fixedpoint_pool_config_to_hypertypes(pool_state.pool_config),
-        fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
     )
     return FixedPoint(scaled_value=int(amount_out))
 
@@ -155,8 +155,8 @@ def _calc_max_sell(
 ) -> FixedPoint:
     """See API for documentation."""
     amount_out = hyperdrivepy.calculate_max_sell(
-        fixedpoint_pool_config_to_hypertypes(pool_state.pool_config),
-        fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
         str(minimum_share_reserves.scaled_value),
     )
     return FixedPoint(scaled_value=int(amount_out))
@@ -238,8 +238,8 @@ def _calc_max_long(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
     return FixedPoint(
         scaled_value=int(
             hyperdrivepy.get_max_long(
-                fixedpoint_pool_config_to_hypertypes(pool_state.pool_config),
-                fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
+                fixedpoint_to_pool_config(pool_state.pool_config),
+                fixedpoint_to_pool_info(pool_state.pool_info),
                 str(budget.scaled_value),
                 checkpoint_exposure=str(pool_state.checkpoint.exposure.scaled_value),
                 maybe_max_iterations=None,
@@ -253,8 +253,8 @@ def _calc_max_short(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
     return FixedPoint(
         scaled_value=int(
             hyperdrivepy.get_max_short(
-                pool_config=fixedpoint_pool_config_to_hypertypes(pool_state.pool_config),
-                pool_info=fixedpoint_pool_info_to_hypertypes(pool_state.pool_info),
+                pool_config=fixedpoint_to_pool_config(pool_state.pool_config),
+                pool_info=fixedpoint_to_pool_info(pool_state.pool_info),
                 budget=str(budget.scaled_value),
                 open_share_price=str(pool_state.pool_info.share_price.scaled_value),
                 checkpoint_exposure=str(pool_state.checkpoint.exposure.scaled_value),

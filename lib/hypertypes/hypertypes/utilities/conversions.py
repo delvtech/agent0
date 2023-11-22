@@ -23,7 +23,7 @@ def snake_to_camel(snake_string: str) -> str:
     return camel_string[0].lower() + camel_string[1:] if camel_string else camel_string
 
 
-def hypertypes_pool_info_to_fixedpoint(hypertypes_pool_info: PoolInfo) -> PoolInfoFP:
+def pool_info_to_fixedpoint(hypertypes_pool_info: PoolInfo) -> PoolInfoFP:
     """Convert the Hypertypes PoolInfo attribute types from what solidity returns to FixedPoint.
 
     Arguments
@@ -44,7 +44,7 @@ def hypertypes_pool_info_to_fixedpoint(hypertypes_pool_info: PoolInfo) -> PoolIn
     )
 
 
-def fixedpoint_pool_info_to_hypertypes(fixedpoint_pool_info: PoolInfoFP) -> PoolInfo:
+def fixedpoint_to_pool_info(fixedpoint_pool_info: PoolInfoFP) -> PoolInfo:
     """Convert the PoolInfo attribute types from FixedPoint to what the Solidity ABI specifies.
 
     Arguments
@@ -62,7 +62,7 @@ def fixedpoint_pool_info_to_hypertypes(fixedpoint_pool_info: PoolInfoFP) -> Pool
     )
 
 
-def hypertypes_checkpoint_to_fixedpoint(
+def checkpoint_to_fixedpoint(
     hypertypes_checkpoint: Checkpoint,
 ) -> CheckpointFP:
     """Convert the HyperTypes Checkpoint attribute types from what Solidity returns to FixedPoint.
@@ -82,7 +82,7 @@ def hypertypes_checkpoint_to_fixedpoint(
     )
 
 
-def fixedpoint_checkpoint_to_hypertypes(
+def fixedpoint_to_checkpoint(
     fixedpoint_checkpoint: CheckpointFP,
 ) -> Checkpoint:
     """Convert the Checkpoint attribute types from FixedPoint to what the Solidity ABI specifies.
@@ -102,7 +102,7 @@ def fixedpoint_checkpoint_to_hypertypes(
     )
 
 
-def hypertypes_pool_config_to_fixedpoint(
+def pool_config_to_fixedpoint(
     hypertypes_pool_config: PoolConfig,
 ) -> PoolConfigFP:
     """Convert the HyperTypes PoolConfig attributes from what Solidity returns to FixedPoint.
@@ -139,7 +139,7 @@ def hypertypes_pool_config_to_fixedpoint(
     return PoolConfigFP(**dict_pool_config)
 
 
-def fixedpoint_pool_config_to_hypertypes(
+def fixedpoint_to_pool_config(
     fixedpoint_pool_config: PoolConfigFP,
 ) -> PoolConfig:
     """Convert the PoolConfig attribute types from FixedPoint to what the Solidity ABI specifies.
