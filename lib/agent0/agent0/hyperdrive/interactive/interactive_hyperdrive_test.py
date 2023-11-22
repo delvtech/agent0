@@ -25,14 +25,14 @@ class TestInteractiveHyperdrive:
 
         base_wallet_df = current_wallet_df[current_wallet_df["base_token_type"] == BASE_TOKEN_SYMBOL]
         assert len(base_wallet_df) == 1
-        assert agent_wallet.balance.amount == FixedPoint(base_wallet_df.iloc[0]["value"])
+        assert agent_wallet.balance.amount == FixedPoint(base_wallet_df.iloc[0]["position"])
 
         # Check lp
         lp_wallet_df = current_wallet_df[current_wallet_df["base_token_type"] == "LP"]
         if len(lp_wallet_df) == 0:
             check_value = FixedPoint(0)
         elif len(lp_wallet_df) == 1:
-            check_value = FixedPoint(lp_wallet_df.iloc[0]["value"])
+            check_value = FixedPoint(lp_wallet_df.iloc[0]["position"])
         else:
             assert False
         assert check_value == agent_wallet.lp_tokens
@@ -42,21 +42,21 @@ class TestInteractiveHyperdrive:
         assert len(long_wallet_df) == len(agent_wallet.longs)
         for _, long_df in long_wallet_df.iterrows():
             assert long_df["maturity_time"] in agent_wallet.longs
-            assert agent_wallet.longs[long_df["maturity_time"]].balance == long_df["value"]
+            assert agent_wallet.longs[long_df["maturity_time"]].balance == long_df["position"]
 
         # Check shorts
         short_wallet_df = current_wallet_df[current_wallet_df["base_token_type"] == "SHORT"]
         assert len(short_wallet_df) == len(agent_wallet.shorts)
         for _, short_df in short_wallet_df.iterrows():
             assert short_df["maturity_time"] in agent_wallet.shorts
-            assert agent_wallet.shorts[short_df["maturity_time"]].balance == short_df["value"]
+            assert agent_wallet.shorts[short_df["maturity_time"]].balance == short_df["position"]
 
         # Check withdrawal_shares
         withdrawal_wallet_df = current_wallet_df[current_wallet_df["base_token_type"] == "WITHDRAWAL_SHARE"]
         if len(withdrawal_wallet_df) == 0:
             check_value = FixedPoint(0)
         elif len(withdrawal_wallet_df) == 1:
-            check_value = FixedPoint(withdrawal_wallet_df.iloc[0]["value"])
+            check_value = FixedPoint(withdrawal_wallet_df.iloc[0]["position"])
         else:
             assert False
         assert check_value == agent_wallet.withdraw_shares
