@@ -13,6 +13,8 @@ from .addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
 
 
 class GetWeb3AndHyperdriveContractsReturnValue(NamedTuple):
+    """Return values for get_web3_and_hyperdrive_contracts"""
+
     w3: Web3
     base_token_contract: ERC20MintableContract
     yield_contract: MockERC4626Contract
