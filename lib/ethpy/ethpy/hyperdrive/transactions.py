@@ -118,10 +118,12 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
     fixedpoint_values = ["baseAmount", "bondAmount", "lpAmount", "withdrawalShareAmount", "sharePrice", "lpSharePrice"]
 
     for value in values:
-        setattr(trade_result, camel_to_snake(value), log_args[value])
+        if value in log_args and hasattr(trade_result, camel_to_snake(value)):
+            setattr(trade_result, camel_to_snake(value), log_args[value])
 
     for value in fixedpoint_values:
-        setattr(trade_result, camel_to_snake(value), FixedPoint(scaled_value=log_args[value]))
+        if value in log_args and hasattr(trade_result, camel_to_snake(value)):
+            setattr(trade_result, camel_to_snake(value), FixedPoint(scaled_value=log_args[value]))
 
     return trade_result
 
