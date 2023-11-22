@@ -1,6 +1,8 @@
 """Helper functions for interfacing with hyperdrive."""
 from __future__ import annotations
 
+from typing import Any, cast
+
 from eth_typing import BlockNumber
 from ethpy.base import UnknownBlockError, get_transaction_logs
 from fixedpointmath import FixedPoint
@@ -31,7 +33,7 @@ def get_hyperdrive_pool_config(hyperdrive_contract: IERC4626HyperdriveContract) 
         The hyperdrive pool config.
     """
     pool_config = hyperdrive_contract.functions.getPoolConfig().call()
-    return hypertypes_pool_config_to_fixedpoint(pool_config)
+    return hypertypes_pool_config_to_fixedpoint(cast(Any, pool_config))
 
 
 def get_hyperdrive_pool_info(hyperdrive_contract: IERC4626HyperdriveContract, block_number: BlockNumber) -> PoolInfoFP:
