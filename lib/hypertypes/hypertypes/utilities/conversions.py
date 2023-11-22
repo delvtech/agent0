@@ -62,11 +62,6 @@ def fixedpoint_pool_info_to_hypertypes(fixedpoint_pool_info: PoolInfoFP) -> Pool
     )
 
 
-def contract_checkpoint_to_hypertypes(contract_checkpoint: dict[str, Any]) -> Checkpoint:
-    """Convert the contract call return value into a HyperTypes Checkpoint object."""
-    return Checkpoint(**contract_checkpoint)
-
-
 def hypertypes_checkpoint_to_fixedpoint(
     hypertypes_checkpoint: Checkpoint,
 ) -> CheckpointFP:
@@ -104,34 +99,6 @@ def fixedpoint_checkpoint_to_hypertypes(
     """
     return Checkpoint(
         **{snake_to_camel(key): value.scaled_value for key, value in asdict(fixedpoint_checkpoint).items()}
-    )
-
-
-def contract_pool_info_to_hypertypes(contract_pool_info: dict[str, Any]) -> PoolInfo:
-    """Convert the contract call return value into a HyperTypes PoolInfo object."""
-    return PoolInfo(**contract_pool_info)
-
-
-def contract_pool_config_to_hypertypes(contract_pool_config: dict[str, Any]) -> PoolConfig:
-    """Convert the contract call returned pool config into a HyperTypes PoolConfig object."""
-    return PoolConfig(
-        baseToken=contract_pool_config["baseToken"],
-        linkerFactory=contract_pool_config["linkerFactory"],
-        linkerCodeHash=contract_pool_config["linkerCodeHash"],
-        initialSharePrice=contract_pool_config["initialSharePrice"],
-        minimumShareReserves=contract_pool_config["minimumShareReserves"],
-        minimumTransactionAmount=contract_pool_config["minimumTransactionAmount"],
-        precisionThreshold=contract_pool_config["precisionThreshold"],
-        positionDuration=contract_pool_config["positionDuration"],
-        checkpointDuration=contract_pool_config["checkpointDuration"],
-        timeStretch=contract_pool_config["timeStretch"],
-        governance=contract_pool_config["governance"],
-        feeCollector=contract_pool_config["feeCollector"],
-        fees=Fees(
-            curve=contract_pool_config["fees"][0],
-            flat=contract_pool_config["fees"][1],
-            governance=contract_pool_config["fees"][2],
-        ),
     )
 
 
