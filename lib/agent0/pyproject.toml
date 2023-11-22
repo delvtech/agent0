@@ -27,7 +27,8 @@ base = [
     "python-dotenv",
     "web3", # will include eth- packages
     "hexbytes",
-    "pandas"
+    "pandas",
+    "nest_asyncio",
 ]
 lateral = [
     # Lateral dependencies across subpackages are pointing to github

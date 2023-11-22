@@ -87,26 +87,21 @@ withdraw_shares_event = hyperdrive_agent2.redeem_withdraw_share(shares=hyperdriv
 
 # %%
 # Get data from database under the hood
-# TODO: https://github.com/delvtech/agent0/issues/1106
 pool_config = interactive_hyperdrive.get_pool_config()
-pool_info_history = interactive_hyperdrive.get_pool_info()
-# TODO checkpoint info is currently bugged, fix
+pool_info = interactive_hyperdrive.get_pool_info()
+# TODO checkpoint info doesn't play nice with advancing time.
+# This is because we don't create checkpoints when we advance time.
 checkpoint_info = interactive_hyperdrive.get_checkpoint_info()
-pool_analysis = interactive_hyperdrive.get_pool_analysis()
-wallet_deltas = interactive_hyperdrive.get_wallet_deltas()
-# TODO current_wallet is currently bugged, fix
+
 current_wallet = interactive_hyperdrive.get_current_wallet()
 ticker = interactive_hyperdrive.get_ticker()
-# TODO wallet_pnl is currently bugged, fix
-wallet_pnl = interactive_hyperdrive.get_wallet_pnl()
+wallet_positions = interactive_hyperdrive.get_wallet_positions()
 total_wallet_pnl_over_time = interactive_hyperdrive.get_total_wallet_pnl_over_time()
-# TODO wallet positions over time is bugged, fix
-wallet_positions_over_time = interactive_hyperdrive.get_wallet_positions_over_time()
 
 # %%
 
 # Plot pretty plots
 # TODO these should be in a notebook for plotting
-pool_info_history.plot(x="timestamp", y="longs_outstanding", kind="line")
+pool_info.plot(x="timestamp", y="longs_outstanding", kind="line")
 # Change wallet_address to be columns for plotting
 total_wallet_pnl_over_time.pivot(index="timestamp", columns="wallet_address", values="pnl").plot()

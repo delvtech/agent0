@@ -2,15 +2,17 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from dataclasses import asdict, dataclass
+from decimal import Decimal
 
+import nest_asyncio
 import pandas as pd
 from chainsync import PostgresConfig
 from chainsync.dashboard.usernames import build_user_mapping
 from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
 from chainsync.db.hyperdrive import (
     get_checkpoint_info,
-    get_current_wallet,
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
@@ -18,14 +20,14 @@ from chainsync.db.hyperdrive import (
     get_total_wallet_pnl_over_time,
     get_wallet_deltas,
     get_wallet_pnl,
-    get_wallet_positions_over_time,
 )
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
+from eth_typing import ChecksumAddress
 from eth_utils.address import to_checksum_address
 from ethpy import EthConfig
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
-from ethpy.hyperdrive import DeployedHyperdrivePool, ReceiptBreakdown, deploy_hyperdrive_from_factory
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, DeployedHyperdrivePool, ReceiptBreakdown, deploy_hyperdrive_from_factory
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hypertypes.IHyperdriveTypes import Fees, PoolConfig
@@ -50,6 +52,10 @@ from .event_types import (
 )
 from .interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
+
+# In order to support both scripts and jupyter notebooks with underlying async functions,
+# we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
+nest_asyncio.apply()
 
 
 class InteractiveHyperdrive:
@@ -137,11 +143,15 @@ class InteractiveHyperdrive:
             config = self.Config()
 
         # Define agent0 configs with this setup
-        # TODO this very likely needs to reference an absolute path
-        # as if we're importing this package from another repo, this path won't work
-        self.eth_config = EthConfig(
-            artifacts_uri="not_used", rpc_uri=chain.rpc_uri, abi_dir="packages/hyperdrive/src/abis/"
-        )
+        # TODO currently getting the path based on this file's path
+        # This requires the entire monorepo to be check out, and will likely not work when
+        # installing agent0 by itself.
+        # This should get fixed when abis are exported in hypertypes.
+        full_path = os.path.realpath(__file__)
+        current_file_dir, _ = os.path.split(full_path)
+        abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
+
+        self.eth_config = EthConfig(artifacts_uri="not_used", rpc_uri=chain.rpc_uri, abi_dir=abi_dir)
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(config, chain, self.eth_config.abi_dir)
         self.hyperdrive_interface = HyperdriveInterface(
@@ -162,6 +172,9 @@ class InteractiveHyperdrive:
         )
 
         self.db_session = initialize_session(postgres_config, ensure_database_created=True)
+
+        # Keep track of how much base have been minted per agent
+        self._initial_funds: dict[ChecksumAddress, FixedPoint] = {}
 
     def __del__(self):
         # Attempt to close the session
@@ -253,7 +266,7 @@ class InteractiveHyperdrive:
         return get_pool_config(self.db_session, coerce_float=coerce_float).iloc[0]
 
     def get_pool_info(self, coerce_float: bool = True) -> pd.DataFrame:
-        """Get the pool info per block and returns as a pandas dataframe.
+        """Get the pool info (and additional info) per block and returns as a pandas dataframe.
 
         Arguments
         ---------
@@ -265,7 +278,10 @@ class InteractiveHyperdrive:
         pd.Dataframe
             A pandas dataframe that consists of the pool info per block.
         """
-        return get_pool_info(self.db_session, coerce_float=coerce_float)
+        pool_info = get_pool_info(self.db_session, coerce_float=coerce_float)
+        pool_analysis = get_pool_analysis(self.db_session, coerce_float=coerce_float, return_timestamp=False)
+        pool_info = pool_info.merge(pool_analysis, how="left", on="block_number")
+        return pool_info
 
     def get_checkpoint_info(self, coerce_float: bool = True) -> pd.DataFrame:
         """Get the previous checkpoint infos per block and returns as a pandas dataframe.
@@ -280,24 +296,11 @@ class InteractiveHyperdrive:
         pd.Dataframe
             A pandas dataframe that consists of the checkpoint info per block.
         """
-        # TODO the data itself looks a bit weird here, perhaps to accelerating time
+        # TODO checkpoint info doesn't play nice with advancing time.
+        # This is because we don't create checkpoints when we advance time.
         # https://github.com/delvtech/agent0/issues/1106
-        return get_checkpoint_info(self.db_session, coerce_float=coerce_float)
-
-    def get_pool_analysis(self, coerce_float: bool = True) -> pd.DataFrame:
-        """Get the pool analysis per block and returns as a pandas dataframe.
-
-        Arguments
-        ---------
-        coerce_float : bool
-            If True, will coerce underlying Decimals to floats.
-
-        Returns
-        -------
-        pd.Dataframe
-            A pandas dataframe that consists of the pool analysis per block.
-        """
-        return get_pool_analysis(self.db_session, coerce_float=coerce_float)
+        out = get_checkpoint_info(self.db_session, coerce_float=coerce_float)
+        return out
 
     def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
         addr_to_username = get_addr_to_username(self.db_session)
@@ -308,24 +311,19 @@ class InteractiveHyperdrive:
         df.insert(df.columns.get_loc(addr_column), "username", usernames)
         return df
 
-    def get_wallet_deltas(self, coerce_float: bool = True) -> pd.DataFrame:
-        """Get all token deltas and returns as a pandas dataframe.
-
-        Arguments
-        ---------
-        coerce_float : bool
-            If True, will coerce underlying Decimals to floats.
-
-        Returns
-        -------
-        pd.Dataframe
-            A pandas dataframe that consists of all token deltas.
-        """
-        out = get_wallet_deltas(self.db_session, coerce_float=coerce_float)
-        return self._add_username_to_dataframe(out, "wallet_address")
+    def _adjust_base_positions(self, in_df: pd.DataFrame, value_column: str, coerce_float: bool):
+        out_df = in_df.copy()
+        for address, initial_balance in self._initial_funds.items():
+            row_idxs = (out_df["wallet_address"] == address) & (out_df["base_token_type"] == BASE_TOKEN_SYMBOL)
+            if coerce_float:
+                out_df.loc[row_idxs, value_column] += float(initial_balance)
+            else:
+                out_df.loc[row_idxs, value_column] += Decimal(str(initial_balance))
+        return out_df
 
     def get_current_wallet(self, coerce_float: bool = True) -> pd.DataFrame:
-        """Gets the current wallet positions of all agents and returns as a pandas dataframe.
+        """Gets the current wallet positions of all agents and their corresponding pnl
+        and returns as a pandas dataframe.
 
         Arguments
         ---------
@@ -335,15 +333,54 @@ class InteractiveHyperdrive:
         Returns
         -------
         pd.Dataframe
-            A pandas dataframe that consists of the current wallet positions.
+            timestamp : pd.Timestamp
+                The block timestamp of the entry.
+            block_number : int
+                The block number of the entry.
+            username : str
+                The username of the entry.
+            wallet_address : str
+                The wallet address of the entry.
+            token_type : str
+                A string specifying the token type. Longs and shorts are encoded as `LONG-{maturity_time}`.
+            position : Decimal | float
+                The current value of the token of the agent at the specified block number.
+            pnl: Decimal | float
+                The current pnl of the token of the agent at the specified block number.
+            base_token_type : str
+                A string specifying the type of the token.
+            maturity_time : Decimal | float
+                The maturity time of the token in epoch seconds. Can be NaN to denote not applicable.
+            latest_block_update: int
+                The last block number that the position was updated.
         """
-        # TODO this currently doesn't store the starting base value
-        # need to add the known base to rows with `WETH` as the token type
         # TODO potential improvement is to pivot the table so that columns are the token type
         # Makes this data easier to work with
         # https://github.com/delvtech/agent0/issues/1106
-        out = get_current_wallet(self.db_session, coerce_float=coerce_float)
-        return self._add_username_to_dataframe(out, "wallet_address")
+        out = get_wallet_pnl(self.db_session, start_block=-1, coerce_float=coerce_float)
+        # DB only stores final delta for base, we calculate actual base based on how much funds
+        # were added in all
+        out = self._adjust_base_positions(out, "value", coerce_float)
+        # Rename column to match get_wallet_positions
+        out = out.rename(columns={"value": "position"})
+        # Add usernames
+        out = self._add_username_to_dataframe(out, "wallet_address")
+        # Filter and order columns
+        out = out[
+            [
+                "timestamp",
+                "block_number",
+                "username",
+                "wallet_address",
+                "token_type",
+                "position",
+                "pnl",
+                "base_token_type",
+                "maturity_time",
+                "latest_block_update",
+            ]
+        ]
+        return out
 
     def get_ticker(self, coerce_float: bool = True) -> pd.DataFrame:
         """Gets the ticker history of all trades and the corresponding token deltas for each trade.
@@ -356,15 +393,36 @@ class InteractiveHyperdrive:
         Returns
         -------
         pd.Dataframe
-            A pandas dataframe that consists of the ticker.
+            timestamp : pd.Timestamp
+                The block timestamp of the entry.
+            block_number : int
+                The block number of the entry.
+            username : str
+                The username of the entry.
+            wallet_address : str
+                The wallet address of the entry.
+            trade_type : str
+                The trade that the agent made.
+            token_diffs : list[str]
+                A list of token diffs for each trade. Each token diff is encoded as "<base_token_type>: <amount>"
         """
-        out = get_ticker(self.db_session, coerce_float=coerce_float)
-        return self._add_username_to_dataframe(out, "wallet_address")
+        out = get_ticker(self.db_session, coerce_float=coerce_float).drop("id", axis=1)
+        out = self._add_username_to_dataframe(out, "wallet_address")
+        out = out[
+            [
+                "timestamp",
+                "block_number",
+                "username",
+                "wallet_address",
+                "trade_type",
+                "token_diffs",
+            ]
+        ]
+        return out
 
-    def get_wallet_pnl(self, coerce_float: bool = True) -> pd.DataFrame:
-        """Gets wallet pnls of all trades and the corresponding token deltas for each trade.
-        Here, each row consists of the position of the token at that time (`value`) and the corresponding PNL
-        of that token at that time (`pnl`). A row will only exist if a position delta occurred at that block.
+    def get_wallet_positions(self, coerce_float: bool = True) -> pd.DataFrame:
+        """Get a dataframe summarizing all wallet deltas and positions
+        and returns as a pandas dataframe.
 
         Arguments
         ---------
@@ -374,12 +432,54 @@ class InteractiveHyperdrive:
         Returns
         -------
         pd.Dataframe
-            A pandas dataframe that consists of all token pnls.
+            timestamp : pd.Timestamp
+                The block timestamp of the entry.
+            block_number : int
+                The block number of the entry.
+            username : str
+                The username of the entry.
+            wallet_address : str
+                The wallet address of the entry.
+            token_type : str
+                A string specifying the token type. Longs and shorts are encoded as `LONG-{maturity_time}`.
+            position : Decimal | float
+                The current value of the token of the agent at the specified block number.
+            delta: Decimal | float
+                The change in value of the token of the agent at the specified block number.
+            base_token_type : str
+                A string specifying the type of the token.
+            maturity_time : Decimal | float
+                The maturity time of the token in epoch seconds. Can be NaN to denote not applicable.
+            transaction_hash: str
+                The transaction hash that resulted in the deltas.
         """
-        # TODO pnls here are missing zero value positions, fix
-        # https://github.com/delvtech/agent0/issues/1106
-        out = get_wallet_pnl(self.db_session, coerce_float=coerce_float)
-        return self._add_username_to_dataframe(out, "wallet_address")
+        # We gather all deltas and calculate the current positions here
+        # If computing this is too slow, we can get current positions from
+        # the wallet_pnl table and left merge with the deltas
+        out = get_wallet_deltas(self.db_session, coerce_float=coerce_float)
+        out["position"] = out.groupby(["wallet_address", "token_type"])["delta"].transform(pd.Series.cumsum)
+
+        # DB only stores final delta for base, we calculate actual base based on how much funds
+        # were added in all
+        out = self._adjust_base_positions(out, "position", coerce_float)
+        # Add usernames
+        out = self._add_username_to_dataframe(out, "wallet_address")
+        # Filter and order columns
+        out = out[
+            [
+                "timestamp",
+                "block_number",
+                "username",
+                "wallet_address",
+                "token_type",
+                "position",
+                "delta",
+                "base_token_type",
+                "maturity_time",
+                "transaction_hash",
+            ]
+        ]
+        return out
 
     def get_total_wallet_pnl_over_time(self, coerce_float: bool = True) -> pd.DataFrame:
         """Gets total pnl for each wallet for each block, aggregated across all open positions.
@@ -392,28 +492,29 @@ class InteractiveHyperdrive:
         Returns
         -------
         pd.Dataframe
-            A pandas dataframe that consists of wallet pnls for each wallet over time.
+            timestamp : pd.Timestamp
+                The block timestamp of the entry.
+            block_number : int
+                The block number of the entry.
+            username : str
+                The username of the entry.
+            wallet_address : str
+                The wallet address of the entry.
+            pnl : Decimal | float
+                The total pnl of the agent at the specified block number.
         """
         out = get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
-        return self._add_username_to_dataframe(out, "wallet_address")
-
-    def get_wallet_positions_over_time(self, coerce_float: bool = True) -> pd.DataFrame:
-        """Gets wallet positions for each wallet for each block.
-
-        Arguments
-        ---------
-        coerce_float : bool
-            If True, will coerce underlying Decimals to floats.
-
-        Returns
-        -------
-        pd.Dataframe
-            A pandas dataframe that consists of wallet positions for each wallet over time.
-        """
-        # TODO pnls here are missing zero value positions, fix
-        # https://github.com/delvtech/agent0/issues/1106
-        out = get_wallet_positions_over_time(self.db_session, coerce_float=coerce_float)
-        return self._add_username_to_dataframe(out, "wallet_address")
+        out = self._add_username_to_dataframe(out, "wallet_address")
+        out = out[
+            [
+                "timestamp",
+                "block_number",
+                "username",
+                "wallet_address",
+                "pnl",
+            ]
+        ]
+        return out
 
     ### Private agent methods ###
 
@@ -429,7 +530,7 @@ class InteractiveHyperdrive:
             self._add_funds(agent, base, eth)
 
         # establish max approval for the hyperdrive contract
-        asyncio.run(
+        asyncio.gather(
             set_max_approval(
                 [agent],
                 self.hyperdrive_interface.web3,
@@ -462,6 +563,12 @@ class InteractiveHyperdrive:
             )
             # Update the agent's wallet balance
             agent.wallet.balance.amount += base
+
+            # Keep track of how much base has been minted for each agent
+            if agent.address in self._initial_funds:
+                self._initial_funds[agent.address] += base
+            else:
+                self._initial_funds[agent.address] = base
 
         # TODO do we want to report a status here?
 

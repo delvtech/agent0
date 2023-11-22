@@ -270,7 +270,9 @@ class TestWalletDeltaInterface:
         wallet_delta_2 = WalletDelta(block_number=1, transaction_hash="a", delta=Decimal("3.2"))
         wallet_delta_3 = WalletDelta(block_number=2, transaction_hash="a", delta=Decimal("3.3"))
         add_wallet_deltas([wallet_delta_1, wallet_delta_2, wallet_delta_3], db_session)
-        wallet_delta_df = get_wallet_deltas(db_session)
+        # Since we're testing this in isolation without poolinfo, we can't return timestamp here
+        # otherwise no data is returned.
+        wallet_delta_df = get_wallet_deltas(db_session, return_timestamp=False)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.1, 3.2, 3.3]))
 
     def test_block_query_wallet_delta(self, db_session):
@@ -279,15 +281,15 @@ class TestWalletDeltaInterface:
         wallet_delta_2 = WalletDelta(block_number=1, transaction_hash="a", delta=Decimal("3.2"))
         wallet_delta_3 = WalletDelta(block_number=2, transaction_hash="a", delta=Decimal("3.3"))
         add_wallet_deltas([wallet_delta_1, wallet_delta_2, wallet_delta_3], db_session)
-        wallet_delta_df = get_wallet_deltas(db_session, start_block=1)
+        wallet_delta_df = get_wallet_deltas(db_session, start_block=1, return_timestamp=False)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.2, 3.3]))
-        wallet_delta_df = get_wallet_deltas(db_session, start_block=-1)
+        wallet_delta_df = get_wallet_deltas(db_session, start_block=-1, return_timestamp=False)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.3]))
-        wallet_delta_df = get_wallet_deltas(db_session, end_block=1)
+        wallet_delta_df = get_wallet_deltas(db_session, end_block=1, return_timestamp=False)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.1]))
-        wallet_delta_df = get_wallet_deltas(db_session, end_block=-1)
+        wallet_delta_df = get_wallet_deltas(db_session, end_block=-1, return_timestamp=False)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.1, 3.2]))
-        wallet_delta_df = get_wallet_deltas(db_session, start_block=1, end_block=-1)
+        wallet_delta_df = get_wallet_deltas(db_session, start_block=1, end_block=-1, return_timestamp=False)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.2]))
 
     def test_get_agents(self, db_session):
