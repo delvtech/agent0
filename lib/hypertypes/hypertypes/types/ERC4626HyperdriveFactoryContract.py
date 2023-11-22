@@ -66,10 +66,7 @@ def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
         if is_dataclass(field_type):
             # Recursively convert nested tuples to nested dataclasses
             field_values[field_name] = tuple_to_dataclass(field_type, value)
-        elif (
-            isinstance(value, tuple)
-            and not getattr(field_type, "_name", None) == "Tuple"
-        ):
+        elif isinstance(value, tuple) and not getattr(field_type, "_name", None) == "Tuple":
             # If it's a tuple and the field is not intended to be a tuple, assume it's a nested dataclass
             field_values[field_name] = tuple_to_dataclass(field_type, value)
         else:
@@ -79,9 +76,7 @@ def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
     return cls(**field_values)
 
 
-class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(ContractFunction):
     """ContractFunction for the deployAndInitialize method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -96,9 +91,7 @@ class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(
         arg5: list[bytes],
         _pool: str,
     ) -> "ERC4626HyperdriveFactoryDeployAndInitializeContractFunction":
-        clone = super().__call__(
-            _config, _contribution, _apr, _initializeExtraData, arg5, _pool
-        )
+        clone = super().__call__(_config, _contribution, _apr, _initializeExtraData, arg5, _pool)
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -111,9 +104,7 @@ class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
 
@@ -128,10 +119,7 @@ class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -163,9 +151,7 @@ class ERC4626HyperdriveFactoryFeeCollectorContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
 
@@ -180,10 +166,7 @@ class ERC4626HyperdriveFactoryFeeCollectorContractFunction(ContractFunction):
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -213,9 +196,7 @@ class ERC4626HyperdriveFactoryFeesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> tuple[int, int, int]:
         """returns (int, int, int)"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = [int, int, int]
 
@@ -230,10 +211,7 @@ class ERC4626HyperdriveFactoryFeesContractFunction(ContractFunction):
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -243,9 +221,7 @@ class ERC4626HyperdriveFactoryFeesContractFunction(ContractFunction):
         return converted_value
 
 
-class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(ContractFunction):
     """ContractFunction for the getDefaultPausers method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -267,9 +243,7 @@ class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> list[str]:
         """returns list[str]"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = list[str]
 
@@ -284,10 +258,7 @@ class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -297,17 +268,13 @@ class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(
         return converted_value
 
 
-class ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction(ContractFunction):
     """ContractFunction for the getInstanceAtIndex method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, index: int
-    ) -> "ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction":
+    def __call__(self, index: int) -> "ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction":
         clone = super().__call__(index)
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -321,9 +288,7 @@ class ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
 
@@ -338,10 +303,7 @@ class ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -351,17 +313,13 @@ class ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction(
         return converted_value
 
 
-class ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction(ContractFunction):
     """ContractFunction for the getInstancesInRange method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, startIndex: int, endIndex: int
-    ) -> "ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction":
+    def __call__(self, startIndex: int, endIndex: int) -> "ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction":
         clone = super().__call__(startIndex, endIndex)
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -375,9 +333,7 @@ class ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> list[str]:
         """returns list[str]"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = list[str]
 
@@ -392,10 +348,7 @@ class ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -405,9 +358,7 @@ class ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction(
         return converted_value
 
 
-class ERC4626HyperdriveFactoryGetNumberOfInstancesContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryGetNumberOfInstancesContractFunction(ContractFunction):
     """ContractFunction for the getNumberOfInstances method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -429,9 +380,7 @@ class ERC4626HyperdriveFactoryGetNumberOfInstancesContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = int
 
@@ -446,10 +395,7 @@ class ERC4626HyperdriveFactoryGetNumberOfInstancesContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -481,9 +427,7 @@ class ERC4626HyperdriveFactoryGetSweepTargetsContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> list[str]:
         """returns list[str]"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = list[str]
 
@@ -498,10 +442,7 @@ class ERC4626HyperdriveFactoryGetSweepTargetsContractFunction(ContractFunction):
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -531,9 +472,7 @@ class ERC4626HyperdriveFactoryGovernanceContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
 
@@ -548,10 +487,7 @@ class ERC4626HyperdriveFactoryGovernanceContractFunction(ContractFunction):
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -561,9 +497,7 @@ class ERC4626HyperdriveFactoryGovernanceContractFunction(ContractFunction):
         return converted_value
 
 
-class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(ContractFunction):
     """ContractFunction for the hyperdriveDeployer method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -585,9 +519,7 @@ class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
 
@@ -602,10 +534,7 @@ class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -615,9 +544,7 @@ class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(
         return converted_value
 
 
-class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(ContractFunction):
     """ContractFunction for the hyperdriveGovernance method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -639,9 +566,7 @@ class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
 
@@ -656,10 +581,7 @@ class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -675,9 +597,7 @@ class ERC4626HyperdriveFactoryIsInstanceContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, arg1: str
-    ) -> "ERC4626HyperdriveFactoryIsInstanceContractFunction":
+    def __call__(self, arg1: str) -> "ERC4626HyperdriveFactoryIsInstanceContractFunction":
         clone = super().__call__(arg1)
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -691,9 +611,7 @@ class ERC4626HyperdriveFactoryIsInstanceContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bool
 
@@ -708,10 +626,7 @@ class ERC4626HyperdriveFactoryIsInstanceContractFunction(ContractFunction):
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -727,9 +642,7 @@ class ERC4626HyperdriveFactoryIsOfficialContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, instance: str
-    ) -> "ERC4626HyperdriveFactoryIsOfficialContractFunction":
+    def __call__(self, instance: str) -> "ERC4626HyperdriveFactoryIsOfficialContractFunction":
         clone = super().__call__(instance)
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -743,9 +656,7 @@ class ERC4626HyperdriveFactoryIsOfficialContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = int
 
@@ -760,10 +671,7 @@ class ERC4626HyperdriveFactoryIsOfficialContractFunction(ContractFunction):
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -795,9 +703,7 @@ class ERC4626HyperdriveFactoryLinkerCodeHashContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bytes
 
@@ -812,10 +718,7 @@ class ERC4626HyperdriveFactoryLinkerCodeHashContractFunction(ContractFunction):
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -847,9 +750,7 @@ class ERC4626HyperdriveFactoryLinkerFactoryContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
 
@@ -864,10 +765,7 @@ class ERC4626HyperdriveFactoryLinkerFactoryContractFunction(ContractFunction):
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -899,9 +797,7 @@ class ERC4626HyperdriveFactoryTarget0DeployerContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
 
@@ -916,10 +812,7 @@ class ERC4626HyperdriveFactoryTarget0DeployerContractFunction(ContractFunction):
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -951,9 +844,7 @@ class ERC4626HyperdriveFactoryTarget1DeployerContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
 
@@ -968,10 +859,7 @@ class ERC4626HyperdriveFactoryTarget1DeployerContractFunction(ContractFunction):
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -981,17 +869,13 @@ class ERC4626HyperdriveFactoryTarget1DeployerContractFunction(ContractFunction):
         return converted_value
 
 
-class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(ContractFunction):
     """ContractFunction for the updateDefaultPausers method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _defaultPausers_: list[str]
-    ) -> "ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction":
+    def __call__(self, _defaultPausers_: list[str]) -> "ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction":
         clone = super().__call__(_defaultPausers_)
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1005,9 +889,7 @@ class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> None:
         """No return value"""
-        super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
         return None
@@ -1021,10 +903,7 @@ class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -1034,17 +913,13 @@ class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(
         return converted_value
 
 
-class ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction(ContractFunction):
     """ContractFunction for the updateFeeCollector method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _feeCollector: str
-    ) -> "ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction":
+    def __call__(self, _feeCollector: str) -> "ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction":
         clone = super().__call__(_feeCollector)
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1058,9 +933,7 @@ class ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> None:
         """No return value"""
-        super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
         return None
@@ -1074,10 +947,7 @@ class ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -1093,9 +963,7 @@ class ERC4626HyperdriveFactoryUpdateFeesContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _fees: Fees
-    ) -> "ERC4626HyperdriveFactoryUpdateFeesContractFunction":
+    def __call__(self, _fees: Fees) -> "ERC4626HyperdriveFactoryUpdateFeesContractFunction":
         clone = super().__call__(_fees)
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1109,9 +977,7 @@ class ERC4626HyperdriveFactoryUpdateFeesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> None:
         """No return value"""
-        super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
         return None
@@ -1125,10 +991,7 @@ class ERC4626HyperdriveFactoryUpdateFeesContractFunction(ContractFunction):
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -1138,17 +1001,13 @@ class ERC4626HyperdriveFactoryUpdateFeesContractFunction(ContractFunction):
         return converted_value
 
 
-class ERC4626HyperdriveFactoryUpdateGovernanceContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateGovernanceContractFunction(ContractFunction):
     """ContractFunction for the updateGovernance method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _governance: str
-    ) -> "ERC4626HyperdriveFactoryUpdateGovernanceContractFunction":
+    def __call__(self, _governance: str) -> "ERC4626HyperdriveFactoryUpdateGovernanceContractFunction":
         clone = super().__call__(_governance)
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1162,9 +1021,7 @@ class ERC4626HyperdriveFactoryUpdateGovernanceContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> None:
         """No return value"""
-        super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
         return None
@@ -1178,10 +1035,7 @@ class ERC4626HyperdriveFactoryUpdateGovernanceContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -1191,9 +1045,7 @@ class ERC4626HyperdriveFactoryUpdateGovernanceContractFunction(
         return converted_value
 
 
-class ERC4626HyperdriveFactoryUpdateHyperdriveGovernanceContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateHyperdriveGovernanceContractFunction(ContractFunction):
     """ContractFunction for the updateHyperdriveGovernance method."""
 
     # super() call methods are generic, while our version adds values & types
@@ -1215,9 +1067,7 @@ class ERC4626HyperdriveFactoryUpdateHyperdriveGovernanceContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> None:
         """No return value"""
-        super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
         return None
@@ -1231,10 +1081,7 @@ class ERC4626HyperdriveFactoryUpdateHyperdriveGovernanceContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -1244,17 +1091,13 @@ class ERC4626HyperdriveFactoryUpdateHyperdriveGovernanceContractFunction(
         return converted_value
 
 
-class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(ContractFunction):
     """ContractFunction for the updateImplementation method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, newDeployer: str
-    ) -> "ERC4626HyperdriveFactoryUpdateImplementationContractFunction":
+    def __call__(self, newDeployer: str) -> "ERC4626HyperdriveFactoryUpdateImplementationContractFunction":
         clone = super().__call__(newDeployer)
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1268,9 +1111,7 @@ class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> None:
         """No return value"""
-        super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
         return None
@@ -1284,10 +1125,7 @@ class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -1297,17 +1135,13 @@ class ERC4626HyperdriveFactoryUpdateImplementationContractFunction(
         return converted_value
 
 
-class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(ContractFunction):
     """ContractFunction for the updateLinkerCodeHash method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _linkerCodeHash: bytes
-    ) -> "ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction":
+    def __call__(self, _linkerCodeHash: bytes) -> "ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction":
         clone = super().__call__(_linkerCodeHash)
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1321,9 +1155,7 @@ class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> None:
         """No return value"""
-        super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
         return None
@@ -1337,10 +1169,7 @@ class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -1350,17 +1179,13 @@ class ERC4626HyperdriveFactoryUpdateLinkerCodeHashContractFunction(
         return converted_value
 
 
-class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(ContractFunction):
     """ContractFunction for the updateLinkerFactory method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, _linkerFactory: str
-    ) -> "ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction":
+    def __call__(self, _linkerFactory: str) -> "ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction":
         clone = super().__call__(_linkerFactory)
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1374,9 +1199,7 @@ class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> None:
         """No return value"""
-        super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
         return None
@@ -1390,10 +1213,7 @@ class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -1403,17 +1223,13 @@ class ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction(
         return converted_value
 
 
-class ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction(
-    ContractFunction
-):
+class ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction(ContractFunction):
     """ContractFunction for the updateSweepTargets method."""
 
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(
-        self, __sweepTargets: list[str]
-    ) -> "ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction":
+    def __call__(self, __sweepTargets: list[str]) -> "ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction":
         clone = super().__call__(__sweepTargets)
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1427,9 +1243,7 @@ class ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction(
         ccip_read_enabled: bool | None = None,
     ) -> None:
         """No return value"""
-        super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
         return None
@@ -1443,10 +1257,7 @@ class ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction(
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -1478,9 +1289,7 @@ class ERC4626HyperdriveFactoryVersionCounterContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = int
 
@@ -1495,10 +1304,7 @@ class ERC4626HyperdriveFactoryVersionCounterContractFunction(ContractFunction):
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -1573,25 +1379,21 @@ class ERC4626HyperdriveFactoryContractFunctions(ContractFunctions):
         decode_tuples: bool | None = False,
     ) -> None:
         super().__init__(abi, w3, address, decode_tuples)
-        self.deployAndInitialize = (
-            ERC4626HyperdriveFactoryDeployAndInitializeContractFunction.factory(
-                "deployAndInitialize",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="deployAndInitialize",
-            )
+        self.deployAndInitialize = ERC4626HyperdriveFactoryDeployAndInitializeContractFunction.factory(
+            "deployAndInitialize",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="deployAndInitialize",
         )
-        self.feeCollector = (
-            ERC4626HyperdriveFactoryFeeCollectorContractFunction.factory(
-                "feeCollector",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="feeCollector",
-            )
+        self.feeCollector = ERC4626HyperdriveFactoryFeeCollectorContractFunction.factory(
+            "feeCollector",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="feeCollector",
         )
         self.fees = ERC4626HyperdriveFactoryFeesContractFunction.factory(
             "fees",
@@ -1601,35 +1403,29 @@ class ERC4626HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="fees",
         )
-        self.getDefaultPausers = (
-            ERC4626HyperdriveFactoryGetDefaultPausersContractFunction.factory(
-                "getDefaultPausers",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="getDefaultPausers",
-            )
+        self.getDefaultPausers = ERC4626HyperdriveFactoryGetDefaultPausersContractFunction.factory(
+            "getDefaultPausers",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getDefaultPausers",
         )
-        self.getInstanceAtIndex = (
-            ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction.factory(
-                "getInstanceAtIndex",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="getInstanceAtIndex",
-            )
+        self.getInstanceAtIndex = ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction.factory(
+            "getInstanceAtIndex",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getInstanceAtIndex",
         )
-        self.getInstancesInRange = (
-            ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction.factory(
-                "getInstancesInRange",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="getInstancesInRange",
-            )
+        self.getInstancesInRange = ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction.factory(
+            "getInstancesInRange",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getInstancesInRange",
         )
         self.getNumberOfInstances = ERC4626HyperdriveFactoryGetNumberOfInstancesContractFunction.factory(
             "getNumberOfInstances",
@@ -1639,35 +1435,29 @@ class ERC4626HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="getNumberOfInstances",
         )
-        self.getSweepTargets = (
-            ERC4626HyperdriveFactoryGetSweepTargetsContractFunction.factory(
-                "getSweepTargets",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="getSweepTargets",
-            )
+        self.getSweepTargets = ERC4626HyperdriveFactoryGetSweepTargetsContractFunction.factory(
+            "getSweepTargets",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getSweepTargets",
         )
-        self.governance = (
-            ERC4626HyperdriveFactoryGovernanceContractFunction.factory(
-                "governance",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="governance",
-            )
+        self.governance = ERC4626HyperdriveFactoryGovernanceContractFunction.factory(
+            "governance",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="governance",
         )
-        self.hyperdriveDeployer = (
-            ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction.factory(
-                "hyperdriveDeployer",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="hyperdriveDeployer",
-            )
+        self.hyperdriveDeployer = ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction.factory(
+            "hyperdriveDeployer",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="hyperdriveDeployer",
         )
         self.hyperdriveGovernance = ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction.factory(
             "hyperdriveGovernance",
@@ -1677,65 +1467,53 @@ class ERC4626HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="hyperdriveGovernance",
         )
-        self.isInstance = (
-            ERC4626HyperdriveFactoryIsInstanceContractFunction.factory(
-                "isInstance",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="isInstance",
-            )
+        self.isInstance = ERC4626HyperdriveFactoryIsInstanceContractFunction.factory(
+            "isInstance",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="isInstance",
         )
-        self.isOfficial = (
-            ERC4626HyperdriveFactoryIsOfficialContractFunction.factory(
-                "isOfficial",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="isOfficial",
-            )
+        self.isOfficial = ERC4626HyperdriveFactoryIsOfficialContractFunction.factory(
+            "isOfficial",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="isOfficial",
         )
-        self.linkerCodeHash = (
-            ERC4626HyperdriveFactoryLinkerCodeHashContractFunction.factory(
-                "linkerCodeHash",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="linkerCodeHash",
-            )
+        self.linkerCodeHash = ERC4626HyperdriveFactoryLinkerCodeHashContractFunction.factory(
+            "linkerCodeHash",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="linkerCodeHash",
         )
-        self.linkerFactory = (
-            ERC4626HyperdriveFactoryLinkerFactoryContractFunction.factory(
-                "linkerFactory",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="linkerFactory",
-            )
+        self.linkerFactory = ERC4626HyperdriveFactoryLinkerFactoryContractFunction.factory(
+            "linkerFactory",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="linkerFactory",
         )
-        self.target0Deployer = (
-            ERC4626HyperdriveFactoryTarget0DeployerContractFunction.factory(
-                "target0Deployer",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="target0Deployer",
-            )
+        self.target0Deployer = ERC4626HyperdriveFactoryTarget0DeployerContractFunction.factory(
+            "target0Deployer",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="target0Deployer",
         )
-        self.target1Deployer = (
-            ERC4626HyperdriveFactoryTarget1DeployerContractFunction.factory(
-                "target1Deployer",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="target1Deployer",
-            )
+        self.target1Deployer = ERC4626HyperdriveFactoryTarget1DeployerContractFunction.factory(
+            "target1Deployer",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="target1Deployer",
         )
         self.updateDefaultPausers = ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction.factory(
             "updateDefaultPausers",
@@ -1745,35 +1523,29 @@ class ERC4626HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="updateDefaultPausers",
         )
-        self.updateFeeCollector = (
-            ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction.factory(
-                "updateFeeCollector",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="updateFeeCollector",
-            )
+        self.updateFeeCollector = ERC4626HyperdriveFactoryUpdateFeeCollectorContractFunction.factory(
+            "updateFeeCollector",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateFeeCollector",
         )
-        self.updateFees = (
-            ERC4626HyperdriveFactoryUpdateFeesContractFunction.factory(
-                "updateFees",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="updateFees",
-            )
+        self.updateFees = ERC4626HyperdriveFactoryUpdateFeesContractFunction.factory(
+            "updateFees",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateFees",
         )
-        self.updateGovernance = (
-            ERC4626HyperdriveFactoryUpdateGovernanceContractFunction.factory(
-                "updateGovernance",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="updateGovernance",
-            )
+        self.updateGovernance = ERC4626HyperdriveFactoryUpdateGovernanceContractFunction.factory(
+            "updateGovernance",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateGovernance",
         )
         self.updateHyperdriveGovernance = ERC4626HyperdriveFactoryUpdateHyperdriveGovernanceContractFunction.factory(
             "updateHyperdriveGovernance",
@@ -1799,35 +1571,29 @@ class ERC4626HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="updateLinkerCodeHash",
         )
-        self.updateLinkerFactory = (
-            ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction.factory(
-                "updateLinkerFactory",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="updateLinkerFactory",
-            )
+        self.updateLinkerFactory = ERC4626HyperdriveFactoryUpdateLinkerFactoryContractFunction.factory(
+            "updateLinkerFactory",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateLinkerFactory",
         )
-        self.updateSweepTargets = (
-            ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction.factory(
-                "updateSweepTargets",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="updateSweepTargets",
-            )
+        self.updateSweepTargets = ERC4626HyperdriveFactoryUpdateSweepTargetsContractFunction.factory(
+            "updateSweepTargets",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateSweepTargets",
         )
-        self.versionCounter = (
-            ERC4626HyperdriveFactoryVersionCounterContractFunction.factory(
-                "versionCounter",
-                w3=w3,
-                contract_abi=abi,
-                address=address,
-                decode_tuples=decode_tuples,
-                function_identifier="versionCounter",
-            )
+        self.versionCounter = ERC4626HyperdriveFactoryVersionCounterContractFunction.factory(
+            "versionCounter",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="versionCounter",
         )
 
 
@@ -2260,9 +2026,7 @@ erc4626hyperdrivefactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "feeCollector",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -2284,20 +2048,14 @@ erc4626hyperdrivefactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "getDefaultPausers",
-            "outputs": [
-                {"internalType": "address[]", "name": "", "type": "address[]"}
-            ],
+            "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "uint256", "name": "index", "type": "uint256"}
-            ],
+            "inputs": [{"internalType": "uint256", "name": "index", "type": "uint256"}],
             "name": "getInstanceAtIndex",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -2328,27 +2086,21 @@ erc4626hyperdrivefactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "getNumberOfInstances",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "getSweepTargets",
-            "outputs": [
-                {"internalType": "address[]", "name": "", "type": "address[]"}
-            ],
+            "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "governance",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -2368,16 +2120,12 @@ erc4626hyperdrivefactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "hyperdriveGovernance",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
             "name": "isInstance",
             "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
             "stateMutability": "view",
@@ -2405,18 +2153,14 @@ erc4626hyperdrivefactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "linkerCodeHash",
-            "outputs": [
-                {"internalType": "bytes32", "name": "", "type": "bytes32"}
-            ],
+            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "linkerFactory",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -2583,9 +2327,7 @@ erc4626hyperdrivefactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "versionCounter",
-            "outputs": [
-                {"internalType": "uint256", "name": "", "type": "uint256"}
-            ],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "view",
             "type": "function",
         },
@@ -2607,9 +2349,7 @@ class ERC4626HyperdriveFactoryContract(Contract):
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
-            self.functions = ERC4626HyperdriveFactoryContractFunctions(
-                erc4626hyperdrivefactory_abi, self.w3, address
-            )
+            self.functions = ERC4626HyperdriveFactoryContractFunctions(erc4626hyperdrivefactory_abi, self.w3, address)
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")
@@ -2620,12 +2360,8 @@ class ERC4626HyperdriveFactoryContract(Contract):
     functions: ERC4626HyperdriveFactoryContractFunctions
 
     @classmethod
-    def factory(
-        cls, w3: Web3, class_name: str | None = None, **kwargs: Any
-    ) -> Type[Self]:
+    def factory(cls, w3: Web3, class_name: str | None = None, **kwargs: Any) -> Type[Self]:
         contract = super().factory(w3, class_name, **kwargs)
-        contract.functions = ERC4626HyperdriveFactoryContractFunctions(
-            erc4626hyperdrivefactory_abi, w3, None
-        )
+        contract.functions = ERC4626HyperdriveFactoryContractFunctions(erc4626hyperdrivefactory_abi, w3, None)
 
         return contract

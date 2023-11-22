@@ -65,10 +65,7 @@ def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
         if is_dataclass(field_type):
             # Recursively convert nested tuples to nested dataclasses
             field_values[field_name] = tuple_to_dataclass(field_type, value)
-        elif (
-            isinstance(value, tuple)
-            and not getattr(field_type, "_name", None) == "Tuple"
-        ):
+        elif isinstance(value, tuple) and not getattr(field_type, "_name", None) == "Tuple":
             # If it's a tuple and the field is not intended to be a tuple, assume it's a nested dataclass
             field_values[field_name] = tuple_to_dataclass(field_type, value)
         else:
@@ -105,9 +102,7 @@ class ERC4626HyperdriveDeployerDeployContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        raw_values = super().call(
-            transaction, block_identifier, state_override, ccip_read_enabled
-        )
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
 
@@ -122,10 +117,7 @@ class ERC4626HyperdriveDeployerDeployContractFunction(ContractFunction):
 
             # Convert the tuple to the dataclass instance using the utility function
             converted_values = tuple(
-                (
-                    tuple_to_dataclass(return_type, value)
-                    for return_type, value in zip(return_types, raw_values)
-                )
+                (tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values))
             )
 
             return converted_values
@@ -270,9 +262,7 @@ erc4626hyperdrivedeployer_abi: ABI = cast(
                 {"internalType": "address", "name": "_pool", "type": "address"},
             ],
             "name": "deploy",
-            "outputs": [
-                {"internalType": "address", "name": "", "type": "address"}
-            ],
+            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
             "stateMutability": "nonpayable",
             "type": "function",
         }
@@ -294,9 +284,7 @@ class ERC4626HyperdriveDeployerContract(Contract):
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
-            self.functions = ERC4626HyperdriveDeployerContractFunctions(
-                erc4626hyperdrivedeployer_abi, self.w3, address
-            )
+            self.functions = ERC4626HyperdriveDeployerContractFunctions(erc4626hyperdrivedeployer_abi, self.w3, address)
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")
@@ -307,12 +295,8 @@ class ERC4626HyperdriveDeployerContract(Contract):
     functions: ERC4626HyperdriveDeployerContractFunctions
 
     @classmethod
-    def factory(
-        cls, w3: Web3, class_name: str | None = None, **kwargs: Any
-    ) -> Type[Self]:
+    def factory(cls, w3: Web3, class_name: str | None = None, **kwargs: Any) -> Type[Self]:
         contract = super().factory(w3, class_name, **kwargs)
-        contract.functions = ERC4626HyperdriveDeployerContractFunctions(
-            erc4626hyperdrivedeployer_abi, w3, None
-        )
+        contract.functions = ERC4626HyperdriveDeployerContractFunctions(erc4626hyperdrivedeployer_abi, w3, None)
 
         return contract
