@@ -15,15 +15,66 @@
 # pylint: disable=too-many-lines
 
 from __future__ import annotations
-from typing import cast
+from typing import Any, Tuple, Type, TypeVar, cast
+from typing_extensions import Self
+from dataclasses import fields, is_dataclass
 
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
-from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
+from web3 import Web3
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
+from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
 
-from .ERC4626Target0DeployerTypes import PoolConfig
+from .ERC4626Target0DeployerTypes import Fees, PoolConfig
+
+T = TypeVar("T")
+
+structs = {
+    "Fees": Fees,
+    "PoolConfig": PoolConfig,
+}
+
+
+def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
+    """
+    Converts a tuple (including nested tuples) to a dataclass instance.  If cls is not a dataclass,
+    then the data will just be passed through this function.
+
+    Arguments
+    ---------
+    cls: type[T]
+        The dataclass type to which the tuple data is to be converted.
+    tuple_data: Any | Tuple[Any, ...]
+        A tuple (or nested tuple) of values to convert into a dataclass instance.
+
+    Returns
+    -------
+    T
+        Either an instance of cls populated with data from tuple_data or tuple_data itself.
+    """
+    if not is_dataclass(cls):
+        return cast(T, tuple_data)
+
+    field_types = {field.name: field.type for field in fields(cls)}
+    field_values = {}
+
+    for (field_name, field_type), value in zip(field_types.items(), tuple_data):
+        field_type = structs.get(field_type, field_type)
+        if is_dataclass(field_type):
+            # Recursively convert nested tuples to nested dataclasses
+            field_values[field_name] = tuple_to_dataclass(field_type, value)
+        elif (
+            isinstance(value, tuple)
+            and not getattr(field_type, "_name", None) == "Tuple"
+        ):
+            # If it's a tuple and the field is not intended to be a tuple, assume it's a nested dataclass
+            field_values[field_name] = tuple_to_dataclass(field_type, value)
+        else:
+            # Otherwise, set the primitive value directly
+            field_values[field_name] = value
+
+    return cls(**field_values)
 
 
 class ERC4626Target0DeployerDeployContractFunction(ContractFunction):
@@ -35,7 +86,9 @@ class ERC4626Target0DeployerDeployContractFunction(ContractFunction):
     def __call__(
         self, _config: PoolConfig, arg2: list[bytes], _pool: str
     ) -> "ERC4626Target0DeployerDeployContractFunction":
-        super().__call__(_config, arg2, _pool)
+        clone = super().__call__(_config, arg2, _pool)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -46,13 +99,57 @@ class ERC4626Target0DeployerDeployContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC4626Target0DeployerContractFunctions(ContractFunctions):
     """ContractFunctions for the ERC4626Target0Deployer contract."""
 
     deploy: ERC4626Target0DeployerDeployContractFunction
+
+    def __init__(
+        self,
+        abi: ABI,
+        w3: "Web3",
+        address: ChecksumAddress | None = None,
+        decode_tuples: bool | None = False,
+    ) -> None:
+        super().__init__(abi, w3, address, decode_tuples)
+        self.deploy = ERC4626Target0DeployerDeployContractFunction.factory(
+            "deploy",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="deploy",
+        )
 
 
 erc4626target0deployer_abi: ABI = cast(
@@ -153,7 +250,9 @@ erc4626target0deployer_abi: ABI = cast(
                 {"internalType": "address", "name": "_pool", "type": "address"},
             ],
             "name": "deploy",
-            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "outputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "stateMutability": "nonpayable",
             "type": "function",
         }
@@ -175,6 +274,9 @@ class ERC4626Target0DeployerContract(Contract):
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
+            self.functions = ERC4626Target0DeployerContractFunctions(
+                erc4626target0deployer_abi, self.w3, address
+            )
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")
@@ -183,3 +285,14 @@ class ERC4626Target0DeployerContract(Contract):
     # events: ERC20ContractEvents
 
     functions: ERC4626Target0DeployerContractFunctions
+
+    @classmethod
+    def factory(
+        cls, w3: Web3, class_name: str | None = None, **kwargs: Any
+    ) -> Type[Self]:
+        contract = super().factory(w3, class_name, **kwargs)
+        contract.functions = ERC4626Target0DeployerContractFunctions(
+            erc4626target0deployer_abi, w3, None
+        )
+
+        return contract

@@ -15,15 +15,64 @@
 # pylint: disable=too-many-lines
 
 from __future__ import annotations
-
-from typing import cast
+from typing import Any, Tuple, Type, TypeVar, cast
+from typing_extensions import Self
+from dataclasses import fields, is_dataclass
 
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
-from multimethod import multimethod
+from web3 import Web3
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
+
+from multimethod import multimethod
+
+
+T = TypeVar("T")
+
+structs = {}
+
+
+def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
+    """
+    Converts a tuple (including nested tuples) to a dataclass instance.  If cls is not a dataclass,
+    then the data will just be passed through this function.
+
+    Arguments
+    ---------
+    cls: type[T]
+        The dataclass type to which the tuple data is to be converted.
+    tuple_data: Any | Tuple[Any, ...]
+        A tuple (or nested tuple) of values to convert into a dataclass instance.
+
+    Returns
+    -------
+    T
+        Either an instance of cls populated with data from tuple_data or tuple_data itself.
+    """
+    if not is_dataclass(cls):
+        return cast(T, tuple_data)
+
+    field_types = {field.name: field.type for field in fields(cls)}
+    field_values = {}
+
+    for (field_name, field_type), value in zip(field_types.items(), tuple_data):
+        field_type = structs.get(field_type, field_type)
+        if is_dataclass(field_type):
+            # Recursively convert nested tuples to nested dataclasses
+            field_values[field_name] = tuple_to_dataclass(field_type, value)
+        elif (
+            isinstance(value, tuple)
+            and not getattr(field_type, "_name", None) == "Tuple"
+        ):
+            # If it's a tuple and the field is not intended to be a tuple, assume it's a nested dataclass
+            field_values[field_name] = tuple_to_dataclass(field_type, value)
+        else:
+            # Otherwise, set the primitive value directly
+            field_values[field_name] = value
+
+    return cls(**field_values)
 
 
 class ERC20MintableDOMAIN_SEPARATORContractFunction(ContractFunction):
@@ -33,7 +82,9 @@ class ERC20MintableDOMAIN_SEPARATORContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "ERC20MintableDOMAIN_SEPARATORContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -44,7 +95,34 @@ class ERC20MintableDOMAIN_SEPARATORContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bytes
+
+        return cast(bytes, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableAllowanceContractFunction(ContractFunction):
@@ -53,8 +131,12 @@ class ERC20MintableAllowanceContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, arg1: str, arg2: str) -> "ERC20MintableAllowanceContractFunction":
-        super().__call__(arg1, arg2)
+    def __call__(
+        self, arg1: str, arg2: str
+    ) -> "ERC20MintableAllowanceContractFunction":
+        clone = super().__call__(arg1, arg2)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -65,7 +147,34 @@ class ERC20MintableAllowanceContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableApproveContractFunction(ContractFunction):
@@ -74,8 +183,12 @@ class ERC20MintableApproveContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, spender: str, amount: int) -> "ERC20MintableApproveContractFunction":
-        super().__call__(spender, amount)
+    def __call__(
+        self, spender: str, amount: int
+    ) -> "ERC20MintableApproveContractFunction":
+        clone = super().__call__(spender, amount)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -86,7 +199,34 @@ class ERC20MintableApproveContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableAuthorityContractFunction(ContractFunction):
@@ -96,7 +236,9 @@ class ERC20MintableAuthorityContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "ERC20MintableAuthorityContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -107,7 +249,34 @@ class ERC20MintableAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableBalanceOfContractFunction(ContractFunction):
@@ -117,7 +286,9 @@ class ERC20MintableBalanceOfContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self, arg1: str) -> "ERC20MintableBalanceOfContractFunction":
-        super().__call__(arg1)
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -128,7 +299,34 @@ class ERC20MintableBalanceOfContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableBurnContractFunction(ContractFunction):
@@ -139,15 +337,13 @@ class ERC20MintableBurnContractFunction(ContractFunction):
     # pylint: disable=function-redefined
     @multimethod
     def __call__(self, amount: int) -> "ERC20MintableBurnContractFunction":  # type: ignore
-        super().__call__(amount)
+        clone = super().__call__(amount)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     @multimethod
-    def __call__(self, destination: str, amount: int) -> "ERC20MintableBurnContractFunction":  # type: ignore
-        super().__call__(destination, amount)
-        return self
-
-    def call(
+    def call(  # type: ignore
         self,
         transaction: TxParams | None = None,
         block_identifier: BlockIdentifier = "latest",
@@ -155,7 +351,58 @@ class ERC20MintableBurnContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    @multimethod
+    def __call__(self, destination: str, amount: int) -> "ERC20MintableBurnContractFunction":  # type: ignore
+        clone = super().__call__(destination, amount)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    @multimethod
+    def call(  # type: ignore
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableCanCallContractFunction(ContractFunction):
@@ -164,8 +411,12 @@ class ERC20MintableCanCallContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, user: str, target: str, functionSig: bytes) -> "ERC20MintableCanCallContractFunction":
-        super().__call__(user, target, functionSig)
+    def __call__(
+        self, user: str, target: str, functionSig: bytes
+    ) -> "ERC20MintableCanCallContractFunction":
+        clone = super().__call__(user, target, functionSig)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -176,7 +427,34 @@ class ERC20MintableCanCallContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableDecimalsContractFunction(ContractFunction):
@@ -186,7 +464,9 @@ class ERC20MintableDecimalsContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "ERC20MintableDecimalsContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -197,7 +477,34 @@ class ERC20MintableDecimalsContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableDoesRoleHaveCapabilityContractFunction(ContractFunction):
@@ -206,8 +513,12 @@ class ERC20MintableDoesRoleHaveCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, role: int, functionSig: bytes) -> "ERC20MintableDoesRoleHaveCapabilityContractFunction":
-        super().__call__(role, functionSig)
+    def __call__(
+        self, role: int, functionSig: bytes
+    ) -> "ERC20MintableDoesRoleHaveCapabilityContractFunction":
+        clone = super().__call__(role, functionSig)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -218,7 +529,34 @@ class ERC20MintableDoesRoleHaveCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableDoesUserHaveRoleContractFunction(ContractFunction):
@@ -227,8 +565,12 @@ class ERC20MintableDoesUserHaveRoleContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, user: str, role: int) -> "ERC20MintableDoesUserHaveRoleContractFunction":
-        super().__call__(user, role)
+    def __call__(
+        self, user: str, role: int
+    ) -> "ERC20MintableDoesUserHaveRoleContractFunction":
+        clone = super().__call__(user, role)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -239,7 +581,34 @@ class ERC20MintableDoesUserHaveRoleContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableGetRolesWithCapabilityContractFunction(ContractFunction):
@@ -248,8 +617,12 @@ class ERC20MintableGetRolesWithCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, arg1: bytes) -> "ERC20MintableGetRolesWithCapabilityContractFunction":
-        super().__call__(arg1)
+    def __call__(
+        self, arg1: bytes
+    ) -> "ERC20MintableGetRolesWithCapabilityContractFunction":
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -260,7 +633,34 @@ class ERC20MintableGetRolesWithCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bytes
+
+        return cast(bytes, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableGetTargetCustomAuthorityContractFunction(ContractFunction):
@@ -269,8 +669,12 @@ class ERC20MintableGetTargetCustomAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, arg1: str) -> "ERC20MintableGetTargetCustomAuthorityContractFunction":
-        super().__call__(arg1)
+    def __call__(
+        self, arg1: str
+    ) -> "ERC20MintableGetTargetCustomAuthorityContractFunction":
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -281,7 +685,34 @@ class ERC20MintableGetTargetCustomAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableGetUserRolesContractFunction(ContractFunction):
@@ -290,8 +721,12 @@ class ERC20MintableGetUserRolesContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, arg1: str) -> "ERC20MintableGetUserRolesContractFunction":
-        super().__call__(arg1)
+    def __call__(
+        self, arg1: str
+    ) -> "ERC20MintableGetUserRolesContractFunction":
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -302,7 +737,34 @@ class ERC20MintableGetUserRolesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bytes
+
+        return cast(bytes, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableIsCapabilityPublicContractFunction(ContractFunction):
@@ -311,8 +773,12 @@ class ERC20MintableIsCapabilityPublicContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, arg1: bytes) -> "ERC20MintableIsCapabilityPublicContractFunction":
-        super().__call__(arg1)
+    def __call__(
+        self, arg1: bytes
+    ) -> "ERC20MintableIsCapabilityPublicContractFunction":
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -323,7 +789,34 @@ class ERC20MintableIsCapabilityPublicContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableIsCompetitionModeContractFunction(ContractFunction):
@@ -333,7 +826,9 @@ class ERC20MintableIsCompetitionModeContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "ERC20MintableIsCompetitionModeContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -344,7 +839,34 @@ class ERC20MintableIsCompetitionModeContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableMintContractFunction(ContractFunction):
@@ -355,15 +877,13 @@ class ERC20MintableMintContractFunction(ContractFunction):
     # pylint: disable=function-redefined
     @multimethod
     def __call__(self, destination: str, amount: int) -> "ERC20MintableMintContractFunction":  # type: ignore
-        super().__call__(destination, amount)
+        clone = super().__call__(destination, amount)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     @multimethod
-    def __call__(self, amount: int) -> "ERC20MintableMintContractFunction":  # type: ignore
-        super().__call__(amount)
-        return self
-
-    def call(
+    def call(  # type: ignore
         self,
         transaction: TxParams | None = None,
         block_identifier: BlockIdentifier = "latest",
@@ -371,7 +891,58 @@ class ERC20MintableMintContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    @multimethod
+    def __call__(self, amount: int) -> "ERC20MintableMintContractFunction":  # type: ignore
+        clone = super().__call__(amount)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    @multimethod
+    def call(  # type: ignore
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ):
+        """No return value"""
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableNameContractFunction(ContractFunction):
@@ -381,7 +952,9 @@ class ERC20MintableNameContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "ERC20MintableNameContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -392,7 +965,34 @@ class ERC20MintableNameContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableNoncesContractFunction(ContractFunction):
@@ -402,7 +1002,9 @@ class ERC20MintableNoncesContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self, arg1: str) -> "ERC20MintableNoncesContractFunction":
-        super().__call__(arg1)
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -413,7 +1015,34 @@ class ERC20MintableNoncesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableOwnerContractFunction(ContractFunction):
@@ -423,7 +1052,9 @@ class ERC20MintableOwnerContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "ERC20MintableOwnerContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -434,7 +1065,34 @@ class ERC20MintableOwnerContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintablePermitContractFunction(ContractFunction):
@@ -453,7 +1111,9 @@ class ERC20MintablePermitContractFunction(ContractFunction):
         r: bytes,
         s: bytes,
     ) -> "ERC20MintablePermitContractFunction":
-        super().__call__(owner, spender, value, deadline, v, r, s)
+        clone = super().__call__(owner, spender, value, deadline, v, r, s)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -464,7 +1124,34 @@ class ERC20MintablePermitContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableSetAuthorityContractFunction(ContractFunction):
@@ -473,8 +1160,12 @@ class ERC20MintableSetAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, newAuthority: str) -> "ERC20MintableSetAuthorityContractFunction":
-        super().__call__(newAuthority)
+    def __call__(
+        self, newAuthority: str
+    ) -> "ERC20MintableSetAuthorityContractFunction":
+        clone = super().__call__(newAuthority)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -485,7 +1176,34 @@ class ERC20MintableSetAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableSetPublicCapabilityContractFunction(ContractFunction):
@@ -494,8 +1212,12 @@ class ERC20MintableSetPublicCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, functionSig: bytes, enabled: bool) -> "ERC20MintableSetPublicCapabilityContractFunction":
-        super().__call__(functionSig, enabled)
+    def __call__(
+        self, functionSig: bytes, enabled: bool
+    ) -> "ERC20MintableSetPublicCapabilityContractFunction":
+        clone = super().__call__(functionSig, enabled)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -506,7 +1228,34 @@ class ERC20MintableSetPublicCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableSetRoleCapabilityContractFunction(ContractFunction):
@@ -518,7 +1267,9 @@ class ERC20MintableSetRoleCapabilityContractFunction(ContractFunction):
     def __call__(
         self, role: int, functionSig: bytes, enabled: bool
     ) -> "ERC20MintableSetRoleCapabilityContractFunction":
-        super().__call__(role, functionSig, enabled)
+        clone = super().__call__(role, functionSig, enabled)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -529,7 +1280,34 @@ class ERC20MintableSetRoleCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableSetTargetCustomAuthorityContractFunction(ContractFunction):
@@ -538,8 +1316,12 @@ class ERC20MintableSetTargetCustomAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, target: str, customAuthority: str) -> "ERC20MintableSetTargetCustomAuthorityContractFunction":
-        super().__call__(target, customAuthority)
+    def __call__(
+        self, target: str, customAuthority: str
+    ) -> "ERC20MintableSetTargetCustomAuthorityContractFunction":
+        clone = super().__call__(target, customAuthority)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -550,7 +1332,34 @@ class ERC20MintableSetTargetCustomAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableSetUserRoleContractFunction(ContractFunction):
@@ -559,8 +1368,12 @@ class ERC20MintableSetUserRoleContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, user: str, role: int, enabled: bool) -> "ERC20MintableSetUserRoleContractFunction":
-        super().__call__(user, role, enabled)
+    def __call__(
+        self, user: str, role: int, enabled: bool
+    ) -> "ERC20MintableSetUserRoleContractFunction":
+        clone = super().__call__(user, role, enabled)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -571,7 +1384,34 @@ class ERC20MintableSetUserRoleContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableSymbolContractFunction(ContractFunction):
@@ -581,7 +1421,9 @@ class ERC20MintableSymbolContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "ERC20MintableSymbolContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -592,7 +1434,34 @@ class ERC20MintableSymbolContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableTotalSupplyContractFunction(ContractFunction):
@@ -602,7 +1471,9 @@ class ERC20MintableTotalSupplyContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "ERC20MintableTotalSupplyContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -613,7 +1484,34 @@ class ERC20MintableTotalSupplyContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableTransferContractFunction(ContractFunction):
@@ -622,8 +1520,12 @@ class ERC20MintableTransferContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, to: str, amount: int) -> "ERC20MintableTransferContractFunction":
-        super().__call__(to, amount)
+    def __call__(
+        self, to: str, amount: int
+    ) -> "ERC20MintableTransferContractFunction":
+        clone = super().__call__(to, amount)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -634,7 +1536,34 @@ class ERC20MintableTransferContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableTransferFromContractFunction(ContractFunction):
@@ -643,8 +1572,12 @@ class ERC20MintableTransferFromContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _from: str, to: str, amount: int) -> "ERC20MintableTransferFromContractFunction":
-        super().__call__(_from, to, amount)
+    def __call__(
+        self, _from: str, to: str, amount: int
+    ) -> "ERC20MintableTransferFromContractFunction":
+        clone = super().__call__(_from, to, amount)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -655,7 +1588,34 @@ class ERC20MintableTransferFromContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableTransferOwnershipContractFunction(ContractFunction):
@@ -664,8 +1624,12 @@ class ERC20MintableTransferOwnershipContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, newOwner: str) -> "ERC20MintableTransferOwnershipContractFunction":
-        super().__call__(newOwner)
+    def __call__(
+        self, newOwner: str
+    ) -> "ERC20MintableTransferOwnershipContractFunction":
+        clone = super().__call__(newOwner)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -676,7 +1640,34 @@ class ERC20MintableTransferOwnershipContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ERC20MintableContractFunctions(ContractFunctions):
@@ -741,6 +1732,277 @@ class ERC20MintableContractFunctions(ContractFunctions):
     transferFrom: ERC20MintableTransferFromContractFunction
 
     transferOwnership: ERC20MintableTransferOwnershipContractFunction
+
+    def __init__(
+        self,
+        abi: ABI,
+        w3: "Web3",
+        address: ChecksumAddress | None = None,
+        decode_tuples: bool | None = False,
+    ) -> None:
+        super().__init__(abi, w3, address, decode_tuples)
+        self.DOMAIN_SEPARATOR = (
+            ERC20MintableDOMAIN_SEPARATORContractFunction.factory(
+                "DOMAIN_SEPARATOR",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="DOMAIN_SEPARATOR",
+            )
+        )
+        self.allowance = ERC20MintableAllowanceContractFunction.factory(
+            "allowance",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="allowance",
+        )
+        self.approve = ERC20MintableApproveContractFunction.factory(
+            "approve",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="approve",
+        )
+        self.authority = ERC20MintableAuthorityContractFunction.factory(
+            "authority",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="authority",
+        )
+        self.balanceOf = ERC20MintableBalanceOfContractFunction.factory(
+            "balanceOf",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="balanceOf",
+        )
+        self.burn = ERC20MintableBurnContractFunction.factory(
+            "burn",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="burn",
+        )
+        self.canCall = ERC20MintableCanCallContractFunction.factory(
+            "canCall",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="canCall",
+        )
+        self.decimals = ERC20MintableDecimalsContractFunction.factory(
+            "decimals",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="decimals",
+        )
+        self.doesRoleHaveCapability = (
+            ERC20MintableDoesRoleHaveCapabilityContractFunction.factory(
+                "doesRoleHaveCapability",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="doesRoleHaveCapability",
+            )
+        )
+        self.doesUserHaveRole = (
+            ERC20MintableDoesUserHaveRoleContractFunction.factory(
+                "doesUserHaveRole",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="doesUserHaveRole",
+            )
+        )
+        self.getRolesWithCapability = (
+            ERC20MintableGetRolesWithCapabilityContractFunction.factory(
+                "getRolesWithCapability",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="getRolesWithCapability",
+            )
+        )
+        self.getTargetCustomAuthority = (
+            ERC20MintableGetTargetCustomAuthorityContractFunction.factory(
+                "getTargetCustomAuthority",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="getTargetCustomAuthority",
+            )
+        )
+        self.getUserRoles = ERC20MintableGetUserRolesContractFunction.factory(
+            "getUserRoles",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getUserRoles",
+        )
+        self.isCapabilityPublic = (
+            ERC20MintableIsCapabilityPublicContractFunction.factory(
+                "isCapabilityPublic",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="isCapabilityPublic",
+            )
+        )
+        self.isCompetitionMode = (
+            ERC20MintableIsCompetitionModeContractFunction.factory(
+                "isCompetitionMode",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="isCompetitionMode",
+            )
+        )
+        self.mint = ERC20MintableMintContractFunction.factory(
+            "mint",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="mint",
+        )
+        self.name = ERC20MintableNameContractFunction.factory(
+            "name",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="name",
+        )
+        self.nonces = ERC20MintableNoncesContractFunction.factory(
+            "nonces",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="nonces",
+        )
+        self.owner = ERC20MintableOwnerContractFunction.factory(
+            "owner",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="owner",
+        )
+        self.permit = ERC20MintablePermitContractFunction.factory(
+            "permit",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="permit",
+        )
+        self.setAuthority = ERC20MintableSetAuthorityContractFunction.factory(
+            "setAuthority",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="setAuthority",
+        )
+        self.setPublicCapability = (
+            ERC20MintableSetPublicCapabilityContractFunction.factory(
+                "setPublicCapability",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="setPublicCapability",
+            )
+        )
+        self.setRoleCapability = (
+            ERC20MintableSetRoleCapabilityContractFunction.factory(
+                "setRoleCapability",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="setRoleCapability",
+            )
+        )
+        self.setTargetCustomAuthority = (
+            ERC20MintableSetTargetCustomAuthorityContractFunction.factory(
+                "setTargetCustomAuthority",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="setTargetCustomAuthority",
+            )
+        )
+        self.setUserRole = ERC20MintableSetUserRoleContractFunction.factory(
+            "setUserRole",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="setUserRole",
+        )
+        self.symbol = ERC20MintableSymbolContractFunction.factory(
+            "symbol",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="symbol",
+        )
+        self.totalSupply = ERC20MintableTotalSupplyContractFunction.factory(
+            "totalSupply",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="totalSupply",
+        )
+        self.transfer = ERC20MintableTransferContractFunction.factory(
+            "transfer",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="transfer",
+        )
+        self.transferFrom = ERC20MintableTransferFromContractFunction.factory(
+            "transferFrom",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="transferFrom",
+        )
+        self.transferOwnership = (
+            ERC20MintableTransferOwnershipContractFunction.factory(
+                "transferOwnership",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="transferOwnership",
+            )
+        )
 
 
 erc20mintable_abi: ABI = cast(
@@ -940,7 +2202,9 @@ erc20mintable_abi: ABI = cast(
         {
             "inputs": [],
             "name": "DOMAIN_SEPARATOR",
-            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "outputs": [
+                {"internalType": "bytes32", "name": "", "type": "bytes32"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -950,7 +2214,9 @@ erc20mintable_abi: ABI = cast(
                 {"internalType": "address", "name": "", "type": "address"},
             ],
             "name": "allowance",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -986,14 +2252,20 @@ erc20mintable_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "name": "balanceOf",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "amount", "type": "uint256"}],
+            "inputs": [
+                {"internalType": "uint256", "name": "amount", "type": "uint256"}
+            ],
             "name": "burn",
             "outputs": [],
             "stateMutability": "nonpayable",
@@ -1068,14 +2340,20 @@ erc20mintable_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "bytes4", "name": "", "type": "bytes4"}],
+            "inputs": [
+                {"internalType": "bytes4", "name": "", "type": "bytes4"}
+            ],
             "name": "getRolesWithCapability",
-            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "outputs": [
+                {"internalType": "bytes32", "name": "", "type": "bytes32"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "name": "getTargetCustomAuthority",
             "outputs": [
                 {
@@ -1088,14 +2366,20 @@ erc20mintable_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "name": "getUserRoles",
-            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "outputs": [
+                {"internalType": "bytes32", "name": "", "type": "bytes32"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "bytes4", "name": "", "type": "bytes4"}],
+            "inputs": [
+                {"internalType": "bytes4", "name": "", "type": "bytes4"}
+            ],
             "name": "isCapabilityPublic",
             "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
             "stateMutability": "view",
@@ -1127,7 +2411,9 @@ erc20mintable_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "amount", "type": "uint256"}],
+            "inputs": [
+                {"internalType": "uint256", "name": "amount", "type": "uint256"}
+            ],
             "name": "mint",
             "outputs": [],
             "stateMutability": "nonpayable",
@@ -1136,21 +2422,29 @@ erc20mintable_abi: ABI = cast(
         {
             "inputs": [],
             "name": "name",
-            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+            "outputs": [
+                {"internalType": "string", "name": "", "type": "string"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "name": "nonces",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "owner",
-            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "outputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1251,14 +2545,18 @@ erc20mintable_abi: ABI = cast(
         {
             "inputs": [],
             "name": "symbol",
-            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+            "outputs": [
+                {"internalType": "string", "name": "", "type": "string"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "totalSupply",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1322,6 +2620,9 @@ class ERC20MintableContract(Contract):
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
+            self.functions = ERC20MintableContractFunctions(
+                erc20mintable_abi, self.w3, address
+            )
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")
@@ -1330,3 +2631,14 @@ class ERC20MintableContract(Contract):
     # events: ERC20ContractEvents
 
     functions: ERC20MintableContractFunctions
+
+    @classmethod
+    def factory(
+        cls, w3: Web3, class_name: str | None = None, **kwargs: Any
+    ) -> Type[Self]:
+        contract = super().factory(w3, class_name, **kwargs)
+        contract.functions = ERC20MintableContractFunctions(
+            erc20mintable_abi, w3, None
+        )
+
+        return contract

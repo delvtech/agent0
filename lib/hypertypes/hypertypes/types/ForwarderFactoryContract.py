@@ -15,13 +15,62 @@
 # pylint: disable=too-many-lines
 
 from __future__ import annotations
-from typing import cast
+from typing import Any, Tuple, Type, TypeVar, cast
+from typing_extensions import Self
+from dataclasses import fields, is_dataclass
 
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
-from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
+from web3 import Web3
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
+from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
+
+
+T = TypeVar("T")
+
+structs = {}
+
+
+def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
+    """
+    Converts a tuple (including nested tuples) to a dataclass instance.  If cls is not a dataclass,
+    then the data will just be passed through this function.
+
+    Arguments
+    ---------
+    cls: type[T]
+        The dataclass type to which the tuple data is to be converted.
+    tuple_data: Any | Tuple[Any, ...]
+        A tuple (or nested tuple) of values to convert into a dataclass instance.
+
+    Returns
+    -------
+    T
+        Either an instance of cls populated with data from tuple_data or tuple_data itself.
+    """
+    if not is_dataclass(cls):
+        return cast(T, tuple_data)
+
+    field_types = {field.name: field.type for field in fields(cls)}
+    field_values = {}
+
+    for (field_name, field_type), value in zip(field_types.items(), tuple_data):
+        field_type = structs.get(field_type, field_type)
+        if is_dataclass(field_type):
+            # Recursively convert nested tuples to nested dataclasses
+            field_values[field_name] = tuple_to_dataclass(field_type, value)
+        elif (
+            isinstance(value, tuple)
+            and not getattr(field_type, "_name", None) == "Tuple"
+        ):
+            # If it's a tuple and the field is not intended to be a tuple, assume it's a nested dataclass
+            field_values[field_name] = tuple_to_dataclass(field_type, value)
+        else:
+            # Otherwise, set the primitive value directly
+            field_values[field_name] = value
+
+    return cls(**field_values)
 
 
 class ForwarderFactoryERC20LINK_HASHContractFunction(ContractFunction):
@@ -31,7 +80,9 @@ class ForwarderFactoryERC20LINK_HASHContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "ForwarderFactoryERC20LINK_HASHContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -42,7 +93,34 @@ class ForwarderFactoryERC20LINK_HASHContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bytes
+
+        return cast(bytes, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ForwarderFactoryCreateContractFunction(ContractFunction):
@@ -51,8 +129,12 @@ class ForwarderFactoryCreateContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, __token: str, __tokenId: int) -> "ForwarderFactoryCreateContractFunction":
-        super().__call__(__token, __tokenId)
+    def __call__(
+        self, __token: str, __tokenId: int
+    ) -> "ForwarderFactoryCreateContractFunction":
+        clone = super().__call__(__token, __tokenId)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -63,7 +145,34 @@ class ForwarderFactoryCreateContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ForwarderFactoryGetDeployDetailsContractFunction(ContractFunction):
@@ -73,7 +182,9 @@ class ForwarderFactoryGetDeployDetailsContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "ForwarderFactoryGetDeployDetailsContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -84,7 +195,34 @@ class ForwarderFactoryGetDeployDetailsContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> tuple[str, int]:
         """returns (str, int)"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = [str, int]
+
+        return cast(tuple[str, int], self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ForwarderFactoryGetForwarderContractFunction(ContractFunction):
@@ -93,8 +231,12 @@ class ForwarderFactoryGetForwarderContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, __token: str, __tokenId: int) -> "ForwarderFactoryGetForwarderContractFunction":
-        super().__call__(__token, __tokenId)
+    def __call__(
+        self, __token: str, __tokenId: int
+    ) -> "ForwarderFactoryGetForwarderContractFunction":
+        clone = super().__call__(__token, __tokenId)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -105,7 +247,34 @@ class ForwarderFactoryGetForwarderContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class ForwarderFactoryContractFunctions(ContractFunctions):
@@ -119,6 +288,53 @@ class ForwarderFactoryContractFunctions(ContractFunctions):
 
     getForwarder: ForwarderFactoryGetForwarderContractFunction
 
+    def __init__(
+        self,
+        abi: ABI,
+        w3: "Web3",
+        address: ChecksumAddress | None = None,
+        decode_tuples: bool | None = False,
+    ) -> None:
+        super().__init__(abi, w3, address, decode_tuples)
+        self.ERC20LINK_HASH = (
+            ForwarderFactoryERC20LINK_HASHContractFunction.factory(
+                "ERC20LINK_HASH",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="ERC20LINK_HASH",
+            )
+        )
+        self.create = ForwarderFactoryCreateContractFunction.factory(
+            "create",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="create",
+        )
+        self.getDeployDetails = (
+            ForwarderFactoryGetDeployDetailsContractFunction.factory(
+                "getDeployDetails",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="getDeployDetails",
+            )
+        )
+        self.getForwarder = (
+            ForwarderFactoryGetForwarderContractFunction.factory(
+                "getForwarder",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="getForwarder",
+            )
+        )
+
 
 forwarderfactory_abi: ABI = cast(
     ABI,
@@ -127,7 +343,9 @@ forwarderfactory_abi: ABI = cast(
         {
             "inputs": [],
             "name": "ERC20LINK_HASH",
-            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "outputs": [
+                {"internalType": "bytes32", "name": "", "type": "bytes32"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -183,7 +401,9 @@ forwarderfactory_abi: ABI = cast(
                 },
             ],
             "name": "getForwarder",
-            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "outputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -205,6 +425,9 @@ class ForwarderFactoryContract(Contract):
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
+            self.functions = ForwarderFactoryContractFunctions(
+                forwarderfactory_abi, self.w3, address
+            )
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")
@@ -213,3 +436,14 @@ class ForwarderFactoryContract(Contract):
     # events: ERC20ContractEvents
 
     functions: ForwarderFactoryContractFunctions
+
+    @classmethod
+    def factory(
+        cls, w3: Web3, class_name: str | None = None, **kwargs: Any
+    ) -> Type[Self]:
+        contract = super().factory(w3, class_name, **kwargs)
+        contract.functions = ForwarderFactoryContractFunctions(
+            forwarderfactory_abi, w3, None
+        )
+
+        return contract

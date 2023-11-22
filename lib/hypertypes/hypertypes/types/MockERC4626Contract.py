@@ -15,13 +15,62 @@
 # pylint: disable=too-many-lines
 
 from __future__ import annotations
-from typing import cast
+from typing import Any, Tuple, Type, TypeVar, cast
+from typing_extensions import Self
+from dataclasses import fields, is_dataclass
 
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
-from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
+from web3 import Web3
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
+from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
+
+
+T = TypeVar("T")
+
+structs = {}
+
+
+def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
+    """
+    Converts a tuple (including nested tuples) to a dataclass instance.  If cls is not a dataclass,
+    then the data will just be passed through this function.
+
+    Arguments
+    ---------
+    cls: type[T]
+        The dataclass type to which the tuple data is to be converted.
+    tuple_data: Any | Tuple[Any, ...]
+        A tuple (or nested tuple) of values to convert into a dataclass instance.
+
+    Returns
+    -------
+    T
+        Either an instance of cls populated with data from tuple_data or tuple_data itself.
+    """
+    if not is_dataclass(cls):
+        return cast(T, tuple_data)
+
+    field_types = {field.name: field.type for field in fields(cls)}
+    field_values = {}
+
+    for (field_name, field_type), value in zip(field_types.items(), tuple_data):
+        field_type = structs.get(field_type, field_type)
+        if is_dataclass(field_type):
+            # Recursively convert nested tuples to nested dataclasses
+            field_values[field_name] = tuple_to_dataclass(field_type, value)
+        elif (
+            isinstance(value, tuple)
+            and not getattr(field_type, "_name", None) == "Tuple"
+        ):
+            # If it's a tuple and the field is not intended to be a tuple, assume it's a nested dataclass
+            field_values[field_name] = tuple_to_dataclass(field_type, value)
+        else:
+            # Otherwise, set the primitive value directly
+            field_values[field_name] = value
+
+    return cls(**field_values)
 
 
 class MockERC4626DOMAIN_SEPARATORContractFunction(ContractFunction):
@@ -31,7 +80,9 @@ class MockERC4626DOMAIN_SEPARATORContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "MockERC4626DOMAIN_SEPARATORContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -42,7 +93,34 @@ class MockERC4626DOMAIN_SEPARATORContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bytes
+
+        return cast(bytes, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626AllowanceContractFunction(ContractFunction):
@@ -51,8 +129,12 @@ class MockERC4626AllowanceContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, arg1: str, arg2: str) -> "MockERC4626AllowanceContractFunction":
-        super().__call__(arg1, arg2)
+    def __call__(
+        self, arg1: str, arg2: str
+    ) -> "MockERC4626AllowanceContractFunction":
+        clone = super().__call__(arg1, arg2)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -63,7 +145,34 @@ class MockERC4626AllowanceContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626ApproveContractFunction(ContractFunction):
@@ -72,8 +181,12 @@ class MockERC4626ApproveContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, spender: str, amount: int) -> "MockERC4626ApproveContractFunction":
-        super().__call__(spender, amount)
+    def __call__(
+        self, spender: str, amount: int
+    ) -> "MockERC4626ApproveContractFunction":
+        clone = super().__call__(spender, amount)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -84,7 +197,34 @@ class MockERC4626ApproveContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626AssetContractFunction(ContractFunction):
@@ -94,7 +234,9 @@ class MockERC4626AssetContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "MockERC4626AssetContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -105,7 +247,34 @@ class MockERC4626AssetContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626AuthorityContractFunction(ContractFunction):
@@ -115,7 +284,9 @@ class MockERC4626AuthorityContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "MockERC4626AuthorityContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -126,7 +297,34 @@ class MockERC4626AuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626BalanceOfContractFunction(ContractFunction):
@@ -136,7 +334,9 @@ class MockERC4626BalanceOfContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self, arg1: str) -> "MockERC4626BalanceOfContractFunction":
-        super().__call__(arg1)
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -147,7 +347,34 @@ class MockERC4626BalanceOfContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626CanCallContractFunction(ContractFunction):
@@ -156,8 +383,12 @@ class MockERC4626CanCallContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, user: str, target: str, functionSig: bytes) -> "MockERC4626CanCallContractFunction":
-        super().__call__(user, target, functionSig)
+    def __call__(
+        self, user: str, target: str, functionSig: bytes
+    ) -> "MockERC4626CanCallContractFunction":
+        clone = super().__call__(user, target, functionSig)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -168,7 +399,34 @@ class MockERC4626CanCallContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626ConvertToAssetsContractFunction(ContractFunction):
@@ -177,8 +435,12 @@ class MockERC4626ConvertToAssetsContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, shares: int) -> "MockERC4626ConvertToAssetsContractFunction":
-        super().__call__(shares)
+    def __call__(
+        self, shares: int
+    ) -> "MockERC4626ConvertToAssetsContractFunction":
+        clone = super().__call__(shares)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -189,7 +451,34 @@ class MockERC4626ConvertToAssetsContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626ConvertToSharesContractFunction(ContractFunction):
@@ -198,8 +487,12 @@ class MockERC4626ConvertToSharesContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, assets: int) -> "MockERC4626ConvertToSharesContractFunction":
-        super().__call__(assets)
+    def __call__(
+        self, assets: int
+    ) -> "MockERC4626ConvertToSharesContractFunction":
+        clone = super().__call__(assets)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -210,7 +503,34 @@ class MockERC4626ConvertToSharesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626DecimalsContractFunction(ContractFunction):
@@ -220,7 +540,9 @@ class MockERC4626DecimalsContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "MockERC4626DecimalsContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -231,7 +553,34 @@ class MockERC4626DecimalsContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626DepositContractFunction(ContractFunction):
@@ -240,8 +589,12 @@ class MockERC4626DepositContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _assets: int, _receiver: str) -> "MockERC4626DepositContractFunction":
-        super().__call__(_assets, _receiver)
+    def __call__(
+        self, _assets: int, _receiver: str
+    ) -> "MockERC4626DepositContractFunction":
+        clone = super().__call__(_assets, _receiver)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -252,7 +605,34 @@ class MockERC4626DepositContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626DoesRoleHaveCapabilityContractFunction(ContractFunction):
@@ -261,8 +641,12 @@ class MockERC4626DoesRoleHaveCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, role: int, functionSig: bytes) -> "MockERC4626DoesRoleHaveCapabilityContractFunction":
-        super().__call__(role, functionSig)
+    def __call__(
+        self, role: int, functionSig: bytes
+    ) -> "MockERC4626DoesRoleHaveCapabilityContractFunction":
+        clone = super().__call__(role, functionSig)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -273,7 +657,34 @@ class MockERC4626DoesRoleHaveCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626DoesUserHaveRoleContractFunction(ContractFunction):
@@ -282,8 +693,12 @@ class MockERC4626DoesUserHaveRoleContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, user: str, role: int) -> "MockERC4626DoesUserHaveRoleContractFunction":
-        super().__call__(user, role)
+    def __call__(
+        self, user: str, role: int
+    ) -> "MockERC4626DoesUserHaveRoleContractFunction":
+        clone = super().__call__(user, role)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -294,7 +709,34 @@ class MockERC4626DoesUserHaveRoleContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626GetRateContractFunction(ContractFunction):
@@ -304,7 +746,9 @@ class MockERC4626GetRateContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "MockERC4626GetRateContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -315,7 +759,34 @@ class MockERC4626GetRateContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626GetRolesWithCapabilityContractFunction(ContractFunction):
@@ -324,8 +795,12 @@ class MockERC4626GetRolesWithCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, arg1: bytes) -> "MockERC4626GetRolesWithCapabilityContractFunction":
-        super().__call__(arg1)
+    def __call__(
+        self, arg1: bytes
+    ) -> "MockERC4626GetRolesWithCapabilityContractFunction":
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -336,7 +811,34 @@ class MockERC4626GetRolesWithCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bytes
+
+        return cast(bytes, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626GetTargetCustomAuthorityContractFunction(ContractFunction):
@@ -345,8 +847,12 @@ class MockERC4626GetTargetCustomAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, arg1: str) -> "MockERC4626GetTargetCustomAuthorityContractFunction":
-        super().__call__(arg1)
+    def __call__(
+        self, arg1: str
+    ) -> "MockERC4626GetTargetCustomAuthorityContractFunction":
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -357,7 +863,34 @@ class MockERC4626GetTargetCustomAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626GetUserRolesContractFunction(ContractFunction):
@@ -367,7 +900,9 @@ class MockERC4626GetUserRolesContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self, arg1: str) -> "MockERC4626GetUserRolesContractFunction":
-        super().__call__(arg1)
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -378,7 +913,34 @@ class MockERC4626GetUserRolesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
         """returns bytes"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bytes
+
+        return cast(bytes, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626IsCapabilityPublicContractFunction(ContractFunction):
@@ -387,8 +949,12 @@ class MockERC4626IsCapabilityPublicContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, arg1: bytes) -> "MockERC4626IsCapabilityPublicContractFunction":
-        super().__call__(arg1)
+    def __call__(
+        self, arg1: bytes
+    ) -> "MockERC4626IsCapabilityPublicContractFunction":
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -399,7 +965,34 @@ class MockERC4626IsCapabilityPublicContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626IsCompetitionModeContractFunction(ContractFunction):
@@ -409,7 +1002,9 @@ class MockERC4626IsCompetitionModeContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "MockERC4626IsCompetitionModeContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -420,7 +1015,34 @@ class MockERC4626IsCompetitionModeContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626MaxDepositContractFunction(ContractFunction):
@@ -430,7 +1052,9 @@ class MockERC4626MaxDepositContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self, arg1: str) -> "MockERC4626MaxDepositContractFunction":
-        super().__call__(arg1)
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -441,7 +1065,34 @@ class MockERC4626MaxDepositContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626MaxMintContractFunction(ContractFunction):
@@ -451,7 +1102,9 @@ class MockERC4626MaxMintContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self, arg1: str) -> "MockERC4626MaxMintContractFunction":
-        super().__call__(arg1)
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -462,7 +1115,34 @@ class MockERC4626MaxMintContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626MaxRedeemContractFunction(ContractFunction):
@@ -472,7 +1152,9 @@ class MockERC4626MaxRedeemContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self, owner: str) -> "MockERC4626MaxRedeemContractFunction":
-        super().__call__(owner)
+        clone = super().__call__(owner)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -483,7 +1165,34 @@ class MockERC4626MaxRedeemContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626MaxWithdrawContractFunction(ContractFunction):
@@ -493,7 +1202,9 @@ class MockERC4626MaxWithdrawContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self, owner: str) -> "MockERC4626MaxWithdrawContractFunction":
-        super().__call__(owner)
+        clone = super().__call__(owner)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -504,7 +1215,34 @@ class MockERC4626MaxWithdrawContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626MintContractFunction(ContractFunction):
@@ -513,8 +1251,12 @@ class MockERC4626MintContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _shares: int, _receiver: str) -> "MockERC4626MintContractFunction":
-        super().__call__(_shares, _receiver)
+    def __call__(
+        self, _shares: int, _receiver: str
+    ) -> "MockERC4626MintContractFunction":
+        clone = super().__call__(_shares, _receiver)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -525,7 +1267,34 @@ class MockERC4626MintContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626NameContractFunction(ContractFunction):
@@ -535,7 +1304,9 @@ class MockERC4626NameContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "MockERC4626NameContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -546,7 +1317,34 @@ class MockERC4626NameContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626NoncesContractFunction(ContractFunction):
@@ -556,7 +1354,9 @@ class MockERC4626NoncesContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self, arg1: str) -> "MockERC4626NoncesContractFunction":
-        super().__call__(arg1)
+        clone = super().__call__(arg1)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -567,7 +1367,34 @@ class MockERC4626NoncesContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626OwnerContractFunction(ContractFunction):
@@ -577,7 +1404,9 @@ class MockERC4626OwnerContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "MockERC4626OwnerContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -588,7 +1417,34 @@ class MockERC4626OwnerContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626PermitContractFunction(ContractFunction):
@@ -607,7 +1463,9 @@ class MockERC4626PermitContractFunction(ContractFunction):
         r: bytes,
         s: bytes,
     ) -> "MockERC4626PermitContractFunction":
-        super().__call__(owner, spender, value, deadline, v, r, s)
+        clone = super().__call__(owner, spender, value, deadline, v, r, s)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -618,7 +1476,34 @@ class MockERC4626PermitContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626PreviewDepositContractFunction(ContractFunction):
@@ -627,8 +1512,12 @@ class MockERC4626PreviewDepositContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, assets: int) -> "MockERC4626PreviewDepositContractFunction":
-        super().__call__(assets)
+    def __call__(
+        self, assets: int
+    ) -> "MockERC4626PreviewDepositContractFunction":
+        clone = super().__call__(assets)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -639,7 +1528,34 @@ class MockERC4626PreviewDepositContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626PreviewMintContractFunction(ContractFunction):
@@ -649,7 +1565,9 @@ class MockERC4626PreviewMintContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self, shares: int) -> "MockERC4626PreviewMintContractFunction":
-        super().__call__(shares)
+        clone = super().__call__(shares)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -660,7 +1578,34 @@ class MockERC4626PreviewMintContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626PreviewRedeemContractFunction(ContractFunction):
@@ -669,8 +1614,12 @@ class MockERC4626PreviewRedeemContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, shares: int) -> "MockERC4626PreviewRedeemContractFunction":
-        super().__call__(shares)
+    def __call__(
+        self, shares: int
+    ) -> "MockERC4626PreviewRedeemContractFunction":
+        clone = super().__call__(shares)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -681,7 +1630,34 @@ class MockERC4626PreviewRedeemContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626PreviewWithdrawContractFunction(ContractFunction):
@@ -690,8 +1666,12 @@ class MockERC4626PreviewWithdrawContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, assets: int) -> "MockERC4626PreviewWithdrawContractFunction":
-        super().__call__(assets)
+    def __call__(
+        self, assets: int
+    ) -> "MockERC4626PreviewWithdrawContractFunction":
+        clone = super().__call__(assets)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -702,7 +1682,34 @@ class MockERC4626PreviewWithdrawContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626RedeemContractFunction(ContractFunction):
@@ -711,8 +1718,12 @@ class MockERC4626RedeemContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _shares: int, _receiver: str, _owner: str) -> "MockERC4626RedeemContractFunction":
-        super().__call__(_shares, _receiver, _owner)
+    def __call__(
+        self, _shares: int, _receiver: str, _owner: str
+    ) -> "MockERC4626RedeemContractFunction":
+        clone = super().__call__(_shares, _receiver, _owner)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -723,7 +1734,34 @@ class MockERC4626RedeemContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626SetAuthorityContractFunction(ContractFunction):
@@ -732,8 +1770,12 @@ class MockERC4626SetAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, newAuthority: str) -> "MockERC4626SetAuthorityContractFunction":
-        super().__call__(newAuthority)
+    def __call__(
+        self, newAuthority: str
+    ) -> "MockERC4626SetAuthorityContractFunction":
+        clone = super().__call__(newAuthority)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -744,7 +1786,34 @@ class MockERC4626SetAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626SetPublicCapabilityContractFunction(ContractFunction):
@@ -753,8 +1822,12 @@ class MockERC4626SetPublicCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, functionSig: bytes, enabled: bool) -> "MockERC4626SetPublicCapabilityContractFunction":
-        super().__call__(functionSig, enabled)
+    def __call__(
+        self, functionSig: bytes, enabled: bool
+    ) -> "MockERC4626SetPublicCapabilityContractFunction":
+        clone = super().__call__(functionSig, enabled)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -765,7 +1838,34 @@ class MockERC4626SetPublicCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626SetRateContractFunction(ContractFunction):
@@ -775,7 +1875,9 @@ class MockERC4626SetRateContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self, _rate_: int) -> "MockERC4626SetRateContractFunction":
-        super().__call__(_rate_)
+        clone = super().__call__(_rate_)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -786,7 +1888,34 @@ class MockERC4626SetRateContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626SetRoleCapabilityContractFunction(ContractFunction):
@@ -795,8 +1924,12 @@ class MockERC4626SetRoleCapabilityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, role: int, functionSig: bytes, enabled: bool) -> "MockERC4626SetRoleCapabilityContractFunction":
-        super().__call__(role, functionSig, enabled)
+    def __call__(
+        self, role: int, functionSig: bytes, enabled: bool
+    ) -> "MockERC4626SetRoleCapabilityContractFunction":
+        clone = super().__call__(role, functionSig, enabled)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -807,7 +1940,34 @@ class MockERC4626SetRoleCapabilityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626SetTargetCustomAuthorityContractFunction(ContractFunction):
@@ -816,8 +1976,12 @@ class MockERC4626SetTargetCustomAuthorityContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, target: str, customAuthority: str) -> "MockERC4626SetTargetCustomAuthorityContractFunction":
-        super().__call__(target, customAuthority)
+    def __call__(
+        self, target: str, customAuthority: str
+    ) -> "MockERC4626SetTargetCustomAuthorityContractFunction":
+        clone = super().__call__(target, customAuthority)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -828,7 +1992,34 @@ class MockERC4626SetTargetCustomAuthorityContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626SetUserRoleContractFunction(ContractFunction):
@@ -837,8 +2028,12 @@ class MockERC4626SetUserRoleContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, user: str, role: int, enabled: bool) -> "MockERC4626SetUserRoleContractFunction":
-        super().__call__(user, role, enabled)
+    def __call__(
+        self, user: str, role: int, enabled: bool
+    ) -> "MockERC4626SetUserRoleContractFunction":
+        clone = super().__call__(user, role, enabled)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -849,7 +2044,34 @@ class MockERC4626SetUserRoleContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626SymbolContractFunction(ContractFunction):
@@ -859,7 +2081,9 @@ class MockERC4626SymbolContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "MockERC4626SymbolContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -870,7 +2094,34 @@ class MockERC4626SymbolContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> str:
         """returns str"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = str
+
+        return cast(str, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626TotalAssetsContractFunction(ContractFunction):
@@ -880,7 +2131,9 @@ class MockERC4626TotalAssetsContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "MockERC4626TotalAssetsContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -891,7 +2144,34 @@ class MockERC4626TotalAssetsContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626TotalSupplyContractFunction(ContractFunction):
@@ -901,7 +2181,9 @@ class MockERC4626TotalSupplyContractFunction(ContractFunction):
     # pylint: disable=arguments-differ
 
     def __call__(self) -> "MockERC4626TotalSupplyContractFunction":
-        super().__call__()
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -912,7 +2194,34 @@ class MockERC4626TotalSupplyContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626TransferContractFunction(ContractFunction):
@@ -921,8 +2230,12 @@ class MockERC4626TransferContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, to: str, amount: int) -> "MockERC4626TransferContractFunction":
-        super().__call__(to, amount)
+    def __call__(
+        self, to: str, amount: int
+    ) -> "MockERC4626TransferContractFunction":
+        clone = super().__call__(to, amount)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -933,7 +2246,34 @@ class MockERC4626TransferContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626TransferFromContractFunction(ContractFunction):
@@ -942,8 +2282,12 @@ class MockERC4626TransferFromContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _from: str, to: str, amount: int) -> "MockERC4626TransferFromContractFunction":
-        super().__call__(_from, to, amount)
+    def __call__(
+        self, _from: str, to: str, amount: int
+    ) -> "MockERC4626TransferFromContractFunction":
+        clone = super().__call__(_from, to, amount)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -954,7 +2298,34 @@ class MockERC4626TransferFromContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> bool:
         """returns bool"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = bool
+
+        return cast(bool, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626TransferOwnershipContractFunction(ContractFunction):
@@ -963,8 +2334,12 @@ class MockERC4626TransferOwnershipContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, newOwner: str) -> "MockERC4626TransferOwnershipContractFunction":
-        super().__call__(newOwner)
+    def __call__(
+        self, newOwner: str
+    ) -> "MockERC4626TransferOwnershipContractFunction":
+        clone = super().__call__(newOwner)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -975,7 +2350,34 @@ class MockERC4626TransferOwnershipContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ):
         """No return value"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = None
+
+        return None
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626WithdrawContractFunction(ContractFunction):
@@ -984,8 +2386,12 @@ class MockERC4626WithdrawContractFunction(ContractFunction):
     # super() call methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    def __call__(self, _assets: int, _receiver: str, _owner: str) -> "MockERC4626WithdrawContractFunction":
-        super().__call__(_assets, _receiver, _owner)
+    def __call__(
+        self, _assets: int, _receiver: str, _owner: str
+    ) -> "MockERC4626WithdrawContractFunction":
+        clone = super().__call__(_assets, _receiver, _owner)
+        self.kwargs = clone.kwargs
+        self.args = clone.args
         return self
 
     def call(
@@ -996,7 +2402,34 @@ class MockERC4626WithdrawContractFunction(ContractFunction):
         ccip_read_enabled: bool | None = None,
     ) -> int:
         """returns int"""
-        return super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        raw_values = super().call(
+            transaction, block_identifier, state_override, ccip_read_enabled
+        )
+        # Define the expected return types from the smart contract call
+        return_types = int
+
+        return cast(int, self._call(return_types, raw_values))
+
+    def _call(self, return_types, raw_values):
+        # cover case of multiple return values
+        if isinstance(return_types, list):
+            # Ensure raw_values is a tuple for consistency
+            if not isinstance(raw_values, list):
+                raw_values = (raw_values,)
+
+            # Convert the tuple to the dataclass instance using the utility function
+            converted_values = tuple(
+                (
+                    tuple_to_dataclass(return_type, value)
+                    for return_type, value in zip(return_types, raw_values)
+                )
+            )
+
+            return converted_values
+
+        # cover case of single return value
+        converted_value = tuple_to_dataclass(return_types, raw_values)
+        return converted_value
 
 
 class MockERC4626ContractFunctions(ContractFunctions):
@@ -1093,6 +2526,411 @@ class MockERC4626ContractFunctions(ContractFunctions):
     transferOwnership: MockERC4626TransferOwnershipContractFunction
 
     withdraw: MockERC4626WithdrawContractFunction
+
+    def __init__(
+        self,
+        abi: ABI,
+        w3: "Web3",
+        address: ChecksumAddress | None = None,
+        decode_tuples: bool | None = False,
+    ) -> None:
+        super().__init__(abi, w3, address, decode_tuples)
+        self.DOMAIN_SEPARATOR = (
+            MockERC4626DOMAIN_SEPARATORContractFunction.factory(
+                "DOMAIN_SEPARATOR",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="DOMAIN_SEPARATOR",
+            )
+        )
+        self.allowance = MockERC4626AllowanceContractFunction.factory(
+            "allowance",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="allowance",
+        )
+        self.approve = MockERC4626ApproveContractFunction.factory(
+            "approve",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="approve",
+        )
+        self.asset = MockERC4626AssetContractFunction.factory(
+            "asset",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="asset",
+        )
+        self.authority = MockERC4626AuthorityContractFunction.factory(
+            "authority",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="authority",
+        )
+        self.balanceOf = MockERC4626BalanceOfContractFunction.factory(
+            "balanceOf",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="balanceOf",
+        )
+        self.canCall = MockERC4626CanCallContractFunction.factory(
+            "canCall",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="canCall",
+        )
+        self.convertToAssets = (
+            MockERC4626ConvertToAssetsContractFunction.factory(
+                "convertToAssets",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="convertToAssets",
+            )
+        )
+        self.convertToShares = (
+            MockERC4626ConvertToSharesContractFunction.factory(
+                "convertToShares",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="convertToShares",
+            )
+        )
+        self.decimals = MockERC4626DecimalsContractFunction.factory(
+            "decimals",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="decimals",
+        )
+        self.deposit = MockERC4626DepositContractFunction.factory(
+            "deposit",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="deposit",
+        )
+        self.doesRoleHaveCapability = (
+            MockERC4626DoesRoleHaveCapabilityContractFunction.factory(
+                "doesRoleHaveCapability",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="doesRoleHaveCapability",
+            )
+        )
+        self.doesUserHaveRole = (
+            MockERC4626DoesUserHaveRoleContractFunction.factory(
+                "doesUserHaveRole",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="doesUserHaveRole",
+            )
+        )
+        self.getRate = MockERC4626GetRateContractFunction.factory(
+            "getRate",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getRate",
+        )
+        self.getRolesWithCapability = (
+            MockERC4626GetRolesWithCapabilityContractFunction.factory(
+                "getRolesWithCapability",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="getRolesWithCapability",
+            )
+        )
+        self.getTargetCustomAuthority = (
+            MockERC4626GetTargetCustomAuthorityContractFunction.factory(
+                "getTargetCustomAuthority",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="getTargetCustomAuthority",
+            )
+        )
+        self.getUserRoles = MockERC4626GetUserRolesContractFunction.factory(
+            "getUserRoles",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getUserRoles",
+        )
+        self.isCapabilityPublic = (
+            MockERC4626IsCapabilityPublicContractFunction.factory(
+                "isCapabilityPublic",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="isCapabilityPublic",
+            )
+        )
+        self.isCompetitionMode = (
+            MockERC4626IsCompetitionModeContractFunction.factory(
+                "isCompetitionMode",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="isCompetitionMode",
+            )
+        )
+        self.maxDeposit = MockERC4626MaxDepositContractFunction.factory(
+            "maxDeposit",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="maxDeposit",
+        )
+        self.maxMint = MockERC4626MaxMintContractFunction.factory(
+            "maxMint",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="maxMint",
+        )
+        self.maxRedeem = MockERC4626MaxRedeemContractFunction.factory(
+            "maxRedeem",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="maxRedeem",
+        )
+        self.maxWithdraw = MockERC4626MaxWithdrawContractFunction.factory(
+            "maxWithdraw",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="maxWithdraw",
+        )
+        self.mint = MockERC4626MintContractFunction.factory(
+            "mint",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="mint",
+        )
+        self.name = MockERC4626NameContractFunction.factory(
+            "name",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="name",
+        )
+        self.nonces = MockERC4626NoncesContractFunction.factory(
+            "nonces",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="nonces",
+        )
+        self.owner = MockERC4626OwnerContractFunction.factory(
+            "owner",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="owner",
+        )
+        self.permit = MockERC4626PermitContractFunction.factory(
+            "permit",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="permit",
+        )
+        self.previewDeposit = MockERC4626PreviewDepositContractFunction.factory(
+            "previewDeposit",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="previewDeposit",
+        )
+        self.previewMint = MockERC4626PreviewMintContractFunction.factory(
+            "previewMint",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="previewMint",
+        )
+        self.previewRedeem = MockERC4626PreviewRedeemContractFunction.factory(
+            "previewRedeem",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="previewRedeem",
+        )
+        self.previewWithdraw = (
+            MockERC4626PreviewWithdrawContractFunction.factory(
+                "previewWithdraw",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="previewWithdraw",
+            )
+        )
+        self.redeem = MockERC4626RedeemContractFunction.factory(
+            "redeem",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="redeem",
+        )
+        self.setAuthority = MockERC4626SetAuthorityContractFunction.factory(
+            "setAuthority",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="setAuthority",
+        )
+        self.setPublicCapability = (
+            MockERC4626SetPublicCapabilityContractFunction.factory(
+                "setPublicCapability",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="setPublicCapability",
+            )
+        )
+        self.setRate = MockERC4626SetRateContractFunction.factory(
+            "setRate",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="setRate",
+        )
+        self.setRoleCapability = (
+            MockERC4626SetRoleCapabilityContractFunction.factory(
+                "setRoleCapability",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="setRoleCapability",
+            )
+        )
+        self.setTargetCustomAuthority = (
+            MockERC4626SetTargetCustomAuthorityContractFunction.factory(
+                "setTargetCustomAuthority",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="setTargetCustomAuthority",
+            )
+        )
+        self.setUserRole = MockERC4626SetUserRoleContractFunction.factory(
+            "setUserRole",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="setUserRole",
+        )
+        self.symbol = MockERC4626SymbolContractFunction.factory(
+            "symbol",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="symbol",
+        )
+        self.totalAssets = MockERC4626TotalAssetsContractFunction.factory(
+            "totalAssets",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="totalAssets",
+        )
+        self.totalSupply = MockERC4626TotalSupplyContractFunction.factory(
+            "totalSupply",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="totalSupply",
+        )
+        self.transfer = MockERC4626TransferContractFunction.factory(
+            "transfer",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="transfer",
+        )
+        self.transferFrom = MockERC4626TransferFromContractFunction.factory(
+            "transferFrom",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="transferFrom",
+        )
+        self.transferOwnership = (
+            MockERC4626TransferOwnershipContractFunction.factory(
+                "transferOwnership",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="transferOwnership",
+            )
+        )
+        self.withdraw = MockERC4626WithdrawContractFunction.factory(
+            "withdraw",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="withdraw",
+        )
 
 
 mockerc4626_abi: ABI = cast(
@@ -1373,7 +3211,9 @@ mockerc4626_abi: ABI = cast(
         {
             "inputs": [],
             "name": "DOMAIN_SEPARATOR",
-            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "outputs": [
+                {"internalType": "bytes32", "name": "", "type": "bytes32"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1383,7 +3223,9 @@ mockerc4626_abi: ABI = cast(
                 {"internalType": "address", "name": "", "type": "address"},
             ],
             "name": "allowance",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1432,9 +3274,13 @@ mockerc4626_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "name": "balanceOf",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1458,16 +3304,24 @@ mockerc4626_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "shares", "type": "uint256"}],
+            "inputs": [
+                {"internalType": "uint256", "name": "shares", "type": "uint256"}
+            ],
             "name": "convertToAssets",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "assets", "type": "uint256"}],
+            "inputs": [
+                {"internalType": "uint256", "name": "assets", "type": "uint256"}
+            ],
             "name": "convertToShares",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1492,7 +3346,9 @@ mockerc4626_abi: ABI = cast(
                 },
             ],
             "name": "deposit",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "nonpayable",
             "type": "function",
         },
@@ -1523,19 +3379,27 @@ mockerc4626_abi: ABI = cast(
         {
             "inputs": [],
             "name": "getRate",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "bytes4", "name": "", "type": "bytes4"}],
+            "inputs": [
+                {"internalType": "bytes4", "name": "", "type": "bytes4"}
+            ],
             "name": "getRolesWithCapability",
-            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "outputs": [
+                {"internalType": "bytes32", "name": "", "type": "bytes32"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "name": "getTargetCustomAuthority",
             "outputs": [
                 {
@@ -1548,14 +3412,20 @@ mockerc4626_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "name": "getUserRoles",
-            "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+            "outputs": [
+                {"internalType": "bytes32", "name": "", "type": "bytes32"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "bytes4", "name": "", "type": "bytes4"}],
+            "inputs": [
+                {"internalType": "bytes4", "name": "", "type": "bytes4"}
+            ],
             "name": "isCapabilityPublic",
             "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
             "stateMutability": "view",
@@ -1569,30 +3439,46 @@ mockerc4626_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "name": "maxDeposit",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "name": "maxMint",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "owner", "type": "address"}
+            ],
             "name": "maxRedeem",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "owner", "type": "address"}
+            ],
             "name": "maxWithdraw",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1610,28 +3496,38 @@ mockerc4626_abi: ABI = cast(
                 },
             ],
             "name": "mint",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "nonpayable",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "name",
-            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+            "outputs": [
+                {"internalType": "string", "name": "", "type": "string"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "inputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "name": "nonces",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "owner",
-            "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+            "outputs": [
+                {"internalType": "address", "name": "", "type": "address"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1659,30 +3555,46 @@ mockerc4626_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "assets", "type": "uint256"}],
+            "inputs": [
+                {"internalType": "uint256", "name": "assets", "type": "uint256"}
+            ],
             "name": "previewDeposit",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "shares", "type": "uint256"}],
+            "inputs": [
+                {"internalType": "uint256", "name": "shares", "type": "uint256"}
+            ],
             "name": "previewMint",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "shares", "type": "uint256"}],
+            "inputs": [
+                {"internalType": "uint256", "name": "shares", "type": "uint256"}
+            ],
             "name": "previewRedeem",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "assets", "type": "uint256"}],
+            "inputs": [
+                {"internalType": "uint256", "name": "assets", "type": "uint256"}
+            ],
             "name": "previewWithdraw",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1705,7 +3617,9 @@ mockerc4626_abi: ABI = cast(
                 },
             ],
             "name": "redeem",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "nonpayable",
             "type": "function",
         },
@@ -1737,7 +3651,9 @@ mockerc4626_abi: ABI = cast(
             "type": "function",
         },
         {
-            "inputs": [{"internalType": "uint256", "name": "_rate_", "type": "uint256"}],
+            "inputs": [
+                {"internalType": "uint256", "name": "_rate_", "type": "uint256"}
+            ],
             "name": "setRate",
             "outputs": [],
             "stateMutability": "nonpayable",
@@ -1790,21 +3706,27 @@ mockerc4626_abi: ABI = cast(
         {
             "inputs": [],
             "name": "symbol",
-            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+            "outputs": [
+                {"internalType": "string", "name": "", "type": "string"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "totalAssets",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
         {
             "inputs": [],
             "name": "totalSupply",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "view",
             "type": "function",
         },
@@ -1869,7 +3791,9 @@ mockerc4626_abi: ABI = cast(
                 },
             ],
             "name": "withdraw",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+            "outputs": [
+                {"internalType": "uint256", "name": "", "type": "uint256"}
+            ],
             "stateMutability": "nonpayable",
             "type": "function",
         },
@@ -1891,6 +3815,9 @@ class MockERC4626Contract(Contract):
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
+            self.functions = MockERC4626ContractFunctions(
+                mockerc4626_abi, self.w3, address
+            )
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")
@@ -1899,3 +3826,14 @@ class MockERC4626Contract(Contract):
     # events: ERC20ContractEvents
 
     functions: MockERC4626ContractFunctions
+
+    @classmethod
+    def factory(
+        cls, w3: Web3, class_name: str | None = None, **kwargs: Any
+    ) -> Type[Self]:
+        contract = super().factory(w3, class_name, **kwargs)
+        contract.functions = MockERC4626ContractFunctions(
+            mockerc4626_abi, w3, None
+        )
+
+        return contract
