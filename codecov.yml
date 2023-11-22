@@ -3,3 +3,6 @@ ignore:
   - "**/*_test.py"
   - "**/test_*.py"
   - "tests/"
+  - "icons/"
+  - "**/*.svg"
+  - "**/hypertypes/types/*.py"
