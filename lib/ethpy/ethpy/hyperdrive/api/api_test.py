@@ -5,10 +5,15 @@ from typing import cast
 
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.base.transactions import smart_contract_read
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
+from hypertypes.types import Checkpoint, PoolConfig
+from hypertypes.utilities.conversions import (
+    checkpoint_to_fixedpoint,
+    pool_config_to_fixedpoint,
+    pool_info_to_fixedpoint,
+)
 from web3 import HTTPProvider
 
 from .api import HyperdriveInterface
@@ -28,8 +33,9 @@ class TestHyperdriveInterface:
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
         eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
         hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
-        pool_config = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolConfig")
-        assert pool_config == hyperdrive.current_pool_state.contract_pool_config
+        # TODO: remove cast when pypechain consolidates dataclasses.
+        pool_config = cast(PoolConfig, hyperdrive.hyperdrive_contract.functions.getPoolConfig().call())
+        assert pool_config_to_fixedpoint(pool_config) == hyperdrive.current_pool_state.pool_config
 
     def test_pool_info(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Checks that the Hyperdrive pool_info matches what is returned from the smart contract.
@@ -42,8 +48,8 @@ class TestHyperdriveInterface:
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
         eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
         hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
-        pool_info = smart_contract_read(hyperdrive.hyperdrive_contract, "getPoolInfo")
-        assert pool_info == hyperdrive.current_pool_state.contract_pool_info
+        pool_info = hyperdrive.hyperdrive_contract.functions.getPoolInfo().call()
+        assert pool_info_to_fixedpoint(pool_info) == hyperdrive.current_pool_state.pool_info
 
     def test_checkpoint(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Checks that the Hyperdrive checkpoint matches what is returned from the smart contract.
@@ -57,8 +63,10 @@ class TestHyperdriveInterface:
         eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
         hyperdrive = HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
         checkpoint_id = hyperdrive.calc_checkpoint_id(block_timestamp=hyperdrive.current_pool_state.block_time)
-        checkpoint = smart_contract_read(hyperdrive.hyperdrive_contract, "getCheckpoint", checkpoint_id)
-        assert checkpoint == hyperdrive.current_pool_state.contract_checkpoint
+        # TODO: remove cast when pypechain consolidates dataclasses.
+        checkpoint = cast(Checkpoint, hyperdrive.hyperdrive_contract.functions.getCheckpoint(checkpoint_id).call())
+        print(f"{checkpoint=}")
+        assert checkpoint_to_fixedpoint(checkpoint) == hyperdrive.current_pool_state.checkpoint
 
     def test_spot_price_and_fixed_rate(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Checks that the Hyperdrive spot price and fixed rate match computing it by hand.

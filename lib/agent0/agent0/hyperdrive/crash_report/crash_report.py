@@ -10,18 +10,20 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
-from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from hyperlogs import ExtendedJSONEncoder, logs
 from web3 import Web3
 from web3.types import RPCEndpoint
 
+from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
+
 if TYPE_CHECKING:
+    from ethpy.hyperdrive.api import HyperdriveInterface
+
     from agent0.base import Trade
     from agent0.hyperdrive.agents import HyperdriveAgent
     from agent0.hyperdrive.state import HyperdriveMarketAction
-    from ethpy.hyperdrive.api import HyperdriveInterface
 
 
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:
@@ -110,7 +112,7 @@ def build_crash_trade_result(
 
     ## Get pool config
     # Pool config is static, so we can get it from the interface here
-    trade_result.raw_pool_config = pool_state.contract_pool_config
+    trade_result.raw_pool_config = pool_state.pool_config_to_dict
     # We call the conversion functions to convert them to human readable versions as well
     trade_result.pool_config = asdict(pool_state.pool_config)
     trade_result.pool_config["contract_address"] = hyperdrive.hyperdrive_contract.address
@@ -119,7 +121,7 @@ def build_crash_trade_result(
     ## Get pool info
     # We wrap contract calls in a try catch to avoid crashing during crash report
     try:
-        trade_result.raw_pool_info = pool_state.contract_pool_info
+        trade_result.raw_pool_info = pool_state.pool_info_to_dict
     except Exception as exc:  # pylint: disable=broad-except
         logging.warning("Failed to get hyperdrive pool info in crash reporting: %s", repr(exc))
         trade_result.raw_pool_info = None
@@ -135,7 +137,7 @@ def build_crash_trade_result(
     ## Get pool checkpoint
     try:
         if trade_result.block_timestamp is not None:
-            trade_result.raw_checkpoint = pool_state.contract_checkpoint
+            trade_result.raw_checkpoint = pool_state.checkpoint_to_dict
         else:
             logging.warning("Failed to get block_timestamp in crash_reporting")
             trade_result.raw_checkpoint = None

@@ -5,8 +5,6 @@ import asyncio
 import logging
 import os
 
-from agent0 import AccountKeyConfig
-from agent0.hyperdrive.agents import HyperdriveAgent
 from eth_account.account import Account
 from ethpy import EthConfig
 from ethpy.base import (
@@ -16,11 +14,13 @@ from ethpy.base import (
     initialize_web3_with_http_provider,
     load_abi_from_file,
     retry_call,
-    smart_contract_read,
 )
 from ethpy.hyperdrive import HyperdriveAddresses
 from hyperlogs import logs as log_utils
 from web3.types import Nonce, TxReceipt
+
+from agent0 import AccountKeyConfig
+from agent0.hyperdrive.agents import HyperdriveAgent
 
 RETRY_COUNT = 5
 
@@ -79,11 +79,7 @@ async def async_fund_agents(
             f"which must be >= {total_agent_eth_budget=}"
         )
 
-    user_base_balance = smart_contract_read(
-        base_token_contract,
-        "balanceOf",
-        user_account.checksum_address,
-    )["value"]
+    user_base_balance = base_token_contract.functions.balanceOf(user_account.checksum_address).call()
     if user_base_balance < total_agent_base_budget:
         raise AssertionError(
             f"User account {user_account.checksum_address=} has {user_base_balance=}, "

@@ -5,7 +5,6 @@ from typing import cast
 
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.base.transactions import smart_contract_read
 from web3 import HTTPProvider
 
 from .addresses import HyperdriveAddresses
@@ -28,6 +27,6 @@ class TestHyperdriveInterface:
         abi_dir = "./packages/hyperdrive/src/abis"
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
         eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir=abi_dir)
-        _, _, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, hyperdrive_contract_addresses)
-        pool_config = smart_contract_read(hyperdrive_contract, "getPoolConfig")
+        contracts = get_web3_and_hyperdrive_contracts(eth_config, hyperdrive_contract_addresses)
+        pool_config = contracts.hyperdrive_contract.functions.getPoolConfig().call()
         assert pool_config is not None
