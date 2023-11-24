@@ -35,6 +35,7 @@ class TestInteractiveHyperdrive:
 
         return chain
 
+    @pytest.mark.anvil
     def _ensure_db_wallet_matches_agent_wallet(
         self,
         interactive_hyperdrive: InteractiveHyperdrive,
@@ -86,9 +87,9 @@ class TestInteractiveHyperdrive:
     # Lots of things to test
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
+    @pytest.mark.anvil
     def test_funding_and_trades(self, chain):
         """Tests interactive hyperdrive end to end"""
-
         # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
         initial_pool_config = InteractiveHyperdrive.Config()
         # Launches 2 pools on the same local chain
@@ -189,6 +190,7 @@ class TestInteractiveHyperdrive:
         assert hyperdrive_agent0.wallet.withdraw_shares == FixedPoint(0)
         self._ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
+    @pytest.mark.anvil
     def test_advance_time(self, chain):
         """Tests interactive hyperdrive end to end"""
         # We need the underlying hyperdrive interface here to test time

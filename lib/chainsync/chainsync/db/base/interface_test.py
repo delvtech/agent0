@@ -32,6 +32,7 @@ def test_drop_table(dummy_session):
 class TestAddrToUsernameInterface:
     """Testing postgres interface for usermap table"""
 
+    @pytest.mark.docker
     def test_get_addr_to_username(self, db_session):
         """Testing retrieval of usernames via interface"""
         username_1 = "a"
@@ -52,6 +53,7 @@ class TestAddrToUsernameInterface:
         np.testing.assert_array_equal(user_map_df["username"], ["a", "a", "a", "b", "b", "c"])
         np.testing.assert_array_equal(user_map_df["address"], ["1", "2", "3", "4", "5", "6"])
 
+    @pytest.mark.docker
     def test_get_query_address(self, db_session):
         """Testing querying by address of addr_to_username via interface"""
         username_1 = "a"
@@ -72,6 +74,7 @@ class TestAddrToUsernameInterface:
         user_map_df = get_addr_to_username(db_session, address="5")
         np.testing.assert_array_equal(user_map_df["username"], ["b"])
 
+    @pytest.mark.docker
     def test_addr_to_username_insertion_error(self, db_session):
         """Testing insertion conflicts of addr_to_username via interface"""
         username_1 = "a"
@@ -105,6 +108,7 @@ class TestAddrToUsernameInterface:
         np.testing.assert_array_equal(user_map_df["username"], ["a", "a", "a", "a"])
         np.testing.assert_array_equal(user_map_df["address"], ["1", "2", "3", "5"])
 
+    @pytest.mark.docker
     def test_addr_to_username_force_insertion(self, db_session):
         """Testing force insertion of addr_to_username via interface"""
         username_1 = "a"
@@ -128,6 +132,7 @@ class TestAddrToUsernameInterface:
 class TestUserToUsernameInterface:
     """Testing postgres interface for usermap table"""
 
+    @pytest.mark.docker
     def test_get_user_to_username(self, db_session):
         """Testing retrieval of usernames via interface"""
         user_1 = "1"
@@ -148,6 +153,7 @@ class TestUserToUsernameInterface:
         np.testing.assert_array_equal(user_map_df["username"], ["a", "b", "c"])
         np.testing.assert_array_equal(user_map_df["user"], ["1", "2", "2"])
 
+    @pytest.mark.docker
     def test_get_query_username(self, db_session):
         """Testing querying by username of username_to_user via interface"""
         user_1 = "1"
@@ -168,6 +174,7 @@ class TestUserToUsernameInterface:
         user_map_df = get_username_to_user(db_session, username="c")
         np.testing.assert_array_equal(user_map_df["user"], ["2"])
 
+    @pytest.mark.docker
     def test_username_to_user_insertion_error(self, db_session):
         """Testing insertion conflicts of username_to_user via interface"""
         user_1 = "1"
@@ -207,6 +214,7 @@ class TestUserToUsernameInterface:
         np.testing.assert_array_equal(user_map_df["username"], ["a", "b", "c"])
         np.testing.assert_array_equal(user_map_df["user"], ["1", "2", "2"])
 
+    @pytest.mark.docker
     def test_addr_to_username_force_insertion(self, db_session):
         """Testing force insertion of addr_to_username via interface"""
         user_1 = "1"

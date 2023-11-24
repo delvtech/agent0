@@ -20,6 +20,7 @@ from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
 
+@pytest.mark.anvil
 @pytest.mark.parametrize("delta", [-1e5, 1e5])
 def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, delta: float):
     """Ensure bot can hit target rate."""

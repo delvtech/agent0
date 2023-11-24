@@ -8,6 +8,11 @@ from typing import Type, cast
 
 import numpy as np
 import pandas as pd
+import pytest
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.test_utils import CycleTradesPolicy
 from chainsync.db.hyperdrive.interface import (
     get_current_wallet,
     get_pool_analysis,
@@ -28,11 +33,6 @@ from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.test_utils import CycleTradesPolicy
-
 
 def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
     return Decimal(str(fp_val))
@@ -43,6 +43,7 @@ class TestBotToDb:
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
+    @pytest.mark.anvil
     def test_bot_to_db(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,

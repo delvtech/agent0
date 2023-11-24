@@ -5,16 +5,16 @@ import logging
 import os
 from typing import TYPE_CHECKING, Type, cast
 
+import pytest
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.test_utils import CycleTradesPolicy
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
-
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.test_utils import CycleTradesPolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -26,6 +26,7 @@ class TestSlippageWarning:
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
+    @pytest.mark.docker
     def test_slippage_warning(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
