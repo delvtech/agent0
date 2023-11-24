@@ -5,16 +5,18 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from fixedpointmath import FixedPoint
+
 from agent0.base import MarketType, Trade
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
-from fixedpointmath import FixedPoint
 
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.state import HyperdriveWallet
     from ethpy.hyperdrive.api import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
+
+    from agent0.hyperdrive.state import HyperdriveWallet
 
 
 class Deterministic(HyperdrivePolicy):

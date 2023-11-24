@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import logging
-import pytest
 
 import agent0
-from agent0.hyperdrive.policies.zoo import Random
+import pytest
 from agent0.base.policies import BasePolicy
+from agent0.hyperdrive.policies.zoo import Random
 
 
 class TestModelZoo:

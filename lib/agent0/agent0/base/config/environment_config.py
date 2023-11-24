@@ -4,8 +4,9 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from agent0.base import FrozenClass, freezable
 from hyperlogs import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, ExtendedJSONEncoder
+
+from agent0.base import FrozenClass, freezable
 
 DEFAULT_USERNAME = "changeme"
 

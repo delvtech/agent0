@@ -6,10 +6,11 @@ import time
 from typing import Iterator
 
 import pytest
-from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 from fixedpointmath import FixedPoint
 from hypertypes import Fees, PoolConfig
 from web3.constants import ADDRESS_ZERO
+
+from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 
 
 def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1"):

@@ -4,10 +4,11 @@ from __future__ import annotations
 import os
 from typing import NamedTuple
 
-from ethpy import EthConfig
-from ethpy.base import initialize_web3_with_http_provider
 from hypertypes.types import ERC20MintableContract, IERC4626HyperdriveContract, MockERC4626Contract
 from web3 import Web3
+
+from ethpy import EthConfig
+from ethpy.base import initialize_web3_with_http_provider
 
 from .addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
 

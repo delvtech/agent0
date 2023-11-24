@@ -5,4 +5,3 @@
 -e lib/hypertypes[base]
 --find-links="packages/hyperdrivepy"
 hyperdrivepy
-multimethod

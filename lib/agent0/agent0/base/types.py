@@ -64,11 +64,11 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False):
                 super().__setattr__(attrib, value)
 
             def freeze(self) -> None:
-                """disallows changing existing members"""
+                """Disallows changing existing members"""
                 super().__setattr__("frozen", True)
 
             def disable_new_attribs(self) -> None:
-                """disallows adding new members"""
+                """Disallows adding new members"""
                 super().__setattr__("no_new_attribs", True)
 
             def astype(self, new_type):

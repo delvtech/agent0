@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 
 class MultiTradePolicy(HyperdrivePolicy):
-    """A agent that submits multiple trades per block"""
+    """An agent that submits multiple trades per block."""
 
     # Using default parameters
     def __init__(
@@ -41,6 +41,7 @@ class MultiTradePolicy(HyperdrivePolicy):
         # we still need it in the constructor since the object factory still calls with this arg
         policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
+        """Initialize config and set counter to 0."""
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
@@ -52,7 +53,7 @@ class MultiTradePolicy(HyperdrivePolicy):
     def action(
         self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
+        """Open all trades for a fixed amount and closes them after, one at a time."""
         # pylint: disable=unused-argument
         action_list = []
 
@@ -105,7 +106,7 @@ class MultiTradePolicy(HyperdrivePolicy):
 
 
 class TestMultiTradePerBlock:
-    """Tests pipeline from bots making trades to viewing the trades in the db"""
+    """Test pipeline from bots making trades to viewing the trades in the db."""
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
@@ -116,9 +117,7 @@ class TestMultiTradePerBlock:
         db_session: Session,
         db_api: str,
     ):
-        """Runs the entire pipeline and checks the database at the end.
-        All arguments are fixtures.
-        """
+        """Runs the entire pipeline and checks the database at the end.All arguments are fixtures."""
         # TODO local_hyperdrive_pool is currently being run with automining. Hence, multiple trades
         # per block can't be tested until we can parameterize anvil running without automining.
         # For now, this is simply testing that the introduction of async trades doesn't break
@@ -203,7 +202,8 @@ class TestMultiTradePerBlock:
         # 3. openShort of 33333 bonds
 
         db_transaction_info: pd.DataFrame = get_transactions(db_session, coerce_float=False)
-        assert len(db_transaction_info == 3)
+        expected_number_of_transactions = 3
+        assert len(db_transaction_info == expected_number_of_transactions)
         # Checking without order
         trxs = db_transaction_info["input_method"].to_list()
         assert "addLiquidity" in trxs
@@ -211,7 +211,7 @@ class TestMultiTradePerBlock:
         assert "openShort" in trxs
 
         db_ticker: pd.DataFrame = get_ticker(db_session, coerce_float=False)
-        assert len(db_ticker == 3)
+        assert len(db_ticker == expected_number_of_transactions)
         ticker_ops = db_ticker["trade_type"].to_list()
         assert "addLiquidity" in ticker_ops
         assert "openLong" in ticker_ops
@@ -220,11 +220,11 @@ class TestMultiTradePerBlock:
         wallet_deltas: pd.DataFrame = get_wallet_deltas(db_session, coerce_float=False)
         # Ensure deltas only exist for valid trades
         # 2 for each trade
-        assert len(wallet_deltas) == 6
+        assert len(wallet_deltas) == 2 * expected_number_of_transactions
         # Ensure deltas only exist for valid trades
         # 2 for each trade
-        assert len(wallet_deltas) == 6
+        assert len(wallet_deltas) == 2 * expected_number_of_transactions
         # 2 for each trade
-        assert len(wallet_deltas) == 6
+        assert len(wallet_deltas) == 2 * expected_number_of_transactions
         # 2 for each trade
-        assert len(wallet_deltas) == 6
+        assert len(wallet_deltas) == 2 * expected_number_of_transactions

@@ -18,7 +18,7 @@ class HyperdriveWalletDeltas(EthWalletDeltas):
     r"""Stores changes for an agent's wallet
 
     Arguments
-    ----------
+    ---------
     lp_tokens : FixedPoint
         The LP tokens held by the trader.
     longs : Dict[int, Long]
@@ -28,6 +28,7 @@ class HyperdriveWalletDeltas(EthWalletDeltas):
     withdraw_shares: FixedPoint
         The withdraw shares held by the trader.
     """
+
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
 
@@ -47,7 +48,7 @@ class Long:
     r"""An open long position.
 
     Arguments
-    ----------
+    ---------
     balance : FixedPoint
         The amount of bonds that the position is long.
 
@@ -63,7 +64,7 @@ class Short:
     r"""An open short position.
 
     Arguments
-    ----------
+    ---------
     balance : FixedPoint
         The amount of bonds that the position is short.
     """

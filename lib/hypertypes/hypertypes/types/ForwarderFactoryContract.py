@@ -21,13 +21,11 @@ from typing import Any, Tuple, Type, TypeVar, cast
 
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
-
 from typing_extensions import Self
 from web3 import Web3
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
-
 
 T = TypeVar("T")
 
@@ -35,8 +33,7 @@ structs = {}
 
 
 def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
-    """
-    Converts a tuple (including nested tuples) to a dataclass instance.  If cls is not a dataclass,
+    """Converts a tuple (including nested tuples) to a dataclass instance.  If cls is not a dataclass,
     then the data will just be passed through this function.
 
     Arguments
@@ -91,7 +88,7 @@ class ForwarderFactoryERC20LINK_HASHContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
-        """returns bytes"""
+        """Returns bytes"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bytes
@@ -136,7 +133,7 @@ class ForwarderFactoryCreateContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> str:
-        """returns str"""
+        """Returns str"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
@@ -181,7 +178,7 @@ class ForwarderFactoryGetDeployDetailsContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> tuple[str, int]:
-        """returns (str, int)"""
+        """Returns (str, int)"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = [str, int]
@@ -226,7 +223,7 @@ class ForwarderFactoryGetForwarderContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> str:
-        """returns str"""
+        """Returns str"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str

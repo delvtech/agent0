@@ -38,7 +38,6 @@ def convert_hyperdrive_transactions_for_block(
         A list of HyperdriveTransaction objects ready to be inserted into Postgres, and
         a list of wallet delta objects ready to be inserted into Postgres
     """
-
     out_transactions: list[HyperdriveTransaction] = []
     out_wallet_deltas: list[WalletDelta] = []
     for transaction in transactions:
@@ -88,11 +87,10 @@ def _convert_object_hexbytes_to_strings(obj: Any) -> Any:
 
 
 def _convert_scaled_value_to_decimal(input_val: int | None) -> Decimal | None:
-    """
-    Given a scaled value int, converts it to a Decimal, while supporting Nones
+    """Given a scaled value int, converts it to a Decimal, while supporting Nones
 
     Arguments
-    ----------
+    ---------
     input_val: int | None
         The scaled integer value to unscale and convert to Decimal
 
@@ -429,7 +427,7 @@ def _build_hyperdrive_transaction_object(
     """Conversion function to translate output of chain queries to the HyperdriveTransaction object.
 
     Arguments
-    ----------
+    ---------
     transaction_dict : dict[str, Any]
         A dictionary representing the decoded transactions from the query
     logs: list[str, Any]

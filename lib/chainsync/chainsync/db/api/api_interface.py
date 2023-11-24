@@ -1,8 +1,8 @@
 """Python api interface for calling the flask server"""
 import logging
 import time
-from io import StringIO
 from http import HTTPStatus
+from io import StringIO
 
 import pandas as pd
 import requests

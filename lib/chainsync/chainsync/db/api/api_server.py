@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import logging
 
-from chainsync.db.base import add_addr_to_username, close_session, initialize_session
-from chainsync.db.hyperdrive import get_current_wallet
 from flask import Flask, jsonify, request
 from flask_expects_json import expects_json
+
+from chainsync.db.base import add_addr_to_username, close_session, initialize_session
+from chainsync.db.hyperdrive import get_current_wallet
 
 app = Flask(__name__)
 
@@ -100,7 +101,6 @@ def launch_flask(host: str | None = None, port: int | None = None):
         Session object for connecting to db. If None, will initialize a new session based on
         postgres.env.
     """
-
     if host is None:
         host = "0.0.0.0"
     if port is None:

@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import Any, cast
 
 from eth_typing import BlockNumber
-from ethpy.base import UnknownBlockError, get_transaction_logs
 from fixedpointmath import FixedPoint
 from hypertypes import IERC4626HyperdriveContract
 from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
@@ -17,6 +16,8 @@ from hypertypes.utilities.conversions import (
 from web3.contract.contract import Contract
 from web3.types import Timestamp, TxReceipt
 
+from ethpy.base import UnknownBlockError, get_transaction_logs
+
 from .receipt_breakdown import ReceiptBreakdown
 
 
@@ -24,7 +25,7 @@ def get_hyperdrive_pool_config(hyperdrive_contract: IERC4626HyperdriveContract) 
     """Get the hyperdrive config from a deployed hyperdrive contract.
 
     Arguments
-    ----------
+    ---------
     hyperdrive_contract : Contract
         The deployed hyperdrive contract instance.
 

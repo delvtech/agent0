@@ -108,7 +108,7 @@ def pool_config_to_fixedpoint(
     """Convert the HyperTypes PoolConfig attributes from what Solidity returns to FixedPoint.
 
     Arguments
-    ----------
+    ---------
     pool_config : hypertypes.IHyperdriveTypes.PoolConfig
         The hyperdrive pool config.
 
@@ -145,7 +145,7 @@ def fixedpoint_to_pool_config(
     """Convert the PoolConfig attribute types from FixedPoint to what the Solidity ABI specifies.
 
     Arguments
-    ----------
+    ---------
     pool_config : ethpy.hyperdrive.state.PoolConfig
         The Hyperdrive pool config in FixedPoint format.
 

@@ -17,7 +17,6 @@ def build_ticker(ticker_data: pd.DataFrame, user_map: pd.DataFrame) -> pd.DataFr
     pd.DataFrame
         The filtered transaction data based on what we want to view in the ticker
     """
-
     # Gather other information from other tables
     mapped_addrs = map_addresses(ticker_data["wallet_address"], user_map)
 

@@ -83,7 +83,6 @@ class Random(HyperdrivePolicy):
         policy_config: Config | None
             The custom arguments for this policy
         """
-
         if policy_config is None:
             policy_config = self.Config()
 

@@ -65,8 +65,7 @@ class InteractiveHyperdrive:
     # pylint: disable=too-many-instance-attributes
     @dataclass
     class Config:
-        """
-        The configuration for the initial pool configuration
+        """The configuration for the initial pool configuration
 
         Attributes
         ----------

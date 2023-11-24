@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import cast
 
 from eth_typing import URI
-from ethpy import EthConfig
 from web3 import HTTPProvider
+
+from ethpy import EthConfig
 
 from .addresses import HyperdriveAddresses
 from .deploy import DeployedHyperdrivePool

@@ -8,8 +8,9 @@ from fixedpointmath import FixedPoint
 from .base import BasePolicy, MarketInterface, Wallet
 
 if TYPE_CHECKING:
-    from agent0.base import Trade
     from numpy.random._generator import Generator as NumpyGenerator
+
+    from agent0.base import Trade
 
 
 # pylint: disable=too-few-public-methods

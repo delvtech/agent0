@@ -62,8 +62,7 @@ def initialize_accounts(
     env_file: str | None = None,
     random_seed: int = 1,
 ) -> AccountKeyConfig:
-    """
-    Build or load an accounts environment file.
+    """Build or load an accounts environment file.
     If it doesn't exist, create it based on agent_config.
     (if develop is off, print instructions on adding in user private key and running script to fund agents).
     If it does exist, read it in and use it.
@@ -126,7 +125,7 @@ def build_account_key_config_from_agent_config(
     """Build an Account Config from a provided agent config.
 
     Arguments
-    --------
+    ---------
     agent_config: list[AgentConfig]
         The list of agent configs that define policies and arguments.
     random_seed: int
@@ -173,7 +172,7 @@ def build_account_config_from_env(env_file: str | None = None, user_key: str | N
     """Build an Account Config from environmental variables.
 
     Arguments
-    --------
+    ---------
     env_file: str | None
         The path to the env file to load from. Defaults to `accounts.env`.
     user_key: str

@@ -2,14 +2,15 @@
 from __future__ import annotations
 
 import numpy as np
-from agent0 import AccountKeyConfig
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.agents import HyperdriveAgent
-from agent0.hyperdrive.crash_report import setup_hyperdrive_crash_report_logging
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses
 from ethpy.hyperdrive.api import HyperdriveInterface
 from hyperlogs import logs
+
+from agent0 import AccountKeyConfig
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.agents import HyperdriveAgent
+from agent0.hyperdrive.crash_report import setup_hyperdrive_crash_report_logging
 
 from .get_agent_accounts import get_agent_accounts
 

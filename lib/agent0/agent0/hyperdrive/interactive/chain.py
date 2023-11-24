@@ -152,8 +152,7 @@ class LocalChain(Chain):
 
     @dataclass
     class Config(Chain.Config):
-        """
-        The configuration for launching a local anvil node in a subprocess
+        """The configuration for launching a local anvil node in a subprocess
 
         Attributes
         ----------

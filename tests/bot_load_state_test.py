@@ -26,11 +26,15 @@ from web3 import HTTPProvider
 
 
 class WalletTestPolicy(HyperdrivePolicy):
-    """A agent that simply cycles through all trades"""
+    """An agent that simply cycles through all trades."""
+
+    COUNTER_ADD_LIQUIDITY = 0
+    COUNTER_OPEN_LONG = 1
+    COUNTER_OPEN_SHORT = 2
 
     @dataclass
     class Config(HyperdrivePolicy.Config):
-        """Custom config arguments for this policy
+        """Custom config arguments for this policy.
 
         Attributes
         ----------
@@ -49,6 +53,7 @@ class WalletTestPolicy(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
     ):
+        """Initialize config and set counter to 0."""
         if policy_config is None:
             policy_config = self.Config()
 
@@ -63,7 +68,7 @@ class WalletTestPolicy(HyperdrivePolicy):
     def action(
         self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
+        """Open all trades for a fixed amount and closes them after, one at a time."""
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -80,7 +85,7 @@ class WalletTestPolicy(HyperdrivePolicy):
             # We want this bot to exit and crash after it's done the trades it needs to do
             done_trading = True
 
-        if self.counter == 0:
+        if self.counter == self.COUNTER_ADD_LIQUIDITY:
             # Add liquidity
             action_list.append(
                 Trade(
@@ -92,7 +97,7 @@ class WalletTestPolicy(HyperdrivePolicy):
                     ),
                 )
             )
-        elif self.counter == 1:
+        elif self.counter == self.COUNTER_OPEN_LONG:
             # Open Long
             action_list.append(
                 Trade(
@@ -104,7 +109,7 @@ class WalletTestPolicy(HyperdrivePolicy):
                     ),
                 )
             )
-        elif self.counter == 2:
+        elif self.counter == self.COUNTER_OPEN_SHORT:
             # Open Short
             action_list.append(
                 Trade(
@@ -123,7 +128,7 @@ class WalletTestPolicy(HyperdrivePolicy):
 
 
 class TestBotToDb:
-    """Tests pipeline from bots making trades to viewing the trades in the db"""
+    """Test pipeline from bots making trades to viewing the trades in the db."""
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
@@ -134,9 +139,7 @@ class TestBotToDb:
         db_session: Session,
         db_api: str,
     ):
-        """Runs the entire pipeline and checks the database at the end.
-        All arguments are fixtures.
-        """
+        """Runs the entire pipeline and checks the database at the end. All arguments are fixtures."""
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
 

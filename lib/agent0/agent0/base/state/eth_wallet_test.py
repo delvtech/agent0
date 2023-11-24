@@ -3,9 +3,10 @@ from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 
-from agent0.base import Quantity, TokenType
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
+
+from agent0.base import Quantity, TokenType
 
 from .eth_wallet import EthWallet
 
