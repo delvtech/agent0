@@ -2,6 +2,8 @@
 from datetime import datetime
 from decimal import Decimal
 
+import pytest
+
 from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta
 
 # These tests are using fixtures defined in conftest.py
@@ -10,6 +12,7 @@ from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo,
 class TestTransactionTable:
     """CRUD tests for transaction table"""
 
+    @pytest.mark.docker
     def test_create_transaction(self, db_session):
         """Create and entry"""
         transaction = HyperdriveTransaction(block_number=1, transaction_hash="a", event_value=Decimal("3.2"))
@@ -21,6 +24,7 @@ class TestTransactionTable:
         # event_value retrieved from postgres is in Decimal, cast to float
         assert float(retrieved_transaction.event_value) == 3.2
 
+    @pytest.mark.docker
     def test_update_transaction(self, db_session):
         """Update an entry"""
         transaction = HyperdriveTransaction(block_number=1, transaction_hash="a", event_value=Decimal("3.2"))
@@ -34,6 +38,7 @@ class TestTransactionTable:
         # event_value retrieved from postgres is in Decimal, cast to float
         assert float(updated_transaction.event_value) == 5.0
 
+    @pytest.mark.docker
     def test_delete_transaction(self, db_session):
         """Delete an entry"""
         transaction = HyperdriveTransaction(block_number=1, transaction_hash="a", event_value=Decimal("3.2"))
@@ -50,6 +55,7 @@ class TestTransactionTable:
 class TestCheckpointTable:
     """CRUD tests for checkpoint table"""
 
+    @pytest.mark.docker
     def test_create_checkpoint(self, db_session):
         """Create and entry"""
         timestamp = datetime.now()
@@ -61,6 +67,7 @@ class TestCheckpointTable:
         assert retrieved_checkpoint is not None
         assert retrieved_checkpoint.timestamp == timestamp
 
+    @pytest.mark.docker
     def test_update_checkpoint(self, db_session):
         """Update an entry"""
         timestamp = datetime.now()
@@ -74,6 +81,7 @@ class TestCheckpointTable:
         updated_checkpoint = db_session.query(CheckpointInfo).filter_by(block_number=1).first()
         assert updated_checkpoint.share_price == 5.0
 
+    @pytest.mark.docker
     def test_delete_checkpoint(self, db_session):
         """Delete an entry"""
         timestamp = datetime.now()
@@ -91,6 +99,7 @@ class TestCheckpointTable:
 class TestPoolConfigTable:
     """CRUD tests for poolconfig table"""
 
+    @pytest.mark.docker
     def test_create_pool_config(self, db_session):
         """Create and entry"""
         pool_config = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
@@ -101,6 +110,7 @@ class TestPoolConfigTable:
         assert retrieved_pool_config is not None
         assert float(retrieved_pool_config.initial_share_price) == 3.2
 
+    @pytest.mark.docker
     def test_delete_pool_config(self, db_session):
         """Delete an entry"""
         pool_config = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
@@ -117,6 +127,7 @@ class TestPoolConfigTable:
 class TestPoolInfoTable:
     """CRUD tests for poolinfo table"""
 
+    @pytest.mark.docker
     def test_create_pool_info(self, db_session):
         """Create and entry"""
         timestamp = datetime.fromtimestamp(1628472000)
@@ -128,6 +139,7 @@ class TestPoolInfoTable:
         assert retrieved_pool_info is not None
         assert retrieved_pool_info.timestamp == timestamp
 
+    @pytest.mark.docker
     def test_update_pool_info(self, db_session):
         """Update an entry"""
         timestamp = datetime.fromtimestamp(1628472000)
@@ -143,6 +155,7 @@ class TestPoolInfoTable:
         updated_pool_info = db_session.query(PoolInfo).filter_by(block_number=1).first()
         assert updated_pool_info.timestamp == new_timestamp
 
+    @pytest.mark.docker
     def test_delete_pool_info(self, db_session):
         """Delete an entry"""
         timestamp = datetime.fromtimestamp(1628472000)
@@ -160,6 +173,7 @@ class TestPoolInfoTable:
 class TestWalletDeltaTable:
     """CRUD tests for WalletDelta table"""
 
+    @pytest.mark.docker
     def test_create_wallet_delta(self, db_session):
         """Create and entry"""
         wallet_delta = WalletDelta(block_number=1, transaction_hash="a", delta=Decimal("3.2"))
@@ -171,6 +185,7 @@ class TestWalletDeltaTable:
         # tokenValue retrieved from postgres is in Decimal, cast to float
         assert float(retrieved_wallet_delta.delta) == 3.2
 
+    @pytest.mark.docker
     def test_update_wallet_delta(self, db_session):
         """Update an entry"""
         wallet_delta = WalletDelta(block_number=1, transaction_hash="a", delta=Decimal("3.2"))
@@ -182,6 +197,7 @@ class TestWalletDeltaTable:
         # delta retrieved from postgres is in Decimal, cast to float
         assert float(updated_wallet_delta.delta) == 5.0
 
+    @pytest.mark.docker
     def test_delete_wallet_delta(self, db_session):
         """Delete an entry"""
         wallet_delta = WalletDelta(block_number=1, transaction_hash="a", delta=Decimal("3.2"))

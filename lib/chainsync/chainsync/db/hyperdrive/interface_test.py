@@ -4,8 +4,9 @@ from decimal import Decimal
 
 import numpy as np
 import pytest
-from chainsync.db.base import get_latest_block_number_from_table
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
+
+from chainsync.db.base import get_latest_block_number_from_table
 
 from .interface import (
     add_checkpoint_infos,
@@ -31,6 +32,7 @@ from .schema import CheckpointInfo, CurrentWallet, HyperdriveTransaction, PoolCo
 class TestTransactionInterface:
     """Testing postgres interface for transaction table"""
 
+    @pytest.mark.docker
     def test_latest_block_number(self, db_session):
         """Testing retrieval of transaction via interface"""
         transaction_1 = HyperdriveTransaction(block_number=1, transaction_hash="a", event_value=Decimal("3.0"))
@@ -46,6 +48,7 @@ class TestTransactionInterface:
         latest_block_number = get_latest_block_number_from_table(HyperdriveTransaction, db_session)
         assert latest_block_number == 3
 
+    @pytest.mark.docker
     def test_get_transactions(self, db_session):
         """Testing retrieval of transactions via interface"""
         transaction_1 = HyperdriveTransaction(block_number=0, transaction_hash="a", event_value=Decimal("3.1"))
@@ -56,6 +59,7 @@ class TestTransactionInterface:
         transactions_df = get_transactions(db_session)
         np.testing.assert_array_equal(transactions_df["event_value"], [3.1, 3.2, 3.3])
 
+    @pytest.mark.docker
     def test_block_query_transactions(self, db_session):
         """Testing querying by block number of transactions via interface"""
         transaction_1 = HyperdriveTransaction(block_number=0, transaction_hash="a", event_value=Decimal("3.1"))
@@ -82,6 +86,7 @@ class TestTransactionInterface:
 class TestCheckpointInterface:
     """Testing postgres interface for checkpoint table"""
 
+    @pytest.mark.docker
     def test_latest_block_number(self, db_session):
         """Testing retrieval of checkpoint via interface"""
         checkpoint_1 = CheckpointInfo(block_number=1, timestamp=datetime.now())
@@ -98,6 +103,7 @@ class TestCheckpointInterface:
         latest_block_number = get_latest_block_number_from_table(CheckpointInfo, db_session)
         assert latest_block_number == 3
 
+    @pytest.mark.docker
     def test_get_checkpoints(self, db_session):
         """Testing retrieval of checkpoints via interface"""
         date_1 = datetime(1945, 8, 6)
@@ -113,6 +119,7 @@ class TestCheckpointInterface:
             checkpoints_df["timestamp"].dt.to_pydatetime(), np.array([date_1, date_2, date_3])
         )
 
+    @pytest.mark.docker
     def test_block_query_checkpoints(self, db_session):
         """Testing querying by block number of checkpoints via interface"""
         checkpoint_1 = CheckpointInfo(block_number=0, timestamp=datetime.now(), share_price=Decimal("3.1"))
@@ -139,6 +146,7 @@ class TestCheckpointInterface:
 class TestPoolConfigInterface:
     """Testing postgres interface for poolconfig table"""
 
+    @pytest.mark.docker
     def test_get_pool_config(self, db_session):
         """Testing retrieval of pool config via interface"""
         pool_config_1 = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
@@ -155,6 +163,7 @@ class TestPoolConfigInterface:
         assert len(pool_config_df_2) == 2
         np.testing.assert_array_equal(pool_config_df_2["initial_share_price"], np.array([3.2, 3.4]))
 
+    @pytest.mark.docker
     def test_primary_id_query_pool_config(self, db_session):
         """Testing retrieval of pool config via interface"""
         pool_config = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
@@ -167,6 +176,7 @@ class TestPoolConfigInterface:
         pool_config_df_2 = get_pool_config(db_session, contract_address="1")
         assert len(pool_config_df_2) == 0
 
+    @pytest.mark.docker
     def test_pool_config_verify(self, db_session):
         """Testing retrieval of pool config via interface"""
         pool_config_1 = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
@@ -191,6 +201,7 @@ class TestPoolConfigInterface:
 class TestPoolInfoInterface:
     """Testing postgres interface for poolinfo table"""
 
+    @pytest.mark.docker
     def test_latest_block_number(self, db_session):
         """Testing latest block number call"""
         timestamp_1 = datetime.fromtimestamp(1628472000)
@@ -209,6 +220,7 @@ class TestPoolInfoInterface:
         latest_block_number = get_latest_block_number_from_pool_info_table(db_session)
         assert latest_block_number == 3
 
+    @pytest.mark.docker
     def test_get_pool_info(self, db_session):
         """Testing retrieval of pool info via interface"""
         timestamp_1 = datetime.fromtimestamp(1628472000)
@@ -224,6 +236,7 @@ class TestPoolInfoInterface:
             pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1, timestamp_2, timestamp_3])
         )
 
+    @pytest.mark.docker
     def test_block_query_pool_info(self, db_session):
         """Testing retrieval of pool info via interface"""
         timestamp_1 = datetime.fromtimestamp(1628472000)
@@ -252,6 +265,7 @@ class TestPoolInfoInterface:
 class TestWalletDeltaInterface:
     """Testing postgres interface for walletinfo table"""
 
+    @pytest.mark.docker
     def test_latest_block_number(self, db_session):
         """Testing retrieval of wallet info via interface"""
         wallet_delta_1 = WalletDelta(block_number=1, transaction_hash="a", delta=Decimal("3.0"))
@@ -264,6 +278,7 @@ class TestWalletDeltaInterface:
         latest_block_number = get_latest_block_number_from_table(WalletDelta, db_session)
         assert latest_block_number == 3
 
+    @pytest.mark.docker
     def test_get_wallet_delta(self, db_session):
         """Testing retrievals of walletinfo via interface"""
         wallet_delta_1 = WalletDelta(block_number=0, transaction_hash="a", delta=Decimal("3.1"))
@@ -275,6 +290,7 @@ class TestWalletDeltaInterface:
         wallet_delta_df = get_wallet_deltas(db_session, return_timestamp=False)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.1, 3.2, 3.3]))
 
+    @pytest.mark.docker
     def test_block_query_wallet_delta(self, db_session):
         """Testing querying by block number of wallet info via interface"""
         wallet_delta_1 = WalletDelta(block_number=0, transaction_hash="a", delta=Decimal("3.1"))
@@ -292,6 +308,7 @@ class TestWalletDeltaInterface:
         wallet_delta_df = get_wallet_deltas(db_session, start_block=1, end_block=-1, return_timestamp=False)
         np.testing.assert_array_equal(wallet_delta_df["delta"], np.array([3.2]))
 
+    @pytest.mark.docker
     def test_get_agents(self, db_session):
         """Testing helper function to get current wallet values"""
         wallet_delta_1 = WalletDelta(block_number=0, transaction_hash="a", wallet_address="addr_1")
@@ -307,6 +324,7 @@ class TestWalletDeltaInterface:
 class TestCurrentWalletInterface:
     """Testing postgres interface for CurrentWallet table"""
 
+    @pytest.mark.docker
     def test_latest_block_number(self, db_session):
         """Testing retrieval of wallet info via interface"""
         wallet_info_1 = CurrentWallet(block_number=1, value=Decimal("3.0"))
@@ -319,6 +337,7 @@ class TestCurrentWalletInterface:
         latest_block_number = get_latest_block_number_from_table(CurrentWallet, db_session)
         assert latest_block_number == 3
 
+    @pytest.mark.docker
     def test_get_current_wallet(self, db_session):
         """Testing retrieval of walletinfo via interface"""
         wallet_info_1 = CurrentWallet(block_number=0, wallet_address="a", value=Decimal("3.1"))
@@ -330,6 +349,7 @@ class TestCurrentWalletInterface:
         wallet_info_df = wallet_info_df.sort_values(by=["value"])
         np.testing.assert_array_equal(wallet_info_df["value"], np.array([3.1, 3.2, 3.3]))
 
+    @pytest.mark.docker
     def test_block_query_wallet_info(self, db_session):
         """Testing querying by block number of wallet info via interface"""
         wallet_info_1 = CurrentWallet(block_number=0, wallet_address="a", value=Decimal("3.1"))
@@ -343,6 +363,7 @@ class TestCurrentWalletInterface:
         wallet_info_df = wallet_info_df.sort_values(by=["value"])
         np.testing.assert_array_equal(wallet_info_df["value"], np.array([3.1, 3.2]))
 
+    @pytest.mark.docker
     def test_current_wallet_info(self, db_session):
         """Testing helper function to get current wallet values"""
         wallet_info_1 = CurrentWallet(

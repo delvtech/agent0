@@ -5,6 +5,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, cast
 
+import pytest
 from eth_typing import URI
 from ethpy import EthConfig
 from fixedpointmath import FixedPoint
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
 class TestRandomPolicy:
     """Tests pipeline from bots making trades to viewing the trades in the db"""
 
+    @pytest.mark.anvil
     def test_random_policy(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
@@ -96,6 +98,7 @@ class TestRandomPolicy:
         for _ in range(10):
             _ = asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts, liquidate))
 
+    @pytest.mark.anvil
     def test_random_policy_trades(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,

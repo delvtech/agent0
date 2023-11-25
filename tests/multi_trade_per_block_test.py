@@ -6,6 +6,13 @@ import os
 from typing import TYPE_CHECKING, cast
 
 import pandas as pd
+import pytest
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base import MarketType, Trade
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.policies import HyperdrivePolicy
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from chainsync.db.hyperdrive.interface import get_ticker, get_transactions, get_wallet_deltas
 from chainsync.exec import acquire_data, data_analysis
 from eth_typing import URI
@@ -14,13 +21,6 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
-
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -109,6 +109,7 @@ class TestMultiTradePerBlock:
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
+    @pytest.mark.docker
     def test_multi_trade_per_block(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,

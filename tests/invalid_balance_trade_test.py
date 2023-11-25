@@ -5,6 +5,13 @@ import logging
 import os
 from typing import TYPE_CHECKING, Type, cast
 
+import pytest
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base import MarketType, Trade
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.policies import HyperdrivePolicy
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base.errors import ContractCallException
@@ -12,13 +19,6 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import HTTPProvider
 from web3.exceptions import ContractLogicError, ContractPanicError
-
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -508,6 +508,7 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
 class TestInvalidTrades:
     """Tests pipeline from bots making trades to viewing the trades in the db"""
 
+    @pytest.mark.anvil
     def _build_and_run_with_funded_bot(self, hyperdrive_pool: DeployedHyperdrivePool, policy: Type[HyperdrivePolicy]):
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
@@ -610,6 +611,7 @@ class TestInvalidTrades:
         # If this reaches this point, the agent was successful, which means this test should fail
         assert False, "Agent was successful with known invalid trade"
 
+    @pytest.mark.anvil
     def test_not_enough_base(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
@@ -629,6 +631,7 @@ class TestInvalidTrades:
             assert isinstance(exc.orig_exception, ContractLogicError)
             assert exc.orig_exception.args[0] == "execution reverted: TRANSFER_FROM_FAILED"
 
+    @pytest.mark.anvil
     def test_invalid_remove_liquidity_from_zero(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
@@ -650,6 +653,7 @@ class TestInvalidTrades:
                 exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
             )
 
+    @pytest.mark.anvil
     def test_invalid_close_long_from_zero(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
@@ -672,6 +676,7 @@ class TestInvalidTrades:
                 exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
             )
 
+    @pytest.mark.anvil
     def test_invalid_close_short_from_zero(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
@@ -694,6 +699,7 @@ class TestInvalidTrades:
                 exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
             )
 
+    @pytest.mark.anvil
     def test_invalid_redeem_withdraw_share_from_zero(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
@@ -712,6 +718,7 @@ class TestInvalidTrades:
             assert "balance of " in exc.args[0]
             assert exc.args[1] == "Preview call for redeem withdrawal shares returned 0 for non-zero input trade amount"
 
+    @pytest.mark.anvil
     def test_invalid_remove_liquidity_from_nonzero(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
@@ -733,6 +740,7 @@ class TestInvalidTrades:
                 exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
             )
 
+    @pytest.mark.anvil
     def test_invalid_close_long_from_nonzero(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
@@ -754,6 +762,7 @@ class TestInvalidTrades:
                 exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
             )
 
+    @pytest.mark.anvil
     def test_invalid_close_short_from_nonzero(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
@@ -775,6 +784,7 @@ class TestInvalidTrades:
                 exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
             )
 
+    @pytest.mark.anvil
     def test_invalid_redeem_withdraw_from_nonzero(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
@@ -793,6 +803,7 @@ class TestInvalidTrades:
             assert "balance of " in exc.args[0]
             assert exc.args[1] == "Preview call for redeem withdrawal shares returned 0 for non-zero input trade amount"
 
+    @pytest.mark.anvil
     def test_invalid_redeem_withdraw_in_pool(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,

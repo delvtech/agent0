@@ -2,6 +2,8 @@
 from decimal import Decimal
 from tempfile import TemporaryDirectory
 
+import pytest
+
 from .export_data import export_db_to_file, import_to_pandas
 from .interface import add_pool_config, get_pool_config
 from .schema import PoolConfig
@@ -11,6 +13,7 @@ from .schema import PoolConfig
 class TestExportImportData:
     """Testing export and import data for precision"""
 
+    @pytest.mark.docker
     def test_export_import(self, db_session):
         """Testing retrieval of transaction via interface"""
         # Write data to database
