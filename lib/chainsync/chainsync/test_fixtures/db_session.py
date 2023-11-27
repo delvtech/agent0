@@ -3,16 +3,13 @@ import logging
 import os
 import re
 import subprocess
-import time
 from pathlib import Path
 from typing import Iterator
 
 import docker
-import psycopg2
 import pytest
-from docker.errors import DockerException, NotFound
+from docker.errors import APIError, DockerException, NotFound
 from docker.models.containers import Container
-from psycopg2 import OperationalError
 from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -21,21 +18,6 @@ from chainsync import PostgresConfig
 from chainsync.db.base import Base, initialize_engine
 
 TEST_POSTGRES_NAME = "postgres_test"
-
-
-def is_postgres_ready(postgres_config: PostgresConfig) -> bool:
-    """Check if postgres is ready."""
-    try:
-        conn = psycopg2.connect(
-            host="127.0.0.1",
-            port=postgres_config.POSTGRES_PORT,
-            user=postgres_config.POSTGRES_USER,
-            password=postgres_config.POSTGRES_PASSWORD,
-        )
-        conn.close()
-        return True
-    except OperationalError:
-        return False
 
 
 @pytest.fixture(scope="session")
@@ -103,12 +85,15 @@ def psql_docker() -> Iterator[PostgresConfig]:
     )
     assert isinstance(container, Container)
 
-    # Check if PostgreSQL is ready
-    while not is_postgres_ready(postgres_config):
-        time.sleep(0.1)  # check every 0.1 seconds
-
     # Get version of postgres
-    version_out = container.exec_run("postgres -V")[1]
+    connected = False
+    version_out = ""
+    while not connected:
+        try:
+            version_out = container.exec_run("postgres -V")[1]
+            connected = True
+        except APIError:
+            logging.warning("No postgres connection, retrying")
     postgres_version = re.search(r"[0-9]+\.[0-9]+", str(version_out))
     if postgres_version is None:
         raise ValueError("Could not find postgres version")
