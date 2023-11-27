@@ -1,4 +1,4 @@
-"""Pytest fixture that creates an in memory db session and creates the base db schema"""
+"""Create an in memory db session and creates the base db schema."""
 import logging
 import os
 import re
@@ -8,15 +8,34 @@ from pathlib import Path
 from typing import Iterator
 
 import docker
+import psycopg2
 import pytest
-from chainsync import PostgresConfig
-from chainsync.db.base import Base, initialize_engine
 from docker.errors import DockerException, NotFound
+from docker.models.containers import Container
+from psycopg2 import OperationalError
 from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from chainsync import PostgresConfig
+from chainsync.db.base import Base, initialize_engine
+
 TEST_POSTGRES_NAME = "postgres_test"
+
+
+def is_postgres_ready(postgres_config: PostgresConfig) -> bool:
+    """Check if postgres is ready."""
+    try:
+        conn = psycopg2.connect(
+            host="127.0.0.1",
+            port=postgres_config.POSTGRES_PORT,
+            user=postgres_config.POSTGRES_USER,
+            password=postgres_config.POSTGRES_PASSWORD,
+        )
+        conn.close()
+        return True
+    except OperationalError:
+        return False
 
 
 @pytest.fixture(scope="session")
@@ -63,11 +82,12 @@ def psql_docker() -> Iterator[PostgresConfig]:
     # Kill the test container if it already exists
     try:
         existing_container = client.containers.get(TEST_POSTGRES_NAME)
+        assert isinstance(existing_container, Container)
     except NotFound:
         # Container doesn't exist, ignore
         existing_container = None
     if existing_container is not None:
-        existing_container.remove(v=True, force=True)  # type:ignore
+        existing_container.remove(v=True, force=True)
 
     container = client.containers.run(
         image="postgres",
@@ -81,12 +101,14 @@ def psql_docker() -> Iterator[PostgresConfig]:
         detach=True,
         remove=True,
     )
+    assert isinstance(container, Container)
 
-    # Wait for the container to start
-    time.sleep(3)
+    # Check if PostgreSQL is ready
+    while not is_postgres_ready(postgres_config):
+        time.sleep(0.1)  # check every 0.1 seconds
 
     # Get version of postgres
-    version_out = container.exec_run("postgres -V")[1]  # type:ignore
+    version_out = container.exec_run("postgres -V")[1]
     postgres_version = re.search(r"[0-9]+\.[0-9]+", str(version_out))
     if postgres_version is None:
         raise ValueError("Could not find postgres version")
@@ -94,16 +116,15 @@ def psql_docker() -> Iterator[PostgresConfig]:
 
     yield postgres_config
 
-    # Docker doesn't play nice with types
     # Remove the container along with volume
-    container.kill()  # type:ignore
+    container.kill()
     # Prune volumes
     client.volumes.prune()
 
 
 @pytest.fixture(scope="session")
 def database_engine(psql_docker: PostgresConfig) -> Iterator[Engine]:  # pylint: disable=redefined-outer-name
-    """Test fixture creating psql engine on local postgres container
+    """Create psql engine on local postgres container.
 
     Arguments
     ---------
@@ -129,13 +150,12 @@ def database_engine(psql_docker: PostgresConfig) -> Iterator[Engine]:  # pylint:
         version=postgres_config.POSTGRES_VERSION,
         password=postgres_config.POSTGRES_PASSWORD,
     ):
-        engine = initialize_engine(postgres_config)
-        yield engine
+        yield initialize_engine(postgres_config)
 
 
 @pytest.fixture(scope="function")
 def db_session(database_engine: Engine) -> Iterator[Session]:  # pylint: disable=redefined-outer-name
-    """Initializes the in memory db session and creates the db schema
+    """Initialize the in memory db session and creates the db schema.
 
     Arguments
     ---------
@@ -147,7 +167,6 @@ def db_session(database_engine: Engine) -> Iterator[Session]:  # pylint: disable
     Iterator[Session]
         Yields the sqlalchemy session object
     """
-
     session = sessionmaker(bind=database_engine)
 
     Base.metadata.create_all(database_engine)  # create tables
@@ -161,7 +180,7 @@ def db_session(database_engine: Engine) -> Iterator[Session]:  # pylint: disable
 
 @pytest.fixture(scope="function")
 def db_api(psql_docker: PostgresConfig) -> Iterator[str]:  # pylint: disable=redefined-outer-name
-    """Launches a process for the db api
+    """Launch a process for the db api.
 
     Arguments
     ---------
@@ -195,6 +214,6 @@ def db_api(psql_docker: PostgresConfig) -> Iterator[str]:  # pylint: disable=red
         ["flask", "--app", api_server_path, "run", "--host", db_api_host, "--port", str(db_api_port)], env=env
     )
 
-    yield "http://" + db_api_host + ":" + str(db_api_port)
+    yield f"http://{db_api_host}:{db_api_port}"
 
     api_process.kill()
