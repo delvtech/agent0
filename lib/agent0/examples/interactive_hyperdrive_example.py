@@ -17,10 +17,10 @@ chain = LocalChain(local_chain_config)
 # Can connect to a specific existing chain
 # existing_chain = Chain("http://localhost:8545")
 
+# %%
 # Initialize the interactive object with specified initial pool parameters and the chain to launch hyperdrive on
 # An "admin" user (as provided by the Chain object) is launched/funded here for deploying hyperdrive
 
-# %%
 # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
 initial_pool_config = InteractiveHyperdrive.Config()
 # Launches 2 pools on the same local chain
@@ -43,6 +43,8 @@ hyperdrive_agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
 # under the hood to allow for error handling and data management
 # Return values here mirror the various events emitted from these contract calls
 open_long_event_1 = hyperdrive_agent0.open_long(base=FixedPoint(11111))
+print(open_long_event_1)
+# %%
 
 # Allow for creating checkpoints on the fly
 # TODO Need to figure out how to mint checkpoints on the fly
@@ -98,9 +100,20 @@ wallet_positions = interactive_hyperdrive.get_wallet_positions()
 total_wallet_pnl_over_time = interactive_hyperdrive.get_total_wallet_pnl_over_time()
 
 # %%
+pool_info
+# %%
+ticker
+# %%
+wallet_positions
+# %%
+total_wallet_pnl_over_time
+# %%
+
 
 # Plot pretty plots
 # TODO these should be in a notebook for plotting
-pool_info.plot(x="timestamp", y="longs_outstanding", kind="line")
+pool_info.plot(x="block_number", y="longs_outstanding", kind="line")
 # Change wallet_address to be columns for plotting
-total_wallet_pnl_over_time.pivot(index="timestamp", columns="wallet_address", values="pnl").plot()
+total_wallet_pnl_over_time.pivot(index="block_number", columns="username", values="pnl").plot()
+
+# %%
