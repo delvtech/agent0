@@ -60,7 +60,7 @@ def drop_table(session: Session, table_name: str) -> None:
 
 
 def initialize_engine(postgres_config: PostgresConfig | None = None, ensure_database_created: bool = False) -> Engine:
-    """Initializes the postgres engine from config
+    """Initialize the postgres engine from config.
 
     Returns
     -------
