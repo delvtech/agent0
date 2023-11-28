@@ -1,4 +1,4 @@
-"""Test for invalid trades due to balance"""
+"""Test for invalid trades due to balance."""
 from __future__ import annotations
 
 import logging
@@ -25,12 +25,14 @@ if TYPE_CHECKING:
     from ethpy.hyperdrive.api import HyperdriveInterface
     from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 
+# ruff: noqa: PLR2004 (magic values used for counter)
+
 
 # Start by defining policies for failed trades
 # One policy per failed trade
 # Starting with empty wallet, catching any closing trades.
 class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
-    """A agent that submits a remove liquidity with a zero wallet"""
+    """An agent that submits a remove liquidity with a zero wallet."""
 
     def __init__(
         self,
@@ -41,12 +43,14 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
         # we still need it in the constructor since the object factory still calls with this arg
         policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
+        """Initialize policy."""
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
         self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Remove liquidity."""
         # pylint: disable=unused-argument
         action_list = []
         # Remove non-existing Liquidity
@@ -64,7 +68,7 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
 
 
 class InvalidCloseLongFromZero(HyperdrivePolicy):
-    """A agent that submits a close long with a zero wallet"""
+    """An agent that submits a close long with a zero wallet."""
 
     def __init__(
         self,
@@ -75,12 +79,14 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
         # we still need it in the constructor since the object factory still calls with this arg
         policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
+        """Initialize policy."""
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
         self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Close long."""
         # pylint: disable=unused-argument
         action_list = []
         # Closing non-existent long
@@ -100,7 +106,7 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
 
 
 class InvalidCloseShortFromZero(HyperdrivePolicy):
-    """A agent that submits a close short with a zero wallet"""
+    """An agent that submits a close short with a zero wallet."""
 
     def __init__(
         self,
@@ -111,12 +117,14 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
         # we still need it in the constructor since the object factory still calls with this arg
         policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
+        """Initialize policy."""
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
         self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Close short."""
         # pylint: disable=unused-argument
         action_list = []
         # Closing non-existent short
@@ -136,7 +144,7 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
 
 
 class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
-    """A agent that submits a redeem withdrawal share with a zero wallet"""
+    """An agent that submits a redeem withdrawal share with a zero wallet."""
 
     def __init__(
         self,
@@ -147,12 +155,14 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
         # we still need it in the constructor since the object factory still calls with this arg
         policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
+        """Initialize policy."""
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
         self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Redeem withdraw shares."""
         # pylint: disable=unused-argument
         action_list = []
         # Redeem non-existent withdrawal shares
@@ -170,7 +180,7 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
 
 
 class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
-    """A agent that submits an invalid remove liquidity share with a non-zero wallet"""
+    """An agent that submits an invalid remove liquidity share with a non-zero wallet."""
 
     def __init__(
         self,
@@ -181,6 +191,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
         # we still need it in the constructor since the object factory still calls with this arg
         policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
+        """Initialize policy."""
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
@@ -189,6 +200,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
     def action(
         self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Alternate between adding and removing lqiuidity.."""
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -222,7 +234,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
 
 
 class InvalidCloseLongFromNonZero(HyperdrivePolicy):
-    """A agent that submits an invalid close long with a non-zero wallet"""
+    """An agent that submits an invalid close long with a non-zero wallet."""
 
     def __init__(
         self,
@@ -233,6 +245,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
         # we still need it in the constructor since the object factory still calls with this arg
         policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
+        """Initialize policy."""
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
@@ -241,6 +254,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
     def action(
         self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Alternate between open and close long."""
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -279,7 +293,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
 
 
 class InvalidCloseShortFromNonZero(HyperdrivePolicy):
-    """A agent that submits an invalid close short with a non-zero wallet"""
+    """An agent that submits an invalid close short with a non-zero wallet."""
 
     def __init__(
         self,
@@ -290,6 +304,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
         # we still need it in the constructor since the object factory still calls with this arg
         policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
+        """Initialize policy."""
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
@@ -298,6 +313,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
     def action(
         self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Alternate between open and close short."""
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -336,7 +352,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
 
 
 class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
-    """A agent that submits an invalid remove liquidity when not enough ready to withdrawal"""
+    """An agent that submits an invalid remove liquidity when not enough ready to withdrawal."""
 
     def __init__(
         self,
@@ -347,6 +363,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         # we still need it in the constructor since the object factory still calls with this arg
         policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
+        """Initialize policy."""
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
@@ -355,6 +372,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
     def action(
         self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Alternate between add liquidity, open long, remove liquidity, and redeem withdrawal shares."""
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -421,7 +439,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
 
 
 class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
-    """A agent that submits an invalid remove liquidity share with a non-zero wallet"""
+    """An agent that submits an invalid remove liquidity share with a non-zero wallet."""
 
     def __init__(
         self,
@@ -432,6 +450,7 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
         # we still need it in the constructor since the object factory still calls with this arg
         policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
     ):
+        """Initialize policy."""
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
@@ -440,6 +459,7 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
     def action(
         self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Alternate between add liquidity, open long, remove liquidity, and redeem withdrawal shares."""
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -506,7 +526,7 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
 
 
 class TestInvalidTrades:
-    """Tests pipeline from bots making trades to viewing the trades in the db"""
+    """Test pipeline from bots making trades to viewing the trades in the db."""
 
     @pytest.mark.anvil
     def _build_and_run_with_funded_bot(self, hyperdrive_pool: DeployedHyperdrivePool, policy: Type[HyperdrivePolicy]):
@@ -616,7 +636,7 @@ class TestInvalidTrades:
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
-        """Tests when making a trade with not enough base in wallet"""
+        """Tests when making a trade with not enough base in wallet."""
         try:
             self._build_and_run_with_non_funded_bot(local_hyperdrive_pool, InvalidRemoveLiquidityFromNonZero)
 
@@ -636,7 +656,7 @@ class TestInvalidTrades:
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
-        """Tests when making a invalid remove liquidity with zero lp tokens"""
+        """Test making a invalid remove liquidity with zero lp tokens."""
         try:
             self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidRemoveLiquidityFromZero)
 
@@ -658,7 +678,7 @@ class TestInvalidTrades:
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
-        """Tests when making a invalid close long with zero long tokens"""
+        """Test making a invalid close long with zero long tokens."""
         try:
             self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidCloseLongFromZero)
 
@@ -681,7 +701,7 @@ class TestInvalidTrades:
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
-        """Tests when making a invalid close long with zero long tokens"""
+        """Test making a invalid close long with zero long tokens."""
         try:
             self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidCloseShortFromZero)
 
@@ -704,7 +724,7 @@ class TestInvalidTrades:
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
-        """Tests when making a invalid redeem withdrawal shares with zero withdrawal tokens"""
+        """Test making a invalid redeem withdrawal shares with zero withdrawal tokens."""
         try:
             self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidRedeemWithdrawFromZero)
 
@@ -723,7 +743,7 @@ class TestInvalidTrades:
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
-        """Tests when making a invalid remove liquidity trade with nonzero lp tokens"""
+        """Test making a invalid remove liquidity trade with nonzero lp tokens."""
         try:
             self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidRemoveLiquidityFromNonZero)
 
@@ -745,7 +765,7 @@ class TestInvalidTrades:
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
-        """Tests when making a invalid close long with nonzero long tokens"""
+        """Test when making a invalid close long with nonzero long tokens."""
         try:
             self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidCloseLongFromNonZero)
 
@@ -767,7 +787,7 @@ class TestInvalidTrades:
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
-        """Tests when making a invalid close short with nonzero short tokens"""
+        """Test making a invalid close short with nonzero short tokens."""
         try:
             self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidCloseShortFromNonZero)
 
@@ -789,7 +809,7 @@ class TestInvalidTrades:
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
-        """Tests when making a invalid close short with nonzero short tokens"""
+        """Test making a invalid close short with nonzero short tokens."""
         try:
             self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidRedeemWithdrawFromNonZero)
 
@@ -808,7 +828,7 @@ class TestInvalidTrades:
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
-        """Tests when making a invalid close short with nonzero short tokens"""
+        """Test making a invalid close short with nonzero short tokens."""
         try:
             self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidRedeemWithdrawInPool)
 

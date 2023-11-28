@@ -118,5 +118,4 @@ def abbreviate_address(addresses: pd.Series) -> pd.Series:
     pd.Series
         The corresponding abbreviated addresses in the same order (with the same indices)
     """
-
     return addresses.str[:6] + "..." + addresses.str[-4:]

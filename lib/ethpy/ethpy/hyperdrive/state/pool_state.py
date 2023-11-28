@@ -20,6 +20,7 @@ from web3.types import BlockData
 @dataclass
 class PoolState:
     r"""A collection of stateful variables for deployed Hyperdrive and Yield contracts."""
+
     block: BlockData
     pool_config: PoolConfigFP
     pool_info: PoolInfoFP

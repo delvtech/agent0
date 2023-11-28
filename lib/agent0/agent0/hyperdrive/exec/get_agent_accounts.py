@@ -105,7 +105,6 @@ async def set_max_approval(
     hyperdrive_address : str
         The address of the deployed hyperdrive contract
     """
-
     agents_left = list(agents)
     exception = None
     for attempt in range(RETRY_COUNT):

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 class TestSlippageWarning:
-    """Tests pipeline from bots making trades to viewing the trades in the db"""
+    """Test pipeline from bots making trades to viewing the trades in the db."""
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
@@ -33,9 +33,7 @@ class TestSlippageWarning:
         cycle_trade_policy: Type[CycleTradesPolicy],
         db_api: str,
     ):
-        """Runs the entire pipeline and checks the database at the end.
-        All arguments are fixtures.
-        """
+        """Runs the entire pipeline and checks the database at the end. All arguments are fixtures."""
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
 

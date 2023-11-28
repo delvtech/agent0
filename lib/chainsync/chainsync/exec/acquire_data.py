@@ -5,17 +5,18 @@ import logging
 import time
 import warnings
 
+from eth_typing import BlockNumber
+from ethpy import EthConfig
+from ethpy.hyperdrive import HyperdriveAddresses
+from ethpy.hyperdrive.api import HyperdriveInterface
+from sqlalchemy.orm import Session
+
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
     data_chain_to_db,
     get_latest_block_number_from_pool_info_table,
     init_data_chain_to_db,
 )
-from eth_typing import BlockNumber
-from ethpy import EthConfig
-from ethpy.hyperdrive import HyperdriveAddresses
-from ethpy.hyperdrive.api import HyperdriveInterface
-from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
 

@@ -158,7 +158,6 @@ def calc_closeout_pnl(
     Decimal
         The closeout pnl
     """
-
     # Define a function to handle the calculation for each group
     out_pnl = current_wallet.apply(
         calc_single_closeout,  # type: ignore

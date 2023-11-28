@@ -1,4 +1,4 @@
-"""System test for checking calculated wallets versus wallets on chain"""
+"""System test for checking calculated wallets versus wallets on chain."""
 from __future__ import annotations
 
 import logging
@@ -25,8 +25,9 @@ from web3 import HTTPProvider
 
 
 def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, hyperdrive: HyperdriveInterface) -> None:
-    """Function to check that the agent's wallet matches what's reported from the chain.
-    Will assert that balances match
+    """Check that the agent's wallet matches what's reported from the chain.
+
+    Will assert that balances match.
 
     Arguments
     ---------
@@ -69,13 +70,20 @@ def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, hyperdrive: Hyperdr
 
 
 class WalletTestAgainstChainPolicy(HyperdrivePolicy):
-    """A agent that simply cycles through all trades"""
+    """An agent that simply cycles through all trades."""
+
+    COUNTER_ADD_LIQUIDITY = 0
+    COUNTER_OPEN_LONG = 1
+    COUNTER_OPEN_SHORT = 2
+    COUNTER_REMOVE_LIQUIDITY = 3
+    COUNTER_CLOSE_LONGS = 4
+    COUNTER_CLOSE_SHORTS = 5
+    COUNTER_REDEEM_WITHDRAW_SHARES = 6
+    COUNTER_CHECK = 7
 
     @dataclass
     class Config(HyperdrivePolicy.Config):
-        """Custom config arguments for this policy
-        This policy doesn't have any config
-        """
+        """Custom config arguments for this policy. This policy doesn't have any config."""
 
     def __init__(
         self,
@@ -84,6 +92,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
     ):
+        """Initialize config and set counter to 0."""
         if policy_config is None:
             policy_config = self.Config()
 
@@ -97,7 +106,8 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
     def action(
         self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """This agent simply opens all trades for a fixed amount and closes them after, one at a time
+        """Open all trades for a fixed amount and closes them after, one at a time.
+
         After each trade, the agent will ensure the wallet passed in matches what's on the chain.
 
         Arguments
@@ -117,7 +127,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
         action_list = []
         done_trading = False
 
-        if self.counter == 0:
+        if self.counter == self.COUNTER_ADD_LIQUIDITY:
             # Add liquidity
             action_list.append(
                 Trade(
@@ -129,7 +139,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                     ),
                 )
             )
-        elif self.counter == 1:
+        elif self.counter == self.COUNTER_OPEN_LONG:
             # Open Long
             action_list.append(
                 Trade(
@@ -142,7 +152,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                     ),
                 )
             )
-        elif self.counter == 2:
+        elif self.counter == self.COUNTER_OPEN_SHORT:
             # Open Short
             action_list.append(
                 Trade(
@@ -155,7 +165,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                     ),
                 )
             )
-        elif self.counter == 3:
+        elif self.counter == self.COUNTER_REMOVE_LIQUIDITY:
             # Remove All Liquidity
             action_list.append(
                 Trade(
@@ -167,7 +177,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                     ),
                 )
             )
-        elif self.counter == 4:
+        elif self.counter == self.COUNTER_CLOSE_LONGS:
             # Close All Longs
             assert len(wallet.longs) == 1
             for long_time, long in wallet.longs.items():
@@ -183,7 +193,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                         ),
                     )
                 )
-        elif self.counter == 5:
+        elif self.counter == self.COUNTER_CLOSE_SHORTS:
             # Close All Shorts
             assert len(wallet.shorts) == 1
             for short_time, short in wallet.shorts.items():
@@ -199,7 +209,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                         ),
                     )
                 )
-        elif self.counter == 6:
+        elif self.counter == self.COUNTER_REDEEM_WITHDRAW_SHARES:
             # Redeem all withdrawal shares
             action_list.append(
                 Trade(
@@ -211,7 +221,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                     ),
                 )
             )
-        elif self.counter == 7:
+        elif self.counter == self.COUNTER_CHECK:
             # One final check after the previous trade
             pass
         else:
@@ -224,7 +234,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
 
 
 class TestWalletAgainstChain:
-    """Tests pipeline from bots making trades to viewing the trades in the db"""
+    """Test pipeline from bots making trades to viewing the trades in the db."""
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
@@ -233,9 +243,7 @@ class TestWalletAgainstChain:
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
-        """Runs the entire pipeline and checks the database at the end.
-        All arguments are fixtures.
-        """
+        """Runs the entire pipeline and checks the database at the end. All arguments are fixtures."""
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
 

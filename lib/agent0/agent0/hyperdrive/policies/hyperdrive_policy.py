@@ -1,9 +1,10 @@
 """Base class for hyperdrive policies"""
 
+from ethpy.hyperdrive.api import HyperdriveInterface
+
 from agent0.base import Trade
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
-from ethpy.hyperdrive.api import HyperdriveInterface
 
 
 class HyperdrivePolicy(BasePolicy[HyperdriveInterface, HyperdriveWallet]):

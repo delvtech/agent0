@@ -1,13 +1,14 @@
 """Create agent accounts and fund them."""
 from __future__ import annotations
 
-from agent0 import AccountKeyConfig
-from agent0.base.make_key import make_private_key
-from agent0.hyperdrive.agents import HyperdriveAgent
 from eth_account.account import Account
 from ethpy import EthConfig
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
 from ethpy.hyperdrive import HyperdriveAddresses, get_web3_and_hyperdrive_contracts
+
+from agent0 import AccountKeyConfig
+from agent0.base.make_key import make_private_key
+from agent0.hyperdrive.agents import HyperdriveAgent
 
 
 def create_and_fund_user_account(

@@ -267,7 +267,6 @@ def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
         A dict keyed by token, valued by amount
         In the case of longs and shorts, valued by a dictionary keyed by maturity_time and balance
     """
-
     # Keeping amounts here as FixedPoints for json to handle
     return {
         wallet.balance.unit.value: wallet.balance.amount,

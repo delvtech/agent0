@@ -5,6 +5,10 @@ import logging
 import os
 import time
 
+from ethpy import EthConfig, build_eth_config
+from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri, get_web3_and_hyperdrive_contracts
+from sqlalchemy.orm import Session
+
 from chainsync.analysis import data_to_analysis
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
@@ -13,9 +17,6 @@ from chainsync.db.hyperdrive import (
     get_latest_block_number_from_table,
     get_pool_config,
 )
-from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri, get_web3_and_hyperdrive_contracts
-from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
 
@@ -117,7 +118,6 @@ def get_latest_data_block(db_session: Session):
     db_session: Session
         Session object for connecting to db.
     """
-
     # Note to avoid race condition, we add pool info as the last update for the block
     latest_pool_info = get_latest_block_number_from_table(PoolInfo, db_session)
 

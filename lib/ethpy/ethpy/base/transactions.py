@@ -352,8 +352,7 @@ def build_transaction(
     nonce: Nonce | None = None,
     read_retry_count: int | None = None,
 ) -> TxParams:
-    """
-    Builds a transaction for the given function.
+    """Builds a transaction for the given function.
 
     Arguments
     ---------
@@ -396,8 +395,7 @@ def build_transaction(
 async def _async_send_transaction_and_wait_for_receipt(
     unsent_txn: TxParams, signer: LocalAccount, web3: Web3
 ) -> TxReceipt:
-    """
-    Sends a transaction and waits for the receipt asynchronously.
+    """Sends a transaction and waits for the receipt asynchronously.
 
     Arguments
     ---------
@@ -473,7 +471,6 @@ async def async_smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-
     if read_retry_count is None:
         read_retry_count = DEFAULT_READ_RETRY_COUNT
     if write_retry_count is None:
@@ -535,11 +532,11 @@ async def async_smart_contract_transact(
 
 
 def _send_transaction_and_wait_for_receipt(unsent_txn: TxParams, signer: LocalAccount, web3: Web3) -> TxReceipt:
-    """
-    Sends a transaction and waits for the receipt.
+    """Sends a transaction and waits for the receipt.
 
     Arguments
     ---------
+
     Arguments
     ---------
     unsent_txn: TxParams
@@ -611,7 +608,6 @@ def smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-
     if read_retry_count is None:
         read_retry_count = DEFAULT_READ_RETRY_COUNT
     if write_retry_count is None:

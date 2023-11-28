@@ -28,15 +28,13 @@ from web3.contract.contract import Contract, ContractFunction, ContractFunctions
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
 
-
 T = TypeVar("T")
 
 structs = {}
 
 
 def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
-    """
-    Converts a tuple (including nested tuples) to a dataclass instance.  If cls is not a dataclass,
+    """Converts a tuple (including nested tuples) to a dataclass instance.  If cls is not a dataclass,
     then the data will just be passed through this function.
 
     Arguments
@@ -91,7 +89,7 @@ class ERC20MintableDOMAIN_SEPARATORContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
-        """returns bytes"""
+        """Returns bytes"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bytes
@@ -136,7 +134,7 @@ class ERC20MintableAllowanceContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> int:
-        """returns int"""
+        """Returns int"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = int
@@ -181,7 +179,7 @@ class ERC20MintableApproveContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> bool:
-        """returns bool"""
+        """Returns bool"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bool
@@ -226,7 +224,7 @@ class ERC20MintableAuthorityContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> str:
-        """returns str"""
+        """Returns str"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
@@ -271,7 +269,7 @@ class ERC20MintableBalanceOfContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> int:
-        """returns int"""
+        """Returns int"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = int
@@ -328,8 +326,6 @@ class ERC20MintableBurnContractFunction(ContractFunction):
         super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
-        return None
-
     def _call(self, return_types, raw_values):
         # cover case of multiple return values
         if isinstance(return_types, list):
@@ -368,7 +364,7 @@ class ERC20MintableCanCallContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> bool:
-        """returns bool"""
+        """Returns bool"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bool
@@ -413,7 +409,7 @@ class ERC20MintableDecimalsContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> int:
-        """returns int"""
+        """Returns int"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = int
@@ -458,7 +454,7 @@ class ERC20MintableDoesRoleHaveCapabilityContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> bool:
-        """returns bool"""
+        """Returns bool"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bool
@@ -503,7 +499,7 @@ class ERC20MintableDoesUserHaveRoleContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> bool:
-        """returns bool"""
+        """Returns bool"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bool
@@ -548,7 +544,7 @@ class ERC20MintableGetRolesWithCapabilityContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
-        """returns bytes"""
+        """Returns bytes"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bytes
@@ -593,7 +589,7 @@ class ERC20MintableGetTargetCustomAuthorityContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> str:
-        """returns str"""
+        """Returns str"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
@@ -638,7 +634,7 @@ class ERC20MintableGetUserRolesContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> bytes:
-        """returns bytes"""
+        """Returns bytes"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bytes
@@ -683,7 +679,7 @@ class ERC20MintableIsCapabilityPublicContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> bool:
-        """returns bool"""
+        """Returns bool"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bool
@@ -728,7 +724,7 @@ class ERC20MintableIsCompetitionModeContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> bool:
-        """returns bool"""
+        """Returns bool"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bool
@@ -785,8 +781,6 @@ class ERC20MintableMintContractFunction(ContractFunction):
         super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
-        return None
-
     def _call(self, return_types, raw_values):
         # cover case of multiple return values
         if isinstance(return_types, list):
@@ -825,7 +819,7 @@ class ERC20MintableNameContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> str:
-        """returns str"""
+        """Returns str"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
@@ -870,7 +864,7 @@ class ERC20MintableNoncesContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> int:
-        """returns int"""
+        """Returns int"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = int
@@ -915,7 +909,7 @@ class ERC20MintableOwnerContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> str:
-        """returns str"""
+        """Returns str"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
@@ -973,8 +967,6 @@ class ERC20MintablePermitContractFunction(ContractFunction):
         super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
-        return None
-
     def _call(self, return_types, raw_values):
         # cover case of multiple return values
         if isinstance(return_types, list):
@@ -1017,8 +1009,6 @@ class ERC20MintableSetAuthorityContractFunction(ContractFunction):
         super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
-        return None
-
     def _call(self, return_types, raw_values):
         # cover case of multiple return values
         if isinstance(return_types, list):
@@ -1060,8 +1050,6 @@ class ERC20MintableSetPublicCapabilityContractFunction(ContractFunction):
         """No return value"""
         super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
-
-        return None
 
     def _call(self, return_types, raw_values):
         # cover case of multiple return values
@@ -1107,8 +1095,6 @@ class ERC20MintableSetRoleCapabilityContractFunction(ContractFunction):
         super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
-        return None
-
     def _call(self, return_types, raw_values):
         # cover case of multiple return values
         if isinstance(return_types, list):
@@ -1150,8 +1136,6 @@ class ERC20MintableSetTargetCustomAuthorityContractFunction(ContractFunction):
         """No return value"""
         super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
-
-        return None
 
     def _call(self, return_types, raw_values):
         # cover case of multiple return values
@@ -1195,8 +1179,6 @@ class ERC20MintableSetUserRoleContractFunction(ContractFunction):
         super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
 
-        return None
-
     def _call(self, return_types, raw_values):
         # cover case of multiple return values
         if isinstance(return_types, list):
@@ -1235,7 +1217,7 @@ class ERC20MintableSymbolContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> str:
-        """returns str"""
+        """Returns str"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = str
@@ -1280,7 +1262,7 @@ class ERC20MintableTotalSupplyContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> int:
-        """returns int"""
+        """Returns int"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = int
@@ -1325,7 +1307,7 @@ class ERC20MintableTransferContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> bool:
-        """returns bool"""
+        """Returns bool"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bool
@@ -1370,7 +1352,7 @@ class ERC20MintableTransferFromContractFunction(ContractFunction):
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
     ) -> bool:
-        """returns bool"""
+        """Returns bool"""
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
         return_types = bool
@@ -1418,8 +1400,6 @@ class ERC20MintableTransferOwnershipContractFunction(ContractFunction):
         """No return value"""
         super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         # Define the expected return types from the smart contract call
-
-        return None
 
     def _call(self, return_types, raw_values):
         # cover case of multiple return values

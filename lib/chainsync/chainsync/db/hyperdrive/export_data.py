@@ -4,8 +4,9 @@ from __future__ import annotations
 import os
 
 import pandas as pd
-from chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
 from sqlalchemy.orm import Session
+
+from chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
 
 from .interface import (
     get_checkpoint_info,

@@ -3,13 +3,14 @@ from __future__ import annotations
 
 from typing import Generic, TypeVar
 
-from agent0.base import Quantity, TokenType, Trade
-from agent0.base.policies import BasePolicy, NoActionPolicy
-from agent0.base.state import EthWallet
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
+
+from agent0.base import Quantity, TokenType, Trade
+from agent0.base.policies import BasePolicy, NoActionPolicy
+from agent0.base.state import EthWallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 MarketInterface = TypeVar("MarketInterface")
@@ -23,7 +24,7 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
         """Initialize an agent and wallet account
 
         Arguments
-        ----------
+        ---------
         account : LocalAccount
             A Web3 local account for storing addresses & signing transactions.
         policy : Policy
@@ -80,7 +81,7 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
         """Helper function for computing a agent trade
 
         Arguments
-        ----------
+        ---------
         interface : MarketInterface
             Interface for the market on which this agent will be executing trades (MarketActions)
 

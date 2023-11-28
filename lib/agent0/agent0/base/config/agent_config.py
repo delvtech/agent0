@@ -4,8 +4,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Type
 
-from agent0.base.policies import BasePolicy
 from fixedpointmath import FixedPoint
+
+from agent0.base.policies import BasePolicy
 
 from .budget import Budget
 

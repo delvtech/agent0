@@ -39,10 +39,11 @@ def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
 
 
 class TestBotToDb:
-    """Tests pipeline from bots making trades to viewing the trades in the db"""
+    """Test pipeline from bots making trades to viewing the trades in the db."""
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
+    # ruff: noqa: PLR0915 (Too many statements)
     @pytest.mark.anvil
     def test_bot_to_db(
         self,
@@ -51,9 +52,7 @@ class TestBotToDb:
         db_session: Session,
         db_api: str,
     ):
-        """Runs the entire pipeline and checks the database at the end.
-        All arguments are fixtures.
-        """
+        """Run the entire pipeline and checks the database at the end. All arguments are fixtures."""
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
         # Get hyperdrive chain info
@@ -267,7 +266,8 @@ class TestBotToDb:
 
         # Ensure trades exist in database
         # Should be 10 total transactions
-        assert len(db_transaction_info) == 10
+        expected_number_of_transactions = 10
+        assert len(db_transaction_info) == expected_number_of_transactions
         np.testing.assert_array_equal(
             db_transaction_info["input_method"],
             [
@@ -285,9 +285,9 @@ class TestBotToDb:
         )
 
         # 10 total trades in wallet deltas
-        assert db_wallet_delta["block_number"].nunique() == 10
+        assert db_wallet_delta["block_number"].nunique() == expected_number_of_transactions
         # 21 different wallet deltas (2 token deltas per trade except for withdraw shares, which is 3)
-        assert len(db_wallet_delta) == 21
+        assert len(db_wallet_delta) == 2 * expected_number_of_transactions + 1
 
         actual_num_longs = Decimal("nan")
         actual_num_shorts = Decimal("nan")
@@ -296,6 +296,7 @@ class TestBotToDb:
         # Go through each trade and ensure wallet deltas are correct
         # The asserts here are equality because they are either int -> Decimal, which is lossless,
         # or they're comparing values after the lossy conversion
+        expected_number_of_deltas = 2
         for _, txn in db_transaction_info.iterrows():
             # TODO differentiate between the first and second addLiquidity
             block_number = txn["block_number"]
@@ -304,7 +305,7 @@ class TestBotToDb:
                 # Filter for all deltas of this trade
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 # Ensure number of token deltas
-                assert len(block_wallet_deltas) == 2
+                assert len(block_wallet_deltas) == expected_number_of_deltas
                 lp_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "LP"]
                 base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
                 assert len(lp_delta_df) == 1
@@ -332,7 +333,7 @@ class TestBotToDb:
                 # Filter for all deltas of this trade
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 # Ensure number of token deltas
-                assert len(block_wallet_deltas) == 2
+                assert len(block_wallet_deltas) == expected_number_of_deltas
                 long_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "LONG"]
                 base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
                 assert len(long_delta_df) == 1
@@ -352,7 +353,7 @@ class TestBotToDb:
             if txn["input_method"] == "openShort":
                 assert txn["input_params_bond_amount"] == Decimal(33333)
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
-                assert len(block_wallet_deltas) == 2
+                assert len(block_wallet_deltas) == expected_number_of_deltas
                 short_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "SHORT"]
                 base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
                 assert len(short_delta_df) == 1
@@ -371,7 +372,7 @@ class TestBotToDb:
                 # TODO change this to expected num lp
                 assert txn["input_params_shares"] == actual_num_lp
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
-                assert len(block_wallet_deltas) == 3
+                assert len(block_wallet_deltas) == expected_number_of_deltas + 1  # 3 deltas for withdraw shares
                 lp_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "LP"]
                 withdrawal_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "WITHDRAWAL_SHARE"]
                 base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
@@ -394,7 +395,7 @@ class TestBotToDb:
                 # TODO change this to expected long amount
                 assert txn["input_params_bond_amount"] == actual_num_longs
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
-                assert len(block_wallet_deltas) == 2
+                assert len(block_wallet_deltas) == expected_number_of_deltas
                 long_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "LONG"]
                 base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
                 assert len(long_delta_df) == 1
@@ -411,7 +412,7 @@ class TestBotToDb:
             if txn["input_method"] == "closeShort":
                 assert txn["input_params_bond_amount"] == Decimal(33333)
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
-                assert len(block_wallet_deltas) == 2
+                assert len(block_wallet_deltas) == expected_number_of_deltas
                 short_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "SHORT"]
                 base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
                 assert len(short_delta_df) == 1
@@ -429,7 +430,7 @@ class TestBotToDb:
                 # TODO change this to expected withdrawal shares
                 assert txn["input_params_shares"] == actual_num_withdrawal
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
-                assert len(block_wallet_deltas) == 2
+                assert len(block_wallet_deltas) == expected_number_of_deltas
                 withdrawal_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "WITHDRAWAL_SHARE"]
                 base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
                 assert len(withdrawal_delta_df) == 1

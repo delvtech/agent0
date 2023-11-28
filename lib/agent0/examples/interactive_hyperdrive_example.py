@@ -2,9 +2,8 @@
 # %%
 import datetime
 
-from fixedpointmath import FixedPoint
-
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
+from fixedpointmath import FixedPoint
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor

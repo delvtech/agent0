@@ -52,7 +52,6 @@ def decode_error_selector_for_contract(error_selector: str, contract: Contract) 
 
     Arguments
     ---------
-
     error_selector : str
         A 3 byte hex string obtained from a keccak256 has of the error signature, i.e.
         'InvalidToken()' would yield '0xc1ab6dc1'.
@@ -64,7 +63,6 @@ def decode_error_selector_for_contract(error_selector: str, contract: Contract) 
     str
        The name of the error. If the error is not found, returns UnknownError.
     """
-
     abi = contract.abi
     if not abi:
         raise ValueError("Contract does not have an abi, cannot decode the error selector.")

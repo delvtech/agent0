@@ -8,6 +8,7 @@ BASE_TOKEN_SYMBOL = "WETH"
 
 class AssetIdPrefix(IntEnum):
     r"""The asset ID is used to encode the trade type in a transaction receipt"""
+
     LP = 0
     LONG = 1
     SHORT = 2
@@ -24,7 +25,7 @@ def encode_asset_id(prefix: int, timestamp: int) -> int:
     then bitwise-or-ing the result with the timestamp.
 
     Arguments
-    --------
+    ---------
     prefix : int
         A one byte prefix that specifies the asset type.
     timestamp : int

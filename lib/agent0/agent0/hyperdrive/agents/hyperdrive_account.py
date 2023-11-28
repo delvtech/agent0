@@ -4,13 +4,14 @@ from __future__ import annotations
 import logging
 from typing import TypeVar
 
+from eth_account.signers.local import LocalAccount
+from ethpy.hyperdrive.api import HyperdriveInterface
+from hexbytes import HexBytes
+
 from agent0.base import MarketType, Quantity, TokenType, Trade
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
-from eth_account.signers.local import LocalAccount
-from ethpy.hyperdrive.api import HyperdriveInterface
-from hexbytes import HexBytes
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 
@@ -118,7 +119,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         """Helper function for computing a agent trade
 
         Arguments
-        ----------
+        ---------
         hyperdrive : HyperdriveInterface
             The market on which this agent will be executing trades (MarketActions)
 

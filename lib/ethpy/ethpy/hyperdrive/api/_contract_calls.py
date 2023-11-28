@@ -4,19 +4,21 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from eth_utils.currency import MAX_WEI
-from ethpy.base import async_smart_contract_transact, get_account_balance, smart_contract_preview_transaction
-from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
-from ethpy.hyperdrive.transactions import parse_logs
 from fixedpointmath import FixedPoint
 from hypertypes.types import IERC4626HyperdriveContract, MockERC4626Contract
 from web3 import Web3
 
+from ethpy.base import async_smart_contract_transact, get_account_balance, smart_contract_preview_transaction
+from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
+from ethpy.hyperdrive.transactions import parse_logs
+
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber
-    from ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
     from web3.contract.contract import Contract
     from web3.types import Nonce
+
+    from ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
 
     from .api import HyperdriveInterface
 

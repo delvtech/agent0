@@ -4,9 +4,6 @@ from __future__ import annotations
 from typing import cast
 
 from eth_typing import URI
-from ethpy import EthConfig
-from ethpy.hyperdrive.addresses import HyperdriveAddresses
-from ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from hypertypes.types import Checkpoint, PoolConfig
 from hypertypes.utilities.conversions import (
@@ -15,6 +12,10 @@ from hypertypes.utilities.conversions import (
     pool_info_to_fixedpoint,
 )
 from web3 import HTTPProvider
+
+from ethpy import EthConfig
+from ethpy.hyperdrive.addresses import HyperdriveAddresses
+from ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 
 from .api import HyperdriveInterface
 

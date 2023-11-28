@@ -4,10 +4,10 @@ from __future__ import annotations
 from typing import NamedTuple
 
 from .arbitrage import Arbitrage
+from .deterministic import Deterministic
 from .lpandarb import LPandArb
 from .random import Random
 from .smart_long import SmartLong
-from .deterministic import Deterministic
 
 
 # Container for all the policies

@@ -11,6 +11,7 @@ from fixedpointmath import FixedPoint
 @dataclass
 class ReceiptBreakdown:
     r"""A granular breakdown of important values in a trade receipt."""
+
     trader: str = ""
     provider: str = ""
     asset_id: int = 0

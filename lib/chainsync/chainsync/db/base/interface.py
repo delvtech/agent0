@@ -8,13 +8,14 @@ from typing import Type, cast
 
 import pandas as pd
 import sqlalchemy
-from chainsync import PostgresConfig, build_postgres_config
 from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engine, exc, func, inspect
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql import text
 from sqlalchemy_utils import create_database, database_exists
+
+from chainsync import PostgresConfig, build_postgres_config
 
 from .schema import AddrToUsername, Base, UsernameToUser
 
@@ -127,7 +128,6 @@ def initialize_session(
     session : Session
         The initialized session object
     """
-
     engine = initialize_engine(postgres_config, ensure_database_created)
 
     # create a configured "Session" class
@@ -244,7 +244,6 @@ def add_username_to_user(user: str, username: str, session: Session, force_updat
     force_update: bool
         If true and an existing username is found, will overwrite
     """
-
     # Below is a best effort check against the database to see if the address is registered to another username
     # This is best effort because there's a race condition here, e.g.,
     # I read (address_1, user_1), someone else writes (address_1, user_2), I write (address_1, user_1)
@@ -341,7 +340,6 @@ def get_latest_block_number_from_table(table_obj: Type[Base], session: Session) 
     int
         The latest block number from the specified table
     """
-
     if not hasattr(table_obj, "block_number"):
         raise ValueError("Table does not have a block_number column")
 

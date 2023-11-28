@@ -4,16 +4,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from fixedpointmath import FixedPoint, FixedPointMath
+
 from agent0.base import WEI, MarketType, Trade
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
-from fixedpointmath import FixedPoint, FixedPointMath
 
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.state import HyperdriveWallet
     from ethpy.hyperdrive.api import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
+
+    from agent0.hyperdrive.state import HyperdriveWallet
 # pylint: disable=too-few-public-methods
 
 
@@ -29,7 +31,6 @@ class SmartLong(HyperdrivePolicy):
         str
             A description of the policy.
         """
-
         raw_description = """
         My strategy:
             - I'm not willing to open a long if it will cause the fixed-rate apr to go below the variable rate
@@ -77,7 +78,6 @@ class SmartLong(HyperdrivePolicy):
         policy_config: Config | None
             The custom arguments for this policy
         """
-
         # Defaults
         if policy_config is None:
             policy_config = self.Config()

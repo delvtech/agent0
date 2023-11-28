@@ -5,6 +5,10 @@ from typing import Type
 
 import numpy as np
 import pandas as pd
+from sqlalchemy import exc
+from sqlalchemy.orm import Session
+from web3.contract.contract import Contract
+
 from chainsync.db.base import Base
 from chainsync.db.hyperdrive import (
     CurrentWallet,
@@ -16,9 +20,6 @@ from chainsync.db.hyperdrive import (
     get_transactions,
     get_wallet_deltas,
 )
-from sqlalchemy import exc
-from sqlalchemy.orm import Session
-from web3.contract.contract import Contract
 
 from .calc_base_buffer import calc_base_buffer
 from .calc_fixed_rate import calc_fixed_rate
@@ -80,7 +81,6 @@ def calc_current_wallet(wallet_deltas_df: pd.DataFrame, latest_wallet: pd.DataFr
     pd.DataFrame
         A dataframe of the current wallet positions, following the schema of CurrentWallet
     """
-
     # There's a chance multiple wallet deltas can happen from the same address at the same block
     # Hence, we group all deltas into a single delta for cumsum
     wallet_deltas_df = (
@@ -144,7 +144,6 @@ def data_to_analysis(
     hyperdrive_contract: Contract,
 ) -> None:
     """Function to query postgres data tables and insert to analysis tables"""
-
     # Get data
     pool_info = get_pool_info(db_session, start_block, end_block, coerce_float=False)
 

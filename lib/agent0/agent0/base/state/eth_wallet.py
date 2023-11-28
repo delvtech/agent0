@@ -7,9 +7,10 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
-from agent0.base import Quantity, TokenType, freezable
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
+
+from agent0.base import Quantity, TokenType, freezable
 
 
 def check_non_zero(data: Any) -> None:
@@ -45,10 +46,11 @@ class EthWalletDeltas:
     r"""Stores changes for an agent's wallet
 
     Arguments
-    ----------
+    ---------
     balance : Quantity
         The base assets that held by the trader.
     """
+
     # fungible
     balance: Quantity = field(default_factory=lambda: Quantity(amount=FixedPoint(0), unit=TokenType.BASE))
 
@@ -64,12 +66,13 @@ class EthWallet:
     r"""Stateful variable for storing what is in the agent's wallet
 
     Arguments
-    ----------
+    ---------
     address : HexBytes
         The associated agent's eth address
     balance : Quantity
         The base assets that held by the trader.
     """
+
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
     address: HexBytes
@@ -91,7 +94,7 @@ class EthWallet:
         """Update the agent's wallet in-place
 
         Arguments
-        ----------
+        ---------
         wallet_deltas : AgentDeltas
             The agent's wallet that tracks the amount of assets this agent holds
         """
