@@ -1,6 +1,6 @@
 # Ignore docstrings for this file
 # pylint: disable=missing-docstring
-# ruff: noqa: D100
+# ruff: noqa: D100 (undocumented-public-module)
 
 
 import os
