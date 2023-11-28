@@ -1,9 +1,13 @@
 """Example script for using interactive hyperdrive."""
 # %%
+# Variables by themselves print out dataframes in a nice format in interactive mode
+# pylint: disable=pointless-statement
+
 import datetime
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from fixedpointmath import FixedPoint
+
+from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor
@@ -30,8 +34,12 @@ interactive_hyperdrive_2 = InteractiveHyperdrive(chain, initial_pool_config)
 # %%
 # Generate funded trading agents from the interactive object
 # Names are reflected on output data frames and plots later
-hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="alice")
-hyperdrive_agent1 = interactive_hyperdrive_2.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="bob")
+hyperdrive_agent0 = interactive_hyperdrive.init_agent(
+    base=FixedPoint(100000), eth=FixedPoint(100), name="alice"
+)
+hyperdrive_agent1 = interactive_hyperdrive_2.init_agent(
+    base=FixedPoint(100000), eth=FixedPoint(100), name="bob"
+)
 # Omission of name defaults to wallet address
 hyperdrive_agent2 = interactive_hyperdrive.init_agent(base=FixedPoint(100000))
 
@@ -43,7 +51,7 @@ hyperdrive_agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
 # under the hood to allow for error handling and data management
 # Return values here mirror the various events emitted from these contract calls
 open_long_event_1 = hyperdrive_agent0.open_long(base=FixedPoint(11111))
-print(open_long_event_1)
+open_long_event_1
 # %%
 
 # Allow for creating checkpoints on the fly
@@ -81,10 +89,16 @@ close_short_event = hyperdrive_agent1.close_short(
 add_lp_event = hyperdrive_agent2.add_liquidity(base=FixedPoint(44444))
 # Add a long to ensure there are withdraw shares to withdraw
 open_long_event = hyperdrive_agent2.open_long(base=FixedPoint(55555))
-remove_lp_event = hyperdrive_agent2.remove_liquidity(shares=hyperdrive_agent2.wallet.lp_tokens)
+remove_lp_event = hyperdrive_agent2.remove_liquidity(
+    shares=hyperdrive_agent2.wallet.lp_tokens
+)
 # Close the long to ensure the withdrawal share is ready to withdraw
-hyperdrive_agent2.close_long(maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount)
-withdraw_shares_event = hyperdrive_agent2.redeem_withdraw_share(shares=hyperdrive_agent2.wallet.withdraw_shares)
+hyperdrive_agent2.close_long(
+    maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
+)
+withdraw_shares_event = hyperdrive_agent2.redeem_withdraw_share(
+    shares=hyperdrive_agent2.wallet.withdraw_shares
+)
 
 # %%
 # Get data from database under the hood
@@ -100,7 +114,7 @@ wallet_positions = interactive_hyperdrive.get_wallet_positions()
 total_wallet_pnl_over_time = interactive_hyperdrive.get_total_wallet_pnl_over_time()
 
 # %%
-pool_info
+print(pool_info)
 # %%
 ticker
 # %%
@@ -114,6 +128,8 @@ total_wallet_pnl_over_time
 # TODO these should be in a notebook for plotting
 pool_info.plot(x="block_number", y="longs_outstanding", kind="line")
 # Change wallet_address to be columns for plotting
-total_wallet_pnl_over_time.pivot(index="block_number", columns="username", values="pnl").plot()
+total_wallet_pnl_over_time.pivot(
+    index="block_number", columns="username", values="pnl"
+).plot()
 
 # %%
