@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import subprocess
+import time
 from pathlib import Path
 from typing import Iterator
 
@@ -85,15 +86,19 @@ def psql_docker() -> Iterator[PostgresConfig]:
     )
     assert isinstance(container, Container)
 
-    # Get version of postgres
+    # Get version of postgres, retry until we get a response
     connected = False
     version_out = ""
-    while not connected:
+    for _ in range(10):
         try:
             version_out = container.exec_run("postgres -V")[1]
             connected = True
+            break
         except APIError:
             logging.warning("No postgres connection, retrying")
+            time.sleep(1)
+    if not connected:
+        raise ValueError("Could not find postgres version")
     postgres_version = re.search(r"[0-9]+\.[0-9]+", str(version_out))
     if postgres_version is None:
         raise ValueError("Could not find postgres version")
