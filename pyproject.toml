@@ -56,7 +56,7 @@ select = ["A", "D", "I", "N", "PL"]
 # PLR0913 : Too many arguments to function call (X > 5)
 # PLR0915 : Too many statements (X > 50)
 # PLR0912 : Too many branches (X > 12)
-ignore = ["D203", "D213", "D415", "D416", "PLR0913", "PLR0915", "PLR0912"]
+ignore = ["D203", "D213", "D415", "D416"]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 fixable = ["A", "D", "I", "N", "PL"]

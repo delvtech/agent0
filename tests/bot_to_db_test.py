@@ -43,6 +43,7 @@ class TestBotToDb:
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
+    # ruff: noqa: PLR0915 (Too many statements)
     @pytest.mark.anvil
     def test_bot_to_db(
         self,
