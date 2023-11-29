@@ -10,13 +10,35 @@ from hypertypes import Checkpoint, Fees, PoolConfig, PoolInfo
 from hypertypes.fixedpoint_types import CheckpointFP, FeesFP, PoolConfigFP, PoolInfoFP
 
 
-def camel_to_snake(snake_string: str) -> str:
-    """Convert camel case string to snake case string."""
-    return re.sub(r"(?<!^)(?=[A-Z])", "_", snake_string).lower()
+def camel_to_snake(camel_string: str) -> str:
+    """Convert camel case string to snake case string.
+
+    Arguments
+    ---------
+    camel_string: str
+        The string to convert.
+
+    Returns
+    -------
+    str
+        The snake case string.
+    """
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", camel_string).lower()
 
 
 def snake_to_camel(snake_string: str) -> str:
-    """Convert snake case string to camel case string."""
+    """Convert snake case string to camel case string.
+
+    Arguments
+    ---------
+    snake_string: str
+        The string to convert.
+
+    Returns
+    -------
+    str
+        The camel case string.
+    """
     # First capitalize the letters following the underscores and remove underscores
     camel_string = re.sub(r"_([a-z])", lambda x: x.group(1).upper(), snake_string)
     # Ensure the first character is lowercase to achieve lowerCamelCase
@@ -28,12 +50,12 @@ def pool_info_to_fixedpoint(hypertypes_pool_info: PoolInfo) -> PoolInfoFP:
 
     Arguments
     ---------
-    pool_info : hypertypes.IHyperdriveTypes.PoolInfo
+    hypertypes_pool_info: PoolInfo
         The hyperdrive pool info.
 
     Returns
     -------
-    ethpy.hyperdrive.state.PoolInfo
+    PoolInfoFP
         A dataclass containing the Hyperdrive pool info with modified types.
         This dataclass has the same attributes as the Hyperdrive ABI, with these changes:
           - The attribute names are converted to snake_case.
@@ -49,12 +71,12 @@ def fixedpoint_to_pool_info(fixedpoint_pool_info: PoolInfoFP) -> PoolInfo:
 
     Arguments
     ---------
-    pool_info : ethpy.hyperdrive.state.PoolInfo
+    fixedpoint_pool_info: PoolInfoFP
         The hyperdrive pool info.
 
     Returns
     -------
-    hypertypes.IHyperdriveTypes.PoolInfo
+    PoolInfo
         A dataclass containing the Hyperdrive pool info with derived types from Pypechain.
     """
     return PoolInfo(
@@ -69,12 +91,12 @@ def checkpoint_to_fixedpoint(
 
     Arguments
     ---------
-    checkpoint : hypertypes.IHyperdriveTypes.Checkpoint
+    hypertypes_checkpoint: Checkpoint
         A checkpoint object with sharePrice and exposure fields with derived types from Pypechain.
 
     Returns
     -------
-    ethpy.hyperdrive.state.Checkpoint
+    CheckpointFP
         A dataclass containing the checkpoint share_price and exposure fields converted to FixedPoint.
     """
     return CheckpointFP(
@@ -89,12 +111,12 @@ def fixedpoint_to_checkpoint(
 
     Arguments
     ---------
-    checkpoint : ethpy.hyperdrive.state.Checkpoint
+    fixedpoint_checkpoint: CheckpointFP
         A checkpoint object with FixedPoint values.
 
     Returns
     -------
-    hypertypes.IHyperdriveTypes.Checkpoint
+    Checkpoint
         A dataclass containing the checkpoint share_price and exposure fields converted to integers.
     """
     return Checkpoint(
@@ -109,12 +131,12 @@ def pool_config_to_fixedpoint(
 
     Arguments
     ---------
-    pool_config : hypertypes.IHyperdriveTypes.PoolConfig
+    hypertypes_pool_config: PoolConfig
         The hyperdrive pool config.
 
     Returns
     -------
-    ethpy.hyperdrive.state.PoolConfig
+    PoolConfigFP
         A dataclass containing the Hyperdrive pool config with modified types.
         This dataclass has the same attributes as the Hyperdrive ABI, with these changes:
           - The attribute names are converted to snake_case.
@@ -146,12 +168,12 @@ def fixedpoint_to_pool_config(
 
     Arguments
     ---------
-    pool_config : ethpy.hyperdrive.state.PoolConfig
+    fixedpoint_pool_config: PoolConfigFP
         The Hyperdrive pool config in FixedPoint format.
 
     Returns
     -------
-    hypertypes.IHyperdriveTypes.PoolConfig
+    PoolConfig
         A dataclass containing the Hyperdrive PoolConfig with types specified by the ABI via Pypechain
     """
     dict_pool_config = {snake_to_camel(key): value for key, value in asdict(fixedpoint_pool_config).items()}
@@ -194,7 +216,18 @@ def fixedpoint_to_pool_config(
 def dataclass_to_dict(
     cls: PoolInfo | PoolInfoFP | PoolConfig | PoolConfigFP | Checkpoint | CheckpointFP,
 ) -> dict[str, Any]:
-    """Convert a state dataclass into a dictionary."""
+    """Convert a state dataclass into a dictionary.
+
+    Arguments
+    ---------
+    cls: PoolInfo | PoolInfoFP | PoolConfig | PoolConfigFP | Checkpoint | CheckpointFP
+        The dataclass to convert
+
+    Returns
+    -------
+    dict[str, Any]
+        The corresponding dictionary
+    """
     out_dict = {}
     for key, val in asdict(cls).items():
         match val:

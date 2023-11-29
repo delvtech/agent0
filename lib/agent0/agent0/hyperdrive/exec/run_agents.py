@@ -53,19 +53,19 @@ def run_agents(
     agent_config: list[AgentConfig]
         The list of agent configurations to run.
     account_key_config: AccountKeyConfig
-        Configuration linking to the env file for storing private keys and initial budgets.
-    develop: bool
-        Flag for development mode.
-    eth_config: EthConfig | None
-        Configuration for URIs to the rpc and artifacts. If not set, will look for addresses
-        in eth.env.
-    contract_addresses: HyperdriveAddresses | None
-        If set, will use these addresses instead of querying the artifact URI
-        defined in eth_config.
-    load_wallet_state: bool
-        If set, will connect to the db api to load wallet states from the current chain
-    liquidate: bool
-        If set, will ignore all policy settings and liquidate all open positions
+        Dataclass containing configuration options for the agent account, including keys and budgets.
+    eth_config: EthConfig | None, optional
+        Configuration for URIs to the rpc and artifacts.
+        If not set, will look for the config in eth.env.
+    contract_addresses: HyperdriveAddresses | None, optional
+        Configuration for the URIs to the Hyperdrive contract addresses.
+        If not set, will look for the addresses in eth_config.
+    load_wallet_state: bool, optional
+        If set, will connect to the db api to load wallet states from the current chain.
+        Defaults to True.
+    liquidate: bool, optional
+        If set, will ignore all policy settings and liquidate all open positions.
+        Defaults to False.
     """
     # See if develop flag is set
     develop_env = os.environ.get("DEVELOP")

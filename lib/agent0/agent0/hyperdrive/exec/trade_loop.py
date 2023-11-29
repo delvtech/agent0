@@ -21,7 +21,7 @@ from .execute_agent_trades import async_execute_agent_trades
 # TODO cleanup this function
 # pylint: disable=too-many-arguments
 def trade_if_new_block(
-    hyperdrive: HyperdriveInterface,
+    interface: HyperdriveInterface,
     agent_accounts: list[HyperdriveAgent],
     halt_on_errors: bool,
     halt_on_slippage: bool,
@@ -33,31 +33,34 @@ def trade_if_new_block(
 
     Arguments
     ---------
-    hyperdrive : HyperdriveInterface
-        The Hyperdrive API interface object
-    agent_accounts : list[HyperdriveAgent]]
-        A list of HyperdriveAgent objects that contain a wallet address and Agent for determining trades
-    halt_on_errors : bool
-        If true, raise an exception if a trade reverts. Otherwise, log a warning and move on.
+    interface: HyperdriveInterface
+        The Hyperdrive API interface object.
+    agent_accounts: list[HyperdriveAgent]]
+        A list of HyperdriveAgent objects that contain a wallet address and Agent for determining trades.
+    halt_on_errors: bool
+        If true, raise an exception if a trade reverts.
+        Otherwise, log a warning and move on.
     halt_on_slippage: bool
-        If halt_on_errors is true and halt_on_slippage is false,
-        don't raise an exception if slippage happens.
-    last_executed_block : int
-        The block number when a trade last happened
+        If halt_on_errors is true and halt_on_slippage is false, don't raise an exception if slippage happens.
+    crash_report_to_file: bool
+        Whether or not to save the crash report to a file.
+        Defaults to True.
+    last_executed_block: int
+        The block number when a trade last happened.
     liquidate: bool
-        If set, will ignore all policy settings and liquidate all open positions
+        If set, will ignore all policy settings and liquidate all open positions.
 
     Returns
     -------
     int
         The block number when a trade last happened
     """
-    latest_block = hyperdrive.web3.eth.get_block("latest")
+    latest_block = interface.web3.eth.get_block("latest")
     latest_block_number = latest_block.get("number", None)
     latest_block_timestamp = latest_block.get("timestamp", None)
     if latest_block_number is None or latest_block_timestamp is None:
         raise AssertionError("latest_block_number and latest_block_timestamp can not be None")
-    wait_for_new_block = get_wait_for_new_block(hyperdrive.web3)
+    wait_for_new_block = get_wait_for_new_block(interface.web3)
     # do trades if we don't need to wait for new block.  otherwise, wait and check for a new block
     if not wait_for_new_block or latest_block_number > last_executed_block:
         # log and show block info
@@ -65,14 +68,12 @@ def trade_if_new_block(
             "Block number: %d, Block time: %s, Price: %s, Rate: %s",
             latest_block_number,
             str(datetime.fromtimestamp(float(latest_block_timestamp))),
-            hyperdrive.calc_spot_price(),
-            hyperdrive.calc_fixed_rate(),
+            interface.calc_spot_price(),
+            interface.calc_fixed_rate(),
         )
         # To avoid jumbled print statements due to asyncio, we handle all logging and crash reporting
         # here, with inner functions returning trade results.
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(hyperdrive, agent_accounts, liquidate)
-        )
+        trade_results: list[TradeResult] = asyncio.run(async_execute_agent_trades(interface, agent_accounts, liquidate))
         last_executed_block = latest_block_number
 
         for trade_result in trade_results:
@@ -99,7 +100,7 @@ def trade_if_new_block(
                     # We only get anvil state dump here, since it's an on chain call
                     # and we don't want to do it when e.g., slippage happens
                     if crash_report_to_file:
-                        trade_result.anvil_state = get_anvil_state_dump(hyperdrive.web3)
+                        trade_result.anvil_state = get_anvil_state_dump(interface.web3)
                     # Defaults to CRITICAL
                     log_hyperdrive_crash_report(trade_result, crash_report_to_file=crash_report_to_file)
 
@@ -120,7 +121,7 @@ def get_wait_for_new_block(web3: Web3) -> bool:
 
     Arguments
     ---------
-    web3 : Web3
+    web3: Web3
         web3.py instantiation.
 
     Returns

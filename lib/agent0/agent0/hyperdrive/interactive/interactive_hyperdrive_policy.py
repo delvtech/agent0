@@ -31,22 +31,36 @@ class InteractiveHyperdrivePolicy(HyperdrivePolicy):
         self.next_maturity_time = None
         super().__init__(budget, None)
 
-    def set_next_action(self, action: HyperdriveActionType, trade_amount: FixedPoint, maturity_time: int | None = None):
-        """Set the next action to execute when the main trading loop is called."""
+    def set_next_action(
+        self, action: HyperdriveActionType, trade_amount: FixedPoint, maturity_time: int | None = None
+    ) -> None:
+        """Set the next action to execute when the main trading loop is called.
+
+        Arguments
+        ---------
+        action: HyperdriveActionType
+            The action type to be performed.
+        trade_amount: FixedPoint
+            A FixedPoint value indicating how much should be traded.
+        maturity_time: int | None, optional
+            The optional maturity time in epoch seconds.
+            This is required for certain trade types, such as closing longs and shorts.
+            Otherwise it can be omitted and will be set to the mint time plus the position duration.
+        """
         self.next_action = action
         self.next_trade_amount = trade_amount
         self.next_maturity_time = maturity_time
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Specify actions.
 
         Arguments
         ---------
-        hyperdrive : HyperdriveInterface
+        interface: HyperdriveInterface
             Interface for the market on which this agent will be executing trades (MarketActions)
-        wallet : HyperdriveWallet
+        wallet: HyperdriveWallet
             agent's wallet
 
         Returns

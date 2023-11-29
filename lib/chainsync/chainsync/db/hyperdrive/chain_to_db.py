@@ -19,20 +19,20 @@ from .interface import add_checkpoint_infos, add_pool_config, add_pool_infos, ad
 
 
 def init_data_chain_to_db(
-    hyperdrive: HyperdriveInterface,
+    interface: HyperdriveInterface,
     session: Session,
 ) -> None:
-    """Function to query and insert pool config to dashboard
+    """Function to query and insert pool config to dashboard.
 
     Arguments
     ---------
-    hyperdrive_contract: Contract
-        The hyperdrive contract
+    interface: HyperdriveInterface
+        The hyperdrive interface object.
     session: Session
         The database session
     """
-    pool_config_dict = asdict(hyperdrive.current_pool_state.pool_config)
-    pool_config_dict["contract_address"] = hyperdrive.addresses
+    pool_config_dict = asdict(interface.current_pool_state.pool_config)
+    pool_config_dict["contract_address"] = interface.addresses
     fees = pool_config_dict["fees"]
     pool_config_dict["curve_fee"] = fees["curve"]
     pool_config_dict["flat_fee"] = fees["flat"]
@@ -42,19 +42,19 @@ def init_data_chain_to_db(
     add_pool_config(pool_config_db_obj, session)
 
 
-def data_chain_to_db(hyperdrive: HyperdriveInterface, block: BlockData, session: Session) -> None:
+def data_chain_to_db(interface: HyperdriveInterface, block: BlockData, session: Session) -> None:
     """Function to query and insert data to dashboard.
 
     Arguments
     ---------
-    hyperdrive : HyperdriveInterface
+    interface: HyperdriveInterface
         Interface for the market on which this agent will be executing trades (MarketActions).
-    block : BlockData
+    block: BlockData
         The block to query.
-    session : Session
+    session: Session
         The database session.
     """
-    pool_state = hyperdrive.get_hyperdrive_state(block)
+    pool_state = interface.get_hyperdrive_state(block)
 
     ## Query and add block_checkpoint_info
     checkpoint_dict = asdict(pool_state.checkpoint)
@@ -67,10 +67,10 @@ def data_chain_to_db(hyperdrive: HyperdriveInterface, block: BlockData, session:
     block_transactions = None
     wallet_deltas = None
     transactions = fetch_contract_transactions_for_block(
-        hyperdrive.web3, hyperdrive.hyperdrive_contract, pool_state.block_number
+        interface.web3, interface.hyperdrive_contract, pool_state.block_number
     )
     block_transactions, wallet_deltas = convert_hyperdrive_transactions_for_block(
-        hyperdrive.web3, hyperdrive.hyperdrive_contract, transactions
+        interface.web3, interface.hyperdrive_contract, transactions
     )
     add_transactions(block_transactions, session)
     add_wallet_deltas(wallet_deltas, session)

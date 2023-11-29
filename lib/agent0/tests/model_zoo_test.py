@@ -34,12 +34,3 @@ class TestModelZoo:
         zoo_description = Random.description()  # access class method
         str_output += zoo_description
         logging.info(str_output)
-
-    def test_base_policy_describe(self):
-        """Test the describe method for the BasePolicy class."""
-        str_output = "Testing BasePolicy describe\n"
-        base_policy = BasePolicy
-        with pytest.raises(NotImplementedError):
-            base_policy_description = base_policy.describe()
-            str_output += base_policy_description
-            logging.info(str_output)

@@ -4,11 +4,10 @@ from __future__ import annotations
 import logging
 
 import pandas as pd
+from chainsync.db.base import get_latest_block_number_from_table
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from sqlalchemy import exc, func
 from sqlalchemy.orm import Session
-
-from chainsync.db.base import get_latest_block_number_from_table
 
 from .schema import (
     CheckpointInfo,
@@ -28,9 +27,9 @@ def add_transactions(transactions: list[HyperdriveTransaction], session: Session
 
     Arguments
     ---------
-    transactions : list[HyperdriveTransaction]
+    transactions: list[HyperdriveTransaction]
         A list of HyperdriveTransaction objects to insert into postgres
-    session : Session
+    session: Session
         The initialized session object
     """
     for transaction in transactions:
@@ -48,10 +47,12 @@ def get_pool_config(session: Session, contract_address: str | None = None, coerc
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    contract_address : str | None, optional
+    contract_address: str | None, optional
         The contract_address to filter the results on. Return all if None
+    coerce_float: bool
+        If True, will coerce all numeric columns to float
 
     Returns
     -------
@@ -71,9 +72,9 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
 
     Arguments
     ---------
-    pool_config : PoolConfig
+    pool_config: PoolConfig
         A PoolConfig object to insert into postgres
-    session : Session
+    session: Session
         The initialized session object
     """
     # NOTE the logic below is not thread safe, i.e., a race condition can exists
@@ -109,9 +110,9 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
 
     Arguments
     ---------
-    pool_infos : list[PoolInfo]
+    pool_infos: list[PoolInfo]
         A list of PoolInfo objects to insert into postgres
-    session : Session
+    session: Session
         The initialized session object
     """
     for pool_info in pool_infos:
@@ -129,9 +130,9 @@ def add_checkpoint_infos(checkpoint_infos: list[CheckpointInfo], session: Sessio
 
     Arguments
     ---------
-    checkpoint_infos : list[CheckpointInfo]
+    checkpoint_infos: list[CheckpointInfo]
         A list of CheckpointInfo objects to insert into postgres
-    session : Session
+    session: Session
         The initialized session object
     """
     for checkpoint_info in checkpoint_infos:
@@ -148,9 +149,9 @@ def add_wallet_deltas(wallet_deltas: list[WalletDelta], session: Session) -> Non
 
     Arguments
     ---------
-    transactions : list[WalletDelta]
+    wallet_deltas: list[WalletDelta]
         A list of WalletDelta objects to insert into postgres
-    session : Session
+    session: Session
         The initialized session object
     """
     for wallet_delta in wallet_deltas:
@@ -168,7 +169,7 @@ def get_latest_block_number_from_pool_info_table(session: Session) -> int:
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
 
     Returns
@@ -184,7 +185,7 @@ def get_latest_block_number_from_analysis_table(session: Session) -> int:
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
 
     Returns
@@ -202,15 +203,15 @@ def get_pool_info(
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    start_block : int | None, optional
+    start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block : int | None, optional
+    end_block: int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    coerce_float : bool
+    coerce_float: bool, optional
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
@@ -247,15 +248,15 @@ def get_transactions(
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    start_block : int | None
+    start_block: int | None
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block : int | None
+    end_block: int | None
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    coerce_float : bool
+    coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
@@ -285,21 +286,21 @@ def get_checkpoint_info(
     """Get all info associated with a given checkpoint.
 
     This includes
-    - `share_price` : The share price of the first transaction in the checkpoint.
-    - `longSharePrice` : The weighted average of the share prices that all longs in the checkpoint were opened at.
-    - `exposure` : The exposure for that checkpoint.
+    - `share_price`: The share price of the first transaction in the checkpoint.
+    - `longSharePrice`: The weighted average of the share prices that all longs in the checkpoint were opened at.
+    - `exposure`: The exposure for that checkpoint.
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    start_block : int | None, optional
+    start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block : int | None, optional
+    end_block: int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    coerce_float : bool
+    coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
@@ -337,17 +338,17 @@ def get_wallet_deltas(
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    start_block : int | None, optional
+    start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block : int | None, optional
+    end_block: int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    return_timestamp : bool, optional
+    return_timestamp: bool, optional
         Gets timestamps when looking at pool analysis. Defaults to True
-    coerce_float : bool
+    coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
@@ -385,15 +386,15 @@ def get_all_traders(
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    start_block : int | None, optional
+    start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block : int | None, optional
+    end_block: int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    coerce_float : bool
+    coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
@@ -430,8 +431,8 @@ def add_current_wallet(current_wallet: list[CurrentWallet], session: Session) ->
 
     Arguments
     ---------
-    wallet_infos: list[WalletInfo]
-        A list of WalletInfo objects to insert into postgres
+    current_wallet: list[CurrentWallet]
+        A list of CurrentWallet objects to insert into postgres
     session: Session
         The initialized session object
     """
@@ -452,14 +453,14 @@ def get_current_wallet(
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    end_block : int | None, optional
+    end_block: int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    wallet_address : list[str] | None, optional
+    wallet_address: list[str] | None, optional
         The wallet addresses to filter the query on
-    coerce_float : bool
+    coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
@@ -521,17 +522,17 @@ def get_pool_analysis(
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    start_block : int | None, optional
+    start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block : int | None, optional
+    end_block: int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    return_timestamp : bool, optional
+    return_timestamp: bool, optional
         Gets timestamps when looking at pool analysis. Defaults to True
-    coerce_float : bool
+    coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
@@ -576,17 +577,17 @@ def get_ticker(
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    start_block : int | None, optional
+    start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block : int | None, optional
+    end_block: int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    wallet_address : list[str] | None, optional
+    wallet_address: list[str] | None, optional
         The wallet addresses to filter the query on
-    coerce_float : bool
+    coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
@@ -630,19 +631,19 @@ def get_wallet_pnl(
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    start_block : int | None, optional
+    start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block : int | None, optional
+    end_block: int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    wallet_address : list[str] | None, optional
+    wallet_address: list[str] | None, optional
         The wallet addresses to filter the query on. Returns all if None.
-    return_timestamp : bool, optional
+    return_timestamp: bool, optional
         Returns the timestamp from the pool info table if True. Defaults to True.
-    coerce_float : bool
+    coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
@@ -689,17 +690,17 @@ def get_total_wallet_pnl_over_time(
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    start_block : int | None, optional
+    start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block : int | None, optional
+    end_block: int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    wallet_address : list[str] | None, optional
+    wallet_address: list[str] | None, optional
         The wallet addresses to filter the query on. Returns all if None.
-    coerce_float : bool
+    coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns
@@ -751,17 +752,17 @@ def get_wallet_positions_over_time(
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    start_block : int | None, optional
+    start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block : int | None, optional
+    end_block: int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3]
-    wallet_address : list[str] | None, optional
+    wallet_address: list[str] | None, optional
         The wallet addresses to filter the query on. Returns all if None.
-    coerce_float : bool
+    coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
     Returns

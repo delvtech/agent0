@@ -22,13 +22,16 @@ def load_all_abis(abi_folder: str, return_bytecode: bool = False) -> dict | tupl
 
     Arguments
     ---------
-    abi_folder : str
+    abi_folder: str
         The local directory that contains all abi json
+    return_bytecode: bool
+        Whether to also return the bytecode of the contract
 
     Returns
     -------
-    dict
-        A dictionary with keys for each abi filename and value is the "abi" field of the JSON decoded file
+    dict | tuple[dict, dict]
+        A dictionary with keys for each abi filename and value is the "abi" field of the JSON decoded file.
+        Also returns the bytecode if return_bytecode is True.
     """
     abis = {}
     bytecodes = {}
@@ -56,13 +59,15 @@ def load_abi_from_file(file_name: str, return_bytecode: bool = False) -> dict | 
 
     Arguments
     ---------
-    abi_folder: str
-        The local directory that contains all abi json
+    file_name: str
+        The file name of the abi json.
+    return_bytecode: bool
+        Whether to also return the bytecode of the contract
 
     Returns
     -------
     dict
-        A dictionary containing "abi" field of the JSON decoded file
+       A dictionary containing "abi" field of the JSON decoded file
     """
     with open(file_name, mode="r", encoding="UTF-8") as file:
         data = json.load(file)

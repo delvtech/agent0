@@ -12,20 +12,26 @@ def initialize_web3_with_http_provider(
 ) -> Web3:
     """Initialize a Web3 instance using an HTTP provider and inject a geth Proof of Authority (poa) middleware.
 
+    .. note::
+        The geth_poa_middleware is required to connect to geth --dev or the Goerli public network.
+        It may also be needed for other EVM compatible blockchains like Polygon or BNB Chain (Binance Smart Chain).
+        See more `here <https://web3py.readthedocs.io/en/stable/middleware.html#proof-of-authority>`_.
+
     Arguments
     ---------
     ethereum_node: URI | str
         Address of the http provider
-    request_kwargs: dict
+    request_kwargs: dict | None, optional
         The HTTPProvider uses the python requests library for making requests.
         If you would like to modify how requests are made,
         you can use the request_kwargs to do so.
+    reset_provider: bool, optional
+        If true, will call anvil_reset before returning the Web3 instance.
 
-    Notes
-    -----
-    The geth_poa_middleware is required to connect to geth --dev or the Goerli public network.
-    It may also be needed for other EVM compatible blockchains like Polygon or BNB Chain (Binance Smart Chain).
-    See more `here <https://web3py.readthedocs.io/en/stable/middleware.html#proof-of-authority>`_.
+    Returns
+    -------
+    Web3
+        The connected web3 instance
     """
     if request_kwargs is None:
         request_kwargs = {}

@@ -50,39 +50,39 @@ def deploy_hyperdrive_from_factory(
 
     Arguments
     ---------
-    rpc_uri : str
+    rpc_uri: str
         The URI of the local RPC node.
-    abi_folder : str
+    abi_folder: str
         The local directory that contains all ABI JSON files.
-    deployer_private_key : str
+    deployer_private_key: str
         Private key for the funded wallet for deploying Hyperdrive.
-    initial_liquidity : FixedPoint
+    initial_liquidity: FixedPoint
         The amount of money to be provided by the `deploy_account` for initial pool liquidity.
     initial_variable_rate: FixedPoint
         The starting variable rate for an underlying yield source.
-    initial_fixed_rate : FixedPoint
+    initial_fixed_rate: FixedPoint
         The fixed rate of the pool on initialization.
-    pool_config : PoolConfig
+    pool_config: PoolConfig
         The configuration for initializing hyperdrive.
         The type is generated from the Hyperdrive ABI using Pypechain.
-    max_fees : Fees
+    max_fees: Fees
         The maximum value for the setup fees.
 
     Returns
     -------
     LocalHyperdriveChain
         A named tuple with the following fields:
-            web3 : Web3
+            web3: Web3
                 Web3 provider object.
-            deploy_account : LocalAccount
+            deploy_account: LocalAccount
                 The local account that deploys and initializes hyperdrive.
             hyperdrive_contract_addresses: HyperdriveAddresses
                 The hyperdrive contract addresses.
-            hyperdrive_contract : Contract
+            hyperdrive_contract: Contract
                 Web3 contract instance for the hyperdrive contract.
-            hyperdrive_factory_contract : Contract
+            hyperdrive_factory_contract: Contract
                 Web3 contract instance for the hyperdrive factory contract.
-            base_token_contract : Contract
+            base_token_contract: Contract
                 Web3 contract instance for the base token contract.
     """
     # Contract calls use the web3.py interface
@@ -152,7 +152,7 @@ def _dataclass_to_tuple(instance: Any) -> tuple:
 
     Arguments
     ---------
-    instance : dataclass
+    instance: dataclass
         A dataclass, whose fields could contain other dataclasses.
 
     Returns
@@ -170,9 +170,9 @@ def _initialize_deployment_account(web3: Web3, account_private_key: str) -> Loca
 
     Arguments
     ---------
-    web3 : Web3
+    web3: Web3
         Web3 provider object.
-    account_private_key : str
+    account_private_key: str
         Private key for the funded wallet for deploying Hyperdrive.
 
     Returns
@@ -204,25 +204,25 @@ def _deploy_hyperdrive_factory(
 
     Arguments
     ---------
-    web3 : Web3
+    web3: Web3
         Web3 provider object.
-    deploy_account_addr : ChecksumAddress
+    deploy_account_addr: ChecksumAddress
         The address of the account that's deploying the contract.
-    abis : dict
+    abis: dict
         A dictionary, keyed by the Hyperdrive ABI filename, containing the ABI JSON dictionary for each file.
-    bytecodes : dict
+    bytecodes: dict
         A dictionary, keyed by the Hyperdrive ABI filename, containing the contract bytecode for each file.
-    initial_variable_rate : FixedPoint
+    initial_variable_rate: FixedPoint
         The starting variable rate for an underlying yield source.
-    pool_config : PoolConfig
+    pool_config: PoolConfig
         The configuration for initializing hyperdrive.
         The type is generated from the Hyperdrive ABI using Pypechain.
-    max_fees : Fees
+    max_fees: Fees
         The maximum value for the setup fees.
 
     Returns
     -------
-    (base_token_contract, factory_token_contract, pool_contract_address) : tuple[Contract, Contract, ChecksumAddress]
+    (base_token_contract, factory_token_contract, pool_contract_address): tuple[Contract, Contract, ChecksumAddress]
         Containing the deployed base token, factory, and the pool contracts/addresses.
     """
     # args = [name, symbol, decimals, admin_addr, isCompetitionMode]
@@ -311,15 +311,15 @@ def _mint_and_approve(
 
     Arguments
     ---------
-    web3 : Web3
+    web3: Web3
         Web3 provider object.
-    funding_account : LocalAccount
+    funding_account: LocalAccount
         A Web3 LocalAccount for the given private key.
-    funding_contract : Contract
+    funding_contract: Contract
         Web3 contract instance for the contract used to mint tokens.
-    contract_to_approve : Contract
+    contract_to_approve: Contract
         Web3 contract instance for the contract that needs approval from the funding contract.
-    mint_amount : FixedPoint
+    mint_amount: FixedPoint
         The amount to mint and approve.
 
     Returns
@@ -361,20 +361,20 @@ def _deploy_and_initialize_hyperdrive_pool(
 
     Arguments
     ---------
-    web3 : Web3
+    web3: Web3
         Web3 provider object.
-    deploy_account : LocalAccount
+    deploy_account: LocalAccount
         A Web3 LocalAccount for the given private key.
-    initial_liquidity : FixedPoint
+    initial_liquidity: FixedPoint
         The amount of money to be provided by the `deploy_account` for initial pool liquidity.
-    initial_fixed_rate : FixedPoint
+    initial_fixed_rate: FixedPoint
         The fixed rate of the pool on initialization.
-    pool_contract_addr : ChecksumAddress
+    pool_contract_addr: ChecksumAddress
         The address of the pool contract.
-    pool_config : PoolConfig
+    pool_config: PoolConfig
         The configuration for initializing hyperdrive.
         The type is generated from the Hyperdrive ABI using Pypechain.
-    factory_contract : Contract
+    factory_contract: Contract
         The hyperdrive factory contract.
 
     Returns

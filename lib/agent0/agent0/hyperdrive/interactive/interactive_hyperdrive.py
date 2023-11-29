@@ -69,19 +69,19 @@ class InteractiveHyperdrive:
 
         Attributes
         ----------
-        initial_liquidity : FixedPoint
+        initial_liquidity: FixedPoint
             The amount of money to be provided by the `deploy_account` for initial pool liquidity.
         initial_variable_rate: FixedPoint
             The starting variable rate for an underlying yield source.
-        initial_fixed_rate : FixedPoint
+        initial_fixed_rate: FixedPoint
             The fixed rate of the pool on initialization.
-        initial_share_price : FixedPoint
+        initial_share_price: FixedPoint
             The initial share price
-        minimum_share_reserves : FixedPoint
+        minimum_share_reserves: FixedPoint
             The minimum share reserves
-        minimum_transaction_amount : FixedPoint
+        minimum_transaction_amount: FixedPoint
             The minimum amount of tokens that a position can be opened or closed with.
-        precision_threshold : int
+        precision_threshold: int
             The amount of precision expected to lose due to exponentiation implementation.
         position_duration: int
             The duration of a position prior to maturity (in seconds)
@@ -235,6 +235,10 @@ class InteractiveHyperdrive:
             The amount of ETH to fund the agent with. Defaults to 10.
         name: str
             The name of the agent. Defaults to the wallet address.
+
+        Returns
+        -------
+        InteractiveHyperdriveAgent
         """
         if base is None:
             base = FixedPoint(0)
@@ -252,7 +256,7 @@ class InteractiveHyperdrive:
 
         Arguments
         ---------
-        coerce_float : bool
+        coerce_float: bool
             If True, will coerce underlying Decimals to floats.
 
         Returns
@@ -269,7 +273,7 @@ class InteractiveHyperdrive:
 
         Arguments
         ---------
-        coerce_float : bool
+        coerce_float: bool
             If True, will coerce underlying Decimals to floats.
 
         Returns
@@ -287,7 +291,7 @@ class InteractiveHyperdrive:
 
         Arguments
         ---------
-        coerce_float : bool
+        coerce_float: bool
             If True, will coerce underlying Decimals to floats.
 
         Returns
@@ -326,29 +330,29 @@ class InteractiveHyperdrive:
 
         Arguments
         ---------
-        coerce_float : bool
+        coerce_float: bool
             If True, will coerce underlying Decimals to floats.
 
         Returns
         -------
         pd.Dataframe
-            timestamp : pd.Timestamp
+            timestamp: pd.Timestamp
                 The block timestamp of the entry.
-            block_number : int
+            block_number: int
                 The block number of the entry.
-            username : str
+            username: str
                 The username of the entry.
-            wallet_address : str
+            wallet_address: str
                 The wallet address of the entry.
-            token_type : str
+            token_type: str
                 A string specifying the token type. Longs and shorts are encoded as `LONG-{maturity_time}`.
-            position : Decimal | float
+            position: Decimal | float
                 The current value of the token of the agent at the specified block number.
             pnl: Decimal | float
                 The current pnl of the token of the agent at the specified block number.
-            base_token_type : str
+            base_token_type: str
                 A string specifying the type of the token.
-            maturity_time : Decimal | float
+            maturity_time: Decimal | float
                 The maturity time of the token in epoch seconds. Can be NaN to denote not applicable.
             latest_block_update: int
                 The last block number that the position was updated.
@@ -386,23 +390,23 @@ class InteractiveHyperdrive:
 
         Arguments
         ---------
-        coerce_float : bool
+        coerce_float: bool
             If True, will coerce underlying Decimals to floats.
 
         Returns
         -------
         pd.Dataframe
-            timestamp : pd.Timestamp
+            timestamp: pd.Timestamp
                 The block timestamp of the entry.
-            block_number : int
+            block_number: int
                 The block number of the entry.
-            username : str
+            username: str
                 The username of the entry.
-            wallet_address : str
+            wallet_address: str
                 The wallet address of the entry.
-            trade_type : str
+            trade_type: str
                 The trade that the agent made.
-            token_diffs : list[str]
+            token_diffs: list[str]
                 A list of token diffs for each trade. Each token diff is encoded as "<base_token_type>: <amount>"
         """
         out = get_ticker(self.db_session, coerce_float=coerce_float).drop("id", axis=1)
@@ -425,29 +429,29 @@ class InteractiveHyperdrive:
 
         Arguments
         ---------
-        coerce_float : bool
+        coerce_float: bool
             If True, will coerce underlying Decimals to floats.
 
         Returns
         -------
         pd.Dataframe
-            timestamp : pd.Timestamp
+            timestamp: pd.Timestamp
                 The block timestamp of the entry.
-            block_number : int
+            block_number: int
                 The block number of the entry.
-            username : str
+            username: str
                 The username of the entry.
-            wallet_address : str
+            wallet_address: str
                 The wallet address of the entry.
-            token_type : str
+            token_type: str
                 A string specifying the token type. Longs and shorts are encoded as `LONG-{maturity_time}`.
-            position : Decimal | float
+            position: Decimal | float
                 The current value of the token of the agent at the specified block number.
             delta: Decimal | float
                 The change in value of the token of the agent at the specified block number.
-            base_token_type : str
+            base_token_type: str
                 A string specifying the type of the token.
-            maturity_time : Decimal | float
+            maturity_time: Decimal | float
                 The maturity time of the token in epoch seconds. Can be NaN to denote not applicable.
             transaction_hash: str
                 The transaction hash that resulted in the deltas.
@@ -485,21 +489,21 @@ class InteractiveHyperdrive:
 
         Arguments
         ---------
-        coerce_float : bool
+        coerce_float: bool
             If True, will coerce underlying Decimals to floats.
 
         Returns
         -------
         pd.Dataframe
-            timestamp : pd.Timestamp
+            timestamp: pd.Timestamp
                 The block timestamp of the entry.
-            block_number : int
+            block_number: int
                 The block number of the entry.
-            username : str
+            username: str
                 The username of the entry.
-            wallet_address : str
+            wallet_address: str
                 The wallet address of the entry.
-            pnl : Decimal | float
+            pnl: Decimal | float
                 The total pnl of the agent at the specified block number.
         """
         out = get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)

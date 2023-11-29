@@ -37,9 +37,9 @@ def acquire_data(
 
     Arguments
     ---------
-    start_block : int
+    start_block: int
         The starting block to filter the query on
-    lookback_block_limit : int
+    lookback_block_limit: int
         The maximum number of blocks to look back when filling in missing data
     eth_config: EthConfig | None
         Configuration for URIs to the rpc and artifacts. If not set, will look for addresses

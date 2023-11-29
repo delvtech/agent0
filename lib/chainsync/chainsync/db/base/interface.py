@@ -8,14 +8,13 @@ from typing import Type, cast
 
 import pandas as pd
 import sqlalchemy
+from chainsync import PostgresConfig, build_postgres_config
 from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engine, exc, func, inspect
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql import text
 from sqlalchemy_utils import create_database, database_exists
-
-from chainsync import PostgresConfig, build_postgres_config
 
 from .schema import AddrToUsername, Base, UsernameToUser
 
@@ -28,7 +27,7 @@ def query_tables(session: Session) -> list[str]:
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
 
     Returns
@@ -46,9 +45,9 @@ def drop_table(session: Session, table_name: str) -> None:
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    table_name : str
+    table_name: str
         The name of the table to be dropped
     """
     metadata = MetaData()
@@ -125,7 +124,7 @@ def initialize_session(
 
     Returns
     -------
-    session : Session
+    session: Session
         The initialized session object
     """
     engine = initialize_engine(postgres_config, ensure_database_created)
@@ -186,13 +185,13 @@ def add_addr_to_username(
 
     Arguments
     ---------
-    username : str
+    username: str
         The logical username to attach to the wallet address
-    addresses : list[str] | str
+    addresses: list[str] | str
         A single or list of wallet addresses to map to the username
-    session : Session
+    session: Session
         The initialized session object
-    user_suffix : str
+    user_suffix: str
         An optional suffix to add to the username mapping
     force_update: bool
         If true and an existing username is found, will overwrite
@@ -233,13 +232,13 @@ def add_username_to_user(user: str, username: str, session: Session, force_updat
 
     Arguments
     ---------
-    user : str
+    user: str
         The single user to attach a username to
     username: str
         A single or list of wallet addresses to map to the username
-    session : Session
+    session: Session
         The initialized session object
-    user_suffix : str
+    user_suffix: str
         An optional suffix to add to the username mapping
     force_update: bool
         If true and an existing username is found, will overwrite
@@ -275,9 +274,9 @@ def get_addr_to_username(session: Session, address: str | None = None) -> pd.Dat
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    address : str | None, optional
+    address: str | None, optional
         The wallet address to filter the results on. Return all if None
 
     Returns
@@ -296,9 +295,9 @@ def get_username_to_user(session: Session, username: str | None = None) -> pd.Da
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    address : str | None, optional
+    address: str | None, optional
         The wallet address to filter the results on. Return all if None
 
     Returns
@@ -320,7 +319,7 @@ class TableWithBlockNumber(Base):
     @declared_attr
     # has to be camelCase to match table column name
     # pylint: disable=invalid-name
-    def block_number(self):
+    def block_number(self) -> Column:
         """Stubbed block_number column."""
         return Column(String)
 
@@ -330,9 +329,9 @@ def get_latest_block_number_from_table(table_obj: Type[Base], session: Session) 
 
     Arguments
     ---------
-    table_obj : Type[Base]
+    table_obj: Type[Base]
         The sqlalchemy class that contains the block_number column
-    session : Session
+    session: Session
         The initialized session object
 
     Returns

@@ -84,15 +84,15 @@ class Deterministic(HyperdrivePolicy):
         super().__init__(budget, rng)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Specify actions.
 
         Arguments
         ---------
-        hyperdrive : HyperdriveInterface
+        interface: HyperdriveInterface
             Interface for the market on which this agent will be executing trades (MarketActions)
-        wallet : HyperdriveWallet
+        wallet: HyperdriveWallet
             agent's wallet
 
         Returns

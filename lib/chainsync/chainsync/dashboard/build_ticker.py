@@ -9,13 +9,17 @@ def build_ticker(ticker_data: pd.DataFrame, user_map: pd.DataFrame) -> pd.DataFr
 
     Arguments
     ---------
-    data: pd.DataFrame
-        The dataframe resulting from get_transactions
+    ticket_data: pd.DataFrame
+        The dataframe resulting from get_transactions.
+    user_map: pd.DataFrame
+        A dataframe with 5 columns (address, abbr_address, username, user, format_name).
+        This is the output of :meth:`chainsync.dashboard.build_user_mapping`.
+
 
     Returns
     -------
     pd.DataFrame
-        The filtered transaction data based on what we want to view in the ticker
+        The filtered transaction data based on what we want to view in the ticker.
     """
     # Gather other information from other tables
     mapped_addrs = map_addresses(ticker_data["wallet_address"], user_map)

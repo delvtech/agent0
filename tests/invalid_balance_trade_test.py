@@ -48,9 +48,23 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Remove liquidity."""
+        """Remove liquidity.
+
+        Arguments
+        ---------
+        interface: HyperdriveInterface
+            The trading market interface.
+        wallet : HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         # Remove non-existing Liquidity
@@ -84,9 +98,23 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Close long."""
+        """Close long.
+
+        Arguments
+        ---------
+        interface: HyperdriveInterface
+            The trading market interface.
+        wallet : HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         # Closing non-existent long
@@ -122,9 +150,23 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Close short."""
+        """Close short.
+
+        Arguments
+        ---------
+        interface: HyperdriveInterface
+            The trading market interface.
+        wallet : HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         # Closing non-existent short
@@ -160,9 +202,23 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Redeem withdraw shares."""
+        """Redeem withdraw shares.
+
+        Arguments
+        ---------
+        interface: HyperdriveInterface
+            The trading market interface.
+        wallet : HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         # Redeem non-existent withdrawal shares
@@ -198,9 +254,23 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Alternate between adding and removing lqiuidity.."""
+        """Alternate between adding and removing liquidity.
+
+        Arguments
+        ---------
+        interface: HyperdriveInterface
+            The trading market interface.
+        wallet : HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -252,9 +322,23 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Alternate between open and close long."""
+        """Alternate between open and close long.
+
+        Arguments
+        ---------
+        interface: HyperdriveInterface
+            The trading market interface.
+        wallet : HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -311,9 +395,23 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Alternate between open and close short."""
+        """Alternate between open and close short.
+
+        Arguments
+        ---------
+        interface: HyperdriveInterface
+            The trading market interface.
+        wallet : HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -370,9 +468,23 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Alternate between add liquidity, open long, remove liquidity, and redeem withdrawal shares."""
+        """Alternate between add liquidity, open long, remove liquidity, and redeem withdrawal shares.
+
+        Arguments
+        ---------
+        interface: HyperdriveInterface
+            The trading market interface.
+        wallet : HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -457,9 +569,23 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
         super().__init__(budget, rng, slippage_tolerance)
 
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Alternate between add liquidity, open long, remove liquidity, and redeem withdrawal shares."""
+        """Alternate between add liquidity, open long, remove liquidity, and redeem withdrawal shares.
+
+        Arguments
+        ---------
+        interface: HyperdriveInterface
+            The trading market interface.
+        wallet : Wallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False

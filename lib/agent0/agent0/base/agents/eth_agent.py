@@ -25,9 +25,9 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
 
         Arguments
         ---------
-        account : LocalAccount
+        account: LocalAccount
             A Web3 local account for storing addresses & signing transactions.
-        policy : Policy
+        policy: Policy
             Policy for producing agent actions.
             If None, then a policy that executes no actions is used.
 
@@ -82,7 +82,7 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
 
         Arguments
         ---------
-        interface : MarketInterface
+        interface: MarketInterface
             Interface for the market on which this agent will be executing trades (MarketActions)
 
         Returns

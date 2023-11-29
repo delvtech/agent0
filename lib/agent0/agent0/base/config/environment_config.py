@@ -62,16 +62,33 @@ class EnvironmentConfig(FrozenClass):
         return json.dumps(self.__dict__, sort_keys=True, indent=2, cls=ExtendedJSONEncoder)
 
     def copy(self) -> EnvironmentConfig:
-        """Returns a new copy of self"""
+        """Returns a new copy of self.
+
+        Returns
+        -------
+        EnvironmentConfig
+        """
         return EnvironmentConfig(**{key: value for key, value in self.__dict__.items() if key not in ["rng"]})
 
     def load_from_json(self, json_file_location: str) -> None:
-        """Load configuration settings from a JSON file and update self"""
+        """Load configuration settings from a JSON file and update self.
+
+        Arguments
+        ---------
+        json_file_location: str
+            The path to the json file to load from.
+        """
         with open(json_file_location, mode="r", encoding="UTF-8") as file:
             json_config = json.load(file)
         self.__dict__.update(**json_config)
 
     def save_as_json(self, json_file_location: str) -> None:
-        """Save configuration settings in JSON format"""
+        """Save configuration settings in JSON format.
+
+        Arguments
+        ---------
+        json_file_location: str
+            The path for the output file.
+        """
         with open(json_file_location, mode="w", encoding="UTF-8") as file:
             json.dump(self.__dict__, file, sort_keys=True, indent=2, cls=ExtendedJSONEncoder)

@@ -33,7 +33,7 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
 
     Arguments
     ---------
-    log_format_string : str, optional
+    log_format_string: str, optional
         Logging format described in string format.
     """
     logs.add_file_handler(
@@ -50,19 +50,19 @@ def build_crash_trade_result(
     exception: BaseException,
     agent: HyperdriveAgent,
     trade_object: Trade[HyperdriveMarketAction],
-    hyperdrive: HyperdriveInterface,
+    interface: HyperdriveInterface,
 ) -> TradeResult:
     """Build the trade result object when a crash happens.
 
     Arguments
     ---------
-    exception : Exception
+    exception: BaseException
         The exception that was thrown
-    agent : HyperdriveAgent
+    agent: HyperdriveAgent
         Object containing a wallet address and Agent for determining trades
-    trade_object : Trade[HyperdriveMarketAction]
+    trade_object: Trade[HyperdriveMarketAction]
         A trade provided by a HyperdriveAgent
-    hyperdrive : HyperdriveInterface
+    interface: HyperdriveInterface
         An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
 
     Returns
@@ -74,7 +74,7 @@ def build_crash_trade_result(
         agent=agent,
         trade_object=trade_object,
     )
-    current_block_number = hyperdrive.get_block_number(hyperdrive.get_current_block())
+    current_block_number = interface.get_block_number(interface.get_current_block())
 
     ## Check if the exception came from a contract call & determine block number
     # If it did, we fill various trade result data with custom data from
@@ -108,14 +108,14 @@ def build_crash_trade_result(
         }
 
     ## Get the pool state at the desired block number
-    pool_state = hyperdrive.get_hyperdrive_state(hyperdrive.get_block(trade_result.block_number))
+    pool_state = interface.get_hyperdrive_state(interface.get_block(trade_result.block_number))
 
     ## Get pool config
     # Pool config is static, so we can get it from the interface here
     trade_result.raw_pool_config = pool_state.pool_config_to_dict
     # We call the conversion functions to convert them to human readable versions as well
     trade_result.pool_config = asdict(pool_state.pool_config)
-    trade_result.pool_config["contract_address"] = hyperdrive.hyperdrive_contract.address
+    trade_result.pool_config["contract_address"] = interface.hyperdrive_contract.address
     trade_result.pool_config["inv_time_stretch"] = FixedPoint(1) / trade_result.pool_config["time_stretch"]
 
     ## Get pool info
@@ -153,13 +153,13 @@ def build_crash_trade_result(
 
     ## Add extra info
     trade_result.contract_addresses = {
-        "hyperdrive_address": hyperdrive.hyperdrive_contract.address,
-        "base_token_address": hyperdrive.base_token_contract.address,
+        "hyperdrive_address": interface.hyperdrive_contract.address,
+        "base_token_address": interface.base_token_contract.address,
     }
     # add additional information to the exception
     trade_result.additional_info = {
-        "spot_price": hyperdrive.calc_spot_price(pool_state),
-        "fixed_rate": hyperdrive.calc_fixed_rate(pool_state),
+        "spot_price": interface.calc_spot_price(pool_state),
+        "fixed_rate": interface.calc_fixed_rate(pool_state),
         "variable_rate": pool_state.variable_rate,
         "vault_shares": pool_state.vault_shares,
     }
@@ -179,14 +179,16 @@ def log_hyperdrive_crash_report(
     Arguments
     ---------
     trade_result: TradeResult
-        The trade result object that stores all crash information
-    log_level: int | None
-        The logging level for this crash report. Defaults to critical.
-
-    Returns
-    -------
-    None
-        This function does not return any value.
+        The trade result object that stores all crash information.
+    log_level: int | None, optional
+        The logging level for this crash report.
+        Defaults to critical.
+    crash_report_to_file: bool, optional
+        Whether or not to save the crash report to a file.
+        Defaults to True.
+    crash_report_file_prefix: str | None, optional
+        Optional prefix to append a string to the crash report filename.
+        The filename defaults to the timestamp of the report.
     """
     if log_level is None:
         log_level = logging.CRITICAL
@@ -258,7 +260,7 @@ def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
 
     Arguments
     ---------
-    wallet : HyperdriveWallet
+    wallet: HyperdriveWallet
         The HyperdriveWallet object to convert
 
     Returns
@@ -315,7 +317,18 @@ def _get_git_revision_hash() -> str:
 
 
 def get_anvil_state_dump(web3: Web3) -> str | None:
-    """Helper function for getting anvil dump state"""
+    """Helper function for getting anvil dump state.
+
+    Arguments
+    ---------
+    web3: Web3
+        Web3 provider object.
+
+    Returns
+    -------
+    str | None
+        Returns the anvil state as a string, or None if it failed.
+    """
     result: str | None = None
     try:
         response = web3.provider.make_request(method=RPCEndpoint("anvil_dumpState"), params=[])

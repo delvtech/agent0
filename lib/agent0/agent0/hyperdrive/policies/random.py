@@ -119,10 +119,10 @@ class Random(HyperdrivePolicy):
         return [action for action in all_available_actions if action in self.allowable_actions]
 
     def open_short_with_random_amount(
-        self, hyperdrive: HyperdriveInterface, pool_state: PoolState, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, pool_state: PoolState, wallet: HyperdriveWallet
     ) -> list[Trade]:
         """Open a short with a random allowable amount."""
-        maximum_trade_amount = hyperdrive.calc_max_short(wallet.balance.amount, pool_state)
+        maximum_trade_amount = interface.calc_max_short(wallet.balance.amount, pool_state)
         if maximum_trade_amount <= WEI:
             return []
 
@@ -164,10 +164,10 @@ class Random(HyperdrivePolicy):
         ]
 
     def open_long_with_random_amount(
-        self, hyperdrive: HyperdriveInterface, pool_state: PoolState, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, pool_state: PoolState, wallet: HyperdriveWallet
     ) -> list[Trade[HyperdriveMarketAction]]:
         """Open a long with a random allowable amount."""
-        maximum_trade_amount = hyperdrive.calc_max_long(wallet.balance.amount, pool_state)
+        maximum_trade_amount = interface.calc_max_long(wallet.balance.amount, pool_state)
         if maximum_trade_amount <= WEI:
             return []
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
@@ -276,10 +276,8 @@ class Random(HyperdrivePolicy):
             )
         ]
 
-    # We want to rename the argument from "interface" to "hyperdrive" to be more explicit
-    # pylint: disable=arguments-renamed
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Implement a random user strategy.
 
@@ -291,9 +289,9 @@ class Random(HyperdrivePolicy):
 
         Arguments
         ---------
-        hyperdrive : HyperdriveInterface
+        interface: HyperdriveInterface
             Interface for the market on which this agent will be executing trades (MarketActions)
-        wallet : HyperdriveWallet
+        wallet: HyperdriveWallet
             The agent's wallet.
 
         Returns
@@ -307,7 +305,7 @@ class Random(HyperdrivePolicy):
         gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
         if not gonna_trade:
             return [], False
-        pool_state = hyperdrive.current_pool_state
+        pool_state = interface.current_pool_state
         # user can always open a trade, and can close a trade if one is open
         available_actions = self.get_available_actions(wallet, pool_state)
         if not available_actions:  # it's possible that no actions are available at this time
@@ -316,11 +314,11 @@ class Random(HyperdrivePolicy):
         action_type = available_actions[self.rng.integers(len(available_actions))]
         # trade amount is also randomly chosen to be close to 10% of the agent's budget
         if action_type == HyperdriveActionType.OPEN_SHORT:
-            return self.open_short_with_random_amount(hyperdrive, pool_state, wallet), False
+            return self.open_short_with_random_amount(interface, pool_state, wallet), False
         if action_type == HyperdriveActionType.CLOSE_SHORT:
             return self.close_random_short(wallet), False
         if action_type == HyperdriveActionType.OPEN_LONG:
-            return self.open_long_with_random_amount(hyperdrive, pool_state, wallet), False
+            return self.open_long_with_random_amount(interface, pool_state, wallet), False
         if action_type == HyperdriveActionType.CLOSE_LONG:
             return self.close_random_long(wallet), False
         if action_type == HyperdriveActionType.ADD_LIQUIDITY:

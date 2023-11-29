@@ -25,8 +25,6 @@ def calc_single_closeout(position: pd.Series, contract: Contract, pool_info: pd.
         The pool info
     min_output: int
         The minimum output to be accepted, as part of slippage tolerance
-    as_underlying: bool
-        Whether or not to use the underlying token
 
     Returns
     -------
@@ -147,11 +145,11 @@ def calc_closeout_pnl(
     Arguments
     ---------
     current_wallet: pd.DataFrame
-        A dataframe resulting from `get_current_wallet` that describes the current wallet position
+        A dataframe resulting from `get_current_wallet` that describes the current wallet position.
     pool_info: pd.DataFrame
-        The pool info object
+        The pool info object.
     hyperdrive_contract: Contract
-        The hyperdrive contract object
+        The hyperdrive contract object.
 
     Returns
     -------

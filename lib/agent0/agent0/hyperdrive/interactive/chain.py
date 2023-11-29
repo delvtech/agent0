@@ -72,13 +72,18 @@ class Chain:
         """Advance time for this chain using the `evm_mine` RPC call.
 
         This function looks at the timestamp of the current block, then
-        mines a block explicitly setting the timestamp to the current block timestamp + time_delta
-        NOTE: this advances the chain for all pool connected to this chain.
+        mines a block explicitly setting the timestamp to the current block timestamp + time_delta.
+
+        .. note:: This advances the chain for all pool connected to this chain.
 
         Attributes
         ----------
         time_delta: int | timedelta
             The amount of time to advance. Can either be a `datetime.timedelta` object or an integer in seconds.
+
+        Returns
+        -------
+        RPCResponse
         """
         if isinstance(time_delta, timedelta):
             time_delta = int(time_delta.total_seconds())
@@ -218,7 +223,13 @@ class LocalChain(Chain):
             self.anvil_process.kill()
         super().__del__()
 
-    def get_deployer_account_private_key(self):
-        """Get the private key of the deployer account."""
+    def get_deployer_account_private_key(self) -> str:
+        """Get the private key of the deployer account.
+
+        Returns
+        -------
+        str
+            The private key for the deployer account.
+        """
         # TODO this is the deployed account for anvil, get this programmatically
         return "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"

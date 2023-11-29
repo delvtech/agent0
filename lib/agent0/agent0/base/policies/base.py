@@ -33,6 +33,7 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         slippage_tolerance: FixedPoint | None = None,
         # TODO should we pass in policy_config here in the base class constructor?
     ):
+        """Instantiate the policy."""
         # TODO budget should have a flag to allow for "the budget is however much this wallet has"
         # https://github.com/delvtech/agent0/issues/827
         if not isinstance(budget, FixedPoint):
@@ -46,8 +47,14 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
             self.rng: NumpyGenerator = rng
 
     @property
-    def name(self):
-        """Return the class name"""
+    def name(self) -> str:
+        """Return the class name.
+
+        Returns
+        -------
+        str
+            The class name.
+        """
         return self.__class__.__name__
 
     def action(self, interface: MarketInterface, wallet: Wallet) -> tuple[list[Trade], bool]:
@@ -55,32 +62,33 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
 
         Arguments
         ---------
-        market : HyperdriveMarketState
-            the trading market
-        wallet : HyperdriveWallet
-            agent's wallet
+        interface: MarketInterface
+            The trading market interface.
+        wallet: Wallet
+            The agent's wallet.
 
         Returns
         -------
-        tuple[list[MarketAction], bool]
+        tuple[list[Trade], bool]
             A tuple where the first element is a list of actions,
-            and the second element defines if the agent is done trading
+            and the second element defines if the agent is done trading.
         """
         raise NotImplementedError
 
     @classmethod
-    def describe(cls, raw_description: str | None = None) -> str:
+    def describe(cls, raw_description: str) -> str:
         """Describe the policy in a user friendly manner that allows newcomers to decide whether to use it.
+
+        Arguments
+        ---------
+        raw_description: str
+            The description of the policy's action plan.
 
         Returns
         -------
         str
             A description of the policy.
         """
-        if raw_description is None:
-            raise NotImplementedError(
-                "This method is meant to be called only by subclasses which provide a `raw_description`."
-            )
         dedented_text = dedent(raw_description).strip()
         indented_text = indent(dedented_text, "  ")  # Adding 2-space indent
         return indented_text

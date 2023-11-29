@@ -32,7 +32,7 @@ def balance_of(api_uri: str, wallet_addrs: list[str]) -> pd.DataFrame:
 
     Arguments
     ---------
-    api_url : str
+    api_url: str
         The endpoint for the flask server.
     wallet_addrs: list[str]
         The list of wallet addresses to register.

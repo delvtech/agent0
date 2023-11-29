@@ -126,7 +126,7 @@ def build_account_key_config_from_agent_config(
 
     Arguments
     ---------
-    agent_config: list[AgentConfig]
+    agent_configs: list[AgentConfig]
         The list of agent configs that define policies and arguments.
     random_seed: int
         The seed to initialize the random generator to pass for each bot

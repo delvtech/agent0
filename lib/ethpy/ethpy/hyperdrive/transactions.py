@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 from eth_typing import BlockNumber
+from ethpy.base import UnknownBlockError, get_transaction_logs
 from fixedpointmath import FixedPoint
 from hypertypes import IERC4626HyperdriveContract
 from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
@@ -16,8 +17,6 @@ from hypertypes.utilities.conversions import (
 from web3.contract.contract import Contract
 from web3.types import Timestamp, TxReceipt
 
-from ethpy.base import UnknownBlockError, get_transaction_logs
-
 from .receipt_breakdown import ReceiptBreakdown
 
 
@@ -26,7 +25,7 @@ def get_hyperdrive_pool_config(hyperdrive_contract: IERC4626HyperdriveContract) 
 
     Arguments
     ---------
-    hyperdrive_contract : Contract
+    hyperdrive_contract: Contract
         The deployed hyperdrive contract instance.
 
     Returns
@@ -64,15 +63,15 @@ def get_hyperdrive_checkpoint(
 
     Arguments
     ---------
-    hyperdrive_contract: Contract
-        The contract to query the pool info from
-    block_number: BlockNumber
-        The block number to query from the chain
+    hyperdrive_contract: IERC4626HyperdriveContract
+        The contract to query the pool info from.
+    block_timestamp: Timestamp
+        The block timestamp that indexes the checkpoint to get.
 
     Returns
     -------
-    dict[str, int]
-        A dictionary containing the checkpoint details.
+    CheckpointFP
+        The dataclass containing the checkpoint info in fixed point
     """
     checkpoint = hyperdrive_contract.functions.getCheckpoint(block_timestamp).call()
     return checkpoint_to_fixedpoint(checkpoint)
@@ -83,11 +82,11 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
 
     Arguments
     ---------
-    TxReceipt
+    tx_receipt: TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
-    hyperdrive_contract : Contract
-        Any deployed web3 contract
-    fn_name : str
+    hyperdrive_contract: Contract
+        The deployed Hyperdrive web3 contract
+    fn_name: str
         This function must exist in the compiled contract's ABI
 
     Returns
@@ -141,18 +140,19 @@ def get_event_history_from_chain(
 
     Arguments
     ---------
-    hyperdrive_contract : Contract
+    hyperdrive_contract: Contract
         The deployed hyperdrive contract instance.
     from_block: int
         The starting block to query
     to_block: int
         The end block to query. If from_block == to_block, will query the specified block number
-    wallet_addr: str | None
+    wallet_addr: str | None, optional
         The wallet address to filter events on. If None, will return all.
 
     Returns
     -------
-    A dictionary of event logs, keyed by the event name. Specifically:
+    dict
+        A dictionary of event logs, keyed by the event name. Specifically:
         # TODO figure out return type of web3 call
         "addLiquidity": list[Unknown]
         "removeLiquidity": list[Unknown]
