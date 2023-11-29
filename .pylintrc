@@ -79,7 +79,7 @@ limit-inference-results=100
 # usually to register additional checkers.
 load-plugins=
 # TODO: Turn this back on after trading competition
-#load-plugins=pylint.extensions.docparams, pylint.extensions.docstyle
+load-plugins=pylint.extensions.docparams, pylint.extensions.docstyle
 
 # Pickle collected data for later comparisons.
 persistent=yes
