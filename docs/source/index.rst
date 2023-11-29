@@ -1,7 +1,7 @@
 .. agent0 documentation master file
 
 Welcome to the documentation for the agent0 monorepo!
-=================================
+=====================================================
 
 .. include:: ../../README.md
    :parser: myst_parser.sphinx_
