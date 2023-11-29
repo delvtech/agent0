@@ -72,7 +72,7 @@ class WalletTestPolicy(HyperdrivePolicy):
         ---------
         interface: HyperdriveInterface
             The trading market interface.
-        wallet : HyperdriveWallet
+        wallet: HyperdriveWallet
             The agent's wallet.
 
         Returns
