@@ -13,7 +13,8 @@ Welcome to the documentation for the agent0 monorepo!
    /autoapi/agent0/index
    /autoapi/chainsync/index
    /autoapi/ethpy/index
-   /autoapi/pypechain/index
+   /autoapi/hyperlogs/index
+   /autoapi/hypertypes/index
 
 
 Indices and tables
