@@ -620,11 +620,10 @@ variable-naming-style=snake_case
 # naming style.
 #variable-rgx=
 
-# TODO: Turn these back on after trading competition
-# [tool.pylint.parameter_documentation]
+[tool.pylint.parameter_documentation]
 # Whether to accept totally missing parameter documentation
 # in the docstring of a function that has parameters.
-# accept-no-param-doc = false
+accept-no-param-doc = false
 
 # Whether to accept totally missing raises documentation
 # in the docstring of a function that raises an exception.
@@ -632,12 +631,12 @@ variable-naming-style=snake_case
 
 # Whether to accept totally missing return documentation in
 # the docstring of a function that returns a statement.
-# accept-no-return-doc = false
+accept-no-return-doc = false
 
 # Whether to accept totally missing yields documentation
 # in the docstring of a generator.
-# accept-no-yields-doc = false
+accept-no-yields-doc = false
 
 # If the docstring type cannot be guessed the
 # specified docstring type will be used.
-# default-docstring-type = numpy
+default-docstring-type = numpy
