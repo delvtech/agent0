@@ -67,6 +67,7 @@ class EnvironmentConfig(FrozenClass):
         Returns
         -------
         EnvironmentConfig
+            A copy of the environment config.
         """
         return EnvironmentConfig(**{key: value for key, value in self.__dict__.items() if key not in ["rng"]})
 

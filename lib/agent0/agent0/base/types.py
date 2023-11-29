@@ -8,6 +8,10 @@ from typing import Any, Generic, TypeVar
 
 from fixedpointmath import FixedPoint
 
+# We don't need to worry about return docstrings for the decorator because they will be overwritten
+# pylint: disable=missing-return-doc
+# pylint: disable=missing-return-type-doc
+
 # This is the minimum allowed value to be passed into calculations to avoid
 # problems with sign flips that occur when the floating point range is exceeded.
 WEI = FixedPoint(scaled_value=1)  # smallest denomination of ether
@@ -25,13 +29,7 @@ class FrozenClass:
         return NotImplemented
 
     def astype(self, _new_type):
-        """Cast all member attributes to a new type.
-
-        Arguments
-        ---------
-        _new_type: Any
-            The new type to cast to.
-        """
+        """Cast all member attributes to a new type."""
         return NotImplemented
 
     @property
@@ -41,7 +39,17 @@ class FrozenClass:
 
 
 def freezable(frozen: bool = False, no_new_attribs: bool = False):
-    r"""A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed."""
+    """A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed.
+
+    Arguments
+    ---------
+    frozen: bool, optional
+        Whether or not the class attributes can be changed.
+        Defaults to False, indicating that they can be changed.
+    no_new_attribs: bool, optional
+        Whether or not new attributes can be added to the class.
+        Defaults to False, indicating that new attributes can be added.
+    """
 
     def decorator(cls):
         """Decorator for the provided class.

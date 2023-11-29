@@ -239,6 +239,8 @@ class InteractiveHyperdrive:
         Returns
         -------
         InteractiveHyperdriveAgent
+            An object that contains the HyperdriveInterface, Agents,
+            and provides access to the interactive Hyperdrive API.
         """
         if base is None:
             base = FixedPoint(0)

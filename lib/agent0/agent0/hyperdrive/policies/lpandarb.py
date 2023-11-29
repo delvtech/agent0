@@ -45,7 +45,7 @@ def calc_shares_needed_for_bonds(
 
     Returns
     -------
-    tuple[FixedPoint, FixedPoint] containing:
+    tuple[FixedPoint, FixedPoint]
         _shares_to_pool: FixedPoint
             The change in shares in the pool for the given amount of bonds.
         _shares_to_gov: FixedPoint
@@ -75,7 +75,7 @@ def calc_reserves_to_hit_target_rate(
 
     Returns
     -------
-    tuple[FixedPoint, FixedPoint] containing:
+    tuple[FixedPoint, FixedPoint]
         total_shares_needed: FixedPoint
             Total amount of shares needed to be added into the pool to hit the target rate.
         total_bonds_needed: FixedPoint
@@ -158,7 +158,7 @@ def apply_step(
 
     Returns
     -------
-    pool_state: PoolState
+    PoolState
         The updated pool state.
     """
     if bonds_needed > 0:  # short case
@@ -267,15 +267,15 @@ class LPandArb(HyperdrivePolicy):
         Arguments
         ---------
         interface: HyperdriveInterface
-            Interface for the market on which this agent will be executing trades (MarketActions)
+            Interface for the market on which this agent will be executing trades (MarketActions).
         wallet: HyperdriveWallet
-            agent's wallet
+            The agent's wallet.
 
         Returns
         -------
         tuple[list[MarketAction], bool]
             A tuple where the first element is a list of actions,
-            and the second element defines if the agent is done trading
+            and the second element defines if the agent is done trading.
         """
         action_list = []
 

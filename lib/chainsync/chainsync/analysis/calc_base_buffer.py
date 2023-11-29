@@ -18,6 +18,10 @@ def calc_base_buffer(
     minimum_share_reserves: Decimal
         The minimum share reserves from the pool config
 
+    Returns
+    -------
+    pd.Series
+        The base buffer.
     """
     # Pandas is smart enough to be able to broadcast with internal Decimal types at runtime
     return longs_outstanding / share_price + minimum_share_reserves  # type: ignore

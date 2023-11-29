@@ -21,7 +21,19 @@ class Zoo(NamedTuple):
     deterministic = Deterministic
 
     def describe(self, policies: list | str | None = None) -> str:
-        """Describe policies, either specific ones provided, or all of them."""
+        """Describe policies, either specific ones provided, or all of them.
+
+        Arguments
+        ---------
+        policies: list | str | None, optional
+            A policy name string or list of policy names to describe.
+            If not provided, then all available policies are described.
+
+        Returns
+        -------
+        str
+            A string containing the policy descriptions joined by new-lines.
+        """
         # programmatically create a list with all the policies
         existing_policies = [
             attr for attr in dir(self) if not attr.startswith("_") and attr not in ["describe", "count", "index"]

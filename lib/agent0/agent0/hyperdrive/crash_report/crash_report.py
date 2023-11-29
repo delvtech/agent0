@@ -68,6 +68,7 @@ def build_crash_trade_result(
     Returns
     -------
     TradeResult
+        The trade result object.
     """
     trade_result = TradeResult(
         status=TradeStatus.FAIL,

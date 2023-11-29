@@ -61,6 +61,13 @@ def drop_table(session: Session, table_name: str) -> None:
 def initialize_engine(postgres_config: PostgresConfig | None = None, ensure_database_created: bool = False) -> Engine:
     """Initialize the postgres engine from config.
 
+    Arguments
+    ---------
+    postgres_config: PostgresConfig | None, optional
+        The postgres config. If none, will set from `postgres.env` file or set to defaults.
+    ensure_database_created: bool, optional
+        If true, will create the database within postgres if it doesn't exist. Defaults to false.
+
     Returns
     -------
     Engine
@@ -115,16 +122,21 @@ def initialize_engine(postgres_config: PostgresConfig | None = None, ensure_data
 def initialize_session(
     postgres_config: PostgresConfig | None = None, drop: bool = False, ensure_database_created: bool = False
 ) -> Session:
-    """Initialize the database if not already initialized.
+    """Initialize the postgres session.
 
     Arguments
     ---------
-    drop: bool
-        If true, will drop all tables in the database before doing anything for debugging
+    postgres_config: PostgresConfig | None, optional
+        The postgres config. If none, will set from `postgres.env` file or set to defaults.
+    drop: bool, optional
+        If true, will drop all tables in the database before doing anything for debugging.
+        Defaults to false.
+    ensure_database_created: bool, optional
+        If true, will create the database within postgres if it doesn't exist. Defaults to false.
 
     Returns
     -------
-    session: Session
+    Session
         The initialized session object
     """
     engine = initialize_engine(postgres_config, ensure_database_created)
@@ -238,8 +250,6 @@ def add_username_to_user(user: str, username: str, session: Session, force_updat
         A single or list of wallet addresses to map to the username
     session: Session
         The initialized session object
-    user_suffix: str
-        An optional suffix to add to the username mapping
     force_update: bool
         If true and an existing username is found, will overwrite
     """
@@ -297,8 +307,8 @@ def get_username_to_user(session: Session, username: str | None = None) -> pd.Da
     ---------
     session: Session
         The initialized session object
-    address: str | None, optional
-        The wallet address to filter the results on. Return all if None
+    username: str | None, optional
+        The username to filter the results on. Return all if None
 
     Returns
     -------
@@ -317,10 +327,14 @@ class TableWithBlockNumber(Base):
     __abstract__ = True
 
     @declared_attr
-    # has to be camelCase to match table column name
-    # pylint: disable=invalid-name
     def block_number(self) -> Column:
-        """Stubbed block_number column."""
+        """Stubbed block_number column.
+
+        Returns
+        -------
+        Column
+            The sqlalchemy Column object for the block number
+        """
         return Column(String)
 
 

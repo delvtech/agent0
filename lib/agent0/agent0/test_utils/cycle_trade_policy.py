@@ -177,5 +177,11 @@ class CycleTradesPolicy(HyperdrivePolicy):
 
 @pytest.fixture(scope="function")
 def cycle_trade_policy() -> Type[CycleTradesPolicy]:
-    """Test fixture to build a policy that cycles through all trades"""
+    """Test fixture to build a policy that cycles through all trades.
+
+    Returns
+    -------
+    CycleTradesPolicy
+        A policy that cycles through all trades.
+    """
     return CycleTradesPolicy

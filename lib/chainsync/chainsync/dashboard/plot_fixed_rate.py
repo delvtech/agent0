@@ -1,12 +1,23 @@
 """Plot the fixed rate."""
 from __future__ import annotations
 
-import matplotlib.pyplot as plt
+import pandas as pd
 from matplotlib import ticker as mpl_ticker
+from matplotlib.axes import Axes
 
 
-def plot_rates(fixed_rate, variable_rate, axes):
-    """Returns the fixed rate plot"""
+def plot_rates(fixed_rate: pd.DataFrame, variable_rate: pd.DataFrame, axes: Axes) -> None:
+    """Plots the fixed and variable rates.
+
+    Arguments
+    ---------
+    fixed_rate: pd.DataFrame
+        The fixed rate dataframe.
+    variable_rate: pd.DataFrame
+        The variable rate dataframe.
+    axes: Axes
+        The matplotlib axes to plot on.
+    """
     axes.plot(fixed_rate["timestamp"], fixed_rate["fixed_rate"], label="Fixed rate")
     axes.plot(variable_rate["timestamp"], variable_rate["variable_rate"], label="Variable rate")
     # change y-axis unit format to 0.1%
@@ -17,4 +28,3 @@ def plot_rates(fixed_rate, variable_rate, axes):
     axes.set_ylabel("rate (%)")
     axes.set_title("Fixed/Variable rate")
     axes.legend()
-    return plt.gcf()

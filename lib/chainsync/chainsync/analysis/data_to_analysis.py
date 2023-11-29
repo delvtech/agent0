@@ -5,10 +5,6 @@ from typing import Type
 
 import numpy as np
 import pandas as pd
-from sqlalchemy import exc
-from sqlalchemy.orm import Session
-from web3.contract.contract import Contract
-
 from chainsync.db.base import Base
 from chainsync.db.hyperdrive import (
     CurrentWallet,
@@ -20,6 +16,9 @@ from chainsync.db.hyperdrive import (
     get_transactions,
     get_wallet_deltas,
 )
+from sqlalchemy import exc
+from sqlalchemy.orm import Session
+from web3.contract.contract import Contract
 
 from .calc_base_buffer import calc_base_buffer
 from .calc_fixed_rate import calc_fixed_rate
@@ -58,7 +57,19 @@ def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session)
 
 
 def calc_total_wallet_delta(wallet_deltas: pd.DataFrame) -> pd.DataFrame:
-    """Calculates total wallet deltas from wallet_delta for every wallet type and position"""
+    """Calculates total wallet deltas from wallet_delta for every wallet type and position.
+
+    Arguments
+    ---------
+    wallet_deltas: pd.DataFrame
+        The dataframe of wallet deltas, from the output of `get_wallet_deltas`.
+
+    Returns
+    -------
+    pd.DataFrame
+        A dataframe of the total wallet deltas.
+
+    """
     return wallet_deltas.groupby(["wallet_address", "token_type"]).agg(
         {"delta": "sum", "base_token_type": "first", "maturity_time": "first"}
     )
@@ -143,7 +154,22 @@ def data_to_analysis(
     db_session: Session,
     hyperdrive_contract: Contract,
 ) -> None:
-    """Function to query postgres data tables and insert to analysis tables"""
+    """Function to query postgres data tables and insert to analysis tables.
+    Executes analysis on a batch of blocks, defined by start and end block.
+
+    Arguments
+    ---------
+    start_block: int
+        The block to start analysis on.
+    end_block: int
+        The block to end analysis on.
+    pool_config: pd.Series
+        The pool config data.
+    db_session: Session
+        The initialized db session.
+    hyperdrive_contract: Contract
+        The hyperdrive contract.
+    """
     # Get data
     pool_info = get_pool_info(db_session, start_block, end_block, coerce_float=False)
 

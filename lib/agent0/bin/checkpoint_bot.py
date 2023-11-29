@@ -6,8 +6,6 @@ import logging
 import os
 import time
 
-from agent0.base.agents import EthAgent
-from agent0.base.config import EnvironmentConfig
 from eth_account.account import Account
 from ethpy import EthConfig, build_eth_config
 from ethpy.base import initialize_web3_with_http_provider, set_anvil_account_balance, smart_contract_transact
@@ -16,20 +14,42 @@ from fixedpointmath import FixedPoint
 from hyperlogs import logs
 from hypertypes import IERC4626HyperdriveContract
 
+from agent0.base.agents import EthAgent
+from agent0.base.config import EnvironmentConfig
+
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.
 CHECKPOINT_WAITING_PERIOD = 0.5
 
 
 def does_checkpoint_exist(hyperdrive_contract: IERC4626HyperdriveContract, checkpoint_time: int) -> bool:
-    """Checks whether or not a given checkpoint exists."""
+    """Checks whether or not a given checkpoint exists.
+
+    Arguments
+    ---------
+    hyperdrive_contract: IERC4626HyperdriveContract
+        The hyperdrive contract.
+    checkpoint_time: int
+        The checkpoint time in epoch seconds.
+
+    Returns
+    -------
+    bool
+        Whether or not the checkpoint exists.
+    """
     checkpoint = hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call()
     logging.info("%s", checkpoint)
     return checkpoint.sharePrice > 0
 
 
 def get_config() -> tuple[EthConfig, EnvironmentConfig]:
-    """Gets the hyperdrive configuration."""
+    """Gets the hyperdrive configuration.
+
+    Returns
+    -------
+    tuple[EthConfig, EnvironmentConfig]
+        The output EthConfig and EnvironmentConfig objects.
+    """
     # Get the configuration and initialize the web3 provider.
     eth_config = build_eth_config()
 

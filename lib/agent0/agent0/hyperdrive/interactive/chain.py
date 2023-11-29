@@ -76,14 +76,15 @@ class Chain:
 
         .. note:: This advances the chain for all pool connected to this chain.
 
-        Attributes
-        ----------
+        Arguments
+        ---------
         time_delta: int | timedelta
             The amount of time to advance. Can either be a `datetime.timedelta` object or an integer in seconds.
 
         Returns
         -------
         RPCResponse
+            A TypedDict returned from the RPC with the result of the call.
         """
         if isinstance(time_delta, timedelta):
             time_delta = int(time_delta.total_seconds())

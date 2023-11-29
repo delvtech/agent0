@@ -94,13 +94,15 @@ class SmartLong(HyperdrivePolicy):
         Arguments
         ---------
         interface: HyperdriveInterface
-            The trading market.
+            Interface for the market on which this agent will be executing trades (MarketActions).
         wallet: HyperdriveWallet
             The agent's wallet.
 
         Returns
         -------
-        action_list: list[MarketAction]
+        tuple[list[MarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading.
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
         gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])

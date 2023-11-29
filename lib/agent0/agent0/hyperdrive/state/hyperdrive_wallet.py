@@ -39,7 +39,13 @@ class HyperdriveWalletDeltas(EthWalletDeltas):
     withdraw_shares: FixedPoint = FixedPoint(0)
 
     def copy(self) -> HyperdriveWalletDeltas:
-        """Returns a new copy of self"""
+        """Returns a new copy of self.
+
+        Returns
+        -------
+        HyperdriveWalletDeltas
+            A deepcopy of the wallet deltas.
+        """
         return HyperdriveWalletDeltas(**copy.deepcopy(self.__dict__))
 
 
@@ -161,7 +167,13 @@ class HyperdriveWallet(EthWallet):
                 raise AssertionError(f"wallet balance should be >= 0, not {self.shorts[maturity_time]}")
 
     def copy(self) -> HyperdriveWallet:
-        """Returns a new copy of self."""
+        """Returns a new copy of self.
+
+        Returns
+        -------
+        HyperdriveWallet
+            A deep copy of the wallet.
+        """
         return HyperdriveWallet(**copy.deepcopy(self.__dict__))
 
     def update(self, wallet_deltas: HyperdriveWalletDeltas) -> None:

@@ -62,6 +62,7 @@ class EthWalletDeltas:
         Returns
         -------
         EthWalletDeltas
+            A deepcopy of the deltas.
         """
         return EthWalletDeltas(**copy.deepcopy(self.__dict__))
 
@@ -97,6 +98,7 @@ class EthWallet:
         Returns
         -------
         EthWallet
+            A deepcopy of the wallet.
         """
         return EthWallet(**copy.deepcopy(self.__dict__))
 

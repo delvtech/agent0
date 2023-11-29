@@ -1,12 +1,21 @@
 """Plot the fixed rate."""
 from __future__ import annotations
 
-import matplotlib.pyplot as plt
+import pandas as pd
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
+from matplotlib.axes import Axes
 
 
-def plot_outstanding_positions(data, axes):
-    """Returns the fixed rate plot"""
+def plot_outstanding_positions(data: pd.DataFrame, axes: Axes):
+    """Returns the fixed rate plot.
+
+    Arguments
+    ---------
+    data: pd.DataFrame
+        The data to plot.
+    axes: Axes
+        The matplotlib axes to plot on.
+    """
     bonds_symbol = "hy" + BASE_TOKEN_SYMBOL
 
     axes.plot(data["timestamp"], data["longs_outstanding"], label="Longs")
@@ -18,4 +27,3 @@ def plot_outstanding_positions(data, axes):
     axes.set_ylabel(bonds_symbol)
     axes.set_title("Open Positions")
     axes.legend()
-    return plt.gcf()

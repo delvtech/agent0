@@ -4,8 +4,6 @@ from __future__ import annotations
 import logging
 
 import agent0
-import pytest
-from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.policies.zoo import Random
 
 
