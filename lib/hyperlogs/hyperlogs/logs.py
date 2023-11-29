@@ -30,19 +30,19 @@ def setup_logging(
 
     Arguments
     ---------
-    log_filename : str, optional
+    log_filename: str, optional
         Path and name of the log file.
-    max_bytes : int, optional
+    max_bytes: int, optional
         Maximum size of the log file in bytes. Defaults to hyperlogs.DEFAULT_LOG_MAXBYTES.
-    log_level : int, optional
+    log_level: int, optional
         Log level to track. Defaults to hyperlogs.DEFAULT_LOG_LEVEL.
-    delete_previous_logs : bool, optional
+    delete_previous_logs: bool, optional
         Whether to delete previous log file if it exists. Defaults to False.
-    log_stdout : bool, optional
+    log_stdout: bool, optional
         Whether to log to standard output. Defaults to True.
-    log_format_string : str, optional
+    log_format_string: str, optional
         Log formatter object. Defaults to None.
-    keep_previous_handlers : bool, optional
+    keep_previous_handlers: bool, optional
         Whether to keep previous handlers. Defaults to False.
 
     .. todo::
@@ -78,7 +78,7 @@ def close_logging(delete_logs=True) -> None:
 
     Arguments
     ---------
-    delete_logs : bool
+    delete_logs: bool
         Whether to delete logs before closing logging.
     """
     logging.shutdown()
@@ -99,15 +99,15 @@ def prepare_log_path(log_filename: str) -> tuple[str, str]:
 
     Arguments
     ---------
-    log_filename : str
+    log_filename: str
         Path and name of the log file.
 
     Returns
     -------
-    tuple[log_dir : str, log_name : str]
-        log_dir : str
+    tuple[log_dir: str, log_name: str]
+        log_dir: str
             Path of the log file.
-        log_name : str
+        log_name: str
             Name of the log file.
     """
     log_dir, log_name = os.path.split(log_filename)
@@ -131,12 +131,12 @@ def create_formatter(log_format_string: str | None = None) -> logging.Formatter:
 
     Arguments
     ---------
-    log_format_string : str, optional
+    log_format_string: str, optional
         Logging format described in string format.
 
     Returns
     -------
-    log_formatter : logging.Formatter
+    logging.Formatter
         Logging format as a Formatter object, after defaults are applied.
     """
     if log_format_string is None:
@@ -151,12 +151,12 @@ def create_log_level(log_level: int | None = None) -> int:
 
     Arguments
     ---------
-    log_level : int, optional
+    log_level: int, optional
         Logging level to be created. Defaults to hyperlogs.DEFAULT_LOG_LEVEL.
 
     Returns
     -------
-    log_level : int
+    int
         Logging level that was created, after defaults are applied.
     """
     if log_level is None:
@@ -169,12 +169,12 @@ def create_max_bytes(max_bytes: int | None = None) -> int:
 
     Arguments
     ---------
-    max_bytes : int, optional
+    max_bytes: int, optional
         Maximum size of the log file in bytes. Defaults to hyperlogs.DEFAULT_LOG_MAXBYTES.
 
     Returns
     -------
-    max_bytes : int
+    int
         Maximum size of the log file in bytes, after defaults are applied.
     """
     if max_bytes is None:
@@ -187,12 +187,12 @@ def get_root_logger(root_logger: logging.Logger | None = None) -> logging.Logger
 
     Arguments
     ---------
-    root_logger : logging.Logger, optional
+    root_logger: logging.Logger, optional
         Logger to which to add the handler. Defaults to  logging.getLogger().
 
     Returns
     -------
-    root_logger : logging.Logger
+    logging.Logger
         Root logger.
     """
     if root_logger is None:
@@ -210,14 +210,14 @@ def add_stdout_handler(
 
     Arguments
     ---------
-    logger : logging.Logger, optional
+    logger: logging.Logger, optional
         Logger to which to add the handler. Defaults to get_root_logger().
-    log_format_string : str, optional
+    log_format_string: str, optional
         Logging format described in string format. Defaults to
         hyperlogs.DEFAULT_LOG_FORMAT and hyperlogs.DEFAULT_LOG_DATETIME.
-    log_level : int, optional
+    log_level: int, optional
         Log level to track. Defaults to hyperlogs.DEFAULT_LOG_LEVEL.
-    keep_previous_handlers : bool, optional
+    keep_previous_handlers: bool, optional
         Whether to keep previous handlers. Defaults to True.
     """
     logger = get_root_logger(logger)
@@ -242,19 +242,19 @@ def add_file_handler(
 
     Arguments
     ---------
-    log_filename : str
+    log_filename: str
         Path and name of the log file.
-    logger : logging.Logger, optional
+    logger: logging.Logger, optional
         Logger to which to add the handler. Defaults to get_root_logger().
-    delete_previous_logs : bool, optional
+    delete_previous_logs: bool, optional
         Whether to delete previous log file if it exists. Defaults to False.
-    log_format_string : str, optional
+    log_format_string: str, optional
         Logging format described in string format.
-    log_level : int, optional
+    log_level: int, optional
         Log level to track. Defaults to hyperlogs.DEFAULT_LOG_LEVEL.
-    max_bytes : int, optional
+    max_bytes: int, optional
         Maximum size of the log file in bytes. Defaults to hyperlogs.DEFAULT_LOG_MAXBYTES.
-    keep_previous_handlers : bool, optional
+    keep_previous_handlers: bool, optional
         Whether to keep previous handlers. Defaults to True.
     """
     # pylint: disable=too-many-arguments
@@ -276,7 +276,7 @@ def remove_handlers(logger: logging.Logger):
 
     Arguments
     ---------
-    logger : logging.Logger
+    logger: logging.Logger
         Logger from which to remove handlers.
     """
     while logger.handlers:
@@ -290,16 +290,21 @@ def create_file_handler(
 
     Arguments
     ---------
-    log_dir : str
+    log_dir: str
         Directory in which to log the file.
-    log_name : str
+    log_name: str
         File name in which to log.
-    log_formatter : logging.Formatter
+    log_formatter: logging.Formatter
         Logging format as a Formatter object.
-    max_bytes : int
+    max_bytes: int
         Maximum size of the log file in bytes. Defaults to hyperlogs.DEFAULT_LOG_MAXBYTES.
-    log_level : int
+    log_level: int
         Log level.
+
+    Returns
+    -------
+    logging.Handler
+        The logging handler.
     """
     log_path = os.path.join(log_dir, log_name)
     handler = RotatingFileHandler(log_path, mode="w", maxBytes=create_max_bytes(max_bytes))

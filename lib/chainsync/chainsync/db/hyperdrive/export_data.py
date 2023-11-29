@@ -28,9 +28,9 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
 
     Arguments
     ---------
-    out_dir : str
+    out_dir: str
         The directory to write the parquet files to. It's assumed this directory already exists.
-    db_session : Session | None, optional
+    db_session: Session | None, optional
         The initialized session object. If none, will read credentials from `postgres.env`
     """
     if db_session is None:

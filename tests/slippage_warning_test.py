@@ -33,7 +33,17 @@ class TestSlippageWarning:
         cycle_trade_policy: Type[CycleTradesPolicy],
         db_api: str,
     ):
-        """Runs the entire pipeline and checks the database at the end. All arguments are fixtures."""
+        """Runs the entire pipeline and checks the database at the end. All arguments are fixtures.
+
+        Arguments
+        ---------
+        local_hyperdrive_pool: DeployedHyperdrivePool
+            The addresses of the deployed hyperdrive pool in the test fixture.
+        cycle_trade_policy: Type[CycleTradesPolicy]
+            The policy defined in the test fixture that cycles through trades.
+        db_api: str
+            The db_api uri deployed in the test fixture.
+        """
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
 

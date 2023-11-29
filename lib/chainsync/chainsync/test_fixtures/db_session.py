@@ -25,10 +25,10 @@ TEST_POSTGRES_NAME = "postgres_test"
 def psql_docker() -> Iterator[PostgresConfig]:
     """Test fixture for running postgres in docker.
 
-    Returns
+    Yields
     -------
-    Iterator[PostgresConfig]
-        An iterator that yields a PostgresConfig
+    PostgresConfig
+        The PostgresConfig.
     """
     # Attempt to use the default socket if it exists
     try:
@@ -119,12 +119,12 @@ def database_engine(psql_docker: PostgresConfig) -> Iterator[Engine]:  # pylint:
     Arguments
     ---------
     psql_docker: PostgresConfig
-        The PostgresConfig object returned by the `psql_docker` test fixture
+        The PostgresConfig object returned by the `psql_docker` test fixture.
 
-    Returns
+    Yields
     -------
-    Iterator[Engine]
-        An iterator that yields a sqlalchemy engine
+    Engine
+        The sqlalchemy engine.
     """
     # Using default postgres info
     # Renaming variable to match what it actually is, i.e., the postgres config
@@ -149,13 +149,13 @@ def db_session(database_engine: Engine) -> Iterator[Session]:  # pylint: disable
 
     Arguments
     ---------
-    database_engine : Engine
-        The sqlalchemy database engine returned from the `database_engine` test fixture
+    database_engine: Engine
+        The sqlalchemy database engine returned from the `database_engine` test fixture.
 
-    Returns
+    Yields
     -------
-    Iterator[Session]
-        Yields the sqlalchemy session object
+    Session
+        The sqlalchemy session object.
     """
     session = sessionmaker(bind=database_engine)
 
@@ -177,10 +177,10 @@ def db_api(psql_docker: PostgresConfig) -> Iterator[str]:  # pylint: disable=red
     psql_docker: PostgresConfig
         The PostgresConfig object returned by the `psql_docker` test fixture
 
-    Returns
+    Yields
     -------
-    Iterator[str]
-        Yields the database api uri
+    str
+        The database api uri
     """
     # Launch the database api server here
     db_api_host = "127.0.0.1"

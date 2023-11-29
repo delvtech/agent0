@@ -95,30 +95,26 @@ class Arbitrage(HyperdrivePolicy):
 
         super().__init__(budget, rng, slippage_tolerance)
 
-    # We want to rename the argument from "interface" to "hyperdrive" to be more explicit
-    # pylint: disable=arguments-renamed
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Specify actions.
 
         Arguments
         ---------
-        hyperdrive : HyperdriveInterface
-            Interface for the market on which this agent will be executing trades (MarketActions)
-        wallet : HyperdriveWallet
-            agent's wallet
+        interface: HyperdriveInterface
+            Interface for the market on which this agent will be executing trades (MarketActions).
+        wallet: HyperdriveWallet
+            The agent's wallet.
 
         Returns
         -------
         tuple[list[MarketAction], bool]
             A tuple where the first element is a list of actions,
-            and the second element defines if the agent is done trading
+            and the second element defines if the agent is done trading.
         """
-        pool_state = hyperdrive.current_pool_state
-        # Get fixed rate
-        fixed_rate = hyperdrive.calc_fixed_rate(pool_state)
-
+        pool_state = interface.current_pool_state
+        fixed_rate = interface.calc_fixed_rate(pool_state)
         action_list = []
 
         # Close longs if matured
@@ -137,6 +133,7 @@ class Arbitrage(HyperdrivePolicy):
                         ),
                     )
                 )
+
         # Close shorts if matured
         for maturity_time, short in wallet.shorts.items():
             # If matured

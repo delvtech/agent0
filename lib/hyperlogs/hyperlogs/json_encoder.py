@@ -5,6 +5,7 @@ from datetime import datetime
 from enum import Enum
 from traceback import format_tb
 from types import TracebackType
+from typing import Any
 
 import numpy as np
 from fixedpointmath import FixedPoint
@@ -18,8 +19,19 @@ class ExtendedJSONEncoder(json.JSONEncoder):
 
     # pylint: disable=too-many-return-statements
     # pylint: disable=too-many-branches
-    def default(self, o):
-        r"""Override default behavior"""
+    def default(self, o: Any) -> Any:
+        """Override default behavior.
+
+        Arguments
+        ---------
+        o: Any
+            The object to be converted to JSON.
+
+        Returns
+        -------
+        Any
+            The corresponding object ready to be serialized to JSON.
+        """
         if isinstance(o, set):
             return list(o)
         if isinstance(o, HexBytes):

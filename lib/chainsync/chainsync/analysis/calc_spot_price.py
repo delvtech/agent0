@@ -13,8 +13,27 @@ def calc_spot_price(
     bond_reserves: pd.Series,
     initial_share_price: Decimal,
     time_stretch: Decimal,
-):
-    """Calculate the spot price."""
+) -> pd.Series:
+    """Calculate the spot price.
+
+    Arguments
+    ---------
+    share_reserves: pd.Series
+        The share reserves from the pool info.
+    share_adjustment: pd.Series
+        The share adjustment from the pool info.
+    bond_reserves: pd.Series
+        The bond reserves from the pool info.
+    initial_share_price: Decimal
+        The initial share price from the pool config.
+    time_stretch: Decimal
+        The time stretch from the pool config.
+
+    Returns
+    -------
+    pd.Series
+        The spot prices.
+    """
     # Keep decimal places to 18 decimal places
     with localcontext() as ctx:
         ctx.prec = 18

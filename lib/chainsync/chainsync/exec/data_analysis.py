@@ -32,10 +32,8 @@ def data_analysis(
 
     Arguments
     ---------
-    start_block : int
+    start_block: int
         The starting block to filter the query on
-    lookback_block_limit : int
-        The maximum number of blocks to look back when filling in missing data
     eth_config: EthConfig | None
         Configuration for URIs to the rpc and artifacts. If not set, will look for addresses
         in eth.env.
@@ -107,16 +105,21 @@ def data_analysis(
         block_number = latest_data_block_number
 
 
-def get_latest_data_block(db_session: Session):
+def get_latest_data_block(db_session: Session) -> int:
     """Gets the latest block the data pipeline has written
     Since there are multiple tables that analysis reads from,
     we query the latest block from all read tables and select the minimum
-    block from the list
+    block from the list.
 
     Arguments
     ---------
     db_session: Session
-        Session object for connecting to db.
+        The initialized db session.
+
+    Returns
+    -------
+    int
+        The latest block number from the PoolInfo table.
     """
     # Note to avoid race condition, we add pool info as the last update for the block
     latest_pool_info = get_latest_block_number_from_table(PoolInfo, db_session)

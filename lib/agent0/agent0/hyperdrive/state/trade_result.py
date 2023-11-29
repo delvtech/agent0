@@ -30,19 +30,19 @@ class TradeResult:
 
     Attributes
     ----------
-    status : TradeStatus
+    status: TradeStatus
         The status of the trade
-    agent : HyperdriveAgent
+    agent: HyperdriveAgent
         The agent that was executing the trade
-    exception : BaseException | None
+    exception: BaseException | None
         The exception that was thrown
-    pool_config : dict[str, Any]
+    pool_config: dict[str, Any]
         The configuration of the pool
-    pool_info : dict[str, Any]
+    pool_info: dict[str, Any]
         The information of the pool
     checkpoint_info: dict[str, Any]
         The information of the latest checkpoint
-    additional_info : dict[str, Any]
+    additional_info: dict[str, Any]
         Additional information used for crash reporting
     anvil_state: str | None
         The anvil state dump when the exception occurred

@@ -4,8 +4,21 @@ from decimal import ROUND_DOWN, ROUND_UP, Decimal, localcontext
 import pandas as pd
 
 
-def calc_fixed_rate(spot_price: pd.Series, position_duration: Decimal):
-    """Calculates the fixed rate given trade data."""
+def calc_fixed_rate(spot_price: pd.Series, position_duration: Decimal) -> pd.Series:
+    """Calculates the fixed rate given trade data.
+
+    Arguments
+    ---------
+    spot_price: pd.Series
+        The spot price.
+    position_duration: Decimal
+        The position duration in seconds.
+
+    Returns
+    -------
+    pd.Series
+        The fixed interest rate.
+    """
     # Position duration (in seconds) in terms of fraction of year
     # This div should round up
     # This replicates div up in fixed point

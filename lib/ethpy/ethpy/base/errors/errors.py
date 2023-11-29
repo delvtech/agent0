@@ -52,7 +52,7 @@ def decode_error_selector_for_contract(error_selector: str, contract: Contract) 
 
     Arguments
     ---------
-    error_selector : str
+    error_selector: str
         A 3 byte hex string obtained from a keccak256 has of the error signature, i.e.
         'InvalidToken()' would yield '0xc1ab6dc1'.
     contract: Contract

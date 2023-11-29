@@ -16,7 +16,7 @@ import requests
 import tomli
 
 # list all packages
-packages = ["agent0", "chainsync", "ethpy"]
+packages = ["agent0", "chainsync", "ethpy", "hypertypes", "hyperlogs"]
 
 # indicate where the Python packages lives
 package_root = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))

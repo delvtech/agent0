@@ -30,10 +30,10 @@ class NoActionPolicy(BasePolicy[MarketInterface, Wallet]):
 
         Arguments
         ---------
-        market : HyperdriveMarketState
-            the trading market
-        wallet : HyperdriveWallet
-            agent's wallet
+        interface: MarketInterface
+            The trading market interface.
+        wallet: Wallet
+            The agent's wallet.
 
         Returns
         -------

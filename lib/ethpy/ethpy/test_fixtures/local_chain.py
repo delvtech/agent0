@@ -18,9 +18,9 @@ def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1"):
 
     Arguments
     ---------
-    anvil_port : int
+    anvil_port: int
         Port number for the anvil chain.
-    host : str
+    host: str
         Host address.
 
     Yields
@@ -72,11 +72,11 @@ def local_hyperdrive_pool(local_chain: str) -> DeployedHyperdrivePool:
             The local account that deploys and initializes hyperdrive
         hyperdrive_contract_addresses: HyperdriveAddresses
             The hyperdrive contract addresses
-        hyperdrive_contract : Contract
+        hyperdrive_contract: Contract
             web3.py contract instance for the hyperdrive contract
-        hyperdrive_factory_contract : Contract
+        hyperdrive_factory_contract: Contract
             web3.py contract instance for the hyperdrive factory contract
-        base_token_contract : Contract
+        base_token_contract: Contract
             web3.py contract instance for the base token contract
     """
     # pylint: disable=redefined-outer-name
@@ -104,11 +104,11 @@ def launch_local_hyperdrive_pool(
             The local account that deploys and initializes hyperdrive
         hyperdrive_contract_addresses: HyperdriveAddresses
             The hyperdrive contract addresses
-        hyperdrive_contract : Contract
+        hyperdrive_contract: Contract
             web3.py contract instance for the hyperdrive contract
-        hyperdrive_factory_contract : Contract
+        hyperdrive_factory_contract: Contract
             web3.py contract instance for the hyperdrive factory contract
-        base_token_contract : Contract
+        base_token_contract: Contract
             web3.py contract instance for the base token contract
     """
     # Lots of local  variables for the tests

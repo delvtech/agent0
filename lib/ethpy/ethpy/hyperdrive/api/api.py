@@ -9,11 +9,6 @@ import copy
 import os
 from typing import TYPE_CHECKING, cast
 
-from fixedpointmath import FixedPoint
-from hypertypes import IERC4626HyperdriveContract
-from hypertypes.types import ERC20MintableContract, MockERC4626Contract
-from web3.types import BlockData, BlockIdentifier, Timestamp
-
 from ethpy import build_eth_config
 from ethpy.base import initialize_web3_with_http_provider
 from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
@@ -23,6 +18,10 @@ from ethpy.hyperdrive.transactions import (
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
 )
+from fixedpointmath import FixedPoint
+from hypertypes import IERC4626HyperdriveContract
+from hypertypes.types import ERC20MintableContract, MockERC4626Contract
+from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
 from ._contract_calls import (
@@ -70,10 +69,9 @@ from ._mock_contract import (
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber
+    from ethpy import EthConfig
     from web3 import Web3
     from web3.types import Nonce
-
-    from ethpy import EthConfig
 
     from ..receipt_breakdown import ReceiptBreakdown
 
@@ -95,14 +93,14 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        eth_config : EthConfig, optional
+        eth_config: EthConfig, optional
             Configuration dataclass for the ethereum environment.
             If given, then it is constructed from environment variables.
-        addresses : HyperdriveAddresses, optional
+        addresses: HyperdriveAddresses, optional
             This is a dataclass containing addresses for deployed hyperdrive and base token contracts.
             If given, then the `eth_config.artifacts_uri` variable is not used, and these Addresses are used instead.
             If not given, then addresses is constructed from the `addresses.json` file at `eth_config.artifacts_uri`.
-        web3 : Web3, optional
+        web3: Web3, optional
             web3 provider object, optional
             If given, a web3 object is constructed using the `eth_config.rpc_uri` as the http provider.
         """
@@ -181,7 +179,7 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        block_identifier : BlockIdentifier
+        block_identifier: BlockIdentifier
             Any one of the web3py types: [BlockParams, BlockNumber, Hash32, HexStr, HexBytes, int].
 
         Returns
@@ -196,7 +194,7 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        block : BlockData
+        block: BlockData
             A web3py dataclass for storing block information.
 
         Returns
@@ -211,7 +209,7 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        block : BlockData
+        block: BlockData
             A web3py dataclass for storing block information.
 
         Returns
@@ -226,7 +224,7 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        block : BlockData, optional
+        block: BlockData, optional
             A web3py dataclass for storing block information.
             Defaults to the latest block.
 
@@ -264,7 +262,7 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        block_number : BlockNumber, optional
+        block_number: BlockNumber, optional
             The number for any minted block.
             If not given, the latest block number is used.
 
@@ -282,7 +280,7 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        block_number : BlockNumber, optional
+        block_number: BlockNumber, optional
             The number for any minted block.
             Defaults to the current block number.
 
@@ -300,7 +298,7 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        block_number : BlockNumber, optional
+        block_number: BlockNumber, optional
             The number for any minted block.
             Defaults to the current block number.
 
@@ -339,15 +337,15 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        agent : LocalAccount
+        agent: LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount : FixedPoint
+        trade_amount: FixedPoint
             The size of the position, in base.
-        slippage_tolerance : FixedPoint, optional
+        slippage_tolerance: FixedPoint, optional
             Amount of slippage allowed from the trade.
             If given, then the trade will not execute unless the slippage is below this value.
             If not given, then execute the trade regardless of the slippage.
-        nonce : Nonce, optional
+        nonce: Nonce, optional
             An optional explicit nonce to set with the transaction.
 
         Returns
@@ -371,17 +369,17 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        agent : LocalAccount
+        agent: LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount : FixedPoint
+        trade_amount: FixedPoint
             The size of the position, in base.
-        maturity_time : int
+        maturity_time: int
             The token maturity time in seconds.
-        slippage_tolerance : FixedPoint, optional
+        slippage_tolerance: FixedPoint, optional
             Amount of slippage allowed from the trade.
             If given, then the trade will not execute unless the slippage is below this value.
             If not given, then execute the trade regardless of the slippage.
-        nonce : Nonce, optional
+        nonce: Nonce, optional
             An optional explicit nonce to set with the transaction.
 
         Returns
@@ -402,15 +400,15 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        agent : LocalAccount
+        agent: LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount : FixedPoint
+        trade_amount: FixedPoint
             The size of the position, in base.
-        slippage_tolerance : FixedPoint, optional
+        slippage_tolerance: FixedPoint, optional
             Amount of slippage allowed from the trade.
             If given, then the trade will not execute unless the slippage is below this value.
             If not given, then execute the trade regardless of the slippage.
-        nonce : Nonce, optional
+        nonce: Nonce, optional
             An explicit nonce to set with the transaction.
 
         Returns
@@ -434,17 +432,17 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        agent : LocalAccount
+        agent: LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount : FixedPoint
+        trade_amount: FixedPoint
             The size of the position, in base.
-        maturity_time : int
+        maturity_time: int
             The token maturity time in seconds.
-        slippage_tolerance : FixedPoint, optional
+        slippage_tolerance: FixedPoint, optional
             Amount of slippage allowed from the trade.
             If given, then the trade will not execute unless the slippage is below this value.
             If not given, then execute the trade regardless of the slippage.
-        nonce : Nonce, optional
+        nonce: Nonce, optional
             An explicit nonce to set with the transaction.
 
         Returns
@@ -468,15 +466,15 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        agent : LocalAccount
+        agent: LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount : FixedPoint
+        trade_amount: FixedPoint
             The size of the position, in base.
-        min_apr : FixedPoint
+        min_apr: FixedPoint
             The minimum allowable APR after liquidity is added.
-        max_apr : FixedPoint
+        max_apr: FixedPoint
             The maximum allowable APR after liquidity is added.
-        nonce : Nonce, optional
+        nonce: Nonce, optional
             An explicit nonce to set with the transaction.
 
         Returns
@@ -493,11 +491,11 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        agent : LocalAccount
+        agent: LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount : FixedPoint
+        trade_amount: FixedPoint
             The size of the position, in base.
-        nonce : Nonce, optional
+        nonce: Nonce, optional
             An explicit nonce to set with the transaction.
 
         Returns
@@ -521,13 +519,11 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        agent : LocalAccount
+        agent: LocalAccount
             The account for the agent that is executing and signing the trade transaction.
-        trade_amount : FixedPoint
+        trade_amount: FixedPoint
             The size of the position, in base.
-        min_output : FixedPoint
-            The minimum output amount.
-        nonce : Nonce, optional
+        nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
 
         Returns
@@ -546,7 +542,7 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -569,10 +565,10 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        checkpoint_duration : int, optional
+        checkpoint_duration: int, optional
             The time, in seconds, between checkpoints.
             Defaults to the current pool's checkpoint duration.
-        block_timestamp : Timestamp, optional
+        block_timestamp: Timestamp, optional
             A timestamp for any block. Use the latest block to get the current checkpoint id,
             or a specific timestamp of a transaction's block if getting the checkpoint id for that transaction.
             Defaults to the current block timestamp.
@@ -599,7 +595,7 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -620,7 +616,7 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -641,7 +637,7 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -662,9 +658,9 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        base_amount : FixedPoint
+        base_amount: FixedPoint
             The amount to spend, in base.
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -685,9 +681,9 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        bond_amount : FixedPoint
+        bond_amount: FixedPoint
             The amount to of bonds to short.
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -714,9 +710,9 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        amount_in : FixedPoint
+        amount_in: FixedPoint
             The amount of shares going into the pool.
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -741,9 +737,9 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        amount_in : FixedPoint
+        amount_in: FixedPoint
             The amount of bonds to target.
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -768,9 +764,9 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        amount_in : FixedPoint
+        amount_in: FixedPoint
             The amount of bonds to target.
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not provided, use the current pool state.
 
@@ -795,9 +791,9 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        amount_in : FixedPoint
+        amount_in: FixedPoint
             The amount of bonds in.
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not provided, use the current pool state.
 
@@ -820,7 +816,7 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not provided, use the current pool state.
 
@@ -845,7 +841,7 @@ class HyperdriveInterface:
         ---------
         minimum_share_reserves: FixedPoint
             The minimum share reserves to target
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not provided, use the current pool state.
 
@@ -875,22 +871,22 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        bonds_in : FixedPoint
+        bonds_in: FixedPoint
             The amount of bonds being added to the pool.
-        maturity_time : int, optional
+        maturity_time: int, optional
             The maturity timestamp of the open position, in epoch seconds.
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
         -------
-        tuple[FixedPoint, FixedPoint, FixedPoint] consisting of:
-            curve_fee : FixedPoint
+        tuple[FixedPoint, FixedPoint, FixedPoint]
+            curve_fee: FixedPoint
                 Curve fee, in shares.
-            flat_fee : FixedPoint
+            flat_fee: FixedPoint
                 Flat fee, in shares.
-            gov_fee : FixedPoint
+            gov_fee: FixedPoint
                 Governance fee, in shares.
         """
         if pool_state is None:
@@ -914,22 +910,22 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        shares_in : FixedPoint
+        shares_in: FixedPoint
             The amount of shares being added to the pool.
-        maturity_time : int, optional
+        maturity_time: int, optional
             The maturity timestamp of the open position, in epoch seconds.
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
         -------
-        tuple[FixedPoint, FixedPoint, FixedPoint] consisting of:
-            curve_fee : FixedPoint
+        tuple[FixedPoint, FixedPoint, FixedPoint]
+            curve_fee: FixedPoint
                 Curve fee, in shares.
-            flat_fee : FixedPoint
+            flat_fee: FixedPoint
                 Flat fee, in shares.
-            gov_fee : FixedPoint
+            gov_fee: FixedPoint
                 Governance fee, in shares.
         """
         if pool_state is None:
@@ -948,21 +944,26 @@ class HyperdriveInterface:
         .. math::
             \mu * (z - \zeta) * (1 + \text{apr} * t)^{1 / \tau}
 
-        Arguments
-        ---------
-        target_rate : FixedPoint
-            The target apr for which to calculate the bond reserves given the pools current share reserves.
-        target_shares : FixedPoint, optional
-            The target share reserves for the pool
-        pool_state : PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
-            If not given, use the current pool state.
-
         .. todo::
             This function name matches the Rust implementation, but is not preferred because
             "given_shares_and_rate" is in the wrong order (should be rate_and_shares) according to arguments
             and really "given_*" could be removed because it can be inferred from arguments.
             Need to fix it from the bottom up.
+
+        Arguments
+        ---------
+        target_rate: FixedPoint
+            The target apr for which to calculate the bond reserves given the pools current share reserves.
+        target_shares: FixedPoint, optional
+            The target share reserves for the pool
+        pool_state: PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The output bonds.
         """
         if pool_state is None:
             pool_state = self.current_pool_state
@@ -976,9 +977,9 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        budget : FixedPoint
+        budget: FixedPoint
             How much money the agent is able to spend, in base.
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -999,9 +1000,9 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        budget : FixedPoint
+        budget: FixedPoint
             How much money the agent is able to spend, in base.
-        pool_state : PoolState, optional
+        pool_state: PoolState, optional
             The current state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 

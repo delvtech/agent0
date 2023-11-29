@@ -15,11 +15,11 @@ def get_transaction_logs(
 
     Arguments
     ---------
-    contract : Contract
+    contract: Contract
         The contract that emitted the receipt
-    tx_receipt : TxReceipt
+    tx_receipt: TxReceipt
         The emitted receipt after a transaction was completed
-    event_names : Sequence[str] | None
+    event_names: Sequence[str] | None
         If not None, then only return logs with matching event names
 
 
@@ -50,9 +50,9 @@ def get_event_object(
 
     Arguments
     ---------
-    contract : Contract
+    contract: Contract
         The contract that emitted the receipt
-    log : LogReceipt
+    log: LogReceipt
         A TypedDict parsed out of the transaction receipt
     tx_receipt: TxReceipt
         The emitted receipt after a transaction was completed

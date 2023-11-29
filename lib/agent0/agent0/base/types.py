@@ -8,43 +8,64 @@ from typing import Any, Generic, TypeVar
 
 from fixedpointmath import FixedPoint
 
+# We don't need to worry about return docstrings for the decorator because they will be overwritten
+# pylint: disable=missing-return-doc
+# pylint: disable=missing-return-type-doc
+
 # This is the minimum allowed value to be passed into calculations to avoid
 # problems with sign flips that occur when the floating point range is exceeded.
 WEI = FixedPoint(scaled_value=1)  # smallest denomination of ether
 
 
 class FrozenClass:
-    """Config object with frozen attributes"""
+    """Config object with frozen attributes."""
 
     def freeze(self):
-        """Disallows changing existing members"""
+        """Disallows changing existing members."""
         return NotImplemented
 
     def disable_new_attribs(self):
-        """Disallows adding new members"""
+        """Disallows adding new members."""
         return NotImplemented
 
     def astype(self, _new_type):
-        """Cast all member attributes to a new type"""
+        """Cast all member attributes to a new type."""
         return NotImplemented
 
     @property
     def dtypes(self):
-        """Return a dict listing name & type of each member variable"""
+        """Return a dict listing name & type of each member variable."""
         return NotImplemented
 
 
 def freezable(frozen: bool = False, no_new_attribs: bool = False):
-    r"""A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed"""
+    """A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed.
+
+    Arguments
+    ---------
+    frozen: bool, optional
+        Whether or not the class attributes can be changed.
+        Defaults to False, indicating that they can be changed.
+    no_new_attribs: bool, optional
+        Whether or not new attributes can be added to the class.
+        Defaults to False, indicating that new attributes can be added.
+    """
 
     def decorator(cls):
+        """Decorator for the provided class.
+
+        Arguments
+        ---------
+        cls: Class
+            The Class object to decorate, which can optionally be a Dataclass
+        """
         # this decorator should only be placed atop a dataclass
         if not is_dataclass(cls):
             raise TypeError("The class must be a data class.")
 
         @wraps(wrapped=cls, updated=())
         class DecoratedFrozenClass(cls, FrozenClass):
-            """Subclass cls to enable freezing of attributes
+            """Subclass cls to enable freezing of attributes.
 
             .. todo:: resolve why pyright cannot access member "freeze" when instantiated_class.freeze() is called
             """
@@ -64,15 +85,21 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False):
                 super().__setattr__(attrib, value)
 
             def freeze(self) -> None:
-                """Disallows changing existing members"""
+                """Disallows changing existing members."""
                 super().__setattr__("frozen", True)
 
             def disable_new_attribs(self) -> None:
-                """Disallows adding new members"""
+                """Disallows adding new members."""
                 super().__setattr__("no_new_attribs", True)
 
             def astype(self, new_type):
-                """Cast all member attributes to a new type"""
+                """Cast all member attributes to a new type.
+
+                Arguments
+                ---------
+                new_type: Any
+                    The type to cast to.
+                """
                 new_data = {}
                 for attr_name, attr_value in asdict(self).items():
                     try:
@@ -91,7 +118,13 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False):
 
             @property
             def dtypes(self) -> dict[str, type]:
-                """Return a dict listing name & type of each member variable"""
+                """Return a dict listing name & type of each member variable.
+
+                Returns
+                -------
+                dict[str, type]
+                    The named types of the class.
+                """
                 dtypes_dict: dict[str, type] = {}
                 for attr_name, attr_value in asdict(self).items():
                     dtypes_dict[attr_name] = type(attr_value)
@@ -112,7 +145,7 @@ class TokenType(Enum):
 
 @dataclass
 class Quantity:
-    r"""An amount with a unit"""
+    r"""An amount with a unit."""
 
     amount: FixedPoint
     unit: TokenType
@@ -122,7 +155,7 @@ class Quantity:
 
 
 class MarketType(Enum):
-    r"""A type of market"""
+    r"""A type of market."""
 
     HYPERDRIVE = "hyperdrive"
     BORROW = "borrow"
@@ -133,7 +166,7 @@ MarketAction = TypeVar("MarketAction")
 
 @dataclass
 class Trade(Generic[MarketAction]):
-    r"""A trade for a market"""
+    """A trade for a market."""
 
     market_type: MarketType
     market_action: MarketAction

@@ -8,7 +8,7 @@ import attr
 import requests
 from eth_typing import Address, ChecksumAddress
 
-from ..base.conversions import camel_to_snake
+from hypertypes.utilities.conversions import camel_to_snake
 
 
 @attr.s
@@ -24,7 +24,18 @@ class HyperdriveAddresses:
 
 
 def fetch_hyperdrive_address_from_uri(contracts_uri: str) -> HyperdriveAddresses:
-    """Fetch addresses for deployed contracts in the Hyperdrive system."""
+    """Fetch addresses for deployed contracts in the Hyperdrive system.
+
+    Arguments
+    ---------
+    contracts_uri: str
+        The URI for the artifacts endpoint.
+
+    Returns
+    -------
+    HyperdriveAddresses
+        The addresses for deployed Hyperdrive contracts.
+    """
     response = None
     for _ in range(100):
         response = requests.get(contracts_uri, timeout=60)

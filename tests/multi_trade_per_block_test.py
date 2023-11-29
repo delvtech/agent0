@@ -48,13 +48,26 @@ class MultiTradePolicy(HyperdrivePolicy):
         self.made_trade = False
         super().__init__(budget, rng, slippage_tolerance)
 
-    # We want to rename the argument from "interface" in the base class to "hyperdrive" to be more explicit
-    # pylint: disable=arguments-renamed
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Open all trades for a fixed amount and closes them after, one at a time."""
+        """Open all trades for a fixed amount and closes them after, one at a time.
+
+        Arguments
+        ---------
+        interface: HyperdriveInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
+
         action_list = []
 
         if self.made_trade:
@@ -117,7 +130,7 @@ class TestMultiTradePerBlock:
         db_session: Session,
         db_api: str,
     ):
-        """Runs the entire pipeline and checks the database at the end.All arguments are fixtures."""
+        """Runs the entire pipeline and checks the database at the end. All arguments are fixtures."""
         # TODO local_hyperdrive_pool is currently being run with automining. Hence, multiple trades
         # per block can't be tested until we can parameterize anvil running without automining.
         # For now, this is simply testing that the introduction of async trades doesn't break

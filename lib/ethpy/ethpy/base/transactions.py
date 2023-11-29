@@ -50,17 +50,17 @@ def smart_contract_read(
 
     Arguments
     ---------
-    contract : web3.contract.contract.Contract
+    contract: web3.contract.contract.Contract
         The contract that we are reading from.
-    function_name_or_signature : str
+    function_name_or_signature: str
         The name of the function to query.
-    *fn_args : Unknown
+    *fn_args: Unknown
         The arguments passed to the contract method.
     block_number: BlockNumber | None
         If set, will query the chain on the specified block
     read_retry_count: BlockNumber | None
         The number of times to retry the read call if it fails. Defaults to 5.
-    **fn_kwargs : Unknown
+    **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
     Returns
@@ -141,19 +141,19 @@ def smart_contract_preview_transaction(
 
     Arguments
     ---------
-    contract : web3.contract.contract.Contract
+    contract: web3.contract.contract.Contract
         The contract that we are reading from.
     signer_address: ChecksumAddress
         The address that would sign the transaction.
-    function_name_or_signature : str
+    function_name_or_signature: str
         The name of the function
-    *fn_args : Unknown
+    *fn_args: Unknown
         The arguments passed to the contract method.
     block_number: BlockNumber | None
         If set, will query the chain on the specified block
     read_retry_count: BlockNumber | None
         The number of times to retry the read call if it fails. Defaults to 5.
-    **fn_kwargs : Unknown
+    **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
     Returns
@@ -366,6 +366,11 @@ def build_transaction(
         The nonce to use for this transaction. Defaults to setting it to the result of `get_transaction_count`.
     read_retry_count: BlockNumber | None
         The number of times to retry the read call if it fails. Defaults to 5.
+
+    Returns
+    -------
+    TxParams
+        The unsent raw transaction.
     """
     if read_retry_count is None:
         read_retry_count = DEFAULT_READ_RETRY_COUNT
@@ -403,7 +408,7 @@ async def _async_send_transaction_and_wait_for_receipt(
         The built transaction ready to be sent
     signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction
-    web3 : Web3
+    web3: Web3
         web3 provider object
 
     Returns
@@ -447,15 +452,15 @@ async def async_smart_contract_transact(
 
     Arguments
     ---------
-    web3 : Web3
+    web3: Web3
         web3 provider object
-    contract : Contract
+    contract: Contract
         Any deployed web3 contract
-    signer : LocalAccount
+    signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction
-    function_name_or_signature : str
+    function_name_or_signature: str
         This function must exist in the compiled contract's ABI
-    *fn_args : Unknown
+    *fn_args: Unknown
         The positional arguments passed to the contract method.
     nonce: Nonce | None
         If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
@@ -463,7 +468,7 @@ async def async_smart_contract_transact(
         The number of times to retry the read call if it fails. Defaults to 5.
     write_retry_count: BlockNumber | None
         The number of times to retry the transact call if it fails. Defaults to no retries.
-    **fn_kwargs : Unknown
+    **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
     Returns
@@ -543,7 +548,7 @@ def _send_transaction_and_wait_for_receipt(unsent_txn: TxParams, signer: LocalAc
         The built transaction ready to be sent
     signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction
-    web3 : Web3
+    web3: Web3
         web3 provider object
 
     Returns
@@ -584,15 +589,15 @@ def smart_contract_transact(
 
     Arguments
     ---------
-    web3 : Web3
+    web3: Web3
         web3 container object
-    contract : Contract
+    contract: Contract
         Any deployed web3 contract
-    signer : LocalAccount
+    signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction
-    function_name_or_signature : str
+    function_name_or_signature: str
         This function must exist in the compiled contract's ABI
-    *fn_args : Unknown
+    *fn_args: Unknown
         The positional arguments passed to the contract method.
     nonce: Nonce | None
         If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
@@ -600,7 +605,7 @@ def smart_contract_transact(
         The number of times to retry the read call if it fails. Defaults to 5.
     write_retry_count: BlockNumber | None
         The number of times to retry the transact call if it fails. Defaults to no retries.
-    **fn_kwargs : Unknown
+    **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
     Returns
@@ -683,15 +688,15 @@ async def async_eth_transfer(
 
     Arguments
     ---------
-    web3 : Web3
+    web3: Web3
         web3 container object
-    signer : LocalAccount
+    signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction
-    to_address : ChecksumAddress
+    to_address: ChecksumAddress
         Address for where the Ethereum is going to
-    amount_wei : int
+    amount_wei: int
         Amount to transfer, in WEI
-    max_priority_fee : int
+    max_priority_fee: int
         Amount of tip to provide to the miner when a block is mined
     nonce: Nonce | None
         If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
@@ -751,15 +756,15 @@ def eth_transfer(
 
     Arguments
     ---------
-    web3 : Web3
+    web3: Web3
         web3 container object
-    signer : LocalAccount
+    signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction
-    to_address : ChecksumAddress
+    to_address: ChecksumAddress
         Address for where the Ethereum is going to
-    amount_wei : int
+    amount_wei: int
         Amount to transfer, in WEI
-    max_priority_fee : int
+    max_priority_fee: int
         Amount of tip to provide to the miner when a block is mined
     nonce: Nonce | None
         If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count

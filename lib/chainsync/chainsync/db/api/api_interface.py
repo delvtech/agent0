@@ -28,14 +28,19 @@ def register_username(api_uri: str, wallet_addrs: list[str], username: str) -> N
 
 
 def balance_of(api_uri: str, wallet_addrs: list[str]) -> pd.DataFrame:
-    """Gets all open positions for a given list of wallet addresses from the db
+    """Gets all open positions for a given list of wallet addresses from the db.
 
     Arguments
     ---------
-    api_url : str
+    api_uri: str
         The endpoint for the flask server.
     wallet_addrs: list[str]
         The list of wallet addresses to register.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame that consists of all open positions for the given wallet addresses.
     """
     # TODO: use the json schema from the server.
     json_data = {"wallet_addrs": wallet_addrs}

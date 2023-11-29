@@ -1,7 +1,7 @@
 .. agent0 documentation master file
 
 Welcome to the documentation for the agent0 monorepo!
-=================================
+=====================================================
 
 .. include:: ../../README.md
    :parser: myst_parser.sphinx_
@@ -13,7 +13,8 @@ Welcome to the documentation for the agent0 monorepo!
    /autoapi/agent0/index
    /autoapi/chainsync/index
    /autoapi/ethpy/index
-   /autoapi/pypechain/index
+   /autoapi/hyperlogs/index
+   /autoapi/hypertypes/index
 
 
 Indices and tables

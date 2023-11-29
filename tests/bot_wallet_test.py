@@ -24,7 +24,7 @@ from numpy.random._generator import Generator as NumpyGenerator
 from web3 import HTTPProvider
 
 
-def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, hyperdrive: HyperdriveInterface) -> None:
+def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, interface: HyperdriveInterface) -> None:
     """Check that the agent's wallet matches what's reported from the chain.
 
     Will assert that balances match.
@@ -33,39 +33,39 @@ def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, hyperdrive: Hyperdr
     ---------
     wallet: HyperdriveWallet
         The HyperdriveWallet object to check against the chain
-    hyperdrive: HyperdriveInterface
+    interface: HyperdriveInterface
         The Hyperdrive API interface object
     """
     # Check base
-    base_from_chain = hyperdrive.base_token_contract.functions.balanceOf(
-        hyperdrive.web3.to_checksum_address(wallet.address.hex())
+    base_from_chain = interface.base_token_contract.functions.balanceOf(
+        interface.web3.to_checksum_address(wallet.address.hex())
     ).call()
     assert wallet.balance.amount == FixedPoint(scaled_value=base_from_chain)
 
     # Check lp positions
     asset_id = encode_asset_id(AssetIdPrefix.LP, 0)
-    address = hyperdrive.web3.to_checksum_address(wallet.address.hex())
-    lp_from_chain = hyperdrive.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
+    address = interface.web3.to_checksum_address(wallet.address.hex())
+    lp_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
     assert wallet.lp_tokens == FixedPoint(scaled_value=lp_from_chain)
 
     # Check withdrawal positions
     asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
-    address = hyperdrive.web3.to_checksum_address(wallet.address.hex())
-    withdrawal_from_chain = hyperdrive.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
+    address = interface.web3.to_checksum_address(wallet.address.hex())
+    withdrawal_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
     assert wallet.withdraw_shares == FixedPoint(scaled_value=withdrawal_from_chain)
 
     # Check long positions
     for long_time, long_amount in wallet.longs.items():
         asset_id = encode_asset_id(AssetIdPrefix.LONG, long_time)
-        address = hyperdrive.web3.to_checksum_address(wallet.address.hex())
-        long_from_chain = hyperdrive.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
+        address = interface.web3.to_checksum_address(wallet.address.hex())
+        long_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
         assert long_amount.balance == FixedPoint(scaled_value=long_from_chain)
 
     # Check short positions
     for short_time, short_amount in wallet.shorts.items():
         asset_id = encode_asset_id(AssetIdPrefix.SHORT, short_time)
-        address = hyperdrive.web3.to_checksum_address(wallet.address.hex())
-        short_from_chain = hyperdrive.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
+        address = interface.web3.to_checksum_address(wallet.address.hex())
+        short_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
         assert short_amount.balance == FixedPoint(scaled_value=short_from_chain)
 
 
@@ -101,10 +101,8 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
         self.counter = 0
         super().__init__(budget, rng, slippage_tolerance)
 
-    # We want to rename the argument from "interface" in the base class to "hyperdrive" to be more explicit
-    # pylint: disable=arguments-renamed
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Open all trades for a fixed amount and closes them after, one at a time.
 
@@ -112,9 +110,9 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
 
         Arguments
         ---------
-        hyperdrive : HyperdriveInterface
+        interface: HyperdriveInterface
             The trading market.
-        wallet : HyperdriveWallet
+        wallet: HyperdriveWallet
             agent's wallet
 
         Returns
@@ -228,7 +226,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
             done_trading = True
 
         # After each trade, check the wallet for correctness against the chain
-        ensure_agent_wallet_is_correct(wallet, hyperdrive)
+        ensure_agent_wallet_is_correct(wallet, interface)
         self.counter += 1
         return action_list, done_trading
 

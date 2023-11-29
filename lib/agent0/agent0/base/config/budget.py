@@ -29,7 +29,7 @@ class Budget:
 
         Arguments
         ---------
-        rng : NumpyGenerator
+        rng: `numpy.random._generator.Generator <https://numpy.org/doc/stable/reference/random/generator.html>`_
             The NumpyGenerator provides access to a wide range of distributions, and stores the random state.
 
         Returns

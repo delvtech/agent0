@@ -35,16 +35,18 @@ def get_agent_accounts(
 
     Arguments
     ---------
-    agent_config : list[AgentConfig]
-        List containing all of the agent specifications
-    web3 : Web3
-        web3 provider object
-    base_token_contract : Contract
-        The deployed ERC20 base token contract
-    hyperdrive_address : str
-        The address of the deployed hyperdrive contract
-    rng : numpy.random._generator.Generator
-        The experiment's stateful random number generator
+    web3: Web3
+        Web3 provider object.
+    agent_config: list[AgentConfig]
+        List containing all of the agent specifications.
+    account_key_config: AccountKeyConfig
+        Dataclass containing configuration options for the agent account, including keys and budgets.
+    base_token_contract: Contract
+        The deployed ERC20 base token contract.
+    hyperdrive_address: str
+        The address of the deployed hyperdrive contract.
+    rng: `numpy.random._generator.Generator <https://numpy.org/doc/stable/reference/random/generator.html>`_
+        The experiment's stateful random number generator.
 
     Returns
     -------
@@ -96,13 +98,13 @@ async def set_max_approval(
 
     Arguments
     ---------
-    agents : list[HyperdriveAgent]
+    agents: list[HyperdriveAgent]
         List of agents
-    web3 : Web3
+    web3: Web3
         web3 provider object
-    base_token_contract : Contract
+    base_token_contract: Contract
         The deployed ERC20 base token contract
-    hyperdrive_address : str
+    hyperdrive_address: str
         The address of the deployed hyperdrive contract
     """
     agents_left = list(agents)

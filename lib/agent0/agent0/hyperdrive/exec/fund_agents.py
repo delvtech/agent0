@@ -37,7 +37,7 @@ async def async_fund_agents(
 
     Arguments
     ---------
-    user_account : HyperdriveAgent
+    user_account: HyperdriveAgent
         The HyperdriveAgent corresponding to the user account to fund the agents.
     eth_config: EthConfig
         Configuration for URIs to the rpc and artifacts.

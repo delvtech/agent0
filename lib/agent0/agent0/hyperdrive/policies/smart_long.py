@@ -86,29 +86,29 @@ class SmartLong(HyperdrivePolicy):
 
         super().__init__(budget, rng, slippage_tolerance)
 
-    # We want to rename the argument from "interface" to "hyperdrive" to be more explicit
-    # pylint: disable=arguments-renamed
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Implement a Long Louie user strategy
 
         Arguments
         ---------
-        hyperdrive : HyperdriveInterface
-            The trading market.
-        wallet : HyperdriveWallet
+        interface: HyperdriveInterface
+            Interface for the market on which this agent will be executing trades (MarketActions).
+        wallet: HyperdriveWallet
             The agent's wallet.
 
         Returns
         -------
-        action_list : list[MarketAction]
+        tuple[list[MarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading.
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
         gonna_trade = self.rng.choice([True, False], p=[float(self.trade_chance), 1 - float(self.trade_chance)])
         if not gonna_trade:
             return ([], False)
-        pool_state = hyperdrive.current_pool_state
+        pool_state = interface.current_pool_state
         action_list = []
         for long_time in wallet.longs:  # loop over longs # pylint: disable=consider-using-dict-items
             # if any long is mature
@@ -131,9 +131,9 @@ class SmartLong(HyperdrivePolicy):
         long_balances = [long.balance for long in wallet.longs.values()]
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
-        if (hyperdrive.calc_fixed_rate() - pool_state.variable_rate) > self.risk_threshold and not has_opened_long:
+        if (interface.calc_fixed_rate() - pool_state.variable_rate) > self.risk_threshold and not has_opened_long:
             # calculate the total number of bonds we want to see in the pool
-            total_bonds_to_match_variable_apr = hyperdrive.calc_bonds_given_shares_and_rate(
+            total_bonds_to_match_variable_apr = interface.calc_bonds_given_shares_and_rate(
                 target_rate=pool_state.variable_rate
             )
             # get the delta bond amount & convert units
@@ -141,13 +141,13 @@ class SmartLong(HyperdrivePolicy):
             # calculate how many bonds we take out of the pool
             new_bonds_to_match_variable_apr = (
                 bond_reserves - total_bonds_to_match_variable_apr
-            ) * hyperdrive.calc_spot_price()
+            ) * interface.calc_spot_price()
             # calculate how much base we pay for the new bonds
-            new_base_to_match_variable_apr = hyperdrive.calc_bonds_out_given_shares_in_down(
+            new_base_to_match_variable_apr = interface.calc_bonds_out_given_shares_in_down(
                 new_bonds_to_match_variable_apr
             )
             # get the maximum amount the agent can long given the market and the agent's wallet
-            max_base = hyperdrive.calc_max_long(wallet.balance.amount, pool_state)
+            max_base = interface.calc_max_long(wallet.balance.amount, pool_state)
             # don't want to trade more than the agent has or more than the market can handle
             trade_amount = FixedPointMath.minimum(max_base, new_base_to_match_variable_apr)
             if trade_amount > WEI and wallet.balance.amount > WEI:

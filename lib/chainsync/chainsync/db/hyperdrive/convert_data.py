@@ -7,10 +7,10 @@ from decimal import Decimal
 from typing import Any
 
 from ethpy.base import get_transaction_logs
-from ethpy.base.conversions import camel_to_snake
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveAddresses, decode_asset_id
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
+from hypertypes.utilities.conversions import camel_to_snake
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxData
@@ -65,7 +65,7 @@ def _convert_object_hexbytes_to_strings(obj: Any) -> Any:
 
     Arguments
     ---------
-    obj : Any
+    obj: Any
         Could be a HexBytes, dict, or any object with the `items` attribute
 
     Returns
@@ -428,7 +428,7 @@ def _build_hyperdrive_transaction_object(
 
     Arguments
     ---------
-    transaction_dict : dict[str, Any]
+    transaction_dict: dict[str, Any]
         A dictionary representing the decoded transactions from the query
     logs: list[str, Any]
         A dictionary representing the decoded logs from the query

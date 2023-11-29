@@ -70,9 +70,9 @@ class InteractiveHyperdriveAgent:
 
         Arguments
         ---------
-        base : FixedPoint
+        base: FixedPoint
             The amount of base to fund the agent with. Defaults to 0.
-        eth : FixedPoint
+        eth: FixedPoint
             The amount of ETH to fund the agent with. Defaults to 0.
         """
         if base is None:
@@ -86,7 +86,7 @@ class InteractiveHyperdriveAgent:
 
         Arguments
         ---------
-        checkpoint_time : int
+        checkpoint_time: int
             The checkpoint time to mint
 
         Returns
@@ -103,7 +103,7 @@ class InteractiveHyperdriveAgent:
 
         Arguments
         ---------
-        base : FixedPoint
+        base: FixedPoint
             The amount of longs to open in units of base.
 
         Returns
@@ -118,9 +118,9 @@ class InteractiveHyperdriveAgent:
 
         Arguments
         ---------
-        maturity_time : int
+        maturity_time: int
             The maturity time of the bonds to close. This is the identifier of the long tokens.
-        bonds : FixedPoint
+        bonds: FixedPoint
             The amount of longs to close in units of bonds.
 
         Returns
@@ -135,7 +135,7 @@ class InteractiveHyperdriveAgent:
 
         Arguments
         ---------
-        bonds : FixedPoint
+        bonds: FixedPoint
             The amount of shorts to open in units of bonds.
 
         Returns
@@ -150,9 +150,9 @@ class InteractiveHyperdriveAgent:
 
         Arguments
         ---------
-        maturity_time : int
+        maturity_time: int
             The maturity time of the bonds to close. This is the identifier of the short tokens.
-        bonds : FixedPoint
+        bonds: FixedPoint
             The amount of shorts to close in units of bonds.
 
         Returns

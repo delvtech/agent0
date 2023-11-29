@@ -18,7 +18,7 @@ def check_non_zero(data: Any) -> None:
 
     Arguments
     ---------
-    data : Any
+    data: Any
         The data to check for non-zero values.
         If it is a FixedPoint then it will be checked.
         If it is dict-like then each key/value in the dict will be checked.
@@ -47,7 +47,7 @@ class EthWalletDeltas:
 
     Arguments
     ---------
-    balance : Quantity
+    balance: Quantity
         The base assets that held by the trader.
     """
 
@@ -57,7 +57,13 @@ class EthWalletDeltas:
     # TODO: Support multiple typed balances:
     #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
     def copy(self) -> EthWalletDeltas:
-        """Returns a new copy of self"""
+        """Returns a new copy of self.
+
+        Returns
+        -------
+        EthWalletDeltas
+            A deepcopy of the deltas.
+        """
         return EthWalletDeltas(**copy.deepcopy(self.__dict__))
 
 
@@ -67,9 +73,9 @@ class EthWallet:
 
     Arguments
     ---------
-    address : HexBytes
+    address: HexBytes
         The associated agent's eth address
-    balance : Quantity
+    balance: Quantity
         The base assets that held by the trader.
     """
 
@@ -87,7 +93,13 @@ class EthWallet:
         setattr(self, key, value)
 
     def copy(self) -> EthWallet:
-        """Returns a new copy of self"""
+        """Returns a new copy of self.
+
+        Returns
+        -------
+        EthWallet
+            A deepcopy of the wallet.
+        """
         return EthWallet(**copy.deepcopy(self.__dict__))
 
     def update(self, wallet_deltas: EthWalletDeltas) -> None:
@@ -95,7 +107,7 @@ class EthWallet:
 
         Arguments
         ---------
-        wallet_deltas : AgentDeltas
+        wallet_deltas: AgentDeltas
             The agent's wallet that tracks the amount of assets this agent holds
         """
         # track over time the agent's weighted average spend, for return calculation
@@ -120,7 +132,14 @@ class EthWallet:
             self.check_valid_wallet_state(self.__dict__)
 
     def check_valid_wallet_state(self, dictionary: dict | None = None) -> None:
-        """Test that all wallet state variables are greater than zero"""
+        """Test that all wallet state variables are greater than zero.
+
+        Arguments
+        ---------
+        dictionary: dict | None, optional
+            The dictionary to check.
+            If not provided, it will use `self.__dict__`.
+        """
         if dictionary is None:
             dictionary = self.__dict__
         check_non_zero(dictionary)

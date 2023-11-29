@@ -10,10 +10,22 @@ from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
 class HyperdrivePolicy(BasePolicy[HyperdriveInterface, HyperdriveWallet]):
     """Hyperdrive policy."""
 
-    # We want to rename the argument from "interface" to "hyperdrive" to be more explicit
-    # pylint: disable=arguments-renamed
     def action(
-        self, hyperdrive: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Returns an empty list, indicating no action."""
+        """Returns an empty list, indicating no action.
+
+        Arguments
+        ---------
+        interface: HyperdriveInterface
+            Interface for the market on which this agent will be executing trades (MarketActions).
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[MarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading.
+        """
         raise NotImplementedError

@@ -5,7 +5,21 @@ from .usernames import map_addresses
 
 
 def build_leaderboard(wallet_pnl: pd.DataFrame, user_map: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Rank users by PNL, individually and bomined across their accounts."""
+    """Rank users by PNL, individually and bomined across their accounts.
+
+    Arguments
+    ---------
+    wallet_pnl: pd.DataFrame
+        The dataframe resulting from get_wallet_pnl.
+    user_map: pd.DataFrame
+        A dataframe with 5 columns (address, abbr_address, username, user, format_name).
+        This is the output of :meth:`chainsync.dashboard.build_user_mapping`.
+
+    Returns
+    -------
+    tuple[pd.DataFrame, pd.DataFrame]
+        The user-combined and individual wallet leaderboard dataframes.
+    """
     total_pnl = wallet_pnl.groupby("wallet_address")["pnl"].sum().reset_index()
 
     mapped_addrs = map_addresses(total_pnl["wallet_address"], user_map)

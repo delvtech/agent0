@@ -28,9 +28,9 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
 
         Arguments
         ---------
-        account : LocalAccount
+        account: LocalAccount
             A Web3 local account for storing addresses & signing transactions.
-        policy : Policy
+        policy: Policy
             Policy for producing agent actions.
             If None, then a policy that executes no actions is used.
 
@@ -113,14 +113,12 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
 
         return action_list
 
-    # We want to rename the argument from "interface" to "hyperdrive" to be more explicit
-    # pylint: disable=arguments-renamed
-    def get_trades(self, hyperdrive: HyperdriveInterface) -> list[Trade[HyperdriveMarketAction]]:
+    def get_trades(self, interface: HyperdriveInterface) -> list[Trade[HyperdriveMarketAction]]:
         """Helper function for computing a agent trade
 
         Arguments
         ---------
-        hyperdrive : HyperdriveInterface
+        interface: HyperdriveInterface
             The market on which this agent will be executing trades (MarketActions)
 
         Returns
@@ -131,7 +129,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         # get the action list from the policy
         # TODO: Deprecate the old wallet in favor of this new one
         actions: list[Trade[HyperdriveMarketAction]]
-        actions, self.done_trading = self.policy.action(hyperdrive, self.wallet)
+        actions, self.done_trading = self.policy.action(interface, self.wallet)
 
         # edit each action in place
         for action in actions:
