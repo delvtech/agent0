@@ -20,7 +20,7 @@ from agent0.hyperdrive.exec import (
     setup_experiment,
 )
 from agent0.hyperdrive.policies import Zoo
-from agent0.hyperdrive.state import HyperdriveActionType
+from agent0.hyperdrive.state import HyperdriveActionType, TradeStatus
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -182,4 +182,6 @@ class TestRandomPolicy:
         for trade_sequence in hyperdrive_trade_actions:
             for trade in trade_sequence:
                 agent_accounts[0].allowable_actions = [trade]  # type: ignore
-                _ = asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts, liquidate))
+                trade_results = asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts, liquidate))
+                for trade_result in trade_results:
+                    assert trade_result.status == TradeStatus.SUCCESS, "Trade failed"
