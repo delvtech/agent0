@@ -180,8 +180,6 @@ class TestBotToDb:
         # 8. addLiquidity of 11111 base
         # 9. openLong of 22222 base
         # 10. openShort of 33333 bonds
-        # 11. removeLiquidity of all LP tokens
-        # The last trade here won't show up in the database, due to data lag of one block
 
         # Test db entries are what we expect
         # We don't coerce to float because we want exact values in decimal

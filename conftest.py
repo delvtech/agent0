@@ -7,7 +7,7 @@ import os
 
 import pytest
 from chainsync.test_fixtures import database_engine, db_api, db_session, dummy_session, psql_docker
-from ethpy.test_fixtures import local_chain, local_hyperdrive_pool
+from ethpy.test_fixtures import init_local_hyperdrive_pool, local_chain, local_hyperdrive_pool
 
 from agent0.test_utils import cycle_trade_policy
 
@@ -56,6 +56,7 @@ __all__ = [
     "dummy_session",
     "psql_docker",
     "local_chain",
+    "init_local_hyperdrive_pool",
     "local_hyperdrive_pool",
     "cycle_trade_policy",
 ]

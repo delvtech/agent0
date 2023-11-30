@@ -3,13 +3,15 @@ from __future__ import annotations
 
 import subprocess
 import time
-from typing import Iterator
+from typing import Callable, Iterator
 
 import pytest
+from ethpy.base import initialize_web3_with_http_provider
 from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 from fixedpointmath import FixedPoint
 from hypertypes import Fees, PoolConfig
 from web3.constants import ADDRESS_ZERO
+from web3.types import RPCEndpoint
 
 
 def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1"):
@@ -52,8 +54,8 @@ def local_chain() -> Iterator[str]:
     yield from launch_local_chain()
 
 
-@pytest.fixture(scope="function")
-def local_hyperdrive_pool(local_chain: str) -> DeployedHyperdrivePool:
+@pytest.fixture(scope="session")
+def init_local_hyperdrive_pool(local_chain: str) -> tuple[DeployedHyperdrivePool, Callable]:
     """Fixture representing a deployed local hyperdrive pool.
 
     Arguments
@@ -63,24 +65,33 @@ def local_hyperdrive_pool(local_chain: str) -> DeployedHyperdrivePool:
 
     Returns
     -------
-    LocalHyperdriveChain
-        A tuple with the following key - value fields:
-
-        web3: Web3
-            web3 provider object
-        deploy_account: LocalAccount
-            The local account that deploys and initializes hyperdrive
-        hyperdrive_contract_addresses: HyperdriveAddresses
-            The hyperdrive contract addresses
-        hyperdrive_contract: Contract
-            web3.py contract instance for the hyperdrive contract
-        hyperdrive_factory_contract: Contract
-            web3.py contract instance for the hyperdrive factory contract
-        base_token_contract: Contract
-            web3.py contract instance for the base token contract
+    DeployedHyperdrivePool, callable
+        The various parameters for a deployed pool, and a callable reset function for tests
     """
     # pylint: disable=redefined-outer-name
-    return launch_local_hyperdrive_pool(local_chain)
+    out = launch_local_hyperdrive_pool(local_chain)
+    # Save the state for the pool and return for this fixture
+
+    _w3 = initialize_web3_with_http_provider(local_chain)
+    rpc_result = _w3.provider.make_request(method=RPCEndpoint("anvil_dumpState"), params=[])
+    assert "result" in rpc_result
+    start_state = rpc_result["result"]
+
+    def reset() -> int:
+        """A function to reset to the state of the initial pool.
+
+        Returns
+        -------
+        int
+            The block number to set for the deploy pool block
+        """
+        # Loads the state, then mines a block to start the "reset state" on a new block
+        _w3.provider.make_request(method=RPCEndpoint("anvil_loadState"), params=[start_state])
+        # _w3.provider.make_request(method=RPCEndpoint("anvil_mine"), params=[])
+        # Have the deployed block be one block after the current block
+        return _w3.eth.block_number + 1
+
+    return out, reset
 
 
 def launch_local_hyperdrive_pool(
@@ -118,7 +129,7 @@ def launch_local_hyperdrive_pool(
     # ABI folder should contain JSON and Bytecode files for the following contracts:
     # ERC20Mintable, MockERC4626, ForwarderFactory, ERC4626HyperdriveDeployer, ERC4626HyperdriveFactory
     abi_folder = "packages/hyperdrive/src/abis/"
-    # Factory initializaiton parameters
+    # Factory initialization parameters
     initial_variable_rate = FixedPoint("0.05")
     curve_fee = FixedPoint("0.1")  # 10%
     flat_fee = FixedPoint("0.0005")  # 0.05%
@@ -165,3 +176,26 @@ def launch_local_hyperdrive_pool(
         pool_config,
         max_fees,
     )
+
+
+@pytest.fixture(scope="function")
+def local_hyperdrive_pool(
+    init_local_hyperdrive_pool: tuple[DeployedHyperdrivePool, Callable]
+) -> DeployedHyperdrivePool:
+    """Fixture representing a deployed local hyperdrive pool.
+
+    Arguments
+    ---------
+    init_local_hyperdrive_pool: tuple[DeployedHyperdrivePool, Callable]
+        Fixture representing the deployed hyperdrive pool and a reset function
+
+    Returns
+    -------
+    DeployedHyperdrivePool
+        The various parameters for a deployed pool, and a callable reset function for tests
+    """
+    # pylint: disable=redefined-outer-name
+    pool, reset = init_local_hyperdrive_pool
+    deploy_block = reset()
+    pool.deploy_block_number = deploy_block
+    return pool
