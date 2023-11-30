@@ -1,6 +1,7 @@
 """Python api interface for calling the flask server"""
 import logging
 import time
+import warnings
 from http import HTTPStatus
 from io import StringIO
 
@@ -62,5 +63,9 @@ def balance_of(api_uri: str, wallet_addrs: list[str]) -> pd.DataFrame:
     # before returning
     # We explicitly set dtype to False to keep everything in string format
     # to avoid loss of precision
-    data = pd.read_json(StringIO(result.json()["data"]), dtype=False)
+    # For some reason, pandas internally is throwing a warning about datetimes here,
+    # we ignore
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        data = pd.read_json(StringIO(result.json()["data"]), dtype=False)
     return data
