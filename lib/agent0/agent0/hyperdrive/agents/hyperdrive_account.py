@@ -7,9 +7,8 @@ from typing import TypeVar
 from eth_account.signers.local import LocalAccount
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
-from hexbytes import HexBytes
 
-from agent0.base import MarketType, Quantity, TokenType, Trade
+from agent0.base import MarketType, Trade
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
