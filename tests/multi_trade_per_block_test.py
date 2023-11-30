@@ -12,7 +12,7 @@ from chainsync.exec import acquire_data, data_analysis
 from eth_typing import URI
 from ethpy import EthConfig
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator as NumpyGenerator
+from numpy.random._generator import Generator
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
@@ -35,7 +35,7 @@ class MultiTradePolicy(HyperdrivePolicy):
     # Using default parameters
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
