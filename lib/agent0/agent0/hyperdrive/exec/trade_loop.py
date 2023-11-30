@@ -88,7 +88,7 @@ def check_result(
     halt_on_slippage: bool,
     crash_report_to_file: bool,
 ) -> None:
-    """Check
+    """Check and handle SUCCESS or FAILURE status from each trade_result.
 
     Arguments
     ---------
@@ -106,8 +106,8 @@ def check_result(
         Defaults to True.
     """
     for trade_result in trade_results:
-        # If successful, log the successful trade
         match trade_result.status:
+            # If successful, log the successful trade
             case TradeStatus.SUCCESS:
                 logging.info(
                     "AGENT %s (%s) performed %s for %g",
@@ -116,6 +116,7 @@ def check_result(
                     trade_result.trade_object.market_action.action_type,
                     float(trade_result.trade_object.market_action.trade_amount),
                 )
+            # Otherwise, optionally fail and create a crash report
             case TradeStatus.FAIL:
                 # Sanity check: exception should not be none if trade failed
                 # Additionally, crash reporting information should exist
@@ -131,7 +132,7 @@ def check_result(
                     # and we don't want to do it when e.g., slippage happens
                     if crash_report_to_file:
                         trade_result.anvil_state = get_anvil_state_dump(interface.web3)
-                        # Defaults to CRITICAL
+                    # Defaults to CRITICAL
                     log_hyperdrive_crash_report(trade_result, crash_report_to_file=crash_report_to_file)
 
                 if halt_on_errors:
