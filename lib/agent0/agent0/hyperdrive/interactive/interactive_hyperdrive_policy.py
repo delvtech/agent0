@@ -17,7 +17,6 @@ class InteractiveHyperdrivePolicy(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
     ):
         """Initialize the bot.
 
@@ -29,7 +28,7 @@ class InteractiveHyperdrivePolicy(HyperdrivePolicy):
         self.next_action = None
         self.next_trade_amount = None
         self.next_maturity_time = None
-        super().__init__(budget, None)
+        super().__init__(None)
 
     def set_next_action(
         self, action: HyperdriveActionType, trade_amount: FixedPoint, maturity_time: int | None = None
