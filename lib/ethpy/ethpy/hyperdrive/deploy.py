@@ -1,8 +1,8 @@
 """Helper functions for deploying Hyperdrive contracts."""
 from __future__ import annotations
 
-from dataclasses import dataclass, fields, is_dataclass
-from typing import Any
+from dataclasses import fields, is_dataclass
+from typing import Any, NamedTuple
 
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
@@ -24,8 +24,7 @@ from .addresses import HyperdriveAddresses
 # pylint: disable=too-many-locals
 
 
-@dataclass
-class DeployedHyperdrivePool:
+class DeployedHyperdrivePool(NamedTuple):
     """Collection of attributes associated with a locally deployed chain with a Hyperdrive pool."""
 
     web3: Web3
