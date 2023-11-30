@@ -17,7 +17,7 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.api import HyperdriveInterface
-    from numpy.random._generator import Generator as NumpyGenerator
+    from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
 
@@ -61,7 +61,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
     # Using default parameters
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
     ):

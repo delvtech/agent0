@@ -7,6 +7,12 @@ from dataclasses import dataclass
 from typing import cast
 
 import pytest
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base import MarketType, Trade
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.policies import HyperdrivePolicy
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from chainsync.exec import acquire_data, data_analysis
 from eth_typing import URI
 from ethpy import EthConfig
@@ -14,16 +20,9 @@ from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.api import HyperdriveInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator as NumpyGenerator
+from numpy.random._generator import Generator
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
-
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 
 
 class WalletTestPolicy(HyperdrivePolicy):
@@ -49,7 +48,7 @@ class WalletTestPolicy(HyperdrivePolicy):
     # Using default parameters
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
     ):

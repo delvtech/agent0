@@ -10,7 +10,7 @@ from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator as NumpyGenerator
+from numpy.random._generator import Generator
 from web3 import HTTPProvider
 from web3.exceptions import ContractLogicError, ContractPanicError
 
@@ -37,7 +37,7 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg

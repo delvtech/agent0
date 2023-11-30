@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
-from numpy.random._generator import Generator as NumpyGenerator
+from numpy.random._generator import Generator
 from web3.datastructures import AttributeDict, MutableAttributeDict
 
 
@@ -46,7 +46,7 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return o.tolist()
         if isinstance(o, FixedPoint):
             return str(o)
-        if isinstance(o, NumpyGenerator):
+        if isinstance(o, Generator):
             return "NumpyGenerator"
         if isinstance(o, datetime):
             return str(o)

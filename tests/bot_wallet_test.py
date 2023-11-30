@@ -14,7 +14,7 @@ from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.api import HyperdriveInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator as NumpyGenerator
+from numpy.random._generator import Generator
 from web3 import HTTPProvider
 
 from agent0 import build_account_key_config_from_agent_config
@@ -88,7 +88,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
     ):

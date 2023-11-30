@@ -8,7 +8,7 @@ import eth_utils
 from eth_account.account import Account
 from ethpy.base import async_smart_contract_transact, get_account_balance
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator as NumpyGenerator
+from numpy.random._generator import Generator
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxReceipt
@@ -29,7 +29,7 @@ def get_agent_accounts(
     account_key_config: AccountKeyConfig,
     base_token_contract: Contract,
     hyperdrive_address: str,
-    rng: NumpyGenerator,
+    rng: Generator,
 ) -> list[HyperdriveAgent]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 

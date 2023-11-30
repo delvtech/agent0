@@ -10,7 +10,7 @@ from fixedpointmath import FixedPoint
 from numpy.random import default_rng
 
 if TYPE_CHECKING:
-    from numpy.random._generator import Generator as NumpyGenerator
+    from numpy.random._generator import Generator
 
     from agent0.base import Trade
     from agent0.base.state import EthWallet
@@ -28,7 +28,7 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
 
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # TODO should we pass in policy_config here in the base class constructor?
     ):
@@ -36,9 +36,9 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         self.slippage_tolerance = slippage_tolerance
         if rng is None:  # TODO: Check that multiple agent.rng derefs to the same rng object
             logging.warning("Policy random number generator (rng) argument not set, using seed of `123`.")
-            self.rng: NumpyGenerator = default_rng(123)
+            self.rng: Generator = default_rng(123)
         else:
-            self.rng: NumpyGenerator = rng
+            self.rng: Generator = rng
 
     @property
     def name(self) -> str:
