@@ -61,7 +61,6 @@ def get_agent_accounts(
 
     # each agent_info object specifies one agent type and a variable number of agents of that type
     for agent_info in agent_config:
-        kwargs = {}
         for policy_instance_index in range(agent_info.number_of_agents):  # instantiate one agent per policy
             agent_count = policy_instance_index + sum(num_agents_so_far)
             # the agent object holds the policy, which makes decisions based
@@ -70,14 +69,16 @@ def get_agent_accounts(
                 raise AssertionError("Private keys must be specified. Did you list them in your .env?")
             # Get the budget from the env file
             agent_budget = FixedPoint(scaled_value=agent_base_budgets[agent_count])
-            # Spawning rng objects for each policy
-            kwargs["rng"] = global_rng.spawn(1)[0]
-            kwargs["slippage_tolerance"] = agent_info.slippage_tolerance
-            kwargs["policy_config"] = agent_info.policy_config
+
+            # Check in policy config to see if rng is set.
+            # If it's not set, spawn a new rng from the global rng
+            if agent_info.policy_config.rng_seed is None and agent_info.policy_config.rng is None:
+                agent_info.policy_config.rng = global_rng.spawn(1)[0]
+
             eth_agent = HyperdriveAgent(
                 Account().from_key(account_key_config.AGENT_KEYS[agent_count]),
                 initial_budget=agent_budget,
-                policy=agent_info.policy(**kwargs),
+                policy=agent_info.policy(agent_info.policy_config),
             )
             if get_account_balance(web3, eth_agent.checksum_address) == 0:
                 raise AssertionError(
