@@ -52,9 +52,10 @@ def setup_experiment(
             - The Hyperdrive interface API object
             - A list of HyperdriveAgent objects that contain a wallet address and Agent for determining trades
     """
-    # this random number generator should be used everywhere so that the experiment is repeatable
+    # this is the global rng object that generates child rng objects for each agent
+    # random number generator should be used everywhere so that the experiment is repeatable
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
-    rng = np.random.default_rng(environment_config.random_seed)
+    global_rng = np.random.default_rng(environment_config.global_random_seed)
     # setup logging
     logs.setup_logging(
         log_filename=environment_config.log_filename,
@@ -77,6 +78,6 @@ def setup_experiment(
         account_key_config,
         hyperdrive.base_token_contract,
         hyperdrive.hyperdrive_contract.address,
-        rng,
+        global_rng,
     )
     return hyperdrive, agent_accounts

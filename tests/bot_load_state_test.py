@@ -14,7 +14,7 @@ from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.api import HyperdriveInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator as NumpyGenerator
+from numpy.random._generator import Generator
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
@@ -49,7 +49,7 @@ class WalletTestPolicy(HyperdrivePolicy):
     # Using default parameters
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
     ):
@@ -167,7 +167,7 @@ class TestBotToDb:
             log_filename="system_test",
             log_level=logging.INFO,
             log_stdout=True,
-            random_seed=1234,
+            global_random_seed=1234,
             username="test",
         )
 

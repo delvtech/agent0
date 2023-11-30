@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import logging
 
+from fixedpointmath import FixedPoint
+
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import Zoo
-from fixedpointmath import FixedPoint
 
 # %%
 
@@ -34,7 +35,7 @@ env_config = EnvironmentConfig(
     log_filename=".logging/agent0_logs.log",
     log_level=logging.CRITICAL,
     log_stdout=True,
-    random_seed=1234,
+    global_random_seed=1234,
     username=USERNAME,
 )
 
@@ -82,7 +83,7 @@ agent_config: list[AgentConfig] = [
 # If it doesn't exist, create it based on agent_config
 # (If os.environ["DEVELOP"] is False, will clean exit and print instructions on how to fund agent)
 # If it does exist, read it in and use it
-account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed)
+account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.global_random_seed)
 
 # Run agents
 run_agents(env_config, agent_config, account_key_config, liquidate=LIQUIDATE)

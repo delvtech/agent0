@@ -69,7 +69,7 @@ class TestBotToDb:
             log_filename="system_test",
             log_level=logging.INFO,
             log_stdout=True,
-            random_seed=1234,
+            global_random_seed=1234,
             username="test",
         )
 

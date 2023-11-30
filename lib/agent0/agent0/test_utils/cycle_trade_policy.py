@@ -7,7 +7,7 @@ from typing import Type
 import pytest
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator as NumpyGenerator
+from numpy.random._generator import Generator
 
 from agent0.base import MarketType, Trade
 from agent0.hyperdrive.policies import HyperdrivePolicy
@@ -34,7 +34,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
     # Using default parameters
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
     ):

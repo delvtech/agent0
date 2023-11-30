@@ -8,7 +8,7 @@ import eth_utils
 from eth_account.account import Account
 from ethpy.base import async_smart_contract_transact, get_account_balance
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator as NumpyGenerator
+from numpy.random._generator import Generator
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxReceipt
@@ -29,7 +29,7 @@ def get_agent_accounts(
     account_key_config: AccountKeyConfig,
     base_token_contract: Contract,
     hyperdrive_address: str,
-    rng: NumpyGenerator,
+    global_rng: Generator,
 ) -> list[HyperdriveAgent]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
@@ -45,7 +45,7 @@ def get_agent_accounts(
         The deployed ERC20 base token contract.
     hyperdrive_address: str
         The address of the deployed hyperdrive contract.
-    rng: `numpy.random._generator.Generator <https://numpy.org/doc/stable/reference/random/generator.html>`_
+    global_rng: `numpy.random._generator.Generator <https://numpy.org/doc/stable/reference/random/generator.html>`_
         The experiment's stateful random number generator.
 
     Returns
@@ -62,7 +62,6 @@ def get_agent_accounts(
     # each agent_info object specifies one agent type and a variable number of agents of that type
     for agent_info in agent_config:
         kwargs = {}
-        kwargs["rng"] = rng
         for policy_instance_index in range(agent_info.number_of_agents):  # instantiate one agent per policy
             agent_count = policy_instance_index + sum(num_agents_so_far)
             # the agent object holds the policy, which makes decisions based
@@ -71,6 +70,8 @@ def get_agent_accounts(
                 raise AssertionError("Private keys must be specified. Did you list them in your .env?")
             # Get the budget from the env file
             agent_budget = FixedPoint(scaled_value=agent_base_budgets[agent_count])
+            # Spawning rng objects for each policy
+            kwargs["rng"] = global_rng.spawn(1)[0]
             kwargs["slippage_tolerance"] = agent_info.slippage_tolerance
             kwargs["policy_config"] = agent_info.policy_config
             eth_agent = HyperdriveAgent(

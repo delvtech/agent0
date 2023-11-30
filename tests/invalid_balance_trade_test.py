@@ -10,7 +10,7 @@ from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator as NumpyGenerator
+from numpy.random._generator import Generator
 from web3 import HTTPProvider
 from web3.exceptions import ContractLogicError, ContractPanicError
 
@@ -37,7 +37,7 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
@@ -86,7 +86,7 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
@@ -137,7 +137,7 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
@@ -188,7 +188,7 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
@@ -237,7 +237,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
@@ -304,7 +304,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
@@ -376,7 +376,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
@@ -448,7 +448,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
@@ -548,7 +548,7 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
         # we still need it in the constructor since the object factory still calls with this arg
@@ -660,7 +660,7 @@ class TestInvalidTrades:
             log_filename=".logging/invalid_test.log",
             log_level=logging.INFO,
             log_stdout=True,
-            random_seed=1234,
+            global_random_seed=1234,
             username="test",
         )
 
@@ -712,7 +712,7 @@ class TestInvalidTrades:
             log_filename=".logging/invalid_test.log",
             log_level=logging.INFO,
             log_stdout=True,
-            random_seed=1234,
+            global_random_seed=1234,
             username="test",
         )
 

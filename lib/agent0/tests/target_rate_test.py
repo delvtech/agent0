@@ -38,7 +38,7 @@ def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, delta: f
         log_filename="target_rate_test",
         log_level=logging.DEBUG,
         log_stdout=True,
-        random_seed=1234,
+        global_random_seed=1234,
         username="test",
     )
 

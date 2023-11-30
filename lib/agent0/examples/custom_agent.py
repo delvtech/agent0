@@ -17,7 +17,7 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.api import HyperdriveInterface
-    from numpy.random._generator import Generator as NumpyGenerator
+    from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
 
@@ -61,7 +61,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
     # Using default parameters
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
     ):
@@ -201,7 +201,7 @@ env_config = EnvironmentConfig(
     log_filename=".logging/agent0_logs.logs",
     log_level=logging.CRITICAL,
     log_stdout=True,
-    random_seed=1234,
+    global_random_seed=1234,
     username=USERNAME,
 )
 
@@ -225,7 +225,7 @@ agent_config: list[AgentConfig] = [
 # If it doesn't exist, create it based on agent_config
 # (If os.environ["DEVELOP"] is False, will clean exit and print instructions on how to fund agent)
 # If it does exist, read it in and use it
-account_key_config = initialize_accounts(agent_config, ENV_FILE, random_seed=env_config.random_seed)
+account_key_config = initialize_accounts(agent_config, ENV_FILE, random_seed=env_config.global_random_seed)
 
 # Run agents
 run_agents(env_config, agent_config, account_key_config, liquidate=LIQUIDATE)

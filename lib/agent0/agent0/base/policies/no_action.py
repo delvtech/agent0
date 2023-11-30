@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from .base import BasePolicy, MarketInterface, Wallet
 
 if TYPE_CHECKING:
-    from numpy.random._generator import Generator as NumpyGenerator
+    from numpy.random._generator import Generator
 
     from agent0.base import Trade
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class NoActionPolicy(BasePolicy[MarketInterface, Wallet]):
     """NoOp class policy"""
 
-    def __init__(self, rng: NumpyGenerator | None = None):
+    def __init__(self, rng: Generator | None = None):
         super().__init__(rng)
 
     def action(self, interface: MarketInterface, wallet: Wallet) -> tuple[list[Trade], bool]:

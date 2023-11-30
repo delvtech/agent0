@@ -13,7 +13,7 @@ from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.api import HyperdriveInterface
-    from numpy.random._generator import Generator as NumpyGenerator
+    from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
 # pylint: disable=too-few-public-methods
@@ -60,7 +60,7 @@ class SmartLong(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: NumpyGenerator | None = None,
+        rng: Generator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
     ):
@@ -70,7 +70,7 @@ class SmartLong(HyperdrivePolicy):
         ---------
         budget: FixedPoint
             The budget of this policy
-        rng: NumpyGenerator | None
+        rng: Generator | None
             Random number generator
         slippage_tolerance: FixedPoint | None
             Slippage tolerance of trades

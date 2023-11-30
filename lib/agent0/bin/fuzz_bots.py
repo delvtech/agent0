@@ -5,13 +5,14 @@ import logging
 import random
 import sys
 
+from ethpy.hyperdrive.api import HyperdriveInterface
+from fixedpointmath import FixedPoint
+from web3.types import RPCEndpoint
+
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import Zoo
-from ethpy.hyperdrive.api import HyperdriveInterface
-from fixedpointmath import FixedPoint
-from web3.types import RPCEndpoint
 
 STOP_CHAIN_ON_CRASH = True
 
@@ -38,7 +39,7 @@ env_config = EnvironmentConfig(
     log_level=logging.CRITICAL,
     log_stdout=True,
     # TODO this should be able to accept None to allow for random
-    random_seed=random.randint(0, 10000000),
+    global_random_seed=random.randint(0, 10000000),
     username=USERNAME,
     # Fuzz bots retries smart contract transactions 3 times
     write_retry_count=3,
@@ -62,7 +63,7 @@ agent_config: list[AgentConfig] = [
 # If it doesn't exist, create it based on agent_config
 # (If os.environ["DEVELOP"] is False, will clean exit and print instructions on how to fund agent)
 # If it does exist, read it in and use it
-account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed)
+account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.global_random_seed)
 
 # Run agents
 # If bots crash, we use an RPC to stop mining anvil
