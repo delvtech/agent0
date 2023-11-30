@@ -15,7 +15,12 @@ if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber
     from ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
+<<<<<<< HEAD
     from web3.types import Nonce
+=======
+    from web3.contract.contract import Contract
+    from web3.types import Nonce, Timestamp, TxParams
+>>>>>>> 28ba439 (adds new hyperdrive interface functions)
 
     from .api import HyperdriveInterface
 
