@@ -3,14 +3,9 @@ from __future__ import annotations
 
 import logging
 import os
-import warnings
 from typing import cast
 
 import pytest
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies.zoo import Zoo
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
@@ -19,12 +14,16 @@ from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.policies.zoo import Zoo
+
 
 @pytest.mark.anvil
 @pytest.mark.parametrize("delta", [-1e5, 1e5])
 def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, delta: float):
     """Ensure bot can hit target rate."""
-    warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
     # Run this test with develop mode on
     os.environ["DEVELOP"] = "true"
     # Get hyperdrive chain info
