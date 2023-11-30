@@ -50,11 +50,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             ### Total shares is correctly calculated
             assert (
                 total_shares
-                == share_reserves
-                + shorts_outstanding / share_price
-                + gov_fees_accrued
-                + withdraw_pool_proceeds
-                + epsilon
+                == share_reserves + shorts_outstanding + gov_fees_accrued + withdraw_pool_proceeds + epsilon
             ), f"{total_shares=} is incorrect."
 
             ### Longs and shorts should always be closed at maturity for the correct amounts
