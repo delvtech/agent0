@@ -43,6 +43,7 @@ exclude = [".venv", ".vscode", "docs"]
 
 [tool.isort]
 known_first_party = ["agent0"]
+line_length = 120
 
 [tool.ruff]
 # Default is: pycodestyle (E) and Pyflakes (F)
