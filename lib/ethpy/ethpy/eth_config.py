@@ -18,13 +18,15 @@ class EthConfig:
         The uri of the artifacts server from which we get addresses.
     rpc_uri: URI | str
         The uri to the ethereum node.
+    database_api_uri: URI | str
+        The uri to the database server.
     abi_dir: str
         The path to the abi directory.
     """
 
     artifacts_uri: URI | str = URI("http://localhost:8080")
     rpc_uri: URI | str = URI("http://localhost:8545")
-    database_api_uri: str = URI("http://localhost:5002")
+    database_api_uri: URI | str = URI("http://localhost:5002")
     abi_dir: str = "./packages/hyperdrive/src/abis"
 
     def __post_init__(self):
@@ -32,9 +34,11 @@ class EthConfig:
             self.artifacts_uri = URI(self.artifacts_uri)
         if isinstance(self.rpc_uri, str):
             self.rpc_uri = URI(self.rpc_uri)
+        if isinstance(self.database_api_uri, str):
+            self.database_api_uri = URI(self.database_api_uri)
 
 
-def build_eth_config() -> EthConfig:
+def build_eth_config(dotenv: str = "eth.env") -> EthConfig:
     """Build an eth config that looks for environmental variables.
     If env var exists, use that, otherwise, default.
 
@@ -44,7 +48,8 @@ def build_eth_config() -> EthConfig:
         Config settings required to connect to the eth node
     """
     # Look for and load local config if it exists
-    load_dotenv("eth.env")
+    if os.path.exists(dotenv):
+        load_dotenv(dotenv)
 
     artifacts_uri = os.getenv("ARTIFACTS_URI")
     rpc_uri = os.getenv("RPC_URI")
