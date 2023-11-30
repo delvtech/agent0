@@ -7,15 +7,14 @@ from typing import Any, NamedTuple
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
+from ethpy.base import get_transaction_logs, initialize_web3_with_http_provider, load_all_abis, smart_contract_transact
+from ethpy.base.contract import deploy_contract
 from fixedpointmath import FixedPoint
 from hypertypes import Fees, PoolConfig
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
 from web3.types import TxReceipt
-
-from ethpy.base import get_transaction_logs, initialize_web3_with_http_provider, load_all_abis, smart_contract_transact
-from ethpy.base.contract import deploy_contract
 
 from .addresses import HyperdriveAddresses
 
@@ -34,6 +33,7 @@ class DeployedHyperdrivePool(NamedTuple):
     hyperdrive_contract: Contract
     hyperdrive_factory_contract: Contract
     base_token_contract: Contract
+    deploy_block_number: int
 
 
 def deploy_hyperdrive_from_factory(
@@ -84,6 +84,8 @@ def deploy_hyperdrive_from_factory(
                 Web3 contract instance for the hyperdrive factory contract.
             base_token_contract: Contract
                 Web3 contract instance for the base token contract.
+            deploy_block_number: int
+                The block number hyperdrive was deployed at.
     """
     # Contract calls use the web3.py interface
     web3 = initialize_web3_with_http_provider(rpc_uri, reset_provider=False)
@@ -128,6 +130,7 @@ def deploy_hyperdrive_from_factory(
             factory_contract,
         )
     )
+    # Get block number when hyperdrive was deployed
     return DeployedHyperdrivePool(
         web3,
         deploy_account=deploy_account,
@@ -140,6 +143,7 @@ def deploy_hyperdrive_from_factory(
         hyperdrive_contract=web3.eth.contract(address=hyperdrive_checksum_address, abi=abis["IERC4626Hyperdrive"]),
         hyperdrive_factory_contract=factory_contract,
         base_token_contract=base_token_contract,
+        deploy_block_number=web3.eth.block_number,
     )
 
 

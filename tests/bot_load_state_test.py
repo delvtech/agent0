@@ -7,12 +7,6 @@ from dataclasses import dataclass
 from typing import cast
 
 import pytest
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from chainsync.exec import acquire_data, data_analysis
 from eth_typing import URI
 from ethpy import EthConfig
@@ -23,6 +17,13 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
+
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base import MarketType, Trade
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.policies import HyperdrivePolicy
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 
 
 class WalletTestPolicy(HyperdrivePolicy):
@@ -205,7 +206,7 @@ class TestBotToDb:
 
         # Run acquire data to get data from chain to db
         acquire_data(
-            start_block=10,  # First 9 blocks are deploying hyperdrive, ignore
+            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -215,7 +216,7 @@ class TestBotToDb:
 
         # Run data analysis to calculate various analysis values
         data_analysis(
-            start_block=10,  # First 9 blocks are deploying hyperdrive, ignore
+            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,

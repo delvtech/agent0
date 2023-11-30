@@ -3,17 +3,18 @@ from __future__ import annotations
 
 import subprocess
 import time
-from typing import Iterator
+from typing import Callable, Iterator
 
 import pytest
+from ethpy.base import initialize_web3_with_http_provider
+from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 from fixedpointmath import FixedPoint
 from hypertypes import Fees, PoolConfig
 from web3.constants import ADDRESS_ZERO
+from web3.types import RPCEndpoint
 
-from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 
-
-def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1"):
+def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1") -> Iterator[str]:
     """Launch a local anvil chain.
 
     Arguments
@@ -40,9 +41,10 @@ def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1"):
     anvil_process.kill()  # Kill anvil process at end
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def local_chain() -> Iterator[str]:
     """Fixture representing a local anvil chain.
+    This fixture is session scoped, so each test will deploy its own pool for testing.
 
     Yields
     ------
@@ -52,8 +54,10 @@ def local_chain() -> Iterator[str]:
     yield from launch_local_chain()
 
 
-@pytest.fixture(scope="function")
-def local_hyperdrive_pool(local_chain: str) -> DeployedHyperdrivePool:
+@pytest.fixture(scope="session")
+def init_local_hyperdrive_pool(
+    local_chain: str,
+) -> tuple[DeployedHyperdrivePool, Callable[[], str], Callable[[str], None]]:
     """Fixture representing a deployed local hyperdrive pool.
 
     Arguments
@@ -63,24 +67,39 @@ def local_hyperdrive_pool(local_chain: str) -> DeployedHyperdrivePool:
 
     Returns
     -------
-    LocalHyperdriveChain
-        A tuple with the following key - value fields:
-
-        web3: Web3
-            web3 provider object
-        deploy_account: LocalAccount
-            The local account that deploys and initializes hyperdrive
-        hyperdrive_contract_addresses: HyperdriveAddresses
-            The hyperdrive contract addresses
-        hyperdrive_contract: Contract
-            web3.py contract instance for the hyperdrive contract
-        hyperdrive_factory_contract: Contract
-            web3.py contract instance for the hyperdrive factory contract
-        base_token_contract: Contract
-            web3.py contract instance for the base token contract
+    DeployedHyperdrivePool, Callable[[], str], Callable[[str], None]
+        The various parameters for a deployed pool, a snapshot function, and a reset function
     """
     # pylint: disable=redefined-outer-name
-    return launch_local_hyperdrive_pool(local_chain)
+    out = launch_local_hyperdrive_pool(local_chain)
+    # Save the state for the pool and return for this fixture
+
+    _w3 = initialize_web3_with_http_provider(local_chain)
+
+    def snapshot() -> str:
+        """Takes a snapshot of the current chain state.
+
+        Returns
+        -------
+        str
+            The snapshot id
+        """
+        response = _w3.provider.make_request(method=RPCEndpoint("evm_snapshot"), params=[])
+        assert "result" in response
+        return response["result"]
+
+    def reset(snapshot_id: str) -> None:
+        """Resets the chain to a previous snapshot.
+
+        Arguments
+        ---------
+        snapshot_id: str
+            The snapshot id to reset to.
+        """
+        # Loads the previous snapshot
+        _ = _w3.provider.make_request(method=RPCEndpoint("evm_revert"), params=[snapshot_id])
+
+    return out, snapshot, reset
 
 
 def launch_local_hyperdrive_pool(
@@ -118,7 +137,7 @@ def launch_local_hyperdrive_pool(
     # ABI folder should contain JSON and Bytecode files for the following contracts:
     # ERC20Mintable, MockERC4626, ForwarderFactory, ERC4626HyperdriveDeployer, ERC4626HyperdriveFactory
     abi_folder = "packages/hyperdrive/src/abis/"
-    # Factory initializaiton parameters
+    # Factory initialization parameters
     initial_variable_rate = FixedPoint("0.05")
     curve_fee = FixedPoint("0.1")  # 10%
     flat_fee = FixedPoint("0.0005")  # 0.05%
@@ -165,3 +184,31 @@ def launch_local_hyperdrive_pool(
         pool_config,
         max_fees,
     )
+
+
+@pytest.fixture(scope="function")
+def local_hyperdrive_pool(
+    init_local_hyperdrive_pool: tuple[DeployedHyperdrivePool, Callable[[], str], Callable[[str], None]]
+) -> Iterator[DeployedHyperdrivePool]:
+    """Fixture representing a deployed local hyperdrive pool.
+
+    Arguments
+    ---------
+    init_local_hyperdrive_pool: tuple[DeployedHyperdrivePool, Callable[[], str], Callable[[str], None]
+        Fixture representing the deployed hyperdrive pool, a snapshot function, and a reset function
+
+    Yields
+    -------
+    DeployedHyperdrivePool
+        The various parameters for a deployed pool
+    """
+    # pylint: disable=redefined-outer-name
+    pool, snapshot, reset = init_local_hyperdrive_pool
+
+    # Take snapshot
+    snapshot_id = snapshot()
+
+    yield pool
+
+    # Revert to snapshot
+    reset(snapshot_id)
