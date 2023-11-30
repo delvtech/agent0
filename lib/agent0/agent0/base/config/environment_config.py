@@ -44,7 +44,7 @@ class EnvironmentConfig(FrozenClass):
     # maximum log file output size, in bytes
     max_bytes: int = DEFAULT_LOG_MAXBYTES  # int(2e6) or 2MB
     # int to be used for the random seed
-    random_seed: int = 1
+    global_random_seed: int = 1
     # retry arguments for read/write smart contract calls
     # Defaults to what's being used in ethpy, which is
     # 5 read retries, 1 write retry
