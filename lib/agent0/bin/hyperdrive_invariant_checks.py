@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from typing import NamedTuple, Sequence
 
 from ethpy import build_eth_config
@@ -15,15 +16,15 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     Arguments
     ---------
-    database_api_uri: str
-        The uri to the database server.
+    argv: Sequence[str]
+        A sequnce containing the uri to the database server and the test epsilon.
     """
     # Parse args
     parsed_args = parse_arguments(argv)
     eth_config = build_eth_config(parsed_args.eth_config_env_file)
     # Setup hyperdrive interface
     interface = HyperdriveInterface(eth_config)
-    # Run the loop
+    # Run the loop forever
     last_executed_block_number = 0
     while True:
         latest_block = interface.web3.eth.get_block("latest")
@@ -31,7 +32,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         if latest_block_number is None:
             raise AssertionError("Block has no number.")
         if latest_block_number > last_executed_block_number:
-            # Get the pool state values
+            # Get the variables to check
             pool_state = interface.get_hyperdrive_state(latest_block)
             share_reserves = pool_state.pool_info.share_reserves
             shorts_outstanding = pool_state.pool_info.shorts_outstanding
@@ -60,10 +61,10 @@ def main(argv: Sequence[str] | None = None) -> None:
             # TODO: fail if any longs or shorts are at or past maturity
             # for each wallet:
             #   for each long:
-            #     if long.maturity_time > latest_checkpoint_time:
+            #     if long.maturity_time <= latest_checkpoint_time:
             #         assert long.is_closed()
             #   for each short:
-            #       if short.maturity_time > latest_checkpoint_time:
+            #       if short.maturity_time <= latest_checkpoint_time:
             #         assert short.is_closed()
 
             ### The system should always be solvent
@@ -91,25 +92,48 @@ def main(argv: Sequence[str] | None = None) -> None:
 
             # Update block number
             last_executed_block_number = latest_block_number
+            time.sleep(parsed_args.sleep_time)
 
 
 class Args(NamedTuple):
-    """Command line arguments for pypechain."""
+    """Command line arguments for the invariant checker."""
 
     eth_config_env_file: str
     test_epsilon: int
+    sleep_time: int
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
-    """Converts argprase.Namespace to Args."""
+    """Converts argprase.Namespace to Args.
+
+    Arguments
+    ---------
+    namespace: argparse.Namespace
+        Object for storing arg attributes.
+
+    Returns
+    -------
+    Args
+    """
     return Args(
         eth_config_env_file=namespace.eth_config_env_file,
         test_epsilon=namespace.test_epsilon,
+        sleep_time=namespace.sleep_time,
     )
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> Args:
-    """Parses input arguments"""
+    """Parses input arguments.
+
+    Arguments
+    ---------
+    argv: Sequence[str]
+        The argv values returned from argparser.
+
+    Returns
+    -------
+    Args
+    """
     parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
     parser.add_argument(
         "--test_epsilon",
@@ -122,6 +146,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=str,
         default="eth.env",
         help="String pointing to eth config env file.",
+    )
+    parser.add_argument(
+        "--sleep_time",
+        type=int,
+        default=5,
+        help="Sleep time between checks, in seconds.",
     )
 
     # Use system arguments if none were passed
