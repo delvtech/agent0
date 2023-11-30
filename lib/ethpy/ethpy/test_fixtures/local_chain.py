@@ -97,9 +97,7 @@ def init_local_hyperdrive_pool(
             The snapshot id to reset to.
         """
         # Loads the previous snapshot
-        print(_w3.eth.block_number)
         _ = _w3.provider.make_request(method=RPCEndpoint("evm_revert"), params=[snapshot_id])
-        print(_w3.eth.block_number)
 
     return out, snapshot, reset
 
