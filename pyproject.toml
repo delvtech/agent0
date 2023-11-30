@@ -41,6 +41,9 @@ exclude = [".venv", ".vscode", "docs"]
 [tool.pyright]
 exclude = [".venv", ".vscode", "docs"]
 
+[tool.isort]
+known_first_party = ["agent0"]
+
 [tool.ruff]
 # Default is: pycodestyle (E) and Pyflakes (F)
 # We add flake8-builtins (A), pydocstyle (D), isort (I), pep8-naming (N), and pylint (PL).
