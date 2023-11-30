@@ -70,7 +70,6 @@ class Arbitrage(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
@@ -93,7 +92,7 @@ class Arbitrage(HyperdrivePolicy):
             policy_config = self.Config()
         self.policy_config = policy_config
 
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet

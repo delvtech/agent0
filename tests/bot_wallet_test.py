@@ -7,12 +7,6 @@ from dataclasses import dataclass
 from typing import cast
 
 import pytest
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
@@ -22,6 +16,13 @@ from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import HTTPProvider
+
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base import MarketType, Trade
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.policies import HyperdrivePolicy
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 
 
 def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, interface: HyperdriveInterface) -> None:
@@ -87,7 +88,6 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
@@ -99,7 +99,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet

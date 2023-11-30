@@ -34,7 +34,6 @@ class CycleTradesPolicy(HyperdrivePolicy):
     # Using default parameters
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
@@ -45,7 +44,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
             policy_config = self.Config()
         self.counter = 0
         self.max_trades = policy_config.max_trades
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet

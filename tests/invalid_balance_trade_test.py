@@ -6,12 +6,6 @@ import os
 from typing import TYPE_CHECKING, Type, cast
 
 import pytest
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base.errors import ContractCallException
@@ -19,6 +13,13 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator as NumpyGenerator
 from web3 import HTTPProvider
 from web3.exceptions import ContractLogicError, ContractPanicError
+
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base import MarketType, Trade
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.policies import HyperdrivePolicy
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -36,7 +37,6 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
@@ -45,7 +45,7 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
     ):
         """Initialize policy."""
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -86,7 +86,6 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
@@ -95,7 +94,7 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
     ):
         """Initialize policy."""
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -138,7 +137,6 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
@@ -147,7 +145,7 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
     ):
         """Initialize policy."""
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -190,7 +188,6 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
@@ -199,7 +196,7 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
     ):
         """Initialize policy."""
         # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -240,7 +237,6 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
@@ -251,7 +247,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -308,7 +304,6 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
@@ -319,7 +314,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -381,7 +376,6 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
@@ -392,7 +386,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -454,7 +448,6 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
@@ -465,7 +458,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -555,7 +548,6 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
@@ -566,7 +558,7 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet

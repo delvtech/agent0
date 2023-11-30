@@ -28,17 +28,11 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # TODO should we pass in policy_config here in the base class constructor?
     ):
         """Instantiate the policy."""
-        # TODO budget should have a flag to allow for "the budget is however much this wallet has"
-        # https://github.com/delvtech/agent0/issues/827
-        if not isinstance(budget, FixedPoint):
-            raise TypeError(f"{budget=} must be of type `FixedPoint`")
-        self.budget: FixedPoint = budget
         self.slippage_tolerance = slippage_tolerance
         if rng is None:  # TODO: Check that multiple agent.rng derefs to the same rng object
             logging.warning("Policy random number generator (rng) argument not set, using seed of `123`.")

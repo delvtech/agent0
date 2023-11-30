@@ -5,6 +5,7 @@ from typing import Generic, TypeVar
 
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
+from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 
@@ -20,7 +21,7 @@ MarketAction = TypeVar("MarketAction")
 class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
     r"""Enact policies on smart contracts and tracks wallet state"""
 
-    def __init__(self, account: LocalAccount, policy: Policy | None = None):
+    def __init__(self, account: LocalAccount, initial_budget: FixedPoint, policy: Policy | None = None):
         """Initialize an agent and wallet account
 
         Arguments
@@ -67,9 +68,12 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
         # State variable defining if this agent is done trading
         self.done_trading = False
         super().__init__(account._key_obj, account._publicapi)  # pylint: disable=protected-access
+
+        # TODO budget should have a flag to allow for "the budget is however much this wallet has"
+        # https://github.com/delvtech/agent0/issues/827
         self.wallet = EthWallet(
             address=HexBytes(self.address),
-            balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE),
+            balance=Quantity(amount=initial_budget, unit=TokenType.BASE),
         )
 
     @property

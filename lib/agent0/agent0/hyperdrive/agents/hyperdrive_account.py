@@ -6,6 +6,7 @@ from typing import TypeVar
 
 from eth_account.signers.local import LocalAccount
 from ethpy.hyperdrive.api import HyperdriveInterface
+from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
 from agent0.base import MarketType, Quantity, TokenType, Trade
@@ -23,7 +24,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         should be able to get the HyperdriveMarketAction type from the HyperdriveInterface
     """
 
-    def __init__(self, account: LocalAccount, policy: Policy | None = None):
+    def __init__(self, account: LocalAccount, initial_budget: FixedPoint, policy: Policy | None = None):
         """Initialize an agent and wallet account
 
         Arguments
@@ -35,7 +36,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
             If None, then a policy that executes no actions is used.
 
         """
-        super().__init__(account, policy)
+        super().__init__(account, initial_budget, policy)
         self.wallet = HyperdriveWallet(
             address=HexBytes(self.address),
             balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE),

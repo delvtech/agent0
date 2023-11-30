@@ -35,7 +35,6 @@ class MultiTradePolicy(HyperdrivePolicy):
     # Using default parameters
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         # When this policy doesn't have a config and doesn't define a custom config object
@@ -47,7 +46,7 @@ class MultiTradePolicy(HyperdrivePolicy):
         # how many times `action` has been called.
         self.counter = 0
         self.made_trade = False
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet

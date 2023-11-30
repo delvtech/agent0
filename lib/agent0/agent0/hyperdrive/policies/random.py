@@ -68,7 +68,6 @@ class Random(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint = FixedPoint("10_000.0"),
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
@@ -91,7 +90,7 @@ class Random(HyperdrivePolicy):
 
         self.trade_chance = policy_config.trade_chance
         self.allowable_actions = policy_config.allowable_actions
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def get_available_actions(
         self,
