@@ -48,6 +48,7 @@ async def async_execute_single_agent_trade(
         TradeResult handles any information about the trade, as well as any errors that the trade resulted in
     """
     if liquidate:
+        # TODO: test this option
         trades: list[Trade[HyperdriveMarketAction]] = agent.get_liquidation_trades()
     else:
         trades: list[Trade[HyperdriveMarketAction]] = agent.get_trades(interface=interface)
@@ -286,5 +287,6 @@ async def async_match_contract_call_to_trade(
             )
 
         case _:
+            # Should never get here
             assert_never(trade.action_type)
     return wallet_deltas, trade_result
