@@ -22,6 +22,8 @@ class InteractiveHyperdrivePolicy(HyperdrivePolicy):
         ---------
         budget: FixedPoint
             The budget of this policy
+        sub_policy: HyperdrivePolicy | None
+            An optional sub-policy to apply to the actions.
         """
         self.next_action = None
         self.next_trade_amount = None

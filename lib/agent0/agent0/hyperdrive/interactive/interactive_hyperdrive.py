@@ -37,6 +37,7 @@ from agent0.base.make_key import make_private_key
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
+from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
 
 from .chain import Chain
@@ -224,17 +225,20 @@ class InteractiveHyperdrive:
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
         name: str | None = None,
+        policy: HyperdrivePolicy | None = None,
     ) -> InteractiveHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
 
         Arguments
         ---------
-        base: FixedPoint
+        base: FixedPoint, optional
             The amount of base to fund the agent with. Defaults to 0.
-        eth: FixedPoint
+        eth: FixedPoint, optional
             The amount of ETH to fund the agent with. Defaults to 10.
-        name: str
+        name: str, optional
             The name of the agent. Defaults to the wallet address.
+        policy: HyperdrivePolicy, optional
+            An optional policy to attach to this agent.
 
         Returns
         -------
@@ -246,7 +250,7 @@ class InteractiveHyperdrive:
             base = FixedPoint(0)
         if eth is None:
             eth = FixedPoint(10)
-        out_agent = InteractiveHyperdriveAgent(base=base, eth=eth, name=name, pool=self)
+        out_agent = InteractiveHyperdriveAgent(base=base, eth=eth, name=name, pool=self, policy=policy)
         return out_agent
 
     ### Database methods
@@ -523,13 +527,15 @@ class InteractiveHyperdrive:
 
     ### Private agent methods ###
 
-    def _init_agent(self, base: FixedPoint, eth: FixedPoint, name: str | None) -> HyperdriveAgent:
+    def _init_agent(
+        self, base: FixedPoint, eth: FixedPoint, name: str | None, policy: HyperdrivePolicy | None
+    ) -> HyperdriveAgent:
         agent_private_key = make_private_key()
         # Setting the budget to 0 here, `_add_funds` will take care of updating the wallet
         agent = HyperdriveAgent(
             Account().from_key(agent_private_key),
             initial_budget=FixedPoint(0),
-            policy=InteractiveHyperdrivePolicy(InteractiveHyperdrivePolicy.Config()),
+            policy=InteractiveHyperdrivePolicy(InteractiveHyperdrivePolicy.Config(sub_policy=policy)),
         )
 
         # Fund agent

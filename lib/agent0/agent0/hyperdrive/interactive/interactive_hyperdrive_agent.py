@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from eth_typing import ChecksumAddress
     from fixedpointmath import FixedPoint
 
+    from agent0.hyperdrive.policies import HyperdrivePolicy
     from agent0.hyperdrive.state import HyperdriveWallet
 
     from .event_types import (
@@ -34,7 +35,14 @@ class InteractiveHyperdriveAgent:
     wrappers here for ease of use.
     """
 
-    def __init__(self, base: FixedPoint, eth: FixedPoint, name: str | None, pool: InteractiveHyperdrive):
+    def __init__(
+        self,
+        base: FixedPoint,
+        eth: FixedPoint,
+        name: str | None,
+        pool: InteractiveHyperdrive,
+        policy: HyperdrivePolicy | None,
+    ) -> None:
         """Constructor for the interactive hyperdrive agent.
         NOTE: this constructor shouldn't be called directly, but rather from InteractiveHyperdrive's
         `init_agent` method.
@@ -45,14 +53,16 @@ class InteractiveHyperdriveAgent:
             The amount of base to fund the agent with.
         eth: FixedPoint
             The amount of ETH to fund the agent with.
-        name: str
+        name: str | None
             The name of the agent. Defaults to the wallet address.
         pool: InteractiveHyperdrive
             The pool object that this agent belongs to.
+        policy: HyperdrivePolicy | None
+            An optional policy to attach to this agent.
         """
         self._pool = pool
         self.name = name
-        self.agent = self._pool._init_agent(base, eth, name)
+        self.agent = self._pool._init_agent(base, eth, name, policy)
 
     @property
     def wallet(self) -> HyperdriveWallet:
