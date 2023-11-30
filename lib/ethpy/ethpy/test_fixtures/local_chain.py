@@ -14,7 +14,7 @@ from web3.constants import ADDRESS_ZERO
 from web3.types import RPCEndpoint
 
 
-def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1"):
+def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1") -> Iterator[str]:
     """Launch a local anvil chain.
 
     Arguments
@@ -55,7 +55,9 @@ def local_chain() -> Iterator[str]:
 
 
 @pytest.fixture(scope="session")
-def init_local_hyperdrive_pool(local_chain: str) -> tuple[DeployedHyperdrivePool, Callable]:
+def init_local_hyperdrive_pool(
+    local_chain: str,
+) -> tuple[DeployedHyperdrivePool, Callable[[], str], Callable[[str], None]]:
     """Fixture representing a deployed local hyperdrive pool.
 
     Arguments
@@ -65,33 +67,41 @@ def init_local_hyperdrive_pool(local_chain: str) -> tuple[DeployedHyperdrivePool
 
     Returns
     -------
-    DeployedHyperdrivePool, callable
-        The various parameters for a deployed pool, and a callable reset function for tests
+    DeployedHyperdrivePool, Callable[[], str], Callable[[str], None]
+        The various parameters for a deployed pool, a snapshot function, and a reset function
     """
     # pylint: disable=redefined-outer-name
     out = launch_local_hyperdrive_pool(local_chain)
     # Save the state for the pool and return for this fixture
 
     _w3 = initialize_web3_with_http_provider(local_chain)
-    rpc_result = _w3.provider.make_request(method=RPCEndpoint("anvil_dumpState"), params=[])
-    assert "result" in rpc_result
-    start_state = rpc_result["result"]
 
-    def reset() -> int:
-        """A function to reset to the state of the initial pool.
+    def snapshot() -> str:
+        """Takes a snapshot of the current chain state.
 
         Returns
         -------
-        int
-            The block number to set for the deploy pool block
+        str
+            The snapshot id
         """
-        # Loads the state, then mines a block to start the "reset state" on a new block
-        _w3.provider.make_request(method=RPCEndpoint("anvil_loadState"), params=[start_state])
-        # _w3.provider.make_request(method=RPCEndpoint("anvil_mine"), params=[])
-        # Have the deployed block be one block after the current block
-        return _w3.eth.block_number + 1
+        response = _w3.provider.make_request(method=RPCEndpoint("evm_snapshot"), params=[])
+        assert "result" in response
+        return response["result"]
 
-    return out, reset
+    def reset(snapshot_id: str) -> None:
+        """Resets the chain to a previous snapshot.
+
+        Arguments
+        ---------
+        snapshot_id: str
+            The snapshot id to reset to.
+        """
+        # Loads the previous snapshot
+        print(_w3.eth.block_number)
+        _ = _w3.provider.make_request(method=RPCEndpoint("evm_revert"), params=[snapshot_id])
+        print(_w3.eth.block_number)
+
+    return out, snapshot, reset
 
 
 def launch_local_hyperdrive_pool(
@@ -180,22 +190,27 @@ def launch_local_hyperdrive_pool(
 
 @pytest.fixture(scope="function")
 def local_hyperdrive_pool(
-    init_local_hyperdrive_pool: tuple[DeployedHyperdrivePool, Callable]
-) -> DeployedHyperdrivePool:
+    init_local_hyperdrive_pool: tuple[DeployedHyperdrivePool, Callable[[], str], Callable[[str], None]]
+) -> Iterator[DeployedHyperdrivePool]:
     """Fixture representing a deployed local hyperdrive pool.
 
     Arguments
     ---------
-    init_local_hyperdrive_pool: tuple[DeployedHyperdrivePool, Callable]
-        Fixture representing the deployed hyperdrive pool and a reset function
+    init_local_hyperdrive_pool: tuple[DeployedHyperdrivePool, Callable[[], str], Callable[[str], None]
+        Fixture representing the deployed hyperdrive pool, a snapshot function, and a reset function
 
-    Returns
+    Yields
     -------
     DeployedHyperdrivePool
-        The various parameters for a deployed pool, and a callable reset function for tests
+        The various parameters for a deployed pool
     """
     # pylint: disable=redefined-outer-name
-    pool, reset = init_local_hyperdrive_pool
-    deploy_block = reset()
-    pool.deploy_block_number = deploy_block
-    return pool
+    pool, snapshot, reset = init_local_hyperdrive_pool
+
+    # Take snapshot
+    snapshot_id = snapshot()
+
+    yield pool
+
+    # Revert to snapshot
+    reset(snapshot_id)
