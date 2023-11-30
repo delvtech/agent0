@@ -6,18 +6,20 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from fixedpointmath import FixedPoint
+
 from agent0 import initialize_accounts
 from agent0.base import MarketType, Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
-from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.state import HyperdriveWallet
     from ethpy.hyperdrive.api import HyperdriveInterface
     from numpy.random._generator import Generator as NumpyGenerator
+
+    from agent0.hyperdrive.state import HyperdriveWallet
 
 # %%
 # Define the unique agent env filename to use for this script
@@ -59,7 +61,6 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
     # Using default parameters
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
@@ -71,7 +72,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet

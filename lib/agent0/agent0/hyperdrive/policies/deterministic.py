@@ -57,7 +57,6 @@ class Deterministic(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
@@ -81,7 +80,7 @@ class Deterministic(HyperdrivePolicy):
             else [("add_liquidity", 100), ("open_long", 100), ("open_short", 100)]
         )
         self.starting_length = len(self.trade_list)
-        super().__init__(budget, rng)
+        super().__init__(rng)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet

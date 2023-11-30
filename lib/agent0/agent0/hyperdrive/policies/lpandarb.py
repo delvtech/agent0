@@ -228,7 +228,6 @@ class LPandArb(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
@@ -250,13 +249,11 @@ class LPandArb(HyperdrivePolicy):
         if policy_config is None:
             policy_config = self.Config()
         self.policy_config = policy_config
-        self.arb_amount = self.policy_config.arb_portion * budget
-        self.lp_amount = self.policy_config.lp_portion * budget
         self.minimum_trade_amount = FixedPoint(10)
         self.convergence_iters = []
         self.convergence_speed = []
 
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     # pylint: disable=too-many-branches
     def action(
@@ -280,14 +277,15 @@ class LPandArb(HyperdrivePolicy):
         action_list = []
 
         # Initial conditions, open LP position
-        if wallet.lp_tokens == FixedPoint(0) and self.lp_amount > FixedPoint(0):
+        lp_amount = self.policy_config.lp_portion * wallet.balance.amount
+        if wallet.lp_tokens == FixedPoint(0) and lp_amount > FixedPoint(0):
             # Add liquidity
             action_list.append(
                 Trade(
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=self.lp_amount,
+                        trade_amount=lp_amount,
                         wallet=wallet,
                         min_apr=interface.calc_fixed_rate() - self.policy_config.rate_slippage,
                         max_apr=interface.calc_fixed_rate() + self.policy_config.rate_slippage,

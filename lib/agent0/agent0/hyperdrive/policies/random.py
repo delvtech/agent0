@@ -68,7 +68,6 @@ class Random(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint = FixedPoint("10_000.0"),
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
@@ -91,7 +90,7 @@ class Random(HyperdrivePolicy):
 
         self.trade_chance = policy_config.trade_chance
         self.allowable_actions = policy_config.allowable_actions
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def get_available_actions(
         self,
@@ -158,7 +157,7 @@ class Random(HyperdrivePolicy):
             return []
 
         initial_trade_amount = FixedPoint(
-            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
+            self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
         # WEI <= trade_amount <= max_short
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
@@ -229,7 +228,7 @@ class Random(HyperdrivePolicy):
             return []
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
-            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
+            self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
         # WEI <= trade_amount <= max long
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
@@ -290,7 +289,7 @@ class Random(HyperdrivePolicy):
         """
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
-            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
+            self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
         # WEI <= trade_amount
         trade_amount: FixedPoint = max(WEI, min(wallet.balance.amount, initial_trade_amount))
@@ -322,7 +321,7 @@ class Random(HyperdrivePolicy):
         """
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
-            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
+            self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
         # WEI <= trade_amount <= lp_tokens
         trade_amount = max(WEI, min(wallet.lp_tokens, initial_trade_amount))
@@ -358,7 +357,7 @@ class Random(HyperdrivePolicy):
         """
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
-            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
+            self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
         shares_available_to_withdraw = min(
             wallet.withdraw_shares,

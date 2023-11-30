@@ -49,7 +49,6 @@ class WalletTestPolicy(HyperdrivePolicy):
     # Using default parameters
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
@@ -62,7 +61,7 @@ class WalletTestPolicy(HyperdrivePolicy):
         # how many times `action` has been called.
         self.counter = 0
         self.rerun = policy_config.rerun
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet

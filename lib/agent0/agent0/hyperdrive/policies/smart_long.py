@@ -60,7 +60,6 @@ class SmartLong(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
         policy_config: Config | None = None,
@@ -84,7 +83,7 @@ class SmartLong(HyperdrivePolicy):
         self.trade_chance = policy_config.trade_chance
         self.risk_threshold = policy_config.risk_threshold
 
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet

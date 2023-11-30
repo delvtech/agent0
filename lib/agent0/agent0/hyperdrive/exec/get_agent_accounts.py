@@ -70,11 +70,13 @@ def get_agent_accounts(
             if len(account_key_config.AGENT_KEYS) < agent_count:
                 raise AssertionError("Private keys must be specified. Did you list them in your .env?")
             # Get the budget from the env file
-            kwargs["budget"] = FixedPoint(scaled_value=agent_base_budgets[agent_count])
+            agent_budget = FixedPoint(scaled_value=agent_base_budgets[agent_count])
             kwargs["slippage_tolerance"] = agent_info.slippage_tolerance
             kwargs["policy_config"] = agent_info.policy_config
             eth_agent = HyperdriveAgent(
-                Account().from_key(account_key_config.AGENT_KEYS[agent_count]), policy=agent_info.policy(**kwargs)
+                Account().from_key(account_key_config.AGENT_KEYS[agent_count]),
+                initial_budget=agent_budget,
+                policy=agent_info.policy(**kwargs),
             )
             if get_account_balance(web3, eth_agent.checksum_address) == 0:
                 raise AssertionError(
