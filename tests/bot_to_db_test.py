@@ -9,10 +9,6 @@ from typing import Type, cast
 import numpy as np
 import pandas as pd
 import pytest
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.test_utils import CycleTradesPolicy
 from chainsync.db.hyperdrive.interface import (
     get_current_wallet,
     get_pool_analysis,
@@ -32,6 +28,11 @@ from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
+
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import run_agents
+from agent0.test_utils import CycleTradesPolicy
 
 
 def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
@@ -107,7 +108,7 @@ class TestBotToDb:
 
         # Run acquire data to get data from chain to db
         acquire_data(
-            start_block=10,  # First 9 blocks are deploying hyperdrive, ignore
+            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -117,7 +118,7 @@ class TestBotToDb:
 
         # Run data analysis to calculate various analysis values
         data_analysis(
-            start_block=10,  # First 9 blocks are deploying hyperdrive, ignore
+            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -149,7 +150,7 @@ class TestBotToDb:
 
         # Run acquire data to get data from chain to db
         acquire_data(
-            start_block=10,  # First 9 blocks are deploying hyperdrive, ignore
+            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -159,7 +160,7 @@ class TestBotToDb:
 
         # Run data analysis to calculate various analysis values
         data_analysis(
-            start_block=10,  # First 9 blocks are deploying hyperdrive, ignore
+            start_block=local_hyperdrive_pool.deploy_block_number,
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,

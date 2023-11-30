@@ -9,14 +9,13 @@ from typing import Iterator
 
 import docker
 import pytest
+from chainsync import PostgresConfig
+from chainsync.db.base import Base, initialize_engine
 from docker.errors import APIError, DockerException, NotFound
 from docker.models.containers import Container
 from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
-
-from chainsync import PostgresConfig
-from chainsync.db.base import Base, initialize_engine
 
 TEST_POSTGRES_NAME = "postgres_test"
 
@@ -168,7 +167,7 @@ def db_session(database_engine: Engine) -> Iterator[Session]:  # pylint: disable
     Base.metadata.drop_all(database_engine)  # drop tables
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def db_api(psql_docker: PostgresConfig) -> Iterator[str]:  # pylint: disable=redefined-outer-name
     """Launch a process for the db api.
 
