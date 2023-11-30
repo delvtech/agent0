@@ -26,11 +26,13 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
     @dataclass(kw_only=True)
     class Config:
         """Config data class for policy specific configuration
+
         Attributes
         ----------
-        rng_seed: int
+        rng_seed: int | None, optional
+            The seed for the random number generator. Defaults to None
         rng: Generator | None, optional
-            The experiment's stateful random number generator. Defaults to using seed 123
+            The experiment's stateful random number generator. Defaults to a spawn of the global rng.
         """
 
         rng_seed: int | None = None
@@ -43,6 +45,13 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
                 self.rng = default_rng(self.rng_seed)
 
     def __init__(self, config: Config):
+        """Initialize the policy.
+
+        Arguments
+        ---------
+        config: Config
+            The configuration for the policy.
+        """
         self.slippage_tolerance = config.slippage_tolerance
         # config.rng should be set in post_init in config
         assert config.rng is not None
