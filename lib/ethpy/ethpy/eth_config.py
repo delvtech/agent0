@@ -38,9 +38,15 @@ class EthConfig:
             self.database_api_uri = URI(self.database_api_uri)
 
 
-def build_eth_config(dotenv: str = "eth.env") -> EthConfig:
+def build_eth_config(dotenv_file: str = "eth.env") -> EthConfig:
     """Build an eth config that looks for environmental variables.
     If env var exists, use that, otherwise, default.
+
+    Arguments
+    ---------
+    dotenv_file: str, optional
+        The path location of the dotenv file to load from.
+        Defaults to "eth.env".
 
     Returns
     -------
@@ -48,8 +54,8 @@ def build_eth_config(dotenv: str = "eth.env") -> EthConfig:
         Config settings required to connect to the eth node
     """
     # Look for and load local config if it exists
-    if os.path.exists(dotenv):
-        load_dotenv(dotenv)
+    if os.path.exists(dotenv_file):
+        load_dotenv(dotenv_file)
 
     artifacts_uri = os.getenv("ARTIFACTS_URI")
     rpc_uri = os.getenv("RPC_URI")
