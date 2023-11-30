@@ -21,14 +21,16 @@ MarketAction = TypeVar("MarketAction")
 class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
     r"""Enact policies on smart contracts and tracks wallet state"""
 
-    def __init__(self, account: LocalAccount, initial_budget: FixedPoint, policy: Policy | None = None):
+    def __init__(self, account: LocalAccount, initial_budget: FixedPoint | None = None, policy: Policy | None = None):
         """Initialize an agent and wallet account
 
         Arguments
         ---------
         account: LocalAccount
             A Web3 local account for storing addresses & signing transactions.
-        policy: Policy
+        initial_budget: FixedPoint | None, optional
+            The initial budget for the wallet bookkeeping.
+        policy: Policy | None, optional
             Policy for producing agent actions.
             If None, then a policy that executes no actions is used.
 
@@ -65,12 +67,16 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
             self.policy = NoActionPolicy()
         else:
             self.policy = policy
+
+        # TODO budget should have a flag to allow for "the budget is however much this wallet has"
+        # https://github.com/delvtech/agent0/issues/827
+        if initial_budget is None:
+            initial_budget = FixedPoint(0)
+
         # State variable defining if this agent is done trading
         self.done_trading = False
         super().__init__(account._key_obj, account._publicapi)  # pylint: disable=protected-access
 
-        # TODO budget should have a flag to allow for "the budget is however much this wallet has"
-        # https://github.com/delvtech/agent0/issues/827
         self.wallet = EthWallet(
             address=HexBytes(self.address),
             balance=Quantity(amount=initial_budget, unit=TokenType.BASE),

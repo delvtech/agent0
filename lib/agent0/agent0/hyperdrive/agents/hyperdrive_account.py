@@ -24,23 +24,23 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         should be able to get the HyperdriveMarketAction type from the HyperdriveInterface
     """
 
-    def __init__(self, account: LocalAccount, initial_budget: FixedPoint, policy: Policy | None = None):
+    def __init__(self, account: LocalAccount, initial_budget: FixedPoint | None = None, policy: Policy | None = None):
         """Initialize an agent and wallet account
 
         Arguments
         ---------
         account: LocalAccount
             A Web3 local account for storing addresses & signing transactions.
-        policy: Policy
+        initial_budget: FixedPoint | None, optional
+            The initial budget for the wallet bookkeeping.
+        policy: Policy | None, optional
             Policy for producing agent actions.
             If None, then a policy that executes no actions is used.
 
         """
         super().__init__(account, initial_budget, policy)
-        self.wallet = HyperdriveWallet(
-            address=HexBytes(self.address),
-            balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE),
-        )
+        # Reinitialize the wallet to the subclass
+        self.wallet = HyperdriveWallet(address=self.wallet.address, balance=self.wallet.balance)
 
     def get_liquidation_trades(self) -> list[Trade[HyperdriveMarketAction]]:
         """List of trades that liquidate all open positions
