@@ -12,6 +12,7 @@ from web3.types import RPCEndpoint
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.hyperdrive.state import TradeResult, TradeStatus
+from agent0.test_utils import assert_never
 
 from .execute_agent_trades import async_execute_agent_trades
 
@@ -76,9 +77,38 @@ def trade_if_new_block(
         trade_results: list[TradeResult] = asyncio.run(async_execute_agent_trades(interface, agent_accounts, liquidate))
         last_executed_block = latest_block_number
 
-        for trade_result in trade_results:
-            # If successful, log the successful trade
-            if trade_result.status == TradeStatus.SUCCESS:
+        check_result(trade_results, interface, halt_on_errors, halt_on_slippage, crash_report_to_file)
+    return last_executed_block
+
+
+def check_result(
+    trade_results: list[TradeResult],
+    interface: HyperdriveInterface,
+    halt_on_errors: bool,
+    halt_on_slippage: bool,
+    crash_report_to_file: bool,
+) -> None:
+    """Check
+
+    Arguments
+    ---------
+    trade_results: list[TradeResult]
+        A list of TradeResult dataclasses, one for each trade made by the agent.
+    interface: HyperdriveInterface
+        The Hyperdrive API interface object.
+    halt_on_errors: bool
+        If true, raise an exception if a trade reverts.
+        Otherwise, log a warning and move on.
+    halt_on_slippage: bool
+        If halt_on_errors is true and halt_on_slippage is false, don't raise an exception if slippage happens.
+    crash_report_to_file: bool
+        Whether or not to save the crash report to a file.
+        Defaults to True.
+    """
+    for trade_result in trade_results:
+        # If successful, log the successful trade
+        match trade_result.status:
+            case TradeStatus.SUCCESS:
                 logging.info(
                     "AGENT %s (%s) performed %s for %g",
                     str(trade_result.agent.checksum_address),
@@ -86,7 +116,7 @@ def trade_if_new_block(
                     trade_result.trade_object.market_action.action_type,
                     float(trade_result.trade_object.market_action.trade_amount),
                 )
-            elif trade_result.status == TradeStatus.FAIL:
+            case TradeStatus.FAIL:
                 # Sanity check: exception should not be none if trade failed
                 # Additionally, crash reporting information should exist
                 assert trade_result.exception is not None
@@ -101,17 +131,16 @@ def trade_if_new_block(
                     # and we don't want to do it when e.g., slippage happens
                     if crash_report_to_file:
                         trade_result.anvil_state = get_anvil_state_dump(interface.web3)
-                    # Defaults to CRITICAL
+                        # Defaults to CRITICAL
                     log_hyperdrive_crash_report(trade_result, crash_report_to_file=crash_report_to_file)
 
                 if halt_on_errors:
                     # Don't halt if slippage detected and halt_on_slippage is false
                     if not trade_result.is_slippage or halt_on_slippage:
                         raise trade_result.exception
-            else:
+            case _:
                 # Should never get here
-                assert False
-    return last_executed_block
+                assert_never(trade_result.status)
 
 
 def get_wait_for_new_block(web3: Web3) -> bool:
