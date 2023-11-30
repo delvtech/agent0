@@ -20,7 +20,7 @@ https://github.com/delvtech/pypechain"""
 from __future__ import annotations
 
 from dataclasses import fields, is_dataclass
-from typing import Any, Tuple, Type, TypeVar, cast
+from typing import Any, Tuple, Type, TypeVar, Sequence, Iterable, cast
 
 from eth_typing import ChecksumAddress, HexStr
 from eth_utils.decorators import combomethod
