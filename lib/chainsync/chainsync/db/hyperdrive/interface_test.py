@@ -4,9 +4,8 @@ from decimal import Decimal
 
 import numpy as np
 import pytest
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
-
 from chainsync.db.base import get_latest_block_number_from_table
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 from .interface import (
     add_checkpoint_infos,
@@ -116,7 +115,7 @@ class TestCheckpointInterface:
 
         checkpoints_df = get_checkpoint_info(db_session)
         np.testing.assert_array_equal(
-            checkpoints_df["timestamp"].dt.to_pydatetime(), np.array([date_1, date_2, date_3])
+            np.array(checkpoints_df["timestamp"].values), np.array([date_1, date_2, date_3]).astype("datetime64[ns]")
         )
 
     @pytest.mark.docker
@@ -233,7 +232,8 @@ class TestPoolInfoInterface:
 
         pool_info_df = get_pool_info(db_session)
         np.testing.assert_array_equal(
-            pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1, timestamp_2, timestamp_3])
+            np.array(pool_info_df["timestamp"].values),
+            np.array([timestamp_1, timestamp_2, timestamp_3]).astype("datetime64[ns]"),
         )
 
     @pytest.mark.docker
@@ -248,18 +248,24 @@ class TestPoolInfoInterface:
         add_pool_infos([pool_info_1, pool_info_2, pool_info_3], db_session)
         pool_info_df = get_pool_info(db_session, start_block=1)
         np.testing.assert_array_equal(
-            pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_2, timestamp_3])
+            np.array(pool_info_df["timestamp"].values), np.array([timestamp_2, timestamp_3]).astype("datetime64[ns]")
         )
         pool_info_df = get_pool_info(db_session, start_block=-1)
-        np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_3]))
+        np.testing.assert_array_equal(
+            np.array(pool_info_df["timestamp"].values), np.array([timestamp_3]).astype("datetime64[ns]")
+        )
         pool_info_df = get_pool_info(db_session, end_block=1)
-        np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1]))
+        np.testing.assert_array_equal(
+            np.array(pool_info_df["timestamp"].values), np.array([timestamp_1]).astype("datetime64[ns]")
+        )
         pool_info_df = get_pool_info(db_session, end_block=-1)
         np.testing.assert_array_equal(
-            pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_1, timestamp_2])
+            np.array(pool_info_df["timestamp"].values), np.array([timestamp_1, timestamp_2]).astype("datetime64[ns]")
         )
         pool_info_df = get_pool_info(db_session, start_block=1, end_block=-1)
-        np.testing.assert_array_equal(pool_info_df["timestamp"].dt.to_pydatetime(), np.array([timestamp_2]))
+        np.testing.assert_array_equal(
+            np.array(pool_info_df["timestamp"].values), np.array([timestamp_2]).astype("datetime64[ns]")
+        )
 
 
 class TestWalletDeltaInterface:
