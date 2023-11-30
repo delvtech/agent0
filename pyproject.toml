@@ -73,3 +73,6 @@ exclude = [
     "docs",
     "lib"
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["agent0"]
