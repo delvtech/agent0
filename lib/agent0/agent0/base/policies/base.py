@@ -44,18 +44,18 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
                 # If seed is None, should just be random
                 self.rng = default_rng(self.rng_seed)
 
-    def __init__(self, config: Config):
+    def __init__(self, policy_config: Config):
         """Initialize the policy.
 
         Arguments
         ---------
-        config: Config
+        policy_config: Config
             The configuration for the policy.
         """
-        self.slippage_tolerance = config.slippage_tolerance
+        self.slippage_tolerance = policy_config.slippage_tolerance
         # config.rng should be set in post_init in config
-        assert config.rng is not None
-        self.rng: Generator = config.rng
+        assert policy_config.rng is not None
+        self.rng: Generator = policy_config.rng
 
     @property
     def name(self) -> str:
