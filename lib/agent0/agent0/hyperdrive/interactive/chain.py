@@ -63,6 +63,10 @@ class Chain:
         )
         assert isinstance(self.postgres_container, Container)
 
+        # Snapshot bookkeeping
+        self._saved_snapshot_id: str
+        self._deployed_hyperdrive_pools = []
+
     def __del__(self):
         """Kill postgres container in this class' destructor."""
         with contextlib.suppress(Exception):
@@ -98,6 +102,38 @@ class Chain:
         next_blocktime = latest_blocktime + time_delta
 
         return self._web3.provider.make_request(method=RPCEndpoint("evm_mine"), params=[next_blocktime])
+
+    def save_snapshot(self) -> None:
+        """Saves a snapshot using the `evm_snapshot` RPC call.
+        The chain can store one snapshot at a time, saving another snapshot overwrites the previous snapshot.
+        Saving/loading snapshot only persist on the same chain, not across chains.
+        """
+        response = self._web3.provider.make_request(method=RPCEndpoint("evm_snapshot"), params=[])
+        assert "result" in response
+        self._saved_snapshot_id = response["result"]
+
+        # TODO save snapshot database state
+
+    def load_snapshot(self) -> None:
+        """Loads the previous snapshot using the `evm_revert` RPC call. Can load the snapshot multiple times.
+        Note: Saving/loading snapshot only persist on the same chain, not across chains.
+        """
+        # Loads the previous snapshot
+        # When reverting snapshots, the chain deletes the previous snapshot, while we want it to persist.
+        # Hence, in this function, we first revert the snapshot, then immediately create a new snapshot
+        # to keep the original snapshot.
+
+        response = self._web3.provider.make_request(method=RPCEndpoint("evm_revert"), params=[self._saved_snapshot_id])
+        assert "result" in response
+        assert response["result"]
+
+        self.save_snapshot()
+
+        # TODO load snapshot database state
+        # TODO load agent wallets from database here
+        # TODO interactive hyperdrive caching breaks when block gets reverted
+        # TODO to avoid deploy, save state, deploy for bookkeeping, we can't allow deploying another pool
+        # on this chain after calling `save_snapshot`
 
     def get_deployer_account_private_key(self):
         """Get the private key of the deployer account."""
@@ -157,6 +193,8 @@ class Chain:
         assert isinstance(container, Container)
 
         return postgres_config, container
+    
+    def _add_deployed_pool_to_bookkeeping():
 
 
 class LocalChain(Chain):

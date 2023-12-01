@@ -207,3 +207,87 @@ class TestInteractiveHyperdrive:
 
         assert current_time_2 - current_time_1 == 3600
         assert current_time_3 - current_time_2 == 3600 * 24 * 7
+
+    @pytest.mark.anvil
+    def test_save_load_snapshot(self, chain):
+        # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
+        initial_pool_config = InteractiveHyperdrive.Config()
+        interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
+        hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+
+        # Generate funded trading agents from the interactive object
+        # Make trades to set the initial state
+        hyperdrive_agent = interactive_hyperdrive.init_agent(base=FixedPoint(111111), eth=FixedPoint(111), name="alice")
+        open_long_event = hyperdrive_agent.open_long(base=FixedPoint(2222))
+        open_short_event = hyperdrive_agent.open_short(bonds=FixedPoint(3333))
+        hyperdrive_agent.add_liquidity(base=FixedPoint(4444))
+
+        # Save the state on the chain
+        chain.save_snapshot()
+
+        # To ensure snapshots are working, we check the agent's wallet on the chain, the wallet object in the agent,
+        # and in the db
+        # Check base balance on the chain
+        init_eth_on_chain, init_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+        init_agent_wallet = hyperdrive_agent.wallet.copy()
+        init_db_wallet = interactive_hyperdrive.get_current_wallet()
+
+        # Make a few trades to change the state
+        hyperdrive_agent.add_funds(base=FixedPoint(1111), eth=FixedPoint(222))
+        hyperdrive_agent.close_long(bonds=FixedPoint(222), maturity_time=open_long_event.maturity_time)
+        hyperdrive_agent.open_short(bonds=FixedPoint(333))
+        hyperdrive_agent.remove_liquidity(shares=FixedPoint(444))
+
+        # Ensure state has changed
+        check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+        check_agent_wallet = hyperdrive_agent.wallet
+        check_db_wallet = interactive_hyperdrive.get_current_wallet()
+
+        assert not check_eth_on_chain == init_eth_on_chain
+        assert not check_base_on_chain == init_base_on_chain
+        assert not check_agent_wallet == init_agent_wallet
+        assert not check_db_wallet.equals(init_db_wallet)
+
+        # Save snapshot and check for equality
+        chain.load_snapshot()
+
+        check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+        check_agent_wallet = hyperdrive_agent.wallet
+        check_db_wallet = interactive_hyperdrive.get_current_wallet()
+
+        assert check_eth_on_chain == init_eth_on_chain
+        assert check_base_on_chain == init_base_on_chain
+        # TODO
+        # assert check_agent_wallet == init_agent_wallet
+        # assert check_db_wallet.equals(init_db_wallet)
+
+        # Do it again to make sure we can do multiple loads
+
+        # Make a few trades to change the state
+        hyperdrive_agent.add_funds(base=FixedPoint(1234), eth=FixedPoint(111))
+        hyperdrive_agent.open_long(base=FixedPoint(222))
+        hyperdrive_agent.close_short(bonds=FixedPoint(333), maturity_time=open_short_event.maturity_time)
+        hyperdrive_agent.remove_liquidity(shares=FixedPoint(555))
+
+        # Ensure state has changed
+        check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+        check_agent_wallet = hyperdrive_agent.wallet
+        check_db_wallet = interactive_hyperdrive.get_current_wallet()
+
+        assert check_eth_on_chain != init_eth_on_chain
+        assert check_base_on_chain != init_base_on_chain
+        assert check_agent_wallet != init_agent_wallet
+        assert not check_db_wallet.equals(init_db_wallet)
+
+        # Save snapshot and check for equality
+        chain.load_snapshot()
+
+        check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+        check_agent_wallet = hyperdrive_agent.wallet
+        check_db_wallet = interactive_hyperdrive.get_current_wallet()
+
+        assert check_eth_on_chain == init_eth_on_chain
+        assert check_base_on_chain == init_base_on_chain
+        # TODO
+        # assert check_agent_wallet == init_agent_wallet
+        # assert check_db_wallet.equals(init_db_wallet)
