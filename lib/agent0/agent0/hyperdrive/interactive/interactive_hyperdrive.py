@@ -267,7 +267,6 @@ class InteractiveHyperdrive:
         # pylint: disable=too-many-arguments
         if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
             raise ValueError("Cannot add a new agent after saving a snapshot")
-        # pylint: disable=too-many-arguments
         if base is None:
             base = FixedPoint(0)
         if eth is None:
