@@ -225,7 +225,7 @@ class Chain:
         for pool in self._deployed_hyperdrive_pools:
             export_path = ".interactive_state/snapshot/" + pool._db_name  # pylint: disable=protected-access
             os.makedirs(export_path, exist_ok=True)
-            export_db_to_file(export_path, pool.db_session)
+            export_db_to_file(export_path, pool.db_session, raw=True)
 
     def _load_db(self):
         # TODO parameterize the load path, careful since this is referencing the container path, not the local path.

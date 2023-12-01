@@ -43,7 +43,7 @@ from .schema import (
 MAX_BATCH_SIZE = 10000
 
 
-def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
+def export_db_to_file(out_dir: str, db_session: Session | None = None, raw: bool = False) -> None:
     """Export all tables from the database and write as parquet files, one per table.
     We use parquet since it's type aware, so all original types (including Decimals) are preserved
     when read
@@ -54,12 +54,18 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
         The directory to write the parquet files to. It's assumed this directory already exists.
     db_session: Session | None, optional
         The initialized session object. If none, will read credentials from `postgres.env`
+    raw: bool, optional
+        If true, won't add any additional columns to the output. Used for save/load state in db.
     """
     if db_session is None:
         # postgres session
         db_session = initialize_session()
 
     # TODO there might be a way to make this all programmatic by reading the schema
+    if raw:
+        return_timestamps = False
+    else:
+        return_timestamps = True
 
     # Base tables
     get_addr_to_username(db_session).to_parquet(
@@ -79,7 +85,7 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
     get_pool_info(db_session, coerce_float=False).to_parquet(
         os.path.join(out_dir, "pool_info.parquet"), index=False, engine="pyarrow"
     )
-    get_wallet_deltas(db_session, coerce_float=False, return_timestamp=False).to_parquet(
+    get_wallet_deltas(db_session, coerce_float=False, return_timestamp=return_timestamps).to_parquet(
         os.path.join(out_dir, "wallet_delta.parquet"), index=False, engine="pyarrow"
     )
     # TODO input_params_maxDeposit is too large of a number to be stored in parquet
@@ -89,16 +95,16 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
     )
 
     ## Analysis tables
-    get_pool_analysis(db_session, coerce_float=False, return_timestamp=False).to_parquet(
+    get_pool_analysis(db_session, coerce_float=False, return_timestamp=return_timestamps).to_parquet(
         os.path.join(out_dir, "pool_analysis.parquet"), index=False, engine="pyarrow"
     )
-    get_current_wallet(db_session, coerce_float=False, raw=True).to_parquet(
+    get_current_wallet(db_session, coerce_float=False, raw=raw).to_parquet(
         os.path.join(out_dir, "current_wallet.parquet"), index=False, engine="pyarrow"
     )
     get_ticker(db_session, coerce_float=False).to_parquet(
         os.path.join(out_dir, "ticker.parquet"), index=False, engine="pyarrow"
     )
-    get_wallet_pnl(db_session, coerce_float=False, return_timestamp=False).to_parquet(
+    get_wallet_pnl(db_session, coerce_float=False, return_timestamp=return_timestamps).to_parquet(
         os.path.join(out_dir, "wallet_pnl.parquet"), index=False, engine="pyarrow"
     )
 
