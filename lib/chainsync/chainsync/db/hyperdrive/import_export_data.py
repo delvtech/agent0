@@ -79,7 +79,7 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
     get_pool_info(db_session, coerce_float=False).to_parquet(
         os.path.join(out_dir, "pool_info.parquet"), index=False, engine="pyarrow"
     )
-    get_wallet_deltas(db_session, coerce_float=False).to_parquet(
+    get_wallet_deltas(db_session, coerce_float=False, return_timestamp=False).to_parquet(
         os.path.join(out_dir, "wallet_delta.parquet"), index=False, engine="pyarrow"
     )
     # TODO input_params_maxDeposit is too large of a number to be stored in parquet
@@ -89,16 +89,16 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
     )
 
     ## Analysis tables
-    get_pool_analysis(db_session, coerce_float=False).to_parquet(
+    get_pool_analysis(db_session, coerce_float=False, return_timestamp=False).to_parquet(
         os.path.join(out_dir, "pool_analysis.parquet"), index=False, engine="pyarrow"
     )
-    get_current_wallet(db_session, coerce_float=False).to_parquet(
+    get_current_wallet(db_session, coerce_float=False, raw=True).to_parquet(
         os.path.join(out_dir, "current_wallet.parquet"), index=False, engine="pyarrow"
     )
     get_ticker(db_session, coerce_float=False).to_parquet(
         os.path.join(out_dir, "ticker.parquet"), index=False, engine="pyarrow"
     )
-    get_wallet_pnl(db_session, coerce_float=False).to_parquet(
+    get_wallet_pnl(db_session, coerce_float=False, return_timestamp=False).to_parquet(
         os.path.join(out_dir, "wallet_pnl.parquet"), index=False, engine="pyarrow"
     )
 
@@ -144,37 +144,48 @@ def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
     drop: bool, optional
         Whether to drop the existing data in the db before importing
     """
-    # Drop all columns if drop is set
+    # Drop all if drop is set
 
     if drop:
-        db_session.delete(AddrToUsername)
-        db_session.delete(UsernameToUser)
-        db_session.delete(PoolConfig)
-        db_session.delete(CheckpointInfo)
-        db_session.delete(PoolInfo)
-        db_session.delete(WalletDelta)
-        db_session.delete(HyperdriveTransaction)
-        db_session.delete(PoolAnalysis)
-        db_session.delete(CurrentWallet)
-        db_session.delete(Ticker)
-        db_session.delete(WalletPNL)
+        db_session.query(AddrToUsername).delete()
+        db_session.query(UsernameToUser).delete()
+        db_session.query(PoolConfig).delete()
+        db_session.query(CheckpointInfo).delete()
+        db_session.query(PoolInfo).delete()
+        db_session.query(WalletDelta).delete()
+        db_session.query(HyperdriveTransaction).delete()
+        db_session.query(PoolAnalysis).delete()
+        db_session.query(CurrentWallet).delete()
+        db_session.query(Ticker).delete()
+        db_session.query(WalletPNL).delete()
+        try:
+            db_session.commit()
+        except exc.DataError as err:
+            db_session.rollback()
+            logging.error("Error on adding wallet_infos: %s", err)
+            raise err
 
     out = import_to_pandas(in_dir)
-    _df_to_db(out["addr_to_username"], AddrToUsername, db_session)
-    _df_to_db(out["username_to_user"], UsernameToUser, db_session)
-    _df_to_db(out["pool_config"], PoolConfig, db_session)
-    _df_to_db(out["checkpoint_info"], CheckpointInfo, db_session)
-    _df_to_db(out["pool_info"], PoolInfo, db_session)
-    _df_to_db(out["wallet_delta"], WalletDelta, db_session)
-    _df_to_db(out["transactions"], HyperdriveTransaction, db_session)
-    _df_to_db(out["pool_analysis"], PoolAnalysis, db_session)
-    _df_to_db(out["current_wallet"], CurrentWallet, db_session)
-    _df_to_db(out["ticker"], Ticker, db_session)
-    _df_to_db(out["wallet_pnl"], WalletPNL, db_session)
+    _df_to_db(out["addr_to_username"], AddrToUsername, db_session, drop)
+    _df_to_db(out["username_to_user"], UsernameToUser, db_session, drop)
+    _df_to_db(out["pool_config"], PoolConfig, db_session, drop)
+    _df_to_db(out["checkpoint_info"], CheckpointInfo, db_session, drop)
+    _df_to_db(out["pool_info"], PoolInfo, db_session, drop)
+    _df_to_db(out["wallet_delta"], WalletDelta, db_session, drop)
+    _df_to_db(out["transactions"], HyperdriveTransaction, db_session, drop)
+    _df_to_db(out["pool_analysis"], PoolAnalysis, db_session, drop)
+    _df_to_db(out["current_wallet"], CurrentWallet, db_session, drop)
+    _df_to_db(out["ticker"], Ticker, db_session, drop)
+    _df_to_db(out["wallet_pnl"], WalletPNL, db_session, drop)
 
 
-def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
+def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session, drop: bool = True):
     """Helper function to add a dataframe to a database"""
+    if drop:
+        if_exists_method = "replace"
+    else:
+        if_exists_method = "append"
+
     table_name = schema_obj.__tablename__
 
     # dataframe to_sql needs data types from the schema object
@@ -184,6 +195,7 @@ def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session)
         table_name,
         con=session.connection(),
         method="multi",
+        if_exists=if_exists_method,
         index=False,
         dtype=dtype,  # type: ignore
         chunksize=MAX_BATCH_SIZE,

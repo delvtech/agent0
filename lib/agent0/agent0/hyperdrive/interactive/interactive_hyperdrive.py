@@ -173,6 +173,9 @@ class InteractiveHyperdrive:
             self.hyperdrive_interface.hyperdrive_contract.address
         )
 
+        # Store the db_id here for later reference
+        self._db_name = postgres_config.POSTGRES_DB
+
         self.db_session = initialize_session(postgres_config, ensure_database_created=True)
 
         # Keep track of how much base have been minted per agent

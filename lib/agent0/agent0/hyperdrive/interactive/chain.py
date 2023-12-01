@@ -144,8 +144,6 @@ class Chain:
         assert "result" in response
         assert response["result"]
 
-        self.save_snapshot()
-
         # The hyperdrive interface in deployed pools need to wipe it's cache
         for pool in self._deployed_hyperdrive_pools:
             pool._reinit_state_after_load_snapshot()  # pylint: disable=protected-access
@@ -153,7 +151,7 @@ class Chain:
         # load snapshot database state
         self._load_db()
 
-        # TODO load agent wallets from database here
+        self.save_snapshot()
 
     def get_deployer_account_private_key(self):
         """Get the private key of the deployer account."""
@@ -198,8 +196,6 @@ class Chain:
             existing_container.remove(v=True, force=True)
 
         # TODO ensure this container auto removes by itself
-        cwd = os.getcwd()
-        local_volume = f"{cwd}/.interactive_state"
         container = client.containers.run(
             image="postgres",
             auto_remove=True,
@@ -209,7 +205,6 @@ class Chain:
             },
             name=container_name,
             ports={"5432/tcp": ("127.0.0.1", postgres_config.POSTGRES_PORT)},
-            volumes=[local_volume + ":/app/.interactive_state"],
             detach=True,
             remove=True,
         )
@@ -223,12 +218,17 @@ class Chain:
         self._deployed_hyperdrive_pools.append(pool)
 
     def _dump_db(self):
-        # TODO
-        pass
+        # TODO parameterize the save path
+        for pool in self._deployed_hyperdrive_pools:
+            export_path = ".interactive_state/snapshot/" + pool._db_name  # pylint: disable=protected-access
+            os.makedirs(export_path, exist_ok=True)
+            export_db_to_file(export_path, pool.db_session)
 
     def _load_db(self):
-        # TODO
-        pass
+        # TODO parameterize the load path, careful since this is referencing the container path, not the local path.
+        for pool in self._deployed_hyperdrive_pools:
+            import_path = ".interactive_state/snapshot/" + pool._db_name  # pylint: disable=protected-access
+            import_to_db(pool.db_session, import_path, drop=True)
 
 
 class LocalChain(Chain):

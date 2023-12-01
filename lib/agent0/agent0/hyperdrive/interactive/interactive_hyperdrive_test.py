@@ -295,7 +295,6 @@ class TestInteractiveHyperdrive:
         # Do it again to make sure we can do multiple loads
 
         # Make a few trades to change the state
-        hyperdrive_agent.add_funds(base=FixedPoint(1234), eth=FixedPoint(111))
         hyperdrive_agent.open_long(base=FixedPoint(222))
         hyperdrive_agent.close_short(bonds=FixedPoint(333), maturity_time=open_short_event.maturity_time)
         hyperdrive_agent.remove_liquidity(shares=FixedPoint(555))
