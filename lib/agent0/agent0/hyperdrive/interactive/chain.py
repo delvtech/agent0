@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 
 import docker
 from chainsync import PostgresConfig
+from chainsync.db.hyperdrive.import_export_data import export_db_to_file, import_to_db
 from docker.errors import NotFound
 from docker.models.containers import Container
 from ethpy.base import initialize_web3_with_http_provider

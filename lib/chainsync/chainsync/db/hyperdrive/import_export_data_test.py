@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 
-from .export_data import export_db_to_file, import_to_pandas
+from .import_export_data import export_db_to_file, import_to_pandas
 from .interface import add_pool_config, get_pool_config
 from .schema import PoolConfig
 

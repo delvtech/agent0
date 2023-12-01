@@ -1,12 +1,21 @@
 """Helper functions to export data to csv from the db and to load csv to dataframes."""
 from __future__ import annotations
 
+import logging
 import os
+from typing import Type
 
 import pandas as pd
+from chainsync.db.base import (
+    AddrToUsername,
+    Base,
+    UsernameToUser,
+    get_addr_to_username,
+    get_username_to_user,
+    initialize_session,
+)
+from sqlalchemy import exc
 from sqlalchemy.orm import Session
-
-from chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
 
 from .interface import (
     get_checkpoint_info,
@@ -19,6 +28,19 @@ from .interface import (
     get_wallet_deltas,
     get_wallet_pnl,
 )
+from .schema import (
+    CheckpointInfo,
+    CurrentWallet,
+    HyperdriveTransaction,
+    PoolAnalysis,
+    PoolConfig,
+    PoolInfo,
+    Ticker,
+    WalletDelta,
+    WalletPNL,
+)
+
+MAX_BATCH_SIZE = 10000
 
 
 def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
@@ -108,3 +130,68 @@ def import_to_pandas(in_dir: str) -> dict[str, pd.DataFrame]:
     out["ticker"] = pd.read_parquet(os.path.join(in_dir, "ticker.parquet"), engine="pyarrow")
     out["wallet_pnl"] = pd.read_parquet(os.path.join(in_dir, "wallet_pnl.parquet"), engine="pyarrow")
     return out
+
+
+def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
+    """Helper function to load data from parquet into the db
+
+    Arguments
+    ---------
+    db_session: Session
+        The sqlalchemy session object
+    in_dir: str
+        The directory to read the parquet files from that matches the out_dir passed into export_db_to_file
+    drop: bool, optional
+        Whether to drop the existing data in the db before importing
+    """
+    # Drop all columns if drop is set
+
+    if drop:
+        db_session.delete(AddrToUsername)
+        db_session.delete(UsernameToUser)
+        db_session.delete(PoolConfig)
+        db_session.delete(CheckpointInfo)
+        db_session.delete(PoolInfo)
+        db_session.delete(WalletDelta)
+        db_session.delete(HyperdriveTransaction)
+        db_session.delete(PoolAnalysis)
+        db_session.delete(CurrentWallet)
+        db_session.delete(Ticker)
+        db_session.delete(WalletPNL)
+
+    out = import_to_pandas(in_dir)
+    _df_to_db(out["addr_to_username"], AddrToUsername, db_session)
+    _df_to_db(out["username_to_user"], UsernameToUser, db_session)
+    _df_to_db(out["pool_config"], PoolConfig, db_session)
+    _df_to_db(out["checkpoint_info"], CheckpointInfo, db_session)
+    _df_to_db(out["pool_info"], PoolInfo, db_session)
+    _df_to_db(out["wallet_delta"], WalletDelta, db_session)
+    _df_to_db(out["transactions"], HyperdriveTransaction, db_session)
+    _df_to_db(out["pool_analysis"], PoolAnalysis, db_session)
+    _df_to_db(out["current_wallet"], CurrentWallet, db_session)
+    _df_to_db(out["ticker"], Ticker, db_session)
+    _df_to_db(out["wallet_pnl"], WalletPNL, db_session)
+
+
+def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
+    """Helper function to add a dataframe to a database"""
+    table_name = schema_obj.__tablename__
+
+    # dataframe to_sql needs data types from the schema object
+    dtype = {c.name: c.type for c in schema_obj.__table__.columns}
+    # Pandas doesn't play nice with types
+    insert_df.to_sql(
+        table_name,
+        con=session.connection(),
+        method="multi",
+        index=False,
+        dtype=dtype,  # type: ignore
+        chunksize=MAX_BATCH_SIZE,
+    )
+    # commit the transaction
+    try:
+        session.commit()
+    except exc.DataError as err:
+        session.rollback()
+        logging.error("Error on adding %s: %s", table_name, err)
+        raise err
