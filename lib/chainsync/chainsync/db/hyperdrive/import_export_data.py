@@ -166,20 +166,20 @@ def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
             raise err
 
     out = import_to_pandas(in_dir)
-    _df_to_db(out["addr_to_username"], AddrToUsername, db_session, drop)
-    _df_to_db(out["username_to_user"], UsernameToUser, db_session, drop)
-    _df_to_db(out["pool_config"], PoolConfig, db_session, drop)
-    _df_to_db(out["checkpoint_info"], CheckpointInfo, db_session, drop)
-    _df_to_db(out["pool_info"], PoolInfo, db_session, drop)
-    _df_to_db(out["wallet_delta"], WalletDelta, db_session, drop)
-    _df_to_db(out["transactions"], HyperdriveTransaction, db_session, drop)
-    _df_to_db(out["pool_analysis"], PoolAnalysis, db_session, drop)
-    _df_to_db(out["current_wallet"], CurrentWallet, db_session, drop)
-    _df_to_db(out["ticker"], Ticker, db_session, drop)
-    _df_to_db(out["wallet_pnl"], WalletPNL, db_session, drop)
+    _df_to_db(out["addr_to_username"], AddrToUsername, db_session)
+    _df_to_db(out["username_to_user"], UsernameToUser, db_session)
+    _df_to_db(out["pool_config"], PoolConfig, db_session)
+    _df_to_db(out["checkpoint_info"], CheckpointInfo, db_session)
+    _df_to_db(out["pool_info"], PoolInfo, db_session)
+    _df_to_db(out["wallet_delta"], WalletDelta, db_session)
+    _df_to_db(out["transactions"], HyperdriveTransaction, db_session)
+    _df_to_db(out["pool_analysis"], PoolAnalysis, db_session)
+    _df_to_db(out["current_wallet"], CurrentWallet, db_session)
+    _df_to_db(out["ticker"], Ticker, db_session)
+    _df_to_db(out["wallet_pnl"], WalletPNL, db_session)
 
 
-def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session, drop: bool = True):
+def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
     """Helper function to add a dataframe to a database"""
     table_name = schema_obj.__tablename__
 

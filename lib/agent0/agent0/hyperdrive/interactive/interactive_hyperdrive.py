@@ -188,6 +188,7 @@ class InteractiveHyperdrive:
         self._pool_agents: list[InteractiveHyperdriveAgent] = []
 
     def cleanup(self):
+        """Cleans up resources used by this object."""
         self.db_session.close()
 
     def __del__(self):
@@ -263,6 +264,7 @@ class InteractiveHyperdrive:
             An object that contains the HyperdriveInterface, Agents,
             and provides access to the interactive Hyperdrive API.
         """
+        # pylint: disable=too-many-arguments
         if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
             raise ValueError("Cannot add a new agent after saving a snapshot")
         # pylint: disable=too-many-arguments
