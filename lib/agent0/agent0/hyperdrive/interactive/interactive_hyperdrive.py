@@ -180,12 +180,16 @@ class InteractiveHyperdrive:
 
         # Add this pool to the chain bookkeeping for snapshots
         chain._add_deployed_pool_to_bookkeeping(self)
+        self.chain = chain
+
+    def cleanup(self):
+        self.db_session.close()
 
     def __del__(self):
         # Attempt to close the session
         # These functions will raise errors if the session is already closed
         try:
-            self.db_session.close()
+            self.cleanup()
         # Never throw exception in destructor
         except Exception:  # pylint: disable=broad-except
             pass
@@ -254,6 +258,8 @@ class InteractiveHyperdrive:
             An object that contains the HyperdriveInterface, Agents,
             and provides access to the interactive Hyperdrive API.
         """
+        if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
+            raise ValueError("Cannot add a new agent after saving a snapshot")
         # pylint: disable=too-many-arguments
         if base is None:
             base = FixedPoint(0)

@@ -3,6 +3,7 @@ import datetime
 import logging
 import os
 from pathlib import Path
+from typing import Iterator
 
 import docker
 import pytest
@@ -21,11 +22,11 @@ class TestInteractiveHyperdrive:
 
     # pylint: disable=redefined-outer-name
 
-    @pytest.fixture()
-    def chain(self) -> LocalChain:
+    @pytest.fixture(scope="function")
+    def chain(self) -> Iterator[LocalChain]:
         """Creates a local chain connected to a local database hosted in docker.
 
-        Returns
+        Yield
         -------
         LocalChain
             local chain instance.
@@ -55,7 +56,8 @@ class TestInteractiveHyperdrive:
 
         local_chain_config = LocalChain.Config()
         chain = LocalChain(local_chain_config)
-        return chain
+        yield chain
+        chain.cleanup()
 
     @pytest.mark.anvil
     def _ensure_db_wallet_matches_agent_wallet(
@@ -110,7 +112,7 @@ class TestInteractiveHyperdrive:
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
     @pytest.mark.anvil
-    def test_funding_and_trades(self, chain):
+    def test_funding_and_trades(self, chain: LocalChain):
         """Tests interactive hyperdrive end to end"""
         # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
         initial_pool_config = InteractiveHyperdrive.Config()
@@ -212,8 +214,12 @@ class TestInteractiveHyperdrive:
         assert hyperdrive_agent0.wallet.withdraw_shares == FixedPoint(0)
         self._ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
+        # Cleanup interactive hyperdrive
+        interactive_hyperdrive.cleanup()
+        interactive_hyperdrive_2.cleanup()
+
     @pytest.mark.anvil
-    def test_advance_time(self, chain):
+    def test_advance_time(self, chain: LocalChain):
         """Tests interactive hyperdrive end to end"""
         # We need the underlying hyperdrive interface here to test time
         interactive_hyperdrive = InteractiveHyperdrive(chain)
@@ -230,8 +236,11 @@ class TestInteractiveHyperdrive:
         assert current_time_2 - current_time_1 == 3600
         assert current_time_3 - current_time_2 == 3600 * 24 * 7
 
+        # Cleanup interactive hyperdrive
+        interactive_hyperdrive.cleanup()
+
     @pytest.mark.anvil
-    def test_save_load_snapshot(self, chain):
+    def test_save_load_snapshot(self, chain: LocalChain):
         # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
         initial_pool_config = InteractiveHyperdrive.Config()
         interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
@@ -252,7 +261,7 @@ class TestInteractiveHyperdrive:
         # Check base balance on the chain
         init_eth_on_chain, init_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
         init_agent_wallet = hyperdrive_agent.wallet.copy()
-        init_db_wallet = interactive_hyperdrive.get_current_wallet()
+        init_db_wallet = interactive_hyperdrive.get_current_wallet().copy()
 
         # Make a few trades to change the state
         hyperdrive_agent.add_funds(base=FixedPoint(1111), eth=FixedPoint(222))
@@ -265,9 +274,9 @@ class TestInteractiveHyperdrive:
         check_agent_wallet = hyperdrive_agent.wallet
         check_db_wallet = interactive_hyperdrive.get_current_wallet()
 
-        assert not check_eth_on_chain == init_eth_on_chain
-        assert not check_base_on_chain == init_base_on_chain
-        assert not check_agent_wallet == init_agent_wallet
+        assert check_eth_on_chain != init_eth_on_chain
+        assert check_base_on_chain != init_base_on_chain
+        assert check_agent_wallet != init_agent_wallet
         assert not check_db_wallet.equals(init_db_wallet)
 
         # Save snapshot and check for equality
@@ -281,7 +290,7 @@ class TestInteractiveHyperdrive:
         assert check_base_on_chain == init_base_on_chain
         # TODO
         # assert check_agent_wallet == init_agent_wallet
-        # assert check_db_wallet.equals(init_db_wallet)
+        assert check_db_wallet.equals(init_db_wallet)
 
         # Do it again to make sure we can do multiple loads
 
@@ -312,4 +321,7 @@ class TestInteractiveHyperdrive:
         assert check_base_on_chain == init_base_on_chain
         # TODO
         # assert check_agent_wallet == init_agent_wallet
-        # assert check_db_wallet.equals(init_db_wallet)
+        assert check_db_wallet.equals(init_db_wallet)
+
+        # Cleanup interactive hyperdrive
+        interactive_hyperdrive.cleanup()

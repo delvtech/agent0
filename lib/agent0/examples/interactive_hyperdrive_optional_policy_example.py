@@ -36,6 +36,8 @@ hyperdrive_random_agent = interactive_hyperdrive.init_agent(
     base=FixedPoint(100000), eth=FixedPoint(100), name="random_bot", policy=Zoo.random
 )
 
+chain.save_snapshot()
+
 # %%
 # Execute interactive trade
 open_long_event_1 = hyperdrive_random_agent.open_long(base=FixedPoint(11111))
@@ -49,3 +51,5 @@ for i in range(10):
     trade_events: list = hyperdrive_random_agent.execute_policy_action()
     random_trade_events.extend(trade_events)
 random_trade_events
+# %%
+chain.load_snapshot()

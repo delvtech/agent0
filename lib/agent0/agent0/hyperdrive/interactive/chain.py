@@ -71,12 +71,16 @@ class Chain:
         # Snapshot bookkeeping
         self._saved_snapshot_id: str
         self._has_saved_snapshot = False
-        self._deployed_hyperdrive_pools = []
+        self._deployed_hyperdrive_pools: list[InteractiveHyperdrive] = []
+
+    def cleanup(self):
+        """Kills the postgres container in this class."""
+        self.postgres_container.kill()
 
     def __del__(self):
         """Kill postgres container in this class' destructor."""
         with contextlib.suppress(Exception):
-            self.postgres_container.kill()
+            self.cleanup()
 
     def advance_time(self, time_delta: int | timedelta) -> RPCResponse:
         """Advance time for this chain using the `evm_mine` RPC call.
@@ -118,7 +122,8 @@ class Chain:
         assert "result" in response
         self._saved_snapshot_id = response["result"]
 
-        # TODO save snapshot database state
+        # Save the db state
+        self._dump_db()
 
         self._has_saved_snapshot = True
 
@@ -144,11 +149,10 @@ class Chain:
         for pool in self._deployed_hyperdrive_pools:
             pool._reinit_state_after_load_snapshot()  # pylint: disable=protected-access
 
-        # TODO load snapshot database state
+        # load snapshot database state
+        self._load_db()
+
         # TODO load agent wallets from database here
-        # TODO interactive hyperdrive caching breaks when block gets reverted
-        # TODO to avoid deploy, save state, deploy for bookkeeping, we can't allow deploying another pool
-        # on this chain after calling `save_snapshot`
 
     def get_deployer_account_private_key(self):
         """Get the private key of the deployer account."""
@@ -193,6 +197,8 @@ class Chain:
             existing_container.remove(v=True, force=True)
 
         # TODO ensure this container auto removes by itself
+        cwd = os.getcwd()
+        local_volume = f"{cwd}/.interactive_state"
         container = client.containers.run(
             image="postgres",
             auto_remove=True,
@@ -202,6 +208,7 @@ class Chain:
             },
             name=container_name,
             ports={"5432/tcp": ("127.0.0.1", postgres_config.POSTGRES_PORT)},
+            volumes=[local_volume + ":/app/.interactive_state"],
             detach=True,
             remove=True,
         )
@@ -213,6 +220,14 @@ class Chain:
         if self._has_saved_snapshot:
             raise ValueError("Cannot add a new pool after saving a snapshot")
         self._deployed_hyperdrive_pools.append(pool)
+
+    def _dump_db(self):
+        # TODO
+        pass
+
+    def _load_db(self):
+        # TODO
+        pass
 
 
 class LocalChain(Chain):
@@ -277,10 +292,15 @@ class LocalChain(Chain):
         # TODO hack, wait for chain to init
         time.sleep(1)
 
+    def cleanup(self):
+        """Kills the subprocess in this class' destructor."""
+        self.anvil_process.kill()
+        super().cleanup()
+
     def __del__(self):
         """Kill subprocess in this class' destructor."""
         with contextlib.suppress(Exception):
-            self.anvil_process.kill()
+            self.cleanup()
         super().__del__()
 
     def get_deployer_account_private_key(self) -> str:
