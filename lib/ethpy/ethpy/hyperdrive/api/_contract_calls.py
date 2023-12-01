@@ -4,21 +4,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from eth_utils.currency import MAX_WEI
-from fixedpointmath import FixedPoint
-from hypertypes.types import IERC4626HyperdriveContract, MockERC4626Contract
-from web3 import Web3
-
 from ethpy.base import async_smart_contract_transact, get_account_balance, smart_contract_preview_transaction
 from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 from ethpy.hyperdrive.transactions import parse_logs
+from fixedpointmath import FixedPoint
+from hypertypes.types import ERC20MintableContract, IERC4626HyperdriveContract, MockERC4626Contract
+from web3 import Web3
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber
-    from web3.contract.contract import Contract
-    from web3.types import Nonce
-
     from ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
+    from web3.types import Nonce
 
     from .api import HyperdriveInterface
 
@@ -61,6 +58,46 @@ def _get_eth_base_balances(interface: HyperdriveInterface, agent: LocalAccount) 
         FixedPoint(scaled_value=agent_eth_balance),
         FixedPoint(scaled_value=agent_base_balance),
     )
+
+
+def _get_gov_fees_accrued(
+    hyperdrive_contract: IERC4626HyperdriveContract,
+    block_number: BlockNumber | None,
+) -> FixedPoint:
+    """See API for documentation."""
+    if block_number is None:
+        block_identifier = "latest"
+    else:
+        block_identifier = block_number
+    gov_fees_accrued = hyperdrive_contract.functions.getUncollectedGovernanceFees().call(
+        block_identifier=block_identifier
+    )
+    return FixedPoint(scaled_value=gov_fees_accrued)
+
+
+def _get_hyperdrive_base_balance(
+    base_contract: ERC20MintableContract,
+    hyperdrive_contract: IERC4626HyperdriveContract,
+    block_number: BlockNumber | None,
+) -> FixedPoint:
+    """See API for documentation."""
+    base_balance = base_contract.functions.balanceOf(hyperdrive_contract.address).call(
+        block_identifier=block_number or "latest"
+    )
+    return FixedPoint(scaled_value=base_balance)
+
+
+def _create_checkpoint(
+    interface: HyperdriveInterface,
+    block_number: BlockNumber | None = None,
+) -> None:
+    """See API for documentation."""
+    if block_number is None:
+        block_timestamp = interface.get_block_timestamp(interface.get_current_block())
+    else:
+        block_timestamp = interface.get_block_timestamp(interface.get_block(block_number))
+    checkpoint_time = interface.calc_checkpoint_id(interface.pool_config.checkpoint_duration, block_timestamp)
+    interface.hyperdrive_contract.functions.checkpoint(checkpoint_time).call(block_identifier=block_timestamp)
 
 
 async def _async_open_long(
