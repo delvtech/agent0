@@ -1,6 +1,10 @@
 """Tests interactive hyperdrive end to end"""
 import datetime
+import logging
+import os
+from pathlib import Path
 
+import docker
 import pytest
 from docker.errors import DockerException
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
@@ -26,13 +30,31 @@ class TestInteractiveHyperdrive:
         LocalChain
             local chain instance.
         """
-        # Construct chain object
+        # Attempt to determine if docker is installed
         try:
-            local_chain_config = LocalChain.Config()
-            chain = LocalChain(local_chain_config)
-        except DockerException:
-            pytest.skip("Docker not found")
+            try:
+                _ = docker.from_env()
+            except Exception:  # pylint: disable=broad-exception-caught
+                home_dir = os.path.expanduser("~")
+                socket_path = Path(f"{home_dir}") / ".docker" / "desktop" / "docker.sock"
+                if socket_path.exists():
+                    logging.debug("Docker not found at default socket, using %s..", socket_path)
+                    _ = docker.DockerClient(base_url=f"unix://{socket_path}")
+                else:
+                    logging.debug("Docker not found.")
+                    _ = docker.from_env()
+        # Skip this test if docker isn't installed
+        except DockerException as exc:
+            # This env variable gets set when running tests in CI
+            # Hence, we don't want to skip this test if we're in CI
+            in_ci = os.getenv("IN_CI")
+            if in_ci is None:
+                pytest.skip("Docker engine not found, skipping")
+            else:
+                raise exc
 
+        local_chain_config = LocalChain.Config()
+        chain = LocalChain(local_chain_config)
         return chain
 
     @pytest.mark.anvil
