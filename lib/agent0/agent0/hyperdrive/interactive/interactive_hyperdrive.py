@@ -24,7 +24,7 @@ from chainsync.db.hyperdrive import (
 )
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
-from eth_typing import ChecksumAddress
+from eth_typing import BlockNumber, ChecksumAddress
 from eth_utils.address import to_checksum_address
 from ethpy import EthConfig
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
@@ -897,7 +897,7 @@ class InteractiveHyperdrive:
         2. Load all agent's wallets from the db.
         """
         # Set internal state block number to 0 to enusre it updates
-        self.hyperdrive_interface.last_state_block_number = 0
+        self.hyperdrive_interface.last_state_block_number = BlockNumber(0)
 
         # Load and set all agent wallets from the db
         # TODO
