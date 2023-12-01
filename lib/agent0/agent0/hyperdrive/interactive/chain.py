@@ -6,9 +6,11 @@ import contextlib
 import logging
 import os
 import subprocess
+import time
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import docker
 from chainsync import PostgresConfig
@@ -16,6 +18,9 @@ from docker.errors import NotFound
 from docker.models.containers import Container
 from ethpy.base import initialize_web3_with_http_provider
 from web3.types import RPCEndpoint, RPCResponse
+
+if TYPE_CHECKING:
+    from .interactive_hyperdrive import InteractiveHyperdrive
 
 
 class Chain:
@@ -65,6 +70,7 @@ class Chain:
 
         # Snapshot bookkeeping
         self._saved_snapshot_id: str
+        self._has_saved_snapshot = False
         self._deployed_hyperdrive_pools = []
 
     def __del__(self):
@@ -114,6 +120,8 @@ class Chain:
 
         # TODO save snapshot database state
 
+        self._has_saved_snapshot = True
+
     def load_snapshot(self) -> None:
         """Loads the previous snapshot using the `evm_revert` RPC call. Can load the snapshot multiple times.
         Note: Saving/loading snapshot only persist on the same chain, not across chains.
@@ -123,11 +131,18 @@ class Chain:
         # Hence, in this function, we first revert the snapshot, then immediately create a new snapshot
         # to keep the original snapshot.
 
+        if not self._has_saved_snapshot:
+            raise ValueError("No saved snapshot to load")
+
         response = self._web3.provider.make_request(method=RPCEndpoint("evm_revert"), params=[self._saved_snapshot_id])
         assert "result" in response
         assert response["result"]
 
         self.save_snapshot()
+
+        # The hyperdrive interface in deployed pools need to wipe it's cache
+        for pool in self._deployed_hyperdrive_pools:
+            pool._reinit_state_after_load_snapshot()  # pylint: disable=protected-access
 
         # TODO load snapshot database state
         # TODO load agent wallets from database here
@@ -193,8 +208,11 @@ class Chain:
         assert isinstance(container, Container)
 
         return postgres_config, container
-    
-    def _add_deployed_pool_to_bookkeeping():
+
+    def _add_deployed_pool_to_bookkeeping(self, pool: InteractiveHyperdrive):
+        if self._has_saved_snapshot:
+            raise ValueError("Cannot add a new pool after saving a snapshot")
+        self._deployed_hyperdrive_pools.append(pool)
 
 
 class LocalChain(Chain):
@@ -255,6 +273,9 @@ class LocalChain(Chain):
         if config.block_timestamp_interval is not None:
             # TODO make RPC call for setting block timestamp
             raise NotImplementedError("Block timestamp interval not implemented yet")
+
+        # TODO hack, wait for chain to init
+        time.sleep(1)
 
     def __del__(self):
         """Kill subprocess in this class' destructor."""

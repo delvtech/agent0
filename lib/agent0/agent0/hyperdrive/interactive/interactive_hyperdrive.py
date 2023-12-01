@@ -178,6 +178,9 @@ class InteractiveHyperdrive:
         # Keep track of how much base have been minted per agent
         self._initial_funds: dict[ChecksumAddress, FixedPoint] = {}
 
+        # Add this pool to the chain bookkeeping for snapshots
+        chain._add_deployed_pool_to_bookkeeping(self)
+
     def __del__(self):
         # Attempt to close the session
         # These functions will raise errors if the session is already closed
@@ -886,3 +889,15 @@ class InteractiveHyperdrive:
 
             case _:
                 assert_never(trade_type)
+
+    def _reinit_state_after_load_snapshot(self) -> None:
+        """After loading a snapshot, we need to re-initialize the state the internal
+        variables of the interactive hyperdrive.
+        1. Wipe the cache from the hyperdrive interface.
+        2. Load all agent's wallets from the db.
+        """
+        # Set internal state block number to 0 to enusre it updates
+        self.hyperdrive_interface.last_state_block_number = 0
+
+        # Load and set all agent wallets from the db
+        # TODO
