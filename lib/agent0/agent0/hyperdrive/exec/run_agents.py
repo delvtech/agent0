@@ -86,7 +86,7 @@ def run_agents(
             async_fund_agents(user_account, eth_config, account_key_config, contract_addresses)
         )  # uses env variables created above as inputs
     # get hyperdrive interface object and agents
-    hyperdrive, agent_accounts = setup_experiment(
+    interface, agent_accounts = setup_experiment(
         eth_config,
         environment_config,
         agent_config,
@@ -117,7 +117,7 @@ def run_agents(
             # On the other hand, we initialize empty wallets just to overwrite here.
             # Keeping here for now for later discussion
             agent.wallet = build_wallet_positions_from_data(
-                agent.checksum_address, balances, hyperdrive.base_token_contract
+                agent.checksum_address, balances, interface.base_token_contract
             )
 
     # If we're in liquidation mode, we explicitly set halt on errors to false
@@ -136,7 +136,7 @@ def run_agents(
             break
 
         new_executed_block = trade_if_new_block(
-            hyperdrive,
+            interface,
             agent_accounts,
             environment_config.halt_on_errors,
             environment_config.halt_on_slippage,

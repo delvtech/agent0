@@ -67,17 +67,17 @@ def setup_experiment(
     )
     setup_hyperdrive_crash_report_logging()
     # create hyperdrive interface object
-    hyperdrive = HyperdriveInterface(
+    interface = HyperdriveInterface(
         eth_config, contract_addresses, read_retry_count=read_retry_count, write_retry_count=write_retry_count
     )
     # load agent policies
     # rng is shared by the agents and can be accessed via `agent_accounts[idx].policy.rng`
     agent_accounts = get_agent_accounts(
-        hyperdrive.web3,
+        interface.web3,
         agent_config,
         account_key_config,
-        hyperdrive.base_token_contract,
-        hyperdrive.hyperdrive_contract.address,
+        interface.base_token_contract,
+        interface.hyperdrive_contract.address,
         global_rng,
     )
-    return hyperdrive, agent_accounts
+    return interface, agent_accounts
