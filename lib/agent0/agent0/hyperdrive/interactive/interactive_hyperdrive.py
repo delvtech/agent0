@@ -586,6 +586,10 @@ class InteractiveHyperdrive:
         return agent
 
     def _add_funds(self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint) -> None:
+        # TODO this can be fixed by getting actual base values from the chain.
+        if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
+            raise ValueError("Cannot add funds to an agent after saving a snapshot")
+
         if eth > FixedPoint(0):
             # Eth is a set balance call
             eth_balance, _ = self.hyperdrive_interface.get_eth_base_balances(agent)
