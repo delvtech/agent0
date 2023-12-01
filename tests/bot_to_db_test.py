@@ -78,10 +78,11 @@ class TestBotToDb:
             AgentConfig(
                 policy=cycle_trade_policy,
                 number_of_agents=1,
-                slippage_tolerance=FixedPoint("0.0001"),
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=cycle_trade_policy.Config(),
+                policy_config=cycle_trade_policy.Config(
+                    slippage_tolerance=FixedPoint("0.0001"),
+                ),
             ),
         ]
 
@@ -133,10 +134,12 @@ class TestBotToDb:
             AgentConfig(
                 policy=cycle_trade_policy,
                 number_of_agents=1,
-                slippage_tolerance=FixedPoint("0.0001"),
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=cycle_trade_policy.Config(max_trades=3),
+                policy_config=cycle_trade_policy.Config(
+                    slippage_tolerance=FixedPoint("0.0001"),
+                    max_trades=3,
+                ),
             ),
         ]
 

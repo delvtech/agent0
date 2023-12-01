@@ -17,9 +17,6 @@ if TYPE_CHECKING:
 class NoActionPolicy(BasePolicy[MarketInterface, Wallet]):
     """NoOp class policy"""
 
-    def __init__(self, rng: Generator | None = None):
-        super().__init__(rng)
-
     def action(self, interface: MarketInterface, wallet: Wallet) -> tuple[list[Trade], bool]:
         """Returns an empty list, indicating no action
 

@@ -40,7 +40,7 @@ class Random(HyperdrivePolicy):
         """
         return super().describe(raw_description)
 
-    @dataclass
+    @dataclass(kw_only=True)
     class Config(HyperdrivePolicy.Config):
         """Custom config arguments for this policy
 
@@ -66,31 +66,17 @@ class Random(HyperdrivePolicy):
             ]
         )
 
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        policy_config: Config | None = None,
-    ) -> None:
+    def __init__(self, policy_config: Config) -> None:
         """Initializes the bot
 
         Arguments
         ---------
-        budget: FixedPoint
-            The budget of this policy
-        rng: Generator | None
-            Random number generator
-        slippage_tolerance: FixedPoint | None
-            Slippage tolerance of trades
-        policy_config: Config | None
+        policy_config: Config
             The custom arguments for this policy
         """
-        if policy_config is None:
-            policy_config = self.Config()
-
         self.trade_chance = policy_config.trade_chance
         self.allowable_actions = policy_config.allowable_actions
-        super().__init__(rng, slippage_tolerance)
+        super().__init__(policy_config)
 
     def get_available_actions(
         self,

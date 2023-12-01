@@ -25,8 +25,8 @@ class CycleTradesPolicy(HyperdrivePolicy):
 
         Attributes
         ----------
-        trade_chance: FixedPoint
-            The probability of this bot to make a trade on an actio call
+        max_trades: int
+            The maximum amount of trades to make before this policy is done trading
         """
 
         max_trades: int | None = None
@@ -34,17 +34,13 @@ class CycleTradesPolicy(HyperdrivePolicy):
     # Using default parameters
     def __init__(
         self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        policy_config: Config | None = None,
+        policy_config: Config,
     ):
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
-        if policy_config is None:
-            policy_config = self.Config()
         self.counter = 0
         self.max_trades = policy_config.max_trades
-        super().__init__(rng, slippage_tolerance)
+        super().__init__(policy_config)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet

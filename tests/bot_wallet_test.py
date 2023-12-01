@@ -82,24 +82,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
     COUNTER_REDEEM_WITHDRAW_SHARES = 6
     COUNTER_CHECK = 7
 
-    @dataclass
-    class Config(HyperdrivePolicy.Config):
-        """Custom config arguments for this policy. This policy doesn't have any config."""
-
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        policy_config: Config | None = None,
-    ):
-        """Initialize config and set counter to 0."""
-        if policy_config is None:
-            policy_config = self.Config()
-
-        # We want to do a sequence of trades one at a time, so we keep an internal counter based on
-        # how many times `action` has been called.
-        self.counter = 0
-        super().__init__(rng, slippage_tolerance)
+    counter = 0
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -266,10 +249,11 @@ class TestWalletAgainstChain:
             AgentConfig(
                 policy=WalletTestAgainstChainPolicy,
                 number_of_agents=1,
-                slippage_tolerance=FixedPoint("0.0001"),
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=WalletTestAgainstChainPolicy.Config(),
+                policy_config=WalletTestAgainstChainPolicy.Config(
+                    slippage_tolerance=FixedPoint("0.0001"),
+                ),
             ),
         ]
 
