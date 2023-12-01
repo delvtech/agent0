@@ -76,6 +76,9 @@ class Chain:
 
     def cleanup(self):
         """Kills the postgres container in this class."""
+        # Runs cleanup on all deployed pools
+        for pool in self._deployed_hyperdrive_pools:
+            pool.cleanup()
         self.postgres_container.kill()
 
     def __del__(self):

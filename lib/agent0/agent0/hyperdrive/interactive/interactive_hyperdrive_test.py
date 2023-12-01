@@ -214,10 +214,6 @@ class TestInteractiveHyperdrive:
         assert hyperdrive_agent0.wallet.withdraw_shares == FixedPoint(0)
         self._ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
-        # Cleanup interactive hyperdrive
-        interactive_hyperdrive.cleanup()
-        interactive_hyperdrive_2.cleanup()
-
     @pytest.mark.anvil
     def test_advance_time(self, chain: LocalChain):
         """Tests interactive hyperdrive end to end"""
@@ -235,9 +231,6 @@ class TestInteractiveHyperdrive:
 
         assert current_time_2 - current_time_1 == 3600
         assert current_time_3 - current_time_2 == 3600 * 24 * 7
-
-        # Cleanup interactive hyperdrive
-        interactive_hyperdrive.cleanup()
 
     @pytest.mark.anvil
     def test_save_load_snapshot(self, chain: LocalChain):
@@ -318,6 +311,3 @@ class TestInteractiveHyperdrive:
         assert check_base_on_chain == init_base_on_chain
         assert check_agent_wallet == init_agent_wallet
         assert check_db_wallet.equals(init_db_wallet)
-
-        # Cleanup interactive hyperdrive
-        interactive_hyperdrive.cleanup()
