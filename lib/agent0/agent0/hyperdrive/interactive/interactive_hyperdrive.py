@@ -12,8 +12,9 @@ import pandas as pd
 from chainsync import PostgresConfig
 from chainsync.dashboard.usernames import build_user_mapping
 from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
+from chainsync.db.hyperdrive import get_checkpoint_info
+from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.db.hyperdrive import (
-    get_checkpoint_info,
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
@@ -37,7 +38,7 @@ from web3.constants import ADDRESS_ZERO
 from agent0.base.make_key import make_private_key
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
-from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
+from agent0.hyperdrive.exec import async_execute_agent_trades, build_wallet_positions_from_data, set_max_approval
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
 from agent0.test_utils import assert_never
@@ -184,6 +185,7 @@ class InteractiveHyperdrive:
         # Add this pool to the chain bookkeeping for snapshots
         chain._add_deployed_pool_to_bookkeeping(self)
         self.chain = chain
+        self._pool_agents: list[InteractiveHyperdriveAgent] = []
 
     def cleanup(self):
         self.db_session.close()
@@ -271,6 +273,7 @@ class InteractiveHyperdrive:
         out_agent = InteractiveHyperdriveAgent(
             base=base, eth=eth, name=name, pool=self, policy=policy, policy_config=policy_config
         )
+        self._pool_agents.append(out_agent)
         return out_agent
 
     ### Database methods
@@ -913,4 +916,10 @@ class InteractiveHyperdrive:
         self.hyperdrive_interface.last_state_block_number = BlockNumber(0)
 
         # Load and set all agent wallets from the db
-        # TODO
+        for agent in self._pool_agents:
+            db_balances = chainsync_get_current_wallet(
+                self.db_session, wallet_address=[agent.agent.checksum_address], coerce_float=False
+            )
+            agent.agent.wallet = build_wallet_positions_from_data(
+                agent.agent.checksum_address, db_balances, self.hyperdrive_interface.base_token_contract
+            )

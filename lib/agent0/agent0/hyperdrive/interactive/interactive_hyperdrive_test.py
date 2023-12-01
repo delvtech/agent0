@@ -287,8 +287,7 @@ class TestInteractiveHyperdrive:
 
         assert check_eth_on_chain == init_eth_on_chain
         assert check_base_on_chain == init_base_on_chain
-        # TODO
-        # assert check_agent_wallet == init_agent_wallet
+        assert check_agent_wallet == init_agent_wallet
         assert check_db_wallet.equals(init_db_wallet)
 
         # Do it again to make sure we can do multiple loads
@@ -317,8 +316,7 @@ class TestInteractiveHyperdrive:
 
         assert check_eth_on_chain == init_eth_on_chain
         assert check_base_on_chain == init_base_on_chain
-        # TODO
-        # assert check_agent_wallet == init_agent_wallet
+        assert check_agent_wallet == init_agent_wallet
         assert check_db_wallet.equals(init_db_wallet)
 
         # Cleanup interactive hyperdrive

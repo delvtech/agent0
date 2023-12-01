@@ -144,12 +144,12 @@ class Chain:
         assert "result" in response
         assert response["result"]
 
+        # load snapshot database state
+        self._load_db()
+
         # The hyperdrive interface in deployed pools need to wipe it's cache
         for pool in self._deployed_hyperdrive_pools:
             pool._reinit_state_after_load_snapshot()  # pylint: disable=protected-access
-
-        # load snapshot database state
-        self._load_db()
 
         self.save_snapshot()
 
