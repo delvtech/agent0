@@ -70,10 +70,12 @@ class TestSlippageWarning:
             AgentConfig(
                 policy=cycle_trade_policy,
                 number_of_agents=1,
-                slippage_tolerance=FixedPoint("-0.01"),  # Negative slippage, slippage check should always catch
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=cycle_trade_policy.Config(max_trades=4),
+                policy_config=cycle_trade_policy.Config(
+                    slippage_tolerance=FixedPoint("-0.01"),  # Negative slippage, slippage check should always catch
+                    max_trades=4,
+                ),
             ),
         ]
 

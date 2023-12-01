@@ -202,10 +202,10 @@ agent_config: list[AgentConfig] = [
     AgentConfig(
         policy=CustomCycleTradesPolicy,
         number_of_agents=1,
-        slippage_tolerance=SLIPPAGE_TOLERANCE,
         base_budget_wei=BASE_BUDGET_PER_BOT,
         eth_budget_wei=ETH_BUDGET_PER_BOT,
         policy_config=CustomCycleTradesPolicy.Config(
+            slippage_tolerance=SLIPPAGE_TOLERANCE,
             static_trade_amount_wei=FixedPoint(100).scaled_value,  # 100 base static trades
         ),
     ),

@@ -49,11 +49,13 @@ agent_config: list[AgentConfig] = [
     AgentConfig(
         policy=Zoo.random,
         number_of_agents=3,
-        slippage_tolerance=SLIPPAGE_TOLERANCE,
         # Fixed budget
         base_budget_wei=BASE_BUDGET_PER_BOT,
         eth_budget_wei=ETH_BUDGET_PER_BOT,
-        policy_config=Zoo.random.Config(trade_chance=FixedPoint("0.8")),
+        policy_config=Zoo.random.Config(
+            slippage_tolerance=SLIPPAGE_TOLERANCE,
+            trade_chance=FixedPoint("0.8"),
+        ),
     ),
 ]
 

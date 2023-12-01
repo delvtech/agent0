@@ -64,7 +64,7 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
 
         """
         if policy is None:
-            self.policy = NoActionPolicy()
+            self.policy = NoActionPolicy(NoActionPolicy.Config())
         else:
             self.policy = policy
 

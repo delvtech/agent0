@@ -527,7 +527,9 @@ class InteractiveHyperdrive:
         agent_private_key = make_private_key()
         # Setting the budget to 0 here, `_add_funds` will take care of updating the wallet
         agent = HyperdriveAgent(
-            Account().from_key(agent_private_key), initial_budget=FixedPoint(0), policy=InteractiveHyperdrivePolicy()
+            Account().from_key(agent_private_key),
+            initial_budget=FixedPoint(0),
+            policy=InteractiveHyperdrivePolicy(InteractiveHyperdrivePolicy.Config()),
         )
 
         # Fund agent
