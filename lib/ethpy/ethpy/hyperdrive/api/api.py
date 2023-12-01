@@ -32,7 +32,10 @@ from ._contract_calls import (
     _async_open_short,
     _async_redeem_withdraw_shares,
     _async_remove_liquidity,
+    _create_checkpoint,
     _get_eth_base_balances,
+    _get_gov_fees_accrued,
+    _get_hyperdrive_base_balance,
     _get_total_supply_withdrawal_shares,
     _get_variable_rate,
     _get_vault_shares,
@@ -128,6 +131,7 @@ class HyperdriveInterface:
         # Fill in the initial state cache.
         self._current_pool_state = self.get_hyperdrive_state()
         self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
+        self.pool_config = self._current_pool_state.pool_config
         # Set the retry count for contract calls using the interface when previewing/transacting
         # TODO these parameters are currently only used for trades against hyperdrive
         # and uses defaults for other smart_contract_read functions, e.g., get_pool_info.
@@ -247,6 +251,8 @@ class HyperdriveInterface:
         variable_rate = self.get_variable_rate(block_number)
         vault_shares = self.get_vault_shares(block_number)
         total_supply_withdrawal_shares = self.get_total_supply_withdrawal_shares(block_number)
+        hyperdrive_base_balance = self.get_hyperdrive_base_balance(block_number)
+        gov_fees_accrued = self.get_gov_fees_accrued(block_number)
         return PoolState(
             block,
             pool_config,
@@ -255,6 +261,8 @@ class HyperdriveInterface:
             variable_rate,
             vault_shares,
             total_supply_withdrawal_shares,
+            hyperdrive_base_balance,
+            gov_fees_accrued,
         )
 
     def get_total_supply_withdrawal_shares(self, block_number: BlockNumber | None) -> FixedPoint:
@@ -325,6 +333,49 @@ class HyperdriveInterface:
             A tuple containing the [agent_eth_balance, agent_base_balance].
         """
         return _get_eth_base_balances(self, agent)
+
+    def get_hyperdrive_base_balance(self, block_number: BlockNumber | None) -> FixedPoint:
+        """Get the current Hyperdrive balance in the base contract.
+
+        Arguments
+        ---------
+        block_number: BlockNumber, optional
+            The number for any minted block.
+            Defaults to the current block number.
+
+        Returns
+        -------
+        FixedPoint
+            The result of base_token_contract.balanceOf(hypedrive_address).
+        """
+        return _get_hyperdrive_base_balance(self.base_token_contract, self.hyperdrive_contract, block_number)
+
+    def get_gov_fees_accrued(self, block_number: BlockNumber | None) -> FixedPoint:
+        """Get the current amount of Uncollected Governance Fees in the Hyperdrive contract.
+
+        Arguments
+        ---------
+        block_number: BlockNumber, optional
+            The number for any minted block.
+            Defaults to the current block number.
+
+        Returns
+        -------
+        FixedPoint
+            The result of hyperdrive_contract.functions.getUncollectedGovernanceFees
+        """
+        return _get_gov_fees_accrued(self.hyperdrive_contract, block_number)
+
+    def create_checkpoint(self, block_number: BlockNumber | None = None) -> None:
+        """Create a Hyperdrive checkpoint.
+
+        Arguments
+        ---------
+        block_number: BlockNumber, optional
+            The number for any minted block.
+            Defaults to the current block number.
+        """
+        _create_checkpoint(self, block_number)
 
     async def async_open_long(
         self,

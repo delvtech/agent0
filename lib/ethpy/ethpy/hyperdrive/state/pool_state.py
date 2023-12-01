@@ -28,6 +28,8 @@ class PoolState:
     variable_rate: FixedPoint
     vault_shares: FixedPoint
     total_supply_withdrawal_shares: FixedPoint
+    hyperdrive_balance: FixedPoint
+    gov_fees_accrued: FixedPoint
 
     def __post_init__(self):
         ## TODO: Get these using the api getter functions without creating a circular import
