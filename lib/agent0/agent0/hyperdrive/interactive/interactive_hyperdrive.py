@@ -251,6 +251,7 @@ class InteractiveHyperdrive:
             An object that contains the HyperdriveInterface, Agents,
             and provides access to the interactive Hyperdrive API.
         """
+        # pylint: disable=too-many-arguments
         if base is None:
             base = FixedPoint(0)
         if eth is None:
@@ -542,6 +543,7 @@ class InteractiveHyperdrive:
         policy: Type[HyperdrivePolicy] | None,
         policy_config: HyperdrivePolicy.Config | None,
     ) -> HyperdriveAgent:
+        # pylint: disable=too-many-arguments
         agent_private_key = make_private_key()
         # Setting the budget to 0 here, `_add_funds` will take care of updating the wallet
         agent = HyperdriveAgent(

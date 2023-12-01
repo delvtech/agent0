@@ -62,6 +62,7 @@ class InteractiveHyperdriveAgent:
         policy: HyperdrivePolicy | None
             An optional policy to attach to this agent.
         """
+        # pylint: disable=too-many-arguments
         self._pool = pool
         self.name = name
         self.agent = self._pool._init_agent(base, eth, name, policy, policy_config)
