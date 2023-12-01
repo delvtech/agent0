@@ -44,6 +44,7 @@ class InteractiveHyperdriveAgent:
         pool: InteractiveHyperdrive,
         policy: Type[HyperdrivePolicy] | None,
         policy_config: HyperdrivePolicy.Config | None,
+        private_key: str | None = None,
     ) -> None:
         """Constructor for the interactive hyperdrive agent.
         NOTE: this constructor shouldn't be called directly, but rather from InteractiveHyperdrive's
@@ -65,7 +66,7 @@ class InteractiveHyperdriveAgent:
         # pylint: disable=too-many-arguments
         self._pool = pool
         self.name = name
-        self.agent = self._pool._init_agent(base, eth, name, policy, policy_config)
+        self.agent = self._pool._init_agent(base, eth, name, policy, policy_config, private_key)
 
     @property
     def wallet(self) -> HyperdriveWallet:

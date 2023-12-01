@@ -391,6 +391,7 @@ class InteractiveHyperdrive:
         name: str | None = None,
         policy: Type[HyperdrivePolicy] | None = None,
         policy_config: HyperdrivePolicy.Config | None = None,
+        private_key: str | None = None,
     ) -> InteractiveHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
 
@@ -421,7 +422,13 @@ class InteractiveHyperdrive:
         if eth is None:
             eth = FixedPoint(10)
         out_agent = InteractiveHyperdriveAgent(
-            base=base, eth=eth, name=name, pool=self, policy=policy, policy_config=policy_config
+            base=base,
+            eth=eth,
+            name=name,
+            pool=self,
+            policy=policy,
+            policy_config=policy_config,
+            private_key=private_key,
         )
         self._pool_agents.append(out_agent)
         return out_agent
@@ -720,9 +727,10 @@ class InteractiveHyperdrive:
         name: str | None,
         policy: Type[HyperdrivePolicy] | None,
         policy_config: HyperdrivePolicy.Config | None,
+        private_key: str | None = None,
     ) -> HyperdriveAgent:
         # pylint: disable=too-many-arguments
-        agent_private_key = make_private_key()
+        agent_private_key = make_private_key() if private_key is None else private_key
         # Setting the budget to 0 here, `_add_funds` will take care of updating the wallet
         agent = HyperdriveAgent(
             Account().from_key(agent_private_key),
