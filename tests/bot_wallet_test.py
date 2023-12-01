@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 import os
-from dataclasses import dataclass
 from typing import cast
 
 import pytest
@@ -14,7 +13,6 @@ from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.api import HyperdriveInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator
 from web3 import HTTPProvider
 
 from agent0 import build_account_key_config_from_agent_config

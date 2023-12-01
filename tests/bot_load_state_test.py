@@ -14,7 +14,6 @@ from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.api import HyperdriveInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
