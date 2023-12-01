@@ -1,4 +1,4 @@
-"""Script for fuzzing profit values on immediately opening & closing a long or short."""
+"""Script to verify that the state of pool reserves is invariant to the order in which positions are closed."""
 # %%
 # Variables by themselves print out dataframes in a nice format in interactive mode
 # pylint: disable=pointless-statement
@@ -62,13 +62,14 @@ start_withdraw_pool_proceeds = pool_state.pool_info.withdrawal_shares_proceeds
 start_minimum_share_reserves = pool_state.pool_config.minimum_share_reserves
 start_share_price = pool_state.pool_info.share_price
 start_global_exposure = pool_state.pool_info.long_exposure
-start_hyperdrive_balance = pool_state.hyperdrive_balance
+start_hyperdrive_balance = pool_state.hyperdrive_base_balance
 start_gov_fees_accrued = pool_state.gov_fees_accrued
 start_total_shares = pool_state.vault_shares
 
 
 # %%
 # Open some trades
+# TODO: include add liquidity
 trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]] = []
 for trade in trade_list:
     agent, trade_type, trade_amount = trade
@@ -87,9 +88,10 @@ for trade in trade_list:
 # %%
 for _ in range(NUM_PATHS_CHECKED):
     # TODO:
-    # load the snapshot
+    # Load the snapshot
 
-    # randomly grab some trades & close them one at a time
+    # Randomly grab some trades & close them one at a time
+    # TODO: Add remove liquidity; withdraw shares would have to happen after & outside this loop
     for trade_index in rng.permuted(list(range(len(trade_events)))):
         agent, trade = trade_events[int(trade_index)]
         if isinstance(trade, OpenLong):
@@ -115,8 +117,8 @@ for _ in range(NUM_PATHS_CHECKED):
         start_global_exposure == pool_state.pool_info.long_exposure
     ), f"{start_global_exposure=} != {pool_state.pool_info.long_exposure}"
     assert (
-        start_hyperdrive_balance == pool_state.hyperdrive_balance
-    ), f"{start_hyperdrive_balance=} != {pool_state.hyperdrive_balance}"
+        start_hyperdrive_balance == pool_state.hyperdrive_base_balance
+    ), f"{start_hyperdrive_balance=} != {pool_state.hyperdrive_base_balance}"
     assert (
         start_gov_fees_accrued == pool_state.gov_fees_accrued
     ), f"{start_gov_fees_accrued=} != {pool_state.gov_fees_accrued}"

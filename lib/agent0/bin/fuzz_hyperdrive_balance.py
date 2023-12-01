@@ -74,6 +74,11 @@ for agent, trade in trade_events:
     if isinstance(trade, OpenShort):
         agent.close_short(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
 
+# TODO:
+# Close out all LP, including the agent that was used to initialize hyperdrive
+# or grab initial vault shares after initialize (deploy) the interactive hyperdrive,
+# and set that current valut shares == initial
+
 # Check the reserve amounts; they should be unchanged now that all of the trades are closed
 pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-assert pool_state.hyperdrive_balance == 0, f"{pool_state.hyperdrive_balance=} != 0"
+assert pool_state.vault_shares == 0, f"{pool_state.vault_shares=} != 0"

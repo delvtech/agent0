@@ -13,6 +13,7 @@ LOCAL = True
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor
+# TODO: boot up Anvil such that it never ticks the block unless we tell it to
 if LOCAL:
     chain_config = LocalChain.Config()
     chain = LocalChain(config=chain_config)
@@ -35,7 +36,7 @@ trade_amount = rng.uniform(
 # %%
 # Generate funded trading agent
 hyperdrive_agent0 = interactive_hyperdrive.init_agent(
-    base=FixedPoint(scaled_value=trade_amount * 2), eth=FixedPoint(100), name="alice"
+    base=FixedPoint(scaled_value=trade_amount), eth=FixedPoint(100), name="alice"
 )
 
 # %%
@@ -59,7 +60,7 @@ close_short_event = hyperdrive_agent0.close_short(
 )
 # %%
 # TODO:
-# Ensure that the prior trades did not result in a profit
+# Ensure that the prior trades did not result in a profit (should be a loss bc of fee)
 open_short_event
 close_short_event
 hyperdrive_agent0.wallet
@@ -70,7 +71,7 @@ add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(scaled_val
 remove_liquidity_event = hyperdrive_agent0.remove_liquidity(shares=add_liquidity_event.lp_amount)
 # %%
 # TODO:
-# Ensure that the prior trades did not result in a profit
+# Ensure that the prior trades did not result in a profit (should be a loss bc of fee)
 add_liquidity_event
 remove_liquidity_event
 hyperdrive_agent0.wallet
