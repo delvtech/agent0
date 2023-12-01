@@ -199,7 +199,7 @@ class LPandArb(HyperdrivePolicy):
         """
         return super().describe(raw_description)
 
-    @dataclass
+    @dataclass(kw_only=True)
     class Config(HyperdrivePolicy.Config):
         """Custom config arguments for this policy.
 
@@ -228,32 +228,21 @@ class LPandArb(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        policy_config: Config | None = None,
+        policy_config: Config,
     ):
         """Initialize the bot.
 
         Arguments
         ---------
-        budget: FixedPoint
-            The budget of this policy
-        rng: Generator | None
-            Random number generator
-        slippage_tolerance: FixedPoint | None
-            Slippage tolerance of trades
-        policy_config: Config | None
+        policy_config: Config
             The custom arguments for this policy
         """
-        # Defaults
-        if policy_config is None:
-            policy_config = self.Config()
         self.policy_config = policy_config
         self.minimum_trade_amount = FixedPoint(10)
         self.convergence_iters = []
         self.convergence_speed = []
 
-        super().__init__(rng, slippage_tolerance)
+        super().__init__(policy_config)
 
     # pylint: disable=too-many-branches
     def action(

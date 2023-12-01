@@ -1,7 +1,6 @@
 """Base policy class. Subclasses of BasicPolicy will implement trade actions."""
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from textwrap import dedent, indent
 from typing import TYPE_CHECKING, Generic, TypeVar
@@ -22,23 +21,41 @@ MarketInterface = TypeVar("MarketInterface")
 class BasePolicy(Generic[MarketInterface, Wallet]):
     """Base class policy."""
 
-    @dataclass
+    # Because we're inheriting from this config, we need to set
+    # kw_only so that we can mix and match defaults and non-defaults
+    @dataclass(kw_only=True)
     class Config:
-        """Config data class for policy specific configuration"""
+        """Config data class for policy specific configuration
 
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        # TODO should we pass in policy_config here in the base class constructor?
-    ):
-        """Instantiate the policy."""
-        self.slippage_tolerance = slippage_tolerance
-        if rng is None:  # TODO: Check that multiple agent.rng derefs to the same rng object
-            logging.warning("Policy random number generator (rng) argument not set, using seed of `123`.")
-            self.rng: Generator = default_rng(123)
-        else:
-            self.rng: Generator = rng
+        Attributes
+        ----------
+        rng_seed: int | None, optional
+            The seed for the random number generator. Defaults to None
+        rng: Generator | None, optional
+            The experiment's stateful random number generator. Defaults to a spawn of the global rng.
+        """
+
+        rng_seed: int | None = None
+        rng: Generator | None = None
+        slippage_tolerance: FixedPoint | None = None
+
+        def __post_init__(self):
+            if self.rng is None:
+                # If seed is None, should just be random
+                self.rng = default_rng(self.rng_seed)
+
+    def __init__(self, policy_config: Config):
+        """Initialize the policy.
+
+        Arguments
+        ---------
+        policy_config: Config
+            The configuration for the policy.
+        """
+        self.slippage_tolerance = policy_config.slippage_tolerance
+        # config.rng should be set in post_init in config
+        assert policy_config.rng is not None
+        self.rng: Generator = policy_config.rng
 
     @property
     def name(self) -> str:

@@ -12,7 +12,6 @@ from chainsync.exec import acquire_data, data_analysis
 from eth_typing import URI
 from ethpy import EthConfig
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
@@ -32,21 +31,8 @@ if TYPE_CHECKING:
 class MultiTradePolicy(HyperdrivePolicy):
     """An agent that submits multiple trades per block."""
 
-    # Using default parameters
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        # When this policy doesn't have a config and doesn't define a custom config object
-        # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
-    ):
-        """Initialize config and set counter to 0."""
-        # We want to do a sequence of trades one at a time, so we keep an internal counter based on
-        # how many times `action` has been called.
-        self.counter = 0
-        self.made_trade = False
-        super().__init__(rng, slippage_tolerance)
+    counter = 0
+    made_trade = False
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -162,7 +148,6 @@ class TestMultiTradePerBlock:
             AgentConfig(
                 policy=MultiTradePolicy,
                 number_of_agents=1,
-                slippage_tolerance=None,
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
                 policy_config=MultiTradePolicy.Config(),

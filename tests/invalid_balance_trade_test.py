@@ -10,7 +10,6 @@ from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator
 from web3 import HTTPProvider
 from web3.exceptions import ContractLogicError, ContractPanicError
 
@@ -34,18 +33,6 @@ if TYPE_CHECKING:
 # Starting with empty wallet, catching any closing trades.
 class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
     """An agent that submits a remove liquidity with a zero wallet."""
-
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        # When this policy doesn't have a config and doesn't define a custom config object
-        # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
-    ):
-        """Initialize policy."""
-        # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
-        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -83,18 +70,6 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
 
 class InvalidCloseLongFromZero(HyperdrivePolicy):
     """An agent that submits a close long with a zero wallet."""
-
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        # When this policy doesn't have a config and doesn't define a custom config object
-        # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
-    ):
-        """Initialize policy."""
-        # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
-        super().__init__(rng, slippage_tolerance)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -135,18 +110,6 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
 class InvalidCloseShortFromZero(HyperdrivePolicy):
     """An agent that submits a close short with a zero wallet."""
 
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        # When this policy doesn't have a config and doesn't define a custom config object
-        # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
-    ):
-        """Initialize policy."""
-        # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
-        super().__init__(rng, slippage_tolerance)
-
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
@@ -186,18 +149,6 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
 class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
     """An agent that submits a redeem withdrawal share with a zero wallet."""
 
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        # When this policy doesn't have a config and doesn't define a custom config object
-        # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
-    ):
-        """Initialize policy."""
-        # TODO Base class doesn't take policy_config, but it's needed for the object factory, fix
-        super().__init__(rng, slippage_tolerance)
-
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
@@ -235,19 +186,7 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
 class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
     """An agent that submits an invalid remove liquidity share with a non-zero wallet."""
 
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        # When this policy doesn't have a config and doesn't define a custom config object
-        # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
-    ):
-        """Initialize policy."""
-        # We want to do a sequence of trades one at a time, so we keep an internal counter based on
-        # how many times `action` has been called.
-        self.counter = 0
-        super().__init__(rng, slippage_tolerance)
+    counter = 0
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -302,19 +241,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
 class InvalidCloseLongFromNonZero(HyperdrivePolicy):
     """An agent that submits an invalid close long with a non-zero wallet."""
 
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        # When this policy doesn't have a config and doesn't define a custom config object
-        # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
-    ):
-        """Initialize policy."""
-        # We want to do a sequence of trades one at a time, so we keep an internal counter based on
-        # how many times `action` has been called.
-        self.counter = 0
-        super().__init__(rng, slippage_tolerance)
+    counter = 0
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -374,19 +301,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
 class InvalidCloseShortFromNonZero(HyperdrivePolicy):
     """An agent that submits an invalid close short with a non-zero wallet."""
 
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        # When this policy doesn't have a config and doesn't define a custom config object
-        # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
-    ):
-        """Initialize policy."""
-        # We want to do a sequence of trades one at a time, so we keep an internal counter based on
-        # how many times `action` has been called.
-        self.counter = 0
-        super().__init__(rng, slippage_tolerance)
+    counter = 0
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -446,19 +361,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
 class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
     """An agent that submits an invalid remove liquidity when not enough ready to withdrawal."""
 
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        # When this policy doesn't have a config and doesn't define a custom config object
-        # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
-    ):
-        """Initialize policy."""
-        # We want to do a sequence of trades one at a time, so we keep an internal counter based on
-        # how many times `action` has been called.
-        self.counter = 0
-        super().__init__(rng, slippage_tolerance)
+    counter = 0
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -546,19 +449,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
 class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
     """An agent that submits an invalid remove liquidity share with a non-zero wallet."""
 
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        # When this policy doesn't have a config and doesn't define a custom config object
-        # we still need it in the constructor since the object factory still calls with this arg
-        policy_config: HyperdrivePolicy.Config | None = None,  # pylint: disable=unused-argument
-    ):
-        """Initialize policy."""
-        # We want to do a sequence of trades one at a time, so we keep an internal counter based on
-        # how many times `action` has been called.
-        self.counter = 0
-        super().__init__(rng, slippage_tolerance)
+    counter = 0
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -674,7 +565,6 @@ class TestInvalidTrades:
             AgentConfig(
                 policy=in_policy,
                 number_of_agents=1,
-                slippage_tolerance=None,
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
                 policy_config=in_policy.Config(),
@@ -726,7 +616,6 @@ class TestInvalidTrades:
             AgentConfig(
                 policy=in_policy,
                 number_of_agents=1,
-                slippage_tolerance=None,
                 base_budget_wei=FixedPoint("10").scaled_value,  # 10 base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
                 policy_config=in_policy.Config(),

@@ -14,7 +14,6 @@ from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.api import HyperdriveInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
@@ -33,7 +32,7 @@ class WalletTestPolicy(HyperdrivePolicy):
     COUNTER_OPEN_LONG = 1
     COUNTER_OPEN_SHORT = 2
 
-    @dataclass
+    @dataclass(kw_only=True)
     class Config(HyperdrivePolicy.Config):
         """Custom config arguments for this policy.
 
@@ -49,19 +48,15 @@ class WalletTestPolicy(HyperdrivePolicy):
     # Using default parameters
     def __init__(
         self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        policy_config: Config | None = None,
+        policy_config: Config,
     ):
         """Initialize config and set counter to 0."""
-        if policy_config is None:
-            policy_config = self.Config()
 
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
         self.rerun = policy_config.rerun
-        super().__init__(rng, slippage_tolerance)
+        super().__init__(policy_config)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -176,10 +171,12 @@ class TestBotToDb:
             AgentConfig(
                 policy=WalletTestPolicy,
                 number_of_agents=1,
-                slippage_tolerance=FixedPoint("0.0001"),
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=WalletTestPolicy.Config(rerun=False),
+                policy_config=WalletTestPolicy.Config(
+                    slippage_tolerance=FixedPoint("0.0001"),
+                    rerun=False,
+                ),
             ),
         ]
 
@@ -230,10 +227,12 @@ class TestBotToDb:
             AgentConfig(
                 policy=WalletTestPolicy,
                 number_of_agents=1,
-                slippage_tolerance=FixedPoint("0.0001"),
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=WalletTestPolicy.Config(rerun=False),
+                policy_config=WalletTestPolicy.Config(
+                    slippage_tolerance=FixedPoint("0.0001"),
+                    rerun=False,
+                ),
             ),
         ]
 

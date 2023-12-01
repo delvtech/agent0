@@ -41,7 +41,7 @@ class SmartLong(HyperdrivePolicy):
         """
         return super().describe(raw_description)
 
-    @dataclass
+    @dataclass(kw_only=True)
     class Config(HyperdrivePolicy.Config):
         """Custom config arguments for this policy
 
@@ -60,30 +60,19 @@ class SmartLong(HyperdrivePolicy):
 
     def __init__(
         self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        policy_config: Config | None = None,
+        policy_config: Config,
     ):
         """Initializes the bot
 
         Arguments
         ---------
-        budget: FixedPoint
-            The budget of this policy
-        rng: Generator | None
-            Random number generator
-        slippage_tolerance: FixedPoint | None
-            Slippage tolerance of trades
-        policy_config: Config | None
+        policy_config: Config
             The custom arguments for this policy
         """
-        # Defaults
-        if policy_config is None:
-            policy_config = self.Config()
         self.trade_chance = policy_config.trade_chance
         self.risk_threshold = policy_config.risk_threshold
 
-        super().__init__(rng, slippage_tolerance)
+        super().__init__(policy_config)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet

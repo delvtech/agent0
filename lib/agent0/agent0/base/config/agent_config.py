@@ -4,8 +4,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Type
 
-from fixedpointmath import FixedPoint
-
 from agent0.base.policies import BasePolicy
 
 from .budget import Budget
@@ -37,15 +35,11 @@ class AgentConfig:
     # pylint: disable=too-many-instance-attributes
 
     policy: Type[BasePolicy]
+    policy_config: BasePolicy.Config
     base_budget_wei: Budget | int
     eth_budget_wei: Budget | int
-    slippage_tolerance: FixedPoint | None = None
     number_of_agents: int = 1
     private_keys: list[str] | None = None
-    # TODO might be able to use default factory for this object for default
-    # instead of dong this in the constructor of every policy
-    # However, we may just want to explicitly say this field is required
-    policy_config: BasePolicy.Config | None = None
 
     def __post_init__(self):
         if self.private_keys is not None and len(self.private_keys) != self.number_of_agents:

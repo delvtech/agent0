@@ -73,9 +73,9 @@ class TestRandomPolicy:
             AgentConfig(
                 policy=Zoo.random,
                 number_of_agents=1,
-                slippage_tolerance=None,
                 base_budget_wei=FixedPoint(1_000_000).scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint(100).scaled_value,  # 100 base
+                policy_config=Zoo.random.Config(slippage_tolerance=None),
             ),
         ]
 
@@ -139,10 +139,13 @@ class TestRandomPolicy:
             AgentConfig(
                 policy=Zoo.random,
                 number_of_agents=1,
-                slippage_tolerance=None,
                 base_budget_wei=FixedPoint(1_000_000).scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint(100).scaled_value,  # 100 base
-                policy_config=Zoo.random.Config(trade_chance=FixedPoint(1.0), allowable_actions=[]),
+                policy_config=Zoo.random.Config(
+                    slippage_tolerance=None,
+                    trade_chance=FixedPoint(1.0),
+                    allowable_actions=[],
+                ),
             ),
         ]
 

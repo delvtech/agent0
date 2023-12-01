@@ -39,7 +39,7 @@ class Deterministic(HyperdrivePolicy):
         """
         return super().describe(raw_description)
 
-    @dataclass
+    @dataclass(kw_only=True)
     class Config(HyperdrivePolicy.Config):
         """Custom config arguments for this policy.
 
@@ -55,32 +55,20 @@ class Deterministic(HyperdrivePolicy):
 
         trade_list: list[tuple[str, int]]
 
-    def __init__(
-        self,
-        rng: Generator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        policy_config: Config | None = None,
-    ):
+    def __init__(self, policy_config: Config):
         """Initialize the bot.
 
         Arguments
         ---------
-        budget: FixedPoint
-            The budget of this policy
-        rng: Generator | None
-            Random number generator
-        slippage_tolerance: FixedPoint | None
-            Slippage tolerance of trades
-        policy_config: Config | None
+        policy_config: Config
             The custom arguments for this policy
         """
-        self.trade_list = (
-            policy_config.trade_list
-            if policy_config
-            else [("add_liquidity", 100), ("open_long", 100), ("open_short", 100)]
-        )
+        if policy_config.trade_list is None:
+            self.trade_list = [("add_liquidity", 100), ("open_long", 100), ("open_short", 100)]
+        else:
+            self.trade_list = policy_config.trade_list
         self.starting_length = len(self.trade_list)
-        super().__init__(rng)
+        super().__init__(policy_config)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
