@@ -3,8 +3,6 @@
 # Variables by themselves print out dataframes in a nice format in interactive mode
 # pylint: disable=pointless-statement
 
-import datetime
-
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
@@ -45,5 +43,5 @@ open_long_event_1
 # %%
 # Execute policy trade
 # Output event is one of the possible trade events
-trade_event = hyperdrive_random_agent.execute_policy_trade()
+trade_event = hyperdrive_random_agent.execute_policy_action()
 trade_event

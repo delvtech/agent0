@@ -4,7 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from eth_typing import ChecksumAddress
+    from typing import Type
+
     from fixedpointmath import FixedPoint
 
     from agent0.hyperdrive.policies import HyperdrivePolicy
@@ -41,7 +42,8 @@ class InteractiveHyperdriveAgent:
         eth: FixedPoint,
         name: str | None,
         pool: InteractiveHyperdrive,
-        policy: HyperdrivePolicy | None,
+        policy: Type[HyperdrivePolicy] | None,
+        policy_config: HyperdrivePolicy.Config | None,
     ) -> None:
         """Constructor for the interactive hyperdrive agent.
         NOTE: this constructor shouldn't be called directly, but rather from InteractiveHyperdrive's
@@ -62,7 +64,7 @@ class InteractiveHyperdriveAgent:
         """
         self._pool = pool
         self.name = name
-        self.agent = self._pool._init_agent(base, eth, name, policy)
+        self.agent = self._pool._init_agent(base, eth, name, policy, policy_config)
 
     @property
     def wallet(self) -> HyperdriveWallet:
@@ -216,3 +218,15 @@ class InteractiveHyperdriveAgent:
             The emitted event of the redeem withdrawal shares call.
         """
         return self._pool._redeem_withdraw_share(self.agent, shares)
+
+    def execute_policy_action(
+        self,
+    ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
+        """Executes the underlying policy action (if set).
+
+        Returns
+        -------
+        list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]
+            Emits the list of events of the executed action
+        """
+        return self._pool._execute_policy_action(self.agent)

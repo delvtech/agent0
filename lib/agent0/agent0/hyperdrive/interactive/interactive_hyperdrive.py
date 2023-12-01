@@ -5,6 +5,7 @@ import asyncio
 import os
 from dataclasses import asdict, dataclass
 from decimal import Decimal
+from typing import Literal, Type, overload
 
 import nest_asyncio
 import pandas as pd
@@ -39,6 +40,7 @@ from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_
 from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
+from agent0.test_utils import assert_never
 
 from .chain import Chain
 from .event_types import (
@@ -225,7 +227,8 @@ class InteractiveHyperdrive:
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
         name: str | None = None,
-        policy: HyperdrivePolicy | None = None,
+        policy: Type[HyperdrivePolicy] | None = None,
+        policy_config: HyperdrivePolicy.Config | None = None,
     ) -> InteractiveHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
 
@@ -239,6 +242,8 @@ class InteractiveHyperdrive:
             The name of the agent. Defaults to the wallet address.
         policy: HyperdrivePolicy, optional
             An optional policy to attach to this agent.
+        policy_config: HyperdrivePolicy, optional
+            The configuration for the attached policy.
 
         Returns
         -------
@@ -250,7 +255,9 @@ class InteractiveHyperdrive:
             base = FixedPoint(0)
         if eth is None:
             eth = FixedPoint(10)
-        out_agent = InteractiveHyperdriveAgent(base=base, eth=eth, name=name, pool=self, policy=policy)
+        out_agent = InteractiveHyperdriveAgent(
+            base=base, eth=eth, name=name, pool=self, policy=policy, policy_config=policy_config
+        )
         return out_agent
 
     ### Database methods
@@ -528,14 +535,21 @@ class InteractiveHyperdrive:
     ### Private agent methods ###
 
     def _init_agent(
-        self, base: FixedPoint, eth: FixedPoint, name: str | None, policy: HyperdrivePolicy | None
+        self,
+        base: FixedPoint,
+        eth: FixedPoint,
+        name: str | None,
+        policy: Type[HyperdrivePolicy] | None,
+        policy_config: HyperdrivePolicy.Config | None,
     ) -> HyperdriveAgent:
         agent_private_key = make_private_key()
         # Setting the budget to 0 here, `_add_funds` will take care of updating the wallet
         agent = HyperdriveAgent(
             Account().from_key(agent_private_key),
             initial_budget=FixedPoint(0),
-            policy=InteractiveHyperdrivePolicy(InteractiveHyperdrivePolicy.Config(sub_policy=policy)),
+            policy=InteractiveHyperdrivePolicy(
+                InteractiveHyperdrivePolicy.Config(sub_policy=policy, sub_policy_config=policy_config)
+            ),
         )
 
         # Fund agent
@@ -585,10 +599,16 @@ class InteractiveHyperdrive:
 
         # TODO do we want to report a status here?
 
-    def _handle_trade_result(self, trade_results: list[TradeResult]) -> ReceiptBreakdown:
+    def _handle_trade_result(self, trade_results: list[TradeResult] | TradeResult) -> ReceiptBreakdown:
         # Sanity check, should only be one trade result
-        assert len(trade_results) == 1
-        trade_result = trade_results[0]
+        if isinstance(trade_results, list):
+            assert len(trade_results) == 1
+            trade_result = trade_results[0]
+        elif isinstance(trade_results, TradeResult):
+            trade_result = trade_results
+        else:
+            assert False
+
         if trade_result.status == TradeStatus.FAIL:
             assert trade_result.exception is not None
             # TODO when we allow for async, we likely would want to ignore slippage checks here
@@ -598,9 +618,9 @@ class InteractiveHyperdrive:
             # Defaults to CRITICAL
             log_hyperdrive_crash_report(trade_result, crash_report_to_file=True)
             raise trade_result.exception
+
         assert trade_result.status == TradeStatus.SUCCESS
-        assert len(trade_results) == 1
-        tx_receipt = trade_results[0].tx_receipt
+        tx_receipt = trade_result.tx_receipt
         assert tx_receipt is not None
         return tx_receipt
 
@@ -630,18 +650,8 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        # TODO running the data pipeline here may be slow, perhaps we should
-        # do it in the background or have an explicit call to load the db
         self._run_data_pipeline()
-        # Build open long event from trade_result
-        return OpenLong(
-            trader=to_checksum_address(tx_receipt.trader),
-            asset_id=tx_receipt.asset_id,
-            maturity_time=tx_receipt.maturity_time_seconds,
-            base_amount=tx_receipt.base_amount,
-            share_price=tx_receipt.share_price,
-            bond_amount=tx_receipt.bond_amount,
-        )
+        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_LONG, tx_receipt)
 
     def _close_long(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
         # Set the next action to open a long
@@ -652,18 +662,8 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        # TODO running the data pipeline here may be slow, perhaps we should
-        # do it in the background or have an explicit call to load the db
         self._run_data_pipeline()
-        # Build open long event from trade_result
-        return CloseLong(
-            trader=to_checksum_address(tx_receipt.trader),
-            asset_id=tx_receipt.asset_id,
-            maturity_time=tx_receipt.maturity_time_seconds,
-            base_amount=tx_receipt.base_amount,
-            share_price=tx_receipt.share_price,
-            bond_amount=tx_receipt.bond_amount,
-        )
+        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_LONG, tx_receipt)
 
     def _open_short(self, agent: HyperdriveAgent, bonds: FixedPoint) -> OpenShort:
         # Set the next action to open a long
@@ -674,18 +674,8 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        # TODO running the data pipeline here may be slow, perhaps we should
-        # do it in the background or have an explicit call to load the db
         self._run_data_pipeline()
-        # Build open long event from trade_result
-        return OpenShort(
-            trader=to_checksum_address(tx_receipt.trader),
-            asset_id=tx_receipt.asset_id,
-            maturity_time=tx_receipt.maturity_time_seconds,
-            base_amount=tx_receipt.base_amount,
-            share_price=tx_receipt.share_price,
-            bond_amount=tx_receipt.bond_amount,
-        )
+        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_SHORT, tx_receipt)
 
     def _close_short(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
         # Set the next action to open a long
@@ -696,18 +686,8 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        # TODO running the data pipeline here may be slow, perhaps we should
-        # do it in the background or have an explicit call to load the db
         self._run_data_pipeline()
-        # Build open long event from trade_result
-        return CloseShort(
-            trader=to_checksum_address(tx_receipt.trader),
-            asset_id=tx_receipt.asset_id,
-            maturity_time=tx_receipt.maturity_time_seconds,
-            base_amount=tx_receipt.base_amount,
-            share_price=tx_receipt.share_price,
-            bond_amount=tx_receipt.bond_amount,
-        )
+        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_SHORT, tx_receipt)
 
     def _add_liquidity(self, agent: HyperdriveAgent, base: FixedPoint) -> AddLiquidity:
         # Set the next action to open a long
@@ -718,17 +698,8 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        # TODO running the data pipeline here may be slow, perhaps we should
-        # do it in the background or have an explicit call to load the db
         self._run_data_pipeline()
-        # Build open long event from trade_result
-        return AddLiquidity(
-            provider=to_checksum_address(tx_receipt.provider),
-            lp_amount=tx_receipt.lp_amount,
-            base_amount=tx_receipt.base_amount,
-            share_price=tx_receipt.share_price,
-            lp_share_price=tx_receipt.lp_share_price,
-        )
+        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.ADD_LIQUIDITY, tx_receipt)
 
     def _remove_liquidity(self, agent: HyperdriveAgent, shares: FixedPoint) -> RemoveLiquidity:
         # Set the next action to open a long
@@ -739,18 +710,8 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        # TODO running the data pipeline here may be slow, perhaps we should
-        # do it in the background or have an explicit call to load the db
         self._run_data_pipeline()
-        # Build open long event from trade_result
-        return RemoveLiquidity(
-            provider=to_checksum_address(tx_receipt.provider),
-            lp_amount=tx_receipt.lp_amount,
-            base_amount=tx_receipt.base_amount,
-            share_price=tx_receipt.share_price,
-            withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
-            lp_share_price=tx_receipt.lp_share_price,
-        )
+        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REMOVE_LIQUIDITY, tx_receipt)
 
     def _redeem_withdraw_share(self, agent: HyperdriveAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
         # Set the next action to open a long
@@ -761,18 +722,165 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        # TODO running the data pipeline here may be slow, perhaps we should
-        # do it in the background or have an explicit call to load the db
         self._run_data_pipeline()
-        # Build open long event from trade_result
-        return RedeemWithdrawalShares(
-            provider=to_checksum_address(tx_receipt.provider),
-            withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
-            base_amount=tx_receipt.base_amount,
-            share_price=tx_receipt.share_price,
-        )
+        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
 
     def _create_checkpoint(self, agent: HyperdriveAgent, checkpoint_time: int | None = None) -> CreateCheckpoint:
         # TODO need to figure out how to mint checkpoints on demand
         # https://github.com/delvtech/agent0/issues/1105
         raise NotImplementedError
+
+    def _execute_policy_action(
+        self, agent: HyperdriveAgent
+    ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
+        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        # Only allow executing agent policies if a policy was passed in the constructor
+        if agent.policy.sub_policy is None:
+            raise ValueError("Must pass in a policy in the constructor to execute policy action.")
+
+        agent.policy.set_next_action_from_sub_policy()
+        trade_results: list[TradeResult] = asyncio.run(
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+        )
+        out_events = []
+        # The underlying policy can execute multiple actions in one step
+        for trade_result in trade_results:
+            tx_receipt = self._handle_trade_result(trade_results)
+            assert trade_result.trade_object is not None
+            action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
+            out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
+        self._run_data_pipeline()
+        # Build event from tx_receipt
+        return out_events
+
+    @overload
+    def _build_event_obj_from_tx_receipt(
+        self, trade_type: Literal[HyperdriveActionType.INITIALIZE_MARKET], tx_receipt: ReceiptBreakdown
+    ) -> None:
+        ...
+
+    @overload
+    def _build_event_obj_from_tx_receipt(
+        self, trade_type: Literal[HyperdriveActionType.OPEN_LONG], tx_receipt: ReceiptBreakdown
+    ) -> OpenLong:
+        ...
+
+    @overload
+    def _build_event_obj_from_tx_receipt(
+        self, trade_type: Literal[HyperdriveActionType.CLOSE_LONG], tx_receipt: ReceiptBreakdown
+    ) -> CloseLong:
+        ...
+
+    @overload
+    def _build_event_obj_from_tx_receipt(
+        self, trade_type: Literal[HyperdriveActionType.OPEN_SHORT], tx_receipt: ReceiptBreakdown
+    ) -> OpenShort:
+        ...
+
+    @overload
+    def _build_event_obj_from_tx_receipt(
+        self, trade_type: Literal[HyperdriveActionType.CLOSE_SHORT], tx_receipt: ReceiptBreakdown
+    ) -> CloseShort:
+        ...
+
+    @overload
+    def _build_event_obj_from_tx_receipt(
+        self, trade_type: Literal[HyperdriveActionType.ADD_LIQUIDITY], tx_receipt: ReceiptBreakdown
+    ) -> AddLiquidity:
+        ...
+
+    @overload
+    def _build_event_obj_from_tx_receipt(
+        self, trade_type: Literal[HyperdriveActionType.REMOVE_LIQUIDITY], tx_receipt: ReceiptBreakdown
+    ) -> RemoveLiquidity:
+        ...
+
+    @overload
+    def _build_event_obj_from_tx_receipt(
+        self, trade_type: Literal[HyperdriveActionType.REDEEM_WITHDRAW_SHARE], tx_receipt: ReceiptBreakdown
+    ) -> RedeemWithdrawalShares:
+        ...
+
+    @overload
+    def _build_event_obj_from_tx_receipt(
+        self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
+    ) -> OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None:
+        ...
+
+    def _build_event_obj_from_tx_receipt(
+        self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
+    ) -> OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None:
+        # pylint: disable=too-many-return-statements
+        match trade_type:
+            case HyperdriveActionType.INITIALIZE_MARKET:
+                raise ValueError(f"{trade_type} not supported!")
+
+            case HyperdriveActionType.OPEN_LONG:
+                return OpenLong(
+                    trader=to_checksum_address(tx_receipt.trader),
+                    asset_id=tx_receipt.asset_id,
+                    maturity_time=tx_receipt.maturity_time_seconds,
+                    base_amount=tx_receipt.base_amount,
+                    share_price=tx_receipt.share_price,
+                    bond_amount=tx_receipt.bond_amount,
+                )
+
+            case HyperdriveActionType.CLOSE_LONG:
+                return CloseLong(
+                    trader=to_checksum_address(tx_receipt.trader),
+                    asset_id=tx_receipt.asset_id,
+                    maturity_time=tx_receipt.maturity_time_seconds,
+                    base_amount=tx_receipt.base_amount,
+                    share_price=tx_receipt.share_price,
+                    bond_amount=tx_receipt.bond_amount,
+                )
+
+            case HyperdriveActionType.OPEN_SHORT:
+                return OpenShort(
+                    trader=to_checksum_address(tx_receipt.trader),
+                    asset_id=tx_receipt.asset_id,
+                    maturity_time=tx_receipt.maturity_time_seconds,
+                    base_amount=tx_receipt.base_amount,
+                    share_price=tx_receipt.share_price,
+                    bond_amount=tx_receipt.bond_amount,
+                )
+
+            case HyperdriveActionType.CLOSE_SHORT:
+                return CloseShort(
+                    trader=to_checksum_address(tx_receipt.trader),
+                    asset_id=tx_receipt.asset_id,
+                    maturity_time=tx_receipt.maturity_time_seconds,
+                    base_amount=tx_receipt.base_amount,
+                    share_price=tx_receipt.share_price,
+                    bond_amount=tx_receipt.bond_amount,
+                )
+
+            case HyperdriveActionType.ADD_LIQUIDITY:
+                return AddLiquidity(
+                    provider=to_checksum_address(tx_receipt.provider),
+                    lp_amount=tx_receipt.lp_amount,
+                    base_amount=tx_receipt.base_amount,
+                    share_price=tx_receipt.share_price,
+                    lp_share_price=tx_receipt.lp_share_price,
+                )
+
+            case HyperdriveActionType.REMOVE_LIQUIDITY:
+                return RemoveLiquidity(
+                    provider=to_checksum_address(tx_receipt.provider),
+                    lp_amount=tx_receipt.lp_amount,
+                    base_amount=tx_receipt.base_amount,
+                    share_price=tx_receipt.share_price,
+                    withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
+                    lp_share_price=tx_receipt.lp_share_price,
+                )
+
+            case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
+                return RedeemWithdrawalShares(
+                    provider=to_checksum_address(tx_receipt.provider),
+                    withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
+                    base_amount=tx_receipt.base_amount,
+                    share_price=tx_receipt.share_price,
+                )
+
+            case _:
+                assert_never(trade_type)
