@@ -53,7 +53,7 @@ class Deterministic(HyperdrivePolicy):
             The portion of capital assigned to LP
         """
 
-        trade_list: list[tuple[str, int]] = [("add_liquidity", 100), ("open_long", 100), ("open_short", 100)]
+        trade_list: list[tuple[str, int]]
 
     def __init__(self, policy_config: Config):
         """Initialize the bot.
@@ -63,7 +63,10 @@ class Deterministic(HyperdrivePolicy):
         policy_config: Config
             The custom arguments for this policy
         """
-        self.trade_list = policy_config.trade_list
+        if policy_config.trade_list is None:
+            self.trade_list = [("add_liquidity", 100), ("open_long", 100), ("open_short", 100)]
+        else:
+            self.trade_list = policy_config.trade_list
         self.starting_length = len(self.trade_list)
         super().__init__(policy_config)
 
