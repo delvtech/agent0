@@ -264,7 +264,6 @@ class TestInteractiveHyperdrive:
         init_db_wallet = interactive_hyperdrive.get_current_wallet().copy()
 
         # Make a few trades to change the state
-        hyperdrive_agent.add_funds(base=FixedPoint(1111), eth=FixedPoint(222))
         hyperdrive_agent.close_long(bonds=FixedPoint(222), maturity_time=open_long_event.maturity_time)
         hyperdrive_agent.open_short(bonds=FixedPoint(333))
         hyperdrive_agent.remove_liquidity(shares=FixedPoint(444))
