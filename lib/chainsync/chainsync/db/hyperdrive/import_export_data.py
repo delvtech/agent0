@@ -181,11 +181,6 @@ def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
 
 def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session, drop: bool = True):
     """Helper function to add a dataframe to a database"""
-    if drop:
-        if_exists_method = "replace"
-    else:
-        if_exists_method = "append"
-
     table_name = schema_obj.__tablename__
 
     # dataframe to_sql needs data types from the schema object
@@ -195,7 +190,8 @@ def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session,
         table_name,
         con=session.connection(),
         method="multi",
-        if_exists=if_exists_method,
+        # if_exists=if_exists_method,
+        if_exists="append",
         index=False,
         dtype=dtype,  # type: ignore
         chunksize=MAX_BATCH_SIZE,
