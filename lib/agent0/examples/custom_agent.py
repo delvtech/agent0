@@ -44,7 +44,7 @@ LIQUIDATE = False
 class CustomCycleTradesPolicy(HyperdrivePolicy):
     """An agent that simply cycles through all trades"""
 
-    @dataclass
+    @dataclass(kw_only=True)
     class Config(HyperdrivePolicy.Config):
         """Custom config arguments for this policy
 

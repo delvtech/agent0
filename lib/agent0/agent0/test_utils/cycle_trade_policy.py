@@ -18,7 +18,7 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 class CycleTradesPolicy(HyperdrivePolicy):
     """A agent that simply cycles through all trades"""
 
-    @dataclass
+    @dataclass(kw_only=True)
     class Config(HyperdrivePolicy.Config):
         """Custom config arguments for this policy
 

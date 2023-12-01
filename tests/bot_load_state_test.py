@@ -32,7 +32,7 @@ class WalletTestPolicy(HyperdrivePolicy):
     COUNTER_OPEN_LONG = 1
     COUNTER_OPEN_SHORT = 2
 
-    @dataclass
+    @dataclass(kw_only=True)
     class Config(HyperdrivePolicy.Config):
         """Custom config arguments for this policy.
 
