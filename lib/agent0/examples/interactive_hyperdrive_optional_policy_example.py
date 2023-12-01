@@ -43,5 +43,9 @@ open_long_event_1
 # %%
 # Execute policy trade
 # Output event is one of the possible trade events
-trade_event = hyperdrive_random_agent.execute_policy_action()
-trade_event
+random_trade_events = []
+for i in range(10):
+    # NOTE Since a policy can execute multiple trades per action, the output events is a list
+    trade_events: list = hyperdrive_random_agent.execute_policy_action()
+    random_trade_events.extend(trade_events)
+random_trade_events
