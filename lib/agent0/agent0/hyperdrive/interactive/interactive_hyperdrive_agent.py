@@ -4,9 +4,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from eth_typing import ChecksumAddress
+    from typing import Type
+
     from fixedpointmath import FixedPoint
 
+    from agent0.hyperdrive.policies import HyperdrivePolicy
     from agent0.hyperdrive.state import HyperdriveWallet
 
     from .event_types import (
@@ -34,7 +36,15 @@ class InteractiveHyperdriveAgent:
     wrappers here for ease of use.
     """
 
-    def __init__(self, base: FixedPoint, eth: FixedPoint, name: str | None, pool: InteractiveHyperdrive):
+    def __init__(
+        self,
+        base: FixedPoint,
+        eth: FixedPoint,
+        name: str | None,
+        pool: InteractiveHyperdrive,
+        policy: Type[HyperdrivePolicy] | None,
+        policy_config: HyperdrivePolicy.Config | None,
+    ) -> None:
         """Constructor for the interactive hyperdrive agent.
         NOTE: this constructor shouldn't be called directly, but rather from InteractiveHyperdrive's
         `init_agent` method.
@@ -45,14 +55,17 @@ class InteractiveHyperdriveAgent:
             The amount of base to fund the agent with.
         eth: FixedPoint
             The amount of ETH to fund the agent with.
-        name: str
+        name: str | None
             The name of the agent. Defaults to the wallet address.
         pool: InteractiveHyperdrive
             The pool object that this agent belongs to.
+        policy: HyperdrivePolicy | None
+            An optional policy to attach to this agent.
         """
+        # pylint: disable=too-many-arguments
         self._pool = pool
         self.name = name
-        self.agent = self._pool._init_agent(base, eth, name)
+        self.agent = self._pool._init_agent(base, eth, name, policy, policy_config)
 
     @property
     def wallet(self) -> HyperdriveWallet:
@@ -206,3 +219,15 @@ class InteractiveHyperdriveAgent:
             The emitted event of the redeem withdrawal shares call.
         """
         return self._pool._redeem_withdraw_share(self.agent, shares)
+
+    def execute_policy_action(
+        self,
+    ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
+        """Executes the underlying policy action (if set).
+
+        Returns
+        -------
+        list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]
+            Emits the list of events of the executed action
+        """
+        return self._pool._execute_policy_action(self.agent)
