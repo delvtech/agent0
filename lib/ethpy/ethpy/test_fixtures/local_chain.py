@@ -85,7 +85,8 @@ def init_local_hyperdrive_pool(
             The snapshot id
         """
         response = _w3.provider.make_request(method=RPCEndpoint("evm_snapshot"), params=[])
-        assert "result" in response
+        if "result" not in response:
+            raise KeyError("Response did not have a result.")
         return response["result"]
 
     def reset(snapshot_id: str) -> None:

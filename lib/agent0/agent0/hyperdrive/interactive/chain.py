@@ -6,16 +6,22 @@ import contextlib
 import logging
 import os
 import subprocess
+import time
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import docker
 from chainsync import PostgresConfig
+from chainsync.db.hyperdrive.import_export_data import export_db_to_file, import_to_db
 from docker.errors import NotFound
 from docker.models.containers import Container
 from ethpy.base import initialize_web3_with_http_provider
 from web3.types import RPCEndpoint, RPCResponse
+
+if TYPE_CHECKING:
+    from .interactive_hyperdrive import InteractiveHyperdrive
 
 
 class Chain:
@@ -63,10 +69,22 @@ class Chain:
         )
         assert isinstance(self.postgres_container, Container)
 
+        # Snapshot bookkeeping
+        self._saved_snapshot_id: str
+        self._has_saved_snapshot = False
+        self._deployed_hyperdrive_pools: list[InteractiveHyperdrive] = []
+
+    def cleanup(self):
+        """Kills the postgres container in this class."""
+        # Runs cleanup on all deployed pools
+        for pool in self._deployed_hyperdrive_pools:
+            pool.cleanup()
+        self.postgres_container.kill()
+
     def __del__(self):
         """Kill postgres container in this class' destructor."""
         with contextlib.suppress(Exception):
-            self.postgres_container.kill()
+            self.cleanup()
 
     def advance_time(self, time_delta: int | timedelta) -> RPCResponse:
         """Advance time for this chain using the `evm_mine` RPC call.
@@ -98,6 +116,46 @@ class Chain:
         next_blocktime = latest_blocktime + time_delta
 
         return self._web3.provider.make_request(method=RPCEndpoint("evm_mine"), params=[next_blocktime])
+
+    def save_snapshot(self) -> None:
+        """Saves a snapshot using the `evm_snapshot` RPC call.
+        The chain can store one snapshot at a time, saving another snapshot overwrites the previous snapshot.
+        Saving/loading snapshot only persist on the same chain, not across chains.
+        """
+        response = self._web3.provider.make_request(method=RPCEndpoint("evm_snapshot"), params=[])
+        if "result" not in response:
+            raise KeyError("Response did not have a result.")
+        self._saved_snapshot_id = response["result"]
+
+        # Save the db state
+        self._dump_db()
+
+        self._has_saved_snapshot = True
+
+    def load_snapshot(self) -> None:
+        """Loads the previous snapshot using the `evm_revert` RPC call. Can load the snapshot multiple times.
+        Note: Saving/loading snapshot only persist on the same chain, not across chains.
+        """
+        # Loads the previous snapshot
+        # When reverting snapshots, the chain deletes the previous snapshot, while we want it to persist.
+        # Hence, in this function, we first revert the snapshot, then immediately create a new snapshot
+        # to keep the original snapshot.
+
+        if not self._has_saved_snapshot:
+            raise ValueError("No saved snapshot to load")
+
+        response = self._web3.provider.make_request(method=RPCEndpoint("evm_revert"), params=[self._saved_snapshot_id])
+        if "result" not in response:
+            raise KeyError("Response did not have a result.")
+
+        # load snapshot database state
+        self._load_db()
+
+        # The hyperdrive interface in deployed pools need to wipe it's cache
+        for pool in self._deployed_hyperdrive_pools:
+            pool._reinit_state_after_load_snapshot()  # pylint: disable=protected-access
+
+        self.save_snapshot()
 
     def get_deployer_account_private_key(self):
         """Get the private key of the deployer account."""
@@ -157,6 +215,24 @@ class Chain:
         assert isinstance(container, Container)
 
         return postgres_config, container
+
+    def _add_deployed_pool_to_bookkeeping(self, pool: InteractiveHyperdrive):
+        if self._has_saved_snapshot:
+            raise ValueError("Cannot add a new pool after saving a snapshot")
+        self._deployed_hyperdrive_pools.append(pool)
+
+    def _dump_db(self):
+        # TODO parameterize the save path
+        for pool in self._deployed_hyperdrive_pools:
+            export_path = ".interactive_state/snapshot/" + pool._db_name  # pylint: disable=protected-access
+            os.makedirs(export_path, exist_ok=True)
+            export_db_to_file(export_path, pool.db_session, raw=True)
+
+    def _load_db(self):
+        # TODO parameterize the load path, careful since this is referencing the container path, not the local path.
+        for pool in self._deployed_hyperdrive_pools:
+            import_path = ".interactive_state/snapshot/" + pool._db_name  # pylint: disable=protected-access
+            import_to_db(pool.db_session, import_path, drop=True)
 
 
 class LocalChain(Chain):
@@ -218,10 +294,18 @@ class LocalChain(Chain):
             # TODO make RPC call for setting block timestamp
             raise NotImplementedError("Block timestamp interval not implemented yet")
 
+        # TODO hack, wait for chain to init
+        time.sleep(1)
+
+    def cleanup(self):
+        """Kills the subprocess in this class' destructor."""
+        self.anvil_process.kill()
+        super().cleanup()
+
     def __del__(self):
         """Kill subprocess in this class' destructor."""
         with contextlib.suppress(Exception):
-            self.anvil_process.kill()
+            self.cleanup()
         super().__del__()
 
     def get_deployer_account_private_key(self) -> str:

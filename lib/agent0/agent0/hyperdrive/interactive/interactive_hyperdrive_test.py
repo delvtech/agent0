@@ -1,6 +1,11 @@
 """Tests interactive hyperdrive end to end"""
 import datetime
+import logging
+import os
+from pathlib import Path
+from typing import Iterator
 
+import docker
 import pytest
 from docker.errors import DockerException
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
@@ -17,23 +22,42 @@ class TestInteractiveHyperdrive:
 
     # pylint: disable=redefined-outer-name
 
-    @pytest.fixture()
-    def chain(self) -> LocalChain:
+    @pytest.fixture(scope="function")
+    def chain(self) -> Iterator[LocalChain]:
         """Creates a local chain connected to a local database hosted in docker.
 
-        Returns
+        Yield
         -------
         LocalChain
             local chain instance.
         """
-        # Construct chain object
+        # Attempt to determine if docker is installed
         try:
-            local_chain_config = LocalChain.Config()
-            chain = LocalChain(local_chain_config)
-        except DockerException:
-            pytest.skip("Docker not found")
+            try:
+                _ = docker.from_env()
+            except Exception:  # pylint: disable=broad-exception-caught
+                home_dir = os.path.expanduser("~")
+                socket_path = Path(f"{home_dir}") / ".docker" / "desktop" / "docker.sock"
+                if socket_path.exists():
+                    logging.debug("Docker not found at default socket, using %s..", socket_path)
+                    _ = docker.DockerClient(base_url=f"unix://{socket_path}")
+                else:
+                    logging.debug("Docker not found.")
+                    _ = docker.from_env()
+        # Skip this test if docker isn't installed
+        except DockerException as exc:
+            # This env variable gets set when running tests in CI
+            # Hence, we don't want to skip this test if we're in CI
+            in_ci = os.getenv("IN_CI")
+            if in_ci is None:
+                pytest.skip("Docker engine not found, skipping")
+            else:
+                raise exc
 
-        return chain
+        local_chain_config = LocalChain.Config()
+        chain = LocalChain(local_chain_config)
+        yield chain
+        chain.cleanup()
 
     @pytest.mark.anvil
     def _ensure_db_wallet_matches_agent_wallet(
@@ -88,7 +112,7 @@ class TestInteractiveHyperdrive:
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
     @pytest.mark.anvil
-    def test_funding_and_trades(self, chain):
+    def test_funding_and_trades(self, chain: LocalChain):
         """Tests interactive hyperdrive end to end"""
         # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
         initial_pool_config = InteractiveHyperdrive.Config()
@@ -191,7 +215,7 @@ class TestInteractiveHyperdrive:
         self._ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
     @pytest.mark.anvil
-    def test_advance_time(self, chain):
+    def test_advance_time(self, chain: LocalChain):
         """Tests interactive hyperdrive end to end"""
         # We need the underlying hyperdrive interface here to test time
         interactive_hyperdrive = InteractiveHyperdrive(chain)
@@ -207,3 +231,83 @@ class TestInteractiveHyperdrive:
 
         assert current_time_2 - current_time_1 == 3600
         assert current_time_3 - current_time_2 == 3600 * 24 * 7
+
+    @pytest.mark.anvil
+    def test_save_load_snapshot(self, chain: LocalChain):
+        # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
+        initial_pool_config = InteractiveHyperdrive.Config()
+        interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
+        hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+
+        # Generate funded trading agents from the interactive object
+        # Make trades to set the initial state
+        hyperdrive_agent = interactive_hyperdrive.init_agent(base=FixedPoint(111111), eth=FixedPoint(111), name="alice")
+        open_long_event = hyperdrive_agent.open_long(base=FixedPoint(2222))
+        open_short_event = hyperdrive_agent.open_short(bonds=FixedPoint(3333))
+        hyperdrive_agent.add_liquidity(base=FixedPoint(4444))
+
+        # Save the state on the chain
+        chain.save_snapshot()
+
+        # To ensure snapshots are working, we check the agent's wallet on the chain, the wallet object in the agent,
+        # and in the db
+        # Check base balance on the chain
+        init_eth_on_chain, init_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+        init_agent_wallet = hyperdrive_agent.wallet.copy()
+        init_db_wallet = interactive_hyperdrive.get_current_wallet().copy()
+
+        # Make a few trades to change the state
+        hyperdrive_agent.close_long(bonds=FixedPoint(222), maturity_time=open_long_event.maturity_time)
+        hyperdrive_agent.open_short(bonds=FixedPoint(333))
+        hyperdrive_agent.remove_liquidity(shares=FixedPoint(444))
+
+        # Ensure state has changed
+        check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+        check_agent_wallet = hyperdrive_agent.wallet
+        check_db_wallet = interactive_hyperdrive.get_current_wallet()
+
+        assert check_eth_on_chain != init_eth_on_chain
+        assert check_base_on_chain != init_base_on_chain
+        assert check_agent_wallet != init_agent_wallet
+        assert not check_db_wallet.equals(init_db_wallet)
+
+        # Save snapshot and check for equality
+        chain.load_snapshot()
+
+        check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+        check_agent_wallet = hyperdrive_agent.wallet
+        check_db_wallet = interactive_hyperdrive.get_current_wallet()
+
+        assert check_eth_on_chain == init_eth_on_chain
+        assert check_base_on_chain == init_base_on_chain
+        assert check_agent_wallet == init_agent_wallet
+        assert check_db_wallet.equals(init_db_wallet)
+
+        # Do it again to make sure we can do multiple loads
+
+        # Make a few trades to change the state
+        hyperdrive_agent.open_long(base=FixedPoint(222))
+        hyperdrive_agent.close_short(bonds=FixedPoint(333), maturity_time=open_short_event.maturity_time)
+        hyperdrive_agent.remove_liquidity(shares=FixedPoint(555))
+
+        # Ensure state has changed
+        check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+        check_agent_wallet = hyperdrive_agent.wallet
+        check_db_wallet = interactive_hyperdrive.get_current_wallet()
+
+        assert check_eth_on_chain != init_eth_on_chain
+        assert check_base_on_chain != init_base_on_chain
+        assert check_agent_wallet != init_agent_wallet
+        assert not check_db_wallet.equals(init_db_wallet)
+
+        # Save snapshot and check for equality
+        chain.load_snapshot()
+
+        check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+        check_agent_wallet = hyperdrive_agent.wallet
+        check_db_wallet = interactive_hyperdrive.get_current_wallet()
+
+        assert check_eth_on_chain == init_eth_on_chain
+        assert check_base_on_chain == init_base_on_chain
+        assert check_agent_wallet == init_agent_wallet
+        assert check_db_wallet.equals(init_db_wallet)

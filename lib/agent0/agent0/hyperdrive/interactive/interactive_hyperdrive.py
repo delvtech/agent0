@@ -12,8 +12,9 @@ import pandas as pd
 from chainsync import PostgresConfig
 from chainsync.dashboard.usernames import build_user_mapping
 from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
+from chainsync.db.hyperdrive import get_checkpoint_info
+from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.db.hyperdrive import (
-    get_checkpoint_info,
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
@@ -24,7 +25,7 @@ from chainsync.db.hyperdrive import (
 )
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
-from eth_typing import ChecksumAddress
+from eth_typing import BlockNumber, ChecksumAddress
 from eth_utils.address import to_checksum_address
 from ethpy import EthConfig
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
@@ -37,7 +38,7 @@ from web3.constants import ADDRESS_ZERO
 from agent0.base.make_key import make_private_key
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
-from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
+from agent0.hyperdrive.exec import async_execute_agent_trades, build_wallet_positions_from_data, set_max_approval
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
 from agent0.test_utils import assert_never
@@ -173,16 +174,28 @@ class InteractiveHyperdrive:
             self.hyperdrive_interface.hyperdrive_contract.address
         )
 
+        # Store the db_id here for later reference
+        self._db_name = postgres_config.POSTGRES_DB
+
         self.db_session = initialize_session(postgres_config, ensure_database_created=True)
 
         # Keep track of how much base have been minted per agent
         self._initial_funds: dict[ChecksumAddress, FixedPoint] = {}
 
+        # Add this pool to the chain bookkeeping for snapshots
+        chain._add_deployed_pool_to_bookkeeping(self)
+        self.chain = chain
+        self._pool_agents: list[InteractiveHyperdriveAgent] = []
+
+    def cleanup(self):
+        """Cleans up resources used by this object."""
+        self.db_session.close()
+
     def __del__(self):
         # Attempt to close the session
         # These functions will raise errors if the session is already closed
         try:
-            self.db_session.close()
+            self.cleanup()
         # Never throw exception in destructor
         except Exception:  # pylint: disable=broad-except
             pass
@@ -252,6 +265,8 @@ class InteractiveHyperdrive:
             and provides access to the interactive Hyperdrive API.
         """
         # pylint: disable=too-many-arguments
+        if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
+            raise ValueError("Cannot add a new agent after saving a snapshot")
         if base is None:
             base = FixedPoint(0)
         if eth is None:
@@ -259,6 +274,7 @@ class InteractiveHyperdrive:
         out_agent = InteractiveHyperdriveAgent(
             base=base, eth=eth, name=name, pool=self, policy=policy, policy_config=policy_config
         )
+        self._pool_agents.append(out_agent)
         return out_agent
 
     ### Database methods
@@ -574,6 +590,10 @@ class InteractiveHyperdrive:
         return agent
 
     def _add_funds(self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint) -> None:
+        # TODO this can be fixed by getting actual base values from the chain.
+        if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
+            raise ValueError("Cannot add funds to an agent after saving a snapshot")
+
         if eth > FixedPoint(0):
             # Eth is a set balance call
             eth_balance, _ = self.hyperdrive_interface.get_eth_base_balances(agent)
@@ -886,3 +906,21 @@ class InteractiveHyperdrive:
 
             case _:
                 assert_never(trade_type)
+
+    def _reinit_state_after_load_snapshot(self) -> None:
+        """After loading a snapshot, we need to re-initialize the state the internal
+        variables of the interactive hyperdrive.
+        1. Wipe the cache from the hyperdrive interface.
+        2. Load all agent's wallets from the db.
+        """
+        # Set internal state block number to 0 to enusre it updates
+        self.hyperdrive_interface.last_state_block_number = BlockNumber(0)
+
+        # Load and set all agent wallets from the db
+        for agent in self._pool_agents:
+            db_balances = chainsync_get_current_wallet(
+                self.db_session, wallet_address=[agent.agent.checksum_address], coerce_float=False
+            )
+            agent.agent.wallet = build_wallet_positions_from_data(
+                agent.agent.checksum_address, db_balances, self.hyperdrive_interface.base_token_contract
+            )
