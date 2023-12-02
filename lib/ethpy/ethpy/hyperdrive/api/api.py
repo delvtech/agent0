@@ -1060,7 +1060,7 @@ class HyperdriveInterface:
         Returns
         -------
         FixedPoint
-            The maximum short, in units of base.
+            The maximum short, in units of bonds.
         """
         if pool_state is None:
             pool_state = self.current_pool_state
