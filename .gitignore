@@ -22,6 +22,9 @@ __pypackages__/
 # Crash reporting directory
 .crash_report
 
+# Interactive snapshot state directory
+.interactive_state
+
 # build directories
 .build
 *.egg-info

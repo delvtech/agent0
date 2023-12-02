@@ -16,7 +16,6 @@ local_chain_config = LocalChain.Config()
 # This also launches a local postgres docker container for data under the hood, attached to the chain.
 # Each hyperdrive pool will have it's own database within this container
 # NOTE: LocalChain is a subclass of Chain
-# TODO can also implement functionality such as save/load state here
 chain = LocalChain(local_chain_config)
 # Can connect to a specific existing chain
 # existing_chain = Chain("http://localhost:8545")
@@ -121,3 +120,5 @@ pool_info.plot(x="block_number", y="longs_outstanding", kind="line")
 total_wallet_pnl_over_time.pivot(index="block_number", columns="username", values="pnl").plot()
 
 # %%
+# Cleanup resources
+chain.cleanup()

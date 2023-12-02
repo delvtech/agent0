@@ -447,7 +447,11 @@ def add_current_wallet(current_wallet: list[CurrentWallet], session: Session) ->
 
 
 def get_current_wallet(
-    session: Session, end_block: int | None = None, wallet_address: list[str] | None = None, coerce_float=True
+    session: Session,
+    end_block: int | None = None,
+    wallet_address: list[str] | None = None,
+    coerce_float=True,
+    raw: bool = False,
 ) -> pd.DataFrame:
     """Get all current wallet data in history and returns as a pandas dataframe.
 
@@ -462,6 +466,8 @@ def get_current_wallet(
         The wallet addresses to filter the query on
     coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
+    raw: bool
+        If true, will return the raw data without any adjustments.
 
     Returns
     -------
@@ -496,6 +502,8 @@ def get_current_wallet(
     query = query.distinct(CurrentWallet.wallet_address, CurrentWallet.token_type)
     query = query.order_by(CurrentWallet.wallet_address, CurrentWallet.token_type, CurrentWallet.block_number.desc())
     current_wallet = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
+    if raw:
+        return current_wallet
 
     # Rename block_number column to be latest_block_update, and set the new block_number to be the query block
     current_wallet["latest_block_update"] = current_wallet["block_number"]

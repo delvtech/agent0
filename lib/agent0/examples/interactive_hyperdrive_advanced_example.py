@@ -37,6 +37,13 @@ hyperdrive_random_agent = interactive_hyperdrive.init_agent(
 )
 
 # %%
+# Saves a snapshot of the state
+# NOTE: Due to bookkeeping purposes, some features gets disabled once a snapshot gets made
+# i.e., creating new pools, creating new agents, and adding funds.
+# Only one snapshot can be saved at a time.
+chain.save_snapshot()
+
+# %%
 # Execute interactive trade
 open_long_event_1 = hyperdrive_random_agent.open_long(base=FixedPoint(11111))
 open_long_event_1
@@ -49,3 +56,10 @@ for i in range(10):
     trade_events: list = hyperdrive_random_agent.execute_policy_action()
     random_trade_events.extend(trade_events)
 random_trade_events
+# %%
+# Loads the snapshot of the state.
+chain.load_snapshot()
+
+# %%
+# cleanup resources
+chain.cleanup()

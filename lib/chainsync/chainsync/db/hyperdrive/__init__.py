@@ -6,7 +6,7 @@ from .convert_data import (
     convert_pool_config,
     convert_pool_info,
 )
-from .export_data import export_db_to_file, import_to_pandas
+from .import_export_data import export_db_to_file, import_to_db, import_to_pandas
 from .interface import (
     add_checkpoint_infos,
     add_pool_config,
