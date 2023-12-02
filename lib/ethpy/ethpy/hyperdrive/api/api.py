@@ -350,7 +350,7 @@ class HyperdriveInterface:
         """
         return _get_hyperdrive_base_balance(self.base_token_contract, self.hyperdrive_contract, block_number)
 
-    def get_gov_fees_accrued(self, block_number: BlockNumber | None) -> FixedPoint:
+    def get_gov_fees_accrued(self, block_number: BlockNumber | None = None) -> FixedPoint:
         """Get the current amount of Uncollected Governance Fees in the Hyperdrive contract.
 
         Arguments
