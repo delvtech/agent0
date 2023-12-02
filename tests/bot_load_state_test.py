@@ -51,7 +51,6 @@ class WalletTestPolicy(HyperdrivePolicy):
         policy_config: Config,
     ):
         """Initialize config and set counter to 0."""
-
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0

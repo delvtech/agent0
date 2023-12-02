@@ -126,7 +126,9 @@ def data_analysis(
         analysis_end_block = latest_data_block_number + 1
         if not suppress_logs:
             logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
-        data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
+        data_to_analysis(
+            analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract, interface
+        )
         curr_start_write_block = latest_data_block_number + 1
 
     # Clean up resources on clean exit
@@ -152,6 +154,4 @@ def get_latest_data_block(db_session: Session) -> int:
         The latest block number from the PoolInfo table.
     """
     # Note to avoid race condition, we add pool info as the last update for the block
-    latest_pool_info = get_latest_block_number_from_table(PoolInfo, db_session)
-
-    return latest_pool_info
+    return get_latest_block_number_from_table(PoolInfo, db_session)

@@ -2,6 +2,7 @@
 import logging
 from decimal import Decimal
 from typing import Type
+from ethpy.hyperdrive.interface import HyperdriveInterface
 
 import numpy as np
 import pandas as pd
@@ -13,6 +14,7 @@ from chainsync.db.hyperdrive import (
     WalletPNL,
     get_current_wallet,
     get_pool_info,
+    get_checkpoint_info,
     get_transactions,
     get_wallet_deltas,
 )
@@ -22,7 +24,7 @@ from web3.contract.contract import Contract
 
 from .calc_base_buffer import calc_base_buffer
 from .calc_fixed_rate import calc_fixed_rate
-from .calc_pnl import calc_closeout_pnl
+from .calc_pnl import calc_closeout_pnl, calc_spot_pnl
 from .calc_spot_price import calc_spot_price
 from .calc_ticker import calc_ticker
 
@@ -153,6 +155,7 @@ def data_to_analysis(
     pool_config: pd.Series,
     db_session: Session,
     hyperdrive_contract: Contract,
+    hyperdrive_interface: HyperdriveInterface,
 ) -> None:
     """Function to query postgres data tables and insert to analysis tables.
     Executes analysis on a batch of blocks, defined by start and end block.
@@ -169,9 +172,12 @@ def data_to_analysis(
         The initialized db session.
     hyperdrive_contract: Contract
         The hyperdrive contract.
+    hyperdrive_interface: HyperdriveInterface
+        The hyperdrive interface.
     """
     # Get data
     pool_info = get_pool_info(db_session, start_block, end_block, coerce_float=False)
+    checkpoint_info = get_checkpoint_info(db_session, 1, end_block, coerce_float=False)
 
     # TODO calculate current wallet positions for this block
     # This should be done from the deltas, not queries from chain
@@ -192,7 +198,8 @@ def data_to_analysis(
         # We can set a sample rate by doing batch processing on this function
         # since we only get the current wallet for the end_block
         wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
-        pnl_df = calc_closeout_pnl(wallet_pnl, pool_info, hyperdrive_contract)
+        # pnl_df = calc_closeout_pnl(wallet_pnl, checkpoint_info, hyperdrive_contract, hyperdrive_interface)
+        # pnl_df = calc_spot_pnl(wallet_pnl, pool_info, pool_config)
 
         # This sets the pnl to the current wallet dataframe, but there may be scaling issues here.
         # This is because the `CurrentWallet` table has one entry per change in wallet position,
@@ -205,7 +212,8 @@ def data_to_analysis(
         # the sampling rate. Otherwise, the e.g., ticker updates will also be on the sampling rate (won't miss data,
         # just lower frequency updates)
         # TODO do scaling tests to see the limit of this
-        wallet_pnl["pnl"] = pnl_df
+        # wallet_pnl["pnl"] = pnl_df
+        wallet_pnl["pnl"] = np.nan
         # Add wallet_pnl to the database
         _df_to_db(wallet_pnl, WalletPNL, db_session)
 

@@ -57,6 +57,7 @@ async def async_execute_single_agent_trade(
     # To do this, we need to manually set the nonce, so we get the base transaction count here
     # and pass in an incrementing nonce per call
     # TODO figure out which exception here to retry on
+    # TODO: change magic number to a constant
     base_nonce = retry_call(5, None, interface.web3.eth.get_transaction_count, agent.checksum_address)
 
     # TODO preliminary search shows async tasks has very low overhead:

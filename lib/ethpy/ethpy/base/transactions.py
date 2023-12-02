@@ -251,10 +251,11 @@ def smart_contract_preview_transaction(
 
 
 def wait_for_transaction_receipt(
-    web3: Web3, transaction_hash: HexBytes, timeout: float = 30, start_latency: float = 1, backoff: float = 2
+    web3: Web3, transaction_hash: HexBytes, timeout: float = 2, start_latency: float = 0.01, backoff: float = 2
 ) -> TxReceipt:
-    """wait_for_transaction_receipt with exponential backoff
-    This function is copied from `web3.eth.wait_for_transaction_receipt`, but using exp backoff.
+    """Retrieves the transaction receipt, retrying with exponential backoff.
+
+    This function is copied from `web3.eth.wait_for_transaction_receipt`, but using exponential backoff.
 
     Arguments
     ---------
@@ -298,11 +299,15 @@ def wait_for_transaction_receipt(
 
 
 async def async_wait_for_transaction_receipt(
-    web3: Web3, transaction_hash: HexBytes, timeout: float = 30, start_latency: float = 1, backoff: float = 2
+    web3: Web3,
+    transaction_hash: HexBytes,
+    timeout: float = 2,
+    start_latency: float = 0.01,
+    backoff_multiplier: float = 2,
 ) -> TxReceipt:
-    """Async version of wait_for_transaction_receipt
-    This function is copied from `web3.eth.wait_for_transaction_receipt`, but using a non-blocking wait
-    instead of a blocking wait
+    """Retrieves the transaction receipt asynchronously, retrying with exponential backoff.
+
+    This function is copied from `web3.eth.wait_for_transaction_receipt`, but using exponential backoff and async await.
 
     Arguments
     ---------
@@ -314,7 +319,7 @@ async def async_wait_for_transaction_receipt(
         The amount of time in seconds to time out the connection
     start_latency: float
         The starting amount of time in seconds to wait between polls
-    backoff: float
+    backoff_multiplier: float
         The backoff factor for the exponential backoff
 
     Returns
@@ -324,7 +329,7 @@ async def async_wait_for_transaction_receipt(
     """
     try:
         with Timeout(timeout) as _timeout:
-            poll_latency = start_latency + random.uniform(0, 1)
+            poll_latency = start_latency
             while True:
                 try:
                     tx_receipt = web3.eth.get_transaction_receipt(transaction_hash)
@@ -333,10 +338,8 @@ async def async_wait_for_transaction_receipt(
                 if tx_receipt is not None:
                     break
                 await _timeout.async_sleep(poll_latency)
-                # Exp backoff
-                poll_latency *= backoff
-                # Add random latency to avoid collisions
-                poll_latency += random.uniform(0, 1)
+                # Exponential backoff
+                poll_latency *= backoff_multiplier
         return tx_receipt
 
     except Timeout as exc:
