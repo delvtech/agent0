@@ -123,7 +123,8 @@ class Chain:
         Saving/loading snapshot only persist on the same chain, not across chains.
         """
         response = self._web3.provider.make_request(method=RPCEndpoint("evm_snapshot"), params=[])
-        assert "result" in response
+        if "result" not in response:
+            raise KeyError("Response did not have a result.")
         self._saved_snapshot_id = response["result"]
 
         # Save the db state
@@ -144,7 +145,8 @@ class Chain:
             raise ValueError("No saved snapshot to load")
 
         response = self._web3.provider.make_request(method=RPCEndpoint("evm_revert"), params=[self._saved_snapshot_id])
-        assert "result" in response
+        if "result" not in response:
+            raise KeyError("Response did not have a result.")
         assert response["result"]
 
         # load snapshot database state
