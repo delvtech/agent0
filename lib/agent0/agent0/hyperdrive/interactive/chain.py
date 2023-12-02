@@ -147,7 +147,6 @@ class Chain:
         response = self._web3.provider.make_request(method=RPCEndpoint("evm_revert"), params=[self._saved_snapshot_id])
         if "result" not in response:
             raise KeyError("Response did not have a result.")
-        assert response["result"]
 
         # load snapshot database state
         self._load_db()
