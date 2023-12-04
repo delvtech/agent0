@@ -10,10 +10,16 @@ from typing import NamedTuple, Sequence
 from ethpy import build_eth_config
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
+from hexbytes import HexBytes
 from hyperlogs import logs
-from web3.types import TxData
 
 from agent0.base.config import EnvironmentConfig
+from agent0.hyperdrive.crash_report import setup_hyperdrive_crash_report_logging
+
+# main function has a lot of stuff
+# pylint: disable=too-many-locals
+# TODO: Clean up nested blocks inside while True
+# pylint: disable=too-many-nested-blocks
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -24,6 +30,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     argv: Sequence[str]
         A sequnce containing the uri to the database server and the test epsilon.
     """
+    # pylint: disable: too-many-locals
     # Parse args
     parsed_args = parse_arguments(argv)
     eth_config = build_eth_config(parsed_args.eth_config_env_file)
@@ -39,12 +46,12 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     # Setup logging
     logs.setup_logging(
-        log_filename=environment_config.log_filename,
-        max_bytes=environment_config.max_bytes,
-        log_level=environment_config.log_level,
-        delete_previous_logs=environment_config.delete_previous_logs,
-        log_stdout=environment_config.log_stdout,
-        log_format_string=environment_config.log_formatter,
+        log_filename=env_config.log_filename,
+        max_bytes=env_config.max_bytes,
+        log_level=env_config.log_level,
+        delete_previous_logs=env_config.delete_previous_logs,
+        log_stdout=env_config.log_stdout,
+        log_format_string=env_config.log_formatter,
     )
     setup_hyperdrive_crash_report_logging()
     # Setup hyperdrive interface
@@ -111,16 +118,23 @@ def main(argv: Sequence[str] | None = None) -> None:
 
                 ### Creating a checkpoint should never fail
                 # TODO: add get_block_transactions() to interface
-                transactions = latest_block.transactions
-                if isinstance(transactions, Sequence[TxData]):
-                    if any(
-                        [transaction["to"] == interface.hyperdrive_contract.address for transaction in transactions]
-                    ):
-                        assert pool_state.checkpoint.share_price > 0
+                transactions = latest_block.get("transactions", None)
+                if transactions is None:
+                    raise AssertionError("Latest block did not have transactions.")
+                if isinstance(transactions, Sequence):
+                    # If any transaction is to hyperdrive then assert a checkpoint happened
+                    for transaction in transactions:
+                        if isinstance(transaction, HexBytes):
+                            raise TypeError("Transaction should not be hexbytes.")
+                        txn_to = transaction.get("to", None)
+                        if txn_to is None:
+                            raise AssertionError("Transaction did not have a 'to' key.")
+                        if txn_to == interface.hyperdrive_contract.address:
+                            assert pool_state.checkpoint.share_price > 0
                 else:
                     # TODO: if not, decode the hexbytes
-                    raise NotImplementedError("gotta do this")
-            except AssertionError | NotImplementedError:
+                    assert False, "NOT IMPLEMENTED"
+            except AssertionError:
                 logging.error("")
 
             # take a nap
@@ -146,6 +160,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     Returns
     -------
     Args
+        Formatted arguments
     """
     return Args(
         eth_config_env_file=namespace.eth_config_env_file,
@@ -165,6 +180,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     Returns
     -------
     Args
+        Formatted arguments
     """
     parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
     parser.add_argument(

@@ -1,7 +1,7 @@
 """Fuzz test to verify that if all of the funds are removed from Hyperdrive, there is no base left in the contract."""
 # %%
-# Variables by themselves print out dataframes in a nice format in interactive mode
-# pylint: disable=pointless-statement
+
+from __future__ import annotations
 
 from typing import cast
 
@@ -12,6 +12,11 @@ from agent0.hyperdrive.interactive import Chain, InteractiveHyperdrive, LocalCha
 from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
+
+# %%
+# Variables by themselves print out dataframes in a nice format in interactive mode
+# pylint: disable=pointless-statement
+
 
 # TODO: change this into an executable script with LOCAL=False always once we're sure it is working
 LOCAL = True
@@ -40,10 +45,10 @@ min_trade = interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_tran
 trade_list: list[tuple[InteractiveHyperdriveAgent, HyperdriveActionType, FixedPoint]] = []
 for agent_index in range(NUM_TRADES):  # 1 agent per trade
     budget = FixedPoint(
-        scaled_value=rng.uniform(low=min_trade * 10, high=int(1e23))
+        scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value * 10, high=int(1e23))))
     )  # Give a little extra money to account for fees
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(scaled_value=budget), eth=FixedPoint(100))
-    trade_type = cast(HyperdriveActionType, rng.choice(available_actions, size=1))
+    agent = interactive_hyperdrive.init_agent(base=budget, eth=FixedPoint(100))
+    trade_type = cast(HyperdriveActionType, rng.choice([item.name for item in available_actions], size=1))
     trade_amount_base = FixedPoint(
         rng.uniform(
             low=min_trade.scaled_value,
@@ -59,11 +64,11 @@ trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]] = []
 for trade in trade_list:
     agent, trade_type, trade_amount = trade
     if trade_type == HyperdriveActionType.OPEN_LONG:
-        trade_event = agent.open_long(base=trade_amount.scaled_value)
+        trade_event = agent.open_long(base=trade_amount)
     elif trade_type == HyperdriveActionType.OPEN_SHORT:
-        trade_event = agent.open_short(bonds=trade_amount.scaled_value)
+        trade_event = agent.open_short(bonds=trade_amount)
     else:
-        raise AssertionError(f"{trade['trade_type']=} is not supported.")
+        raise AssertionError(f"{trade_type=} is not supported.")
     trade_events.append((agent, trade_event))
 
 # %%

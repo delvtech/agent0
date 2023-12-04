@@ -29,19 +29,24 @@ interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 # %%
 # Get a random trade amount
 rng = np.random.default_rng()  # No seed, we want this to be random every time it is executed
-trade_amount = rng.uniform(
-    low=interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount, high=int(1e23)
+trade_amount = FixedPoint(
+    scaled_value=int(
+        np.floor(
+            rng.uniform(
+                low=interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount.scaled_value,
+                high=int(1e23),
+            )
+        )
+    )
 )
 
 # %%
 # Generate funded trading agent
-hyperdrive_agent0 = interactive_hyperdrive.init_agent(
-    base=FixedPoint(scaled_value=trade_amount), eth=FixedPoint(100), name="alice"
-)
+hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=trade_amount, eth=FixedPoint(100), name="alice")
 
 # %%
 # Open a long and close it immediately
-open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(scaled_value=trade_amount))
+open_long_event = hyperdrive_agent0.open_long(base=trade_amount)
 close_long_event = hyperdrive_agent0.close_long(
     maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
 )
@@ -54,7 +59,7 @@ hyperdrive_agent0.wallet
 
 # %%
 # Open a short and close it immediately
-open_short_event = hyperdrive_agent0.open_short(bonds=FixedPoint(scaled_value=trade_amount))
+open_short_event = hyperdrive_agent0.open_short(bonds=trade_amount)
 close_short_event = hyperdrive_agent0.close_short(
     maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
 )
@@ -67,7 +72,7 @@ hyperdrive_agent0.wallet
 
 # %%
 # Add liquidity and redeem it immediately
-add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(scaled_value=trade_amount))
+add_liquidity_event = hyperdrive_agent0.add_liquidity(base=trade_amount)
 remove_liquidity_event = hyperdrive_agent0.remove_liquidity(shares=add_liquidity_event.lp_amount)
 # %%
 # TODO:

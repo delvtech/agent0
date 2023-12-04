@@ -22,6 +22,7 @@ from agent0.base.config import EnvironmentConfig
 
 # Checkpoint bot has a lot going on
 # pylint: disable=too-many-locals
+# pylint: disable=too-many-statements
 
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.
@@ -71,7 +72,13 @@ def get_config() -> tuple[EthConfig, EnvironmentConfig]:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    """Runs the checkpoint bot."""
+    """Runs the checkpoint bot.
+
+    Arguments
+    ---------
+    argv: Sequence[str]
+        The argv values returned from argparser.
+    """
     parsed_args = parse_arguments(argv)
     eth_config, env_config = get_config()
 
@@ -180,7 +187,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 checkpoint_time = timestamp - timestamp % checkpoint_duration
 
                 need_checkpoint = checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration
-                assert need_checkpoint == False, "We shouldn't need a checkpoint if one was just created."
+                assert not need_checkpoint, "We shouldn't need a checkpoint if one was just created."
 
                 checkpoint_exists = does_checkpoint_exist(hyperdrive_contract, checkpoint_time)
                 assert checkpoint_exists, "Checkpoint should exist since it was just made."
@@ -202,7 +209,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
 
 class Args(NamedTuple):
-    """Command line arguments for the fuzz bot."""
+    """Command line arguments for the checkpoint bot."""
 
     fuzz: bool
 
@@ -218,6 +225,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     Returns
     -------
     Args
+        Formatted arguments
     """
     return Args(fuzz=namespace.fuzz)
 
@@ -233,6 +241,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     Returns
     -------
     Args
+        Formatted arguments
     """
     parser = argparse.ArgumentParser(description="Runs a bot that creates checkpoints each checkpoint_duration.")
     parser.add_argument(
