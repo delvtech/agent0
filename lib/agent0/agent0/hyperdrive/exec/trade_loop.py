@@ -27,6 +27,7 @@ def trade_if_new_block(
     halt_on_errors: bool,
     halt_on_slippage: bool,
     crash_report_to_file: bool,
+    log_to_rollbar: bool,
     last_executed_block: int,
     liquidate: bool,
 ) -> int:
@@ -77,7 +78,7 @@ def trade_if_new_block(
         trade_results: list[TradeResult] = asyncio.run(async_execute_agent_trades(interface, agent_accounts, liquidate))
         last_executed_block = latest_block_number
 
-        check_result(trade_results, interface, halt_on_errors, halt_on_slippage, crash_report_to_file)
+        check_result(trade_results, interface, halt_on_errors, halt_on_slippage, crash_report_to_file, log_to_rollbar)
     return last_executed_block
 
 
@@ -87,6 +88,7 @@ def check_result(
     halt_on_errors: bool,
     halt_on_slippage: bool,
     crash_report_to_file: bool,
+    log_to_rollbar: bool,
 ) -> None:
     """Check and handle SUCCESS or FAILURE status from each trade_result.
 
@@ -133,7 +135,9 @@ def check_result(
                     if crash_report_to_file:
                         trade_result.anvil_state = get_anvil_state_dump(interface.web3)
                     # Defaults to CRITICAL
-                    log_hyperdrive_crash_report(trade_result, crash_report_to_file=crash_report_to_file)
+                    log_hyperdrive_crash_report(
+                        trade_result, crash_report_to_file=crash_report_to_file, log_to_rollbar=log_to_rollbar
+                    )
 
                 if halt_on_errors:
                     # Don't halt if slippage detected and halt_on_slippage is false

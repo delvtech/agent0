@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import logging
+import os
 import random
 import sys
 
+import rollbar
+from dotenv import load_dotenv
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from web3.types import RPCEndpoint
@@ -14,7 +17,7 @@ from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import Zoo
 
-STOP_CHAIN_ON_CRASH = True
+STOP_CHAIN_ON_CRASH = False
 
 # NOTE be sure to adjust `eth.env` to connect to a specific chain
 
@@ -30,13 +33,28 @@ SLIPPAGE_TOLERANCE = FixedPoint("0.0001")  # 0.1% slippage
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 
+
+load_dotenv("rollbar.env")
+ROLLBAR_API_KEY = os.getenv("ROLLBAR_API_KEY")
+log_to_rollbar = bool(ROLLBAR_API_KEY)
+# TODO: grab actual code version from pyproject, set enviroment etc, and get the access_token out to .env
+if log_to_rollbar:
+    print("logging to rollbar enabled.")
+    rollbar.init(
+        access_token=ROLLBAR_API_KEY,
+        environment="matt-test-1",
+        code_version="1.0",
+    )
+
+
 # Build configuration
 env_config = EnvironmentConfig(
     delete_previous_logs=True,
-    halt_on_errors=True,
+    halt_on_errors=False,
     crash_report_to_file=True,
     log_filename=".logging/debug_bots.log",
     log_level=logging.CRITICAL,
+    log_rollbar=log_to_rollbar,
     log_stdout=True,
     # TODO this should be able to accept None to allow for random
     global_random_seed=random.randint(0, 10000000),
@@ -82,4 +100,6 @@ except Exception as exc:  # pylint: disable=broad-exception-caught
     if STOP_CHAIN_ON_CRASH:
         hyperdrive = HyperdriveInterface()
         hyperdrive.web3.provider.make_request(method=RPCEndpoint("evm_setIntervalMining"), params=[0])
+    if log_to_rollbar:
+        rollbar.report_exc_info(exc)
     raise exc

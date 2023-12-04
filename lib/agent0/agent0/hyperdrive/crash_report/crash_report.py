@@ -10,6 +10,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
+import rollbar
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from hyperlogs import ExtendedJSONEncoder, logs
@@ -173,6 +174,7 @@ def log_hyperdrive_crash_report(
     log_level: int | None = None,
     crash_report_to_file: bool = True,
     crash_report_file_prefix: str | None = None,
+    log_to_rollbar: bool = False,
 ) -> None:
     # pylint: disable=too-many-arguments
     """Log a crash report for a hyperdrive transaction.
@@ -190,6 +192,8 @@ def log_hyperdrive_crash_report(
     crash_report_file_prefix: str | None, optional
         Optional prefix to append a string to the crash report filename.
         The filename defaults to the timestamp of the report.
+    log_to_rollbar: bool, optional
+        Defaults to False.  If enabled, logs errors to the rollbar service.
     """
     if log_level is None:
         log_level = logging.CRITICAL
@@ -235,6 +239,9 @@ def log_hyperdrive_crash_report(
     logging_crash_report = json.dumps(dump_obj, indent=2, cls=ExtendedJSONEncoder)
 
     logging.log(log_level, logging_crash_report)
+    if log_to_rollbar:
+        rollbar.report_message("logging a crash report", "critical", payload_data=logging_crash_report)
+        rollbar.report_exc_info(trade_result.exception, payload_data=logging_crash_report, level="critical")
 
     # We print out a machine readable crash report
     if crash_report_to_file:
