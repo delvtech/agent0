@@ -60,6 +60,25 @@ def _get_eth_base_balances(interface: HyperdriveInterface, agent: LocalAccount) 
     )
 
 
+def _get_hyperdrive_base_balance(
+    base_contract: ERC20MintableContract,
+    hyperdrive_contract: IERC4626HyperdriveContract,
+    block_number: BlockNumber | None,
+) -> FixedPoint:
+    """See API for documentation."""
+    base_balance = base_contract.functions.balanceOf(hyperdrive_contract.address).call(
+        block_identifier=block_number or "latest"
+    )
+    return FixedPoint(scaled_value=base_balance)
+
+
+def _get_hyperdrive_eth_balance(web3, hyperdrive_address) -> FixedPoint:
+    """See API for documentation."""
+    hyperdrive_checksum_address = Web3.to_checksum_address(hyperdrive_address)
+    agent_eth_balance = get_account_balance(web3, hyperdrive_checksum_address)
+    return FixedPoint(scaled_value=agent_eth_balance)
+
+
 def _get_gov_fees_accrued(
     hyperdrive_contract: IERC4626HyperdriveContract,
     block_number: BlockNumber | None,
@@ -73,18 +92,6 @@ def _get_gov_fees_accrued(
         block_identifier=block_identifier
     )
     return FixedPoint(scaled_value=gov_fees_accrued)
-
-
-def _get_hyperdrive_base_balance(
-    base_contract: ERC20MintableContract,
-    hyperdrive_contract: IERC4626HyperdriveContract,
-    block_number: BlockNumber | None,
-) -> FixedPoint:
-    """See API for documentation."""
-    base_balance = base_contract.functions.balanceOf(hyperdrive_contract.address).call(
-        block_identifier=block_number or "latest"
-    )
-    return FixedPoint(scaled_value=base_balance)
 
 
 def _create_checkpoint(

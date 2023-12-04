@@ -1,10 +1,13 @@
 """A checkpoint bot for Hyperdrive"""
 from __future__ import annotations
 
+import argparse
 import datetime
 import logging
 import os
+import sys
 import time
+from typing import NamedTuple, Sequence
 
 from eth_account.account import Account
 from ethpy import EthConfig, build_eth_config
@@ -16,6 +19,10 @@ from hypertypes import IERC4626HyperdriveContract
 
 from agent0.base.agents import EthAgent
 from agent0.base.config import EnvironmentConfig
+
+# Checkpoint bot has a lot going on
+# pylint: disable=too-many-locals
+# pylint: disable=too-many-statements
 
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.
@@ -64,10 +71,15 @@ def get_config() -> tuple[EthConfig, EnvironmentConfig]:
     return (eth_config, env_config)
 
 
-def main() -> None:
-    """Runs the checkpoint bot."""
-    # Checkpoint bot does it's own thing
-    # pylint: disable=too-many-locals
+def main(argv: Sequence[str] | None = None) -> None:
+    """Runs the checkpoint bot.
+
+    Arguments
+    ---------
+    argv: Sequence[str]
+        The argv values returned from argparser.
+    """
+    parsed_args = parse_arguments(argv)
     eth_config, env_config = get_config()
 
     # Get environment variables for block time and block timestamp interval
@@ -165,6 +177,20 @@ def main() -> None:
                 "Checkpoint successfully mined with receipt=%s",
                 receipt["transactionHash"].hex(),
             )
+            if parsed_args.fuzz:
+                assert receipt["status"] == 1, "Checkpoint failed."
+                latest_block = web3.eth.get_block("latest")
+                timestamp = latest_block.get("timestamp", None)
+                if timestamp is None:
+                    raise AssertionError(f"{latest_block=} has no timestamp")
+                checkpoint_portion_elapsed = timestamp % checkpoint_duration
+                checkpoint_time = timestamp - timestamp % checkpoint_duration
+
+                need_checkpoint = checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration
+                assert not need_checkpoint, "We shouldn't need a checkpoint if one was just created."
+
+                checkpoint_exists = does_checkpoint_exist(hyperdrive_contract, checkpoint_time)
+                assert checkpoint_exists, "Checkpoint should exist since it was just made."
 
         # Sleep for enough time that the block timestamp would have advanced
         # far enough to consider minting a new checkpoint.
@@ -180,6 +206,54 @@ def main() -> None:
             adjusted_sleep_duration,
         )
         time.sleep(adjusted_sleep_duration)
+
+
+class Args(NamedTuple):
+    """Command line arguments for the checkpoint bot."""
+
+    fuzz: bool
+
+
+def namespace_to_args(namespace: argparse.Namespace) -> Args:
+    """Converts argprase.Namespace to Args.
+
+    Arguments
+    ---------
+    namespace: argparse.Namespace
+        Object for storing arg attributes.
+
+    Returns
+    -------
+    Args
+        Formatted arguments
+    """
+    return Args(fuzz=namespace.fuzz)
+
+
+def parse_arguments(argv: Sequence[str] | None = None) -> Args:
+    """Parses input arguments.
+
+    Arguments
+    ---------
+    argv: Sequence[str]
+        The argv values returned from argparser.
+
+    Returns
+    -------
+    Args
+        Formatted arguments
+    """
+    parser = argparse.ArgumentParser(description="Runs a bot that creates checkpoints each checkpoint_duration.")
+    parser.add_argument(
+        "--fuzz",
+        type=bool,
+        default=False,
+        help="If true, then add an assertion step to verify that the checkpoint was successful.",
+    )
+    # Use system arguments if none were passed
+    if argv is None:
+        argv = sys.argv
+    return namespace_to_args(parser.parse_args())
 
 
 # Run the checkpoint bot.

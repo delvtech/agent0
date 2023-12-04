@@ -28,7 +28,8 @@ class PoolState:
     variable_rate: FixedPoint
     vault_shares: FixedPoint
     total_supply_withdrawal_shares: FixedPoint
-    hyperdrive_balance: FixedPoint
+    hyperdrive_base_balance: FixedPoint
+    hyperdrive_eth_balance: FixedPoint
     gov_fees_accrued: FixedPoint
 
     def __post_init__(self):

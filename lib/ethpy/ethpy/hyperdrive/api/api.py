@@ -36,6 +36,7 @@ from ._contract_calls import (
     _get_eth_base_balances,
     _get_gov_fees_accrued,
     _get_hyperdrive_base_balance,
+    _get_hyperdrive_eth_balance,
     _get_total_supply_withdrawal_shares,
     _get_variable_rate,
     _get_vault_shares,
@@ -252,6 +253,7 @@ class HyperdriveInterface:
         vault_shares = self.get_vault_shares(block_number)
         total_supply_withdrawal_shares = self.get_total_supply_withdrawal_shares(block_number)
         hyperdrive_base_balance = self.get_hyperdrive_base_balance(block_number)
+        hyperdrive_eth_balance = self.get_hyperdrive_eth_balance()
         gov_fees_accrued = self.get_gov_fees_accrued(block_number)
         return PoolState(
             block,
@@ -262,6 +264,7 @@ class HyperdriveInterface:
             vault_shares,
             total_supply_withdrawal_shares,
             hyperdrive_base_balance,
+            hyperdrive_eth_balance,
             gov_fees_accrued,
         )
 
@@ -333,6 +336,16 @@ class HyperdriveInterface:
             A tuple containing the [agent_eth_balance, agent_base_balance].
         """
         return _get_eth_base_balances(self, agent)
+
+    def get_hyperdrive_eth_balance(self) -> FixedPoint:
+        """Get the current Hyperdrive eth balance from an RPC.
+
+        Returns
+        -------
+        FixedPoint
+            The eth on the chain.
+        """
+        return _get_hyperdrive_eth_balance(self.web3, self.hyperdrive_contract.address)
 
     def get_hyperdrive_base_balance(self, block_number: BlockNumber | None) -> FixedPoint:
         """Get the current Hyperdrive balance in the base contract.
