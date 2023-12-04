@@ -61,7 +61,7 @@ for agent_index in range(NUM_TRADES):  # 1 agent per trade
     trade_list.append((agent, trade_type, trade_amount_base))
 
 # %%
-# Get reserve levels
+# List of columns in pool info to check between the initial pool info and the latest pool info.
 check_columns = [
     "share_reserves",
     "shorts_outstanding",
@@ -73,14 +73,6 @@ check_columns = [
     "lp_total_supply",
     "longs_outstanding",
 ]
-
-# TODO add these to pool info
-pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-# This is pool config? Shouldn't change
-# start_minimum_share_reserves = pool_state.pool_config.minimum_share_reserves
-start_hyperdrive_balance = pool_state.hyperdrive_base_balance
-start_gov_fees_accrued = pool_state.gov_fees_accrued
-start_total_shares = pool_state.vault_shares
 
 
 # %%
@@ -101,9 +93,13 @@ for trade in trade_list:
 # snapshot the chain, so we can load the snapshot & close in different orders
 chain.save_snapshot()
 
+first_run = True  # pylint: disable=invalid-name
+check_data = {}
+
+
 # %%
 for iteration in range(NUM_PATHS_CHECKED):
-    print(iteration)
+    print(f"{iteration=}")
     # TODO:
     # Load the snapshot
     chain.load_snapshot()
@@ -121,15 +117,36 @@ for iteration in range(NUM_PATHS_CHECKED):
 
     pool_info_df = interactive_hyperdrive.get_pool_info(coerce_float=False)
 
-    pd.testing.assert_series_equal(
-        pool_info_df[check_columns].iloc[0], pool_info_df[check_columns].iloc[-1], check_names=False
-    )
+    # On first run, save final state
+    if first_run:
+        check_data["check_pool_info_df"] = pool_info_df[check_columns].iloc[-1].copy()
+        # TODO add these to pool info
+        pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
+        check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
+        check_data["gov_fees_accrued"] = pool_state.gov_fees_accrued
+        check_data["vault_shares"] = pool_state.vault_shares
 
-    pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-    assert (
-        start_hyperdrive_balance == pool_state.hyperdrive_base_balance
-    ), f"{start_hyperdrive_balance=} != {pool_state.hyperdrive_base_balance}"
-    assert (
-        start_gov_fees_accrued == pool_state.gov_fees_accrued
-    ), f"{start_gov_fees_accrued=} != {pool_state.gov_fees_accrued}"
-    assert start_total_shares == pool_state.vault_shares, f"{start_total_shares=} != {pool_state.vault_shares}"
+        # Sanity check on static pool config
+        check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
+        first_run = False
+
+    # On subsequent run, check against the saved final state
+    else:
+        # This checks that the subset of columns in initial pool info and the latest pool info are identical.
+        pd.testing.assert_series_equal(
+            check_data["check_pool_info_df"], pool_info_df[check_columns].iloc[-1], check_names=False
+        )
+
+        pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
+        assert (
+            check_data["hyperdrive_base_balance"] == pool_state.hyperdrive_base_balance
+        ), f"{check_data['hyperdrive_base_balance']=} != {pool_state.hyperdrive_base_balance}"
+        assert (
+            check_data["gov_fees_accrued"] == pool_state.gov_fees_accrued
+        ), f"{check_data['gov_fees_accrued']=} != {pool_state.gov_fees_accrued}"
+        assert (
+            check_data["vault_shares"] == pool_state.vault_shares
+        ), f"{check_data['vault_shares']=} != {pool_state.vault_shares}"
+        assert (
+            check_data["minimum_share_reserves"] == pool_state.pool_config.minimum_share_reserves
+        ), f"{check_data['minimum_share_reserves']=} != {pool_state.pool_config.minimum_share_reserves}"
