@@ -256,7 +256,7 @@ class TestInteractiveHyperdrive:
         init_agent_wallet = hyperdrive_agent.wallet.copy()
         init_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False).copy()
         init_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
-        init_pool_info_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
+        init_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
         # Make a few trades to change the state
         hyperdrive_agent.close_long(bonds=FixedPoint(222), maturity_time=open_long_event.maturity_time)
@@ -268,14 +268,14 @@ class TestInteractiveHyperdrive:
         check_agent_wallet = hyperdrive_agent.wallet
         check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
         check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
-        check_pool_info_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
+        check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
         assert check_eth_on_chain != init_eth_on_chain
         assert check_base_on_chain != init_base_on_chain
         assert check_agent_wallet != init_agent_wallet
         assert not check_db_wallet.equals(init_db_wallet)
         assert check_pool_info_on_chain != init_pool_info_on_chain
-        assert not check_pool_info_on_db.equals(init_pool_info_on_db)
+        assert not check_pool_state_on_db.equals(init_pool_state_on_db)
 
         # Save snapshot and check for equality
         chain.load_snapshot()
@@ -284,14 +284,14 @@ class TestInteractiveHyperdrive:
         check_agent_wallet = hyperdrive_agent.wallet
         check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
         check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
-        check_pool_info_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
+        check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
         assert check_eth_on_chain == init_eth_on_chain
         assert check_base_on_chain == init_base_on_chain
         assert check_agent_wallet == init_agent_wallet
         assert check_db_wallet.equals(init_db_wallet)
         assert check_pool_info_on_chain == init_pool_info_on_chain
-        assert check_pool_info_on_db.equals(init_pool_info_on_db)
+        assert check_pool_state_on_db.equals(init_pool_state_on_db)
 
         # Do it again to make sure we can do multiple loads
 
@@ -305,14 +305,14 @@ class TestInteractiveHyperdrive:
         check_agent_wallet = hyperdrive_agent.wallet
         check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
         check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
-        check_pool_info_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
+        check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
         assert check_eth_on_chain != init_eth_on_chain
         assert check_base_on_chain != init_base_on_chain
         assert check_agent_wallet != init_agent_wallet
         assert not check_db_wallet.equals(init_db_wallet)
         assert check_pool_info_on_chain != init_pool_info_on_chain
-        assert not check_pool_info_on_db.equals(init_pool_info_on_db)
+        assert not check_pool_state_on_db.equals(init_pool_state_on_db)
 
         # Save snapshot and check for equality
         chain.load_snapshot()
@@ -321,11 +321,11 @@ class TestInteractiveHyperdrive:
         check_agent_wallet = hyperdrive_agent.wallet
         check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
         check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
-        check_pool_info_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
+        check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
         assert check_eth_on_chain == init_eth_on_chain
         assert check_base_on_chain == init_base_on_chain
         assert check_agent_wallet == init_agent_wallet
         assert check_db_wallet.equals(init_db_wallet)
         assert check_pool_info_on_chain == init_pool_info_on_chain
-        assert check_pool_info_on_db.equals(init_pool_info_on_db)
+        assert check_pool_state_on_db.equals(init_pool_state_on_db)
