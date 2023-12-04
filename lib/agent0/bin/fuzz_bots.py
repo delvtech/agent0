@@ -2,12 +2,10 @@
 from __future__ import annotations
 
 import logging
-import os
 import random
 import sys
 
 import rollbar
-from dotenv import load_dotenv
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from web3.types import RPCEndpoint
@@ -16,6 +14,7 @@ from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import Zoo
+from agent0.logging.rollbar_utilities import initialize_rollbar
 
 STOP_CHAIN_ON_CRASH = False
 
@@ -33,19 +32,7 @@ SLIPPAGE_TOLERANCE = FixedPoint("0.0001")  # 0.1% slippage
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 
-
-load_dotenv("rollbar.env")
-ROLLBAR_API_KEY = os.getenv("ROLLBAR_API_KEY")
-log_to_rollbar = bool(ROLLBAR_API_KEY)
-# TODO: grab actual code version from pyproject, set enviroment etc, and get the access_token out to .env
-if log_to_rollbar:
-    print("logging to rollbar enabled.")
-    rollbar.init(
-        access_token=ROLLBAR_API_KEY,
-        environment="matt-test-1",
-        code_version="1.0",
-    )
-
+log_to_rollbar = initialize_rollbar("local.fuzzbots")
 
 # Build configuration
 env_config = EnvironmentConfig(
