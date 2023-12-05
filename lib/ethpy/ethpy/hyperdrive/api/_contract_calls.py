@@ -13,7 +13,7 @@ from web3 import Web3
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
-    from eth_typing import BlockNumber
+    from eth_typing import BlockNumber, ChecksumAddress
     from ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
     from web3.types import Nonce
 
@@ -107,8 +107,8 @@ def _create_checkpoint(
     interface.hyperdrive_contract.functions.checkpoint(checkpoint_time).call(block_identifier=block_timestamp)
 
 
-def _set_rate(interface: HyperdriveInterface, new_rate: FixedPoint) -> None:
-    interface.yield_contract.functions.setRate(new_rate.scaled_value).transact()
+def _set_rate(interface: HyperdriveInterface, new_rate: FixedPoint, sender: ChecksumAddress) -> None:
+    interface.yield_contract.functions.setRate(new_rate.scaled_value).transact({"from": sender})
 
 
 async def _async_open_long(

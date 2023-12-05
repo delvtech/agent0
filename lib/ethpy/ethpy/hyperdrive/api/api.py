@@ -9,6 +9,7 @@ import copy
 import os
 from typing import TYPE_CHECKING, cast
 
+from eth_typing import ChecksumAddress
 from ethpy import build_eth_config
 from ethpy.base import initialize_web3_with_http_provider
 from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
@@ -391,15 +392,17 @@ class HyperdriveInterface:
         """
         _create_checkpoint(self, block_number)
 
-    def set_rate(self, new_rate: FixedPoint) -> None:
+    def set_rate(self, new_rate: FixedPoint, sender: ChecksumAddress) -> None:
         """Set the variable rate for the yield source.
 
         Arguments
         ---------
         new_rate: FixedPoint
             The new variable rate for the yield source.
+        sender: ChecksumAddress
+            The sender address for the agent that is executing and signing the trade transaction.
         """
-        _set_rate(self, new_rate)
+        _set_rate(self, new_rate, sender)
 
     async def async_open_long(
         self,
