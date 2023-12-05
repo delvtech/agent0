@@ -13,11 +13,11 @@ from typing import TYPE_CHECKING, Any
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from hyperlogs import ExtendedJSONEncoder, logs
+from hyperlogs.rollbar_utilities import log_rollbar_exception
 from web3 import Web3
 from web3.types import RPCEndpoint
 
 from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
-from agent0.logging.rollbar_utilities import log_rollbar_exception
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.api import HyperdriveInterface
