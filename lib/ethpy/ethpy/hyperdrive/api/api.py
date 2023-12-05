@@ -380,28 +380,30 @@ class HyperdriveInterface:
         """
         return _get_gov_fees_accrued(self.hyperdrive_contract, block_number)
 
-    def create_checkpoint(self, block_number: BlockNumber | None = None) -> None:
+    def create_checkpoint(self, sender: LocalAccount, block_number: BlockNumber | None = None) -> None:
         """Create a Hyperdrive checkpoint.
 
         Arguments
         ---------
+        sender: LocalAccount
+            The sender account that is executing and signing the trade transaction.
         block_number: BlockNumber, optional
             The number for any minted block.
             Defaults to the current block number.
         """
-        _create_checkpoint(self, block_number)
+        _create_checkpoint(self, sender, block_number)
 
-    def set_rate(self, new_rate: FixedPoint, sender: LocalAccount) -> None:
+    def set_rate(self, sender: LocalAccount, new_rate: FixedPoint) -> None:
         """Set the variable rate for the yield source.
 
         Arguments
         ---------
-        new_rate: FixedPoint
-            The new variable rate for the yield source.
         sender: LocalAccount
             The sender account that is executing and signing the trade transaction.
+        new_rate: FixedPoint
+            The new variable rate for the yield source.
         """
-        _set_rate(self, new_rate, sender)
+        _set_rate(self, sender, new_rate)
 
     async def async_open_long(
         self,
