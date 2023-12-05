@@ -16,7 +16,7 @@ from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import Zoo
 
-STOP_CHAIN_ON_CRASH = False
+STOP_CHAIN_ON_CRASH = True
 
 # NOTE be sure to adjust `eth.env` to connect to a specific chain
 
@@ -37,7 +37,7 @@ log_to_rollbar = initialize_rollbar("localfuzzbots")
 # Build configuration
 env_config = EnvironmentConfig(
     delete_previous_logs=True,
-    halt_on_errors=False,
+    halt_on_errors=True,
     crash_report_to_file=True,
     log_filename=".logging/debug_bots.log",
     log_level=logging.CRITICAL,
