@@ -38,6 +38,8 @@ class EnvironmentConfig(FrozenClass):
     delete_previous_logs: bool = False
     # log log_file_and_stdout; if True, save to file and write to stdout, else just save to file
     log_stdout: bool = False
+    # if True, enables rollbar logging
+    log_to_rollbar: bool = False
     # log_formatter; specifies the format in which the logger saves the logs
     # see https://docs.python.org/3/library/logging.html#logrecord-attributes for which attributes can be used
     log_formatter: str = "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s"

@@ -18,17 +18,17 @@ classifiers = [
 
 [project.optional-dependencies]
 # This flag installs all dependencies and should be ran when installing this subpackage in isolation
-with-dependencies = [
-    "agent0[base, lateral]"
-]
+with-dependencies = ["agent0[base, lateral]"]
 base = [
     "fixedpointmath @ git+https://github.com/delvtech/fixedpointmath.git/#subdirectory=lib/fixedpointmath",
     "numpy",
     "python-dotenv",
-    "web3", # will include eth- packages
+    # will include eth- packages
+    "web3",
     "hexbytes",
     "pandas",
     "nest_asyncio",
+    "rollbar",
 ]
 lateral = [
     # Lateral dependencies across subpackages are pointing to github

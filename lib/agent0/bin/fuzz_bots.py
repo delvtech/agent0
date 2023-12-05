@@ -5,8 +5,10 @@ import logging
 import random
 import sys
 
+import rollbar
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
+from hyperlogs.rollbar_utilities import initialize_rollbar
 from web3.types import RPCEndpoint
 
 from agent0 import initialize_accounts
@@ -30,6 +32,8 @@ SLIPPAGE_TOLERANCE = FixedPoint("0.0001")  # 0.1% slippage
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 
+log_to_rollbar = initialize_rollbar("localfuzzbots")
+
 # Build configuration
 env_config = EnvironmentConfig(
     delete_previous_logs=True,
@@ -37,6 +41,7 @@ env_config = EnvironmentConfig(
     crash_report_to_file=True,
     log_filename=".logging/debug_bots.log",
     log_level=logging.CRITICAL,
+    log_to_rollbar=log_to_rollbar,
     log_stdout=True,
     # TODO this should be able to accept None to allow for random
     global_random_seed=random.randint(0, 10000000),
@@ -82,4 +87,6 @@ except Exception as exc:  # pylint: disable=broad-exception-caught
     if STOP_CHAIN_ON_CRASH:
         hyperdrive = HyperdriveInterface()
         hyperdrive.web3.provider.make_request(method=RPCEndpoint("evm_setIntervalMining"), params=[0])
+    if log_to_rollbar:
+        rollbar.report_exc_info(sys.exc_info())
     raise exc

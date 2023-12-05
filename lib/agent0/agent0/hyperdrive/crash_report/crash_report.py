@@ -1,9 +1,11 @@
 """Utility function for logging agent crash reports."""
 from __future__ import annotations
 
+import getpass
 import json
 import logging
 import os
+import platform
 import subprocess
 from collections import OrderedDict
 from dataclasses import asdict
@@ -13,6 +15,7 @@ from typing import TYPE_CHECKING, Any
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from hyperlogs import ExtendedJSONEncoder, logs
+from hyperlogs.rollbar_utilities import log_rollbar_exception
 from web3 import Web3
 from web3.types import RPCEndpoint
 
@@ -173,6 +176,7 @@ def log_hyperdrive_crash_report(
     log_level: int | None = None,
     crash_report_to_file: bool = True,
     crash_report_file_prefix: str | None = None,
+    log_to_rollbar: bool = False,
 ) -> None:
     # pylint: disable=too-many-arguments
     """Log a crash report for a hyperdrive transaction.
@@ -190,6 +194,9 @@ def log_hyperdrive_crash_report(
     crash_report_file_prefix: str | None, optional
         Optional prefix to append a string to the crash report filename.
         The filename defaults to the timestamp of the report.
+    log_to_rollbar: bool, optional
+        If enabled, logs errors to the rollbar service.
+        Defaults to False.
     """
     if log_level is None:
         log_level = logging.CRITICAL
@@ -228,6 +235,7 @@ def log_hyperdrive_crash_report(
             # NOTE if this crash report happens in a PR that gets squashed,
             # we loose this hash.
             ("commit_hash", _get_git_revision_hash()),
+            # Environment details
         ]
     )
 
@@ -236,15 +244,27 @@ def log_hyperdrive_crash_report(
 
     logging.log(log_level, logging_crash_report)
 
+    dump_obj["raw_transaction"] = trade_result.raw_transaction  # type: ignore
+    dump_obj["raw_pool_config"] = trade_result.raw_pool_config  # type: ignore
+    dump_obj["raw_pool_info"] = trade_result.raw_pool_info  # type: ignore
+    dump_obj["raw_checkpoint"] = trade_result.raw_checkpoint  # type: ignore
+    dump_obj["anvil_dump_state"] = trade_result.anvil_state  # type: ignore
+
+    env_details = {
+        "environment": os.getenv("APP_ENV", "development"),  # e.g., 'production', 'development'
+        "platform": platform.system(),  # e.g., 'Linux', 'Windows'
+        "platform_version": platform.version(),
+        "hostname": platform.node(),
+        "python_version": platform.python_version(),
+        "time": datetime.utcnow().isoformat(),
+        "user": getpass.getuser(),
+    }
+
     # We print out a machine readable crash report
     if crash_report_to_file:
+        dump_obj["environment"] = env_details  # type: ignore
         # We add the machine readable version of the crash to the file
         # OrderedDict doesn't play nice with types
-        dump_obj["raw_transaction"] = trade_result.raw_transaction  # type: ignore
-        dump_obj["raw_pool_config"] = trade_result.raw_pool_config  # type: ignore
-        dump_obj["raw_pool_info"] = trade_result.raw_pool_info  # type: ignore
-        dump_obj["raw_checkpoint"] = trade_result.raw_checkpoint  # type: ignore
-        dump_obj["anvil_dump_state"] = trade_result.anvil_state  # type: ignore
         # Generate filename
         if crash_report_file_prefix is None:
             crash_report_file_prefix = ""
@@ -254,6 +274,12 @@ def log_hyperdrive_crash_report(
             os.makedirs(crash_report_dir)
         with open(crash_report_file, "w", encoding="utf-8") as file:
             json.dump(dump_obj, file, indent=2, cls=ExtendedJSONEncoder)
+
+    if log_to_rollbar:
+        logging_crash_report = json.loads(json.dumps(dump_obj, indent=2, cls=ExtendedJSONEncoder))
+        log_rollbar_exception(trade_result.exception, log_level, logging_crash_report, env_details)
+        if trade_result.orig_exception:
+            log_rollbar_exception(trade_result.orig_exception, log_level, logging_crash_report, env_details)
 
 
 def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
