@@ -262,7 +262,7 @@ def log_hyperdrive_crash_report(
 
     # We print out a machine readable crash report
     if crash_report_to_file:
-        dump_obj["environment_details"] = env_details
+        dump_obj["environment"] = env_details  # type: ignore
         # We add the machine readable version of the crash to the file
         # OrderedDict doesn't play nice with types
         # Generate filename
