@@ -1,9 +1,11 @@
 """Utility function for logging agent crash reports."""
 from __future__ import annotations
 
+import getpass
 import json
 import logging
 import os
+import platform
 import subprocess
 from collections import OrderedDict
 from dataclasses import asdict
@@ -233,6 +235,7 @@ def log_hyperdrive_crash_report(
             # NOTE if this crash report happens in a PR that gets squashed,
             # we loose this hash.
             ("commit_hash", _get_git_revision_hash()),
+            # Environment details
         ]
     )
 
@@ -241,15 +244,27 @@ def log_hyperdrive_crash_report(
 
     logging.log(log_level, logging_crash_report)
 
+    dump_obj["raw_transaction"] = trade_result.raw_transaction  # type: ignore
+    dump_obj["raw_pool_config"] = trade_result.raw_pool_config  # type: ignore
+    dump_obj["raw_pool_info"] = trade_result.raw_pool_info  # type: ignore
+    dump_obj["raw_checkpoint"] = trade_result.raw_checkpoint  # type: ignore
+    dump_obj["anvil_dump_state"] = trade_result.anvil_state  # type: ignore
+
+    env_details = {
+        "environment": os.getenv("APP_ENV", "development"),  # e.g., 'production', 'development'
+        "platform": platform.system(),  # e.g., 'Linux', 'Windows'
+        "platform_version": platform.version(),
+        "hostname": platform.node(),
+        "python_version": platform.python_version(),
+        "time": datetime.utcnow().isoformat(),
+        "user": getpass.getuser(),
+    }
+
     # We print out a machine readable crash report
     if crash_report_to_file:
+        dump_obj["environment_details"] = env_details
         # We add the machine readable version of the crash to the file
         # OrderedDict doesn't play nice with types
-        dump_obj["raw_transaction"] = trade_result.raw_transaction  # type: ignore
-        dump_obj["raw_pool_config"] = trade_result.raw_pool_config  # type: ignore
-        dump_obj["raw_pool_info"] = trade_result.raw_pool_info  # type: ignore
-        dump_obj["raw_checkpoint"] = trade_result.raw_checkpoint  # type: ignore
-        dump_obj["anvil_dump_state"] = trade_result.anvil_state  # type: ignore
         # Generate filename
         if crash_report_file_prefix is None:
             crash_report_file_prefix = ""
@@ -261,16 +276,10 @@ def log_hyperdrive_crash_report(
             json.dump(dump_obj, file, indent=2, cls=ExtendedJSONEncoder)
 
     if log_to_rollbar:
-        dump_obj["raw_transaction"] = trade_result.raw_transaction  # type: ignore
-        dump_obj["raw_pool_config"] = trade_result.raw_pool_config  # type: ignore
-        dump_obj["raw_pool_info"] = trade_result.raw_pool_info  # type: ignore
-        dump_obj["raw_checkpoint"] = trade_result.raw_checkpoint  # type: ignore
-        dump_obj["anvil_dump_state"] = trade_result.anvil_state  # type: ignore
-
         logging_crash_report = json.loads(json.dumps(dump_obj, indent=2, cls=ExtendedJSONEncoder))
-        log_rollbar_exception(trade_result.exception, log_level, json.loads(logging_crash_report))
+        log_rollbar_exception(trade_result.exception, log_level, logging_crash_report, env_details)
         if trade_result.orig_exception:
-            log_rollbar_exception(trade_result.orig_exception, log_level, logging_crash_report)
+            log_rollbar_exception(trade_result.orig_exception, log_level, logging_crash_report, env_details)
 
 
 def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
