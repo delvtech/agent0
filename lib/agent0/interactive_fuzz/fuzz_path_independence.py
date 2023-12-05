@@ -93,8 +93,7 @@ for trade in trade_list:
 # snapshot the chain, so we can load the snapshot & close in different orders
 chain.save_snapshot()
 
-first_run = True  # pylint: disable=invalid-name
-check_data = {}
+check_data: dict | None = None
 
 
 # %%
@@ -118,7 +117,8 @@ for iteration in range(NUM_PATHS_CHECKED):
     pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
     # On first run, save final state
-    if first_run:
+    if check_data is None:
+        check_data = {}
         check_data["check_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
         # TODO add these to pool info
         pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
@@ -128,7 +128,6 @@ for iteration in range(NUM_PATHS_CHECKED):
 
         # Sanity check on static pool config
         check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
-        first_run = False
 
     # On subsequent run, check against the saved final state
     else:
