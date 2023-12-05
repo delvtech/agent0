@@ -115,11 +115,11 @@ for iteration in range(NUM_PATHS_CHECKED):
 
     # Check the reserve amounts; they should be unchanged now that all of the trades are closed
 
-    pool_info_df = interactive_hyperdrive.get_pool_info(coerce_float=False)
+    pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
     # On first run, save final state
     if first_run:
-        check_data["check_pool_info_df"] = pool_info_df[check_columns].iloc[-1].copy()
+        check_data["check_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
         # TODO add these to pool info
         pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
         check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
@@ -134,7 +134,7 @@ for iteration in range(NUM_PATHS_CHECKED):
     else:
         # This checks that the subset of columns in initial pool info and the latest pool info are identical.
         pd.testing.assert_series_equal(
-            check_data["check_pool_info_df"], pool_info_df[check_columns].iloc[-1], check_names=False
+            check_data["check_pool_state_df"], pool_state_df[check_columns].iloc[-1], check_names=False
         )
 
         pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
