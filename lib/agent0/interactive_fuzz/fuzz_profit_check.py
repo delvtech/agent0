@@ -6,20 +6,10 @@
 import numpy as np
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import Chain, InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 
-# TODO: change this into an executable script with LOCAL=False always once we're sure it is working
-LOCAL = True
-
-# %%
-# Parameters for local chain initialization, defines defaults in constructor
-# TODO: boot up Anvil such that it never ticks the block unless we tell it to
-if LOCAL:
-    chain_config = LocalChain.Config()
-    chain = LocalChain(config=chain_config)
-else:
-    chain_config = Chain.Config(db_port=5004, remove_existing_db_container=True)
-    chain = Chain(rpc_uri="http://localhost:8545", config=chain_config)
+chain_config = LocalChain.Config()
+chain = LocalChain(config=chain_config)
 
 # %%
 # Parameters for pool initialization.
@@ -28,6 +18,7 @@ interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 
 # %%
 # Get a random trade amount
+# TODO generate a random seed and store the seed in fuzz test report when it fails
 rng = np.random.default_rng()  # No seed, we want this to be random every time it is executed
 trade_amount = FixedPoint(
     scaled_value=int(
@@ -51,32 +42,19 @@ close_long_event = hyperdrive_agent0.close_long(
     maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
 )
 # %%
-# TODO:
 # Ensure that the prior trades did not result in a profit
-open_long_event
-close_long_event
-hyperdrive_agent0.wallet
+assert close_long_event.base_amount < open_long_event.base_amount
+assert hyperdrive_agent0.wallet.balance.amount < trade_amount
 
 # %%
 # Open a short and close it immediately
+# Set trade amount to the new wallet position (due to losing money from the previous open/close)
+trade_amount = hyperdrive_agent0.wallet.balance.amount
 open_short_event = hyperdrive_agent0.open_short(bonds=trade_amount)
 close_short_event = hyperdrive_agent0.close_short(
     maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
 )
 # %%
-# TODO:
 # Ensure that the prior trades did not result in a profit (should be a loss bc of fee)
-open_short_event
-close_short_event
-hyperdrive_agent0.wallet
-
-# %%
-# Add liquidity and redeem it immediately
-add_liquidity_event = hyperdrive_agent0.add_liquidity(base=trade_amount)
-remove_liquidity_event = hyperdrive_agent0.remove_liquidity(shares=add_liquidity_event.lp_amount)
-# %%
-# TODO:
-# Ensure that the prior trades did not result in a profit (should be a loss bc of fee)
-add_liquidity_event
-remove_liquidity_event
-hyperdrive_agent0.wallet
+assert close_short_event.base_amount < open_short_event.base_amount
+assert hyperdrive_agent0.wallet.balance.amount < trade_amount

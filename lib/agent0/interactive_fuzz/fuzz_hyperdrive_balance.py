@@ -3,12 +3,10 @@
 
 from __future__ import annotations
 
-from typing import cast
-
 import numpy as np
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import Chain, InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
@@ -18,18 +16,13 @@ from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
 # pylint: disable=pointless-statement
 
 
-# TODO: change this into an executable script with LOCAL=False always once we're sure it is working
-LOCAL = True
 NUM_TRADES = 3
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor
-if LOCAL:
-    chain_config = LocalChain.Config()
-    chain = LocalChain(config=chain_config)
-else:
-    chain_config = Chain.Config(db_port=5004, remove_existing_db_container=True)
-    chain = Chain(rpc_uri="http://localhost:8545", config=chain_config)
+chain_config = LocalChain.Config()
+chain = LocalChain(config=chain_config)
+# TODO generate a random seed and store the seed in fuzz test report when it fails
 rng = np.random.default_rng()  # No seed, we want this to be random every time it is executed
 
 # %%
@@ -37,10 +30,16 @@ rng = np.random.default_rng()  # No seed, we want this to be random every time i
 initial_pool_config = InteractiveHyperdrive.Config()
 interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 
+# %%
+
+# Get initial vault shares
+pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
+initial_vault_shares = pool_state.vault_shares
+
 
 # %%
 # Generate a list of agents that execute random trades
-available_actions = [HyperdriveActionType.OPEN_LONG, HyperdriveActionType.OPEN_SHORT]
+available_actions = np.array([HyperdriveActionType.OPEN_LONG, HyperdriveActionType.OPEN_SHORT])
 min_trade = interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount
 trade_list: list[tuple[InteractiveHyperdriveAgent, HyperdriveActionType, FixedPoint]] = []
 for agent_index in range(NUM_TRADES):  # 1 agent per trade
@@ -48,11 +47,15 @@ for agent_index in range(NUM_TRADES):  # 1 agent per trade
         scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value * 10, high=int(1e23))))
     )  # Give a little extra money to account for fees
     agent = interactive_hyperdrive.init_agent(base=budget, eth=FixedPoint(100))
-    trade_type = cast(HyperdriveActionType, rng.choice([item.name for item in available_actions], size=1))
+    trade_type = rng.choice(available_actions, size=1)[0]
     trade_amount_base = FixedPoint(
-        rng.uniform(
-            low=min_trade.scaled_value,
-            high=int(budget.scaled_value / 2),  # Don't trade all of their money, to make sure they have enough for fees
+        scaled_value=int(
+            rng.uniform(
+                low=min_trade.scaled_value,
+                high=int(
+                    budget.scaled_value / 2
+                ),  # Don't trade all of their money, to make sure they have enough for fees
+            )
         )
     )
     trade_list.append((agent, trade_type, trade_amount_base))
@@ -79,11 +82,6 @@ for agent, trade in trade_events:
     if isinstance(trade, OpenShort):
         agent.close_short(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
 
-# TODO:
-# Close out all LP, including the agent that was used to initialize hyperdrive
-# or grab initial vault shares after initialize (deploy) the interactive hyperdrive,
-# and set that current valut shares == initial
-
 # Check the reserve amounts; they should be unchanged now that all of the trades are closed
 pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-assert pool_state.vault_shares == 0, f"{pool_state.vault_shares=} != 0"
+assert pool_state.vault_shares == initial_vault_shares, f"{pool_state.vault_shares=} != {initial_vault_shares=}"
