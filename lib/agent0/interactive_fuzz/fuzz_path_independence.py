@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import Chain, InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
@@ -16,19 +16,14 @@ from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
 # pylint: disable=pointless-statement
 
 
-# TODO: change this into an executable script with LOCAL=False always once we're sure it is working
-LOCAL = True
 NUM_TRADES = 3
 NUM_PATHS_CHECKED = 10
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor
-if LOCAL:
-    chain_config = LocalChain.Config()
-    chain = LocalChain(config=chain_config)
-else:
-    chain_config = Chain.Config(db_port=5004, remove_existing_db_container=True)
-    chain = Chain(rpc_uri="http://localhost:8545", config=chain_config)
+chain_config = LocalChain.Config()
+chain = LocalChain(config=chain_config)
+# TODO generate a random seed and store the seed in fuzz test report when it fails
 rng = np.random.default_rng()  # No seed, we want this to be random every time it is executed
 
 # %%
