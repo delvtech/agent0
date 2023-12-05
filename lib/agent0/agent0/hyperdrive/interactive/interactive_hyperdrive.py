@@ -575,7 +575,7 @@ class InteractiveHyperdrive:
             self._add_funds(agent, base, eth)
 
         # establish max approval for the hyperdrive contract
-        asyncio.gather(
+        asyncio.run(
             set_max_approval(
                 [agent],
                 self.hyperdrive_interface.web3,
