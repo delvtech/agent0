@@ -46,7 +46,8 @@ def trade_if_new_block(
         If halt_on_errors is true and halt_on_slippage is false, don't raise an exception if slippage happens.
     crash_report_to_file: bool
         Whether or not to save the crash report to a file.
-        Defaults to True.
+    log_to_rollbar: bool
+        Whether or not to log to rollbar.
     last_executed_block: int
         The block number when a trade last happened.
     liquidate: bool
@@ -105,7 +106,8 @@ def check_result(
         If halt_on_errors is true and halt_on_slippage is false, don't raise an exception if slippage happens.
     crash_report_to_file: bool
         Whether or not to save the crash report to a file.
-        Defaults to True.
+    log_to_rollbar: bool
+        Whether or not to log to rollbar.
     """
     for trade_result in trade_results:
         match trade_result.status:
@@ -128,13 +130,17 @@ def check_result(
 
                 # Crash reporting
                 if trade_result.is_slippage:
-                    log_hyperdrive_crash_report(trade_result, logging.WARNING, crash_report_to_file=False)
+                    print(f"{trade_result.is_slippage=}")
+                    log_hyperdrive_crash_report(
+                        trade_result, logging.WARNING, crash_report_to_file=False, log_to_rollbar=False
+                    )
                 else:
                     # We only get anvil state dump here, since it's an on chain call
                     # and we don't want to do it when e.g., slippage happens
                     if crash_report_to_file:
                         trade_result.anvil_state = get_anvil_state_dump(interface.web3)
                     # Defaults to CRITICAL
+                    print(f"check_result {log_to_rollbar=}")
                     log_hyperdrive_crash_report(
                         trade_result, crash_report_to_file=crash_report_to_file, log_to_rollbar=log_to_rollbar
                     )

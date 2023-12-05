@@ -32,7 +32,7 @@ SLIPPAGE_TOLERANCE = FixedPoint("0.0001")  # 0.1% slippage
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 
-log_to_rollbar = initialize_rollbar("local.fuzzbots")
+log_to_rollbar = initialize_rollbar("localfuzzbots")
 
 # Build configuration
 env_config = EnvironmentConfig(
@@ -41,7 +41,7 @@ env_config = EnvironmentConfig(
     crash_report_to_file=True,
     log_filename=".logging/debug_bots.log",
     log_level=logging.CRITICAL,
-    log_rollbar=log_to_rollbar,
+    log_to_rollbar=log_to_rollbar,
     log_stdout=True,
     # TODO this should be able to accept None to allow for random
     global_random_seed=random.randint(0, 10000000),
@@ -88,5 +88,5 @@ except Exception as exc:  # pylint: disable=broad-exception-caught
         hyperdrive = HyperdriveInterface()
         hyperdrive.web3.provider.make_request(method=RPCEndpoint("evm_setIntervalMining"), params=[0])
     if log_to_rollbar:
-        rollbar.report_exc_info(exc)
+        rollbar.report_exc_info(sys.exc_info())
     raise exc

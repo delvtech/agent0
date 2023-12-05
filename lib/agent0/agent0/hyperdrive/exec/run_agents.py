@@ -257,7 +257,7 @@ def run_agents(
             environment_config.halt_on_errors,
             environment_config.halt_on_slippage,
             environment_config.crash_report_to_file,
-            environment_config.log_rollbar,
+            environment_config.log_to_rollbar,
             last_executed_block,
             liquidate,
         )

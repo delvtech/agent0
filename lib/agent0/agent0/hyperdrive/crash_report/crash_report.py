@@ -10,7 +10,6 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
-import rollbar
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from hyperlogs import ExtendedJSONEncoder, logs
@@ -18,6 +17,7 @@ from web3 import Web3
 from web3.types import RPCEndpoint
 
 from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
+from agent0.logging.rollbar_utilities import log_rollbar_exception
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.api import HyperdriveInterface
@@ -193,7 +193,8 @@ def log_hyperdrive_crash_report(
         Optional prefix to append a string to the crash report filename.
         The filename defaults to the timestamp of the report.
     log_to_rollbar: bool, optional
-        Defaults to False.  If enabled, logs errors to the rollbar service.
+        If enabled, logs errors to the rollbar service.
+        Defaults to False.
     """
     if log_level is None:
         log_level = logging.CRITICAL
@@ -239,9 +240,11 @@ def log_hyperdrive_crash_report(
     logging_crash_report = json.dumps(dump_obj, indent=2, cls=ExtendedJSONEncoder)
 
     logging.log(log_level, logging_crash_report)
+
     if log_to_rollbar:
-        rollbar.report_message("logging a crash report", "critical", payload_data=logging_crash_report)
-        rollbar.report_exc_info(trade_result.exception, payload_data=logging_crash_report, level="critical")
+        log_rollbar_exception(trade_result.exception, log_level, json.loads(logging_crash_report))
+        if trade_result.orig_exception:
+            log_rollbar_exception(trade_result.orig_exception, log_level, json.loads(logging_crash_report))
 
     # We print out a machine readable crash report
     if crash_report_to_file:
