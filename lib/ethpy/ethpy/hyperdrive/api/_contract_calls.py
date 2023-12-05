@@ -101,6 +101,7 @@ def _get_gov_fees_accrued(
 
 def _create_checkpoint(
     interface: HyperdriveInterface,
+    sender: LocalAccount,
     block_number: BlockNumber | None = None,
 ) -> None:
     """See API for documentation."""
@@ -109,16 +110,32 @@ def _create_checkpoint(
     else:
         block_timestamp = interface.get_block_timestamp(interface.get_block(block_number))
     checkpoint_time = interface.calc_checkpoint_id(interface.pool_config.checkpoint_duration, block_timestamp)
-    interface.hyperdrive_contract.functions.checkpoint(checkpoint_time).call(block_identifier=block_timestamp)
+
+    _ = smart_contract_transact(
+        interface.web3,
+        interface.hyperdrive_contract,
+        sender,
+        "checkpoint",
+        checkpoint_time,
+        read_retry_count=interface.read_retry_count,
+        write_retry_count=interface.write_retry_count,
+    )
 
 
-def _set_rate(interface: HyperdriveInterface, new_rate: FixedPoint, sender: LocalAccount) -> None:
+def _set_rate(
+    interface: HyperdriveInterface,
+    sender: LocalAccount,
+    new_rate: FixedPoint,
+) -> None:
+    """See API for documentation."""
     _ = smart_contract_transact(
         interface.web3,
         interface.yield_contract,
         sender,
         "setRate",
         new_rate.scaled_value,
+        read_retry_count=interface.read_retry_count,
+        write_retry_count=interface.write_retry_count,
     )
 
 
