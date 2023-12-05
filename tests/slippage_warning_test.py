@@ -14,7 +14,7 @@ from web3 import HTTPProvider
 
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.test_utils import CycleTradesPolicy
 
 if TYPE_CHECKING:
@@ -92,7 +92,7 @@ class TestSlippageWarning:
         )
 
         # Running agents with halt on slippage off should be fine
-        run_agents(
+        setup_and_run_agent_loop(
             env_config,
             agent_config,
             account_key_config,
@@ -115,7 +115,7 @@ class TestSlippageWarning:
 
         # Running agents with halt on slippage should throw exception
         try:
-            run_agents(
+            setup_and_run_agent_loop(
                 env_config,
                 agent_config,
                 account_key_config,

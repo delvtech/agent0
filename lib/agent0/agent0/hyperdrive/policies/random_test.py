@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, cast
 import pytest
 from eth_typing import URI
 from ethpy import EthConfig
+from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
@@ -61,11 +62,9 @@ class TestRandomPolicy:
 
         # Build eth config that points to the local test chain
         eth_config = EthConfig(
-            # Artifacts_uri isn't used here, as we explicitly set addresses and passed to run_bots
-            artifacts_uri="not_used",
+            artifacts_uri="not_used",  # Artifacts_uri isn't used here, since we set addresses and passed to run_bots
             rpc_uri=rpc_uri,
-            database_api_uri=db_api,
-            # Using default abi dir
+            database_api_uri=db_api,  # Using default abi dir
         )
 
         # Build agent config with no allowable trades
@@ -79,24 +78,28 @@ class TestRandomPolicy:
             ),
         ]
 
+        # Create Hyperdrive interface object
+        interface = HyperdriveInterface(
+            eth_config,
+            hyperdrive_contract_addresses,
+            read_retry_count=env_config.read_retry_count,
+            write_retry_count=env_config.write_retry_count,
+        )
+
         # Instantiate and fund agent
         account_key_config = build_account_key_config_from_agent_config(agent_config, random_seed=123)
-        user_account = create_and_fund_user_account(eth_config, account_key_config, hyperdrive_contract_addresses)
+        user_account = create_and_fund_user_account(account_key_config, interface)
         asyncio.run(async_fund_agents(user_account, eth_config, account_key_config, hyperdrive_contract_addresses))
-        hyperdrive, agent_accounts = setup_experiment(
-            eth_config,
+        agent_accounts = setup_experiment(
             env_config,
             agent_config,
             account_key_config,
-            hyperdrive_contract_addresses,
-            env_config.read_retry_count,
-            env_config.write_retry_count,
+            interface,
         )
-        liquidate = False
 
         # Do a handful of trades
         for _ in range(10):
-            _ = asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts, liquidate))
+            _ = asyncio.run(async_execute_agent_trades(interface, agent_accounts, liquidate=False))
 
     @pytest.mark.anvil
     def test_random_policy_trades(
@@ -149,20 +152,24 @@ class TestRandomPolicy:
             ),
         ]
 
+        # Create Hyperdrive interface object
+        interface = HyperdriveInterface(
+            eth_config,
+            hyperdrive_contract_addresses,
+            read_retry_count=env_config.read_retry_count,
+            write_retry_count=env_config.write_retry_count,
+        )
+
         # Instantiate and fund agent
         account_key_config = build_account_key_config_from_agent_config(agent_config, random_seed=123)
-        user_account = create_and_fund_user_account(eth_config, account_key_config, hyperdrive_contract_addresses)
+        user_account = create_and_fund_user_account(account_key_config, interface)
         asyncio.run(async_fund_agents(user_account, eth_config, account_key_config, hyperdrive_contract_addresses))
-        hyperdrive, agent_accounts = setup_experiment(
-            eth_config,
+        agent_accounts = setup_experiment(
             env_config,
             agent_config,
             account_key_config,
-            hyperdrive_contract_addresses,
-            env_config.read_retry_count,
-            env_config.write_retry_count,
+            interface,
         )
-        liquidate = False
 
         hyperdrive_trade_actions = [
             [
@@ -185,6 +192,6 @@ class TestRandomPolicy:
         for trade_sequence in hyperdrive_trade_actions:
             for trade in trade_sequence:
                 agent_accounts[0].allowable_actions = [trade]  # type: ignore
-                trade_results = asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts, liquidate))
+                trade_results = asyncio.run(async_execute_agent_trades(interface, agent_accounts, liquidate=False))
                 for trade_result in trade_results:
                     assert trade_result.status == TradeStatus.SUCCESS, "Trade failed"

@@ -18,7 +18,7 @@ from web3 import HTTPProvider
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base import MarketType, Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 
@@ -166,7 +166,7 @@ class TestMultiTradePerBlock:
             # Using default abi dir
         )
 
-        run_agents(
+        setup_and_run_agent_loop(
             env_config,
             agent_config,
             account_key_config,

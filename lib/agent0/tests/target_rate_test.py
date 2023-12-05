@@ -16,7 +16,7 @@ from web3 import HTTPProvider
 
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies.zoo import Zoo
 
 
@@ -64,7 +64,7 @@ def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, delta: f
             policy_config=Zoo.deterministic.Config(trade_list=[trade_tuple]),
         ),
     ]
-    run_agents(
+    setup_and_run_agent_loop(
         env_config,
         agent_config,
         account_key_config=build_account_key_config_from_agent_config(agent_config, random_seed=1),
@@ -88,7 +88,7 @@ def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, delta: f
             ),
         ),
     ]
-    run_agents(
+    setup_and_run_agent_loop(
         env_config,
         agent_config,
         account_key_config=build_account_key_config_from_agent_config(agent_config, random_seed=2),
