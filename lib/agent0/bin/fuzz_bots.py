@@ -23,7 +23,7 @@ ENV_FILE = "fuzz_test_bots.account.env"
 # Username binding of bots
 USERNAME = "test_bots"
 # The amount of base token each bot receives
-BASE_BUDGET_PER_BOT = FixedPoint(100)
+BASE_BUDGET_PER_BOT = FixedPoint(1000)
 ETH_BUDGET_PER_BOT = FixedPoint(10)
 # The slippage tolerance for trades
 SLIPPAGE_TOLERANCE = FixedPoint("0.0001")  # 0.1% slippage
