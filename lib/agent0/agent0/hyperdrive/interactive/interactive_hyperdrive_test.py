@@ -144,19 +144,20 @@ class TestInteractiveHyperdrive:
         )
         assert chain_base_balance == FixedPoint(111111)
         # There was a little bit of gas spent to approve, so we don't do a direct comparison here
-        assert (FixedPoint(111) - chain_eth_balance) < FixedPoint("0.001")
+        assert (FixedPoint(111) - chain_eth_balance) < FixedPoint("0.0001")
         (chain_eth_balance, chain_base_balance) = interactive_hyperdrive_2.hyperdrive_interface.get_eth_base_balances(
             hyperdrive_agent1.agent
         )
         assert chain_base_balance == FixedPoint(222222)
         # There was a little bit of gas spent to approve, so we don't do a direct comparison here
-        assert (FixedPoint(222) - chain_eth_balance) < FixedPoint("0.001")
+        assert (FixedPoint(222) - chain_eth_balance) < FixedPoint("0.0001")
         (chain_eth_balance, chain_base_balance) = interactive_hyperdrive.hyperdrive_interface.get_eth_base_balances(
             hyperdrive_agent2.agent
         )
         assert chain_base_balance == FixedPoint(333333)
         # There was a little bit of gas spent to approve, so we don't do a direct comparison here
-        assert (FixedPoint(333) - chain_eth_balance) < FixedPoint("0.001")
+        # Since we initialized without parameters, and the default is 10 eth. We then added 333 eth.
+        assert (FixedPoint(343) - chain_eth_balance) < FixedPoint("0.0001")
 
         # Test trades
         # Add liquidity

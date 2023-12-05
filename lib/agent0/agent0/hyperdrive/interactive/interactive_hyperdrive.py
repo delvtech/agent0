@@ -575,7 +575,7 @@ class InteractiveHyperdrive:
             self._add_funds(agent, base, eth)
 
         # establish max approval for the hyperdrive contract
-        asyncio.gather(
+        asyncio.run(
             set_max_approval(
                 [agent],
                 self.hyperdrive_interface.web3,
@@ -605,7 +605,7 @@ class InteractiveHyperdrive:
             _ = smart_contract_transact(
                 self.hyperdrive_interface.web3,
                 self.hyperdrive_interface.base_token_contract,
-                agent,
+                self._deployed_hyperdrive.deploy_account,
                 "mint(address,uint256)",
                 agent.checksum_address,
                 base.scaled_value,
