@@ -107,6 +107,10 @@ def _create_checkpoint(
     interface.hyperdrive_contract.functions.checkpoint(checkpoint_time).call(block_identifier=block_timestamp)
 
 
+def _set_rate(interface: HyperdriveInterface, new_rate: FixedPoint) -> None:
+    interface.yield_contract.functions.setRate(new_rate.scaled_value).transact()
+
+
 async def _async_open_long(
     interface: HyperdriveInterface,
     agent: LocalAccount,

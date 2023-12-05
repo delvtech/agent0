@@ -339,14 +339,6 @@ class TestInteractiveHyperdrive:
         config = InteractiveHyperdrive.Config(initial_variable_rate=FixedPoint("0.05"))
         interactive_hyperdrive = InteractiveHyperdrive(chain, config)
 
-        ## Make a few trades to change the state
-        ## Generate funded trading agents from the interactive object
-        ## Make trades to set the initial state
-        # hyperdrive_agent = interactive_hyperdrive.init_agent(base=FixedPoint(111111), eth=FixedPoint(111), name="alice")
-        # hyperdrive_agent.open_long(base=FixedPoint(2222))
-        # hyperdrive_agent.open_short(bonds=FixedPoint(3333))
-        # hyperdrive_agent.add_liquidity(base=FixedPoint(4444))
-
         # Set the variable rate
         # This mines a block since it's a transaction
         interactive_hyperdrive.set_variable_rate(FixedPoint("0.10"))

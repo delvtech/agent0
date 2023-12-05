@@ -243,13 +243,7 @@ class InteractiveHyperdrive:
         variable_rate: FixedPoint
             The new variable rate for the pool.
         """
-        _ = smart_contract_transact(
-            self.hyperdrive_interface.web3,
-            self.hyperdrive_interface.yield_contract,
-            self._deployed_hyperdrive.deploy_account,
-            "setRate(uint256)",
-            variable_rate.scaled_value,
-        )
+        self.hyperdrive_interface.set_rate(variable_rate)
         # Since this is a contract call, we need to run the data pipeline
         self._run_data_pipeline()
 
