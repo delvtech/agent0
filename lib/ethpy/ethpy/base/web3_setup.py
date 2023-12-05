@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from eth_typing import URI
 from web3 import Web3
-from web3.middleware import geth_poa
+
+# web3.middleware imports latest_block_based_cache_middleware from a private variable in
+# middleware.cache.  web3py docs say it is ready to use.
+from web3.middleware import geth_poa, latest_block_based_cache_middleware  # type: ignore
 from web3.types import RPCEndpoint
 
 
@@ -38,6 +41,7 @@ def initialize_web3_with_http_provider(
     provider = Web3.HTTPProvider(ethereum_node, request_kwargs)
     web3 = Web3(provider)
     web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
+    web3.middleware_onion.add(latest_block_based_cache_middleware)
     if reset_provider:
         # TODO: Check that the user is running on anvil, raise error if not
         _ = web3.provider.make_request(method=RPCEndpoint("anvil_reset"), params=[])
