@@ -130,7 +130,6 @@ def check_result(
 
                 # Crash reporting
                 if trade_result.is_slippage:
-                    print(f"{trade_result.is_slippage=}")
                     log_hyperdrive_crash_report(
                         trade_result, logging.WARNING, crash_report_to_file=False, log_to_rollbar=False
                     )
@@ -140,7 +139,6 @@ def check_result(
                     if crash_report_to_file:
                         trade_result.anvil_state = get_anvil_state_dump(interface.web3)
                     # Defaults to CRITICAL
-                    print(f"check_result {log_to_rollbar=}")
                     log_hyperdrive_crash_report(
                         trade_result, crash_report_to_file=crash_report_to_file, log_to_rollbar=log_to_rollbar
                     )
