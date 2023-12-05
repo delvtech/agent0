@@ -8,7 +8,7 @@ from fixedpointmath import FixedPoint
 
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
+from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import Zoo
 
 # %%
@@ -88,4 +88,4 @@ agent_config: list[AgentConfig] = [
 account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.global_random_seed)
 
 # Run agents
-run_agents(env_config, agent_config, account_key_config, liquidate=LIQUIDATE)
+setup_and_run_agent_loop(env_config, agent_config, account_key_config, liquidate=LIQUIDATE)
