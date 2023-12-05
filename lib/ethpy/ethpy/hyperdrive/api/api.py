@@ -398,10 +398,10 @@ class HyperdriveInterface:
 
         Arguments
         ---------
-        new_rate: FixedPoint
-            The new variable rate for the yield source.
         sender: LocalAccount
             The sender account that is executing and signing the trade transaction.
+        new_rate: FixedPoint
+            The new variable rate for the yield source.
         """
         _set_rate(self, sender, new_rate)
 
