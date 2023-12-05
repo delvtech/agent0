@@ -61,5 +61,9 @@ random_trade_events
 chain.load_snapshot()
 
 # %%
+# Set the underlying yield variable rate
+interactive_hyperdrive.set_variable_rate(FixedPoint("0.10"))
+
+# %%
 # cleanup resources
 chain.cleanup()
