@@ -2,6 +2,7 @@
 import datetime
 import logging
 import os
+from decimal import Decimal
 from pathlib import Path
 from typing import Iterator
 
@@ -330,3 +331,20 @@ class TestInteractiveHyperdrive:
         assert check_db_wallet.equals(init_db_wallet)
         assert check_pool_info_on_chain == init_pool_info_on_chain
         assert check_pool_state_on_db.equals(init_pool_state_on_db)
+
+    @pytest.mark.anvil
+    def test_set_variable_rate(self, chain: LocalChain):
+        """Tests interactive hyperdrive end to end"""
+        # We need the underlying hyperdrive interface here to test time
+        config = InteractiveHyperdrive.Config(initial_variable_rate=FixedPoint("0.05"))
+        interactive_hyperdrive = InteractiveHyperdrive(chain, config)
+
+        # Set the variable rate
+        # This mines a block since it's a transaction
+        interactive_hyperdrive.set_variable_rate(FixedPoint("0.10"))
+
+        # Ensure variable rate has changed
+        pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
+
+        assert pool_state_df["variable_rate"].iloc[0] == Decimal("0.05")
+        assert pool_state_df["variable_rate"].iloc[-1] == Decimal("0.10")

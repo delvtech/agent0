@@ -235,6 +235,18 @@ class InteractiveHyperdrive:
             max_fees,
         )
 
+    def set_variable_rate(self, variable_rate: FixedPoint) -> None:
+        """Sets the underlying variable rate for this pool.
+
+        Arguments
+        ---------
+        variable_rate: FixedPoint
+            The new variable rate for the pool.
+        """
+        self.hyperdrive_interface.set_rate(variable_rate, self._deployed_hyperdrive.deploy_account)
+        # Since this is a contract call, we need to run the data pipeline
+        self._run_data_pipeline()
+
     def init_agent(
         self,
         base: FixedPoint | None = None,
@@ -618,6 +630,9 @@ class InteractiveHyperdrive:
                 self._initial_funds[agent.address] += base
             else:
                 self._initial_funds[agent.address] = base
+
+        # Since this is a contract call, we need to run the data pipeline
+        self._run_data_pipeline()
 
         # TODO do we want to report a status here?
 
