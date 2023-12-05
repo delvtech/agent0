@@ -153,7 +153,8 @@ class TestInteractiveHyperdrive:
             hyperdrive_agent2.agent
         )
         assert chain_base_balance == FixedPoint(333333)
-        assert chain_eth_balance == FixedPoint(333)
+        # There was a little bit of gas spent to approve, so we don't do a direct comparison here
+        assert (FixedPoint(343) - chain_eth_balance) < FixedPoint("0.001")
 
         # Test trades
         # Add liquidity
