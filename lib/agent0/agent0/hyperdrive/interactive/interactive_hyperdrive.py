@@ -605,7 +605,7 @@ class InteractiveHyperdrive:
             _ = smart_contract_transact(
                 self.hyperdrive_interface.web3,
                 self.hyperdrive_interface.base_token_contract,
-                agent,
+                self._deployed_hyperdrive.deploy_account,
                 "mint(address,uint256)",
                 agent.checksum_address,
                 base.scaled_value,
