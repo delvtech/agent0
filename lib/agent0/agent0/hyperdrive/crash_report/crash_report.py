@@ -241,11 +241,6 @@ def log_hyperdrive_crash_report(
 
     logging.log(log_level, logging_crash_report)
 
-    if log_to_rollbar:
-        log_rollbar_exception(trade_result.exception, log_level, json.loads(logging_crash_report))
-        if trade_result.orig_exception:
-            log_rollbar_exception(trade_result.orig_exception, log_level, json.loads(logging_crash_report))
-
     # We print out a machine readable crash report
     if crash_report_to_file:
         # We add the machine readable version of the crash to the file
@@ -264,6 +259,18 @@ def log_hyperdrive_crash_report(
             os.makedirs(crash_report_dir)
         with open(crash_report_file, "w", encoding="utf-8") as file:
             json.dump(dump_obj, file, indent=2, cls=ExtendedJSONEncoder)
+
+    if log_to_rollbar:
+        dump_obj["raw_transaction"] = trade_result.raw_transaction  # type: ignore
+        dump_obj["raw_pool_config"] = trade_result.raw_pool_config  # type: ignore
+        dump_obj["raw_pool_info"] = trade_result.raw_pool_info  # type: ignore
+        dump_obj["raw_checkpoint"] = trade_result.raw_checkpoint  # type: ignore
+        dump_obj["anvil_dump_state"] = trade_result.anvil_state  # type: ignore
+
+        logging_crash_report = json.loads(json.dumps(dump_obj, indent=2, cls=ExtendedJSONEncoder))
+        log_rollbar_exception(trade_result.exception, log_level, json.loads(logging_crash_report))
+        if trade_result.orig_exception:
+            log_rollbar_exception(trade_result.orig_exception, log_level, logging_crash_report)
 
 
 def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
