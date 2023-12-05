@@ -156,7 +156,7 @@ class TestInteractiveHyperdrive:
         )
         assert chain_base_balance == FixedPoint(333333)
         # There was a little bit of gas spent to approve, so we don't do a direct comparison here
-        # Since we initialized without parameters, default is 10 eth. We then added 333 eth.
+        # Since we initialized without parameters, and the default is 10 eth. We then added 333 eth.
         assert (FixedPoint(343) - chain_eth_balance) < FixedPoint("0.0001")
 
         # Test trades
