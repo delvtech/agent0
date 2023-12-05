@@ -298,7 +298,7 @@ class InteractiveHyperdrive:
         # pool config for this object.
         return get_pool_config(self.db_session, coerce_float=coerce_float).iloc[0]
 
-    def get_pool_info(self, coerce_float: bool = True) -> pd.DataFrame:
+    def get_pool_state(self, coerce_float: bool = True) -> pd.DataFrame:
         """Get the pool info (and additional info) per block and returns as a pandas dataframe.
 
         Arguments

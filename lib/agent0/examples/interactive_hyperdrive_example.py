@@ -92,7 +92,7 @@ withdraw_shares_event = hyperdrive_agent2.redeem_withdraw_share(shares=hyperdriv
 # %%
 # Get data from database under the hood
 pool_config = interactive_hyperdrive.get_pool_config()
-pool_info = interactive_hyperdrive.get_pool_info()
+pool_state = interactive_hyperdrive.get_pool_state()
 # TODO checkpoint info doesn't play nice with advancing time.
 # This is because we don't create checkpoints when we advance time.
 checkpoint_info = interactive_hyperdrive.get_checkpoint_info()
@@ -103,7 +103,7 @@ wallet_positions = interactive_hyperdrive.get_wallet_positions()
 total_wallet_pnl_over_time = interactive_hyperdrive.get_total_wallet_pnl_over_time()
 
 # %%
-print(pool_info)
+print(pool_state)
 # %%
 ticker
 # %%
@@ -115,7 +115,7 @@ total_wallet_pnl_over_time
 
 # Plot pretty plots
 # TODO these should be in a notebook for plotting
-pool_info.plot(x="block_number", y="longs_outstanding", kind="line")
+pool_state.plot(x="block_number", y="longs_outstanding", kind="line")
 # Change wallet_address to be columns for plotting
 total_wallet_pnl_over_time.pivot(index="block_number", columns="username", values="pnl").plot()
 
