@@ -2,9 +2,8 @@
 # %%
 from __future__ import annotations
 
-from typing import cast
-
 import numpy as np
+import pandas as pd
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.interactive import Chain, InteractiveHyperdrive, LocalChain
@@ -40,7 +39,7 @@ interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 
 # %%
 # Generate a list of agents that execute random trades
-available_actions = [HyperdriveActionType.OPEN_LONG, HyperdriveActionType.OPEN_SHORT]
+available_actions = np.array([HyperdriveActionType.OPEN_LONG, HyperdriveActionType.OPEN_SHORT])
 min_trade = interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount
 trade_list: list[tuple[InteractiveHyperdriveAgent, HyperdriveActionType, FixedPoint]] = []
 for agent_index in range(NUM_TRADES):  # 1 agent per trade
@@ -48,27 +47,32 @@ for agent_index in range(NUM_TRADES):  # 1 agent per trade
         scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value * 10, high=int(1e23))))
     )  # Give a little extra money to account for fees
     agent = interactive_hyperdrive.init_agent(base=budget, eth=FixedPoint(100))
-    trade_type = cast(HyperdriveActionType, rng.choice([item.name for item in available_actions], size=1))
+    trade_type = rng.choice(available_actions, size=1)[0]
     trade_amount_base = FixedPoint(
-        rng.uniform(
-            low=min_trade.scaled_value,
-            high=int(budget.scaled_value / 2),  # Don't trade all of their money, to make sure they have enough for fees
+        scaled_value=int(
+            rng.uniform(
+                low=min_trade.scaled_value,
+                high=int(
+                    budget.scaled_value / 2
+                ),  # Don't trade all of their money, to make sure they have enough for fees
+            )
         )
     )
     trade_list.append((agent, trade_type, trade_amount_base))
 
 # %%
-# Get reserve levels
-pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-start_share_reserves = pool_state.pool_info.share_reserves
-start_shorts_outstanding = pool_state.pool_info.shorts_outstanding
-start_withdraw_pool_proceeds = pool_state.pool_info.withdrawal_shares_proceeds
-start_minimum_share_reserves = pool_state.pool_config.minimum_share_reserves
-start_share_price = pool_state.pool_info.share_price
-start_global_exposure = pool_state.pool_info.long_exposure
-start_hyperdrive_balance = pool_state.hyperdrive_base_balance
-start_gov_fees_accrued = pool_state.gov_fees_accrued
-start_total_shares = pool_state.vault_shares
+# List of columns in pool info to check between the initial pool info and the latest pool info.
+check_columns = [
+    "share_reserves",
+    "shorts_outstanding",
+    "withdrawal_shares_proceeds",
+    "share_price",
+    "long_exposure",
+    # Added in addition to original script
+    "bond_reserves",
+    "lp_total_supply",
+    "longs_outstanding",
+]
 
 
 # %%
@@ -86,13 +90,18 @@ for trade in trade_list:
     trade_events.append((agent, trade_event))
 
 # %%
-# TODO:
 # snapshot the chain, so we can load the snapshot & close in different orders
+chain.save_snapshot()
+
+check_data: dict | None = None
+
 
 # %%
-for _ in range(NUM_PATHS_CHECKED):
+for iteration in range(NUM_PATHS_CHECKED):
+    print(f"{iteration=}")
     # TODO:
     # Load the snapshot
+    chain.load_snapshot()
 
     # Randomly grab some trades & close them one at a time
     # TODO: Add remove liquidity; withdraw shares would have to happen after & outside this loop
@@ -104,26 +113,39 @@ for _ in range(NUM_PATHS_CHECKED):
             agent.close_short(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
 
     # Check the reserve amounts; they should be unchanged now that all of the trades are closed
-    pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-    assert (
-        start_share_reserves == pool_state.pool_info.share_reserves
-    ), f"{start_share_reserves=} != {pool_state.pool_info.share_reserves}"
-    assert (
-        start_shorts_outstanding == pool_state.pool_info.shorts_outstanding
-    ), f"{start_shorts_outstanding=} != {pool_state.pool_info.shorts_outstanding}"
-    assert (
-        start_withdraw_pool_proceeds == pool_state.pool_info.withdrawal_shares_proceeds
-    ), f"{start_withdraw_pool_proceeds=} != {pool_state.pool_info.withdrawal_shares_proceeds}"
-    assert (
-        start_share_price == pool_state.pool_info.share_price
-    ), f"{start_share_price=} != {pool_state.pool_info.share_price}"
-    assert (
-        start_global_exposure == pool_state.pool_info.long_exposure
-    ), f"{start_global_exposure=} != {pool_state.pool_info.long_exposure}"
-    assert (
-        start_hyperdrive_balance == pool_state.hyperdrive_base_balance
-    ), f"{start_hyperdrive_balance=} != {pool_state.hyperdrive_base_balance}"
-    assert (
-        start_gov_fees_accrued == pool_state.gov_fees_accrued
-    ), f"{start_gov_fees_accrued=} != {pool_state.gov_fees_accrued}"
-    assert start_total_shares == pool_state.vault_shares, f"{start_total_shares=} != {pool_state.vault_shares}"
+
+    pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
+
+    # On first run, save final state
+    if check_data is None:
+        check_data = {}
+        check_data["check_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
+        # TODO add these to pool info
+        pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
+        check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
+        check_data["gov_fees_accrued"] = pool_state.gov_fees_accrued
+        check_data["vault_shares"] = pool_state.vault_shares
+
+        # Sanity check on static pool config
+        check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
+
+    # On subsequent run, check against the saved final state
+    else:
+        # This checks that the subset of columns in initial pool info and the latest pool info are identical.
+        pd.testing.assert_series_equal(
+            check_data["check_pool_state_df"], pool_state_df[check_columns].iloc[-1], check_names=False
+        )
+
+        pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
+        assert (
+            check_data["hyperdrive_base_balance"] == pool_state.hyperdrive_base_balance
+        ), f"{check_data['hyperdrive_base_balance']=} != {pool_state.hyperdrive_base_balance}"
+        assert (
+            check_data["gov_fees_accrued"] == pool_state.gov_fees_accrued
+        ), f"{check_data['gov_fees_accrued']=} != {pool_state.gov_fees_accrued}"
+        assert (
+            check_data["vault_shares"] == pool_state.vault_shares
+        ), f"{check_data['vault_shares']=} != {pool_state.vault_shares}"
+        assert (
+            check_data["minimum_share_reserves"] == pool_state.pool_config.minimum_share_reserves
+        ), f"{check_data['minimum_share_reserves']=} != {pool_state.pool_config.minimum_share_reserves}"
