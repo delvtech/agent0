@@ -52,6 +52,7 @@ def setup_and_run_agent_loop(
     contract_addresses: HyperdriveAddresses | None = None,
     load_wallet_state: bool = True,
     liquidate: bool = False,
+    minimum_avg_agent_base: FixedPoint | None = None,
 ) -> None:
     """Entrypoint to run agent trades in a loop.
 
@@ -75,6 +76,9 @@ def setup_and_run_agent_loop(
     liquidate: bool, optional
         If set, will ignore all policy settings and liquidate all open positions.
         Defaults to False.
+    minimum_avg_agent_base: FixedPoint, optional
+        If set, then the script will fund the agents with their original budgets
+        whenever the average balance across wallets is less than this amount.
     """
     # Set sane logging defaults to avoid spam from dependencies
     logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -91,75 +95,15 @@ def setup_and_run_agent_loop(
     )
     # Run the agent trades in a while True loop
     run_agents(
-        environment_config, eth_config, account_key_config, contract_addresses, interface, agent_accounts, liquidate
+        environment_config,
+        eth_config,
+        account_key_config,
+        contract_addresses,
+        interface,
+        agent_accounts,
+        liquidate,
+        minimum_avg_agent_base,
     )
-
-
-def run_agents(
-    environment_config: EnvironmentConfig,
-    eth_config: EthConfig,
-    account_key_config: AccountKeyConfig,
-    contract_addresses: HyperdriveAddresses,
-    interface: HyperdriveInterface,
-    agent_accounts: list[HyperdriveAgent],
-    liquidate: bool = False,
-    minimum_avg_agent_base: FixedPoint | None = None,
-):
-    """Run agent trades in a forever (while True) loop.
-
-    Arguments
-    ---------
-    environment_config: EnvironmentConfig
-        The agent's environment configuration.
-    eth_config: EthConfig
-        Configuration for URIs to the rpc and artifacts.
-    account_key_config: AccountKeyConfig
-        Dataclass containing configuration options for the agent account, including keys and budgets.
-    contract_addresses: HyperdriveAddresses | None, optional
-        Configuration for the URIs to the Hyperdrive contract addresses.
-        If not set, will look for the addresses in eth_config.
-    interface: HyperdriveInterface
-        An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
-    agent_accounts: list[HyperdriveAgent]
-        A list of HyperdriveAgent that are conducting the trades
-    liquidate: bool, optional
-        If set, will ignore all policy settings and liquidate all open positions.
-        Defaults to False.
-    minimum_avg_agent_base: FixedPoint, optional
-        If set, then the script will fund the agents with their original budgets
-        whenever the average balance across wallets is less than this amount.
-    """
-    # Check if all agents done trading
-    # If so, exit cleanly
-    # The done trading state variable gets set internally
-    last_executed_block = BlockNumber(0)
-    poll_latency = START_LATENCY + random.uniform(0, 1)
-    while True:
-        if all(agent.done_trading for agent in agent_accounts):
-            break
-        new_executed_block = trade_if_new_block(
-            interface,
-            agent_accounts,
-            environment_config.halt_on_errors,
-            environment_config.halt_on_slippage,
-            environment_config.crash_report_to_file,
-            last_executed_block,
-            liquidate,
-        )
-        if minimum_avg_agent_base is not None:
-            if (
-                sum(agent.wallet.balance.amount for agent in agent_accounts) / FixedPoint(len(agent_accounts))
-                < minimum_avg_agent_base
-            ):
-                _ = async_fund_agents_with_fake_user(eth_config, account_key_config, contract_addresses, interface)
-        if new_executed_block == last_executed_block:
-            # wait
-            time.sleep(poll_latency)
-            poll_latency *= BACKOFF
-            poll_latency += random.uniform(0, 1)
-        else:
-            # Reset backoff
-            poll_latency = START_LATENCY + random.uniform(0, 1)
 
 
 def setup_agents(
@@ -263,6 +207,73 @@ def setup_agents(
     if liquidate:
         environment_config.halt_on_errors = False
     return interface, agent_accounts, eth_config, contract_addresses
+
+
+def run_agents(
+    environment_config: EnvironmentConfig,
+    eth_config: EthConfig,
+    account_key_config: AccountKeyConfig,
+    contract_addresses: HyperdriveAddresses,
+    interface: HyperdriveInterface,
+    agent_accounts: list[HyperdriveAgent],
+    liquidate: bool = False,
+    minimum_avg_agent_base: FixedPoint | None = None,
+):
+    """Run agent trades in a forever (while True) loop.
+
+    Arguments
+    ---------
+    environment_config: EnvironmentConfig
+        The agent's environment configuration.
+    eth_config: EthConfig
+        Configuration for URIs to the rpc and artifacts.
+    account_key_config: AccountKeyConfig
+        Dataclass containing configuration options for the agent account, including keys and budgets.
+    contract_addresses: HyperdriveAddresses | None, optional
+        Configuration for the URIs to the Hyperdrive contract addresses.
+        If not set, will look for the addresses in eth_config.
+    interface: HyperdriveInterface
+        An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
+    agent_accounts: list[HyperdriveAgent]
+        A list of HyperdriveAgent that are conducting the trades
+    liquidate: bool, optional
+        If set, will ignore all policy settings and liquidate all open positions.
+        Defaults to False.
+    minimum_avg_agent_base: FixedPoint, optional
+        If set, then the script will fund the agents with their original budgets
+        whenever the average balance across wallets is less than this amount.
+    """
+    # Check if all agents done trading
+    # If so, exit cleanly
+    # The done trading state variable gets set internally
+    last_executed_block = BlockNumber(0)
+    poll_latency = START_LATENCY + random.uniform(0, 1)
+    while True:
+        if all(agent.done_trading for agent in agent_accounts):
+            break
+        new_executed_block = trade_if_new_block(
+            interface,
+            agent_accounts,
+            environment_config.halt_on_errors,
+            environment_config.halt_on_slippage,
+            environment_config.crash_report_to_file,
+            last_executed_block,
+            liquidate,
+        )
+        if minimum_avg_agent_base is not None:
+            if (
+                sum(agent.wallet.balance.amount for agent in agent_accounts) / FixedPoint(len(agent_accounts))
+                < minimum_avg_agent_base
+            ):
+                _ = async_fund_agents_with_fake_user(eth_config, account_key_config, contract_addresses, interface)
+        if new_executed_block == last_executed_block:
+            # wait
+            time.sleep(poll_latency)
+            poll_latency *= BACKOFF
+            poll_latency += random.uniform(0, 1)
+        else:
+            # Reset backoff
+            poll_latency = START_LATENCY + random.uniform(0, 1)
 
 
 def async_fund_agents_with_fake_user(
