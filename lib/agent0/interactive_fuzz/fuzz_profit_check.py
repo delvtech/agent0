@@ -18,6 +18,7 @@ interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 
 # %%
 # Get a random trade amount
+# TODO generate a random seed and store the seed in fuzz test report when it fails
 rng = np.random.default_rng()  # No seed, we want this to be random every time it is executed
 trade_amount = FixedPoint(
     scaled_value=int(
