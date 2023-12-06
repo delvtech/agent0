@@ -6,7 +6,6 @@ from enum import Enum
 
 from fixedpointmath import FixedPoint
 
-from agent0.base import freezable
 from agent0.base.state import BaseMarketAction
 
 from .hyperdrive_wallet import HyperdriveWallet
@@ -28,7 +27,6 @@ class HyperdriveActionType(Enum):
     REDEEM_WITHDRAW_SHARE = "redeem_withdraw_share"
 
 
-@freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class HyperdriveMarketAction(BaseMarketAction[HyperdriveActionType, HyperdriveWallet]):
     r"""Market action specification."""
