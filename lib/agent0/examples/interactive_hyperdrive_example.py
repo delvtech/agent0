@@ -46,7 +46,7 @@ hyperdrive_agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
 # under the hood to allow for error handling and data management
 # Return values here mirror the various events emitted from these contract calls
 open_long_event_1 = hyperdrive_agent0.open_long(base=FixedPoint(11111))
-open_long_event_1
+open_long_event_1  # pyright: ignore
 # %%
 
 # Allow for creating checkpoints on the fly
@@ -105,11 +105,11 @@ total_wallet_pnl_over_time = interactive_hyperdrive.get_total_wallet_pnl_over_ti
 # %%
 print(pool_state)
 # %%
-ticker
+ticker  # pyright: ignore
 # %%
-wallet_positions
+wallet_positions  # pyright: ignore
 # %%
-total_wallet_pnl_over_time
+total_wallet_pnl_over_time  # pyright: ignore
 # %%
 
 
