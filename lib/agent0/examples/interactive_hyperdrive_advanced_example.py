@@ -1,5 +1,5 @@
 """Example script for using interactive hyperdrive."""
-# pyright: ignore reportUnusedExpression
+# pylint: disable=pointless-statement
 # %%
 # Variables by themselves print out dataframes in a nice format in interactive mode
 
