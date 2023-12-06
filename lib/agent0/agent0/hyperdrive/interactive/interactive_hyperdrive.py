@@ -206,7 +206,7 @@ class InteractiveHyperdrive:
         """We use a combination of the chain's rpc uri and the hyperdrive contract address as the hash."""
         return hash((self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address))
 
-    def __eq__(self, other: InteractiveHyperdrive):
+    def __eq__(self, other):
         return (self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address) == (
             other.chain.rpc_uri,
             other._deployed_hyperdrive.hyperdrive_contract.address,
