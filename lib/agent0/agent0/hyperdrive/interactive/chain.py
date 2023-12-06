@@ -165,7 +165,7 @@ class Chain:
             # +1 due to the potential off by one error
             end_checkpoint_time = timestamp + time_delta + 1
 
-            checkpoint_times = [v for v in range(start_checkpoint_time, end_checkpoint_time, checkpoint_duration)]
+            checkpoint_times = list(range(start_checkpoint_time, end_checkpoint_time, checkpoint_duration))
 
             # Handle the first checkpoint, if it hasn't been created, make the checkpoint
             for pool in self._deployed_hyperdrive_pools:
