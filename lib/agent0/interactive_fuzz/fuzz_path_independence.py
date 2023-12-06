@@ -109,7 +109,6 @@ check_columns = [
 # Close the trades randomly & verify that the final state is unchanged
 for iteration in range(NUM_PATHS_CHECKED):
     print(f"{iteration=}")
-    # TODO:
     # Load the snapshot
     chain.load_snapshot()
 
@@ -128,7 +127,6 @@ for iteration in range(NUM_PATHS_CHECKED):
     if check_data is None:
         check_data = {}
         check_data["check_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
-        # TODO add these to pool info
         pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
         effective_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state)
         check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance

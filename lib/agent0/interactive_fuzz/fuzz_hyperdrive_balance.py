@@ -22,8 +22,8 @@ NUM_TRADES = 3
 # Parameters for local chain initialization, defines defaults in constructor
 chain_config = LocalChain.Config()
 chain = LocalChain(config=chain_config)
-# TODO generate a random seed and store the seed in fuzz test report when it fails
-rng = np.random.default_rng()  # No seed, we want this to be random every time it is executed
+random_seed = np.random.randint(low=1, high=99999999)  # No seed, we want this to be random every time it is executed
+rng = np.random.default_rng(random_seed)
 
 # %%
 # Parameters for pool initialization.
@@ -75,7 +75,10 @@ for trade in trade_list:
     trade_events.append((agent, trade_event))
 
 # %%
-# TODO: advance some time
+# Advance some time
+chain.advance_time(
+    rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration - 1)
+)
 
 # %%
 # Close the trades
@@ -89,4 +92,6 @@ for agent, trade in trade_events:
 pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
 assert pool_state.vault_shares == initial_vault_shares, f"{pool_state.vault_shares=} != {initial_vault_shares=}"
 
-# TODO: assert share_reserves >= minimum_share_reserves
+assert (
+    pool_state.pool_info.share_reserves >= pool_state.pool_config.minimum_share_reserves
+), f"{pool_state.pool_info.share_reserves=} != {pool_state.pool_config.minimum_share_reserves=}"
