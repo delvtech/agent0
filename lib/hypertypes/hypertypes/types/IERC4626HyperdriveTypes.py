@@ -17,12 +17,9 @@ https://github.com/delvtech/pypechain """
 # pylint: disable=no-else-return
 from __future__ import annotations
 
-
 from dataclasses import dataclass
 
-from web3.types import ABIEvent
-
-from web3.types import ABIEventParams
+from web3.types import ABIEvent, ABIEventParams
 
 
 @dataclass

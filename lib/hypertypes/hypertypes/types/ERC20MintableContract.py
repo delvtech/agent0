@@ -20,20 +20,16 @@ https://github.com/delvtech/pypechain"""
 from __future__ import annotations
 
 from dataclasses import fields, is_dataclass
-from typing import Any, Iterable, Tuple, Type, TypeVar, Sequence, cast, overload
+from typing import Any, Iterable, Sequence, Tuple, Type, TypeVar, cast, overload
 
 from eth_typing import ChecksumAddress, HexStr
-from eth_utils.decorators import combomethod
 from hexbytes import HexBytes
 from typing_extensions import Self
 from web3 import Web3
-from web3.contract.contract import Contract, ContractFunction, ContractFunctions
-from web3.contract.contract import ContractEvent, ContractEvents
-from web3.exceptions import FallbackNotFound
-from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
-from web3.types import EventData
 from web3._utils.filters import LogFilter
-
+from web3.contract.contract import Contract, ContractEvent, ContractEvents, ContractFunction, ContractFunctions
+from web3.exceptions import FallbackNotFound
+from web3.types import ABI, BlockIdentifier, CallOverride, EventData, TxParams
 
 T = TypeVar("T")
 
@@ -78,6 +74,22 @@ def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
     return cls(**field_values)
 
 
+def dataclass_to_tuple(instance: Any) -> Any:
+    """Convert a dataclass instance to a tuple, handling nested dataclasses.
+    If the input is not a dataclass, return the original value.
+    """
+    if not is_dataclass(instance):
+        return instance
+
+    def convert_value(value: Any) -> Any:
+        """Convert nested dataclasses to tuples recursively, or return the original value."""
+        if is_dataclass(value):
+            return dataclass_to_tuple(value)
+        return value
+
+    return tuple(convert_value(getattr(instance, field.name)) for field in fields(instance))
+
+
 def rename_returned_types(return_types, raw_values) -> Any:
     """_summary_
 
@@ -114,7 +126,7 @@ def rename_returned_types(return_types, raw_values) -> Any:
 class ERC20MintableDOMAIN_SEPARATORContractFunction(ContractFunction):
     """ContractFunction for the DOMAIN_SEPARATOR method."""
 
-    def __call__(self) -> ERC20MintableDOMAIN_SEPARATORContractFunction:
+    def __call__(self) -> ERC20MintableDOMAIN_SEPARATORContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -133,16 +145,16 @@ class ERC20MintableDOMAIN_SEPARATORContractFunction(ContractFunction):
         return_types = bytes
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bytes, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableAllowanceContractFunction(ContractFunction):
     """ContractFunction for the allowance method."""
 
-    def __call__(self, arg1: str, arg2: str) -> ERC20MintableAllowanceContractFunction:
-        clone = super().__call__(arg1, arg2)
+    def __call__(self, arg1: str, arg2: str) -> ERC20MintableAllowanceContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1), dataclass_to_tuple(arg2))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -160,16 +172,16 @@ class ERC20MintableAllowanceContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableApproveContractFunction(ContractFunction):
     """ContractFunction for the approve method."""
 
-    def __call__(self, spender: str, amount: int) -> ERC20MintableApproveContractFunction:
-        clone = super().__call__(spender, amount)
+    def __call__(self, spender: str, amount: int) -> ERC20MintableApproveContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(spender), dataclass_to_tuple(amount))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -187,15 +199,15 @@ class ERC20MintableApproveContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableAuthorityContractFunction(ContractFunction):
     """ContractFunction for the authority method."""
 
-    def __call__(self) -> ERC20MintableAuthorityContractFunction:
+    def __call__(self) -> ERC20MintableAuthorityContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -214,16 +226,16 @@ class ERC20MintableAuthorityContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableBalanceOfContractFunction(ContractFunction):
     """ContractFunction for the balanceOf method."""
 
-    def __call__(self, arg1: str) -> ERC20MintableBalanceOfContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: str) -> ERC20MintableBalanceOfContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -241,8 +253,8 @@ class ERC20MintableBalanceOfContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
@@ -250,7 +262,7 @@ class ERC20MintableBurnContractFunction0(ContractFunction):
     """ContractFunction for the burn method."""
 
     def __call__(self, amount: int) -> ERC20MintableBurnContractFunction:  # type: ignore
-        super().__call__(amount)
+        super().__call__()  # type: ignore
         return cast(ERC20MintableBurnContractFunction, self)
 
     def call(
@@ -271,7 +283,7 @@ class ERC20MintableBurnContractFunction1(ContractFunction):
     """ContractFunction for the burn method."""
 
     def __call__(self, destination: str, amount: int) -> ERC20MintableBurnContractFunction:  # type: ignore
-        super().__call__(destination, amount)
+        super().__call__(dataclass_to_tuple(destination), dataclass_to_tuple(amount))  # type: ignore
         return cast(ERC20MintableBurnContractFunction, self)
 
     def call(
@@ -304,7 +316,7 @@ class ERC20MintableBurnContractFunction(ContractFunction):
         ...
 
     def __call__(self, *args) -> ERC20MintableBurnContractFunction:  # type: ignore
-        clone = super().__call__(*args)
+        clone = super().__call__(*(dataclass_to_tuple(arg) for arg in args))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self  # type: ignore
@@ -313,8 +325,8 @@ class ERC20MintableBurnContractFunction(ContractFunction):
 class ERC20MintableCanCallContractFunction(ContractFunction):
     """ContractFunction for the canCall method."""
 
-    def __call__(self, user: str, target: str, functionSig: bytes) -> ERC20MintableCanCallContractFunction:
-        clone = super().__call__(user, target, functionSig)
+    def __call__(self, user: str, target: str, functionSig: bytes) -> ERC20MintableCanCallContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(user), dataclass_to_tuple(target), dataclass_to_tuple(functionSig))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -332,15 +344,15 @@ class ERC20MintableCanCallContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableDecimalsContractFunction(ContractFunction):
     """ContractFunction for the decimals method."""
 
-    def __call__(self) -> ERC20MintableDecimalsContractFunction:
+    def __call__(self) -> ERC20MintableDecimalsContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -359,16 +371,16 @@ class ERC20MintableDecimalsContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableDoesRoleHaveCapabilityContractFunction(ContractFunction):
     """ContractFunction for the doesRoleHaveCapability method."""
 
-    def __call__(self, role: int, functionSig: bytes) -> ERC20MintableDoesRoleHaveCapabilityContractFunction:
-        clone = super().__call__(role, functionSig)
+    def __call__(self, role: int, functionSig: bytes) -> ERC20MintableDoesRoleHaveCapabilityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(role), dataclass_to_tuple(functionSig))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -386,16 +398,16 @@ class ERC20MintableDoesRoleHaveCapabilityContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableDoesUserHaveRoleContractFunction(ContractFunction):
     """ContractFunction for the doesUserHaveRole method."""
 
-    def __call__(self, user: str, role: int) -> ERC20MintableDoesUserHaveRoleContractFunction:
-        clone = super().__call__(user, role)
+    def __call__(self, user: str, role: int) -> ERC20MintableDoesUserHaveRoleContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(user), dataclass_to_tuple(role))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -413,16 +425,16 @@ class ERC20MintableDoesUserHaveRoleContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableGetRolesWithCapabilityContractFunction(ContractFunction):
     """ContractFunction for the getRolesWithCapability method."""
 
-    def __call__(self, arg1: bytes) -> ERC20MintableGetRolesWithCapabilityContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: bytes) -> ERC20MintableGetRolesWithCapabilityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -440,16 +452,16 @@ class ERC20MintableGetRolesWithCapabilityContractFunction(ContractFunction):
         return_types = bytes
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bytes, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableGetTargetCustomAuthorityContractFunction(ContractFunction):
     """ContractFunction for the getTargetCustomAuthority method."""
 
-    def __call__(self, arg1: str) -> ERC20MintableGetTargetCustomAuthorityContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: str) -> ERC20MintableGetTargetCustomAuthorityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -467,16 +479,16 @@ class ERC20MintableGetTargetCustomAuthorityContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableGetUserRolesContractFunction(ContractFunction):
     """ContractFunction for the getUserRoles method."""
 
-    def __call__(self, arg1: str) -> ERC20MintableGetUserRolesContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: str) -> ERC20MintableGetUserRolesContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -494,16 +506,16 @@ class ERC20MintableGetUserRolesContractFunction(ContractFunction):
         return_types = bytes
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bytes, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableIsCapabilityPublicContractFunction(ContractFunction):
     """ContractFunction for the isCapabilityPublic method."""
 
-    def __call__(self, arg1: bytes) -> ERC20MintableIsCapabilityPublicContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: bytes) -> ERC20MintableIsCapabilityPublicContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -521,15 +533,15 @@ class ERC20MintableIsCapabilityPublicContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableIsCompetitionModeContractFunction(ContractFunction):
     """ContractFunction for the isCompetitionMode method."""
 
-    def __call__(self) -> ERC20MintableIsCompetitionModeContractFunction:
+    def __call__(self) -> ERC20MintableIsCompetitionModeContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -548,8 +560,8 @@ class ERC20MintableIsCompetitionModeContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
@@ -557,7 +569,7 @@ class ERC20MintableMintContractFunction0(ContractFunction):
     """ContractFunction for the mint method."""
 
     def __call__(self, destination: str, amount: int) -> ERC20MintableMintContractFunction:  # type: ignore
-        super().__call__(destination, amount)
+        super().__call__(dataclass_to_tuple(destination), dataclass_to_tuple(amount))  # type: ignore
         return cast(ERC20MintableMintContractFunction, self)
 
     def call(
@@ -578,7 +590,7 @@ class ERC20MintableMintContractFunction1(ContractFunction):
     """ContractFunction for the mint method."""
 
     def __call__(self, amount: int) -> ERC20MintableMintContractFunction:  # type: ignore
-        super().__call__(amount)
+        super().__call__()  # type: ignore
         return cast(ERC20MintableMintContractFunction, self)
 
     def call(
@@ -611,7 +623,7 @@ class ERC20MintableMintContractFunction(ContractFunction):
         ...
 
     def __call__(self, *args) -> ERC20MintableMintContractFunction:  # type: ignore
-        clone = super().__call__(*args)
+        clone = super().__call__(*(dataclass_to_tuple(arg) for arg in args))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self  # type: ignore
@@ -620,7 +632,7 @@ class ERC20MintableMintContractFunction(ContractFunction):
 class ERC20MintableNameContractFunction(ContractFunction):
     """ContractFunction for the name method."""
 
-    def __call__(self) -> ERC20MintableNameContractFunction:
+    def __call__(self) -> ERC20MintableNameContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -639,16 +651,16 @@ class ERC20MintableNameContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableNoncesContractFunction(ContractFunction):
     """ContractFunction for the nonces method."""
 
-    def __call__(self, arg1: str) -> ERC20MintableNoncesContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: str) -> ERC20MintableNoncesContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -666,15 +678,15 @@ class ERC20MintableNoncesContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableOwnerContractFunction(ContractFunction):
     """ContractFunction for the owner method."""
 
-    def __call__(self) -> ERC20MintableOwnerContractFunction:
+    def __call__(self) -> ERC20MintableOwnerContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -693,18 +705,24 @@ class ERC20MintableOwnerContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintablePermitContractFunction(ContractFunction):
     """ContractFunction for the permit method."""
 
-    def __call__(
-        self, owner: str, spender: str, value: int, deadline: int, v: int, r: bytes, s: bytes
-    ) -> ERC20MintablePermitContractFunction:
-        clone = super().__call__(owner, spender, value, deadline, v, r, s)
+    def __call__(self, owner: str, spender: str, value: int, deadline: int, v: int, r: bytes, s: bytes) -> ERC20MintablePermitContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(owner),
+            dataclass_to_tuple(spender),
+            dataclass_to_tuple(value),
+            dataclass_to_tuple(deadline),
+            dataclass_to_tuple(v),
+            dataclass_to_tuple(r),
+            dataclass_to_tuple(s),
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -720,14 +738,13 @@ class ERC20MintablePermitContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableSetAuthorityContractFunction(ContractFunction):
     """ContractFunction for the setAuthority method."""
 
-    def __call__(self, newAuthority: str) -> ERC20MintableSetAuthorityContractFunction:
-        clone = super().__call__(newAuthority)
+    def __call__(self, newAuthority: str) -> ERC20MintableSetAuthorityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(newAuthority))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -743,14 +760,13 @@ class ERC20MintableSetAuthorityContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableSetPublicCapabilityContractFunction(ContractFunction):
     """ContractFunction for the setPublicCapability method."""
 
-    def __call__(self, functionSig: bytes, enabled: bool) -> ERC20MintableSetPublicCapabilityContractFunction:
-        clone = super().__call__(functionSig, enabled)
+    def __call__(self, functionSig: bytes, enabled: bool) -> ERC20MintableSetPublicCapabilityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(functionSig), dataclass_to_tuple(enabled))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -766,14 +782,13 @@ class ERC20MintableSetPublicCapabilityContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableSetRoleCapabilityContractFunction(ContractFunction):
     """ContractFunction for the setRoleCapability method."""
 
-    def __call__(self, role: int, functionSig: bytes, enabled: bool) -> ERC20MintableSetRoleCapabilityContractFunction:
-        clone = super().__call__(role, functionSig, enabled)
+    def __call__(self, role: int, functionSig: bytes, enabled: bool) -> ERC20MintableSetRoleCapabilityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(role), dataclass_to_tuple(functionSig), dataclass_to_tuple(enabled))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -789,14 +804,13 @@ class ERC20MintableSetRoleCapabilityContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableSetTargetCustomAuthorityContractFunction(ContractFunction):
     """ContractFunction for the setTargetCustomAuthority method."""
 
-    def __call__(self, target: str, customAuthority: str) -> ERC20MintableSetTargetCustomAuthorityContractFunction:
-        clone = super().__call__(target, customAuthority)
+    def __call__(self, target: str, customAuthority: str) -> ERC20MintableSetTargetCustomAuthorityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(target), dataclass_to_tuple(customAuthority))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -812,14 +826,13 @@ class ERC20MintableSetTargetCustomAuthorityContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableSetUserRoleContractFunction(ContractFunction):
     """ContractFunction for the setUserRole method."""
 
-    def __call__(self, user: str, role: int, enabled: bool) -> ERC20MintableSetUserRoleContractFunction:
-        clone = super().__call__(user, role, enabled)
+    def __call__(self, user: str, role: int, enabled: bool) -> ERC20MintableSetUserRoleContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(user), dataclass_to_tuple(role), dataclass_to_tuple(enabled))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -835,13 +848,12 @@ class ERC20MintableSetUserRoleContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableSymbolContractFunction(ContractFunction):
     """ContractFunction for the symbol method."""
 
-    def __call__(self) -> ERC20MintableSymbolContractFunction:
+    def __call__(self) -> ERC20MintableSymbolContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -860,15 +872,15 @@ class ERC20MintableSymbolContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableTotalSupplyContractFunction(ContractFunction):
     """ContractFunction for the totalSupply method."""
 
-    def __call__(self) -> ERC20MintableTotalSupplyContractFunction:
+    def __call__(self) -> ERC20MintableTotalSupplyContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -887,16 +899,16 @@ class ERC20MintableTotalSupplyContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableTransferContractFunction(ContractFunction):
     """ContractFunction for the transfer method."""
 
-    def __call__(self, to: str, amount: int) -> ERC20MintableTransferContractFunction:
-        clone = super().__call__(to, amount)
+    def __call__(self, to: str, amount: int) -> ERC20MintableTransferContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(to), dataclass_to_tuple(amount))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -914,16 +926,16 @@ class ERC20MintableTransferContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableTransferFromContractFunction(ContractFunction):
     """ContractFunction for the transferFrom method."""
 
-    def __call__(self, _from: str, to: str, amount: int) -> ERC20MintableTransferFromContractFunction:
-        clone = super().__call__(_from, to, amount)
+    def __call__(self, _from: str, to: str, amount: int) -> ERC20MintableTransferFromContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(_from), dataclass_to_tuple(to), dataclass_to_tuple(amount))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -941,16 +953,16 @@ class ERC20MintableTransferFromContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class ERC20MintableTransferOwnershipContractFunction(ContractFunction):
     """ContractFunction for the transferOwnership method."""
 
-    def __call__(self, newOwner: str) -> ERC20MintableTransferOwnershipContractFunction:
-        clone = super().__call__(newOwner)
+    def __call__(self, newOwner: str) -> ERC20MintableTransferOwnershipContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(newOwner))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -966,7 +978,6 @@ class ERC20MintableTransferOwnershipContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class ERC20MintableContractFunctions(ContractFunctions):
@@ -1288,26 +1299,44 @@ class ERC20MintableApprovalContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "ERC20MintableApprovalContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["ERC20MintableApprovalContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "ERC20MintableApprovalContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1315,8 +1344,28 @@ class ERC20MintableApprovalContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["ERC20MintableApprovalContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1326,26 +1375,44 @@ class ERC20MintableAuthorityUpdatedContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "ERC20MintableAuthorityUpdatedContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["ERC20MintableAuthorityUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "ERC20MintableAuthorityUpdatedContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1353,8 +1420,28 @@ class ERC20MintableAuthorityUpdatedContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["ERC20MintableAuthorityUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1364,26 +1451,44 @@ class ERC20MintableOwnershipTransferredContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "ERC20MintableOwnershipTransferredContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["ERC20MintableOwnershipTransferredContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "ERC20MintableOwnershipTransferredContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1391,8 +1496,28 @@ class ERC20MintableOwnershipTransferredContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["ERC20MintableOwnershipTransferredContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1402,26 +1527,44 @@ class ERC20MintablePublicCapabilityUpdatedContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "ERC20MintablePublicCapabilityUpdatedContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["ERC20MintablePublicCapabilityUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "ERC20MintablePublicCapabilityUpdatedContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1429,8 +1572,28 @@ class ERC20MintablePublicCapabilityUpdatedContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["ERC20MintablePublicCapabilityUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1440,26 +1603,44 @@ class ERC20MintableRoleCapabilityUpdatedContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "ERC20MintableRoleCapabilityUpdatedContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["ERC20MintableRoleCapabilityUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "ERC20MintableRoleCapabilityUpdatedContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1467,8 +1648,28 @@ class ERC20MintableRoleCapabilityUpdatedContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["ERC20MintableRoleCapabilityUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1478,26 +1679,44 @@ class ERC20MintableTargetCustomAuthorityUpdatedContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "ERC20MintableTargetCustomAuthorityUpdatedContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["ERC20MintableTargetCustomAuthorityUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "ERC20MintableTargetCustomAuthorityUpdatedContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1505,8 +1724,28 @@ class ERC20MintableTargetCustomAuthorityUpdatedContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["ERC20MintableTargetCustomAuthorityUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1516,26 +1755,44 @@ class ERC20MintableTransferContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "ERC20MintableTransferContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["ERC20MintableTransferContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "ERC20MintableTransferContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1543,8 +1800,28 @@ class ERC20MintableTransferContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["ERC20MintableTransferContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1554,26 +1831,44 @@ class ERC20MintableUserRoleUpdatedContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "ERC20MintableUserRoleUpdatedContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["ERC20MintableUserRoleUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "ERC20MintableUserRoleUpdatedContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1581,8 +1876,28 @@ class ERC20MintableUserRoleUpdatedContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["ERC20MintableUserRoleUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -2053,7 +2368,8 @@ class ERC20MintableContract(Contract):
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
-            self.functions = ERC20MintableContractFunctions(erc20mintable_abi, self.w3, address)
+            self.functions = ERC20MintableContractFunctions(erc20mintable_abi, self.w3, address)  # type: ignore
+            self.events = ERC20MintableContractEvents(erc20mintable_abi, self.w3, address)  # type: ignore
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")

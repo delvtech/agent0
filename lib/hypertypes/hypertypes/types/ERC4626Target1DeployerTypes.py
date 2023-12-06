@@ -17,7 +17,6 @@ https://github.com/delvtech/pypechain """
 # pylint: disable=no-else-return
 from __future__ import annotations
 
-
 from dataclasses import dataclass
 
 
