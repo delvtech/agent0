@@ -6,7 +6,7 @@ e.g., new wallets being added.
 import logging
 
 from chainsync.db.base import add_addr_to_username, add_username_to_user, initialize_session
-from hyperlogs import logs as log_utils
+from hyperlogs import setup_logging
 
 # Force row updates if key conflicts
 FORCE_UPDATE = False
@@ -206,7 +206,7 @@ username_to_user = {
 # This reads the postgres.env file for database credentials
 db_session = initialize_session()
 
-log_utils.setup_logging(".logging/update_usernames.log", log_stdout=True, delete_previous_logs=True)
+setup_logging(".logging/update_usernames.log", log_stdout=True, delete_previous_logs=True)
 
 # Add to database
 for addr, username in addr_to_username.items():

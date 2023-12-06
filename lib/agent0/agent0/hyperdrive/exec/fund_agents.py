@@ -16,7 +16,7 @@ from ethpy.base import (
     retry_call,
 )
 from ethpy.hyperdrive import HyperdriveAddresses
-from hyperlogs import logs as log_utils
+from hyperlogs import setup_logging
 from web3.types import Nonce, TxReceipt
 
 from agent0 import AccountKeyConfig
@@ -48,7 +48,7 @@ async def async_fund_agents(
         Configuration for defining various contract addresses.
     """
     # Funding contains its own logging as this is typically run from a script or in debug mode
-    log_utils.setup_logging(".logging/fund_accounts.log", log_stdout=True, delete_previous_logs=True)
+    setup_logging(".logging/fund_accounts.log", log_stdout=True, delete_previous_logs=True)
 
     agent_accounts = [
         HyperdriveAgent(Account().from_key(agent_private_key)) for agent_private_key in account_key_config.AGENT_KEYS

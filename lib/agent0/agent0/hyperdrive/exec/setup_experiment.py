@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 from ethpy.hyperdrive.api import HyperdriveInterface
-from hyperlogs import logs
+from hyperlogs import setup_logging
 
 from agent0 import AccountKeyConfig
 from agent0.base.config import AgentConfig, EnvironmentConfig
@@ -42,7 +42,7 @@ def setup_experiment(
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
     global_rng = np.random.default_rng(environment_config.global_random_seed)
     # setup logging
-    logs.setup_logging(
+    setup_logging(
         log_filename=environment_config.log_filename,
         max_bytes=environment_config.max_bytes,
         log_level=environment_config.log_level,

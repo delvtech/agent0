@@ -14,7 +14,7 @@ from ethpy import EthConfig, build_eth_config
 from ethpy.base import initialize_web3_with_http_provider, set_anvil_account_balance, smart_contract_transact
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri, get_hyperdrive_pool_config
 from fixedpointmath import FixedPoint
-from hyperlogs import logs
+from hyperlogs import setup_logging
 from hypertypes import IERC4626HyperdriveContract
 
 from agent0.base.agents import EthAgent
@@ -100,7 +100,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
 
     # Setup logging
-    logs.setup_logging(
+    setup_logging(
         log_filename=env_config.log_filename,
         max_bytes=env_config.max_bytes,
         log_level=env_config.log_level,
