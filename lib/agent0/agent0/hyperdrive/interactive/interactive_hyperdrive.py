@@ -211,6 +211,7 @@ class InteractiveHyperdrive:
         self._analysis_thread: Thread | None = None
 
         # Run the data pipeline in background threads
+
         self._launch_data_pipeline()
         self.data_pipeline_timeout = config.data_pipeline_timeout
 
@@ -230,6 +231,7 @@ class InteractiveHyperdrive:
             raise ValueError("Data pipeline already running")
 
         self._stop_threads = False
+        # We need to create new threads every launch, since start can be called at most once per thread object
         self._data_thread = Thread(
             target=acquire_data,
             kwargs={
@@ -252,6 +254,8 @@ class InteractiveHyperdrive:
                 "exit_callback_fn": lambda: self._stop_threads,
             },
         )
+        self._data_thread.start()
+        self._analysis_thread.start()
 
     def _stop_data_pipeline(self):
         if self._data_thread is None or self._analysis_thread is None:
@@ -262,6 +266,7 @@ class InteractiveHyperdrive:
         # These wait for the threads to finally stop
         self._data_thread.join()
         self._analysis_thread.join()
+        # Dereference thread variables
         self._data_thread = None
         self._analysis_thread = None
 
