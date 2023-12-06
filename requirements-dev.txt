@@ -21,3 +21,4 @@ urllib3<2.0
 # Used for tests of db interface
 docker
 pytest-postgresql
+rollbar
