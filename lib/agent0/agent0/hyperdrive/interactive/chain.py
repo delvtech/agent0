@@ -86,7 +86,20 @@ class Chain:
         with contextlib.suppress(Exception):
             self.cleanup()
 
-    def advance_time(self, time_delta: int | timedelta) -> RPCResponse:
+    def _advance_chain_time(self, time_delta: int) -> None:
+        # We explicitly set the next block timestamp to be exactly time_delta seconds
+        # after the previous block. Hence, we first get the current block, followed by
+        # an explicit set of the next block timestamp, followed by a mine.
+        latest_blocktime = self._web3.eth.get_block("latest").get("timestamp", None)
+        if latest_blocktime is None:
+            raise AssertionError("The provided block has no timestamp")
+        next_blocktime = latest_blocktime + time_delta
+
+        response = self._web3.provider.make_request(method=RPCEndpoint("evm_mine"), params=[next_blocktime])
+        # TODO ensure response is valid
+        pass
+
+    def advance_time(self, time_delta: int | timedelta, create_checkpoints: bool = True) -> None:
         """Advance time for this chain using the `evm_mine` RPC call.
 
         This function looks at the timestamp of the current block, then
@@ -98,26 +111,45 @@ class Chain:
         ---------
         time_delta: int | timedelta
             The amount of time to advance. Can either be a `datetime.timedelta` object or an integer in seconds.
-
-        Returns
-        -------
-        RPCResponse
-            A TypedDict returned from the RPC with the result of the call.
+        create_checkpoints: bool, optional
+            If set to true, will create intermediate checkpoints between advance times.
         """
         if isinstance(time_delta, timedelta):
             time_delta = int(time_delta.total_seconds())
         else:
             time_delta = int(time_delta)  # convert int-like (e.g. np.int64) types to int
 
-        # We explicitly set the next block timestamp to be exactly time_delta seconds
-        # after the previous block. Hence, we first get the current block, followed by
-        # an explicit set of the next block timestamp, followed by a mine.
-        latest_blocktime = self._web3.eth.get_block("latest").get("timestamp", None)
-        if latest_blocktime is None:
-            raise AssertionError("The provided block has no timestamp")
-        next_blocktime = latest_blocktime + time_delta
+        # Don't checkpoint when advancing time if `create_checkpoints` is false
+        # or there are no deployed pools
+        if (not create_checkpoints) or (len(self._deployed_hyperdrive_pools) == 0):
+            self._advance_chain_time(time_delta)
+        else:
+            # For every pool, check the checkpoint duration and advance the chain for that amount of time,
+            # followed by creating a checkpoint for that pool.
+            # TODO support multiple pools with different checkpoint durations
+            # For now
+            checkpoint_durations = [
+                pool.hyperdrive_interface.pool_config.checkpoint_duration for pool in self._deployed_hyperdrive_pools
+            ]
+            if not all(checkpoint_durations[0] == x for x in checkpoint_durations):
+                raise NotImplementedError("All pools on this chain must have the same checkpoint duration")
 
-        return self._web3.provider.make_request(method=RPCEndpoint("evm_mine"), params=[next_blocktime])
+            # Loop through each
+            checkpoint_duration = checkpoint_durations[0]
+            checkpoint_iterations = int(time_delta / checkpoint_duration)
+            last_advance_time = time_delta % checkpoint_duration
+            for _ in range(checkpoint_iterations):
+                self._advance_chain_time(checkpoint_duration)
+                # Create checkpoints for each pool
+                for pool in self._deployed_hyperdrive_pools:
+                    # Create checkpoint handles making a checkpoint at the right time
+                    pool.create_checkpoint()
+            # Final advance time
+            self._advance_chain_time(last_advance_time)
+
+        # This function mines blocks, so run data pipeline on each pool here
+        for pool in self._deployed_hyperdrive_pools:
+            pool._run_data_pipeline()  # pylint: disable=protected-access
 
     def save_snapshot(self) -> None:
         """Saves a snapshot using the `evm_snapshot` RPC call.

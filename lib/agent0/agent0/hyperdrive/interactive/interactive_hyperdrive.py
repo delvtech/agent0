@@ -247,6 +247,10 @@ class InteractiveHyperdrive:
         # Since this is a contract call, we need to run the data pipeline
         self._run_data_pipeline()
 
+    def create_checkpoint(self) -> CreateCheckpoint:
+        """Creates a checkpoint for this pool if it doesn't exist."""
+        raise NotImplementedError
+
     def init_agent(
         self,
         base: FixedPoint | None = None,
@@ -761,11 +765,6 @@ class InteractiveHyperdrive:
         tx_receipt = self._handle_trade_result(trade_results)
         self._run_data_pipeline()
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
-
-    def _create_checkpoint(self, agent: HyperdriveAgent, checkpoint_time: int | None = None) -> CreateCheckpoint:
-        # TODO need to figure out how to mint checkpoints on demand
-        # https://github.com/delvtech/agent0/issues/1105
-        raise NotImplementedError
 
     def _execute_policy_action(
         self, agent: HyperdriveAgent
