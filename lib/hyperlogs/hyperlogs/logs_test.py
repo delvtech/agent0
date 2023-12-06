@@ -7,7 +7,7 @@ import os
 import sys
 import unittest
 
-from hyperlogs import add_file_handler, add_stdout_handler, close_logging, get_root_logger, setup_logging
+from . import add_file_handler, add_stdout_handler, close_logging, get_root_logger, setup_logging
 
 
 class TestLogging(unittest.TestCase):
