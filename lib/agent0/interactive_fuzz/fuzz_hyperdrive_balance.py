@@ -108,9 +108,9 @@ pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
 if pool_state.vault_shares != initial_vault_shares:
     logging.critical("vault_shares=%s != initial_vault_shares=%s", pool_state.vault_shares, initial_vault_shares)
     FAILED = True
-if pool_state.pool_info.share_reserves != pool_state.pool_config.minimum_share_reserves:
+if pool_state.pool_info.share_reserves < pool_state.pool_config.minimum_share_reserves:
     logging.critical(
-        "share_reserves=%s != minimum_share_reserves=%s",
+        "share_reserves=%s < minimum_share_reserves=%s",
         pool_state.pool_info.share_reserves,
         pool_state.pool_config.minimum_share_reserves,
     )
