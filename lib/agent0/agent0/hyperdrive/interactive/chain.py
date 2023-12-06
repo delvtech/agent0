@@ -106,6 +106,8 @@ class Chain:
         """
         if isinstance(time_delta, timedelta):
             time_delta = int(time_delta.total_seconds())
+        else:
+            time_delta = int(time_delta)  # convert int-like (e.g. np.int64) types to int
 
         # We explicitly set the next block timestamp to be exactly time_delta seconds
         # after the previous block. Hence, we first get the current block, followed by
