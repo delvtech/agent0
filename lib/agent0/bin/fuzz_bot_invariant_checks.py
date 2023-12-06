@@ -11,7 +11,7 @@ from ethpy import build_eth_config
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
-from hyperlogs import logs
+from hyperlogs import setup_logging
 
 from agent0.base.config import EnvironmentConfig
 from agent0.hyperdrive.crash_report import setup_hyperdrive_crash_report_logging
@@ -45,7 +45,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
 
     # Setup logging
-    logs.setup_logging(
+    setup_logging(
         log_filename=env_config.log_filename,
         max_bytes=env_config.max_bytes,
         log_level=env_config.log_level,
