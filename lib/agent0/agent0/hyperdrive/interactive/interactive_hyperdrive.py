@@ -258,10 +258,20 @@ class InteractiveHyperdrive:
         # Since this is a contract call, we need to run the data pipeline
         self._run_data_pipeline()
 
-    def _create_checkpoint(self, checkpoint_time: int, check_if_exists: bool = True) -> CreateCheckpoint | None:
+    def _create_checkpoint(
+        self, checkpoint_time: int | None = None, check_if_exists: bool = True
+    ) -> CreateCheckpoint | None:
         """Internal function without safeguard checks for creating a checkpoint.
         Creating checkpoints is called by the chain's `advance_time`.
         """
+
+        if checkpoint_time is None:
+            block_timestamp = self.hyperdrive_interface.get_block_timestamp(
+                self.hyperdrive_interface.get_current_block()
+            )
+            checkpoint_time = self.hyperdrive_interface.calc_checkpoint_id(
+                self.hyperdrive_interface.pool_config.checkpoint_duration, block_timestamp
+            )
 
         if check_if_exists:
             checkpoint = self.hyperdrive_interface.hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call()

@@ -159,28 +159,20 @@ class Chain:
             timestamp = self._web3.eth.get_block("latest").get("timestamp")
             assert timestamp is not None
 
-            # We ignore the first checkpoint time since we handle it explicitly
-            first_checkpoint_time = timestamp - timestamp % checkpoint_duration
-            start_checkpoint_time = first_checkpoint_time + checkpoint_duration
-            # +1 due to the potential off by one error
-            end_checkpoint_time = timestamp + time_delta + 1
-
-            checkpoint_times = list(range(start_checkpoint_time, end_checkpoint_time, checkpoint_duration))
-
             # Handle the first checkpoint, if it hasn't been created, make the checkpoint
             for pool in self._deployed_hyperdrive_pools:
                 # Create checkpoint handles making a checkpoint at the right time
                 checkpoint_event = pool._create_checkpoint(  # pylint: disable=protected-access
-                    first_checkpoint_time,
                     check_if_exists=True,
                 )
                 if checkpoint_event is not None:
                     out_dict[pool].append(checkpoint_event)
 
             # Loop through each checkpoint duration epoch
+            advance_iterations = int(time_delta / checkpoint_duration)
             last_advance_time = time_delta % checkpoint_duration
             offset = 0
-            for checkpoint_time in checkpoint_times:
+            for _ in range(advance_iterations):
                 # Advance the chain time by the checkpoint duration
                 self._advance_chain_time(checkpoint_duration - offset)
 
@@ -193,7 +185,7 @@ class Chain:
                 time_before_checkpoints = self._web3.eth.get_block("latest").get("timestamp")
                 assert time_before_checkpoints is not None
                 for pool in self._deployed_hyperdrive_pools:
-                    checkpoint_event = pool._create_checkpoint(checkpoint_time)  # pylint: disable=protected-access
+                    checkpoint_event = pool._create_checkpoint()  # pylint: disable=protected-access
                     # These checkpoints should never fail
                     assert checkpoint_event is not None
                     # Add checkpoint event to the output
