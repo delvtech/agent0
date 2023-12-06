@@ -95,3 +95,16 @@ class EnvironmentConfig(FrozenClass):
         """
         with open(json_file_location, mode="w", encoding="UTF-8") as file:
             json.dump(self.__dict__, file, sort_keys=True, indent=2, cls=ExtendedJSONEncoder)
+
+    def freeze(self):
+        """Disallows changing existing members."""
+
+    def disable_new_attribs(self):
+        """Disallows adding new members."""
+
+    def astype(self, _):
+        """Cast all member attributes to a new type."""
+
+    @property
+    def dtypes(self):
+        """Return a dict listing name & type of each member variable."""

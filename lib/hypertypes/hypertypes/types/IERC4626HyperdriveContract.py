@@ -20,20 +20,18 @@ https://github.com/delvtech/pypechain"""
 from __future__ import annotations
 
 from dataclasses import fields, is_dataclass
-from typing import Any, Iterable, NamedTuple, Tuple, Type, TypeVar, Sequence, cast
+from typing import Any, Iterable, NamedTuple, Sequence, Tuple, Type, TypeVar, cast
 
 from eth_typing import ChecksumAddress, HexStr
-from eth_utils.decorators import combomethod
 from hexbytes import HexBytes
 from typing_extensions import Self
 from web3 import Web3
-from web3.contract.contract import Contract, ContractFunction, ContractFunctions
-from web3.contract.contract import ContractEvent, ContractEvents
-from web3.exceptions import FallbackNotFound
-from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
-from web3.types import EventData
 from web3._utils.filters import LogFilter
-from .IERC4626HyperdriveTypes import Options, Checkpoint, MarketState, Fees, PoolConfig, PoolInfo, WithdrawPool
+from web3.contract.contract import Contract, ContractEvent, ContractEvents, ContractFunction, ContractFunctions
+from web3.exceptions import FallbackNotFound
+from web3.types import ABI, BlockIdentifier, CallOverride, EventData, TxParams
+
+from .IERC4626HyperdriveTypes import Checkpoint, Fees, MarketState, Options, PoolConfig, PoolInfo, WithdrawPool
 
 T = TypeVar("T")
 
@@ -86,6 +84,22 @@ def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
     return cls(**field_values)
 
 
+def dataclass_to_tuple(instance: Any) -> Any:
+    """Convert a dataclass instance to a tuple, handling nested dataclasses.
+    If the input is not a dataclass, return the original value.
+    """
+    if not is_dataclass(instance):
+        return instance
+
+    def convert_value(value: Any) -> Any:
+        """Convert nested dataclasses to tuples recursively, or return the original value."""
+        if is_dataclass(value):
+            return dataclass_to_tuple(value)
+        return value
+
+    return tuple(convert_value(getattr(instance, field.name)) for field in fields(instance))
+
+
 def rename_returned_types(return_types, raw_values) -> Any:
     """_summary_
 
@@ -122,7 +136,7 @@ def rename_returned_types(return_types, raw_values) -> Any:
 class IERC4626HyperdriveDOMAIN_SEPARATORContractFunction(ContractFunction):
     """ContractFunction for the DOMAIN_SEPARATOR method."""
 
-    def __call__(self) -> IERC4626HyperdriveDOMAIN_SEPARATORContractFunction:
+    def __call__(self) -> IERC4626HyperdriveDOMAIN_SEPARATORContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -141,15 +155,15 @@ class IERC4626HyperdriveDOMAIN_SEPARATORContractFunction(ContractFunction):
         return_types = bytes
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bytes, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdrivePERMIT_TYPEHASHContractFunction(ContractFunction):
     """ContractFunction for the PERMIT_TYPEHASH method."""
 
-    def __call__(self) -> IERC4626HyperdrivePERMIT_TYPEHASHContractFunction:
+    def __call__(self) -> IERC4626HyperdrivePERMIT_TYPEHASHContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -168,18 +182,21 @@ class IERC4626HyperdrivePERMIT_TYPEHASHContractFunction(ContractFunction):
         return_types = bytes
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bytes, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveAddLiquidityContractFunction(ContractFunction):
     """ContractFunction for the addLiquidity method."""
 
-    def __call__(
-        self, _contribution: int, _minApr: int, _maxApr: int, _options: Options
-    ) -> IERC4626HyperdriveAddLiquidityContractFunction:
-        clone = super().__call__(_contribution, _minApr, _maxApr, _options)
+    def __call__(self, contribution: int, minApr: int, maxApr: int, options: Options) -> IERC4626HyperdriveAddLiquidityContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(contribution),
+            dataclass_to_tuple(minApr),
+            dataclass_to_tuple(maxApr),
+            dataclass_to_tuple(options),
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -197,16 +214,16 @@ class IERC4626HyperdriveAddLiquidityContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveBalanceOfContractFunction(ContractFunction):
     """ContractFunction for the balanceOf method."""
 
-    def __call__(self, tokenId: int, owner: str) -> IERC4626HyperdriveBalanceOfContractFunction:
-        clone = super().__call__(tokenId, owner)
+    def __call__(self, tokenId: int, owner: str) -> IERC4626HyperdriveBalanceOfContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(tokenId), dataclass_to_tuple(owner))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -224,15 +241,15 @@ class IERC4626HyperdriveBalanceOfContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveBaseTokenContractFunction(ContractFunction):
     """ContractFunction for the baseToken method."""
 
-    def __call__(self) -> IERC4626HyperdriveBaseTokenContractFunction:
+    def __call__(self) -> IERC4626HyperdriveBaseTokenContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -251,18 +268,18 @@ class IERC4626HyperdriveBaseTokenContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveBatchTransferFromContractFunction(ContractFunction):
     """ContractFunction for the batchTransferFrom method."""
 
-    def __call__(
-        self, _from: str, to: str, ids: list[int], values: list[int]
-    ) -> IERC4626HyperdriveBatchTransferFromContractFunction:
-        clone = super().__call__(_from, to, ids, values)
+    def __call__(self, _from: str, to: str, ids: list[int], values: list[int]) -> IERC4626HyperdriveBatchTransferFromContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(_from), dataclass_to_tuple(to), dataclass_to_tuple(ids), dataclass_to_tuple(values)
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -278,14 +295,13 @@ class IERC4626HyperdriveBatchTransferFromContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class IERC4626HyperdriveCheckpointContractFunction(ContractFunction):
     """ContractFunction for the checkpoint method."""
 
-    def __call__(self, _checkpointTime: int) -> IERC4626HyperdriveCheckpointContractFunction:
-        clone = super().__call__(_checkpointTime)
+    def __call__(self, checkpointTime: int) -> IERC4626HyperdriveCheckpointContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(checkpointTime))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -301,16 +317,18 @@ class IERC4626HyperdriveCheckpointContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class IERC4626HyperdriveCloseLongContractFunction(ContractFunction):
     """ContractFunction for the closeLong method."""
 
-    def __call__(
-        self, _maturityTime: int, _bondAmount: int, _minOutput: int, _options: Options
-    ) -> IERC4626HyperdriveCloseLongContractFunction:
-        clone = super().__call__(_maturityTime, _bondAmount, _minOutput, _options)
+    def __call__(self, maturityTime: int, bondAmount: int, minOutput: int, options: Options) -> IERC4626HyperdriveCloseLongContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(maturityTime),
+            dataclass_to_tuple(bondAmount),
+            dataclass_to_tuple(minOutput),
+            dataclass_to_tuple(options),
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -328,18 +346,21 @@ class IERC4626HyperdriveCloseLongContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveCloseShortContractFunction(ContractFunction):
     """ContractFunction for the closeShort method."""
 
-    def __call__(
-        self, _maturityTime: int, _bondAmount: int, _minOutput: int, _options: Options
-    ) -> IERC4626HyperdriveCloseShortContractFunction:
-        clone = super().__call__(_maturityTime, _bondAmount, _minOutput, _options)
+    def __call__(self, maturityTime: int, bondAmount: int, minOutput: int, options: Options) -> IERC4626HyperdriveCloseShortContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(maturityTime),
+            dataclass_to_tuple(bondAmount),
+            dataclass_to_tuple(minOutput),
+            dataclass_to_tuple(options),
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -357,16 +378,16 @@ class IERC4626HyperdriveCloseShortContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveCollectGovernanceFeeContractFunction(ContractFunction):
     """ContractFunction for the collectGovernanceFee method."""
 
-    def __call__(self, _options: Options) -> IERC4626HyperdriveCollectGovernanceFeeContractFunction:
-        clone = super().__call__(_options)
+    def __call__(self, options: Options) -> IERC4626HyperdriveCollectGovernanceFeeContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(options))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -384,16 +405,16 @@ class IERC4626HyperdriveCollectGovernanceFeeContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveGetCheckpointContractFunction(ContractFunction):
     """ContractFunction for the getCheckpoint method."""
 
-    def __call__(self, _checkpointId: int) -> IERC4626HyperdriveGetCheckpointContractFunction:
-        clone = super().__call__(_checkpointId)
+    def __call__(self, checkpointId: int) -> IERC4626HyperdriveGetCheckpointContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(checkpointId))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -411,15 +432,15 @@ class IERC4626HyperdriveGetCheckpointContractFunction(ContractFunction):
         return_types = Checkpoint
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(Checkpoint, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveGetMarketStateContractFunction(ContractFunction):
     """ContractFunction for the getMarketState method."""
 
-    def __call__(self) -> IERC4626HyperdriveGetMarketStateContractFunction:
+    def __call__(self) -> IERC4626HyperdriveGetMarketStateContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -438,15 +459,15 @@ class IERC4626HyperdriveGetMarketStateContractFunction(ContractFunction):
         return_types = MarketState
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(MarketState, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveGetPoolConfigContractFunction(ContractFunction):
     """ContractFunction for the getPoolConfig method."""
 
-    def __call__(self) -> IERC4626HyperdriveGetPoolConfigContractFunction:
+    def __call__(self) -> IERC4626HyperdriveGetPoolConfigContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -465,15 +486,15 @@ class IERC4626HyperdriveGetPoolConfigContractFunction(ContractFunction):
         return_types = PoolConfig
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(PoolConfig, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveGetPoolInfoContractFunction(ContractFunction):
     """ContractFunction for the getPoolInfo method."""
 
-    def __call__(self) -> IERC4626HyperdriveGetPoolInfoContractFunction:
+    def __call__(self) -> IERC4626HyperdriveGetPoolInfoContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -492,15 +513,15 @@ class IERC4626HyperdriveGetPoolInfoContractFunction(ContractFunction):
         return_types = PoolInfo
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(PoolInfo, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveGetUncollectedGovernanceFeesContractFunction(ContractFunction):
     """ContractFunction for the getUncollectedGovernanceFees method."""
 
-    def __call__(self) -> IERC4626HyperdriveGetUncollectedGovernanceFeesContractFunction:
+    def __call__(self) -> IERC4626HyperdriveGetUncollectedGovernanceFeesContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -519,15 +540,15 @@ class IERC4626HyperdriveGetUncollectedGovernanceFeesContractFunction(ContractFun
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveGetWithdrawPoolContractFunction(ContractFunction):
     """ContractFunction for the getWithdrawPool method."""
 
-    def __call__(self) -> IERC4626HyperdriveGetWithdrawPoolContractFunction:
+    def __call__(self) -> IERC4626HyperdriveGetWithdrawPoolContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -546,18 +567,16 @@ class IERC4626HyperdriveGetWithdrawPoolContractFunction(ContractFunction):
         return_types = WithdrawPool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(WithdrawPool, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveInitializeContractFunction(ContractFunction):
     """ContractFunction for the initialize method."""
 
-    def __call__(
-        self, _contribution: int, _apr: int, _options: Options
-    ) -> IERC4626HyperdriveInitializeContractFunction:
-        clone = super().__call__(_contribution, _apr, _options)
+    def __call__(self, contribution: int, apr: int, options: Options) -> IERC4626HyperdriveInitializeContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(contribution), dataclass_to_tuple(apr), dataclass_to_tuple(options))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -575,16 +594,16 @@ class IERC4626HyperdriveInitializeContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveIsApprovedForAllContractFunction(ContractFunction):
     """ContractFunction for the isApprovedForAll method."""
 
-    def __call__(self, owner: str, spender: str) -> IERC4626HyperdriveIsApprovedForAllContractFunction:
-        clone = super().__call__(owner, spender)
+    def __call__(self, owner: str, spender: str) -> IERC4626HyperdriveIsApprovedForAllContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(owner), dataclass_to_tuple(spender))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -602,16 +621,16 @@ class IERC4626HyperdriveIsApprovedForAllContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveIsSweepableContractFunction(ContractFunction):
     """ContractFunction for the isSweepable method."""
 
-    def __call__(self, _target: str) -> IERC4626HyperdriveIsSweepableContractFunction:
-        clone = super().__call__(_target)
+    def __call__(self, target: str) -> IERC4626HyperdriveIsSweepableContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(target))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -629,16 +648,16 @@ class IERC4626HyperdriveIsSweepableContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveLoadContractFunction(ContractFunction):
     """ContractFunction for the load method."""
 
-    def __call__(self, _slots: list[int]) -> IERC4626HyperdriveLoadContractFunction:
-        clone = super().__call__(_slots)
+    def __call__(self, slots: list[int]) -> IERC4626HyperdriveLoadContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(slots))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -656,16 +675,16 @@ class IERC4626HyperdriveLoadContractFunction(ContractFunction):
         return_types = list[bytes]
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(list[bytes], rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveNameContractFunction(ContractFunction):
     """ContractFunction for the name method."""
 
-    def __call__(self, _id: int) -> IERC4626HyperdriveNameContractFunction:
-        clone = super().__call__(_id)
+    def __call__(self, _id: int) -> IERC4626HyperdriveNameContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(_id))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -683,16 +702,16 @@ class IERC4626HyperdriveNameContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveNoncesContractFunction(ContractFunction):
     """ContractFunction for the nonces method."""
 
-    def __call__(self, owner: str) -> IERC4626HyperdriveNoncesContractFunction:
-        clone = super().__call__(owner)
+    def __call__(self, owner: str) -> IERC4626HyperdriveNoncesContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(owner))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -710,8 +729,8 @@ class IERC4626HyperdriveNoncesContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
@@ -724,10 +743,13 @@ class IERC4626HyperdriveOpenLongContractFunction(ContractFunction):
         maturityTime: int
         bondProceeds: int
 
-    def __call__(
-        self, _baseAmount: int, _minOutput: int, _minSharePrice: int, _options: Options
-    ) -> IERC4626HyperdriveOpenLongContractFunction:
-        clone = super().__call__(_baseAmount, _minOutput, _minSharePrice, _options)
+    def __call__(self, baseAmount: int, minOutput: int, minSharePrice: int, options: Options) -> IERC4626HyperdriveOpenLongContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(baseAmount),
+            dataclass_to_tuple(minOutput),
+            dataclass_to_tuple(minSharePrice),
+            dataclass_to_tuple(options),
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -745,8 +767,8 @@ class IERC4626HyperdriveOpenLongContractFunction(ContractFunction):
         return_types = [int, int]
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return self.ReturnValues(*rename_returned_types(return_types, raw_values))
 
 
@@ -759,10 +781,13 @@ class IERC4626HyperdriveOpenShortContractFunction(ContractFunction):
         maturityTime: int
         traderDeposit: int
 
-    def __call__(
-        self, _bondAmount: int, _maxDeposit: int, _minSharePrice: int, _options: Options
-    ) -> IERC4626HyperdriveOpenShortContractFunction:
-        clone = super().__call__(_bondAmount, _maxDeposit, _minSharePrice, _options)
+    def __call__(self, bondAmount: int, maxDeposit: int, minSharePrice: int, options: Options) -> IERC4626HyperdriveOpenShortContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(bondAmount),
+            dataclass_to_tuple(maxDeposit),
+            dataclass_to_tuple(minSharePrice),
+            dataclass_to_tuple(options),
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -780,16 +805,16 @@ class IERC4626HyperdriveOpenShortContractFunction(ContractFunction):
         return_types = [int, int]
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return self.ReturnValues(*rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdrivePauseContractFunction(ContractFunction):
     """ContractFunction for the pause method."""
 
-    def __call__(self, _status: bool) -> IERC4626HyperdrivePauseContractFunction:
-        clone = super().__call__(_status)
+    def __call__(self, status: bool) -> IERC4626HyperdrivePauseContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(status))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -805,14 +830,13 @@ class IERC4626HyperdrivePauseContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class IERC4626HyperdrivePerTokenApprovalsContractFunction(ContractFunction):
     """ContractFunction for the perTokenApprovals method."""
 
-    def __call__(self, tokenId: int, owner: str, spender: str) -> IERC4626HyperdrivePerTokenApprovalsContractFunction:
-        clone = super().__call__(tokenId, owner, spender)
+    def __call__(self, tokenId: int, owner: str, spender: str) -> IERC4626HyperdrivePerTokenApprovalsContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(tokenId), dataclass_to_tuple(owner), dataclass_to_tuple(spender))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -830,18 +854,24 @@ class IERC4626HyperdrivePerTokenApprovalsContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdrivePermitForAllContractFunction(ContractFunction):
     """ContractFunction for the permitForAll method."""
 
-    def __call__(
-        self, owner: str, spender: str, _approved: bool, deadline: int, v: int, r: bytes, s: bytes
-    ) -> IERC4626HyperdrivePermitForAllContractFunction:
-        clone = super().__call__(owner, spender, _approved, deadline, v, r, s)
+    def __call__(self, owner: str, spender: str, approved: bool, deadline: int, v: int, r: bytes, s: bytes) -> IERC4626HyperdrivePermitForAllContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(owner),
+            dataclass_to_tuple(spender),
+            dataclass_to_tuple(approved),
+            dataclass_to_tuple(deadline),
+            dataclass_to_tuple(v),
+            dataclass_to_tuple(r),
+            dataclass_to_tuple(s),
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -857,13 +887,12 @@ class IERC4626HyperdrivePermitForAllContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class IERC4626HyperdrivePoolContractFunction(ContractFunction):
     """ContractFunction for the pool method."""
 
-    def __call__(self) -> IERC4626HyperdrivePoolContractFunction:
+    def __call__(self) -> IERC4626HyperdrivePoolContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -882,8 +911,8 @@ class IERC4626HyperdrivePoolContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
@@ -896,10 +925,8 @@ class IERC4626HyperdriveRedeemWithdrawalSharesContractFunction(ContractFunction)
         proceeds: int
         sharesRedeemed: int
 
-    def __call__(
-        self, _shares: int, _minOutput: int, _options: Options
-    ) -> IERC4626HyperdriveRedeemWithdrawalSharesContractFunction:
-        clone = super().__call__(_shares, _minOutput, _options)
+    def __call__(self, shares: int, minOutput: int, options: Options) -> IERC4626HyperdriveRedeemWithdrawalSharesContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(shares), dataclass_to_tuple(minOutput), dataclass_to_tuple(options))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -917,8 +944,8 @@ class IERC4626HyperdriveRedeemWithdrawalSharesContractFunction(ContractFunction)
         return_types = [int, int]
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return self.ReturnValues(*rename_returned_types(return_types, raw_values))
 
 
@@ -931,10 +958,8 @@ class IERC4626HyperdriveRemoveLiquidityContractFunction(ContractFunction):
         baseProceeds: int
         withdrawalShares: int
 
-    def __call__(
-        self, _shares: int, _minOutput: int, _options: Options
-    ) -> IERC4626HyperdriveRemoveLiquidityContractFunction:
-        clone = super().__call__(_shares, _minOutput, _options)
+    def __call__(self, shares: int, minOutput: int, options: Options) -> IERC4626HyperdriveRemoveLiquidityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(shares), dataclass_to_tuple(minOutput), dataclass_to_tuple(options))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -952,16 +977,16 @@ class IERC4626HyperdriveRemoveLiquidityContractFunction(ContractFunction):
         return_types = [int, int]
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return self.ReturnValues(*rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveSetApprovalContractFunction(ContractFunction):
     """ContractFunction for the setApproval method."""
 
-    def __call__(self, tokenID: int, operator: str, amount: int) -> IERC4626HyperdriveSetApprovalContractFunction:
-        clone = super().__call__(tokenID, operator, amount)
+    def __call__(self, tokenID: int, operator: str, amount: int) -> IERC4626HyperdriveSetApprovalContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(tokenID), dataclass_to_tuple(operator), dataclass_to_tuple(amount))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -977,16 +1002,18 @@ class IERC4626HyperdriveSetApprovalContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class IERC4626HyperdriveSetApprovalBridgeContractFunction(ContractFunction):
     """ContractFunction for the setApprovalBridge method."""
 
-    def __call__(
-        self, tokenID: int, operator: str, amount: int, caller: str
-    ) -> IERC4626HyperdriveSetApprovalBridgeContractFunction:
-        clone = super().__call__(tokenID, operator, amount, caller)
+    def __call__(self, tokenID: int, operator: str, amount: int, caller: str) -> IERC4626HyperdriveSetApprovalBridgeContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(tokenID),
+            dataclass_to_tuple(operator),
+            dataclass_to_tuple(amount),
+            dataclass_to_tuple(caller),
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1002,14 +1029,13 @@ class IERC4626HyperdriveSetApprovalBridgeContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class IERC4626HyperdriveSetApprovalForAllContractFunction(ContractFunction):
     """ContractFunction for the setApprovalForAll method."""
 
-    def __call__(self, operator: str, approved: bool) -> IERC4626HyperdriveSetApprovalForAllContractFunction:
-        clone = super().__call__(operator, approved)
+    def __call__(self, operator: str, approved: bool) -> IERC4626HyperdriveSetApprovalForAllContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(operator), dataclass_to_tuple(approved))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1025,14 +1051,13 @@ class IERC4626HyperdriveSetApprovalForAllContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class IERC4626HyperdriveSetGovernanceContractFunction(ContractFunction):
     """ContractFunction for the setGovernance method."""
 
-    def __call__(self, _who: str) -> IERC4626HyperdriveSetGovernanceContractFunction:
-        clone = super().__call__(_who)
+    def __call__(self, who: str) -> IERC4626HyperdriveSetGovernanceContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(who))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1048,14 +1073,13 @@ class IERC4626HyperdriveSetGovernanceContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class IERC4626HyperdriveSetPauserContractFunction(ContractFunction):
     """ContractFunction for the setPauser method."""
 
-    def __call__(self, who: str, status: bool) -> IERC4626HyperdriveSetPauserContractFunction:
-        clone = super().__call__(who, status)
+    def __call__(self, who: str, status: bool) -> IERC4626HyperdriveSetPauserContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(who), dataclass_to_tuple(status))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1071,14 +1095,13 @@ class IERC4626HyperdriveSetPauserContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class IERC4626HyperdriveSweepContractFunction(ContractFunction):
     """ContractFunction for the sweep method."""
 
-    def __call__(self, _target: str) -> IERC4626HyperdriveSweepContractFunction:
-        clone = super().__call__(_target)
+    def __call__(self, target: str) -> IERC4626HyperdriveSweepContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(target))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1094,14 +1117,13 @@ class IERC4626HyperdriveSweepContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class IERC4626HyperdriveSymbolContractFunction(ContractFunction):
     """ContractFunction for the symbol method."""
 
-    def __call__(self, _id: int) -> IERC4626HyperdriveSymbolContractFunction:
-        clone = super().__call__(_id)
+    def __call__(self, _id: int) -> IERC4626HyperdriveSymbolContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(_id))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1119,15 +1141,15 @@ class IERC4626HyperdriveSymbolContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveTarget0ContractFunction(ContractFunction):
     """ContractFunction for the target0 method."""
 
-    def __call__(self) -> IERC4626HyperdriveTarget0ContractFunction:
+    def __call__(self) -> IERC4626HyperdriveTarget0ContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1146,15 +1168,15 @@ class IERC4626HyperdriveTarget0ContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveTarget1ContractFunction(ContractFunction):
     """ContractFunction for the target1 method."""
 
-    def __call__(self) -> IERC4626HyperdriveTarget1ContractFunction:
+    def __call__(self) -> IERC4626HyperdriveTarget1ContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1173,16 +1195,16 @@ class IERC4626HyperdriveTarget1ContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveTotalSupplyContractFunction(ContractFunction):
     """ContractFunction for the totalSupply method."""
 
-    def __call__(self, _id: int) -> IERC4626HyperdriveTotalSupplyContractFunction:
-        clone = super().__call__(_id)
+    def __call__(self, _id: int) -> IERC4626HyperdriveTotalSupplyContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(_id))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1200,18 +1222,18 @@ class IERC4626HyperdriveTotalSupplyContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class IERC4626HyperdriveTransferFromContractFunction(ContractFunction):
     """ContractFunction for the transferFrom method."""
 
-    def __call__(
-        self, tokenID: int, _from: str, to: str, amount: int
-    ) -> IERC4626HyperdriveTransferFromContractFunction:
-        clone = super().__call__(tokenID, _from, to, amount)
+    def __call__(self, tokenID: int, _from: str, to: str, amount: int) -> IERC4626HyperdriveTransferFromContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(tokenID), dataclass_to_tuple(_from), dataclass_to_tuple(to), dataclass_to_tuple(amount)
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1227,16 +1249,19 @@ class IERC4626HyperdriveTransferFromContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class IERC4626HyperdriveTransferFromBridgeContractFunction(ContractFunction):
     """ContractFunction for the transferFromBridge method."""
 
-    def __call__(
-        self, tokenID: int, _from: str, to: str, amount: int, caller: str
-    ) -> IERC4626HyperdriveTransferFromBridgeContractFunction:
-        clone = super().__call__(tokenID, _from, to, amount, caller)
+    def __call__(self, tokenID: int, _from: str, to: str, amount: int, caller: str) -> IERC4626HyperdriveTransferFromBridgeContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(tokenID),
+            dataclass_to_tuple(_from),
+            dataclass_to_tuple(to),
+            dataclass_to_tuple(amount),
+            dataclass_to_tuple(caller),
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1252,7 +1277,6 @@ class IERC4626HyperdriveTransferFromBridgeContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class IERC4626HyperdriveContractFunctions(ContractFunctions):
@@ -1694,26 +1718,44 @@ class IERC4626HyperdriveAddLiquidityContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveAddLiquidityContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveAddLiquidityContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveAddLiquidityContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1721,8 +1763,28 @@ class IERC4626HyperdriveAddLiquidityContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveAddLiquidityContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1732,26 +1794,44 @@ class IERC4626HyperdriveApprovalContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveApprovalContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveApprovalContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveApprovalContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1759,8 +1839,28 @@ class IERC4626HyperdriveApprovalContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveApprovalContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1770,26 +1870,44 @@ class IERC4626HyperdriveApprovalForAllContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveApprovalForAllContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveApprovalForAllContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveApprovalForAllContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1797,8 +1915,28 @@ class IERC4626HyperdriveApprovalForAllContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveApprovalForAllContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1808,26 +1946,44 @@ class IERC4626HyperdriveCloseLongContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveCloseLongContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveCloseLongContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveCloseLongContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1835,8 +1991,28 @@ class IERC4626HyperdriveCloseLongContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveCloseLongContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1846,26 +2022,44 @@ class IERC4626HyperdriveCloseShortContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveCloseShortContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveCloseShortContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveCloseShortContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1873,8 +2067,28 @@ class IERC4626HyperdriveCloseShortContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveCloseShortContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1884,26 +2098,44 @@ class IERC4626HyperdriveCollectGovernanceFeeContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveCollectGovernanceFeeContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveCollectGovernanceFeeContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveCollectGovernanceFeeContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1911,8 +2143,28 @@ class IERC4626HyperdriveCollectGovernanceFeeContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveCollectGovernanceFeeContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1922,26 +2174,44 @@ class IERC4626HyperdriveCreateCheckpointContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveCreateCheckpointContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveCreateCheckpointContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveCreateCheckpointContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1949,8 +2219,28 @@ class IERC4626HyperdriveCreateCheckpointContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveCreateCheckpointContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1960,26 +2250,44 @@ class IERC4626HyperdriveInitializeContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveInitializeContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveInitializeContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveInitializeContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1987,8 +2295,28 @@ class IERC4626HyperdriveInitializeContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveInitializeContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1998,26 +2326,44 @@ class IERC4626HyperdriveOpenLongContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveOpenLongContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveOpenLongContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveOpenLongContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -2025,8 +2371,28 @@ class IERC4626HyperdriveOpenLongContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveOpenLongContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -2036,26 +2402,44 @@ class IERC4626HyperdriveOpenShortContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveOpenShortContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveOpenShortContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveOpenShortContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -2063,8 +2447,28 @@ class IERC4626HyperdriveOpenShortContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveOpenShortContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -2074,26 +2478,44 @@ class IERC4626HyperdriveRedeemWithdrawalSharesContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveRedeemWithdrawalSharesContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveRedeemWithdrawalSharesContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveRedeemWithdrawalSharesContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -2101,8 +2523,28 @@ class IERC4626HyperdriveRedeemWithdrawalSharesContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveRedeemWithdrawalSharesContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -2112,26 +2554,44 @@ class IERC4626HyperdriveRemoveLiquidityContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveRemoveLiquidityContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveRemoveLiquidityContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveRemoveLiquidityContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -2139,8 +2599,28 @@ class IERC4626HyperdriveRemoveLiquidityContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveRemoveLiquidityContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -2150,26 +2630,44 @@ class IERC4626HyperdriveTransferSingleContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveTransferSingleContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveTransferSingleContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveTransferSingleContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -2177,8 +2675,28 @@ class IERC4626HyperdriveTransferSingleContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveTransferSingleContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -3101,7 +3619,8 @@ class IERC4626HyperdriveContract(Contract):
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
-            self.functions = IERC4626HyperdriveContractFunctions(ierc4626hyperdrive_abi, self.w3, address)
+            self.functions = IERC4626HyperdriveContractFunctions(ierc4626hyperdrive_abi, self.w3, address)  # type: ignore
+            self.events = IERC4626HyperdriveContractEvents(ierc4626hyperdrive_abi, self.w3, address)  # type: ignore
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")

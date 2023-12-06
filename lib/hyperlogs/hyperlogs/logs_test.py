@@ -7,7 +7,7 @@ import os
 import sys
 import unittest
 
-import hyperlogs.logs as log_utils
+from hyperlogs import add_file_handler, add_stdout_handler, close_logging, get_root_logger, setup_logging
 
 
 class TestLogging(unittest.TestCase):
@@ -32,13 +32,13 @@ class TestLogging(unittest.TestCase):
                 handler = logging.FileHandler(os.path.join(log_dir, log_name), "w")
             else:
                 handler = logging.StreamHandler(sys.stdout)
-            log_utils.get_root_logger().setLevel(level)  # events of this level and above will be tracked
+            get_root_logger().setLevel(level)  # events of this level and above will be tracked
             handler.setFormatter(
                 logging.Formatter(
                     "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s", "%y-%m-%d %H:%M:%S"
                 )
             )
-            log_utils.get_root_logger().handlers = [
+            get_root_logger().handlers = [
                 handler,
             ]
             logging.debug("Debug test")
@@ -48,37 +48,37 @@ class TestLogging(unittest.TestCase):
             logging.critical("Critical test")
             self.assertLogs(level=level)
             if handler_type == "file":
-                log_utils.close_logging()
+                close_logging()
 
     def test_multiple_handlers_setup_logging(self):
         """Verfies that two handlers are created if we log to file and stdout."""
         log_filename = ".logging/test_logging.log"
         # one handler because we're logging to file only
-        log_utils.setup_logging(log_filename=log_filename, log_stdout=False, keep_previous_handlers=False)
-        self.assertEqual(len(log_utils.get_root_logger().handlers), 1)
-        log_utils.close_logging()
+        setup_logging(log_filename=log_filename, log_stdout=False, keep_previous_handlers=False)
+        self.assertEqual(len(get_root_logger().handlers), 1)
+        close_logging()
         # one handler because we're logging to stdout only
-        log_utils.setup_logging(log_stdout=True)
-        self.assertEqual(len(log_utils.get_root_logger().handlers), 1)
-        log_utils.close_logging()
+        setup_logging(log_stdout=True)
+        self.assertEqual(len(get_root_logger().handlers), 1)
+        close_logging()
         # two handlers because we're logging to file and stdout
-        log_utils.setup_logging(log_filename=log_filename, log_stdout=True)
-        self.assertEqual(len(log_utils.get_root_logger().handlers), 2)
-        log_utils.close_logging()
+        setup_logging(log_filename=log_filename, log_stdout=True)
+        self.assertEqual(len(get_root_logger().handlers), 2)
+        close_logging()
 
     def test_multiple_handlers_add_handlers(self):
         """Verfies that two handlers are created if we log to file and stdout."""
         log_filename = ".logging/test_logging.log"
         # one handler because we're logging to file only
-        log_utils.add_stdout_handler(keep_previous_handlers=False)
-        self.assertEqual(len(log_utils.get_root_logger().handlers), 1)
-        log_utils.close_logging()
+        add_stdout_handler(keep_previous_handlers=False)
+        self.assertEqual(len(get_root_logger().handlers), 1)
+        close_logging()
         # one handler because we're logging to stdout only
-        log_utils.add_file_handler(log_filename=log_filename)
-        self.assertEqual(len(log_utils.get_root_logger().handlers), 1)
-        log_utils.close_logging()
+        add_file_handler(log_filename=log_filename)
+        self.assertEqual(len(get_root_logger().handlers), 1)
+        close_logging()
         # two handlers because we're logging to file and stdout
-        log_utils.add_stdout_handler(keep_previous_handlers=False)
-        log_utils.add_file_handler(log_filename=log_filename)
-        self.assertEqual(len(log_utils.get_root_logger().handlers), 2)
-        log_utils.close_logging()
+        add_stdout_handler(keep_previous_handlers=False)
+        add_file_handler(log_filename=log_filename)
+        self.assertEqual(len(get_root_logger().handlers), 2)
+        close_logging()

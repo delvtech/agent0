@@ -20,20 +20,16 @@ https://github.com/delvtech/pypechain"""
 from __future__ import annotations
 
 from dataclasses import fields, is_dataclass
-from typing import Any, Iterable, Tuple, Type, TypeVar, Sequence, cast
+from typing import Any, Iterable, Sequence, Tuple, Type, TypeVar, cast
 
 from eth_typing import ChecksumAddress, HexStr
-from eth_utils.decorators import combomethod
 from hexbytes import HexBytes
 from typing_extensions import Self
 from web3 import Web3
-from web3.contract.contract import Contract, ContractFunction, ContractFunctions
-from web3.contract.contract import ContractEvent, ContractEvents
-from web3.exceptions import FallbackNotFound
-from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
-from web3.types import EventData
 from web3._utils.filters import LogFilter
-
+from web3.contract.contract import Contract, ContractEvent, ContractEvents, ContractFunction, ContractFunctions
+from web3.exceptions import FallbackNotFound
+from web3.types import ABI, BlockIdentifier, CallOverride, EventData, TxParams
 
 T = TypeVar("T")
 
@@ -78,6 +74,22 @@ def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
     return cls(**field_values)
 
 
+def dataclass_to_tuple(instance: Any) -> Any:
+    """Convert a dataclass instance to a tuple, handling nested dataclasses.
+    If the input is not a dataclass, return the original value.
+    """
+    if not is_dataclass(instance):
+        return instance
+
+    def convert_value(value: Any) -> Any:
+        """Convert nested dataclasses to tuples recursively, or return the original value."""
+        if is_dataclass(value):
+            return dataclass_to_tuple(value)
+        return value
+
+    return tuple(convert_value(getattr(instance, field.name)) for field in fields(instance))
+
+
 def rename_returned_types(return_types, raw_values) -> Any:
     """_summary_
 
@@ -114,7 +126,7 @@ def rename_returned_types(return_types, raw_values) -> Any:
 class MockERC4626DOMAIN_SEPARATORContractFunction(ContractFunction):
     """ContractFunction for the DOMAIN_SEPARATOR method."""
 
-    def __call__(self) -> MockERC4626DOMAIN_SEPARATORContractFunction:
+    def __call__(self) -> MockERC4626DOMAIN_SEPARATORContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -133,16 +145,16 @@ class MockERC4626DOMAIN_SEPARATORContractFunction(ContractFunction):
         return_types = bytes
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bytes, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626AllowanceContractFunction(ContractFunction):
     """ContractFunction for the allowance method."""
 
-    def __call__(self, arg1: str, arg2: str) -> MockERC4626AllowanceContractFunction:
-        clone = super().__call__(arg1, arg2)
+    def __call__(self, arg1: str, arg2: str) -> MockERC4626AllowanceContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1), dataclass_to_tuple(arg2))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -160,16 +172,16 @@ class MockERC4626AllowanceContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626ApproveContractFunction(ContractFunction):
     """ContractFunction for the approve method."""
 
-    def __call__(self, spender: str, amount: int) -> MockERC4626ApproveContractFunction:
-        clone = super().__call__(spender, amount)
+    def __call__(self, spender: str, amount: int) -> MockERC4626ApproveContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(spender), dataclass_to_tuple(amount))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -187,15 +199,15 @@ class MockERC4626ApproveContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626AssetContractFunction(ContractFunction):
     """ContractFunction for the asset method."""
 
-    def __call__(self) -> MockERC4626AssetContractFunction:
+    def __call__(self) -> MockERC4626AssetContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -214,15 +226,15 @@ class MockERC4626AssetContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626AuthorityContractFunction(ContractFunction):
     """ContractFunction for the authority method."""
 
-    def __call__(self) -> MockERC4626AuthorityContractFunction:
+    def __call__(self) -> MockERC4626AuthorityContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -241,16 +253,16 @@ class MockERC4626AuthorityContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626BalanceOfContractFunction(ContractFunction):
     """ContractFunction for the balanceOf method."""
 
-    def __call__(self, arg1: str) -> MockERC4626BalanceOfContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: str) -> MockERC4626BalanceOfContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -268,16 +280,16 @@ class MockERC4626BalanceOfContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626CanCallContractFunction(ContractFunction):
     """ContractFunction for the canCall method."""
 
-    def __call__(self, user: str, target: str, functionSig: bytes) -> MockERC4626CanCallContractFunction:
-        clone = super().__call__(user, target, functionSig)
+    def __call__(self, user: str, target: str, functionSig: bytes) -> MockERC4626CanCallContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(user), dataclass_to_tuple(target), dataclass_to_tuple(functionSig))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -295,16 +307,16 @@ class MockERC4626CanCallContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626ConvertToAssetsContractFunction(ContractFunction):
     """ContractFunction for the convertToAssets method."""
 
-    def __call__(self, shares: int) -> MockERC4626ConvertToAssetsContractFunction:
-        clone = super().__call__(shares)
+    def __call__(self, shares: int) -> MockERC4626ConvertToAssetsContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(shares))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -322,16 +334,16 @@ class MockERC4626ConvertToAssetsContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626ConvertToSharesContractFunction(ContractFunction):
     """ContractFunction for the convertToShares method."""
 
-    def __call__(self, assets: int) -> MockERC4626ConvertToSharesContractFunction:
-        clone = super().__call__(assets)
+    def __call__(self, assets: int) -> MockERC4626ConvertToSharesContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(assets))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -349,15 +361,15 @@ class MockERC4626ConvertToSharesContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626DecimalsContractFunction(ContractFunction):
     """ContractFunction for the decimals method."""
 
-    def __call__(self) -> MockERC4626DecimalsContractFunction:
+    def __call__(self) -> MockERC4626DecimalsContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -376,16 +388,16 @@ class MockERC4626DecimalsContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626DepositContractFunction(ContractFunction):
     """ContractFunction for the deposit method."""
 
-    def __call__(self, _assets: int, _receiver: str) -> MockERC4626DepositContractFunction:
-        clone = super().__call__(_assets, _receiver)
+    def __call__(self, assets: int, receiver: str) -> MockERC4626DepositContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(assets), dataclass_to_tuple(receiver))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -403,16 +415,16 @@ class MockERC4626DepositContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626DoesRoleHaveCapabilityContractFunction(ContractFunction):
     """ContractFunction for the doesRoleHaveCapability method."""
 
-    def __call__(self, role: int, functionSig: bytes) -> MockERC4626DoesRoleHaveCapabilityContractFunction:
-        clone = super().__call__(role, functionSig)
+    def __call__(self, role: int, functionSig: bytes) -> MockERC4626DoesRoleHaveCapabilityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(role), dataclass_to_tuple(functionSig))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -430,16 +442,16 @@ class MockERC4626DoesRoleHaveCapabilityContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626DoesUserHaveRoleContractFunction(ContractFunction):
     """ContractFunction for the doesUserHaveRole method."""
 
-    def __call__(self, user: str, role: int) -> MockERC4626DoesUserHaveRoleContractFunction:
-        clone = super().__call__(user, role)
+    def __call__(self, user: str, role: int) -> MockERC4626DoesUserHaveRoleContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(user), dataclass_to_tuple(role))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -457,15 +469,15 @@ class MockERC4626DoesUserHaveRoleContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626GetRateContractFunction(ContractFunction):
     """ContractFunction for the getRate method."""
 
-    def __call__(self) -> MockERC4626GetRateContractFunction:
+    def __call__(self) -> MockERC4626GetRateContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -484,16 +496,16 @@ class MockERC4626GetRateContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626GetRolesWithCapabilityContractFunction(ContractFunction):
     """ContractFunction for the getRolesWithCapability method."""
 
-    def __call__(self, arg1: bytes) -> MockERC4626GetRolesWithCapabilityContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: bytes) -> MockERC4626GetRolesWithCapabilityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -511,16 +523,16 @@ class MockERC4626GetRolesWithCapabilityContractFunction(ContractFunction):
         return_types = bytes
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bytes, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626GetTargetCustomAuthorityContractFunction(ContractFunction):
     """ContractFunction for the getTargetCustomAuthority method."""
 
-    def __call__(self, arg1: str) -> MockERC4626GetTargetCustomAuthorityContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: str) -> MockERC4626GetTargetCustomAuthorityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -538,16 +550,16 @@ class MockERC4626GetTargetCustomAuthorityContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626GetUserRolesContractFunction(ContractFunction):
     """ContractFunction for the getUserRoles method."""
 
-    def __call__(self, arg1: str) -> MockERC4626GetUserRolesContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: str) -> MockERC4626GetUserRolesContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -565,16 +577,16 @@ class MockERC4626GetUserRolesContractFunction(ContractFunction):
         return_types = bytes
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bytes, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626IsCapabilityPublicContractFunction(ContractFunction):
     """ContractFunction for the isCapabilityPublic method."""
 
-    def __call__(self, arg1: bytes) -> MockERC4626IsCapabilityPublicContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: bytes) -> MockERC4626IsCapabilityPublicContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -592,15 +604,15 @@ class MockERC4626IsCapabilityPublicContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626IsCompetitionModeContractFunction(ContractFunction):
     """ContractFunction for the isCompetitionMode method."""
 
-    def __call__(self) -> MockERC4626IsCompetitionModeContractFunction:
+    def __call__(self) -> MockERC4626IsCompetitionModeContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -619,16 +631,16 @@ class MockERC4626IsCompetitionModeContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626MaxDepositContractFunction(ContractFunction):
     """ContractFunction for the maxDeposit method."""
 
-    def __call__(self, arg1: str) -> MockERC4626MaxDepositContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: str) -> MockERC4626MaxDepositContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -646,16 +658,16 @@ class MockERC4626MaxDepositContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626MaxMintContractFunction(ContractFunction):
     """ContractFunction for the maxMint method."""
 
-    def __call__(self, arg1: str) -> MockERC4626MaxMintContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: str) -> MockERC4626MaxMintContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -673,16 +685,16 @@ class MockERC4626MaxMintContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626MaxRedeemContractFunction(ContractFunction):
     """ContractFunction for the maxRedeem method."""
 
-    def __call__(self, owner: str) -> MockERC4626MaxRedeemContractFunction:
-        clone = super().__call__(owner)
+    def __call__(self, owner: str) -> MockERC4626MaxRedeemContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(owner))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -700,16 +712,16 @@ class MockERC4626MaxRedeemContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626MaxWithdrawContractFunction(ContractFunction):
     """ContractFunction for the maxWithdraw method."""
 
-    def __call__(self, owner: str) -> MockERC4626MaxWithdrawContractFunction:
-        clone = super().__call__(owner)
+    def __call__(self, owner: str) -> MockERC4626MaxWithdrawContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(owner))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -727,16 +739,16 @@ class MockERC4626MaxWithdrawContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626MintContractFunction(ContractFunction):
     """ContractFunction for the mint method."""
 
-    def __call__(self, _shares: int, _receiver: str) -> MockERC4626MintContractFunction:
-        clone = super().__call__(_shares, _receiver)
+    def __call__(self, shares: int, receiver: str) -> MockERC4626MintContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(shares), dataclass_to_tuple(receiver))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -754,15 +766,15 @@ class MockERC4626MintContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626NameContractFunction(ContractFunction):
     """ContractFunction for the name method."""
 
-    def __call__(self) -> MockERC4626NameContractFunction:
+    def __call__(self) -> MockERC4626NameContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -781,16 +793,16 @@ class MockERC4626NameContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626NoncesContractFunction(ContractFunction):
     """ContractFunction for the nonces method."""
 
-    def __call__(self, arg1: str) -> MockERC4626NoncesContractFunction:
-        clone = super().__call__(arg1)
+    def __call__(self, arg1: str) -> MockERC4626NoncesContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -808,15 +820,15 @@ class MockERC4626NoncesContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626OwnerContractFunction(ContractFunction):
     """ContractFunction for the owner method."""
 
-    def __call__(self) -> MockERC4626OwnerContractFunction:
+    def __call__(self) -> MockERC4626OwnerContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -835,18 +847,24 @@ class MockERC4626OwnerContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626PermitContractFunction(ContractFunction):
     """ContractFunction for the permit method."""
 
-    def __call__(
-        self, owner: str, spender: str, value: int, deadline: int, v: int, r: bytes, s: bytes
-    ) -> MockERC4626PermitContractFunction:
-        clone = super().__call__(owner, spender, value, deadline, v, r, s)
+    def __call__(self, owner: str, spender: str, value: int, deadline: int, v: int, r: bytes, s: bytes) -> MockERC4626PermitContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(owner),
+            dataclass_to_tuple(spender),
+            dataclass_to_tuple(value),
+            dataclass_to_tuple(deadline),
+            dataclass_to_tuple(v),
+            dataclass_to_tuple(r),
+            dataclass_to_tuple(s),
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -862,14 +880,13 @@ class MockERC4626PermitContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626PreviewDepositContractFunction(ContractFunction):
     """ContractFunction for the previewDeposit method."""
 
-    def __call__(self, assets: int) -> MockERC4626PreviewDepositContractFunction:
-        clone = super().__call__(assets)
+    def __call__(self, assets: int) -> MockERC4626PreviewDepositContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(assets))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -887,16 +904,16 @@ class MockERC4626PreviewDepositContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626PreviewMintContractFunction(ContractFunction):
     """ContractFunction for the previewMint method."""
 
-    def __call__(self, shares: int) -> MockERC4626PreviewMintContractFunction:
-        clone = super().__call__(shares)
+    def __call__(self, shares: int) -> MockERC4626PreviewMintContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(shares))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -914,16 +931,16 @@ class MockERC4626PreviewMintContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626PreviewRedeemContractFunction(ContractFunction):
     """ContractFunction for the previewRedeem method."""
 
-    def __call__(self, shares: int) -> MockERC4626PreviewRedeemContractFunction:
-        clone = super().__call__(shares)
+    def __call__(self, shares: int) -> MockERC4626PreviewRedeemContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(shares))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -941,16 +958,16 @@ class MockERC4626PreviewRedeemContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626PreviewWithdrawContractFunction(ContractFunction):
     """ContractFunction for the previewWithdraw method."""
 
-    def __call__(self, assets: int) -> MockERC4626PreviewWithdrawContractFunction:
-        clone = super().__call__(assets)
+    def __call__(self, assets: int) -> MockERC4626PreviewWithdrawContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(assets))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -968,16 +985,16 @@ class MockERC4626PreviewWithdrawContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626RedeemContractFunction(ContractFunction):
     """ContractFunction for the redeem method."""
 
-    def __call__(self, _shares: int, _receiver: str, _owner: str) -> MockERC4626RedeemContractFunction:
-        clone = super().__call__(_shares, _receiver, _owner)
+    def __call__(self, shares: int, receiver: str, owner: str) -> MockERC4626RedeemContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(shares), dataclass_to_tuple(receiver), dataclass_to_tuple(owner))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -995,16 +1012,16 @@ class MockERC4626RedeemContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626SetAuthorityContractFunction(ContractFunction):
     """ContractFunction for the setAuthority method."""
 
-    def __call__(self, newAuthority: str) -> MockERC4626SetAuthorityContractFunction:
-        clone = super().__call__(newAuthority)
+    def __call__(self, newAuthority: str) -> MockERC4626SetAuthorityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(newAuthority))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1020,14 +1037,13 @@ class MockERC4626SetAuthorityContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626SetPublicCapabilityContractFunction(ContractFunction):
     """ContractFunction for the setPublicCapability method."""
 
-    def __call__(self, functionSig: bytes, enabled: bool) -> MockERC4626SetPublicCapabilityContractFunction:
-        clone = super().__call__(functionSig, enabled)
+    def __call__(self, functionSig: bytes, enabled: bool) -> MockERC4626SetPublicCapabilityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(functionSig), dataclass_to_tuple(enabled))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1043,14 +1059,13 @@ class MockERC4626SetPublicCapabilityContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626SetRateContractFunction(ContractFunction):
     """ContractFunction for the setRate method."""
 
-    def __call__(self, _rate_: int) -> MockERC4626SetRateContractFunction:
-        clone = super().__call__(_rate_)
+    def __call__(self, rate_: int) -> MockERC4626SetRateContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(rate_))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1066,14 +1081,13 @@ class MockERC4626SetRateContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626SetRoleCapabilityContractFunction(ContractFunction):
     """ContractFunction for the setRoleCapability method."""
 
-    def __call__(self, role: int, functionSig: bytes, enabled: bool) -> MockERC4626SetRoleCapabilityContractFunction:
-        clone = super().__call__(role, functionSig, enabled)
+    def __call__(self, role: int, functionSig: bytes, enabled: bool) -> MockERC4626SetRoleCapabilityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(role), dataclass_to_tuple(functionSig), dataclass_to_tuple(enabled))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1089,14 +1103,13 @@ class MockERC4626SetRoleCapabilityContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626SetTargetCustomAuthorityContractFunction(ContractFunction):
     """ContractFunction for the setTargetCustomAuthority method."""
 
-    def __call__(self, target: str, customAuthority: str) -> MockERC4626SetTargetCustomAuthorityContractFunction:
-        clone = super().__call__(target, customAuthority)
+    def __call__(self, target: str, customAuthority: str) -> MockERC4626SetTargetCustomAuthorityContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(target), dataclass_to_tuple(customAuthority))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1112,14 +1125,13 @@ class MockERC4626SetTargetCustomAuthorityContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626SetUserRoleContractFunction(ContractFunction):
     """ContractFunction for the setUserRole method."""
 
-    def __call__(self, user: str, role: int, enabled: bool) -> MockERC4626SetUserRoleContractFunction:
-        clone = super().__call__(user, role, enabled)
+    def __call__(self, user: str, role: int, enabled: bool) -> MockERC4626SetUserRoleContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(user), dataclass_to_tuple(role), dataclass_to_tuple(enabled))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1135,13 +1147,12 @@ class MockERC4626SetUserRoleContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626SymbolContractFunction(ContractFunction):
     """ContractFunction for the symbol method."""
 
-    def __call__(self) -> MockERC4626SymbolContractFunction:
+    def __call__(self) -> MockERC4626SymbolContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1160,15 +1171,15 @@ class MockERC4626SymbolContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626TotalAssetsContractFunction(ContractFunction):
     """ContractFunction for the totalAssets method."""
 
-    def __call__(self) -> MockERC4626TotalAssetsContractFunction:
+    def __call__(self) -> MockERC4626TotalAssetsContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1187,15 +1198,15 @@ class MockERC4626TotalAssetsContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626TotalSupplyContractFunction(ContractFunction):
     """ContractFunction for the totalSupply method."""
 
-    def __call__(self) -> MockERC4626TotalSupplyContractFunction:
+    def __call__(self) -> MockERC4626TotalSupplyContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1214,16 +1225,16 @@ class MockERC4626TotalSupplyContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626TransferContractFunction(ContractFunction):
     """ContractFunction for the transfer method."""
 
-    def __call__(self, to: str, amount: int) -> MockERC4626TransferContractFunction:
-        clone = super().__call__(to, amount)
+    def __call__(self, to: str, amount: int) -> MockERC4626TransferContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(to), dataclass_to_tuple(amount))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1241,16 +1252,16 @@ class MockERC4626TransferContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626TransferFromContractFunction(ContractFunction):
     """ContractFunction for the transferFrom method."""
 
-    def __call__(self, _from: str, to: str, amount: int) -> MockERC4626TransferFromContractFunction:
-        clone = super().__call__(_from, to, amount)
+    def __call__(self, _from: str, to: str, amount: int) -> MockERC4626TransferFromContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(_from), dataclass_to_tuple(to), dataclass_to_tuple(amount))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1268,16 +1279,16 @@ class MockERC4626TransferFromContractFunction(ContractFunction):
         return_types = bool
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(return_types, raw_values))
 
 
 class MockERC4626TransferOwnershipContractFunction(ContractFunction):
     """ContractFunction for the transferOwnership method."""
 
-    def __call__(self, newOwner: str) -> MockERC4626TransferOwnershipContractFunction:
-        clone = super().__call__(newOwner)
+    def __call__(self, newOwner: str) -> MockERC4626TransferOwnershipContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(newOwner))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1293,14 +1304,13 @@ class MockERC4626TransferOwnershipContractFunction(ContractFunction):
         # Define the expected return types from the smart contract call
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
 
 class MockERC4626WithdrawContractFunction(ContractFunction):
     """ContractFunction for the withdraw method."""
 
-    def __call__(self, _assets: int, _receiver: str, _owner: str) -> MockERC4626WithdrawContractFunction:
-        clone = super().__call__(_assets, _receiver, _owner)
+    def __call__(self, assets: int, receiver: str, owner: str) -> MockERC4626WithdrawContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(assets), dataclass_to_tuple(receiver), dataclass_to_tuple(owner))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1318,8 +1328,8 @@ class MockERC4626WithdrawContractFunction(ContractFunction):
         return_types = int
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(return_types, raw_values))
 
 
@@ -1802,26 +1812,44 @@ class MockERC4626ApprovalContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "MockERC4626ApprovalContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["MockERC4626ApprovalContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "MockERC4626ApprovalContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1829,8 +1857,28 @@ class MockERC4626ApprovalContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["MockERC4626ApprovalContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1840,26 +1888,44 @@ class MockERC4626AuthorityUpdatedContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "MockERC4626AuthorityUpdatedContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["MockERC4626AuthorityUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "MockERC4626AuthorityUpdatedContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1867,8 +1933,28 @@ class MockERC4626AuthorityUpdatedContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["MockERC4626AuthorityUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1878,26 +1964,44 @@ class MockERC4626DepositContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "MockERC4626DepositContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["MockERC4626DepositContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "MockERC4626DepositContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1905,8 +2009,28 @@ class MockERC4626DepositContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["MockERC4626DepositContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1916,26 +2040,44 @@ class MockERC4626OwnershipTransferredContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "MockERC4626OwnershipTransferredContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["MockERC4626OwnershipTransferredContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "MockERC4626OwnershipTransferredContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1943,8 +2085,28 @@ class MockERC4626OwnershipTransferredContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["MockERC4626OwnershipTransferredContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1954,26 +2116,44 @@ class MockERC4626PublicCapabilityUpdatedContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "MockERC4626PublicCapabilityUpdatedContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["MockERC4626PublicCapabilityUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "MockERC4626PublicCapabilityUpdatedContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1981,8 +2161,28 @@ class MockERC4626PublicCapabilityUpdatedContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["MockERC4626PublicCapabilityUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1992,26 +2192,44 @@ class MockERC4626RoleCapabilityUpdatedContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "MockERC4626RoleCapabilityUpdatedContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["MockERC4626RoleCapabilityUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "MockERC4626RoleCapabilityUpdatedContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -2019,8 +2237,28 @@ class MockERC4626RoleCapabilityUpdatedContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["MockERC4626RoleCapabilityUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -2030,26 +2268,44 @@ class MockERC4626TargetCustomAuthorityUpdatedContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "MockERC4626TargetCustomAuthorityUpdatedContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["MockERC4626TargetCustomAuthorityUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "MockERC4626TargetCustomAuthorityUpdatedContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -2057,8 +2313,28 @@ class MockERC4626TargetCustomAuthorityUpdatedContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["MockERC4626TargetCustomAuthorityUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -2068,26 +2344,44 @@ class MockERC4626TransferContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "MockERC4626TransferContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["MockERC4626TransferContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "MockERC4626TransferContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -2095,8 +2389,28 @@ class MockERC4626TransferContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["MockERC4626TransferContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -2106,26 +2420,44 @@ class MockERC4626UserRoleUpdatedContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "MockERC4626UserRoleUpdatedContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["MockERC4626UserRoleUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "MockERC4626UserRoleUpdatedContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -2133,8 +2465,28 @@ class MockERC4626UserRoleUpdatedContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["MockERC4626UserRoleUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -2144,26 +2496,44 @@ class MockERC4626WithdrawContractEvent(ContractEvent):
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
 
-    # TODO: remove pylint disable when we add a type-hint for argument_names
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
     # pylint: disable=useless-parent-delegation
     def __init__(self, *argument_names: tuple[str]) -> None:
         super().__init__(*argument_names)
 
-    @combomethod
-    def get_logs(
-        self,
+    def get_logs(  # type: ignore
+        self: "MockERC4626WithdrawContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
         block_hash: HexBytes | None = None,
     ) -> Iterable[EventData]:
-        return super().get_logs(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
         )
 
-    @combomethod
-    def create_filter(
-        self,
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["MockERC4626WithdrawContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "MockERC4626WithdrawContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -2171,8 +2541,28 @@ class MockERC4626WithdrawContractEvent(ContractEvent):
         address: ChecksumAddress | None = None,
         topics: Sequence[Any] | None = None,
     ) -> LogFilter:
-        return super().create_filter(
-            argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["MockERC4626WithdrawContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -2789,7 +3179,8 @@ class MockERC4626Contract(Contract):
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
-            self.functions = MockERC4626ContractFunctions(mockerc4626_abi, self.w3, address)
+            self.functions = MockERC4626ContractFunctions(mockerc4626_abi, self.w3, address)  # type: ignore
+            self.events = MockERC4626ContractEvents(mockerc4626_abi, self.w3, address)  # type: ignore
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")

@@ -22,20 +22,20 @@ class FrozenClass:
 
     def freeze(self):
         """Disallows changing existing members."""
-        return NotImplemented
+        raise NotImplementedError
 
     def disable_new_attribs(self):
         """Disallows adding new members."""
-        return NotImplemented
+        raise NotImplementedError
 
     def astype(self, _new_type):
         """Cast all member attributes to a new type."""
-        return NotImplemented
+        raise NotImplementedError
 
     @property
     def dtypes(self):
         """Return a dict listing name & type of each member variable."""
-        return NotImplemented
+        raise NotImplementedError
 
 
 def freezable(frozen: bool = False, no_new_attribs: bool = False):

@@ -23,15 +23,12 @@ from dataclasses import fields, is_dataclass
 from typing import Any, NamedTuple, Tuple, Type, TypeVar, cast
 
 from eth_typing import ChecksumAddress, HexStr
-
 from hexbytes import HexBytes
 from typing_extensions import Self
 from web3 import Web3
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
-
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
-
 
 T = TypeVar("T")
 
@@ -76,6 +73,22 @@ def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
     return cls(**field_values)
 
 
+def dataclass_to_tuple(instance: Any) -> Any:
+    """Convert a dataclass instance to a tuple, handling nested dataclasses.
+    If the input is not a dataclass, return the original value.
+    """
+    if not is_dataclass(instance):
+        return instance
+
+    def convert_value(value: Any) -> Any:
+        """Convert nested dataclasses to tuples recursively, or return the original value."""
+        if is_dataclass(value):
+            return dataclass_to_tuple(value)
+        return value
+
+    return tuple(convert_value(getattr(instance, field.name)) for field in fields(instance))
+
+
 def rename_returned_types(return_types, raw_values) -> Any:
     """_summary_
 
@@ -112,7 +125,7 @@ def rename_returned_types(return_types, raw_values) -> Any:
 class ForwarderFactoryERC20LINK_HASHContractFunction(ContractFunction):
     """ContractFunction for the ERC20LINK_HASH method."""
 
-    def __call__(self) -> ForwarderFactoryERC20LINK_HASHContractFunction:
+    def __call__(self) -> ForwarderFactoryERC20LINK_HASHContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -131,16 +144,16 @@ class ForwarderFactoryERC20LINK_HASHContractFunction(ContractFunction):
         return_types = bytes
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bytes, rename_returned_types(return_types, raw_values))
 
 
 class ForwarderFactoryCreateContractFunction(ContractFunction):
     """ContractFunction for the create method."""
 
-    def __call__(self, __token: str, __tokenId: int) -> ForwarderFactoryCreateContractFunction:
-        clone = super().__call__(__token, __tokenId)
+    def __call__(self, token: str, tokenId: int) -> ForwarderFactoryCreateContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(token), dataclass_to_tuple(tokenId))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -158,8 +171,8 @@ class ForwarderFactoryCreateContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
@@ -172,7 +185,7 @@ class ForwarderFactoryGetDeployDetailsContractFunction(ContractFunction):
         arg1: str
         arg2: int
 
-    def __call__(self) -> ForwarderFactoryGetDeployDetailsContractFunction:
+    def __call__(self) -> ForwarderFactoryGetDeployDetailsContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -191,16 +204,16 @@ class ForwarderFactoryGetDeployDetailsContractFunction(ContractFunction):
         return_types = [str, int]
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return self.ReturnValues(*rename_returned_types(return_types, raw_values))
 
 
 class ForwarderFactoryGetForwarderContractFunction(ContractFunction):
     """ContractFunction for the getForwarder method."""
 
-    def __call__(self, __token: str, __tokenId: int) -> ForwarderFactoryGetForwarderContractFunction:
-        clone = super().__call__(__token, __tokenId)
+    def __call__(self, token: str, tokenId: int) -> ForwarderFactoryGetForwarderContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(token), dataclass_to_tuple(tokenId))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -218,8 +231,8 @@ class ForwarderFactoryGetForwarderContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
@@ -335,7 +348,7 @@ class ForwarderFactoryContract(Contract):
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
-            self.functions = ForwarderFactoryContractFunctions(forwarderfactory_abi, self.w3, address)
+            self.functions = ForwarderFactoryContractFunctions(forwarderfactory_abi, self.w3, address)  # type: ignore
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")

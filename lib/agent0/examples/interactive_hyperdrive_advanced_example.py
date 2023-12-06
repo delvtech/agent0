@@ -1,7 +1,7 @@
 """Example script for using interactive hyperdrive."""
+# pylint: disable=pointless-statement
 # %%
 # Variables by themselves print out dataframes in a nice format in interactive mode
-# pylint: disable=pointless-statement
 
 from fixedpointmath import FixedPoint
 
@@ -46,7 +46,7 @@ chain.save_snapshot()
 # %%
 # Execute interactive trade
 open_long_event_1 = hyperdrive_random_agent.open_long(base=FixedPoint(11111))
-open_long_event_1
+open_long_event_1  # pyright: ignore
 # %%
 # Execute policy trade
 # Output event is one of the possible trade events
@@ -55,7 +55,7 @@ for i in range(10):
     # NOTE Since a policy can execute multiple trades per action, the output events is a list
     trade_events: list = hyperdrive_random_agent.execute_policy_action()
     random_trade_events.extend(trade_events)
-random_trade_events
+random_trade_events  # pyright: ignore
 # %%
 # Loads the snapshot of the state.
 chain.load_snapshot()

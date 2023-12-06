@@ -23,15 +23,12 @@ from dataclasses import fields, is_dataclass
 from typing import Any, Tuple, Type, TypeVar, cast
 
 from eth_typing import ChecksumAddress, HexStr
-
 from hexbytes import HexBytes
 from typing_extensions import Self
 from web3 import Web3
 from web3.contract.contract import Contract, ContractFunction, ContractFunctions
-
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
-
 
 from .ERC4626HyperdriveDeployerTypes import Fees, PoolConfig
 
@@ -81,6 +78,22 @@ def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
     return cls(**field_values)
 
 
+def dataclass_to_tuple(instance: Any) -> Any:
+    """Convert a dataclass instance to a tuple, handling nested dataclasses.
+    If the input is not a dataclass, return the original value.
+    """
+    if not is_dataclass(instance):
+        return instance
+
+    def convert_value(value: Any) -> Any:
+        """Convert nested dataclasses to tuples recursively, or return the original value."""
+        if is_dataclass(value):
+            return dataclass_to_tuple(value)
+        return value
+
+    return tuple(convert_value(getattr(instance, field.name)) for field in fields(instance))
+
+
 def rename_returned_types(return_types, raw_values) -> Any:
     """_summary_
 
@@ -117,10 +130,14 @@ def rename_returned_types(return_types, raw_values) -> Any:
 class ERC4626HyperdriveDeployerDeployContractFunction(ContractFunction):
     """ContractFunction for the deploy method."""
 
-    def __call__(
-        self, _config: PoolConfig, _target0: str, _target1: str, _extraData: list[bytes], _pool: str
-    ) -> ERC4626HyperdriveDeployerDeployContractFunction:
-        clone = super().__call__(_config, _target0, _target1, _extraData, _pool)
+    def __call__(self, config: PoolConfig, target0: str, target1: str, extraData: list[bytes], pool: str) -> ERC4626HyperdriveDeployerDeployContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(config),
+            dataclass_to_tuple(target0),
+            dataclass_to_tuple(target1),
+            dataclass_to_tuple(extraData),
+            dataclass_to_tuple(pool),
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -138,8 +155,8 @@ class ERC4626HyperdriveDeployerDeployContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
 
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(return_types, raw_values))
 
 
@@ -228,7 +245,7 @@ class ERC4626HyperdriveDeployerContract(Contract):
         try:
             # Initialize parent Contract class
             super().__init__(address=address)
-            self.functions = ERC4626HyperdriveDeployerContractFunctions(erc4626hyperdrivedeployer_abi, self.w3, address)
+            self.functions = ERC4626HyperdriveDeployerContractFunctions(erc4626hyperdrivedeployer_abi, self.w3, address)  # type: ignore
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")
