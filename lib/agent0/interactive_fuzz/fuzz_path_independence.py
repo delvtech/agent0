@@ -71,9 +71,30 @@ for agent_index in range(NUM_TRADES):  # 1 agent per trade
     trade_list.append((agent, trade_type, trade_amount_base))
 
 # %%
+# Open some trades
+trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]] = []
+for trade in trade_list:
+    agent, trade_type, trade_amount = trade
+    if trade_type == HyperdriveActionType.OPEN_LONG:
+        trade_event = agent.open_long(base=trade_amount)
+    elif trade_type == HyperdriveActionType.OPEN_SHORT:
+        trade_event = agent.open_short(bonds=trade_amount)
+    else:
+        raise AssertionError(f"{trade_type=} is not supported.")
+    trade_events.append((agent, trade_event))
+    # randomly advance time between opening trades
+    chain.advance_time(
+        rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration)
+    )
+
+# %%
+# Snapshot the chain, so we can load the snapshot & close in different orders
+chain.save_snapshot()
+check_data: dict | None = None
+
+# %%
 # List of columns in pool info to check between the initial pool info and the latest pool info.
 check_columns = [
-    "share_reserves",
     "shorts_outstanding",
     "withdrawal_shares_proceeds",
     "share_price",
@@ -86,26 +107,6 @@ check_columns = [
 
 
 # %%
-# Open some trades
-# TODO: include add liquidity
-trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]] = []
-for trade in trade_list:
-    agent, trade_type, trade_amount = trade
-    if trade_type == HyperdriveActionType.OPEN_LONG:
-        trade_event = agent.open_long(base=trade_amount)
-    elif trade_type == HyperdriveActionType.OPEN_SHORT:
-        trade_event = agent.open_short(bonds=trade_amount)
-    else:
-        raise AssertionError(f"{trade_type=} is not supported.")
-    trade_events.append((agent, trade_event))
-
-# %%
-# Snapshot the chain, so we can load the snapshot & close in different orders
-chain.save_snapshot()
-check_data: dict | None = None
-
-
-# %%
 # Close the trades randomly & verify that the final state is unchanged
 for iteration in range(NUM_PATHS_CHECKED):
     print(f"{iteration=}")
@@ -114,7 +115,6 @@ for iteration in range(NUM_PATHS_CHECKED):
     chain.load_snapshot()
 
     # Randomly grab some trades & close them one at a time
-    # TODO: Add remove liquidity; withdraw shares would have to happen after & outside this loop
     for trade_index in rng.permuted(list(range(len(trade_events)))):
         agent, trade = trade_events[int(trade_index)]
         if isinstance(trade, OpenLong):
@@ -123,7 +123,6 @@ for iteration in range(NUM_PATHS_CHECKED):
             agent.close_short(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
 
     # Check the reserve amounts; they should be unchanged now that all of the trades are closed
-
     pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
     # On first run, save final state
@@ -132,10 +131,10 @@ for iteration in range(NUM_PATHS_CHECKED):
         check_data["check_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
         # TODO add these to pool info
         pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
+        effective_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state)
         check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
-        check_data["gov_fees_accrued"] = pool_state.gov_fees_accrued
+        check_data["effective_share_reserves"] = effective_share_reserves
         check_data["vault_shares"] = pool_state.vault_shares
-
         # Sanity check on static pool config
         check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
 
@@ -152,11 +151,13 @@ for iteration in range(NUM_PATHS_CHECKED):
                 pool_state.hyperdrive_base_balance,
             )
             failed = True
-        if check_data["gov_fees_accrued"] != pool_state.gov_fees_accrued:
+        if check_data[
+            "effective_share_reserves"
+        ] != interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state):
             logging.critical(
-                "check_data['gov_fees_accrued']=%s != pool_state.gov_fees_accrued=%s",
-                check_data["gov_fees_accrued"],
-                pool_state.gov_fees_accrued,
+                "check_data['effective_share_reserves']=%s != effective_share_reserves=%s",
+                check_data["effective_share_reserves"],
+                interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state),
             )
             failed = True
         if check_data["vault_shares"] != pool_state.vault_shares:
@@ -185,7 +186,10 @@ for iteration in range(NUM_PATHS_CHECKED):
 
         if failed:
             logging.info(
-                "random_seed = %s\npool_config = %s\n\npool_info = %s\n\nlatest_checkpoint = %s\n\nadditional_info = %s",
+                (
+                    "random_seed = %s\npool_config = %s\n\npool_info = %s"
+                    "\n\nlatest_checkpoint = %s\n\nadditional_info = %s"
+                ),
                 random_seed,
                 json.dumps(asdict(pool_state.pool_config), indent=2, cls=ExtendedJSONEncoder),
                 json.dumps(asdict(pool_state.pool_info), indent=2, cls=ExtendedJSONEncoder),

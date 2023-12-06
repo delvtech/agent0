@@ -178,6 +178,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 receipt["transactionHash"].hex(),
             )
             if parsed_args.fuzz:
+                # TODO: Add crash report
                 assert receipt["status"] == 1, "Checkpoint failed."
                 latest_block = web3.eth.get_block("latest")
                 timestamp = latest_block.get("timestamp", None)
