@@ -130,6 +130,7 @@ class Chain:
             with a value of a list of emitted `CreateCheckpoint` events called
             from advancing time.
         """
+        # pylint: disable=too-many-locals
         if isinstance(time_delta, timedelta):
             time_delta = int(time_delta.total_seconds())
         else:
