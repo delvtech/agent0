@@ -105,6 +105,8 @@ class InteractiveHyperdrive:
             The upper bound on the flat fee that governance can set.
         max_governance_fee: FixedPoint
             The upper bound on the governance fee that governance can set.
+        preview_before_trade: bool, optional
+            Whether to preview the position before executing a trade. Defaults to False.
         """
 
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
@@ -125,6 +127,7 @@ class InteractiveHyperdrive:
         max_curve_fee = FixedPoint("0.3")  # 30%
         max_flat_fee = FixedPoint("0.0015")  # 0.15%
         max_governance_fee = FixedPoint("0.30")  # 30%
+        preview_before_trade: bool = False
 
         def __post_init__(self):
             if self.time_stretch is None:
@@ -154,7 +157,12 @@ class InteractiveHyperdrive:
         current_file_dir, _ = os.path.split(full_path)
         abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
 
-        self.eth_config = EthConfig(artifacts_uri="not_used", rpc_uri=chain.rpc_uri, abi_dir=abi_dir)
+        self.eth_config = EthConfig(
+            artifacts_uri="not_used",
+            rpc_uri=chain.rpc_uri,
+            abi_dir=abi_dir,
+            preview_before_trade=config.preview_before_trade,
+        )
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(config, chain, self.eth_config.abi_dir)
         self.hyperdrive_interface = HyperdriveInterface(
