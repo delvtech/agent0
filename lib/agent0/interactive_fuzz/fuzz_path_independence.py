@@ -24,6 +24,7 @@ from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
 # Set global defaults
 NUM_TRADES = 3
 NUM_PATHS_CHECKED = 10
+FAILED = False
 
 # %%
 # Setup logging
@@ -35,7 +36,7 @@ setup_logging(
 )
 
 # %%
-# Parameters for local chain initialization, defines defaults in constructor
+# Setup local chain
 chain_config = LocalChain.Config()
 chain = LocalChain(config=chain_config)
 random_seed = np.random.randint(low=1, high=99999999)  # No seed, we want this to be random every time it is executed
@@ -109,6 +110,7 @@ check_columns = [
 # Close the trades randomly & verify that the final state is unchanged
 for iteration in range(NUM_PATHS_CHECKED):
     print(f"{iteration=}")
+    FAILED = False
     # Load the snapshot
     chain.load_snapshot()
 
@@ -140,7 +142,6 @@ for iteration in range(NUM_PATHS_CHECKED):
         # Check values not provided in the database
         pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
 
-        failed = False
         # Base balance
         if check_data["hyperdrive_base_balance"] != pool_state.hyperdrive_base_balance:
             logging.critical(
@@ -148,7 +149,7 @@ for iteration in range(NUM_PATHS_CHECKED):
                 check_data["hyperdrive_base_balance"],
                 pool_state.hyperdrive_base_balance,
             )
-            failed = True
+            FAILED = True
         # Effective share reserves
         if check_data[
             "effective_share_reserves"
@@ -158,7 +159,7 @@ for iteration in range(NUM_PATHS_CHECKED):
                 check_data["effective_share_reserves"],
                 interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state),
             )
-            failed = True
+            FAILED = True
         # Vault shares (Hyperdrive balance of vault contract)
         if check_data["vault_shares"] != pool_state.vault_shares:
             logging.critical(
@@ -166,7 +167,7 @@ for iteration in range(NUM_PATHS_CHECKED):
                 check_data["vault_shares"],
                 pool_state.vault_shares,
             )
-            failed = True
+            FAILED = True
         # Minimum share reserves
         if check_data["minimum_share_reserves"] != pool_state.pool_config.minimum_share_reserves:
             logging.critical(
@@ -174,7 +175,7 @@ for iteration in range(NUM_PATHS_CHECKED):
                 check_data["minimum_share_reserves"],
                 pool_state.pool_config.minimum_share_reserves,
             )
-            failed = True
+            FAILED = True
         # Check that the subset of columns in initial db pool state and the latest pool state are equal
         if not check_data["check_pool_state_df"].equals(pool_state_df[check_columns].iloc[-1]):
             try:
@@ -183,9 +184,9 @@ for iteration in range(NUM_PATHS_CHECKED):
                 )
             except AssertionError as err:
                 logging.critical("Database pool info is not equal\n%s", err)
-            failed = True
+            FAILED = True
 
-        if failed:
+        if FAILED:
             logging.info(
                 (
                     "random_seed = %s\npool_config = %s\n\npool_info = %s"
