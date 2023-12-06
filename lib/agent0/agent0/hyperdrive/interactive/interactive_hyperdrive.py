@@ -62,6 +62,9 @@ from .event_types import (
 from .interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
 
+# Is very thorough module.
+# pylint: disable=too-many-lines
+
 # In order to support both scripts and jupyter notebooks with underlying async functions,
 # we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
 nest_asyncio.apply()
@@ -407,6 +410,8 @@ class InteractiveHyperdrive:
             An optional policy to attach to this agent.
         policy_config: HyperdrivePolicy, optional
             The configuration for the attached policy.
+        private_key: str, optional
+            The private key of the associated account. Default is auto-generated.
 
         Returns
         -------

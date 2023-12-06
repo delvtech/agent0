@@ -418,7 +418,7 @@ class TestInteractiveHyperdrive:
         assert larry.wallet.address.hex().startswith(pubkey.lower())  # deployer public key
 
     @pytest.mark.anvil
-    def test_remove_all_liquidity(self, chain: LocalChain):
+    def test_remove_deployer_liquidity(self, chain: LocalChain):
         config = InteractiveHyperdrive.Config(
             initial_liquidity=FixedPoint(100),
         )
@@ -426,8 +426,7 @@ class TestInteractiveHyperdrive:
         privkey = chain.get_deployer_account_private_key()  # anvil account 0
         larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
         # Ideally this would hold the accurate number of LP tokens, but the amount from initialization isn't
-        # included in acquire_data. Instead, we hack some coins into his wallet
+        # included in acquire_data. Instead, we hack some coins into his wallet, to avoid error checks.
         larry.wallet.lp_tokens = FixedPoint(100)
-        # share_price = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_price
-        # larry_lp_shares = FixedPoint(1/share_price)
+        # I don't know how many shares he actually has, so I'm guessing here.
         larry.remove_liquidity(shares=FixedPoint(5))
