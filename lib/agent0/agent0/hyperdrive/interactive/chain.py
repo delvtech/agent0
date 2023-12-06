@@ -102,14 +102,8 @@ class Chain:
         if "result" not in response:
             raise KeyError("Response did not have a result.")
 
-    def _create_checkpoint_if_needed(self, checkpoint_time) -> CreateCheckpoint:
-        latest_block = self._web3.eth.get_block("latest")
-        timestamp = latest_block.get("timestamp", None)
-        if timestamp is None:
-            raise AssertionError(f"{latest_block=} has no timestamp")
-
     def advance_time(
-        self, time_delta: int | timedelta, create_checkpoints: bool = True
+        self, time_delta: int | timedelta, create_checkpoints: bool = False
     ) -> dict[InteractiveHyperdrive, list[CreateCheckpoint]]:
         """Advance time for this chain using the `evm_mine` RPC call.
 
@@ -127,7 +121,7 @@ class Chain:
         time_delta: int | timedelta
             The amount of time to advance. Can either be a `datetime.timedelta` object or an integer in seconds.
         create_checkpoints: bool, optional
-            If set to true, will create intermediate checkpoints between advance times.
+            If set to true, will create intermediate checkpoints between advance times. Defaults to False.
 
         Returns
         -------
