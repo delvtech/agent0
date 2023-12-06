@@ -41,7 +41,7 @@ rng = np.random.default_rng(random_seed)
 
 # %%
 # Parameters for pool initialization.
-initial_pool_config = InteractiveHyperdrive.Config()
+initial_pool_config = InteractiveHyperdrive.Config(preview_before_trade=True)
 interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 
 # %%
