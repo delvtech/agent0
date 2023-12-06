@@ -311,10 +311,13 @@ class Chain:
             export_db_to_file(export_path, pool.db_session, raw=True)
 
     def _load_db(self):
-        # TODO parameterize the load path, careful since this is referencing the container path, not the local path.
+        # TODO parameterize the load path
         for pool in self._deployed_hyperdrive_pools:
+            # We need to stop the underlying data pipeline before updating the underlying database
+            pool._stop_data_pipeline()  # pylint: disable=protected-access
             import_path = ".interactive_state/snapshot/" + pool._db_name  # pylint: disable=protected-access
             import_to_db(pool.db_session, import_path, drop=True)
+            pool._launch_data_pipeline()  # pylint: disable=protected-access
 
 
 class LocalChain(Chain):

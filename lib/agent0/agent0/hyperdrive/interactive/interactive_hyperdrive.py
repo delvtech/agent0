@@ -185,16 +185,16 @@ class InteractiveHyperdrive:
         )
 
         # Make a copy of the dataclass to avoid changing the base class
-        postgres_config = PostgresConfig(**asdict(chain.postgres_config))
+        self.postgres_config = PostgresConfig(**asdict(chain.postgres_config))
         # Update the database field to use a unique name for this pool using the hyperdrive contract address
-        postgres_config.POSTGRES_DB = "interactive-hyperdrive-" + str(
+        self.postgres_config.POSTGRES_DB = "interactive-hyperdrive-" + str(
             self.hyperdrive_interface.hyperdrive_contract.address
         )
 
         # Store the db_id here for later reference
-        self._db_name = postgres_config.POSTGRES_DB
+        self._db_name = self.postgres_config.POSTGRES_DB
 
-        self.db_session = initialize_session(postgres_config, ensure_database_created=True)
+        self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
 
         # Keep track of how much base have been minted per agent
         self._initial_funds: dict[ChecksumAddress, FixedPoint] = {}
@@ -204,35 +204,14 @@ class InteractiveHyperdrive:
         self.chain = chain
         self._pool_agents: list[InteractiveHyperdriveAgent] = []
 
-        # We use this variable passed into the underlying threads as a lambda function
-        # to
-        self.stop_threads = False
+        # We use this variable to control underlying threads when to exit.
+        # When this varible is set to true, the underlying threads will exit.
+        self._stop_threads = False
+        self._data_thread: Thread | None = None
+        self._analysis_thread: Thread | None = None
 
         # Run the data pipeline in background threads
-        self.data_thread = Thread(
-            target=acquire_data,
-            kwargs={
-                "start_block": self._deploy_block_number,  # Start block is the block hyperdrive was deployed
-                "eth_config": self.eth_config,
-                "postgres_config": postgres_config,
-                "contract_addresses": self.hyperdrive_interface.addresses,
-                "exit_on_catch_up": False,
-                "exit_callback_fn": lambda: self.stop_threads,
-            },
-        )
-        self.analysis_thread = Thread(
-            target=data_analysis,
-            kwargs={
-                "start_block": self._deploy_block_number,
-                "eth_config": self.eth_config,
-                "postgres_config": postgres_config,
-                "contract_addresses": self.hyperdrive_interface.addresses,
-                "exit_on_catch_up": False,
-                "exit_callback_fn": lambda: self.stop_threads,
-            },
-        )
-        self.data_thread.start()
-        self.analysis_thread.start()
+        self._launch_data_pipeline()
         self.data_pipeline_timeout = config.data_pipeline_timeout
 
         # Pool config should exist before returning
@@ -243,13 +222,52 @@ class InteractiveHyperdrive:
             except ValueError:
                 time.sleep(1)
 
+    def _launch_data_pipeline(self):
+        # Run the data pipeline in background threads
+        # Ensure the stop flag is set to false
+        # This ensures no other threads are running when launching data pipeline
+        if self._data_thread is not None or self._analysis_thread is not None:
+            raise ValueError("Data pipeline already running")
+
+        self._stop_threads = False
+        self._data_thread = Thread(
+            target=acquire_data,
+            kwargs={
+                "start_block": self._deploy_block_number,  # Start block is the block hyperdrive was deployed
+                "eth_config": self.eth_config,
+                "postgres_config": self.postgres_config,
+                "contract_addresses": self.hyperdrive_interface.addresses,
+                "exit_on_catch_up": False,
+                "exit_callback_fn": lambda: self._stop_threads,
+            },
+        )
+        self._analysis_thread = Thread(
+            target=data_analysis,
+            kwargs={
+                "start_block": self._deploy_block_number,
+                "eth_config": self.eth_config,
+                "postgres_config": self.postgres_config,
+                "contract_addresses": self.hyperdrive_interface.addresses,
+                "exit_on_catch_up": False,
+                "exit_callback_fn": lambda: self._stop_threads,
+            },
+        )
+
+    def _stop_data_pipeline(self):
+        if self._data_thread is None or self._analysis_thread is None:
+            raise ValueError("Data pipeline not running")
+
+        # This lets the underlying threads know to stop at the next opportunity
+        self._stop_threads = True
+        # These wait for the threads to finally stop
+        self._data_thread.join()
+        self._analysis_thread.join()
+        self._data_thread = None
+        self._analysis_thread = None
+
     def cleanup(self):
         """Cleans up resources used by this object."""
-        # This lets the underlying threads know to stop at the next opportunity
-        self.stop_threads = True
-        # These wait for the threads to finally stop
-        self.data_thread.join()
-        self.analysis_thread.join()
+        self._stop_data_pipeline()
         self.db_session.close_all()
 
     def __del__(self):
