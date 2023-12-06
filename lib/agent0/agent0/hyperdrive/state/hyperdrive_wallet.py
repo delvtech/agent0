@@ -80,7 +80,7 @@ class Short:
 
 
 @dataclass(kw_only=True)
-class HyperdriveWallet(EthWallet):
+class HyperdriveWallet(EthWallet[HyperdriveWalletDeltas]):
     r"""Stateful variable for storing what is in the agent's wallet.
 
     Arguments

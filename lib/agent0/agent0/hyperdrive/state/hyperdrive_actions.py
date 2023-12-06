@@ -30,7 +30,7 @@ class HyperdriveActionType(Enum):
 
 @freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class HyperdriveMarketAction(BaseMarketAction):
+class HyperdriveMarketAction(BaseMarketAction[HyperdriveActionType, HyperdriveWallet]):
     r"""Market action specification."""
 
     # these two variables are required to be set by the strategy
