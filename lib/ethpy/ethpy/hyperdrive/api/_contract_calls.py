@@ -562,7 +562,6 @@ async def _async_redeem_withdraw_shares(
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
     current_block = interface.current_pool_state.block_number
-    # if preview_before_trade:
     preview_result = smart_contract_preview_transaction(
         interface.hyperdrive_contract,
         agent_checksum_address,
