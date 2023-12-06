@@ -5,7 +5,7 @@ import copy
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
@@ -67,8 +67,11 @@ class EthWalletDeltas:
         return EthWalletDeltas(**copy.deepcopy(self.__dict__))
 
 
+T = TypeVar("T", bound=EthWalletDeltas)
+
+
 @dataclass(kw_only=True)
-class EthWallet:
+class EthWallet(Generic[T]):
     r"""Stateful variable for storing what is in the agent's wallet
 
     Arguments
@@ -102,7 +105,7 @@ class EthWallet:
         """
         return EthWallet(**copy.deepcopy(self.__dict__))
 
-    def update(self, wallet_deltas: EthWalletDeltas) -> None:
+    def update(self, wallet_deltas: T) -> None:
         """Update the agent's wallet in-place
 
         Arguments
