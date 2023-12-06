@@ -24,6 +24,9 @@ if TYPE_CHECKING:
 
     from .api import HyperdriveInterface
 
+# async calls now have 6 arguments after adding preview_before_trade
+# pylint: disable=too-many-arguments
+
 
 def _get_total_supply_withdrawal_shares(
     hyperdrive_contract: IERC4626HyperdriveContract, block_number: BlockNumber | None = None
@@ -149,6 +152,7 @@ async def _async_open_long(
     trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
     nonce: Nonce | None = None,
+    preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
@@ -173,7 +177,8 @@ async def _async_open_long(
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
     current_block = interface.current_pool_state.block_number
-    if slippage_tolerance is not None:
+    preview_result = {}
+    if preview_before_trade or slippage_tolerance is not None:
         preview_result = smart_contract_preview_transaction(
             interface.hyperdrive_contract,
             agent_checksum_address,
@@ -182,6 +187,7 @@ async def _async_open_long(
             block_number=current_block,
             read_retry_count=interface.read_retry_count,
         )
+    if slippage_tolerance is not None:
         min_output = (
             FixedPoint(scaled_value=preview_result["bondProceeds"]) * (FixedPoint(1) - slippage_tolerance)
         ).scaled_value
@@ -222,6 +228,7 @@ async def _async_close_long(
     maturity_time: int,
     slippage_tolerance: FixedPoint | None = None,
     nonce: Nonce | None = None,
+    preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
@@ -240,7 +247,8 @@ async def _async_close_long(
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
     current_block = interface.current_pool_state.block_number
-    if slippage_tolerance is not None:
+    preview_result = {}
+    if preview_before_trade or slippage_tolerance is not None:
         preview_result = smart_contract_preview_transaction(
             interface.hyperdrive_contract,
             agent_checksum_address,
@@ -249,6 +257,7 @@ async def _async_close_long(
             block_number=current_block,
             read_retry_count=interface.read_retry_count,
         )
+    if slippage_tolerance is not None:
         min_output = (
             FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
         ).scaled_value
@@ -287,6 +296,7 @@ async def _async_open_short(
     trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
     nonce: Nonce | None = None,
+    preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
@@ -310,7 +320,8 @@ async def _async_open_short(
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
     current_block = interface.current_pool_state.block_number
-    if slippage_tolerance is not None:
+    preview_result = {}
+    if preview_before_trade or slippage_tolerance is not None:
         preview_result = smart_contract_preview_transaction(
             interface.hyperdrive_contract,
             agent_checksum_address,
@@ -319,6 +330,7 @@ async def _async_open_short(
             block_number=current_block,
             read_retry_count=interface.read_retry_count,
         )
+    if slippage_tolerance is not None:
         max_deposit = (
             FixedPoint(scaled_value=preview_result["traderDeposit"]) * (FixedPoint(1) + slippage_tolerance)
         ).scaled_value
@@ -359,6 +371,7 @@ async def _async_close_short(
     maturity_time: int,
     slippage_tolerance: FixedPoint | None = None,
     nonce: Nonce | None = None,
+    preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
@@ -377,7 +390,8 @@ async def _async_close_short(
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
     current_block = interface.current_pool_state.block_number
-    if slippage_tolerance:
+    preview_result = {}
+    if preview_before_trade or slippage_tolerance is not None:
         preview_result = smart_contract_preview_transaction(
             interface.hyperdrive_contract,
             agent_checksum_address,
@@ -386,6 +400,7 @@ async def _async_close_short(
             block_number=current_block,
             read_retry_count=interface.read_retry_count,
         )
+    if slippage_tolerance:
         min_output = (
             FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
         ).scaled_value
@@ -426,6 +441,7 @@ async def _async_add_liquidity(
     min_apr: FixedPoint,
     max_apr: FixedPoint,
     nonce: Nonce | None = None,
+    preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
@@ -443,14 +459,15 @@ async def _async_add_liquidity(
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
     current_block = interface.current_pool_state.block_number
-    # _ = smart_contract_preview_transaction(
-    #     interface.hyperdrive_contract,
-    #     agent_checksum_address,
-    #     "addLiquidity",
-    #     *fn_args,
-    #     block_number=current_block,
-    #     read_retry_count=interface.read_retry_count,
-    # )
+    if preview_before_trade:
+        _ = smart_contract_preview_transaction(
+            interface.hyperdrive_contract,
+            agent_checksum_address,
+            "addLiquidity",
+            *fn_args,
+            block_number=current_block,
+            read_retry_count=interface.read_retry_count,
+        )
     # TODO add slippage controls for add liquidity
     try:
         tx_receipt = await async_smart_contract_transact(
@@ -476,6 +493,7 @@ async def _async_remove_liquidity(
     agent: LocalAccount,
     trade_amount: FixedPoint,
     nonce: Nonce | None = None,
+    preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
@@ -493,14 +511,15 @@ async def _async_remove_liquidity(
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
     current_block = interface.current_pool_state.block_number
-    # _ = smart_contract_preview_transaction(
-    #     interface.hyperdrive_contract,
-    #     agent_checksum_address,
-    #     "removeLiquidity",
-    #     *fn_args,
-    #     block_number=current_block,
-    #     read_retry_count=interface.read_retry_count,
-    # )
+    if preview_before_trade is True:
+        _ = smart_contract_preview_transaction(
+            interface.hyperdrive_contract,
+            agent_checksum_address,
+            "removeLiquidity",
+            *fn_args,
+            block_number=current_block,
+            read_retry_count=interface.read_retry_count,
+        )
     try:
         tx_receipt = await async_smart_contract_transact(
             interface.web3,
@@ -525,6 +544,7 @@ async def _async_redeem_withdraw_shares(
     agent: LocalAccount,
     trade_amount: FixedPoint,
     nonce: Nonce | None = None,
+    preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     # for now, assume an underlying vault share price of at least 1, should be higher by a bit
@@ -543,20 +563,20 @@ async def _async_redeem_withdraw_shares(
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
     current_block = interface.current_pool_state.block_number
-    preview_result = smart_contract_preview_transaction(
-        interface.hyperdrive_contract,
-        agent_checksum_address,
-        "redeemWithdrawalShares",
-        *fn_args,
-        block_number=current_block,
-        read_retry_count=interface.read_retry_count,
-    )
-
-    # Here, a preview call of redeem withdrawal shares will still be successful without logs if
-    # the amount of shares to redeem is larger than what's in the wallet. We want to catch this error
-    # here with a useful error message, so we check that explicitly here
-    if preview_result["sharesRedeemed"] == 0 and trade_amount > 0:
-        raise ValueError("Preview call for redeem withdrawal shares returned 0 for non-zero input trade amount")
+    if preview_before_trade:
+        preview_result = smart_contract_preview_transaction(
+            interface.hyperdrive_contract,
+            agent_checksum_address,
+            "redeemWithdrawalShares",
+            *fn_args,
+            block_number=current_block,
+            read_retry_count=interface.read_retry_count,
+        )
+        # Here, a preview call of redeem withdrawal shares will still be successful without logs if
+        # the amount of shares to redeem is larger than what's in the wallet. We want to catch this error
+        # here with a useful error message, so we check that explicitly here
+        if preview_result["sharesRedeemed"] == 0 and trade_amount > 0:
+            raise ValueError("Preview call for redeem withdrawal shares returned 0 for non-zero input trade amount")
 
     try:
         tx_receipt = await async_smart_contract_transact(

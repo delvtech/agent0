@@ -132,7 +132,7 @@ class InteractiveHyperdrive:
                     FixedPoint("5.24592") / (FixedPoint("0.04665") * (self.initial_fixed_rate * FixedPoint(100)))
                 )
 
-    def __init__(self, chain: Chain, config: Config | None = None):
+    def __init__(self, chain: Chain, config: Config | None = None, preview_before_trade: bool = False):
         """Constructor for the interactive hyperdrive agent.
 
         Arguments
@@ -141,6 +141,8 @@ class InteractiveHyperdrive:
             The chain object to launch hyperdrive on
         config: Config | None
             The configuration for the initial pool configuration
+        preview_before_trade: bool, optional
+            Whether to preview the trade before submitting it. Defaults to False.
         """
         if config is None:
             config = self.Config()
@@ -154,7 +156,12 @@ class InteractiveHyperdrive:
         current_file_dir, _ = os.path.split(full_path)
         abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
 
-        self.eth_config = EthConfig(artifacts_uri="not_used", rpc_uri=chain.rpc_uri, abi_dir=abi_dir)
+        self.eth_config = EthConfig(
+            artifacts_uri="not_used",
+            rpc_uri=chain.rpc_uri,
+            abi_dir=abi_dir,
+            preview_before_trade=config.preview_before_trade,
+        )
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(config, chain, self.eth_config.abi_dir)
         self.hyperdrive_interface = HyperdriveInterface(

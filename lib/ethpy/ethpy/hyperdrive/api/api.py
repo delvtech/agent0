@@ -441,7 +441,9 @@ class HyperdriveInterface:
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
-        return await _async_open_long(self, agent, trade_amount, slippage_tolerance, nonce)
+        return await _async_open_long(
+            self, agent, trade_amount, slippage_tolerance, nonce, self.eth_config.preview_before_trade
+        )
 
     # We do not control the number of arguments; this is set by hyperdrive-rs
     # pylint: disable=too-many-arguments
@@ -475,7 +477,9 @@ class HyperdriveInterface:
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
-        return await _async_close_long(self, agent, trade_amount, maturity_time, slippage_tolerance, nonce)
+        return await _async_close_long(
+            self, agent, trade_amount, maturity_time, slippage_tolerance, nonce, self.eth_config.preview_before_trade
+        )
 
     async def async_open_short(
         self,
@@ -504,7 +508,9 @@ class HyperdriveInterface:
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
-        return await _async_open_short(self, agent, trade_amount, slippage_tolerance, nonce)
+        return await _async_open_short(
+            self, agent, trade_amount, slippage_tolerance, nonce, self.eth_config.preview_before_trade
+        )
 
     # We do not control the number of arguments; this is set by hyperdrive-rs
     # pylint: disable=too-many-arguments
@@ -538,7 +544,9 @@ class HyperdriveInterface:
         ReceiptBreakdown
             A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
-        return await _async_close_short(self, agent, trade_amount, maturity_time, slippage_tolerance, nonce)
+        return await _async_close_short(
+            self, agent, trade_amount, maturity_time, slippage_tolerance, nonce, self.eth_config.preview_before_trade
+        )
 
     # We do not control the number of arguments; this is set by hyperdrive-rs
     # pylint: disable=too-many-arguments
@@ -570,7 +578,9 @@ class HyperdriveInterface:
         ReceiptBreakdown
             A dataclass containing the absolute values for token quantities changed.
         """
-        return await _async_add_liquidity(self, agent, trade_amount, min_apr, max_apr, nonce)
+        return await _async_add_liquidity(
+            self, agent, trade_amount, min_apr, max_apr, nonce, self.eth_config.preview_before_trade
+        )
 
     async def async_remove_liquidity(
         self, agent: LocalAccount, trade_amount: FixedPoint, nonce: Nonce | None = None
@@ -591,7 +601,7 @@ class HyperdriveInterface:
         ReceiptBreakdown
             A dataclass containing the absolute values for token quantities changed.
         """
-        return await _async_remove_liquidity(self, agent, trade_amount, nonce)
+        return await _async_remove_liquidity(self, agent, trade_amount, nonce, self.eth_config.preview_before_trade)
 
     async def async_redeem_withdraw_shares(
         self, agent: LocalAccount, trade_amount: FixedPoint, nonce: Nonce | None = None
@@ -619,7 +629,9 @@ class HyperdriveInterface:
         ReceiptBreakdown
             A dataclass containing the absolute values for token quantities changed.
         """
-        return await _async_redeem_withdraw_shares(self, agent, trade_amount, nonce)
+        return await _async_redeem_withdraw_shares(
+            self, agent, trade_amount, nonce, self.eth_config.preview_before_trade
+        )
 
     def calc_position_duration_in_years(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Returns the pool config position duration as a fraction of a year.

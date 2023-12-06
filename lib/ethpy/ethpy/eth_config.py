@@ -22,12 +22,15 @@ class EthConfig:
         The uri to the database server.
     abi_dir: str
         The path to the abi directory.
+    preview_before_trade: bool, optional
+        Whether to preview the trade before submitting it. Defaults to False.
     """
 
     artifacts_uri: URI | str = URI("http://localhost:8080")
     rpc_uri: URI | str = URI("http://localhost:8545")
     database_api_uri: URI | str = URI("http://localhost:5002")
     abi_dir: str = "./packages/hyperdrive/src/abis"
+    preview_before_trade: bool = False
 
     def __post_init__(self):
         if isinstance(self.artifacts_uri, str):
@@ -61,14 +64,17 @@ def build_eth_config(dotenv_file: str = "eth.env") -> EthConfig:
     rpc_uri = os.getenv("RPC_URI")
     database_api_uri = os.getenv("DATABASE_API_URI")
     abi_dir = os.getenv("ABI_DIR")
+    preview_before_trade = os.getenv("PREVIEW_BEFORE_TRADE")
 
     arg_dict = {}
     if artifacts_uri is not None:
         arg_dict["artifacts_uri"] = artifacts_uri
     if rpc_uri is not None:
         arg_dict["rpc_uri"] = rpc_uri
-    if abi_dir is not None:
-        arg_dict["abi_dir"] = abi_dir
     if database_api_uri is not None:
         arg_dict["database_api_uri"] = database_api_uri
+    if abi_dir is not None:
+        arg_dict["abi_dir"] = abi_dir
+    if preview_before_trade is not None:
+        arg_dict["preview_before_trade"] = preview_before_trade
     return EthConfig(**arg_dict)
