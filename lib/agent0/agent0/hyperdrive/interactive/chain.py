@@ -155,10 +155,6 @@ class Chain:
                 raise NotImplementedError("All pools on this chain must have the same checkpoint duration")
             checkpoint_duration = checkpoint_durations[0]
 
-            # Calculate all checkpoint times we need to create for advancing time
-            timestamp = self._web3.eth.get_block("latest").get("timestamp")
-            assert timestamp is not None
-
             # Handle the first checkpoint, if it hasn't been created, make the checkpoint
             for pool in self._deployed_hyperdrive_pools:
                 # Create checkpoint handles making a checkpoint at the right time
