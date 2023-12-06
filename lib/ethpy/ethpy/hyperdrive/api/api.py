@@ -40,7 +40,7 @@ from ._contract_calls import (
     _get_total_supply_withdrawal_shares,
     _get_variable_rate,
     _get_vault_shares,
-    _set_rate,
+    _set_variable_rate,
 )
 from ._mock_contract import (
     _calc_bonds_given_shares_and_rate,
@@ -393,7 +393,7 @@ class HyperdriveInterface:
         """
         _create_checkpoint(self, sender, block_number)
 
-    def set_rate(self, sender: LocalAccount, new_rate: FixedPoint) -> None:
+    def set_variable_rate(self, sender: LocalAccount, new_rate: FixedPoint) -> None:
         """Set the variable rate for the yield source.
 
         Arguments
@@ -403,7 +403,7 @@ class HyperdriveInterface:
         new_rate: FixedPoint
             The new variable rate for the yield source.
         """
-        _set_rate(self, sender, new_rate)
+        _set_variable_rate(self, sender, new_rate)
 
     async def async_open_long(
         self,
