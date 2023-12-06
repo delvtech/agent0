@@ -185,7 +185,8 @@ for iteration in range(NUM_PATHS_CHECKED):
 
         if failed:
             logging.info(
-                "pool_config = %s\n\npool_info = %s\n\nlatest_checkpoint = %s\n\nadditional_info = %s",
+                "random_seed = %s\npool_config = %s\n\npool_info = %s\n\nlatest_checkpoint = %s\n\nadditional_info = %s",
+                random_seed,
                 json.dumps(asdict(pool_state.pool_config), indent=2, cls=ExtendedJSONEncoder),
                 json.dumps(asdict(pool_state.pool_info), indent=2, cls=ExtendedJSONEncoder),
                 json.dumps(asdict(pool_state.checkpoint), indent=2, cls=ExtendedJSONEncoder),
