@@ -105,6 +105,8 @@ class InteractiveHyperdrive:
             The upper bound on the flat fee that governance can set.
         max_governance_fee: FixedPoint
             The upper bound on the governance fee that governance can set.
+        preview_before_trade: bool, optional
+            Whether to preview the position before executing a trade. Defaults to False.
         """
 
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
@@ -125,6 +127,7 @@ class InteractiveHyperdrive:
         max_curve_fee = FixedPoint("0.3")  # 30%
         max_flat_fee = FixedPoint("0.0015")  # 0.15%
         max_governance_fee = FixedPoint("0.30")  # 30%
+        preview_before_trade: bool = False
 
         def __post_init__(self):
             if self.time_stretch is None:
@@ -132,7 +135,7 @@ class InteractiveHyperdrive:
                     FixedPoint("5.24592") / (FixedPoint("0.04665") * (self.initial_fixed_rate * FixedPoint(100)))
                 )
 
-    def __init__(self, chain: Chain, config: Config | None = None, preview_before_trade: bool = False):
+    def __init__(self, chain: Chain, config: Config | None = None):
         """Constructor for the interactive hyperdrive agent.
 
         Arguments
@@ -141,8 +144,6 @@ class InteractiveHyperdrive:
             The chain object to launch hyperdrive on
         config: Config | None
             The configuration for the initial pool configuration
-        preview_before_trade: bool, optional
-            Whether to preview the trade before submitting it. Defaults to False.
         """
         if config is None:
             config = self.Config()
