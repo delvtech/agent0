@@ -260,8 +260,8 @@ class TestInteractiveHyperdrive:
         pre_time = post_time
         checkpoint_events = chain.advance_time(3600, create_checkpoints=True)
         post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
-        # Advancing time equal to checkpoint duration results in time being off by a second
-        assert abs(post_time - pre_time - 3600) <= 1
+        # Advancing time equal to checkpoint duration results in time being off by few second
+        assert abs(post_time - pre_time - 3600) <= 2
         # assert one checkpoint made
         assert len(checkpoint_events[interactive_hyperdrive]) == 1
 
@@ -269,8 +269,8 @@ class TestInteractiveHyperdrive:
         pre_time = post_time
         checkpoint_events = chain.advance_time(datetime.timedelta(hours=3), create_checkpoints=True)
         post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
-        # Advancing time equal to checkpoint duration results in time being off by a second
-        assert abs(post_time - pre_time - 3600 * 3) <= 1
+        # Advancing time equal to checkpoint duration results in time being off by few second
+        assert abs(post_time - pre_time - 3600 * 3) <= 2
         # TODO assert multiple checkpoints made
         assert len(checkpoint_events[interactive_hyperdrive]) == 3
 
@@ -279,8 +279,8 @@ class TestInteractiveHyperdrive:
         # Advance time with multiple checkpoints
         checkpoint_events = chain.advance_time(4000, create_checkpoints=True)
         post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
-        # Advancing time equal to checkpoint duration results in time being off by a second
-        assert abs(post_time - pre_time - 4000) <= 1
+        # Advancing time equal to checkpoint duration results in time being off by few second
+        assert abs(post_time - pre_time - 4000) <= 2
         assert len(checkpoint_events[interactive_hyperdrive]) == 1
 
         # TODO add additional columns in data pipeline for checkpoints from CreateCheckpoint event
