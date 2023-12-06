@@ -480,7 +480,6 @@ def _build_hyperdrive_transaction_object(
     elif len(event_logs) == 1:
         event_args: dict[str, Any] = event_logs[0]["args"]
     else:
-        logging.warning("Transfer event contains multiple TransferSingle logs, selecting first")
         event_args: dict[str, Any] = event_logs[0]["args"]
     out_dict["event_value"] = _convert_object_hexbytes_to_strings(event_args.get("value", None))
     out_dict["event_from"] = event_args.get("from", None)
