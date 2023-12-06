@@ -263,7 +263,7 @@ class InteractiveHyperdrive:
         variable_rate: FixedPoint
             The new variable rate for the pool.
         """
-        self.hyperdrive_interface.set_rate(self._deployed_hyperdrive.deploy_account, variable_rate)
+        self.hyperdrive_interface.set_variable_rate(self._deployed_hyperdrive.deploy_account, variable_rate)
         # Since this is a contract call, we need to run the data pipeline
         self._run_data_pipeline()
 
