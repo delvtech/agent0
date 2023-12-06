@@ -126,7 +126,7 @@ def _create_checkpoint(
     return trade_result
 
 
-def _set_rate(
+def _set_variable_rate(
     interface: HyperdriveInterface,
     sender: LocalAccount,
     new_rate: FixedPoint,
