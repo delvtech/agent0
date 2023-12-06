@@ -242,19 +242,21 @@ class TestInteractiveHyperdrive:
         interactive_hyperdrive = InteractiveHyperdrive(chain, config)
         hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
 
-        # TODO there is a non-determininstic element here, if we advance time for exactly a checkpoint duration,
-        # during the boundary for a checkpoint, the first checkpoint will either get made or not depending
-        # on where the boundary lies at the current time. The code doesn't break, but we can't be certain
-        # how many checkpoints were made per advance time. To make this deterministic, we advance time for a
-        # time first to ensure the current block isn't on an exact checkpoint boundary
+        # TODO there is a non-determininstic element here, the first advance time for 600 seconds
+        # may push the time forward past a checkpoint boundary depending on the current time,
+        # in which case 1 checkpoint will be made. Hence, we can't be certain on how many checkpoints
+        # were made per advance time.
 
         # Advance time lower than a checkpoint duration
         pre_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
         checkpoint_events = chain.advance_time(600, create_checkpoints=True)
         post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
         assert post_time - pre_time == 600
-        # assert no checkpoints made
-        assert len(checkpoint_events[interactive_hyperdrive]) == 0
+        # assert 0 or 1 checkpoints made
+        assert len(checkpoint_events[interactive_hyperdrive]) in [0, 1]
+
+        # After this point, we know that the previous checkpoint is guaranteed to be made, so
+        # we can be exact about the number of checkpoints made from here on out
 
         # Advance time equal to a checkpoint duration
         pre_time = post_time
@@ -262,7 +264,7 @@ class TestInteractiveHyperdrive:
         post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
         # Advancing time equal to checkpoint duration results in time being off by few second
         assert abs(post_time - pre_time - 3600) <= 2
-        # assert one checkpoint made
+        # assert one or two checkpoint made
         assert len(checkpoint_events[interactive_hyperdrive]) == 1
 
         # Advance time with multiple checkpoints
@@ -271,7 +273,7 @@ class TestInteractiveHyperdrive:
         post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
         # Advancing time equal to checkpoint duration results in time being off by few second
         assert abs(post_time - pre_time - 3600 * 3) <= 2
-        # TODO assert multiple checkpoints made
+        # assert 3 or 4 checkpoints made
         assert len(checkpoint_events[interactive_hyperdrive]) == 3
 
         ## Checking when advancing time of a value not a multiple of checkpoint_duration ##
@@ -281,6 +283,7 @@ class TestInteractiveHyperdrive:
         post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
         # Advancing time equal to checkpoint duration results in time being off by few second
         assert abs(post_time - pre_time - 4000) <= 2
+        # assert 1 or 2 checkpoints made
         assert len(checkpoint_events[interactive_hyperdrive]) == 1
 
         # TODO add additional columns in data pipeline for checkpoints from CreateCheckpoint event
