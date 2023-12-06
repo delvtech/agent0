@@ -99,7 +99,6 @@ check_columns = [
     "withdrawal_shares_proceeds",
     "share_price",
     "long_exposure",
-    # Added in addition to original script
     "bond_reserves",
     "lp_total_supply",
     "longs_outstanding",
@@ -144,6 +143,7 @@ for iteration in range(NUM_PATHS_CHECKED):
         pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
 
         failed = False
+        # Base balance
         if check_data["hyperdrive_base_balance"] != pool_state.hyperdrive_base_balance:
             logging.critical(
                 "check_data['hyperdrive_base_balance']=%s != pool_state.hyperdrive_base_balance=%s",
@@ -151,6 +151,7 @@ for iteration in range(NUM_PATHS_CHECKED):
                 pool_state.hyperdrive_base_balance,
             )
             failed = True
+        # Effective share reserves
         if check_data[
             "effective_share_reserves"
         ] != interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state):
@@ -160,6 +161,7 @@ for iteration in range(NUM_PATHS_CHECKED):
                 interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state),
             )
             failed = True
+        # Vault shares (Hyperdrive balance of vault contract)
         if check_data["vault_shares"] != pool_state.vault_shares:
             logging.critical(
                 "check_data['vault_shares']=%s != pool_state.vault_shares=%s",
@@ -167,6 +169,7 @@ for iteration in range(NUM_PATHS_CHECKED):
                 pool_state.vault_shares,
             )
             failed = True
+        # Minimum share reserves
         if check_data["minimum_share_reserves"] != pool_state.pool_config.minimum_share_reserves:
             logging.critical(
                 "check_data['minimum_share_reserves']=%s != pool_state.pool_config.minimum_share_reserves=%s",

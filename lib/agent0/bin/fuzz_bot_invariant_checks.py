@@ -2,24 +2,24 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 import time
+from dataclasses import asdict
+from math import isclose
 from typing import NamedTuple, Sequence
 
+from eth_typing import BlockNumber
 from ethpy import build_eth_config
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
-from hyperlogs import setup_logging
+from hyperlogs import ExtendedJSONEncoder, setup_logging
+from web3.types import BlockData
 
 from agent0.base.config import EnvironmentConfig
 from agent0.hyperdrive.crash_report import setup_hyperdrive_crash_report_logging
-
-# main function has a lot of stuff
-# pylint: disable=too-many-locals
-# TODO: Clean up nested blocks inside while True
-# pylint: disable=too-many-nested-blocks
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -30,8 +30,37 @@ def main(argv: Sequence[str] | None = None) -> None:
     argv: Sequence[str]
         A sequnce containing the uri to the database server and the test epsilon.
     """
-    # pylint: disable: too-many-locals
     # Parse args
+    parsed_args, interface = setup_fuzz(argv)
+    # Run the loop forever
+    last_executed_block_number = 0  # no matter what we will run the check the first time
+    while True:
+        latest_block = interface.get_block("latest")
+        latest_block_number = latest_block.get("number", None)
+        if latest_block_number is None:
+            raise AssertionError("Block has no number.")
+        if not latest_block_number > last_executed_block_number:
+            # take a nap
+            time.sleep(parsed_args.sleep_time)
+            continue
+        # Update block number
+        last_executed_block_number = latest_block_number
+        run_invariant_checks(latest_block, latest_block_number, interface, parsed_args.test_epsilon)
+
+
+def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveInterface]:
+    """Setup the fuzz config & interface.
+
+    Arguments
+    ---------
+    argv: Sequence[str]
+        A sequnce containing the uri to the database server and the test epsilon.
+
+    Returns
+    -------
+    tuple[Args, HyperdriveInterface]
+        The parsed arguments and interface constructed from those arguments.
+    """
     parsed_args = parse_arguments(argv)
     eth_config = build_eth_config(parsed_args.eth_config_env_file)
     env_config = EnvironmentConfig(
@@ -43,7 +72,6 @@ def main(argv: Sequence[str] | None = None) -> None:
         global_random_seed=1234,
         username="INVARIANT_CHECKS",
     )
-
     # Setup logging
     setup_logging(
         log_filename=env_config.log_filename,
@@ -56,79 +84,150 @@ def main(argv: Sequence[str] | None = None) -> None:
     setup_hyperdrive_crash_report_logging()
     # Setup hyperdrive interface
     interface = HyperdriveInterface(eth_config)
-    # Run the loop forever
-    last_executed_block_number = 0  # no matter what we will run the check the first time
-    while True:
-        latest_block = interface.get_block("latest")
-        latest_block_number = latest_block.get("number", None)
-        if latest_block_number is None:
-            raise AssertionError("Block has no number.")
-        if latest_block_number > last_executed_block_number:
-            # Update block number
-            last_executed_block_number = latest_block_number
-            try:
-                # Get the variables to check
-                pool_state = interface.get_hyperdrive_state(latest_block)
-                share_reserves = pool_state.pool_info.share_reserves
-                shorts_outstanding = pool_state.pool_info.shorts_outstanding
-                withdraw_pool_proceeds = pool_state.pool_info.withdrawal_shares_proceeds
-                minimum_share_reserves = pool_state.pool_config.minimum_share_reserves
-                share_price = pool_state.pool_info.share_price
-                global_exposure = pool_state.pool_info.long_exposure
-                gov_fees_accrued = pool_state.gov_fees_accrued
-                total_shares = pool_state.vault_shares
-                hyperdrive_base_balance = pool_state.hyperdrive_base_balance
-                hyperdrive_eth_balance = pool_state.hyperdrive_eth_balance
-                epsilon = FixedPoint(scaled_value=parsed_args.test_epsilon)
+    return parsed_args, interface
 
-                # Check each invariant
 
-                ### Hyperdrive base & eth balances should always be zero
-                assert hyperdrive_base_balance == FixedPoint(0)
-                assert hyperdrive_eth_balance == FixedPoint(0)
+def run_invariant_checks(
+    latest_block: BlockData,
+    latest_block_number: BlockNumber,
+    interface: HyperdriveInterface,
+    test_epsilon: float,
+) -> None:
+    """Run the invariant checks.
 
-                ### Total shares is correctly calculated
-                assert (
-                    total_shares
-                    == share_reserves
-                    + shorts_outstanding / share_price
-                    + gov_fees_accrued
-                    + withdraw_pool_proceeds
-                    + epsilon  # TODO: They mean "within epsilon", i.e. +/- epsilon
-                ), f"{total_shares=} is incorrect."
+    Arguments
+    ---------
+    latest_block: BlockData
+        The current block to be tested.
+    latest_block_number: BlockNumber
+        The current block number.
+    interface: HyperdriveInterface
+        An instantiated HyperdriveInterface object constructed using the script arguments.
+    test_epsilon: float
+        The tolerance for the invariance checks.
+    """
+    # Get the variables to check
+    pool_state = interface.get_hyperdrive_state(latest_block)
+    epsilon = FixedPoint(str(test_epsilon))
 
-                ### The system should always be solvent
-                solvency = share_reserves - global_exposure - minimum_share_reserves
-                assert solvency > 0, f"System is not solvent at block {latest_block_number}"
+    # Check each invariant
+    failed = False
 
-                ### The pool has more than the minimum share reserves
-                assert (
-                    minimum_share_reserves <= share_reserves * share_price - global_exposure
-                ), f"{minimum_share_reserves=} must be >= 0."
+    # Hyperdrive base & eth balances should always be zero
+    if pool_state.hyperdrive_base_balance != FixedPoint(0):
+        logging.critical(
+            "hyperdrive_base_balance=%s != 0. Test failed at block %s",
+            pool_state.hyperdrive_base_balance,
+            latest_block_number,
+        )
+        failed = True
+    if pool_state.hyperdrive_eth_balance != FixedPoint(0):
+        logging.critical(
+            "hyperdrive_eth_balance=%s != 0. Test failed at block %s",
+            pool_state.hyperdrive_eth_balance,
+            latest_block_number,
+        )
+        failed = True
 
-                ### Creating a checkpoint should never fail
-                # TODO: add get_block_transactions() to interface
-                transactions = latest_block.get("transactions", None)
-                if transactions is None:
-                    raise AssertionError("Latest block did not have transactions.")
-                if isinstance(transactions, Sequence):
-                    # If any transaction is to hyperdrive then assert a checkpoint happened
-                    for transaction in transactions:
-                        if isinstance(transaction, HexBytes):
-                            raise TypeError("Transaction should not be hexbytes.")
-                        txn_to = transaction.get("to", None)
-                        if txn_to is None:
-                            raise AssertionError("Transaction did not have a 'to' key.")
-                        if txn_to == interface.hyperdrive_contract.address:
-                            assert pool_state.checkpoint.share_price > 0
-                else:
-                    # TODO: if not, decode the hexbytes
-                    assert False, "NOT IMPLEMENTED"
-            except AssertionError:
-                logging.error("")
+    # Total shares is correctly calculated
+    if not isclose(
+        pool_state.vault_shares,
+        pool_state.pool_info.share_reserves
+        + pool_state.pool_info.shorts_outstanding / pool_state.pool_info.share_price
+        + pool_state.gov_fees_accrued
+        + pool_state.pool_info.withdrawal_shares_proceeds,
+        abs_tol=epsilon,
+    ):
+        logging.critical(
+            "total_shares=%s is incorrect, should be %s. Test failed at block %s.",
+            pool_state.vault_shares,
+            pool_state.pool_info.share_reserves
+            + pool_state.pool_info.shorts_outstanding / pool_state.pool_info.share_price
+            + pool_state.gov_fees_accrued
+            + pool_state.pool_info.withdrawal_shares_proceeds,
+            latest_block_number,
+        )
+        failed = True
 
-            # take a nap
-            time.sleep(parsed_args.sleep_time)
+    # The system should always be solvent
+    solvency = (
+        pool_state.pool_info.share_reserves
+        - pool_state.pool_info.long_exposure
+        - pool_state.pool_config.minimum_share_reserves
+    )
+    if not isclose(solvency, FixedPoint(0), abs_tol=epsilon):
+        logging.critical(
+            "solvency=share_reserves - global_exposure - minimum_share_reserves=%s != 0. Test failed at block %s",
+            solvency,
+            latest_block_number,
+        )
+        failed = True
+
+    # The pool has more than the minimum share reserves
+    if not isclose(
+        pool_state.pool_config.minimum_share_reserves,
+        pool_state.pool_info.share_reserves * pool_state.pool_info.share_price - pool_state.pool_info.long_exposure,
+        abs_tol=epsilon,
+    ):
+        logging.critical(
+            (
+                "minimum_share_reserves=%s != share_reserves * share_price - global_exposure = %s. "
+                "Test failed at block %s"
+            ),
+            pool_state.pool_config.minimum_share_reserves,
+            pool_state.pool_info.share_reserves * pool_state.pool_info.share_price - pool_state.pool_info.long_exposure,
+            latest_block_number,
+        )
+        failed = True
+
+    # Creating a checkpoint should never fail
+    # TODO: add get_block_transactions() to interface
+    transactions = latest_block.get("transactions", None)
+    if transactions is None:
+        raise AssertionError("Latest block did not have transactions.")
+    # TODO: if not, decode the hexbytes
+    if isinstance(transactions, Sequence):
+        # If any transaction is to hyperdrive then assert a checkpoint happened
+        for transaction in transactions:
+            if isinstance(transaction, HexBytes):
+                raise TypeError("Transaction should not be hexbytes.")
+            txn_to = transaction.get("to", None)
+            if txn_to is None:
+                raise AssertionError("Transaction did not have a 'to' key.")
+            if txn_to == interface.hyperdrive_contract.address and pool_state.checkpoint.share_price <= 0:
+                logging.critical(
+                    (
+                        "A transaction was created but no checkpoint was minted.\n"
+                        "checkpoint.share_price=%s\n"
+                        "transaction=%s\n"
+                        "block_number=%s"
+                    ),
+                    pool_state.checkpoint.share_price,
+                    transaction,
+                    latest_block_number,
+                )
+                failed = True
+
+    # Log additional information if any test failed
+    if failed:
+        logging.info(
+            "pool_config = %s\n\npool_info = %s\n\nlatest_checkpoint = %s\n\nadditional_info = %s",
+            json.dumps(asdict(pool_state.pool_config), indent=2, cls=ExtendedJSONEncoder),
+            json.dumps(asdict(pool_state.pool_info), indent=2, cls=ExtendedJSONEncoder),
+            json.dumps(asdict(pool_state.checkpoint), indent=2, cls=ExtendedJSONEncoder),
+            json.dumps(
+                {
+                    "hyperdrive_address": interface.hyperdrive_contract.address,
+                    "base_token_address": interface.base_token_contract.address,
+                    "spot_price": interface.calc_spot_price(pool_state),
+                    "fixed_rate": interface.calc_fixed_rate(pool_state),
+                    "variable_rate": pool_state.variable_rate,
+                    "vault_shares": pool_state.vault_shares,
+                },
+                indent=2,
+                cls=ExtendedJSONEncoder,
+            ),
+        )
 
 
 class Args(NamedTuple):
@@ -174,10 +273,10 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     """
     parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
     parser.add_argument(
-        "--test_epsilon",
+        "--test_epsilon_decimals",
         type=int,
-        default=int(1e14),  # todo: change to fixed point
-        help="The test epsilon amount, in WEI.",
+        default=4,
+        help="The desired precision for equality tests, as an integer number of decimals.",
     )
     parser.add_argument(
         "--eth_config_env_file",
