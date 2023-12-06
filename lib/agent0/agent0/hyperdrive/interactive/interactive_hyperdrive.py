@@ -160,6 +160,7 @@ class InteractiveHyperdrive:
         self.hyperdrive_interface = HyperdriveInterface(
             self.eth_config,
             self._deployed_hyperdrive.hyperdrive_contract_addresses,
+            web3=chain._web3,
         )
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
@@ -199,6 +200,17 @@ class InteractiveHyperdrive:
         # Never throw exception in destructor
         except Exception:  # pylint: disable=broad-except
             pass
+
+    # We overwrite these dunder methods to allow this object to be used as a dictionary key
+    def __hash__(self):
+        """We use a combination of the chain's rpc uri and the hyperdrive contract address as the hash."""
+        return hash((self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address))
+
+    def __eq__(self, other):
+        return (self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address) == (
+            other.chain.rpc_uri,
+            other._deployed_hyperdrive.hyperdrive_contract.address,
+        )
 
     def _deploy_hyperdrive(self, config: Config, chain: Chain, abi_dir) -> DeployedHyperdrivePool:
         # sanity check (also for type checking), should get set in __post_init__
@@ -246,6 +258,45 @@ class InteractiveHyperdrive:
         self.hyperdrive_interface.set_rate(self._deployed_hyperdrive.deploy_account, variable_rate)
         # Since this is a contract call, we need to run the data pipeline
         self._run_data_pipeline()
+
+    def _create_checkpoint(
+        self, checkpoint_time: int | None = None, check_if_exists: bool = True
+    ) -> CreateCheckpoint | None:
+        """Internal function without safeguard checks for creating a checkpoint.
+        Creating checkpoints is called by the chain's `advance_time`.
+        """
+
+        if checkpoint_time is None:
+            block_timestamp = self.hyperdrive_interface.get_block_timestamp(
+                self.hyperdrive_interface.get_current_block()
+            )
+            checkpoint_time = self.hyperdrive_interface.calc_checkpoint_id(
+                self.hyperdrive_interface.pool_config.checkpoint_duration, block_timestamp
+            )
+
+        if check_if_exists:
+            checkpoint = self.hyperdrive_interface.hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call()
+            # If it exists, don't create a checkpoint and return None.
+            if checkpoint.sharePrice > 0:
+                return None
+
+        try:
+            tx_receipt = self.hyperdrive_interface.create_checkpoint(
+                self._deployed_hyperdrive.deploy_account, checkpoint_time=checkpoint_time
+            )
+        except AssertionError as exc:
+            # Adding additional context to the "Transaction receipt has no logs" error
+            raise ValueError("Failed to create checkpoint, does the checkpoint already exist?") from exc
+        # We don't call `_build_event_obj_from_tx_receipt` here because
+        # it's based on the enum of `HyperdriveActionType`, which creating
+        # a checkpoint isn't a trade result
+        return CreateCheckpoint(
+            checkpoint_time=tx_receipt.checkpoint_time,
+            share_price=tx_receipt.share_price,
+            matured_shorts=tx_receipt.matured_shorts,
+            matured_longs=tx_receipt.matured_longs,
+            lp_share_price=tx_receipt.lp_share_price,
+        )
 
     def init_agent(
         self,
@@ -761,11 +812,6 @@ class InteractiveHyperdrive:
         tx_receipt = self._handle_trade_result(trade_results)
         self._run_data_pipeline()
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
-
-    def _create_checkpoint(self, agent: HyperdriveAgent, checkpoint_time: int | None = None) -> CreateCheckpoint:
-        # TODO need to figure out how to mint checkpoints on demand
-        # https://github.com/delvtech/agent0/issues/1105
-        raise NotImplementedError
 
     def _execute_policy_action(
         self, agent: HyperdriveAgent

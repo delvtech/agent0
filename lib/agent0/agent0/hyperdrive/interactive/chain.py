@@ -18,7 +18,9 @@ from chainsync.db.hyperdrive.import_export_data import export_db_to_file, import
 from docker.errors import NotFound
 from docker.models.containers import Container
 from ethpy.base import initialize_web3_with_http_provider
-from web3.types import RPCEndpoint, RPCResponse
+from web3.types import RPCEndpoint
+
+from .event_types import CreateCheckpoint
 
 if TYPE_CHECKING:
     from .interactive_hyperdrive import InteractiveHyperdrive
@@ -86,29 +88,7 @@ class Chain:
         with contextlib.suppress(Exception):
             self.cleanup()
 
-    def advance_time(self, time_delta: int | timedelta) -> RPCResponse:
-        """Advance time for this chain using the `evm_mine` RPC call.
-
-        This function looks at the timestamp of the current block, then
-        mines a block explicitly setting the timestamp to the current block timestamp + time_delta.
-
-        .. note:: This advances the chain for all pool connected to this chain.
-
-        Arguments
-        ---------
-        time_delta: int | timedelta
-            The amount of time to advance. Can either be a `datetime.timedelta` object or an integer in seconds.
-
-        Returns
-        -------
-        RPCResponse
-            A TypedDict returned from the RPC with the result of the call.
-        """
-        if isinstance(time_delta, timedelta):
-            time_delta = int(time_delta.total_seconds())
-        else:
-            time_delta = int(time_delta)  # convert int-like (e.g. np.int64) types to int
-
+    def _advance_chain_time(self, time_delta: int) -> None:
         # We explicitly set the next block timestamp to be exactly time_delta seconds
         # after the previous block. Hence, we first get the current block, followed by
         # an explicit set of the next block timestamp, followed by a mine.
@@ -116,8 +96,109 @@ class Chain:
         if latest_blocktime is None:
             raise AssertionError("The provided block has no timestamp")
         next_blocktime = latest_blocktime + time_delta
+        response = self._web3.provider.make_request(method=RPCEndpoint("evm_mine"), params=[next_blocktime])
 
-        return self._web3.provider.make_request(method=RPCEndpoint("evm_mine"), params=[next_blocktime])
+        # ensure response is valid
+        if "result" not in response:
+            raise KeyError("Response did not have a result.")
+
+    def advance_time(
+        self, time_delta: int | timedelta, create_checkpoints: bool = False
+    ) -> dict[InteractiveHyperdrive, list[CreateCheckpoint]]:
+        """Advance time for this chain using the `evm_mine` RPC call.
+
+        This function looks at the timestamp of the current block, then
+        mines a block explicitly setting the timestamp to the current block timestamp + time_delta.
+
+        If create_checkpoints is True, it will also create intermediate when advancing time.
+
+        .. note:: This advances the chain for all pool connected to this chain.
+        .. note:: This function is a best effort attempt at being exact in advancing time, but the final result
+            may be off by a second.
+
+        Arguments
+        ---------
+        time_delta: int | timedelta
+            The amount of time to advance. Can either be a `datetime.timedelta` object or an integer in seconds.
+        create_checkpoints: bool, optional
+            If set to true, will create intermediate checkpoints between advance times. Defaults to False.
+
+        Returns
+        -------
+        dict[InteractiveHyperdrive, list[CreateCheckpoint]]
+            Returns a dictionary keyed by the interactive hyperdrive object,
+            with a value of a list of emitted `CreateCheckpoint` events called
+            from advancing time.
+        """
+        # pylint: disable=too-many-locals
+        if isinstance(time_delta, timedelta):
+            time_delta = int(time_delta.total_seconds())
+        else:
+            time_delta = int(time_delta)  # convert int-like (e.g. np.int64) types to int
+
+        out_dict: dict[InteractiveHyperdrive, list[CreateCheckpoint]] = {
+            pool: [] for pool in self._deployed_hyperdrive_pools
+        }
+
+        # Don't checkpoint when advancing time if `create_checkpoints` is false
+        # or there are no deployed pools
+        if (not create_checkpoints) or (len(self._deployed_hyperdrive_pools) == 0):
+            self._advance_chain_time(time_delta)
+        else:
+            # For every pool, check the checkpoint duration and advance the chain for that amount of time,
+            # followed by creating a checkpoint for that pool.
+            # TODO support multiple pools with different checkpoint durations
+            checkpoint_durations = [
+                pool.hyperdrive_interface.pool_config.checkpoint_duration for pool in self._deployed_hyperdrive_pools
+            ]
+            if not all(checkpoint_durations[0] == x for x in checkpoint_durations):
+                raise NotImplementedError("All pools on this chain must have the same checkpoint duration")
+            checkpoint_duration = checkpoint_durations[0]
+
+            # Handle the first checkpoint, if it hasn't been created, make the checkpoint
+            for pool in self._deployed_hyperdrive_pools:
+                # Create checkpoint handles making a checkpoint at the right time
+                checkpoint_event = pool._create_checkpoint(  # pylint: disable=protected-access
+                    check_if_exists=True,
+                )
+                if checkpoint_event is not None:
+                    out_dict[pool].append(checkpoint_event)
+
+            # Loop through each checkpoint duration epoch
+            advance_iterations = int(time_delta / checkpoint_duration)
+            last_advance_time = time_delta % checkpoint_duration
+            offset = 0
+            for _ in range(advance_iterations):
+                # Advance the chain time by the checkpoint duration
+                self._advance_chain_time(checkpoint_duration - offset)
+
+                # Create checkpoints for each pool
+                # Here, creating checkpoints mines the block, which itself may take time. Hence, we
+                # calculate the offset and subtract it from the next advance time call.
+                # However, if the amount of time advanced is an exact multiple of the checkpoint duration,
+                # the last offset doesn't get applied, so this function can result in being off by however
+                # long the checkpoint took to create (typically a second).
+                time_before_checkpoints = self._web3.eth.get_block("latest").get("timestamp")
+                assert time_before_checkpoints is not None
+                for pool in self._deployed_hyperdrive_pools:
+                    checkpoint_event = pool._create_checkpoint()  # pylint: disable=protected-access
+                    # These checkpoints should never fail
+                    assert checkpoint_event is not None
+                    # Add checkpoint event to the output
+                    out_dict[pool].append(checkpoint_event)
+                time_after_checkpoints = self._web3.eth.get_block("latest").get("timestamp")
+                assert time_after_checkpoints is not None
+                offset = time_after_checkpoints - time_before_checkpoints
+
+            # Final advance time to advance the remainder
+            # Best effort, if offset is larger than the remainder, don't advance time again.
+            if last_advance_time - offset > 0:
+                self._advance_chain_time(last_advance_time - offset)
+
+        # This function mines blocks, so run data pipeline on each pool here
+        for pool in self._deployed_hyperdrive_pools:
+            pool._run_data_pipeline()  # pylint: disable=protected-access
+        return out_dict
 
     def save_snapshot(self) -> None:
         """Saves a snapshot using the `evm_snapshot` RPC call.

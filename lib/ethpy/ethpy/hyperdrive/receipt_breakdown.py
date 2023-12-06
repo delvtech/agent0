@@ -22,6 +22,10 @@ class ReceiptBreakdown:
     withdrawal_share_amount: FixedPoint = FixedPoint(0)
     share_price: FixedPoint = FixedPoint(0)
     lp_share_price: FixedPoint = FixedPoint(0)
+    # checkpoint event params
+    checkpoint_time: int = 0
+    matured_shorts: FixedPoint = FixedPoint(0)
+    matured_longs: FixedPoint = FixedPoint(0)
 
     def __post_init__(self):
         # lots of attributes to check
@@ -34,6 +38,9 @@ class ReceiptBreakdown:
             or self.withdrawal_share_amount < 0
             or self.share_price < 0
             or self.lp_share_price < 0
+            or self.checkpoint_time < 0
+            or self.matured_shorts < 0
+            or self.matured_longs < 0
         ):
             raise ValueError(
                 "All ReceiptBreakdown arguments must be positive,"

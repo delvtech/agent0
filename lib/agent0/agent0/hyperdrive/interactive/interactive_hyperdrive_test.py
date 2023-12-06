@@ -225,14 +225,66 @@ class TestInteractiveHyperdrive:
 
         current_time_1 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
         # Testing passing in seconds
-        chain.advance_time(3600)
+        chain.advance_time(3600, create_checkpoints=False)
         current_time_2 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
         # Testing passing in timedelta
-        chain.advance_time(datetime.timedelta(weeks=1))
+        chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
         current_time_3 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
 
         assert current_time_2 - current_time_1 == 3600
         assert current_time_3 - current_time_2 == 3600 * 24 * 7
+
+    @pytest.mark.anvil
+    def test_advance_time_with_checkpoints(self, chain: LocalChain):
+        """Tests interactive hyperdrive end to end"""
+        # We need the underlying hyperdrive interface here to test time
+        config = InteractiveHyperdrive.Config(checkpoint_duration=3600)
+        interactive_hyperdrive = InteractiveHyperdrive(chain, config)
+        hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+
+        # TODO there is a non-determininstic element here, if we advance time for exactly a checkpoint duration,
+        # during the boundary for a checkpoint, the first checkpoint will either get made or not depending
+        # on where the boundary lies at the current time. The code doesn't break, but we can't be certain
+        # how many checkpoints were made per advance time. To make this deterministic, we advance time for a
+        # time first to ensure the current block isn't on an exact checkpoint boundary
+
+        # Advance time lower than a checkpoint duration
+        pre_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+        checkpoint_events = chain.advance_time(600, create_checkpoints=True)
+        post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+        assert post_time - pre_time == 600
+        # assert no checkpoints made
+        assert len(checkpoint_events[interactive_hyperdrive]) == 0
+
+        # Advance time equal to a checkpoint duration
+        pre_time = post_time
+        checkpoint_events = chain.advance_time(3600, create_checkpoints=True)
+        post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+        # Advancing time equal to checkpoint duration results in time being off by a second
+        assert abs(post_time - pre_time - 3600) <= 1
+        # assert one checkpoint made
+        assert len(checkpoint_events[interactive_hyperdrive]) == 1
+
+        # Advance time with multiple checkpoints
+        pre_time = post_time
+        checkpoint_events = chain.advance_time(datetime.timedelta(hours=3), create_checkpoints=True)
+        post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+        # Advancing time equal to checkpoint duration results in time being off by a second
+        assert abs(post_time - pre_time - 3600 * 3) <= 1
+        # TODO assert multiple checkpoints made
+        assert len(checkpoint_events[interactive_hyperdrive]) == 3
+
+        ## Checking when advancing time of a value not a multiple of checkpoint_duration ##
+        pre_time = post_time
+        # Advance time with multiple checkpoints
+        checkpoint_events = chain.advance_time(4000, create_checkpoints=True)
+        post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+        # Advancing time equal to checkpoint duration results in time being off by a second
+        assert abs(post_time - pre_time - 4000) <= 1
+        assert len(checkpoint_events[interactive_hyperdrive]) == 1
+
+        # TODO add additional columns in data pipeline for checkpoints from CreateCheckpoint event
+        # then check `hyperdrive_interface.get_checkpoint_info` for proper checkpoints.
 
     @pytest.mark.anvil
     def test_save_load_snapshot(self, chain: LocalChain):
