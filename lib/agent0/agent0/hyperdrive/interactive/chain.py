@@ -195,9 +195,6 @@ class Chain:
             if last_advance_time - offset > 0:
                 self._advance_chain_time(last_advance_time - offset)
 
-        # This function mines blocks, so run data pipeline on each pool here
-        for pool in self._deployed_hyperdrive_pools:
-            pool._run_data_pipeline()  # pylint: disable=protected-access
         return out_dict
 
     def save_snapshot(self) -> None:

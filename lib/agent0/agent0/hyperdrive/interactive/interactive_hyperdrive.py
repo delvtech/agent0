@@ -240,6 +240,8 @@ class InteractiveHyperdrive:
     def cleanup(self):
         """Cleans up resources used by this object."""
         self.db_session.close()
+        self.data_thread.terminate()
+        self.analysis_thread.terminate()
 
     def __del__(self):
         # Attempt to close the session
