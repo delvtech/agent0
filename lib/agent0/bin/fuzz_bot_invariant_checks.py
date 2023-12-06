@@ -273,10 +273,10 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     """
     parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
     parser.add_argument(
-        "--test_epsilon_decimals",
-        type=int,
-        default=4,
-        help="The desired precision for equality tests, as an integer number of decimals.",
+        "--test_epsilon",
+        type=float,
+        default=1e-4,
+        help="The allowed error for equality tests.",
     )
     parser.add_argument(
         "--eth_config_env_file",
