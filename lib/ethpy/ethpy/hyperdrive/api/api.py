@@ -380,7 +380,9 @@ class HyperdriveInterface:
         """
         return _get_gov_fees_accrued(self.hyperdrive_contract, block_number)
 
-    def create_checkpoint(self, sender: LocalAccount, block_number: BlockNumber | None = None) -> ReceiptBreakdown:
+    def create_checkpoint(
+        self, sender: LocalAccount, block_number: BlockNumber | None = None, checkpoint_time: int | None = None
+    ) -> ReceiptBreakdown:
         """Create a Hyperdrive checkpoint.
 
         Arguments
@@ -390,13 +392,15 @@ class HyperdriveInterface:
         block_number: BlockNumber, optional
             The number for any minted block.
             Defaults to the current block number.
+        checkpoint_time: int, optional
+            The checkpoint time to use. Defaults to the corresponding checkpoint for the provided block_number
 
         Returns
         -------
         ReceiptBreakdown
             A dataclass containing the output event of the contract call.
         """
-        return _create_checkpoint(self, sender, block_number)
+        return _create_checkpoint(self, sender, block_number, checkpoint_time)
 
     def set_rate(self, sender: LocalAccount, new_rate: FixedPoint) -> None:
         """Set the variable rate for the yield source.

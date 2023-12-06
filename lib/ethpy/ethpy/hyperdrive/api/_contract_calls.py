@@ -103,13 +103,15 @@ def _create_checkpoint(
     interface: HyperdriveInterface,
     sender: LocalAccount,
     block_number: BlockNumber | None = None,
+    checkpoint_time: int | None = None,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
-    if block_number is None:
-        block_timestamp = interface.get_block_timestamp(interface.get_current_block())
-    else:
-        block_timestamp = interface.get_block_timestamp(interface.get_block(block_number))
-    checkpoint_time = interface.calc_checkpoint_id(interface.pool_config.checkpoint_duration, block_timestamp)
+    if checkpoint_time is None:
+        if block_number is None:
+            block_timestamp = interface.get_block_timestamp(interface.get_current_block())
+        else:
+            block_timestamp = interface.get_block_timestamp(interface.get_block(block_number))
+        checkpoint_time = interface.calc_checkpoint_id(interface.pool_config.checkpoint_duration, block_timestamp)
 
     tx_receipt = smart_contract_transact(
         interface.web3,

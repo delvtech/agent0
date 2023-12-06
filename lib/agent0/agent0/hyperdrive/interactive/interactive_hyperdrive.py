@@ -200,6 +200,17 @@ class InteractiveHyperdrive:
         except Exception:  # pylint: disable=broad-except
             pass
 
+    # We overwrite these dunder methods to allow this object to be used as a dictionary key
+    def __hash__(self):
+        """We use a combination of the chain's rpc uri and the hyperdrive contract address as the hash."""
+        return hash((self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address))
+
+    def __eq__(self, other: InteractiveHyperdrive):
+        return (self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address) == (
+            other.chain.rpc_uri,
+            other._deployed_hyperdrive.hyperdrive_contract.address,
+        )
+
     def _deploy_hyperdrive(self, config: Config, chain: Chain, abi_dir) -> DeployedHyperdrivePool:
         # sanity check (also for type checking), should get set in __post_init__
         assert config.time_stretch is not None
@@ -247,12 +258,21 @@ class InteractiveHyperdrive:
         # Since this is a contract call, we need to run the data pipeline
         self._run_data_pipeline()
 
-    def _create_checkpoint(self) -> CreateCheckpoint:
+    def _create_checkpoint(self, checkpoint_time: int, check_if_exists: bool = True) -> CreateCheckpoint | None:
         """Internal function without safeguard checks for creating a checkpoint.
         Creating checkpoints is called by the chain's `advance_time`.
         """
+
+        if check_if_exists:
+            checkpoint = self.hyperdrive_interface.hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call()
+            # If it exists, don't create a checkpoint and return None.
+            if checkpoint.sharePrice > 0:
+                return None
+
         try:
-            tx_receipt = self.hyperdrive_interface.create_checkpoint(self._deployed_hyperdrive.deploy_account)
+            tx_receipt = self.hyperdrive_interface.create_checkpoint(
+                self._deployed_hyperdrive.deploy_account, checkpoint_time=checkpoint_time
+            )
         except AssertionError as exc:
             # Adding additional context to the "Transaction receipt has no logs" error
             raise ValueError("Failed to create checkpoint, does the checkpoint already exist?") from exc
