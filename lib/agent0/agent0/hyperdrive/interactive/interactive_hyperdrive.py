@@ -217,7 +217,6 @@ class InteractiveHyperdrive:
         self._analysis_thread: Thread | None = None
 
         # Run the data pipeline in background threads
-
         self._launch_data_pipeline()
         self.data_pipeline_timeout = config.data_pipeline_timeout
 
