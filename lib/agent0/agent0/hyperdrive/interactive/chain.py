@@ -148,7 +148,6 @@ class Chain:
             # For every pool, check the checkpoint duration and advance the chain for that amount of time,
             # followed by creating a checkpoint for that pool.
             # TODO support multiple pools with different checkpoint durations
-            # For now
             checkpoint_durations = [
                 pool.hyperdrive_interface.pool_config.checkpoint_duration for pool in self._deployed_hyperdrive_pools
             ]
@@ -182,27 +181,26 @@ class Chain:
             last_advance_time = time_delta % checkpoint_duration
             offset = 0
             for checkpoint_time in checkpoint_times:
-                # To avoid advancing too much time on the `create_checkpoint` mine,
-                # we also explicitly set the block timestamp for the next mine from create checkpoint.
+                # Advance the chain time by the checkpoint duration
                 self._advance_chain_time(checkpoint_duration - offset)
 
                 # Create checkpoints for each pool
                 # Here, creating checkpoints mines the block, which itself may take time. Hence, we
                 # calculate the offset and subtract it from the next advance time call.
                 # However, if the amount of time advanced is an exact multiple of the checkpoint duration,
-                # the last offset doesn't get applied, so this function can result in being off by a second.
+                # the last offset doesn't get applied, so this function can result in being off by however
+                # long the checkpoint took to create (typically a second).
                 time_before_checkpoints = self._web3.eth.get_block("latest").get("timestamp")
                 assert time_before_checkpoints is not None
                 for pool in self._deployed_hyperdrive_pools:
-                    # Create checkpoint handles making a checkpoint at the right time
                     checkpoint_event = pool._create_checkpoint(checkpoint_time)  # pylint: disable=protected-access
+                    # These checkpoints should never fail
                     assert checkpoint_event is not None
+                    # Add checkpoint event to the output
                     out_dict[pool].append(checkpoint_event)
                 time_after_checkpoints = self._web3.eth.get_block("latest").get("timestamp")
                 assert time_after_checkpoints is not None
                 offset = time_after_checkpoints - time_before_checkpoints
-                if checkpoint_duration - offset < 0:
-                    raise ValueError("Unable to advance time, try increasing the amount of time to advance.")
 
             # Final advance time to advance the remainder
             # Best effort, if offset is larger than the remainder, don't advance time again.
