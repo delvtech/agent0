@@ -6,7 +6,11 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler
 
-import hyperlogs
+# Logging defaults
+DEFAULT_LOG_LEVEL = logging.INFO
+DEFAULT_LOG_FORMATTER = "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s"
+DEFAULT_LOG_DATETIME = "%y-%m-%d %H:%M:%S"
+DEFAULT_LOG_MAXBYTES = int(2e6)  # 2MB
 
 
 def setup_logging(
@@ -116,7 +120,8 @@ def prepare_log_path(log_filename: str) -> tuple[str, str]:
         log_name += ".log"
     # Use default log directory if log_dir is not provided
     if log_dir == "":
-        base_folder = os.path.dirname(os.path.dirname(os.path.abspath(hyperlogs.__file__)))
+        # Default directory is wherever the scripts get ran from.
+        base_folder = os.getcwd()
         log_dir = os.path.join(base_folder, ".logging")
     # Create log directory if necessary
     if not os.path.exists(log_dir):
@@ -140,9 +145,9 @@ def create_formatter(log_format_string: str | None = None) -> logging.Formatter:
         Logging format as a Formatter object, after defaults are applied.
     """
     if log_format_string is None:
-        log_formatter = logging.Formatter(hyperlogs.DEFAULT_LOG_FORMATTER, hyperlogs.DEFAULT_LOG_DATETIME)
+        log_formatter = logging.Formatter(DEFAULT_LOG_FORMATTER, DEFAULT_LOG_DATETIME)
     else:
-        log_formatter = logging.Formatter(log_format_string, hyperlogs.DEFAULT_LOG_DATETIME)
+        log_formatter = logging.Formatter(log_format_string, DEFAULT_LOG_DATETIME)
     return log_formatter
 
 
@@ -160,7 +165,7 @@ def create_log_level(log_level: int | None = None) -> int:
         Logging level that was created, after defaults are applied.
     """
     if log_level is None:
-        log_level = hyperlogs.DEFAULT_LOG_LEVEL
+        log_level = DEFAULT_LOG_LEVEL
     return log_level
 
 
@@ -178,7 +183,7 @@ def create_max_bytes(max_bytes: int | None = None) -> int:
         Maximum size of the log file in bytes, after defaults are applied.
     """
     if max_bytes is None:
-        max_bytes = hyperlogs.DEFAULT_LOG_MAXBYTES
+        max_bytes = DEFAULT_LOG_MAXBYTES
     return max_bytes
 
 
