@@ -629,9 +629,7 @@ class HyperdriveInterface:
         ReceiptBreakdown
             A dataclass containing the absolute values for token quantities changed.
         """
-        return await _async_redeem_withdraw_shares(
-            self, agent, trade_amount, nonce, self.eth_config.preview_before_trade
-        )
+        return await _async_redeem_withdraw_shares(self, agent, trade_amount, nonce)
 
     def calc_position_duration_in_years(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Returns the pool config position duration as a fraction of a year.
