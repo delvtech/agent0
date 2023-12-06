@@ -24,6 +24,7 @@ _SLEEP_AMOUNT = 1
 
 # Lots of arguments
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
 def data_analysis(
     start_block: int = 0,
     eth_config: EthConfig | None = None,
@@ -64,7 +65,9 @@ def data_analysis(
         eth_config = build_eth_config()
 
     # postgres session
+    db_session_init = False
     if db_session is None:
+        db_session_init = True
         db_session = initialize_session(postgres_config=postgres_config, ensure_database_created=True)
 
     # Get addresses either from artifacts URI defined in eth_config or from contract_addresses
@@ -117,6 +120,11 @@ def data_analysis(
         logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
         data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
         block_number = latest_data_block_number
+
+    # Clean up resources on clean exit
+    # If this function made the db session, we close it here
+    if db_session_init:
+        db_session.close()
 
 
 def get_latest_data_block(db_session: Session) -> int:

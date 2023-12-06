@@ -62,7 +62,9 @@ def acquire_data(
     ## Initialization
     hyperdrive = HyperdriveInterface(eth_config, contract_addresses)
     # postgres session
+    db_session_init = False
     if db_session is None:
+        db_session_init = True
         db_session = initialize_session(postgres_config, ensure_database_created=True)
 
     ## Get starting point for restarts
@@ -122,3 +124,8 @@ def acquire_data(
                 )
                 continue
             data_chain_to_db(hyperdrive, hyperdrive.get_block(block_number), db_session)
+
+    # Clean up resources on clean exit
+    # If this function made the db session, we close it here
+    if db_session_init:
+        db_session.close()

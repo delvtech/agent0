@@ -273,7 +273,7 @@ class InteractiveHyperdrive:
     def cleanup(self):
         """Cleans up resources used by this object."""
         self._stop_data_pipeline()
-        self.db_session.close_all()
+        self.db_session.close()
 
     def __del__(self):
         # Attempt to close the session
