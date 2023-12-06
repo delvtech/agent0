@@ -66,6 +66,12 @@ from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
 # we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
 nest_asyncio.apply()
 
+# TODO clean up this file
+# Likely should move all the agent specific method to `interactive_hyperdrive_agent`.
+# However, this makes the agent less barebones, and the agent requires lots of resources
+# from InteractiveHyperdrive.
+# pylint: disable=too-many-lines
+
 
 class InteractiveHyperdrive:
     """Hyperdrive class that supports an interactive interface for running tests and experiments."""
