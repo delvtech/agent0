@@ -94,23 +94,6 @@ class InteractiveHyperdriveAgent:
             eth = FixedPoint(0)
         self._pool._add_funds(self.agent, base, eth)
 
-    def create_checkpoint(self, checkpoint_time: int | None = None) -> CreateCheckpoint:
-        """Creates a checkpoint, originating from the agent.
-
-        Arguments
-        ---------
-        checkpoint_time: int
-            The checkpoint time to mint
-
-        Returns
-        -------
-        CreateCheckpoint
-            The emitted event of the checkpoint call.
-        """
-        # TODO underlying function will raise NotImplementedError
-        # https://github.com/delvtech/agent0/issues/1105
-        return self._pool._create_checkpoint(self.agent, checkpoint_time)
-
     def open_long(self, base: FixedPoint) -> OpenLong:
         """Opens a long for this agent.
 

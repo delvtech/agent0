@@ -103,15 +103,17 @@ def _create_checkpoint(
     interface: HyperdriveInterface,
     sender: LocalAccount,
     block_number: BlockNumber | None = None,
-) -> None:
+    checkpoint_time: int | None = None,
+) -> ReceiptBreakdown:
     """See API for documentation."""
-    if block_number is None:
-        block_timestamp = interface.get_block_timestamp(interface.get_current_block())
-    else:
-        block_timestamp = interface.get_block_timestamp(interface.get_block(block_number))
-    checkpoint_time = interface.calc_checkpoint_id(interface.pool_config.checkpoint_duration, block_timestamp)
+    if checkpoint_time is None:
+        if block_number is None:
+            block_timestamp = interface.get_block_timestamp(interface.get_current_block())
+        else:
+            block_timestamp = interface.get_block_timestamp(interface.get_block(block_number))
+        checkpoint_time = interface.calc_checkpoint_id(interface.pool_config.checkpoint_duration, block_timestamp)
 
-    _ = smart_contract_transact(
+    tx_receipt = smart_contract_transact(
         interface.web3,
         interface.hyperdrive_contract,
         sender,
@@ -120,6 +122,8 @@ def _create_checkpoint(
         read_retry_count=interface.read_retry_count,
         write_retry_count=interface.write_retry_count,
     )
+    trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "createCheckpoint")
+    return trade_result
 
 
 def _set_variable_rate(

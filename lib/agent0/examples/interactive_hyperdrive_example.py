@@ -61,8 +61,10 @@ print(hyperdrive_agent0.wallet)
 
 # NOTE these calls are chainwide calls, so all pools connected to this chain gets affected.
 # Advance time, accepts timedelta or seconds
-chain.advance_time(datetime.timedelta(weeks=52))
-chain.advance_time(3600)
+# The option `create_checkpoints` creates hyperdrive checkpoints when advancing time
+# but this call may be slow when advancing a large amount of time.
+chain.advance_time(datetime.timedelta(weeks=52), create_checkpoints=False)
+chain.advance_time(3600, create_checkpoints=True)
 
 # Close previous longs
 close_long_event_1 = hyperdrive_agent0.close_long(
