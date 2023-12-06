@@ -75,6 +75,9 @@ for trade in trade_list:
     trade_events.append((agent, trade_event))
 
 # %%
+# TODO: advance some time
+
+# %%
 # Close the trades
 for agent, trade in trade_events:
     if isinstance(trade, OpenLong):
@@ -85,3 +88,5 @@ for agent, trade in trade_events:
 # Check the reserve amounts; they should be unchanged now that all of the trades are closed
 pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
 assert pool_state.vault_shares == initial_vault_shares, f"{pool_state.vault_shares=} != {initial_vault_shares=}"
+
+# TODO: assert share_reserves >= minimum_share_reserves

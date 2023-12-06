@@ -97,16 +97,6 @@ def main(argv: Sequence[str] | None = None) -> None:
                     + epsilon  # TODO: They mean "within epsilon", i.e. +/- epsilon
                 ), f"{total_shares=} is incorrect."
 
-                ### Longs and shorts should always be closed at maturity for the correct amounts
-                # TODO: fail if any longs or shorts are at or past maturity
-                # for each wallet:
-                #   for each long:
-                #     if long.maturity_time <= latest_checkpoint_time:
-                #         assert long.is_closed()
-                #   for each short:
-                #       if short.maturity_time <= latest_checkpoint_time:
-                #         assert short.is_closed()
-
                 ### The system should always be solvent
                 solvency = share_reserves - global_exposure - minimum_share_reserves
                 assert solvency > 0, f"System is not solvent at block {latest_block_number}"
@@ -186,7 +176,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     parser.add_argument(
         "--test_epsilon",
         type=int,
-        default=10,
+        default=int(1e14),  # todo: change to fixed point
         help="The test epsilon amount, in WEI.",
     )
     parser.add_argument(

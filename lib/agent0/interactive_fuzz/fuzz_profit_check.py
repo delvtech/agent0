@@ -38,6 +38,7 @@ hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=trade_amount, eth=Fix
 # %%
 # Open a long and close it immediately
 open_long_event = hyperdrive_agent0.open_long(base=trade_amount)
+# TODO: Let some amount of time, less than a checkpoint, pass
 close_long_event = hyperdrive_agent0.close_long(
     maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
 )
@@ -51,6 +52,7 @@ assert hyperdrive_agent0.wallet.balance.amount < trade_amount
 # Set trade amount to the new wallet position (due to losing money from the previous open/close)
 trade_amount = hyperdrive_agent0.wallet.balance.amount
 open_short_event = hyperdrive_agent0.open_short(bonds=trade_amount)
+# TODO: Let some amount of time pass, less than a checkpoint, pass
 close_short_event = hyperdrive_agent0.close_short(
     maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
 )
