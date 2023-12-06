@@ -394,6 +394,9 @@ class TestInteractiveHyperdrive:
         config = InteractiveHyperdrive.Config(initial_variable_rate=FixedPoint("0.05"))
         interactive_hyperdrive = InteractiveHyperdrive(chain, config)
 
+        # Make a trade to mine the block on this variable rate so it shows up in the data pipeline
+        _ = interactive_hyperdrive.init_agent()
+
         # Set the variable rate
         # This mines a block since it's a transaction
         interactive_hyperdrive.set_variable_rate(FixedPoint("0.10"))
