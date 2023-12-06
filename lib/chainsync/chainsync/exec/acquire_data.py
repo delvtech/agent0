@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import time
+from typing import Callable
 
 from chainsync import PostgresConfig
 from chainsync.db.base import initialize_session
@@ -30,6 +31,7 @@ def acquire_data(
     postgres_config: PostgresConfig | None = None,
     contract_addresses: HyperdriveAddresses | None = None,
     exit_on_catch_up: bool = False,
+    exit_callback_fn: Callable[[], bool] | None = None,
 ):
     """Execute the data acquisition pipeline.
 
@@ -50,8 +52,12 @@ def acquire_data(
     contract_addresses: HyperdriveAddresses | None
         If set, will use these addresses instead of querying the artifact URI
         defined in eth_config.
-    exit_on_catch_up: bool
-        If True, will exit after catching up to current block
+    exit_on_catch_up: bool, optional
+        If True, will exit after catching up to current block. Defaults to False.
+    exit_callback_fn: Callable[[], bool] | None, optional
+        A function that returns a boolean to call to determine if the script should exit.
+        The function should return False if the script should continue, or True if the script should exit.
+        Defaults to not set.
     """
     ## Initialization
     hyperdrive = HyperdriveInterface(eth_config, contract_addresses)
@@ -89,7 +95,10 @@ def acquire_data(
         latest_mined_block = hyperdrive.web3.eth.get_block_number()
         # Only execute if we are on a new block
         if latest_mined_block <= block_number:
-            if exit_on_catch_up:
+            exit_callable = False
+            if exit_callback_fn is not None:
+                exit_callable = exit_callback_fn()
+            if exit_on_catch_up or exit_callable:
                 break
             time.sleep(_SLEEP_AMOUNT)
             continue

@@ -6,7 +6,7 @@ import os
 import time
 from dataclasses import asdict, dataclass
 from decimal import Decimal
-from multiprocessing import Process
+from threading import Thread
 from typing import Literal, Type, overload
 
 import nest_asyncio
@@ -204,8 +204,12 @@ class InteractiveHyperdrive:
         self.chain = chain
         self._pool_agents: list[InteractiveHyperdriveAgent] = []
 
+        # We use this variable passed into the underlying threads as a lambda function
+        # to
+        self.stop_threads = False
+
         # Run the data pipeline in background threads
-        self.data_thread = Process(
+        self.data_thread = Thread(
             target=acquire_data,
             kwargs={
                 "start_block": self._deploy_block_number,  # Start block is the block hyperdrive was deployed
@@ -213,9 +217,10 @@ class InteractiveHyperdrive:
                 "postgres_config": postgres_config,
                 "contract_addresses": self.hyperdrive_interface.addresses,
                 "exit_on_catch_up": False,
+                "exit_callback_fn": lambda: self.stop_threads,
             },
         )
-        self.analysis_thread = Process(
+        self.analysis_thread = Thread(
             target=data_analysis,
             kwargs={
                 "start_block": self._deploy_block_number,
@@ -223,6 +228,7 @@ class InteractiveHyperdrive:
                 "postgres_config": postgres_config,
                 "contract_addresses": self.hyperdrive_interface.addresses,
                 "exit_on_catch_up": False,
+                "exit_callback_fn": lambda: self.stop_threads,
             },
         )
         self.data_thread.start()
@@ -239,9 +245,12 @@ class InteractiveHyperdrive:
 
     def cleanup(self):
         """Cleans up resources used by this object."""
-        self.db_session.close()
-        self.data_thread.terminate()
-        self.analysis_thread.terminate()
+        # This lets the underlying threads know to stop at the next opportunity
+        self.stop_threads = True
+        # These wait for the threads to finally stop
+        self.data_thread.join()
+        self.analysis_thread.join()
+        self.db_session.close_all()
 
     def __del__(self):
         # Attempt to close the session

@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+from typing import Callable
 
 from chainsync import PostgresConfig
 from chainsync.analysis import data_to_analysis
@@ -21,6 +22,8 @@ from sqlalchemy.orm import Session
 _SLEEP_AMOUNT = 1
 
 
+# Lots of arguments
+# pylint: disable=too-many-arguments
 def data_analysis(
     start_block: int = 0,
     eth_config: EthConfig | None = None,
@@ -28,6 +31,7 @@ def data_analysis(
     postgres_config: PostgresConfig | None = None,
     contract_addresses: HyperdriveAddresses | None = None,
     exit_on_catch_up: bool = False,
+    exit_callback_fn: Callable[[], bool] | None = None,
 ):
     """Execute the data acquisition pipeline.
 
@@ -48,6 +52,10 @@ def data_analysis(
         defined in eth_config.
     exit_on_catch_up: bool
         If True, will exit after catching up to current block
+    exit_callback_fn: Callable[[], bool] | None, optional
+        A function that returns a boolean to call to determine if the script should exit.
+        The function should return False if the script should continue, or True if the script should exit.
+        Defaults to not set.
     """
     ## Initialization
     # eth config
@@ -95,7 +103,10 @@ def data_analysis(
         latest_data_block_number = get_latest_data_block(db_session)
         # Only execute if we are on a new block
         if latest_data_block_number <= block_number:
-            if exit_on_catch_up:
+            exit_callable = False
+            if exit_callback_fn is not None:
+                exit_callable = exit_callback_fn()
+            if exit_on_catch_up or exit_callable:
                 break
             time.sleep(_SLEEP_AMOUNT)
             continue
