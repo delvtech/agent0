@@ -112,7 +112,7 @@ chain.advance_time(position_duration + 30)
 current_time = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
 maturity_checkpoint_time = current_time - current_time % checkpoint_duration
 smart_contract_transact(
-    chain._web3,
+    interactive_hyperdrive.hyperdrive_interface.web3,
     interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract,
     signer.agent,
     "checkpoint",
