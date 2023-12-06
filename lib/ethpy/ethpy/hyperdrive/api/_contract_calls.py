@@ -18,7 +18,7 @@ from web3 import Web3
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
-    from eth_typing import BlockNumber, ChecksumAddress
+    from eth_typing import BlockNumber
     from ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
     from web3.types import Nonce
 
@@ -400,7 +400,7 @@ async def _async_close_short(
             block_number=current_block,
             read_retry_count=interface.read_retry_count,
         )
-    if slippage_tolerance:
+    if slippage_tolerance is not None:
         min_output = (
             FixedPoint(scaled_value=preview_result["value"]) * (FixedPoint(1) - slippage_tolerance)
         ).scaled_value
