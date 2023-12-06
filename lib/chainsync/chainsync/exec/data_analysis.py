@@ -5,10 +5,7 @@ import logging
 import os
 import time
 
-from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri, get_web3_and_hyperdrive_contracts
-from sqlalchemy.orm import Session
-
+from chainsync import PostgresConfig
 from chainsync.analysis import data_to_analysis
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
@@ -17,6 +14,9 @@ from chainsync.db.hyperdrive import (
     get_latest_block_number_from_table,
     get_pool_config,
 )
+from ethpy import EthConfig, build_eth_config
+from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri, get_web3_and_hyperdrive_contracts
+from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
 
@@ -25,6 +25,7 @@ def data_analysis(
     start_block: int = 0,
     eth_config: EthConfig | None = None,
     db_session: Session | None = None,
+    postgres_config: PostgresConfig | None = None,
     contract_addresses: HyperdriveAddresses | None = None,
     exit_on_catch_up: bool = False,
 ):
@@ -40,6 +41,8 @@ def data_analysis(
     db_session: Session | None
         Session object for connecting to db. If None, will initialize a new session based on
         postgres.env.
+    postgres_config: PostgresConfig | None = None,
+        PostgresConfig for connecting to db. If none, will set from postgres.env.
     contract_addresses: HyperdriveAddresses | None
         If set, will use these addresses instead of querying the artifact URI
         defined in eth_config.
@@ -54,7 +57,7 @@ def data_analysis(
 
     # postgres session
     if db_session is None:
-        db_session = initialize_session()
+        db_session = initialize_session(postgres_config=postgres_config, ensure_database_created=True)
 
     # Get addresses either from artifacts URI defined in eth_config or from contract_addresses
     if contract_addresses is None:

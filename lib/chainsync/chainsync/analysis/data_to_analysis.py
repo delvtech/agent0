@@ -173,30 +173,6 @@ def data_to_analysis(
     # Get data
     pool_info = get_pool_info(db_session, start_block, end_block, coerce_float=False)
 
-    # Calculate spot price
-    # TODO ideally we would call hyperdrive interface directly to get the spot price and fixed rate.
-    # However, we need to be able to query e.g., pool_info for a specific block. Hence here, we use the
-    # pool info from the db and directly call hyperdrivepy to get the spot price.
-    spot_price = calc_spot_price(
-        pool_info["share_reserves"],
-        pool_info["share_adjustment"],
-        pool_info["bond_reserves"],
-        pool_config["initial_share_price"],
-        pool_config["time_stretch"],
-    )
-
-    # Calculate fixed rate
-    fixed_rate = calc_fixed_rate(spot_price, pool_config["position_duration"])
-
-    # Calculate base buffer
-    base_buffer = calc_base_buffer(
-        pool_info["longs_outstanding"], pool_info["share_price"], pool_config["minimum_share_reserves"]
-    )
-
-    pool_analysis_df = pd.concat([pool_info["block_number"], spot_price, fixed_rate, base_buffer], axis=1)
-    pool_analysis_df.columns = ["block_number", "spot_price", "fixed_rate", "base_buffer"]
-    _df_to_db(pool_analysis_df, PoolAnalysis, db_session)
-
     # TODO calculate current wallet positions for this block
     # This should be done from the deltas, not queries from chain
     wallet_deltas_df = get_wallet_deltas(db_session, start_block, end_block, coerce_float=False)
@@ -240,3 +216,28 @@ def data_to_analysis(
     ticker_df = calc_ticker(wallet_deltas_df, transactions, pool_info)
     # TODO add ticker to database
     _df_to_db(ticker_df, Ticker, db_session)
+
+    # We add pool analysis last since this table is what's being used to determine how far the data pipeline is.
+    # Calculate spot price
+    # TODO ideally we would call hyperdrive interface directly to get the spot price and fixed rate.
+    # However, we need to be able to query e.g., pool_info for a specific block. Hence here, we use the
+    # pool info from the db and directly call hyperdrivepy to get the spot price.
+    spot_price = calc_spot_price(
+        pool_info["share_reserves"],
+        pool_info["share_adjustment"],
+        pool_info["bond_reserves"],
+        pool_config["initial_share_price"],
+        pool_config["time_stretch"],
+    )
+
+    # Calculate fixed rate
+    fixed_rate = calc_fixed_rate(spot_price, pool_config["position_duration"])
+
+    # Calculate base buffer
+    base_buffer = calc_base_buffer(
+        pool_info["longs_outstanding"], pool_info["share_price"], pool_config["minimum_share_reserves"]
+    )
+
+    pool_analysis_df = pd.concat([pool_info["block_number"], spot_price, fixed_rate, base_buffer], axis=1)
+    pool_analysis_df.columns = ["block_number", "spot_price", "fixed_rate", "base_buffer"]
+    _df_to_db(pool_analysis_df, PoolAnalysis, db_session)

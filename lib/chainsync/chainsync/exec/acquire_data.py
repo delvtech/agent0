@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import time
 
+from chainsync import PostgresConfig
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
     data_chain_to_db,
@@ -26,6 +27,7 @@ def acquire_data(
     lookback_block_limit: int = 1000,
     eth_config: EthConfig | None = None,
     db_session: Session | None = None,
+    postgres_config: PostgresConfig | None = None,
     contract_addresses: HyperdriveAddresses | None = None,
     exit_on_catch_up: bool = False,
 ):
@@ -42,7 +44,9 @@ def acquire_data(
         in eth.env.
     db_session: Session | None
         Session object for connecting to db. If None, will initialize a new session based on
-        postgres.env.
+        postgres_config.
+    postgres_config: PostgresConfig | None = None,
+        PostgresConfig for connecting to db. If none, will set from postgres.env.
     contract_addresses: HyperdriveAddresses | None
         If set, will use these addresses instead of querying the artifact URI
         defined in eth_config.
@@ -53,7 +57,7 @@ def acquire_data(
     hyperdrive = HyperdriveInterface(eth_config, contract_addresses)
     # postgres session
     if db_session is None:
-        db_session = initialize_session()
+        db_session = initialize_session(postgres_config, ensure_database_created=True)
 
     ## Get starting point for restarts
     # Get last entry of pool info in db
