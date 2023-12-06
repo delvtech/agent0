@@ -225,14 +225,43 @@ class TestInteractiveHyperdrive:
 
         current_time_1 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
         # Testing passing in seconds
-        chain.advance_time(3600)
+        chain.advance_time(3600, create_checkpoints=False)
         current_time_2 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
         # Testing passing in timedelta
-        chain.advance_time(datetime.timedelta(weeks=1))
+        chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
         current_time_3 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
 
         assert current_time_2 - current_time_1 == 3600
         assert current_time_3 - current_time_2 == 3600 * 24 * 7
+
+    @pytest.mark.anvil
+    def test_advance_time_with_checkpoints(self, chain: LocalChain):
+        """Tests interactive hyperdrive end to end"""
+        # We need the underlying hyperdrive interface here to test time
+        config = InteractiveHyperdrive.Config(checkpoint_duration=3600)
+        interactive_hyperdrive = InteractiveHyperdrive(chain, config)
+        hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+
+        pre_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+        # Advance time lower than a checkpoint duration
+        chain.advance_time(600, create_checkpoints=True)
+        post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+        assert post_time - pre_time == 600
+        # TODO assert no checkpoints made
+
+        pre_time = post_time
+        # Advance time equal to a checkpoint duration
+        chain.advance_time(3600, create_checkpoints=True)
+        post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+        assert post_time - pre_time == 3600
+        # TODO assert one checkpoint made
+
+        pre_time = post_time
+        # Advance time with multiple checkpoints
+        chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=True)
+        post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+        assert post_time - pre_time == 3600 * 24 * 7
+        # TODO assert multiple checkpoints made
 
     @pytest.mark.anvil
     def test_save_load_snapshot(self, chain: LocalChain):

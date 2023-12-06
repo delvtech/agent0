@@ -96,8 +96,9 @@ class Chain:
         next_blocktime = latest_blocktime + time_delta
 
         response = self._web3.provider.make_request(method=RPCEndpoint("evm_mine"), params=[next_blocktime])
-        # TODO ensure response is valid
-        pass
+        # ensure response is valid
+        if "result" not in response:
+            raise KeyError("Response did not have a result.")
 
     def advance_time(self, time_delta: int | timedelta, create_checkpoints: bool = True) -> None:
         """Advance time for this chain using the `evm_mine` RPC call.
@@ -143,7 +144,8 @@ class Chain:
                 # Create checkpoints for each pool
                 for pool in self._deployed_hyperdrive_pools:
                     # Create checkpoint handles making a checkpoint at the right time
-                    pool.create_checkpoint()
+                    checkpoint_event = pool.create_checkpoint()
+                    pass
             # Final advance time
             self._advance_chain_time(last_advance_time)
 

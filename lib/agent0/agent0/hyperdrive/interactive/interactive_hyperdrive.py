@@ -247,9 +247,25 @@ class InteractiveHyperdrive:
         # Since this is a contract call, we need to run the data pipeline
         self._run_data_pipeline()
 
-    def create_checkpoint(self) -> CreateCheckpoint:
-        """Creates a checkpoint for this pool if it doesn't exist."""
-        raise NotImplementedError
+    def _create_checkpoint(self) -> CreateCheckpoint:
+        """Internal function without safeguard checks for creating a checkpoint.
+        Creating checkpoints is called by the chain's `advance_time`.
+        """
+        try:
+            tx_receipt = self.hyperdrive_interface.create_checkpoint(self._deployed_hyperdrive.deploy_account)
+        except AssertionError as exc:
+            # Adding additional context to the "Transaction receipt has no logs" error
+            raise ValueError("Failed to create checkpoint, does the checkpoint already exist?") from exc
+        # We don't call `_build_event_obj_from_tx_receipt` here because
+        # it's based on the enum of `HyperdriveActionType`, which creating
+        # a checkpoint isn't a trade result
+        return CreateCheckpoint(
+            checkpoint_time=tx_receipt.checkpoint_time,
+            share_price=tx_receipt.share_price,
+            matured_shorts=tx_receipt.matured_shorts,
+            matured_longs=tx_receipt.matured_longs,
+            lp_share_price=tx_receipt.lp_share_price,
+        )
 
     def init_agent(
         self,
