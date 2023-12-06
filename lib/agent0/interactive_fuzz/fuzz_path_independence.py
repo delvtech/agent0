@@ -1,5 +1,4 @@
 """Script to verify that the state of pool reserves is invariant to the order in which positions are closed."""
-# %%
 from __future__ import annotations
 
 import json
@@ -16,17 +15,11 @@ from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
 
-# Pylint UPPER_CASE name conventions shouldn't always apply in notebooks.
-# pylint: disable=invalid-name
-
-
-# %%
 # Set global defaults
 NUM_TRADES = 3
 NUM_PATHS_CHECKED = 10
 FAILED = False
 
-# %%
 # Setup logging
 log_filename = ".logging/fuzz_path_independence.log"
 setup_logging(
@@ -35,43 +28,44 @@ setup_logging(
     log_stdout=False,
 )
 
-# %%
 # Setup local chain
 chain_config = LocalChain.Config()
 chain = LocalChain(config=chain_config)
 random_seed = np.random.randint(low=1, high=99999999)  # No seed, we want this to be random every time it is executed
 rng = np.random.default_rng(random_seed)
 
-# %%
 # Parameters for pool initialization.
 initial_pool_config = InteractiveHyperdrive.Config()
 interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 
 
-# %%
 # Generate a list of agents that execute random trades
-available_actions = np.array([HyperdriveActionType.OPEN_LONG, HyperdriveActionType.OPEN_SHORT])
-min_trade = interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount
-trade_list: list[tuple[InteractiveHyperdriveAgent, HyperdriveActionType, FixedPoint]] = []
-for agent_index in range(NUM_TRADES):  # 1 agent per trade
-    budget = FixedPoint(
-        scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value * 10, high=int(1e23))))
-    )  # Give a little extra money to account for fees
-    agent = interactive_hyperdrive.init_agent(base=budget, eth=FixedPoint(100))
-    trade_type = rng.choice(available_actions, size=1)[0]
-    trade_amount_base = FixedPoint(
-        scaled_value=int(
-            rng.uniform(
-                low=min_trade.scaled_value,
-                high=int(
-                    budget.scaled_value / 2
-                ),  # Don't trade all of their money, to make sure they have enough for fees
+def new_func(NUM_TRADES, rng, interactive_hyperdrive):
+    available_actions = np.array([HyperdriveActionType.OPEN_LONG, HyperdriveActionType.OPEN_SHORT])
+    min_trade = interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount
+    trade_list: list[tuple[InteractiveHyperdriveAgent, HyperdriveActionType, FixedPoint]] = []
+    for agent_index in range(NUM_TRADES):  # 1 agent per trade
+        budget = FixedPoint(
+            scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value * 10, high=int(1e23))))
+        )  # Give a little extra money to account for fees
+        agent = interactive_hyperdrive.init_agent(base=budget, eth=FixedPoint(100))
+        trade_type = rng.choice(available_actions, size=1)[0]
+        trade_amount_base = FixedPoint(
+            scaled_value=int(
+                rng.uniform(
+                    low=min_trade.scaled_value,
+                    high=int(
+                        budget.scaled_value / 2
+                    ),  # Don't trade all of their money, to make sure they have enough for fees
+                )
             )
         )
-    )
-    trade_list.append((agent, trade_type, trade_amount_base))
+        trade_list.append((agent, trade_type, trade_amount_base))
+    return trade_list
 
-# %%
+
+trade_list = new_func(NUM_TRADES, rng, interactive_hyperdrive)
+
 # Open some trades
 trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]] = []
 for trade in trade_list:
@@ -88,12 +82,10 @@ for trade in trade_list:
         rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration)
     )
 
-# %%
 # Snapshot the chain, so we can load the snapshot & close in different orders
 chain.save_snapshot()
 check_data: dict | None = None
 
-# %%
 # List of columns in pool info to check between the initial pool info and the latest pool info.
 check_columns = [
     "shorts_outstanding",
@@ -105,8 +97,6 @@ check_columns = [
     "longs_outstanding",
 ]
 
-
-# %%
 # Close the trades randomly & verify that the final state is unchanged
 for iteration in range(NUM_PATHS_CHECKED):
     print(f"{iteration=}")
