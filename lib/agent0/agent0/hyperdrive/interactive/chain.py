@@ -304,6 +304,8 @@ class Chain:
     def _dump_db(self):
         # TODO parameterize the save path
         for pool in self._deployed_hyperdrive_pools:
+            # Need to ensure data has caught up before snapshot
+            pool._ensure_data_caught_up()  # pylint: disable=protected-access
             export_path = ".interactive_state/snapshot/" + pool._db_name  # pylint: disable=protected-access
             os.makedirs(export_path, exist_ok=True)
             export_db_to_file(export_path, pool.db_session, raw=True)
@@ -379,8 +381,8 @@ class LocalChain(Chain):
 
     def cleanup(self):
         """Kills the subprocess in this class' destructor."""
-        self.anvil_process.kill()
         super().cleanup()
+        self.anvil_process.kill()
 
     def __del__(self):
         """Kill subprocess in this class' destructor."""
