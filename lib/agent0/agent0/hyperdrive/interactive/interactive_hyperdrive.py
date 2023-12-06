@@ -160,6 +160,7 @@ class InteractiveHyperdrive:
         self.hyperdrive_interface = HyperdriveInterface(
             self.eth_config,
             self._deployed_hyperdrive.hyperdrive_contract_addresses,
+            web3=chain._web3,
         )
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
