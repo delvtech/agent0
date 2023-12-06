@@ -536,11 +536,8 @@ async def async_smart_contract_transact(
         ) from err
 
 
-def _send_transaction_and_wait_for_receipt(unsent_txn: TxParams, signer: LocalAccount, web3: Web3) -> TxReceipt:
+def send_transaction_and_wait_for_receipt(unsent_txn: TxParams, signer: LocalAccount, web3: Web3) -> TxReceipt:
     """Sends a transaction and waits for the receipt.
-
-    Arguments
-    ---------
 
     Arguments
     ---------
@@ -629,7 +626,7 @@ def smart_contract_transact(
         # Building transaction can fail when transaction itself isn't correct
         unsent_txn = build_transaction(func_handle, signer, web3, nonce=nonce, read_retry_count=read_retry_count)
         return retry_call(
-            write_retry_count, _retry_txn_check, _send_transaction_and_wait_for_receipt, unsent_txn, signer, web3
+            write_retry_count, _retry_txn_check, send_transaction_and_wait_for_receipt, unsent_txn, signer, web3
         )
 
     # Wraps the exception with a contract call exception, adding additional information

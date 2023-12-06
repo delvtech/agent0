@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import numpy as np
-import pandas as pd
+from ethpy.base.transactions import smart_contract_transact
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import Chain, InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
@@ -16,26 +16,22 @@ from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
 # pylint: disable=pointless-statement
 
 
-# TODO: change this into an executable script with LOCAL=False always once we're sure it is working
-LOCAL = True
-NUM_TRADES = 3
-NUM_PATHS_CHECKED = 10
+NUM_TRADES = 10
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor
-if LOCAL:
-    chain_config = LocalChain.Config()
-    chain = LocalChain(config=chain_config)
-else:
-    chain_config = Chain.Config(db_port=5004, remove_existing_db_container=True)
-    chain = Chain(rpc_uri="http://localhost:8545", config=chain_config)
+# set a large block time so i can manually control when it ticks
+# TODO: set block time really high after contracts deployed:
+# chain_config = LocalChain.Config(block_time=1_000_000)
+chain_config = LocalChain.Config()
+chain = LocalChain(config=chain_config)
 rng = np.random.default_rng()  # No seed, we want this to be random every time it is executed
 
 # %%
 # Parameters for pool initialization.
 initial_pool_config = InteractiveHyperdrive.Config()
 interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
-
+signer = interactive_hyperdrive.init_agent(eth=FixedPoint(100))
 
 # %%
 # Generate a list of agents that execute random trades
@@ -89,63 +85,107 @@ for trade in trade_list:
         raise AssertionError(f"{trade_type=} is not supported.")
     trade_events.append((agent, trade_event))
 
+# automatically created by sending transactions
+starting_checkpoint = interactive_hyperdrive.hyperdrive_interface.current_pool_state.checkpoint
+
 # %%
 # snapshot the chain, so we can load the snapshot & close in different orders
 chain.save_snapshot()
 
 check_data: dict | None = None
+# %%
+# advance the time to at least the position duration, maximum of two position durations.
 
+position_duration = interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration
+rng = np.random.default_rng()  # No seed, we want this to be random every time it is executed
+extra_time = int(np.floor(rng.uniform(low=0, high=position_duration)))
+
+# advances time and mines a block
+current_time = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
+checkpoint_duration = interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration
+
+starting_checkpoint_time = current_time - current_time % checkpoint_duration
+
+chain.advance_time(position_duration + 30)
+
+# create a checkpoint
+current_time = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
+maturity_checkpoint_time = current_time - current_time % checkpoint_duration
+smart_contract_transact(
+    chain._web3,
+    interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract,
+    signer.agent,
+    "checkpoint",
+    maturity_checkpoint_time,
+)
+chain.advance_time(extra_time)
+maturity_checkpoint = interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract.functions.getCheckpoint(
+    maturity_checkpoint_time
+).call()
 
 # %%
-for iteration in range(NUM_PATHS_CHECKED):
-    print(f"{iteration=}")
-    # TODO:
-    # Load the snapshot
-    chain.load_snapshot()
+# close them one at a time, check invariants
 
-    # Randomly grab some trades & close them one at a time
-    # TODO: Add remove liquidity; withdraw shares would have to happen after & outside this loop
-    for trade_index in rng.permuted(list(range(len(trade_events)))):
-        agent, trade = trade_events[int(trade_index)]
-        if isinstance(trade, OpenLong):
-            agent.close_long(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
-        if isinstance(trade, OpenShort):
-            agent.close_short(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
+SECONDS_PER_YEAR = 60 * 60 * 24 * 365
 
-    # Check the reserve amounts; they should be unchanged now that all of the trades are closed
 
-    pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
+def assertion(condition: bool, message: str = "Assertion failed."):
+    """Simple assertion check.
 
-    # On first run, save final state
-    if check_data is None:
-        check_data = {}
-        check_data["check_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
-        # TODO add these to pool info
-        pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-        check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
-        check_data["gov_fees_accrued"] = pool_state.gov_fees_accrued
-        check_data["vault_shares"] = pool_state.vault_shares
+    Parameters
+    ----------
+    condition : bool
+        condition to check.
+    message : str, optional
+        Error message if condtion fails.
+    """
+    if not condition:
+        print(message)
 
-        # Sanity check on static pool config
-        check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
 
-    # On subsequent run, check against the saved final state
-    else:
-        # This checks that the subset of columns in initial pool info and the latest pool info are identical.
-        pd.testing.assert_series_equal(
-            check_data["check_pool_state_df"], pool_state_df[check_columns].iloc[-1], check_names=False
+for agent, trade in trade_events:
+    if isinstance(trade, OpenLong):
+        close_long_event = agent.close_long(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
+        # 0.05 would be a 5% fee.
+        flat_fee_percent = interactive_hyperdrive.hyperdrive_interface.pool_config.fees.flat
+        # base out should be equal to bonds in minus the flat fee.
+
+        # assert with trade values
+        actual_base_amount = close_long_event.base_amount
+        expected_base_amount_from_event = close_long_event.bond_amount - close_long_event.bond_amount * flat_fee_percent
+        assertion(actual_base_amount == expected_base_amount_from_event)
+
+        # assert with event values
+        expected_base_amount_from_trade = trade.bond_amount - trade.bond_amount * flat_fee_percent
+        assertion(close_long_event.base_amount == expected_base_amount_from_trade)
+
+        # show the difference
+        difference = actual_base_amount.scaled_value - expected_base_amount_from_trade.scaled_value
+        print(f"close long: difference in wei {difference}")
+        # assert actual_base_amount == expected_base_amount
+        # assert close_long_event.base_amount == trade.bond_amount - trade.bond_amount * flat_fee_percent
+    if isinstance(trade, OpenShort):
+        close_short_event = agent.close_short(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
+
+        # get the share prices
+        open_share_price = starting_checkpoint.share_price
+        closing_share_price = FixedPoint(scaled_value=maturity_checkpoint.sharePrice)
+
+        # interested accrued in shares = (c1 / c0 + flat_fee) * dy - c1 * dz
+        flat_fee_percent = interactive_hyperdrive.hyperdrive_interface.pool_config.fees.flat
+
+        # get the share amount, c1 * dz part of the equation.
+        share_reserves_delta = trade.bond_amount
+        flat_fee = trade.bond_amount * flat_fee_percent
+        share_reserves_delta_plus_flat_fee = share_reserves_delta + flat_fee
+
+        interest_accrued = (
+            trade.bond_amount * (closing_share_price / open_share_price + flat_fee_percent)
+            - share_reserves_delta_plus_flat_fee
         )
 
-        pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-        assert (
-            check_data["hyperdrive_base_balance"] == pool_state.hyperdrive_base_balance
-        ), f"{check_data['hyperdrive_base_balance']=} != {pool_state.hyperdrive_base_balance}"
-        assert (
-            check_data["gov_fees_accrued"] == pool_state.gov_fees_accrued
-        ), f"{check_data['gov_fees_accrued']=} != {pool_state.gov_fees_accrued}"
-        assert (
-            check_data["vault_shares"] == pool_state.vault_shares
-        ), f"{check_data['vault_shares']=} != {pool_state.vault_shares}"
-        assert (
-            check_data["minimum_share_reserves"] == pool_state.pool_config.minimum_share_reserves
-        ), f"{check_data['minimum_share_reserves']=} != {pool_state.pool_config.minimum_share_reserves}"
+        # assert and show the difference
+        assertion(close_short_event.base_amount == interest_accrued)
+        difference = close_short_event.base_amount.scaled_value - interest_accrued.scaled_value
+        print(f"close short: difference in wei {difference}")
+        # assert close_short_event.base_amount == interest_accrued
