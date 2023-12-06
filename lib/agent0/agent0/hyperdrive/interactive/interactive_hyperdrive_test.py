@@ -279,6 +279,9 @@ class TestInteractiveHyperdrive:
         assert abs(post_time - pre_time - 4000) <= 1
         assert len(checkpoint_events[interactive_hyperdrive]) == 1
 
+        # TODO add additional columns in data pipeline for checkpoints from CreateCheckpoint event
+        # then check `hyperdrive_interface.get_checkpoint_info` for proper checkpoints.
+
     @pytest.mark.anvil
     def test_save_load_snapshot(self, chain: LocalChain):
         # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
