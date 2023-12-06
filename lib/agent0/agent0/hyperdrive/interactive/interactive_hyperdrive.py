@@ -116,6 +116,7 @@ class InteractiveHyperdrive:
 
         # Environment variables
         data_pipeline_timeout: int = 60
+        preview_before_trade: bool = False
         # Initial pool variables
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
         initial_variable_rate: FixedPoint = FixedPoint("0.05")
@@ -135,7 +136,6 @@ class InteractiveHyperdrive:
         max_curve_fee = FixedPoint("0.3")  # 30%
         max_flat_fee = FixedPoint("0.0015")  # 0.15%
         max_governance_fee = FixedPoint("0.30")  # 30%
-        preview_before_trade: bool = False
 
         def __post_init__(self):
             if self.time_stretch is None:
