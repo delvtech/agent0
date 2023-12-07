@@ -34,7 +34,7 @@ def main(argv: Sequence[str] | None = None):
     argv: Sequence[str]
         The argv values returned from argparser.
     """
-    # Setup logging
+    # Setup the environment
     parsed_args, log_filename, chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(argv)
 
     # Get initial vault shares
@@ -51,8 +51,7 @@ def main(argv: Sequence[str] | None = None):
     close_random_trades(trade_events, rng)
 
     # Check the reserve amounts; they should be unchanged now that all of the trades are closed
-    failed = invariant_check_failed(initial_vault_shares, random_seed, interactive_hyperdrive)
-    if failed:
+    if invariant_check_failed(initial_vault_shares, random_seed, interactive_hyperdrive):
         raise AssertionError(f"Testing failed; see logs in {log_filename}")
 
 
@@ -156,6 +155,7 @@ def setup_fuzz(
     # Parameters for pool initialization.
     initial_pool_config = InteractiveHyperdrive.Config(preview_before_trade=True)
     interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
+
     return parsed_args, log_filename, chain, random_seed, rng, interactive_hyperdrive
 
 

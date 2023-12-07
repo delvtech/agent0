@@ -180,6 +180,7 @@ def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, str, LocalChain, int, 
         delete_previous_logs=True,
         log_stdout=False,
     )
+
     # Setup local chain
     chain_config = LocalChain.Config()
     chain = LocalChain(config=chain_config)
@@ -187,9 +188,11 @@ def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, str, LocalChain, int, 
         low=1, high=99999999
     )  # No seed, we want this to be random every time it is executed
     rng = np.random.default_rng(random_seed)
+
     # Parameters for pool initialization.
     initial_pool_config = InteractiveHyperdrive.Config(preview_before_trade=True)
     interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
+
     return parsed_args, log_filename, chain, random_seed, rng, interactive_hyperdrive
 
 
@@ -307,7 +310,7 @@ def close_random_trades(
 
 
 def invariant_check_failed(
-    state_data: dict[str, Any],
+    check_data: dict[str, Any],
     random_seed: int,
     interactive_hyperdrive: InteractiveHyperdrive,
 ) -> bool:
@@ -315,7 +318,7 @@ def invariant_check_failed(
 
     Arguments
     ---------
-    state_data: dict[str, Any]
+    check_data: dict[str, Any]
         The trade data to check.
     random_seed: int
         Random seed used to run the experiment.
@@ -331,44 +334,44 @@ def invariant_check_failed(
     pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
 
     # Base balance
-    if state_data["hyperdrive_base_balance"] != pool_state.hyperdrive_base_balance:
+    if check_data["hyperdrive_base_balance"] != pool_state.hyperdrive_base_balance:
         logging.critical(
             "check_data['hyperdrive_base_balance']=%s != pool_state.hyperdrive_base_balance=%s",
-            state_data["hyperdrive_base_balance"],
+            check_data["hyperdrive_base_balance"],
             pool_state.hyperdrive_base_balance,
         )
         failed = True
         # Effective share reserves
-    if state_data[
+    if check_data[
         "effective_share_reserves"
     ] != interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state):
         logging.critical(
             "check_data['effective_share_reserves']=%s != effective_share_reserves=%s",
-            state_data["effective_share_reserves"],
+            check_data["effective_share_reserves"],
             interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state),
         )
         failed = True
         # Vault shares (Hyperdrive balance of vault contract)
-    if state_data["vault_shares"] != pool_state.vault_shares:
+    if check_data["vault_shares"] != pool_state.vault_shares:
         logging.critical(
             "check_data['vault_shares']=%s != pool_state.vault_shares=%s",
-            state_data["vault_shares"],
+            check_data["vault_shares"],
             pool_state.vault_shares,
         )
         failed = True
         # Minimum share reserves
-    if state_data["minimum_share_reserves"] != pool_state.pool_config.minimum_share_reserves:
+    if check_data["minimum_share_reserves"] != pool_state.pool_config.minimum_share_reserves:
         logging.critical(
             "check_data['minimum_share_reserves']=%s != pool_state.pool_config.minimum_share_reserves=%s",
-            state_data["minimum_share_reserves"],
+            check_data["minimum_share_reserves"],
             pool_state.pool_config.minimum_share_reserves,
         )
         failed = True
         # Check that the subset of columns in initial db pool state and the latest pool state are equal
-    if not state_data["initial_pool_state_df"].equals(state_data["final_pool_state_df"]):
+    if not check_data["initial_pool_state_df"].equals(check_data["final_pool_state_df"]):
         try:
             pd.testing.assert_series_equal(
-                state_data["initial_pool_state_df"], state_data["final_pool_state_df"], check_names=False
+                check_data["initial_pool_state_df"], check_data["final_pool_state_df"], check_names=False
             )
         except AssertionError as err:
             logging.critical("Database pool info is not equal\n%s", err)
