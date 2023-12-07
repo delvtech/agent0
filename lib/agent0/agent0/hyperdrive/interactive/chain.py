@@ -221,7 +221,7 @@ class Chain:
         self._dump_db(save_dir)
         anvil_state_dump = get_anvil_state_dump(self._web3)
         assert anvil_state_dump is not None
-        anvil_state_dump_file = Path(save_dir) / "anvil_state_dump.json"
+        anvil_state_dump_file = Path(save_dir) / "anvil_state.dump"
 
         with open(anvil_state_dump_file, "w", encoding="utf-8") as f:
             f.write(anvil_state_dump)
