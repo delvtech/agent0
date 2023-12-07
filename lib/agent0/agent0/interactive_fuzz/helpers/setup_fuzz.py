@@ -49,7 +49,7 @@ def setup_fuzz(
     rng = np.random.default_rng(random_seed)
 
     # Parameters for pool initialization.
-    initial_pool_config = InteractiveHyperdrive.Config(preview_before_trade=True)
+    initial_pool_config = InteractiveHyperdrive.Config(preview_before_trade=True, checkpoint_duration=3600)
     interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 
     return chain, random_seed, rng, interactive_hyperdrive
