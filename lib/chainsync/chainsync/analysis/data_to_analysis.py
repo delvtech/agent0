@@ -173,6 +173,49 @@ def data_to_analysis(
     # Get data
     pool_info = get_pool_info(db_session, start_block, end_block, coerce_float=False)
 
+    # TODO calculate current wallet positions for this block
+    # This should be done from the deltas, not queries from chain
+    wallet_deltas_df = get_wallet_deltas(db_session, start_block, end_block, coerce_float=False)
+    # Explicit check for empty wallet_deltas here
+    if len(wallet_deltas_df) > 0:
+        # Get current wallet of previous timestamp here
+        # If it doesn't exist, should be an empty dataframe
+        latest_wallet = get_current_wallet(db_session, end_block=start_block, coerce_float=False)
+        current_wallet_df = calc_current_wallet(wallet_deltas_df, latest_wallet)
+        _df_to_db(current_wallet_df, CurrentWallet, db_session)
+
+        # calculate pnl through closeout pnl
+        # TODO this function might be slow due to contract call on chain
+        # and calculating for every position, wallet, and block
+        # This will get better when we have the rust implementation of `smart_contract_preview_transaction`.
+        # Alternatively, set sample rate so we don't calculate this every block
+        # We can set a sample rate by doing batch processing on this function
+        # since we only get the current wallet for the end_block
+        wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
+        pnl_df = calc_closeout_pnl(wallet_pnl, pool_info, hyperdrive_contract)
+
+        # This sets the pnl to the current wallet dataframe, but there may be scaling issues here.
+        # This is because the `CurrentWallet` table has one entry per change in wallet position,
+        # and the `get_current_wallet` function handles getting all current positions at a block.
+        # If we add this current_wallet (plus pnl) to the database here, the final size in the db is
+        # number_of_blocks * number_of_addresses * number_of_open_positions, which is not scalable.
+        # We alleviate this by sampling periodically, and not calculate this for every block
+        # TODO implement sampling by setting the start + end block parameters in the caller of this function
+        # TODO If sampling, might want to move this to be a separate function, with the caller controlling
+        # the sampling rate. Otherwise, the e.g., ticker updates will also be on the sampling rate (won't miss data,
+        # just lower frequency updates)
+        # TODO do scaling tests to see the limit of this
+        wallet_pnl["pnl"] = pnl_df
+        # Add wallet_pnl to the database
+        _df_to_db(wallet_pnl, WalletPNL, db_session)
+
+        # Build ticker from wallet delta
+        transactions = get_transactions(db_session, start_block, end_block, coerce_float=False)
+        ticker_df = calc_ticker(wallet_deltas_df, transactions, pool_info)
+        # TODO add ticker to database
+        _df_to_db(ticker_df, Ticker, db_session)
+
+    # We add pool analysis last since this table is what's being used to determine how far the data pipeline is.
     # Calculate spot price
     # TODO ideally we would call hyperdrive interface directly to get the spot price and fixed rate.
     # However, we need to be able to query e.g., pool_info for a specific block. Hence here, we use the
@@ -196,47 +239,3 @@ def data_to_analysis(
     pool_analysis_df = pd.concat([pool_info["block_number"], spot_price, fixed_rate, base_buffer], axis=1)
     pool_analysis_df.columns = ["block_number", "spot_price", "fixed_rate", "base_buffer"]
     _df_to_db(pool_analysis_df, PoolAnalysis, db_session)
-
-    # TODO calculate current wallet positions for this block
-    # This should be done from the deltas, not queries from chain
-    wallet_deltas_df = get_wallet_deltas(db_session, start_block, end_block, coerce_float=False)
-    # Explicit check for empty wallet_deltas here
-    if len(wallet_deltas_df) == 0:
-        return
-
-    # Get current wallet of previous timestamp here
-    # If it doesn't exist, should be an empty dataframe
-    latest_wallet = get_current_wallet(db_session, end_block=start_block, coerce_float=False)
-    current_wallet_df = calc_current_wallet(wallet_deltas_df, latest_wallet)
-    _df_to_db(current_wallet_df, CurrentWallet, db_session)
-
-    # calculate pnl through closeout pnl
-    # TODO this function might be slow due to contract call on chain
-    # and calculating for every position, wallet, and block
-    # This will get better when we have the rust implementation of `smart_contract_preview_transaction`.
-    # Alternatively, set sample rate so we don't calculate this every block
-    # We can set a sample rate by doing batch processing on this function
-    # since we only get the current wallet for the end_block
-    wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
-    pnl_df = calc_closeout_pnl(wallet_pnl, pool_info, hyperdrive_contract)
-
-    # This sets the pnl to the current wallet dataframe, but there may be scaling issues here.
-    # This is because the `CurrentWallet` table has one entry per change in wallet position,
-    # and the `get_current_wallet` function handles getting all current positions at a block.
-    # If we add this current_wallet (plus pnl) to the database here, the final size in the db is
-    # number_of_blocks * number_of_addresses * number_of_open_positions, which is not scalable.
-    # We alleviate this by sampling periodically, and not calculate this for every block
-    # TODO implement sampling by setting the start + end block parameters in the caller of this function
-    # TODO If sampling, might want to move this to be a separate function, with the caller controlling
-    # the sampling rate. Otherwise, the e.g., ticker updates will also be on the sampling rate (won't miss data,
-    # just lower frequency updates)
-    # TODO do scaling tests to see the limit of this
-    wallet_pnl["pnl"] = pnl_df
-    # Add wallet_pnl to the database
-    _df_to_db(wallet_pnl, WalletPNL, db_session)
-
-    # Build ticker from wallet delta
-    transactions = get_transactions(db_session, start_block, end_block, coerce_float=False)
-    ticker_df = calc_ticker(wallet_deltas_df, transactions, pool_info)
-    # TODO add ticker to database
-    _df_to_db(ticker_df, Ticker, db_session)

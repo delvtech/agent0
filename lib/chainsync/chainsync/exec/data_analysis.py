@@ -4,11 +4,9 @@ from __future__ import annotations
 import logging
 import os
 import time
+from typing import Callable
 
-from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri, get_web3_and_hyperdrive_contracts
-from sqlalchemy.orm import Session
-
+from chainsync import PostgresConfig
 from chainsync.analysis import data_to_analysis
 from chainsync.db.base import initialize_session
 from chainsync.db.hyperdrive import (
@@ -17,16 +15,24 @@ from chainsync.db.hyperdrive import (
     get_latest_block_number_from_table,
     get_pool_config,
 )
+from ethpy import EthConfig, build_eth_config
+from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri, get_web3_and_hyperdrive_contracts
+from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
 
 
+# Lots of arguments
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
 def data_analysis(
     start_block: int = 0,
     eth_config: EthConfig | None = None,
     db_session: Session | None = None,
+    postgres_config: PostgresConfig | None = None,
     contract_addresses: HyperdriveAddresses | None = None,
     exit_on_catch_up: bool = False,
+    exit_callback_fn: Callable[[], bool] | None = None,
 ):
     """Execute the data acquisition pipeline.
 
@@ -40,11 +46,17 @@ def data_analysis(
     db_session: Session | None
         Session object for connecting to db. If None, will initialize a new session based on
         postgres.env.
+    postgres_config: PostgresConfig | None = None,
+        PostgresConfig for connecting to db. If none, will set from postgres.env.
     contract_addresses: HyperdriveAddresses | None
         If set, will use these addresses instead of querying the artifact URI
         defined in eth_config.
     exit_on_catch_up: bool
         If True, will exit after catching up to current block
+    exit_callback_fn: Callable[[], bool] | None, optional
+        A function that returns a boolean to call to determine if the script should exit.
+        The function should return False if the script should continue, or True if the script should exit.
+        Defaults to not set.
     """
     ## Initialization
     # eth config
@@ -53,8 +65,10 @@ def data_analysis(
         eth_config = build_eth_config()
 
     # postgres session
+    db_session_init = False
     if db_session is None:
-        db_session = initialize_session()
+        db_session_init = True
+        db_session = initialize_session(postgres_config=postgres_config, ensure_database_created=True)
 
     # Get addresses either from artifacts URI defined in eth_config or from contract_addresses
     if contract_addresses is None:
@@ -92,7 +106,10 @@ def data_analysis(
         latest_data_block_number = get_latest_data_block(db_session)
         # Only execute if we are on a new block
         if latest_data_block_number <= block_number:
-            if exit_on_catch_up:
+            exit_callable = False
+            if exit_callback_fn is not None:
+                exit_callable = exit_callback_fn()
+            if exit_on_catch_up or exit_callable:
                 break
             time.sleep(_SLEEP_AMOUNT)
             continue
@@ -103,6 +120,11 @@ def data_analysis(
         logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
         data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
         block_number = latest_data_block_number
+
+    # Clean up resources on clean exit
+    # If this function made the db session, we close it here
+    if db_session_init:
+        db_session.close()
 
 
 def get_latest_data_block(db_session: Session) -> int:

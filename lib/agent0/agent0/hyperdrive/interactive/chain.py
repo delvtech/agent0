@@ -195,9 +195,6 @@ class Chain:
             if last_advance_time - offset > 0:
                 self._advance_chain_time(last_advance_time - offset)
 
-        # This function mines blocks, so run data pipeline on each pool here
-        for pool in self._deployed_hyperdrive_pools:
-            pool._run_data_pipeline()  # pylint: disable=protected-access
         return out_dict
 
     def save_snapshot(self) -> None:
@@ -307,15 +304,20 @@ class Chain:
     def _dump_db(self):
         # TODO parameterize the save path
         for pool in self._deployed_hyperdrive_pools:
+            # Need to ensure data has caught up before snapshot
+            pool._ensure_data_caught_up()  # pylint: disable=protected-access
             export_path = ".interactive_state/snapshot/" + pool._db_name  # pylint: disable=protected-access
             os.makedirs(export_path, exist_ok=True)
             export_db_to_file(export_path, pool.db_session, raw=True)
 
     def _load_db(self):
-        # TODO parameterize the load path, careful since this is referencing the container path, not the local path.
+        # TODO parameterize the load path
         for pool in self._deployed_hyperdrive_pools:
+            # We need to stop the underlying data pipeline before updating the underlying database
+            pool._stop_data_pipeline()  # pylint: disable=protected-access
             import_path = ".interactive_state/snapshot/" + pool._db_name  # pylint: disable=protected-access
             import_to_db(pool.db_session, import_path, drop=True)
+            pool._launch_data_pipeline()  # pylint: disable=protected-access
 
 
 class LocalChain(Chain):
@@ -382,8 +384,8 @@ class LocalChain(Chain):
 
     def cleanup(self):
         """Kills the subprocess in this class' destructor."""
-        self.anvil_process.kill()
         super().cleanup()
+        self.anvil_process.kill()
 
     def __del__(self):
         """Kill subprocess in this class' destructor."""

@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import asyncio
 import os
+import time
 from dataclasses import asdict, dataclass
 from decimal import Decimal
+from threading import Thread
 from typing import Literal, Type, overload
 
 import nest_asyncio
@@ -15,6 +17,7 @@ from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_us
 from chainsync.db.hyperdrive import get_checkpoint_info
 from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.db.hyperdrive import (
+    get_latest_block_number_from_analysis_table,
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
@@ -33,7 +36,9 @@ from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, DeployedHyperdrivePool, ReceiptB
 from ethpy.hyperdrive.api import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hypertypes import Fees, PoolConfig
+from web3._utils.threads import Timeout
 from web3.constants import ADDRESS_ZERO
+from web3.exceptions import TimeExhausted
 
 from agent0.base.make_key import make_private_key
 from agent0.hyperdrive.agents import HyperdriveAgent
@@ -60,6 +65,12 @@ from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
 # In order to support both scripts and jupyter notebooks with underlying async functions,
 # we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
 nest_asyncio.apply()
+
+# TODO clean up this file
+# Likely should move all the agent specific method to `interactive_hyperdrive_agent`.
+# However, this makes the agent less barebones, and the agent requires lots of resources
+# from InteractiveHyperdrive.
+# pylint: disable=too-many-lines
 
 
 class InteractiveHyperdrive:
@@ -109,6 +120,10 @@ class InteractiveHyperdrive:
             Whether to preview the position before executing a trade. Defaults to False.
         """
 
+        # Environment variables
+        data_pipeline_timeout: int = 60
+        preview_before_trade: bool = False
+        # Initial pool variables
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
         initial_variable_rate: FixedPoint = FixedPoint("0.05")
         initial_fixed_rate: FixedPoint = FixedPoint("0.05")
@@ -127,7 +142,6 @@ class InteractiveHyperdrive:
         max_curve_fee = FixedPoint("0.3")  # 30%
         max_flat_fee = FixedPoint("0.0015")  # 0.15%
         max_governance_fee = FixedPoint("0.30")  # 30%
-        preview_before_trade: bool = False
 
         def __post_init__(self):
             if self.time_stretch is None:
@@ -177,16 +191,16 @@ class InteractiveHyperdrive:
         )
 
         # Make a copy of the dataclass to avoid changing the base class
-        postgres_config = PostgresConfig(**asdict(chain.postgres_config))
+        self.postgres_config = PostgresConfig(**asdict(chain.postgres_config))
         # Update the database field to use a unique name for this pool using the hyperdrive contract address
-        postgres_config.POSTGRES_DB = "interactive-hyperdrive-" + str(
+        self.postgres_config.POSTGRES_DB = "interactive-hyperdrive-" + str(
             self.hyperdrive_interface.hyperdrive_contract.address
         )
 
         # Store the db_id here for later reference
-        self._db_name = postgres_config.POSTGRES_DB
+        self._db_name = self.postgres_config.POSTGRES_DB
 
-        self.db_session = initialize_session(postgres_config, ensure_database_created=True)
+        self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
 
         # Keep track of how much base have been minted per agent
         self._initial_funds: dict[ChecksumAddress, FixedPoint] = {}
@@ -196,8 +210,74 @@ class InteractiveHyperdrive:
         self.chain = chain
         self._pool_agents: list[InteractiveHyperdriveAgent] = []
 
+        # We use this variable to control underlying threads when to exit.
+        # When this varible is set to true, the underlying threads will exit.
+        self._stop_threads = False
+        self._data_thread: Thread | None = None
+        self._analysis_thread: Thread | None = None
+
+        # Run the data pipeline in background threads
+        self._launch_data_pipeline()
+        self.data_pipeline_timeout = config.data_pipeline_timeout
+
+        # Pool config should exist before returning
+        for _ in range(10):
+            try:
+                self.get_pool_config()
+                break
+            except ValueError:
+                time.sleep(1)
+
+    def _launch_data_pipeline(self):
+        # Run the data pipeline in background threads
+        # Ensure the stop flag is set to false
+        # This ensures no other threads are running when launching data pipeline
+        if self._data_thread is not None or self._analysis_thread is not None:
+            raise ValueError("Data pipeline already running")
+
+        self._stop_threads = False
+        # We need to create new threads every launch, since start can be called at most once per thread object
+        self._data_thread = Thread(
+            target=acquire_data,
+            kwargs={
+                "start_block": self._deploy_block_number,  # Start block is the block hyperdrive was deployed
+                "eth_config": self.eth_config,
+                "postgres_config": self.postgres_config,
+                "contract_addresses": self.hyperdrive_interface.addresses,
+                "exit_on_catch_up": False,
+                "exit_callback_fn": lambda: self._stop_threads,
+            },
+        )
+        self._analysis_thread = Thread(
+            target=data_analysis,
+            kwargs={
+                "start_block": self._deploy_block_number,
+                "eth_config": self.eth_config,
+                "postgres_config": self.postgres_config,
+                "contract_addresses": self.hyperdrive_interface.addresses,
+                "exit_on_catch_up": False,
+                "exit_callback_fn": lambda: self._stop_threads,
+            },
+        )
+        self._data_thread.start()
+        self._analysis_thread.start()
+
+    def _stop_data_pipeline(self):
+        if self._data_thread is None or self._analysis_thread is None:
+            raise ValueError("Data pipeline not running")
+
+        # This lets the underlying threads know to stop at the next opportunity
+        self._stop_threads = True
+        # These wait for the threads to finally stop
+        self._data_thread.join()
+        self._analysis_thread.join()
+        # Dereference thread variables
+        self._data_thread = None
+        self._analysis_thread = None
+
     def cleanup(self):
         """Cleans up resources used by this object."""
+        self._stop_data_pipeline()
         self.db_session.close()
 
     def __del__(self):
@@ -264,8 +344,6 @@ class InteractiveHyperdrive:
             The new variable rate for the pool.
         """
         self.hyperdrive_interface.set_variable_rate(self._deployed_hyperdrive.deploy_account, variable_rate)
-        # Since this is a contract call, we need to run the data pipeline
-        self._run_data_pipeline()
 
     def _create_checkpoint(
         self, checkpoint_time: int | None = None, check_if_exists: bool = True
@@ -367,7 +445,10 @@ class InteractiveHyperdrive:
         """
         # Underlying function returns a dataframe, but this is assuming there's a single
         # pool config for this object.
-        return get_pool_config(self.db_session, coerce_float=coerce_float).iloc[0]
+        pool_config = get_pool_config(self.db_session, coerce_float=coerce_float)
+        if len(pool_config) == 0:
+            raise ValueError("Pool config doesn't exist in the db.")
+        return pool_config.iloc[0]
 
     def get_pool_state(self, coerce_float: bool = True) -> pd.DataFrame:
         """Get the pool info (and additional info) per block and returns as a pandas dataframe.
@@ -382,6 +463,9 @@ class InteractiveHyperdrive:
         pd.Dataframe
             A pandas dataframe that consists of the pool info per block.
         """
+        # DB read calls ensures data pipeline is caught up before returning
+        self._ensure_data_caught_up()
+
         pool_info = get_pool_info(self.db_session, coerce_float=coerce_float)
         pool_analysis = get_pool_analysis(self.db_session, coerce_float=coerce_float, return_timestamp=False)
         pool_info = pool_info.merge(pool_analysis, how="left", on="block_number")
@@ -400,9 +484,8 @@ class InteractiveHyperdrive:
         pd.Dataframe
             A pandas dataframe that consists of the checkpoint info per block.
         """
-        # TODO checkpoint info doesn't play nice with advancing time.
-        # This is because we don't create checkpoints when we advance time.
-        # https://github.com/delvtech/agent0/issues/1106
+        # DB read calls ensures data pipeline is caught up before returning
+        self._ensure_data_caught_up()
         out = get_checkpoint_info(self.db_session, coerce_float=coerce_float)
         return out
 
@@ -458,6 +541,8 @@ class InteractiveHyperdrive:
             latest_block_update: int
                 The last block number that the position was updated.
         """
+        # DB read calls ensures data pipeline is caught up before returning
+        self._ensure_data_caught_up()
         # TODO potential improvement is to pivot the table so that columns are the token type
         # Makes this data easier to work with
         # https://github.com/delvtech/agent0/issues/1106
@@ -510,6 +595,8 @@ class InteractiveHyperdrive:
             token_diffs: list[str]
                 A list of token diffs for each trade. Each token diff is encoded as "<base_token_type>: <amount>"
         """
+        # DB read calls ensures data pipeline is caught up before returning
+        self._ensure_data_caught_up()
         out = get_ticker(self.db_session, coerce_float=coerce_float).drop("id", axis=1)
         out = self._add_username_to_dataframe(out, "wallet_address")
         out = out[
@@ -557,6 +644,8 @@ class InteractiveHyperdrive:
             transaction_hash: str
                 The transaction hash that resulted in the deltas.
         """
+        # DB read calls ensures data pipeline is caught up before returning
+        self._ensure_data_caught_up()
         # We gather all deltas and calculate the current positions here
         # If computing this is too slow, we can get current positions from
         # the wallet_pnl table and left merge with the deltas
@@ -607,6 +696,8 @@ class InteractiveHyperdrive:
             pnl: Decimal | float
                 The total pnl of the agent at the specified block number.
         """
+        # DB read calls ensures data pipeline is caught up before returning
+        self._ensure_data_caught_up()
         out = get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
         out = self._add_username_to_dataframe(out, "wallet_address")
         out = out[
@@ -690,9 +781,6 @@ class InteractiveHyperdrive:
             else:
                 self._initial_funds[agent.address] = base
 
-        # Since this is a contract call, we need to run the data pipeline
-        self._run_data_pipeline()
-
         # TODO do we want to report a status here?
 
     def _handle_trade_result(self, trade_results: list[TradeResult] | TradeResult) -> ReceiptBreakdown:
@@ -720,22 +808,24 @@ class InteractiveHyperdrive:
         assert tx_receipt is not None
         return tx_receipt
 
-    def _run_data_pipeline(self) -> None:
-        # TODO these functions are not thread safe, need to fix if we expose async functions
-        acquire_data(
-            start_block=self._deploy_block_number,  # Start block is the block hyperdrive was deployed
-            eth_config=self.eth_config,
-            db_session=self.db_session,
-            contract_addresses=self.hyperdrive_interface.addresses,
-            exit_on_catch_up=True,
-        )
-        data_analysis(
-            start_block=self._deploy_block_number,
-            eth_config=self.eth_config,
-            db_session=self.db_session,
-            contract_addresses=self.hyperdrive_interface.addresses,
-            exit_on_catch_up=True,
-        )
+    def _ensure_data_caught_up(self, polling_interval: int = 1) -> None:
+        latest_mined_block: BlockNumber | None = None
+        analysis_latest_block_number: int | None = None
+
+        try:
+            with Timeout(self.data_pipeline_timeout) as _timeout:
+                while True:
+                    latest_mined_block = self.hyperdrive_interface.web3.eth.get_block_number()
+                    analysis_latest_block_number = get_latest_block_number_from_analysis_table(self.db_session)
+                    if latest_mined_block > analysis_latest_block_number:
+                        _timeout.sleep(polling_interval)
+                    else:
+                        break
+        except Timeout as exc:
+            raise TimeExhausted(
+                f"Data pipeline didn't catch up after {self.data_pipeline_timeout} seconds",
+                f"{latest_mined_block=}, {analysis_latest_block_number=}",
+            ) from exc
 
     def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
         # Set the next action to open a long
@@ -746,7 +836,6 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        self._run_data_pipeline()
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_LONG, tx_receipt)
 
     def _close_long(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
@@ -758,7 +847,6 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        self._run_data_pipeline()
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_LONG, tx_receipt)
 
     def _open_short(self, agent: HyperdriveAgent, bonds: FixedPoint) -> OpenShort:
@@ -770,7 +858,6 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        self._run_data_pipeline()
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_SHORT, tx_receipt)
 
     def _close_short(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
@@ -782,7 +869,6 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        self._run_data_pipeline()
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_SHORT, tx_receipt)
 
     def _add_liquidity(self, agent: HyperdriveAgent, base: FixedPoint) -> AddLiquidity:
@@ -794,7 +880,6 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        self._run_data_pipeline()
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.ADD_LIQUIDITY, tx_receipt)
 
     def _remove_liquidity(self, agent: HyperdriveAgent, shares: FixedPoint) -> RemoveLiquidity:
@@ -806,7 +891,6 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        self._run_data_pipeline()
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REMOVE_LIQUIDITY, tx_receipt)
 
     def _redeem_withdraw_share(self, agent: HyperdriveAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
@@ -818,7 +902,6 @@ class InteractiveHyperdrive:
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
         tx_receipt = self._handle_trade_result(trade_results)
-        self._run_data_pipeline()
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
 
     def _execute_policy_action(
@@ -840,7 +923,6 @@ class InteractiveHyperdrive:
             assert trade_result.trade_object is not None
             action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
             out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
-        self._run_data_pipeline()
         # Build event from tx_receipt
         return out_events
 
