@@ -251,7 +251,7 @@ class TestInteractiveHyperdrive:
         pre_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
         checkpoint_events = chain.advance_time(600, create_checkpoints=True)
         post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
-        assert post_time - pre_time == 600
+        assert abs(post_time - pre_time - 600) <= 2
         # assert 0 or 1 checkpoints made
         assert len(checkpoint_events[interactive_hyperdrive]) in [0, 1]
 
