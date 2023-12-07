@@ -9,6 +9,7 @@ from typing import NamedTuple, Sequence
 import numpy as np
 from fixedpointmath import FixedPoint
 
+from agent0.hyperdrive.interactive.chain import LocalChain
 from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
 from agent0.interactive_fuzz.helpers import generate_trade_list, open_random_trades, setup_fuzz
 
@@ -29,13 +30,15 @@ def main(argv: Sequence[str] | None = None):
     fuzz_long_short_maturity_values(*parsed_args)
 
 
-def fuzz_long_short_maturity_values(num_trades: int):
+def fuzz_long_short_maturity_values(num_trades: int, chain_config: LocalChain.Config | None = None):
     """Does fuzzy invariant checks on closing longs and shorts past maturity.
 
     Parameters
     ----------
     num_trades: int
         Number of trades to perform during the fuzz tests.
+    chain_config: LocalChain.Config, optional
+        Configuration options for the local chain.
 
     Raises
     ------
@@ -49,7 +52,9 @@ def fuzz_long_short_maturity_values(num_trades: int):
     # TODO: set block time really high after contracts deployed:
     # chain_config = LocalChain.Config(block_time=1_000_000)
     # TODO: We will want to log the random seed; so remove this pylint disable once we do
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename)  # pylint: disable=unused-variable
+    chain, _, rng, interactive_hyperdrive = setup_fuzz(
+        log_filename, chain_config=chain_config
+    )  # pylint: disable=unused-variable
     signer = interactive_hyperdrive.init_agent(eth=FixedPoint(100))
 
     # Generate a list of agents that execute random trades
@@ -138,6 +143,7 @@ class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
     num_trades: int
+    chain_config: LocalChain.Config
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -154,9 +160,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         Formatted arguments
     """
     # TODO: replace this func with Args(**namespace)?
-    return Args(
-        num_trades=namespace.num_trades,
-    )
+    return Args(num_trades=namespace.num_trades, chain_config=LocalChain.Config(chain_port=namespace.chain_port))
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> Args:
@@ -179,6 +183,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         default=5,
         help="The number of random trades to open.",
     )
+    parser.add_argument(
+        "--chain_port",
+        type=int,
+        default=10000,
+        help="The number of random trades to open.",
+    )
     # Use system arguments if none were passed
     if argv is None:
         argv = sys.argv
@@ -190,9 +200,9 @@ def assertion(condition: bool, message: str = "Assertion failed."):
 
     Parameters
     ----------
-    condition : bool
+    condition: bool
         condition to check.
-    message : str, optional
+    message: str, optional
         Error message if condtion fails.
     """
     if not condition:
