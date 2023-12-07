@@ -14,6 +14,11 @@ from agent0.interactive_fuzz.generate_trade_list import generate_trade_list
 from agent0.interactive_fuzz.open_random_trades import open_random_trades
 from agent0.interactive_fuzz.setup_fuzz import setup_fuzz
 
+# TODO: We will want to log the random seed; so remove this disable once we do
+# pylint: disable=unused-argument
+# main script has a lot of stuff going on
+# pylint: disable=too-many-locals
+
 
 def main(argv: Sequence[str] | None = None):
     """Primary entrypoint.
