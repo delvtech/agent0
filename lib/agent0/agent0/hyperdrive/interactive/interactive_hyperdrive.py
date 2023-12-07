@@ -249,6 +249,7 @@ class InteractiveHyperdrive:
                 "contract_addresses": self.hyperdrive_interface.addresses,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
+                "suppress_logs": True,
             },
         )
         self._analysis_thread = Thread(
@@ -260,6 +261,7 @@ class InteractiveHyperdrive:
                 "contract_addresses": self.hyperdrive_interface.addresses,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
+                "suppress_logs": True,
             },
         )
         self._data_thread.start()

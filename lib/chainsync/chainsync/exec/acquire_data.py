@@ -21,8 +21,9 @@ from sqlalchemy.orm import Session
 _SLEEP_AMOUNT = 1
 
 
-# Lots of arguments
+# TODO cleanup
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
 def acquire_data(
     start_block: int = 0,
     lookback_block_limit: int = 1000,
@@ -32,6 +33,7 @@ def acquire_data(
     contract_addresses: HyperdriveAddresses | None = None,
     exit_on_catch_up: bool = False,
     exit_callback_fn: Callable[[], bool] | None = None,
+    suppress_logs: bool = False,
 ):
     """Execute the data acquisition pipeline.
 
@@ -58,7 +60,11 @@ def acquire_data(
         A function that returns a boolean to call to determine if the script should exit.
         The function should return False if the script should continue, or True if the script should exit.
         Defaults to not set.
+    suppress_logs: bool, optional
+        If true, will suppress info logging from this function. Defaults to False.
     """
+    # TODO implement logger instead of global logging to suppress based on module name.
+
     ## Initialization
     hyperdrive = HyperdriveInterface(eth_config, contract_addresses)
     # postgres session
@@ -92,7 +98,8 @@ def acquire_data(
 
     # Main data loop
     # monitor for new blocks & add pool info per block
-    logging.info("Monitoring for pool info updates...")
+    if not suppress_logs:
+        logging.info("Monitoring for pool info updates...")
     while True:
         latest_mined_block = hyperdrive.web3.eth.get_block_number()
         # Only execute if we are on a new block
@@ -108,7 +115,7 @@ def acquire_data(
         for block_int in range(block_number + 1, latest_mined_block + 1):
             block_number: BlockNumber = BlockNumber(block_int)
             # Only print every 10 blocks
-            if (block_number % 10) == 0:
+            if not suppress_logs and (block_number % 10) == 0:
                 logging.info("Block %s", block_number)
             # Explicit check against loopback block limit
             if (latest_mined_block - block_number) > lookback_block_limit:
