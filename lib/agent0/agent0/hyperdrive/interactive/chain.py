@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from .interactive_hyperdrive import InteractiveHyperdrive
 
 
+# pylint: disable=too-many-instance-attributes
 class Chain:
     """A chain object that connects to a chain. Also launches a postgres docker container for data."""
 
@@ -233,11 +234,12 @@ class Chain:
 
         TODO there are issues around this, namely:
         1.  Anvil load state doesn't load the block number and timestamp.
-        2.  There exists an issue with the underlying yield contract, as there is a `last_updated` var
+        2.  Anvil load state only loads the current state, not all previous states.
+        3.  There exists an issue with the underlying yield contract, as there is a `last_updated` var
             that gets saved, but anvil doesn't load the original timestamp, so the yield contract errors.
             (May be able to solve if we're able to solve issue 1 to correctly load the block number and
-            previous states. Could replay trades?)
-        3.  To load the state in another chain, we need this function to load all original objects
+            previous states.)
+        4.  To load the state in another chain, we need this function to load all original objects
             created from the saved chain, e.g., interactive_hyperdrive and all agents they contain, and return
             them from this function.
 
@@ -372,6 +374,10 @@ class Chain:
 
 class LocalChain(Chain):
     """Launches a local anvil chain in a subprocess."""
+
+    # Pylint is complaining that `load_state` is an abstract method, so we need to overwrite here.
+    # However, `load_state` is just a function stub that needs to throw `NotImplementedError` if called.
+    # pylint: disable=abstract-method
 
     @dataclass
     class Config(Chain.Config):
