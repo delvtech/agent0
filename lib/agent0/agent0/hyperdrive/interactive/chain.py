@@ -109,7 +109,7 @@ class Chain:
             raise KeyError("Response did not have a result.")
 
     def advance_time(
-        self, time_delta: int | timedelta, create_checkpoints: bool = False
+        self, time_delta: int | timedelta, create_checkpoints: bool = True
     ) -> dict[InteractiveHyperdrive, list[CreateCheckpoint]]:
         """Advance time for this chain using the `evm_mine` RPC call.
 
@@ -127,7 +127,7 @@ class Chain:
         time_delta: int | timedelta
             The amount of time to advance. Can either be a `datetime.timedelta` object or an integer in seconds.
         create_checkpoints: bool, optional
-            If set to true, will create intermediate checkpoints between advance times. Defaults to False.
+            If set to true, will create intermediate checkpoints between advance times. Defaults to True.
 
         Returns
         -------

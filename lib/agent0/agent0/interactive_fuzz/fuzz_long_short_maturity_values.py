@@ -58,6 +58,18 @@ def fuzz_long_short_maturity_values(num_trades: int, chain_config: LocalChain.Co
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config=chain_config)
     signer = interactive_hyperdrive.init_agent(eth=FixedPoint(100))
 
+    # Advance time to ensure current time is in the middle of a checkpoint
+    current_block_time = interactive_hyperdrive.hyperdrive_interface.get_block_timestamp(
+        interactive_hyperdrive.hyperdrive_interface.get_current_block()
+    )
+    time_to_next_checkpoint = (
+        current_block_time % interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration
+    )
+    # Add a small amount to ensure we're not at the edge of a checkpoint
+    # This prevents the latter step of `chain.advance_time(position_duration+30)` advancing past a checkpoint
+    # Also prevents `open_random_trades` from passing the create checkpoint barrier
+    chain.advance_time(time_to_next_checkpoint + 100, create_checkpoints=True)
+
     # Generate a list of agents that execute random trades
     trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
 
