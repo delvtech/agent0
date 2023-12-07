@@ -203,7 +203,7 @@ class Chain:
 
         return out_dict
 
-    def save_state(self, save_dir: str | None = None, save_prefix: str | None = None) -> None:
+    def save_state(self, save_dir: str | None = None, save_prefix: str | None = None) -> str:
         """Saves the interactive state using the `anvil_dumpState` RPC call.
         Saving/loading state can be done across chains.
 
@@ -214,6 +214,11 @@ class Chain:
             where `Config.save_state_dir` defaults to `./.interactive_state/`.
         save_prefix: str, optional
             If save_dir wasn't provided, prepends an optional prefix to the time suffix for this state.
+
+        Returns
+        -------
+        str
+            The path to the saved state.
         """
         if save_dir is None:
             curr_time = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -232,6 +237,8 @@ class Chain:
             f.write(anvil_state_dump)
 
         # TODO pickle all interactive objects and their underlying agents, see `load_state`
+
+        return save_dir
 
     def load_state(self, load_dir: str) -> None:
         """Loads the interactive state from the `save_state` function.
