@@ -19,7 +19,6 @@ from hyperlogs import ExtendedJSONEncoder, setup_logging
 from web3.types import BlockData
 
 from agent0.base.config import EnvironmentConfig
-from agent0.hyperdrive.crash_report import setup_hyperdrive_crash_report_logging
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -30,7 +29,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     argv: Sequence[str]
         A sequnce containing the uri to the database server and the test epsilon.
     """
-    # Parse args
+    # Setup the experiment
     parsed_args, interface = setup_fuzz(argv)
     # Run the loop forever
     last_executed_block_number = 0  # no matter what we will run the check the first time
@@ -81,7 +80,6 @@ def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveInterface]:
         log_stdout=env_config.log_stdout,
         log_format_string=env_config.log_formatter,
     )
-    setup_hyperdrive_crash_report_logging()
     # Setup hyperdrive interface
     interface = HyperdriveInterface(eth_config)
     return parsed_args, interface
