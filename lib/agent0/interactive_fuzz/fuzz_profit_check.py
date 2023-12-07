@@ -1,10 +1,9 @@
 """Script for fuzzing profit values on immediately opening & closing a long or short."""
+from __future__ import annotations
 
-# Imports
 import json
 import logging
 from dataclasses import asdict
-from typing import Any, NamedTuple, Sequence
 
 import numpy as np
 from fixedpointmath import FixedPoint
@@ -15,6 +14,7 @@ from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 
 
 def main():
+    """Primary entrypoint."""
     # Setup the environment
     log_filename, chain, random_seed, rng, interactive_hyperdrive = setup_fuzz()
 
@@ -78,11 +78,6 @@ def main():
 
 def setup_fuzz() -> tuple[str, LocalChain, int, Generator, InteractiveHyperdrive]:
     """Setup the fuzz experiment.
-
-    Arguments
-    ---------
-    argv: Sequence[str]
-        A sequnce containing the uri to the database server and the test epsilon.
 
     Returns
     -------

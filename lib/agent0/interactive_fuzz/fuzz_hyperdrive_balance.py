@@ -18,13 +18,6 @@ from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
 
-# Variables by themselves print out dataframes in a nice format in interactive mode
-# pylint: disable=pointless-statement
-# pylint: disable=invalid-name
-
-# Set global defaults
-FAILED = False
-
 
 def main(argv: Sequence[str] | None = None):
     """Primary entrypoint.
@@ -45,7 +38,7 @@ def main(argv: Sequence[str] | None = None):
     trade_list = generate_trade_list(parsed_args.num_trades, rng, interactive_hyperdrive)
 
     # Open some trades
-    trade_events = open_trades(chain, rng, interactive_hyperdrive, trade_list)
+    trade_events = open_trades(trade_list, chain, rng, interactive_hyperdrive)
 
     # Close the trades
     close_random_trades(trade_events, rng)
