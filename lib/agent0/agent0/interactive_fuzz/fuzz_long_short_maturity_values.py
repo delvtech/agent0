@@ -14,8 +14,6 @@ from agent0.interactive_fuzz.generate_trade_list import generate_trade_list
 from agent0.interactive_fuzz.open_random_trades import open_random_trades
 from agent0.interactive_fuzz.setup_fuzz import setup_fuzz
 
-# TODO: We will want to log the random seed; so remove this disable once we do
-# pylint: disable=unused-argument
 # main script has a lot of stuff going on
 # pylint: disable=too-many-locals
 
@@ -35,7 +33,8 @@ def main(argv: Sequence[str] | None = None):
     # set a large block time so i can manually control when it ticks
     # TODO: set block time really high after contracts deployed:
     # chain_config = LocalChain.Config(block_time=1_000_000)
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename)
+    # TODO: We will want to log the random seed; so remove this pylint disable once we do
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename)  # pylint: disable=unused-variable
     signer = interactive_hyperdrive.init_agent(eth=FixedPoint(100))
 
     # Generate a list of agents that execute random trades
@@ -44,27 +43,27 @@ def main(argv: Sequence[str] | None = None):
     # Open some trades
     trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=False)
 
-    # automatically created by sending transactions
+    # Starting checkpoint is automatically created by sending transactions
     starting_checkpoint = interactive_hyperdrive.hyperdrive_interface.current_pool_state.checkpoint
 
-    # advance the time to at least the position duration, maximum of two position durations.
+    # Advance the time to a little more than the position duration
     position_duration = interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration
-    extra_time = int(np.floor(rng.uniform(low=0, high=position_duration)))
-
-    # advances time and mines a block
-    current_time = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
     chain.advance_time(position_duration + 30, create_checkpoints=False)
 
-    # create a checkpoint
-    current_time = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
+    # Create a checkpoint
     interactive_hyperdrive.hyperdrive_interface.create_checkpoint(signer.agent)
+
+    # Advance time again
+    extra_time = int(np.floor(rng.uniform(low=0, high=position_duration)))
     chain.advance_time(extra_time, create_checkpoints=False)
 
+    # Get the latest checkpoint
+    current_time = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
     maturity_checkpoint = interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract.functions.getCheckpoint(
         interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id(block_timestamp=current_time)
     ).call()
 
-    # Close them one at a time, check invariants
+    # Close the trades one at a time, check invariants
     for index, (agent, trade) in enumerate(trade_events):
         logging.info("index=%s\n", index)
         if isinstance(trade, OpenLong):
