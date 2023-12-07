@@ -12,10 +12,7 @@ from fixedpointmath import FixedPoint
 from hyperlogs import ExtendedJSONEncoder
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.interactive_fuzz.close_random_trades import close_random_trades
-from agent0.interactive_fuzz.generate_trade_list import generate_trade_list
-from agent0.interactive_fuzz.open_random_trades import open_random_trades
-from agent0.interactive_fuzz.setup_fuzz import setup_fuzz
+from agent0.interactive_fuzz.helpers import close_random_trades, generate_trade_list, open_random_trades, setup_fuzz
 
 
 def main(argv: Sequence[str] | None = None):
@@ -28,15 +25,34 @@ def main(argv: Sequence[str] | None = None):
     """
     # Setup the environment
     parsed_args = parse_arguments(argv)
+    fuzz_hyperdrive_balance(*parsed_args)
+
+
+def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config):
+    """Does fuzzy invariant checks on the hyperdrive contract's balances.
+
+    Parameters
+    ----------
+    num_trades: int
+        Number of trades to perform during the fuzz tests.
+    chain_config: LocalChain.Config, optional
+        Configuration options for the local chain.
+
+    Raises
+    ------
+    AssertionError
+        If the invariant checks fail during the tests an error will be raised.
+    """
+
     log_filename = ".logging/fuzz_hyperdrive_balance.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config)
 
     # Get initial vault shares
     pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
     initial_vault_shares = pool_state.vault_shares
 
     # Generate a list of agents that execute random trades
-    trade_list = generate_trade_list(parsed_args.num_trades, rng, interactive_hyperdrive)
+    trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
 
     # Open some trades
     trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=True)
@@ -55,6 +71,7 @@ class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
     num_trades: int
+    chain_config: LocalChain.Config
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -70,9 +87,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     Args
         Formatted arguments
     """
-    return Args(
-        num_trades=namespace.num_trades,
-    )
+    return Args(num_trades=namespace.num_trades, chain_config=LocalChain.Config(chain_port=namespace.chain_port))
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> Args:
@@ -94,6 +109,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=5,
         help="The number of random trades to open.",
+    )
+    parser.add_argument(
+        "--chain_port",
+        type=int,
+        default=10000,
+        help="The port to use for the local chain.",
     )
     # Use system arguments if none were passed
     if argv is None:

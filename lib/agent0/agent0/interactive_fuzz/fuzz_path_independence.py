@@ -12,10 +12,7 @@ import pandas as pd
 from hyperlogs import ExtendedJSONEncoder
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.interactive_fuzz.close_random_trades import close_random_trades
-from agent0.interactive_fuzz.generate_trade_list import generate_trade_list
-from agent0.interactive_fuzz.open_random_trades import open_random_trades
-from agent0.interactive_fuzz.setup_fuzz import setup_fuzz
+from agent0.interactive_fuzz.helpers import close_random_trades, generate_trade_list, open_random_trades, setup_fuzz
 
 
 # pylint: disable=too-many-locals
@@ -29,11 +26,31 @@ def main(argv: Sequence[str] | None = None):
     """
     # Setup the experiment
     parsed_args = parse_arguments(argv)
+    fuzz_path_independence(*parsed_args)
+
+
+def fuzz_path_independence(num_trades: int, num_paths_checked: int, chain_config: LocalChain.Config):
+    """Does fuzzy invariant checks for opening and closing longs and shorts.
+
+    Parameters
+    ----------
+    num_trades: int
+        Number of trades to perform during the fuzz tests.
+    num_paths_checked: int
+        Number of paths (order of operations for opening/closing) to perform.
+    chain_config: LocalChain.Config, optional
+        Configuration options for the local chain.
+
+    Raises
+    ------
+    AssertionError
+        If the invariant checks fail during the tests an error will be raised.
+    """
     log_filename = ".logging/fuzz_path_independence.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config)
 
     # Generate a list of agents that execute random trades
-    trade_list = generate_trade_list(parsed_args.num_trades, rng, interactive_hyperdrive)
+    trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
 
     # Open some trades
     trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=True)
@@ -55,7 +72,7 @@ def main(argv: Sequence[str] | None = None):
     # Close the trades randomly & verify that the final state is unchanged
     check_data: dict[str, Any] | None = None
     first_run_state_dump_dir: str | None = None
-    for iteration in range(parsed_args.num_paths_checked):
+    for iteration in range(num_paths_checked):
         print(f"{iteration=}")
         # Load the snapshot
         chain.load_snapshot()
@@ -97,6 +114,7 @@ class Args(NamedTuple):
 
     num_trades: int
     num_paths_checked: int
+    chain_config: LocalChain.Config
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -112,10 +130,10 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     Args
         Formatted arguments
     """
-    # TODO: replace this func with Args(**namespace)?
     return Args(
         num_trades=namespace.num_trades,
         num_paths_checked=namespace.num_paths_checked,
+        chain_config=LocalChain.Config(chain_port=namespace.chain_port),
     )
 
 
@@ -143,7 +161,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         "--num_paths_checked",
         type=int,
         default=10,
-        help="The numer of independent closing paths to check.",
+        help="The port to use for the local chain.",
     )
     # Use system arguments if none were passed
     if argv is None:

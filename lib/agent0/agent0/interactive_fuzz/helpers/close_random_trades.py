@@ -8,7 +8,8 @@ from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import Interacti
 
 
 def close_random_trades(
-    trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]], rng: Generator
+    trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]],
+    rng: Generator,
 ) -> None:
     """Close trades provided in a random order.
 

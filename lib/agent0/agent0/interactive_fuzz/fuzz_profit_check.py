@@ -1,9 +1,12 @@
 """Script for fuzzing profit values on immediately opening & closing a long or short."""
 from __future__ import annotations
 
+import argparse
 import json
 import logging
+import sys
 from dataclasses import asdict
+from typing import NamedTuple, Sequence
 
 import numpy as np
 from fixedpointmath import FixedPoint
@@ -11,14 +14,38 @@ from hyperlogs import ExtendedJSONEncoder
 from numpy.random._generator import Generator
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.interactive_fuzz.setup_fuzz import setup_fuzz
+from agent0.interactive_fuzz.helpers import setup_fuzz
 
 
-def main():
-    """Primary entrypoint."""
+def main(argv: Sequence[str] | None = None):
+    """Primary entrypoint.
+
+    Arguments
+    ---------
+    argv: Sequence[str]
+        The argv values returned from argparser.
+    """
+    parsed_args = parse_arguments(argv)
+    fuzz_profit_check(*parsed_args)
+
+
+def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
+    """Fuzzes invariant checks for profit from long and short positions.
+
+    Parameters
+    ----------
+    chain_config: LocalChain.Config, optional
+        Configuration options for the local chain.
+
+    Raises
+    ------
+    AssertionError
+        If the invariant checks fail during the tests an error will be raised.
+    """
+
     # Setup the environment
     log_filename = ".logging/fuzz_profit_check.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config)
 
     # Get a random trade amount
     trade_amount = FixedPoint(
@@ -103,6 +130,56 @@ def advance_time_before_checkpoint(
         )
         # do a final check to make sure that the checkpoint didn't happen
         assert len(checkpoint_info[interactive_hyperdrive]) == 0, "Checkpoint was created when it should not have been."
+
+
+class Args(NamedTuple):
+    """Command line arguments for the invariant checker."""
+
+    chain_config: LocalChain.Config
+
+
+def namespace_to_args(namespace: argparse.Namespace) -> Args:
+    """Converts argprase.Namespace to Args.
+
+    Arguments
+    ---------
+    namespace: argparse.Namespace
+        Object for storing arg attributes.
+
+    Returns
+    -------
+    Args
+        Formatted arguments
+    """
+    return Args(
+        chain_config=LocalChain.Config(chain_port=namespace.chain_port),
+    )
+
+
+def parse_arguments(argv: Sequence[str] | None = None) -> Args:
+    """Parses input arguments.
+
+    Arguments
+    ---------
+    argv: Sequence[str]
+        The argv values returned from argparser.
+
+    Returns
+    -------
+    Args
+        Formatted arguments
+    """
+    parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
+    parser.add_argument(
+        "--chain_port",
+        type=int,
+        default=10000,
+        help="The number of random trades to open.",
+    )
+    # Use system arguments if none were passed
+    if argv is None:
+        argv = sys.argv
+    return namespace_to_args(parser.parse_args())
 
 
 def invariant_check_failed(

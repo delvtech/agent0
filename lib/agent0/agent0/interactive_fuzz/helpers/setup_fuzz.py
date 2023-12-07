@@ -8,7 +8,9 @@ from numpy.random._generator import Generator
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 
 
-def setup_fuzz(log_filename: str) -> tuple[LocalChain, int, Generator, InteractiveHyperdrive]:
+def setup_fuzz(
+    log_filename: str, chain_config: LocalChain.Config | None = None
+) -> tuple[LocalChain, int, Generator, InteractiveHyperdrive]:
     """Setup the fuzz experiment.
 
     Arguments
@@ -16,6 +18,8 @@ def setup_fuzz(log_filename: str) -> tuple[LocalChain, int, Generator, Interacti
     log_filename: str
         Output location for the logging file,
         which will include state information if the test fails.
+    chain_config: LocalChain.Config, optional
+        Configuration options for the local chain.
 
     Returns
     -------
@@ -37,8 +41,8 @@ def setup_fuzz(log_filename: str) -> tuple[LocalChain, int, Generator, Interacti
     )
 
     # Setup local chain
-    chain_config = LocalChain.Config()
-    chain = LocalChain(config=chain_config)
+    config = chain_config if chain_config else LocalChain.Config()
+    chain = LocalChain(config=config)
     random_seed = np.random.randint(
         low=1, high=99999999
     )  # No seed, we want this to be random every time it is executed

@@ -56,6 +56,9 @@ def open_random_trades(
         if advance_time:
             # Advance a random amount of time between opening trades
             chain.advance_time(
-                rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration)
+                rng.integers(
+                    low=0,
+                    high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration,
+                )
             )
     return trade_events
