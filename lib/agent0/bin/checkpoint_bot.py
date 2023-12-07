@@ -147,7 +147,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             raise AssertionError(f"{latest_block=} has no timestamp")
         checkpoint_portion_elapsed = timestamp % checkpoint_duration
         checkpoint_time = timestamp - timestamp % checkpoint_duration
-        need_checkpoint = checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration
+        enough_time_has_elapsed = checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration
         checkpoint_doesnt_exist = not does_checkpoint_exist(hyperdrive_contract, checkpoint_time)
 
         logging.info(
@@ -156,11 +156,11 @@ def main(argv: Sequence[str] | None = None) -> None:
             timestamp,
             checkpoint_portion_elapsed,
             checkpoint_time,
-            need_checkpoint,
+            enough_time_has_elapsed,
             checkpoint_doesnt_exist,
         )
 
-        if need_checkpoint and checkpoint_doesnt_exist:
+        if enough_time_has_elapsed and checkpoint_doesnt_exist:
             logging.info("Submitting a checkpoint for checkpointTime=%s...", checkpoint_time)
             # TODO: We will run into issues with the gas price being too low
             # with testnets and mainnet. When we get closer to production, we
@@ -187,8 +187,8 @@ def main(argv: Sequence[str] | None = None) -> None:
                 checkpoint_portion_elapsed = timestamp % checkpoint_duration
                 checkpoint_time = timestamp - timestamp % checkpoint_duration
 
-                need_checkpoint = checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration
-                assert not need_checkpoint, "We shouldn't need a checkpoint if one was just created."
+                enough_time_has_elapsed = checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration
+                assert not enough_time_has_elapsed, "We shouldn't need a checkpoint if one was just created."
 
                 checkpoint_exists = does_checkpoint_exist(hyperdrive_contract, checkpoint_time)
                 assert checkpoint_exists, "Checkpoint should exist since it was just made."
