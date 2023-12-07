@@ -243,7 +243,7 @@ def open_trades(
     chain: LocalChain,
     rng: Generator,
     interactive_hyperdrive: InteractiveHyperdrive,
-):
+) -> list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]]:
     """Open some trades specified by the trade list.
 
     Arguments
@@ -277,11 +277,10 @@ def open_trades(
         else:
             raise AssertionError(f"{trade_type=} is not supported.")
         trade_events.append((agent, trade_event))
-        # randomly advance time between opening trades
+        # Advance a random amount of time between opening trades
         chain.advance_time(
             rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration)
         )
-
     return trade_events
 
 
