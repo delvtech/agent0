@@ -165,3 +165,5 @@ for index, (agent, trade) in enumerate(trade_events):
         print(f"close short: {close_short_event.base_amount}")
         print(f"close short: difference in wei {difference}\n")
         # assert close_short_event.base_amount == interest_accrued
+
+chain.cleanup()

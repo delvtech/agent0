@@ -46,9 +46,9 @@ def main(argv: Sequence[str] | None = None):
 
     # Check the reserve amounts; they should be unchanged now that all of the trades are closed
     if invariant_check_failed(initial_vault_shares, random_seed, interactive_hyperdrive):
-        interactive_hyperdrive.cleanup()
+        chain.cleanup()
         raise AssertionError(f"Testing failed; see logs in {log_filename}")
-    interactive_hyperdrive.cleanup()
+    chain.cleanup()
 
 
 class Args(NamedTuple):
