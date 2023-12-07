@@ -203,20 +203,25 @@ class Chain:
 
         return out_dict
 
-    def save_state(self, save_dir: str | None = None) -> None:
+    def save_state(self, save_dir: str | None = None, save_prefix: str | None = None) -> None:
         """Saves the interactive state using the `anvil_dumpState` RPC call.
         Saving/loading state can be done across chains.
 
         Arguments
         ---------
         save_dir: str, optional
-            The directory to save the state to. Defaults to `{Config.save_state_dir}/{current_time}/`,
+            The directory to save the state to. Defaults to `{Config.save_state_dir}/{save_prefix}_{current_time}/`,
             where `Config.save_state_dir` defaults to `./.interactive_state/`.
+        save_prefix: str, optional
+            If save_dir wasn't provided, prepends an optional prefix to the time suffix for this state.
         """
         if save_dir is None:
             curr_time = datetime.utcnow().replace(tzinfo=timezone.utc)
             fn_time_str = curr_time.strftime("%Y_%m_%d_%H_%M_%S_Z")
-            save_dir = str(Path(".interactive_state/") / fn_time_str)
+            if save_prefix is None:
+                save_dir = str(Path(".interactive_state/") / fn_time_str)
+            else:
+                save_dir = str(Path(".interactive_state/") / (save_prefix + "_" + fn_time_str))
 
         self._dump_db(save_dir)
         anvil_state_dump = get_anvil_state_dump(self._web3)
