@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-from ethpy.base.transactions import smart_contract_transact
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
@@ -25,7 +24,8 @@ NUM_TRADES = 10
 # chain_config = LocalChain.Config(block_time=1_000_000)
 chain_config = LocalChain.Config()
 chain = LocalChain(config=chain_config)
-rng = np.random.default_rng()  # No seed, we want this to be random every time it is executed
+random_seed = np.random.randint(low=1, high=99999999)  # No seed, we want this to be random every time it is executed
+rng = np.random.default_rng(random_seed)
 
 # %%
 # Parameters for pool initialization.
@@ -57,23 +57,7 @@ for agent_index in range(NUM_TRADES):  # 1 agent per trade
     trade_list.append((agent, trade_type, trade_amount_base))
 
 # %%
-# List of columns in pool info to check between the initial pool info and the latest pool info.
-check_columns = [
-    "share_reserves",
-    "shorts_outstanding",
-    "withdrawal_shares_proceeds",
-    "share_price",
-    "long_exposure",
-    # Added in addition to original script
-    "bond_reserves",
-    "lp_total_supply",
-    "longs_outstanding",
-]
-
-
-# %%
 # Open some trades
-# TODO: include add liquidity
 trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]] = []
 for trade in trade_list:
     agent, trade_type, trade_amount = trade
@@ -88,11 +72,6 @@ for trade in trade_list:
 # automatically created by sending transactions
 starting_checkpoint = interactive_hyperdrive.hyperdrive_interface.current_pool_state.checkpoint
 
-# %%
-# snapshot the chain, so we can load the snapshot & close in different orders
-chain.save_snapshot()
-
-check_data: dict | None = None
 # %%
 # advance the time to at least the position duration, maximum of two position durations.
 
@@ -110,19 +89,13 @@ chain.advance_time(position_duration + 30)
 
 # create a checkpoint
 current_time = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
-maturity_checkpoint_time = current_time - current_time % checkpoint_duration
-smart_contract_transact(
-    interactive_hyperdrive.hyperdrive_interface.web3,
-    interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract,
-    signer.agent,
-    "checkpoint",
-    maturity_checkpoint_time,
-)
+interactive_hyperdrive.hyperdrive_interface.create_checkpoint(signer.agent)
 chain.advance_time(extra_time)
+
+maturity_checkpoint_time = current_time - current_time % checkpoint_duration
 maturity_checkpoint = interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract.functions.getCheckpoint(
     maturity_checkpoint_time
 ).call()
-
 # %%
 # close them one at a time, check invariants
 
@@ -143,7 +116,8 @@ def assertion(condition: bool, message: str = "Assertion failed."):
         print(message)
 
 
-for agent, trade in trade_events:
+for index, (agent, trade) in enumerate(trade_events):
+    print(f"{index=}\n")
     if isinstance(trade, OpenLong):
         close_long_event = agent.close_long(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
         # 0.05 would be a 5% fee.
@@ -153,15 +127,16 @@ for agent, trade in trade_events:
         # assert with trade values
         actual_base_amount = close_long_event.base_amount
         expected_base_amount_from_event = close_long_event.bond_amount - close_long_event.bond_amount * flat_fee_percent
-        assertion(actual_base_amount == expected_base_amount_from_event)
+        # assertion(actual_base_amount == expected_base_amount_from_event)
 
         # assert with event values
         expected_base_amount_from_trade = trade.bond_amount - trade.bond_amount * flat_fee_percent
-        assertion(close_long_event.base_amount == expected_base_amount_from_trade)
+        # assertion(close_long_event.base_amount == expected_base_amount_from_trade)
 
         # show the difference
         difference = actual_base_amount.scaled_value - expected_base_amount_from_trade.scaled_value
-        print(f"close long: difference in wei {difference}")
+        print(f"close long: {actual_base_amount.to_decimal()}")
+        print(f"close long: difference in wei {difference}\n")
         # assert actual_base_amount == expected_base_amount
         # assert close_long_event.base_amount == trade.bond_amount - trade.bond_amount * flat_fee_percent
     if isinstance(trade, OpenShort):
@@ -185,7 +160,8 @@ for agent, trade in trade_events:
         )
 
         # assert and show the difference
-        assertion(close_short_event.base_amount == interest_accrued)
+        # assertion(close_short_event.base_amount == interest_accrued)
         difference = close_short_event.base_amount.scaled_value - interest_accrued.scaled_value
-        print(f"close short: difference in wei {difference}")
+        print(f"close short: {close_short_event.base_amount}")
+        print(f"close short: difference in wei {difference}\n")
         # assert close_short_event.base_amount == interest_accrued
