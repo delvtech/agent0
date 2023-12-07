@@ -11,7 +11,7 @@ from typing import NamedTuple, Sequence
 from fixedpointmath import FixedPoint
 from hyperlogs import ExtendedJSONEncoder
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive
+from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.interactive_fuzz.close_random_trades import close_random_trades
 from agent0.interactive_fuzz.generate_trade_list import generate_trade_list
 from agent0.interactive_fuzz.open_random_trades import open_random_trades
@@ -45,7 +45,7 @@ def main(argv: Sequence[str] | None = None):
     close_random_trades(trade_events, rng)
 
     # Check the reserve amounts; they should be unchanged now that all of the trades are closed
-    if invariant_check_failed(initial_vault_shares, random_seed, interactive_hyperdrive):
+    if invariant_check_failed(initial_vault_shares, random_seed, interactive_hyperdrive, chain):
         chain.cleanup()
         raise AssertionError(f"Testing failed; see logs in {log_filename}")
     chain.cleanup()
@@ -105,6 +105,7 @@ def invariant_check_failed(
     initial_vault_shares: FixedPoint,
     random_seed: int,
     interactive_hyperdrive: InteractiveHyperdrive,
+    chain: LocalChain,
 ) -> bool:
     """Check the pool state invariants.
 
@@ -116,6 +117,8 @@ def invariant_check_failed(
         Random seed used to run the experiment.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
+    chain: LocalChain
+        An instantiated LocalChain object.
 
     Returns
     -------
@@ -136,6 +139,7 @@ def invariant_check_failed(
         failed = True
 
     if failed:
+        dump_state_dir = chain.save_state(save_prefix="fuzz_hyperdrive_balance")
         logging.info(
             "random_seed = %s\npool_config = %s\n\npool_info = %s\n\nlatest_checkpoint = %s\n\nadditional_info = %s",
             random_seed,
@@ -144,6 +148,7 @@ def invariant_check_failed(
             json.dumps(asdict(pool_state.checkpoint), indent=2, cls=ExtendedJSONEncoder),
             json.dumps(
                 {
+                    "dump_state_dir": dump_state_dir,
                     "hyperdrive_address": interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract.address,
                     "base_token_address": interactive_hyperdrive.hyperdrive_interface.base_token_contract.address,
                     "spot_price": interactive_hyperdrive.hyperdrive_interface.calc_spot_price(pool_state),
@@ -155,6 +160,7 @@ def invariant_check_failed(
                 cls=ExtendedJSONEncoder,
             ),
         )
+
     return failed
 
 

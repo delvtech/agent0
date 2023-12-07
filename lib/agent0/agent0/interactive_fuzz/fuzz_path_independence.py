@@ -11,7 +11,7 @@ from typing import Any, NamedTuple, Sequence
 import pandas as pd
 from hyperlogs import ExtendedJSONEncoder
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive
+from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.interactive_fuzz.close_random_trades import close_random_trades
 from agent0.interactive_fuzz.generate_trade_list import generate_trade_list
 from agent0.interactive_fuzz.open_random_trades import open_random_trades
@@ -53,6 +53,7 @@ def main(argv: Sequence[str] | None = None):
 
     # Close the trades randomly & verify that the final state is unchanged
     check_data: dict[str, Any] | None = None
+    first_run_state_dump_dir: str | None = None
     for iteration in range(parsed_args.num_paths_checked):
         print(f"{iteration=}")
         # Load the snapshot
@@ -76,13 +77,15 @@ def main(argv: Sequence[str] | None = None):
             check_data["effective_share_reserves"] = effective_share_reserves
             check_data["vault_shares"] = pool_state.vault_shares
             check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
+            first_run_state_dump_dir = chain.save_state(save_prefix="fuzz_path_independence")
 
         # On subsequent run, check against the saved final state
         else:
             # Check values not provided in the database
             check_data["final_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
             # Raise an error if it failed
-            if invariant_check_failed(check_data, random_seed, interactive_hyperdrive):
+            assert first_run_state_dump_dir is not None
+            if invariant_check_failed(check_data, random_seed, interactive_hyperdrive, chain, first_run_state_dump_dir):
                 chain.cleanup()
                 raise AssertionError(f"Testing failed; see logs in {log_filename}")
     chain.cleanup()
@@ -151,6 +154,8 @@ def invariant_check_failed(
     check_data: dict[str, Any],
     random_seed: int,
     interactive_hyperdrive: InteractiveHyperdrive,
+    chain: LocalChain,
+    first_run_state_dump_dir: str,
 ) -> bool:
     """Check the pool state invariants.
 
@@ -162,6 +167,10 @@ def invariant_check_failed(
         Random seed used to run the experiment.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
+    chain: LocalChain
+        An instantiated LocalChain object.
+    first_run_state_dump_dir: str
+        The directory of the initial run of path independence state dump.
 
     Returns
     -------
@@ -216,6 +225,8 @@ def invariant_check_failed(
         failed = True
 
     if failed:
+        dump_state_dir = chain.save_state(save_prefix="fuzz_path_independence")
+
         logging.info(
             (
                 "random_seed = %s\npool_config = %s\n\npool_info = %s"
@@ -227,6 +238,8 @@ def invariant_check_failed(
             json.dumps(asdict(pool_state.checkpoint), indent=2, cls=ExtendedJSONEncoder),
             json.dumps(
                 {
+                    "first_run_state_dump_dir": first_run_state_dump_dir,
+                    "dump_state_dir": dump_state_dir,
                     "hyperdrive_address": interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract.address,
                     "base_token_address": interactive_hyperdrive.hyperdrive_interface.base_token_contract.address,
                     "spot_price": interactive_hyperdrive.hyperdrive_interface.calc_spot_price(pool_state),
