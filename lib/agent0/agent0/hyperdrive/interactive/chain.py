@@ -8,7 +8,7 @@ import os
 import subprocess
 import time
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -20,12 +20,15 @@ from docker.models.containers import Container
 from ethpy.base import initialize_web3_with_http_provider
 from web3.types import RPCEndpoint
 
+from agent0.hyperdrive.crash_report import get_anvil_state_dump
+
 from .event_types import CreateCheckpoint
 
 if TYPE_CHECKING:
     from .interactive_hyperdrive import InteractiveHyperdrive
 
 
+# pylint: disable=too-many-instance-attributes
 class Chain:
     """A chain object that connects to a chain. Also launches a postgres docker container for data."""
 
@@ -43,6 +46,8 @@ class Chain:
 
         db_port: int = 5433
         remove_existing_db_container: bool = True
+        snapshot_dir: str = ".interactive_state/snapshot/"
+        saved_state_dir: str = ".interactive_state/"
 
     def __init__(self, rpc_uri: str, config: Config | None = None):
         """Initialize the Chain class that connects to an existing chain.
@@ -72,6 +77,7 @@ class Chain:
         assert isinstance(self.postgres_container, Container)
 
         # Snapshot bookkeeping
+        self._snapshot_dir = config.snapshot_dir
         self._saved_snapshot_id: str
         self._has_saved_snapshot = False
         self._deployed_hyperdrive_pools: list[InteractiveHyperdrive] = []
@@ -197,6 +203,53 @@ class Chain:
 
         return out_dict
 
+    def save_state(self, save_dir: str | None = None) -> None:
+        """Saves the interactive state using the `anvil_dumpState` RPC call.
+        Saving/loading state can be done across chains.
+
+        Arguments
+        ---------
+        save_dir: str, optional
+            The directory to save the state to. Defaults to `{Config.save_state_dir}/{current_time}/`,
+            where `Config.save_state_dir` defaults to `./.interactive_state/`.
+        """
+        if save_dir is None:
+            curr_time = datetime.utcnow().replace(tzinfo=timezone.utc)
+            fn_time_str = curr_time.strftime("%Y_%m_%d_%H_%M_%S_Z")
+            save_dir = str(Path(".interactive_state/") / fn_time_str)
+
+        self._dump_db(save_dir)
+        anvil_state_dump = get_anvil_state_dump(self._web3)
+        assert anvil_state_dump is not None
+        anvil_state_dump_file = Path(save_dir) / "anvil_state.dump"
+
+        with open(anvil_state_dump_file, "w", encoding="utf-8") as f:
+            f.write(anvil_state_dump)
+
+        # TODO pickle all interactive objects and their underlying agents, see `load_state`
+
+    def load_state(self, load_dir: str) -> None:
+        """Loads the interactive state from the `save_state` function.
+        Saving/loading state can be done across chains.
+
+        .. todo:: There are issues around load_state, namely:
+        1.  Anvil load state doesn't load the block number and timestamp.
+        2.  Anvil load state only loads the current state, not all previous states.
+        3.  There exists an issue with the underlying yield contract, as there is a `last_updated` var
+            that gets saved, but anvil doesn't load the original timestamp, so the yield contract throws an error.
+            (May be able to solve if we're able to solve issue 1 to correctly load the block number and
+            previous states.)
+        4.  To load the state in another chain, we need this function to load all original objects
+            created from the saved chain, e.g., interactive_hyperdrive and all agents they contain, and return
+            them from this function.
+
+        Arguments
+        ---------
+        load_dir: str
+            The directory to load the state from.
+        """
+        raise NotImplementedError
+
     def save_snapshot(self) -> None:
         """Saves a snapshot using the `evm_snapshot` RPC call.
         The chain can store one snapshot at a time, saving another snapshot overwrites the previous snapshot.
@@ -208,8 +261,7 @@ class Chain:
         self._saved_snapshot_id = response["result"]
 
         # Save the db state
-        self._dump_db()
-
+        self._dump_db(self._snapshot_dir)
         self._has_saved_snapshot = True
 
     def load_snapshot(self) -> None:
@@ -229,7 +281,7 @@ class Chain:
             raise KeyError("Response did not have a result.")
 
         # load snapshot database state
-        self._load_db()
+        self._load_db(self._snapshot_dir)
 
         # The hyperdrive interface in deployed pools need to wipe it's cache
         for pool in self._deployed_hyperdrive_pools:
@@ -301,27 +353,31 @@ class Chain:
             raise ValueError("Cannot add a new pool after saving a snapshot")
         self._deployed_hyperdrive_pools.append(pool)
 
-    def _dump_db(self):
+    def _dump_db(self, save_dir: str):
         # TODO parameterize the save path
         for pool in self._deployed_hyperdrive_pools:
             # Need to ensure data has caught up before snapshot
             pool._ensure_data_caught_up()  # pylint: disable=protected-access
-            export_path = ".interactive_state/snapshot/" + pool._db_name  # pylint: disable=protected-access
+            export_path = str(Path(save_dir) / pool._db_name)  # pylint: disable=protected-access
             os.makedirs(export_path, exist_ok=True)
             export_db_to_file(export_path, pool.db_session, raw=True)
 
-    def _load_db(self):
+    def _load_db(self, load_dir: str):
         # TODO parameterize the load path
         for pool in self._deployed_hyperdrive_pools:
             # We need to stop the underlying data pipeline before updating the underlying database
             pool._stop_data_pipeline()  # pylint: disable=protected-access
-            import_path = ".interactive_state/snapshot/" + pool._db_name  # pylint: disable=protected-access
+            import_path = str(Path(load_dir) / pool._db_name)  # pylint: disable=protected-access
             import_to_db(pool.db_session, import_path, drop=True)
             pool._launch_data_pipeline()  # pylint: disable=protected-access
 
 
 class LocalChain(Chain):
     """Launches a local anvil chain in a subprocess."""
+
+    # Pylint is complaining that `load_state` is an abstract method, so we need to overwrite here.
+    # However, `load_state` is just a function stub that needs to throw `NotImplementedError` if called.
+    # pylint: disable=abstract-method
 
     @dataclass
     class Config(Chain.Config):
