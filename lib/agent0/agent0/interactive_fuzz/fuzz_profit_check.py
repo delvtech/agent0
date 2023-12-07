@@ -66,11 +66,7 @@ def main():
         "long_events": {"open": open_long_event, "close": close_long_event},
         "short_events": {"open": open_short_event, "close": close_short_event},
     }
-    if invariant_check_failed(
-        check_data,
-        random_seed,
-        interactive_hyperdrive,
-    ):
+    if invariant_check_failed(check_data, random_seed, interactive_hyperdrive, chain):
         chain.cleanup()
         raise AssertionError(f"Testing failed; see logs in {log_filename}")
     chain.cleanup()
@@ -113,6 +109,7 @@ def invariant_check_failed(
     check_data,
     random_seed,
     interactive_hyperdrive,
+    chain: LocalChain,
 ):
     """Check the pool state invariants.
 
@@ -124,6 +121,8 @@ def invariant_check_failed(
         Random seed used to run the experiment.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
+    chain: LocalChain
+        An instantiated LocalChain object.
 
     Returns
     -------
@@ -167,6 +166,8 @@ def invariant_check_failed(
         failed = True
 
     if failed:
+        dump_state_dir = chain.save_state(save_prefix="fuzz_profit_check")
+
         pool_state = interactive_hyperdrive.hyperdrive_interface.current_pool_state
         logging.info(
             "random_seed = %s\npool_config = %s\n\npool_info = %s\n\nlatest_checkpoint = %s\n\nadditional_info = %s",
@@ -176,6 +177,7 @@ def invariant_check_failed(
             json.dumps(asdict(pool_state.checkpoint), indent=2, cls=ExtendedJSONEncoder),
             json.dumps(
                 {
+                    "dump_state_dir": dump_state_dir,
                     "hyperdrive_address": interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract.address,
                     "base_token_address": interactive_hyperdrive.hyperdrive_interface.base_token_contract.address,
                     "spot_price": interactive_hyperdrive.hyperdrive_interface.calc_spot_price(pool_state),
