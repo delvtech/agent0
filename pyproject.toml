@@ -20,10 +20,6 @@ minversion = "6.0"
 addopts = ["--tb=short"]
 norecursedirs = ".git examples hyperdrive_solidity"
 python_files = "*_test.py test_*.py"
-markers = [
-    "anvil: tests using anvil (deselect with '-m \"not anvil\"')",
-    "docker: tests using docker (deselect with '-m \"not docker\"')",
-]
 
 [tool.pylint.format]
 max-line-length = "120"

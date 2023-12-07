@@ -389,7 +389,6 @@ class TestInteractiveHyperdrive:
 
     @pytest.mark.anvil
     def test_set_variable_rate(self, chain: LocalChain):
-        """Tests interactive hyperdrive end to end"""
         # We need the underlying hyperdrive interface here to test time
         config = InteractiveHyperdrive.Config(initial_variable_rate=FixedPoint("0.05"))
         interactive_hyperdrive = InteractiveHyperdrive(chain, config)
@@ -406,3 +405,28 @@ class TestInteractiveHyperdrive:
 
         assert pool_state_df["variable_rate"].iloc[0] == Decimal("0.05")
         assert pool_state_df["variable_rate"].iloc[-1] == Decimal("0.10")
+
+    @pytest.mark.anvil
+    def test_access_deployer_account(self, chain: LocalChain):
+        config = InteractiveHyperdrive.Config(
+            initial_liquidity=FixedPoint("100"),
+        )
+        interactive_hyperdrive = InteractiveHyperdrive(chain, config)
+        privkey = chain.get_deployer_account_private_key()  # anvil account 0
+        pubkey = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+        larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
+        assert larry.wallet.address.hex().startswith(pubkey.lower())  # deployer public key
+
+    @pytest.mark.anvil
+    def test_remove_deployer_liquidity(self, chain: LocalChain):
+        config = InteractiveHyperdrive.Config(
+            initial_liquidity=FixedPoint(100),
+        )
+        interactive_hyperdrive = InteractiveHyperdrive(chain, config)
+        privkey = chain.get_deployer_account_private_key()  # anvil account 0
+        larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
+        # Ideally this would hold the accurate number of LP tokens, but the amount from initialization isn't
+        # included in acquire_data. Instead, we hack some coins into his wallet, to avoid error checks.
+        larry.wallet.lp_tokens = FixedPoint(100)
+        # I don't know how many shares he actually has, so I'm guessing here.
+        larry.remove_liquidity(shares=FixedPoint(5))

@@ -62,6 +62,9 @@ from .event_types import (
 from .interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
 
+# Is very thorough module.
+# pylint: disable=too-many-lines
+
 # In order to support both scripts and jupyter notebooks with underlying async functions,
 # we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
 nest_asyncio.apply()
@@ -391,6 +394,7 @@ class InteractiveHyperdrive:
         name: str | None = None,
         policy: Type[HyperdrivePolicy] | None = None,
         policy_config: HyperdrivePolicy.Config | None = None,
+        private_key: str | None = None,
     ) -> InteractiveHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
 
@@ -406,6 +410,8 @@ class InteractiveHyperdrive:
             An optional policy to attach to this agent.
         policy_config: HyperdrivePolicy, optional
             The configuration for the attached policy.
+        private_key: str, optional
+            The private key of the associated account. Default is auto-generated.
 
         Returns
         -------
@@ -421,7 +427,13 @@ class InteractiveHyperdrive:
         if eth is None:
             eth = FixedPoint(10)
         out_agent = InteractiveHyperdriveAgent(
-            base=base, eth=eth, name=name, pool=self, policy=policy, policy_config=policy_config
+            base=base,
+            eth=eth,
+            name=name,
+            pool=self,
+            policy=policy,
+            policy_config=policy_config,
+            private_key=private_key,
         )
         self._pool_agents.append(out_agent)
         return out_agent
@@ -720,9 +732,10 @@ class InteractiveHyperdrive:
         name: str | None,
         policy: Type[HyperdrivePolicy] | None,
         policy_config: HyperdrivePolicy.Config | None,
+        private_key: str | None = None,
     ) -> HyperdriveAgent:
         # pylint: disable=too-many-arguments
-        agent_private_key = make_private_key()
+        agent_private_key = make_private_key() if private_key is None else private_key
         # Setting the budget to 0 here, `_add_funds` will take care of updating the wallet
         agent = HyperdriveAgent(
             Account().from_key(agent_private_key),
