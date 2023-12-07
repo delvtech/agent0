@@ -7,16 +7,16 @@ from dataclasses import asdict
 
 import numpy as np
 from fixedpointmath import FixedPoint
-from hyperlogs import ExtendedJSONEncoder, setup_logging
-from numpy.random._generator import Generator
+from hyperlogs import ExtendedJSONEncoder
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
+from .setup_fuzz import setup_fuzz
 
 
 def main():
     """Primary entrypoint."""
     # Setup the environment
-    log_filename, chain, random_seed, rng, interactive_hyperdrive = setup_fuzz()
+    log_filename = ".logging/fuzz_profit_check.log"
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename)
 
     # Get a random trade amount
     trade_amount = FixedPoint(
@@ -74,48 +74,6 @@ def main():
         interactive_hyperdrive,
     ):
         raise AssertionError(f"Testing failed; see logs in {log_filename}")
-
-
-def setup_fuzz() -> tuple[str, LocalChain, int, Generator, InteractiveHyperdrive]:
-    """Setup the fuzz experiment.
-
-    Returns
-    -------
-    tuple[Args, str, LocalChain, int, Generator, InteractiveHyperdrive]
-        A tuple containing:
-            parsed_args: Args
-                A dataclass containing the parsed command line arguments.
-            log_filename: str
-                Where the log files are stored.
-            chain: LocalChain
-                An instantiated LocalChain.
-            random_seed: int
-                The random seed used to construct the Generator.
-            rng: `Generator <https://numpy.org/doc/stable/reference/random/generator.html>`_
-                The numpy Generator provides access to a wide range of distributions, and stores the random state.
-            interactive_hyperdrive: InteractiveHyperdrive
-                An instantiated InteractiveHyperdrive object.
-    """
-    log_filename = ".logging/fuzz_profit_check.log"
-    setup_logging(
-        log_filename=log_filename,
-        delete_previous_logs=True,
-        log_stdout=False,
-    )
-
-    # Setup local chain
-    chain_config = LocalChain.Config()
-    chain = LocalChain(config=chain_config)
-    random_seed = np.random.randint(
-        low=1, high=99999999
-    )  # No seed, we want this to be random every time it is executed
-    rng = np.random.default_rng(random_seed)
-
-    # Parameters for pool initialization.
-    initial_pool_config = InteractiveHyperdrive.Config(preview_before_trade=True)
-    interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
-
-    return log_filename, chain, random_seed, rng, interactive_hyperdrive
 
 
 def invariant_check_failed(
