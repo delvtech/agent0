@@ -35,7 +35,7 @@ def main(argv: Sequence[str] | None = None):
     trade_list = generate_trade_list(parsed_args.num_trades, rng, interactive_hyperdrive)
 
     # Open some trades
-    trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive)
+    trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=True)
 
     # Snapshot the chain, so we can load the snapshot & close in different orders
     chain.save_snapshot()

@@ -15,6 +15,7 @@ def open_random_trades(
     chain: LocalChain,
     rng: Generator,
     interactive_hyperdrive: InteractiveHyperdrive,
+    advance_time: bool = False,
 ) -> list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]]:
     """Open some trades specified by the trade list.
 
@@ -31,6 +32,9 @@ def open_random_trades(
         The numpy Generator provides access to a wide range of distributions, and stores the random state.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
+    advance_time: bool, optional
+        If True, advance time a random amount between 0 and the position duration after each trade.
+        Defaults to False.
 
     Returns
     -------
@@ -49,8 +53,9 @@ def open_random_trades(
         else:
             raise AssertionError(f"{trade_type=} is not supported.")
         trade_events.append((agent, trade_event))
-        # Advance a random amount of time between opening trades
-        chain.advance_time(
-            rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration)
-        )
+        if advance_time:
+            # Advance a random amount of time between opening trades
+            chain.advance_time(
+                rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration)
+            )
     return trade_events
