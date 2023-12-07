@@ -18,6 +18,7 @@ from agent0.interactive_fuzz.open_random_trades import open_random_trades
 from agent0.interactive_fuzz.setup_fuzz import setup_fuzz
 
 
+# pylint: disable=too-many-locals
 def main(argv: Sequence[str] | None = None):
     """Primary entrypoint.
 
