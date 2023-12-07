@@ -232,11 +232,11 @@ class Chain:
         """Loads the interactive state from the `save_state` function.
         Saving/loading state can be done across chains.
 
-        TODO there are issues around this, namely:
+        .. todo:: There are issues around load_state, namely:
         1.  Anvil load state doesn't load the block number and timestamp.
         2.  Anvil load state only loads the current state, not all previous states.
         3.  There exists an issue with the underlying yield contract, as there is a `last_updated` var
-            that gets saved, but anvil doesn't load the original timestamp, so the yield contract errors.
+            that gets saved, but anvil doesn't load the original timestamp, so the yield contract throws an error.
             (May be able to solve if we're able to solve issue 1 to correctly load the block number and
             previous states.)
         4.  To load the state in another chain, we need this function to load all original objects
