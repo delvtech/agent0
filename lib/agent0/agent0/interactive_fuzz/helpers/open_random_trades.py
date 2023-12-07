@@ -59,6 +59,7 @@ def open_random_trades(
                 rng.integers(
                     low=0,
                     high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration,
-                )
+                ),
+                create_checkpoints=True,
             )
     return trade_events
