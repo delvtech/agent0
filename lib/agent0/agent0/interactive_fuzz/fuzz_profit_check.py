@@ -73,7 +73,9 @@ def main():
         random_seed,
         interactive_hyperdrive,
     ):
+        interactive_hyperdrive.cleanup()
         raise AssertionError(f"Testing failed; see logs in {log_filename}")
+    interactive_hyperdrive.cleanup()
 
 
 def invariant_check_failed(

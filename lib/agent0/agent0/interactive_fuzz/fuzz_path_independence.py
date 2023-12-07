@@ -83,7 +83,9 @@ def main(argv: Sequence[str] | None = None):
             check_data["final_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
             # Raise an error if it failed
             if invariant_check_failed(check_data, random_seed, interactive_hyperdrive):
+                interactive_hyperdrive.cleanup()
                 raise AssertionError(f"Testing failed; see logs in {log_filename}")
+    interactive_hyperdrive.cleanup()
 
 
 class Args(NamedTuple):
