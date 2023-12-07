@@ -674,7 +674,8 @@ class HyperdriveInterface:
         Returns
         -------
         int
-            The checkpoint id, which can be used as an argument for the Hyperdrive getCheckpoint function.
+            The checkpoint id, in units of seconds,
+            which can be used as an argument for the Hyperdrive getCheckpoint function.
         """
         if checkpoint_duration is None:
             checkpoint_duration = self.current_pool_state.pool_config.checkpoint_duration
