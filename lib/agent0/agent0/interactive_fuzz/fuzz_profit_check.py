@@ -11,11 +11,23 @@ from hyperlogs import ExtendedJSONEncoder
 from numpy.random._generator import Generator
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.interactive_fuzz import setup_fuzz
+from agent0.interactive_fuzz.helpers import setup_fuzz
 
 
 def main():
     """Primary entrypoint."""
+    fuzz_profit_check()
+
+
+def fuzz_profit_check():
+    """Fuzzes invariant checks for profit from long and short positions.
+
+    Raises
+    ------
+    AssertionError
+        If the invariant checks fail during the tests an error will be raised.
+    """
+
     # Setup the environment
     log_filename = ".logging/fuzz_profit_check.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename)

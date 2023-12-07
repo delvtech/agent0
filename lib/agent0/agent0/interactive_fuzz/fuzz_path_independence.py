@@ -26,11 +26,29 @@ def main(argv: Sequence[str] | None = None):
     """
     # Setup the experiment
     parsed_args = parse_arguments(argv)
+    fuzz_path_independence(*parsed_args)
+
+
+def fuzz_path_independence(num_trades: int, num_paths_checked: int):
+    """Does fuzzy invariant checks for opening and closing longs and shorts.
+
+    Parameters
+    ----------
+    num_trades: int
+        Number of trades to perform during the fuzz tests.
+    num_paths_checked: int
+        Number of paths (order of operations for opening/closing) to perform.
+
+    Raises
+    ------
+    AssertionError
+        If the invariant checks fail during the tests an error will be raised.
+    """
     log_filename = ".logging/fuzz_path_independence.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename)
 
     # Generate a list of agents that execute random trades
-    trade_list = generate_trade_list(parsed_args.num_trades, rng, interactive_hyperdrive)
+    trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
 
     # Open some trades
     trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=True)
@@ -51,8 +69,12 @@ def main(argv: Sequence[str] | None = None):
 
     # Close the trades randomly & verify that the final state is unchanged
     check_data: dict[str, Any] | None = None
+<<<<<<< HEAD
     first_run_state_dump_dir: str | None = None
     for iteration in range(parsed_args.num_paths_checked):
+=======
+    for iteration in range(num_paths_checked):
+>>>>>>> b7e4dc7 (expose acutal functions)
         print(f"{iteration=}")
         # Load the snapshot
         chain.load_snapshot()

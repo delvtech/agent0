@@ -10,7 +10,7 @@ import numpy as np
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
-from agent0.interactive_fuzz import generate_trade_list, open_random_trades, setup_fuzz
+from agent0.interactive_fuzz.helpers import generate_trade_list, open_random_trades, setup_fuzz
 
 # main script has a lot of stuff going on
 # pylint: disable=too-many-locals
@@ -26,6 +26,23 @@ def main(argv: Sequence[str] | None = None):
     """
     # Setup the experiment
     parsed_args = parse_arguments(argv)
+    fuzz_long_short_maturity_values(*parsed_args)
+
+
+def fuzz_long_short_maturity_values(num_trades: int):
+    """Does fuzzy invariant checks on closing longs and shorts past maturity.
+
+    Parameters
+    ----------
+    num_trades: int
+        Number of trades to perform during the fuzz tests.
+
+    Raises
+    ------
+    AssertionError
+        If the invariant checks fail during the tests an error will be raised.
+    """
+
     log_filename = ".logging/fuzz_long_short_maturity_values.log"
     # Parameters for local chain initialization, defines defaults in constructor
     # set a large block time so i can manually control when it ticks
@@ -36,7 +53,7 @@ def main(argv: Sequence[str] | None = None):
     signer = interactive_hyperdrive.init_agent(eth=FixedPoint(100))
 
     # Generate a list of agents that execute random trades
-    trade_list = generate_trade_list(parsed_args.num_trades, rng, interactive_hyperdrive)
+    trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
 
     # Open some trades
     trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=False)
