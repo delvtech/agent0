@@ -15,7 +15,6 @@ if TYPE_CHECKING:
         AddLiquidity,
         CloseLong,
         CloseShort,
-        CreateCheckpoint,
         OpenLong,
         OpenShort,
         RedeemWithdrawalShares,
