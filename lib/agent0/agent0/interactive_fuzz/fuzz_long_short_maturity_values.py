@@ -159,6 +159,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     return namespace_to_args(parser.parse_args())
 
 
+# pylint: disable=too-many-arguments
 def invariant_check_failed(
     open_trade_event: OpenLong | OpenShort,
     close_trade_event: CloseLong | CloseShort,
@@ -172,8 +173,14 @@ def invariant_check_failed(
 
     Arguments
     ---------
-    initial_vault_shares: FixedPoint
-        The number of vault shares owned by the Hyperdrive pool when it was deployed.
+    open_trade_event: OpenLong | OpenShort
+        The OpenLong or OpenShort event that resulted from opening the position.
+    close_trade_event: CloseLong | CloseShort
+        The CloseLong or CloseShort event that resulted from closing the position.
+    starting_checkpoint: CheckpointFP
+        The starting checkpoint.
+    maturity_checkpoint: CheckpointFP
+        The maturity checkpoint.
     random_seed: int
         Random seed used to run the experiment.
     interactive_hyperdrive: InteractiveHyperdrive
