@@ -278,7 +278,7 @@ class InteractiveHyperdrive:
         self._data_thread = None
         self._analysis_thread = None
 
-    def cleanup(self):
+    def _cleanup(self):
         """Cleans up resources used by this object."""
         self._stop_data_pipeline()
         self.db_session.close()
@@ -287,7 +287,7 @@ class InteractiveHyperdrive:
         # Attempt to close the session
         # These functions will raise errors if the session is already closed
         try:
-            self.cleanup()
+            self._cleanup()
         # Never throw exception in destructor
         except Exception:  # pylint: disable=broad-except
             pass
