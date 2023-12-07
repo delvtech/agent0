@@ -18,6 +18,7 @@ from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
 
 # Variables by themselves print out dataframes in a nice format in interactive mode
 # pylint: disable=pointless-statement
+# pylint: disable=invalid-name
 
 # %%
 # Set global defaults
@@ -118,7 +119,7 @@ if pool_state.pool_info.share_reserves < pool_state.pool_config.minimum_share_re
 
 if FAILED:
     logging.info(
-        ("random_seed = %s\npool_config = %s\n\npool_info = %s" "\n\nlatest_checkpoint = %s\n\nadditional_info = %s"),
+        "random_seed = %s\npool_config = %s\n\npool_info = %s\n\nlatest_checkpoint = %s\n\nadditional_info = %s",
         random_seed,
         json.dumps(asdict(pool_state.pool_config), indent=2, cls=ExtendedJSONEncoder),
         json.dumps(asdict(pool_state.pool_info), indent=2, cls=ExtendedJSONEncoder),

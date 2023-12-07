@@ -1,10 +1,12 @@
 """Script to verify that the state of pool reserves is invariant to the order in which positions are closed."""
 from __future__ import annotations
 
+import argparse
 import json
 import logging
+import sys
 from dataclasses import asdict
-from typing import Any
+from typing import Any, NamedTuple, Sequence
 
 import numpy as np
 import pandas as pd
@@ -17,19 +19,149 @@ from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
 
-# Set global defaults
-NUM_TRADES = 3
-NUM_PATHS_CHECKED = 10
-FAILED = False
+
+def main(argv: Sequence[str] | None = None):
+    """Primary entrypoint.
+
+    Arguments
+    ---------
+    argv: Sequence[str]
+        The argv values returned from argparser.
+    """
+    # Setup the experiment
+    parsed_args, log_filename, chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(argv)
+
+    # Generate a list of agents that execute random trades
+    trade_list = generate_trade_list(parsed_args.num_trades, rng, interactive_hyperdrive)
+
+    # Open some trades
+    trade_events = open_trades(trade_list, chain, rng, interactive_hyperdrive)
+
+    # Snapshot the chain, so we can load the snapshot & close in different orders
+    chain.save_snapshot()
+
+    # List of columns in pool info to check between the initial pool info and the latest pool info.
+    check_columns = [
+        "shorts_outstanding",
+        "withdrawal_shares_proceeds",
+        "share_price",
+        "long_exposure",
+        "bond_reserves",
+        "lp_total_supply",
+        "longs_outstanding",
+    ]
+
+    # Close the trades randomly & verify that the final state is unchanged
+    check_data: dict[str, Any] | None = None
+    for iteration in range(parsed_args.num_paths_checked):
+        print(f"{iteration=}")
+        # Load the snapshot
+        chain.load_snapshot()
+
+        # Randomly grab some trades & close them one at a time
+        close_random_trades(trade_events, rng)
+
+        # Check the reserve amounts; they should be unchanged now that all of the trades are closed
+        pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
+
+        # On first run, save final state
+        if check_data is None:
+            check_data = {}
+            pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
+            effective_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(
+                pool_state
+            )
+            check_data["initial_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
+            check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
+            check_data["effective_share_reserves"] = effective_share_reserves
+            check_data["vault_shares"] = pool_state.vault_shares
+            check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
+
+        # On subsequent run, check against the saved final state
+        else:
+            # Check values not provided in the database
+            check_data["final_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
+            # Raise an error if it failed
+            if invariant_check_failed(check_data, random_seed, interactive_hyperdrive):
+                raise AssertionError(f"Testing failed; see logs in {log_filename}")
 
 
-def setup_fuzz() -> tuple[str, LocalChain, int, Generator, InteractiveHyperdrive]:
-    """Setup the fuzz experiment.
+class Args(NamedTuple):
+    """Command line arguments for the invariant checker."""
+
+    num_trades: int
+    num_paths_checked: int
+
+
+def namespace_to_args(namespace: argparse.Namespace) -> Args:
+    """Converts argprase.Namespace to Args.
+
+    Arguments
+    ---------
+    namespace: argparse.Namespace
+        Object for storing arg attributes.
 
     Returns
     -------
-    tuple[str, LocalChain, int, Generator, InteractiveHyperdrive]
+    Args
+        Formatted arguments
+    """
+    return Args(
+        num_trades=namespace.num_trades,
+        num_paths_checked=namespace.num_paths_checked,
+    )
+
+
+def parse_arguments(argv: Sequence[str] | None = None) -> Args:
+    """Parses input arguments.
+
+    Arguments
+    ---------
+    argv: Sequence[str]
+        The argv values returned from argparser.
+
+    Returns
+    -------
+    Args
+        Formatted arguments
+    """
+    parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
+    parser.add_argument(
+        "--num_trades",
+        type=int,
+        default=5,
+        help="The number of random trades to open.",
+    )
+    parser.add_argument(
+        "--num_paths_checked",
+        type=int,
+        default=10,
+        help="The numer of independent closing paths to check.",
+    )
+    # Use system arguments if none were passed
+    if argv is None:
+        argv = sys.argv
+    # If no arguments were passed, display the help message and exit
+    if len(argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+    return namespace_to_args(parser.parse_args())
+
+
+def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, str, LocalChain, int, Generator, InteractiveHyperdrive]:
+    """Setup the fuzz experiment.
+
+    Arguments
+    ---------
+    argv: Sequence[str]
+        A sequnce containing the uri to the database server and the test epsilon.
+
+    Returns
+    -------
+    tuple[Args, str, LocalChain, int, Generator, InteractiveHyperdrive]
         A tuple containing:
+            parsed_args: Args
+                A dataclass containing the parsed command line arguments.
             log_filename: str
                 Where the log files are stored.
             chain: LocalChain
@@ -41,7 +173,7 @@ def setup_fuzz() -> tuple[str, LocalChain, int, Generator, InteractiveHyperdrive
             interactive_hyperdrive: InteractiveHyperdrive
                 An instantiated InteractiveHyperdrive object.
     """
-
+    parsed_args = parse_arguments(argv)
     log_filename = ".logging/fuzz_path_independence.log"
     setup_logging(
         log_filename=log_filename,
@@ -58,7 +190,7 @@ def setup_fuzz() -> tuple[str, LocalChain, int, Generator, InteractiveHyperdrive
     # Parameters for pool initialization.
     initial_pool_config = InteractiveHyperdrive.Config(preview_before_trade=True)
     interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
-    return log_filename, chain, random_seed, rng, interactive_hyperdrive
+    return parsed_args, log_filename, chain, random_seed, rng, interactive_hyperdrive
 
 
 def generate_trade_list(
@@ -116,6 +248,11 @@ def open_trades(
 
     Arguments
     ---------
+    trade_list: list[tuple[InteractiveHyperdriveAgent, HyperdriveActionType, FixedPoint]]
+        Each element in the returned list is a tuple containing
+            - an agent
+            - a trade for that agent
+            - the trade amount in base
     chain: LocalChain
         An instantiated LocalChain.
     rng: `Generator <https://numpy.org/doc/stable/reference/random/generator.html>`_
@@ -170,7 +307,7 @@ def close_random_trades(
             agent.close_short(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
 
 
-def check_invariants(
+def invariant_check_failed(
     state_data: dict[str, Any],
     random_seed: int,
     interactive_hyperdrive: InteractiveHyperdrive,
@@ -262,65 +399,6 @@ def check_invariants(
             ),
         )
     return failed
-
-
-def main():
-    # Setup the experiment
-    log_filename, chain, random_seed, rng, interactive_hyperdrive = setup_fuzz()
-
-    # Generate a list of agents that execute random trades
-    trade_list = generate_trade_list(NUM_TRADES, rng, interactive_hyperdrive)
-
-    # Open some trades
-    trade_events = open_trades(trade_list, chain, rng, interactive_hyperdrive)
-
-    # Snapshot the chain, so we can load the snapshot & close in different orders
-    chain.save_snapshot()
-    check_data: dict | None = None
-
-    # List of columns in pool info to check between the initial pool info and the latest pool info.
-    check_columns = [
-        "shorts_outstanding",
-        "withdrawal_shares_proceeds",
-        "share_price",
-        "long_exposure",
-        "bond_reserves",
-        "lp_total_supply",
-        "longs_outstanding",
-    ]
-
-    # Close the trades randomly & verify that the final state is unchanged
-    for iteration in range(NUM_PATHS_CHECKED):
-        print(f"{iteration=}")
-        # Load the snapshot
-        chain.load_snapshot()
-
-        # Randomly grab some trades & close them one at a time
-        close_random_trades(trade_events, rng)
-
-        # Check the reserve amounts; they should be unchanged now that all of the trades are closed
-        pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
-
-        # On first run, save final state
-        if check_data is None:
-            check_data: dict[str, Any] = {}
-            pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-            effective_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(
-                pool_state
-            )
-            check_data["initial_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
-            check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
-            check_data["effective_share_reserves"] = effective_share_reserves
-            check_data["vault_shares"] = pool_state.vault_shares
-            check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
-
-        # On subsequent run, check against the saved final state
-        else:
-            # Check values not provided in the database
-            check_data["final_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
-            failed = check_invariants(check_data, random_seed, interactive_hyperdrive)
-            if failed:
-                raise AssertionError(f"Testing failed; see logs in {log_filename}")
 
 
 if __name__ == "__main__":
