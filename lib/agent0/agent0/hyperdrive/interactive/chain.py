@@ -80,7 +80,7 @@ class Chain:
         """Kills the postgres container in this class."""
         # Runs cleanup on all deployed pools
         for pool in self._deployed_hyperdrive_pools:
-            pool.cleanup()
+            pool._cleanup()  # pylint: disable=protected-access
         self.postgres_container.kill()
 
     def __del__(self):
