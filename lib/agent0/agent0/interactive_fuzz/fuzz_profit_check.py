@@ -11,7 +11,7 @@ from hyperlogs import ExtendedJSONEncoder
 from numpy.random._generator import Generator
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.interactive_fuzz.setup_fuzz import setup_fuzz
+from agent0.interactive_fuzz import setup_fuzz
 
 
 def main():

@@ -12,10 +12,7 @@ from fixedpointmath import FixedPoint
 from hyperlogs import ExtendedJSONEncoder
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.interactive_fuzz.close_random_trades import close_random_trades
-from agent0.interactive_fuzz.generate_trade_list import generate_trade_list
-from agent0.interactive_fuzz.open_random_trades import open_random_trades
-from agent0.interactive_fuzz.setup_fuzz import setup_fuzz
+from agent0.interactive_fuzz import close_random_trades, generate_trade_list, open_random_trades, setup_fuzz
 
 
 def main(argv: Sequence[str] | None = None):
