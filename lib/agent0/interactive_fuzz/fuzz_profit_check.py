@@ -62,7 +62,8 @@ hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=trade_amount, eth=Fix
 open_long_event = hyperdrive_agent0.open_long(base=trade_amount)
 # Let some time pass, as long as it is less than a checkpoint
 chain.advance_time(
-    rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration - 1)
+    rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration - 1),
+    create_checkpoints=True,
 )
 close_long_event = hyperdrive_agent0.close_long(
     maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
@@ -95,7 +96,8 @@ trade_amount = hyperdrive_agent0.wallet.balance.amount
 open_short_event = hyperdrive_agent0.open_short(bonds=trade_amount)
 # Let some time pass, as long as it is less than a checkpoint
 chain.advance_time(
-    rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration - 1)
+    rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration - 1),
+    create_checkpoints=True,
 )
 close_short_event = hyperdrive_agent0.close_short(
     maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount

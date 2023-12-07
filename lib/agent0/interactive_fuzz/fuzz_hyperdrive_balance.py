@@ -92,7 +92,8 @@ for trade in trade_list:
 # %%
 # Advance some time
 chain.advance_time(
-    rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration - 1)
+    rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration - 1),
+    create_checkpoints=True,
 )
 
 # %%
