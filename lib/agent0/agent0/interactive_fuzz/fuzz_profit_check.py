@@ -8,7 +8,9 @@ from dataclasses import asdict
 import numpy as np
 from fixedpointmath import FixedPoint
 from hyperlogs import ExtendedJSONEncoder
+from numpy.random._generator import Generator
 
+from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.interactive_fuzz.setup_fuzz import setup_fuzz
 
 
@@ -35,10 +37,8 @@ def main():
     # Open a long
     open_long_event = long_agent.open_long(base=trade_amount)
     # Let some time pass, as long as it is less than a checkpoint
-    chain.advance_time(
-        rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration - 1),
-        create_checkpoints=True,
-    )
+    # This means that the open & close will get pro-rated to the same spot
+    advance_time_before_checkpoint(chain, rng, interactive_hyperdrive)
     # Close the long
     close_long_event = long_agent.close_long(
         maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
@@ -51,10 +51,8 @@ def main():
     trade_amount = short_agent.wallet.balance.amount
     open_short_event = short_agent.open_short(bonds=trade_amount)
     # Let some time pass, as long as it is less than a checkpoint
-    chain.advance_time(
-        rng.integers(low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration - 1),
-        create_checkpoints=True,
-    )
+    # This means that the open & close will get pro-rated to the same spot
+    advance_time_before_checkpoint(chain, rng, interactive_hyperdrive)
     # Close the short
     close_short_event = short_agent.close_short(
         maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
@@ -76,6 +74,39 @@ def main():
         chain.cleanup()
         raise AssertionError(f"Testing failed; see logs in {log_filename}")
     chain.cleanup()
+
+
+def advance_time_before_checkpoint(
+    chain: LocalChain, rng: Generator, interactive_hyperdrive: InteractiveHyperdrive
+) -> None:
+    """Advance time on the chain a random amount that is less than the next checkpoint time.
+
+    Arguments
+    ---------
+    chain: LocalChain
+        An instantiated LocalChain.
+    rng: `Generator <https://numpy.org/doc/stable/reference/random/generator.html>`_
+        The numpy Generator provides access to a wide range of distributions, and stores the random state.
+    interactive_hyperdrive: InteractiveHyperdrive
+        An instantiated InteractiveHyperdrive object.
+    """
+    current_block_time = interactive_hyperdrive.hyperdrive_interface.get_block_timestamp(
+        interactive_hyperdrive.hyperdrive_interface.get_current_block()
+    )
+    last_checkpoint_time = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id(current_block_time)
+    next_checkpoint_time = (
+        last_checkpoint_time + interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration
+    )
+    advance_upper_bound = next_checkpoint_time - current_block_time - 2  # minus 2 seconds to avoid edge cases
+    # Only advance time if the upper bound is positive
+    # Would be negative if we are already very close to the next checkpoint time
+    if advance_upper_bound >= 0:
+        checkpoint_info = chain.advance_time(
+            rng.integers(low=0, high=advance_upper_bound),
+            create_checkpoints=True,  # we don't want to create one, but only because we haven't advanced enough
+        )
+        # do a final check to make sure that the checkpoint didn't happen
+        assert len(checkpoint_info[interactive_hyperdrive]) == 0, "Checkpoint was created when it should not have been."
 
 
 def invariant_check_failed(
