@@ -9,7 +9,7 @@ import numpy as np
 from fixedpointmath import FixedPoint
 from hyperlogs import ExtendedJSONEncoder
 
-from .setup_fuzz import setup_fuzz
+from agent0.interactive_fuzz.setup_fuzz import setup_fuzz
 
 
 def main():
