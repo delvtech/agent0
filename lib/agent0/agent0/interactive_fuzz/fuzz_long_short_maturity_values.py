@@ -53,12 +53,12 @@ def main(argv: Sequence[str] | None = None):
 
     # advances time and mines a block
     current_time = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
-    chain.advance_time(position_duration + 30)
+    chain.advance_time(position_duration + 30, create_checkpoints=False)
 
     # create a checkpoint
     current_time = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
     interactive_hyperdrive.hyperdrive_interface.create_checkpoint(signer.agent)
-    chain.advance_time(extra_time)
+    chain.advance_time(extra_time, create_checkpoints=False)
 
     maturity_checkpoint = interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract.functions.getCheckpoint(
         interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id(block_timestamp=current_time)
