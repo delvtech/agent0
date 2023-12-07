@@ -56,9 +56,7 @@ def fuzz_long_short_maturity_values(num_trades: int, chain_config: LocalChain.Co
     # set a large block time so i can manually control when it ticks
     # TODO: set block time really high after contracts deployed:
     # chain_config = LocalChain.Config(block_time=1_000_000)
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
-        log_filename, chain_config=chain_config
-    )  # pylint: disable=unused-variable
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config=chain_config)
     signer = interactive_hyperdrive.init_agent(eth=FixedPoint(100))
 
     # Generate a list of agents that execute random trades
