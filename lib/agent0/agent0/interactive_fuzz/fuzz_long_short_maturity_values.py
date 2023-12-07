@@ -14,7 +14,6 @@ from hyperlogs import ExtendedJSONEncoder
 from hypertypes.fixedpoint_types import CheckpointFP
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.hyperdrive.interactive.chain import LocalChain
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort, OpenLong, OpenShort
 from agent0.interactive_fuzz.helpers import generate_trade_list, open_random_trades, setup_fuzz
 
