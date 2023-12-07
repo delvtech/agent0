@@ -62,6 +62,8 @@ class InteractiveHyperdriveAgent:
             The pool object that this agent belongs to.
         policy: HyperdrivePolicy | None
             An optional policy to attach to this agent.
+        private_key: str | None, optional
+            The private key of the associated account. Default is auto-generated.
         """
         # pylint: disable=too-many-arguments
         self._pool = pool
