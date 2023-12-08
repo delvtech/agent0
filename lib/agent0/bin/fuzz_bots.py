@@ -39,6 +39,7 @@ env_config = EnvironmentConfig(
     delete_previous_logs=True,
     halt_on_errors=False,
     crash_report_to_file=True,
+    crash_report_file_prefix="fuzz_bots",
     log_filename=".logging/debug_bots.log",
     log_level=logging.CRITICAL,
     log_to_rollbar=log_to_rollbar,

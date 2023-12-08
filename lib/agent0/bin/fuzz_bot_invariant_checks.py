@@ -18,7 +18,7 @@ from hyperlogs.rollbar_utilities import initialize_rollbar
 from web3.types import BlockData
 
 from agent0.base.config import EnvironmentConfig
-from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
+from agent0.hyperdrive.crash_report import build_crash_trade_result, get_anvil_state_dump, log_hyperdrive_crash_report
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -51,8 +51,13 @@ def main(argv: Sequence[str] | None = None) -> None:
             run_invariant_checks(latest_block, latest_block_number, interface, parsed_args.test_epsilon)
         except AssertionError as error:
             report = build_crash_trade_result(error, interface)
-            # Crash reporting already going to file in logging
-            log_hyperdrive_crash_report(report, crash_report_to_file=False, log_to_rollbar=True)
+            report.anvil_state = get_anvil_state_dump(interface.web3)
+            log_hyperdrive_crash_report(
+                report,
+                crash_report_to_file=True,
+                crash_report_file_prefix="fuzz_bots_invariant_checks",
+                log_to_rollbar=True,
+            )
 
 
 def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveInterface]:

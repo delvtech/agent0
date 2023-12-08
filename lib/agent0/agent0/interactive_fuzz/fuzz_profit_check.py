@@ -120,7 +120,9 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
             error, interactive_hyperdrive.hyperdrive_interface, agent, additional_info=additional_info
         )
         # Crash reporting already going to file in logging
-        log_hyperdrive_crash_report(report, crash_report_to_file=False, log_to_rollbar=True)
+        log_hyperdrive_crash_report(
+            report, crash_report_to_file=True, crash_report_file_prefix="fuzz_profit_check", log_to_rollbar=True
+        )
         chain.cleanup()
         raise error
     chain.cleanup()

@@ -289,6 +289,8 @@ def log_hyperdrive_crash_report(
             json.dump(dump_obj, file, indent=2, cls=ExtendedJSONEncoder)
 
     if log_to_rollbar:
+        # Don't log anvil dump state to rollbar
+        dump_obj["anvil_dump_state"] = None  # type: ignore
         logging_crash_report = json.loads(json.dumps(dump_obj, indent=2, cls=ExtendedJSONEncoder))
         log_rollbar_exception(trade_result.exception, log_level, logging_crash_report, env_details)
         if trade_result.orig_exception:

@@ -827,7 +827,9 @@ class InteractiveHyperdrive:
             # and we don't want to do it when e.g., slippage happens
             trade_result.anvil_state = get_anvil_state_dump(self.hyperdrive_interface.web3)
             # Defaults to CRITICAL
-            log_hyperdrive_crash_report(trade_result, crash_report_to_file=True)
+            log_hyperdrive_crash_report(
+                trade_result, crash_report_to_file=True, crash_report_file_prefix="interactive_hyperdrive"
+            )
             raise trade_result.exception
 
         assert trade_result.status == TradeStatus.SUCCESS
