@@ -22,6 +22,7 @@ def check_for_invalid_balance(trade_result: TradeResult) -> tuple[bool, TradeRes
         a modified trade_result that has a custom exception argument message prepended
     """
     wallet = trade_result.agent.wallet
+    assert trade_result.trade_object is not None
     trade_type = trade_result.trade_object.market_action.action_type
     trade_amount = trade_result.trade_object.market_action.trade_amount
     maturity_time = trade_result.trade_object.market_action.maturity_time

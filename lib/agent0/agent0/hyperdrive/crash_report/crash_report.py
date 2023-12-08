@@ -52,8 +52,8 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
 def build_crash_trade_result(
     exception: BaseException,
     agent: HyperdriveAgent,
-    trade_object: Trade[HyperdriveMarketAction],
     interface: HyperdriveInterface,
+    trade_object: Trade[HyperdriveMarketAction] | None = None,
 ) -> TradeResult:
     """Build the trade result object when a crash happens.
 
@@ -63,10 +63,10 @@ def build_crash_trade_result(
         The exception that was thrown
     agent: HyperdriveAgent
         Object containing a wallet address and Agent for determining trades
-    trade_object: Trade[HyperdriveMarketAction]
-        A trade provided by a HyperdriveAgent
     interface: HyperdriveInterface
         An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
+    trade_object: Trade[HyperdriveMarketAction], optional
+        A trade provided by a HyperdriveAgent. If None, won't report the trade object.
 
     Returns
     -------
@@ -312,7 +312,7 @@ def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
     }
 
 
-def _hyperdrive_trade_obj_to_dict(trade_obj: Trade[HyperdriveMarketAction]) -> dict[str, Any]:
+def _hyperdrive_trade_obj_to_dict(trade_obj: Trade[HyperdriveMarketAction] | None) -> dict[str, Any]:
     """Helper function to convert hyperdrive trade object to a dict
 
     Arguments
@@ -325,6 +325,8 @@ def _hyperdrive_trade_obj_to_dict(trade_obj: Trade[HyperdriveMarketAction]) -> d
     dict[str, Any]
         A dict ready to be converted to json
     """
+    if trade_obj is None:
+        return {}
     return {
         "market_type": trade_obj.market_type.name,
         "action_type": trade_obj.market_action.action_type.name,
