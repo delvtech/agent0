@@ -125,10 +125,8 @@ def data_analysis(
         # TODO do regular batching to sample for wallet information
         analysis_start_block = curr_start_write_block
         analysis_end_block = latest_data_block_number + 1
-        print("Running batch %s to %s", analysis_start_block, analysis_end_block)
         if not suppress_logs:
             logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
-        print(f"{analysis_start_block=}")
         data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
         curr_start_write_block = latest_data_block_number + 1
 
