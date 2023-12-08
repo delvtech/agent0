@@ -244,6 +244,7 @@ class InteractiveHyperdrive:
             target=acquire_data,
             kwargs={
                 "start_block": self._deploy_block_number,  # Start block is the block hyperdrive was deployed
+                "lookback_block_limit": 10000,
                 "eth_config": self.eth_config,
                 "postgres_config": self.postgres_config,
                 "contract_addresses": self.hyperdrive_interface.addresses,
