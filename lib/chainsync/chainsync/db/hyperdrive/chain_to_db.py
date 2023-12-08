@@ -56,6 +56,10 @@ def data_chain_to_db(interface: HyperdriveInterface, block: BlockData, session: 
     """
     pool_state = interface.get_hyperdrive_state(block)
 
+    # TODO there's a race condition here, if this script gets interrupted between
+    # intermediate results and pool info, there will be duplicate rows for e.g.,
+    # add_checkpoint_infos, wallet_deltas, etc.
+
     ## Query and add block_checkpoint_info
     checkpoint_dict = asdict(pool_state.checkpoint)
     checkpoint_dict["block_number"] = int(pool_state.block_number)
