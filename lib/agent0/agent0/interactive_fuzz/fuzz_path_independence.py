@@ -259,6 +259,7 @@ def invariant_check(
         failed = True
 
     if failed:
+        logging.critical("\n".join(exception_message))
         raise AssertionError(*exception_message)
 
 

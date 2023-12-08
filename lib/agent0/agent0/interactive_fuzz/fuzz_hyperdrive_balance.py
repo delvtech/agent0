@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from typing import NamedTuple, Sequence
 
@@ -178,6 +179,7 @@ def invariant_check(
         failed = True
 
     if failed:
+        logging.critical("\n".join(exception_message))
         raise AssertionError(*exception_message)
 
 

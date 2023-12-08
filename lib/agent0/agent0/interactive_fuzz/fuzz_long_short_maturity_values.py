@@ -276,6 +276,7 @@ def invariant_check(
         raise ValueError("Invalid types for open/close trade events")
 
     if failed:
+        logging.critical("\n".join(exception_message))
         raise AssertionError(*exception_message)
 
 
