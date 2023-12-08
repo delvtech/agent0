@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Type
 
 import pytest
-from ethpy.hyperdrive.api import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade

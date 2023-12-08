@@ -1,6 +1,6 @@
 """Script for gathering all events emitted from the hyperdrive contract since the beginning of the chain."""
 import pandas as pd
-from ethpy.hyperdrive.api import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 
 # This is meant to be a standalone script, no need for global upper_case naming style
 # pylint: disable=invalid-name

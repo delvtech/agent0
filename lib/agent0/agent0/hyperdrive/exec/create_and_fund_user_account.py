@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from eth_account.account import Account
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
-from ethpy.hyperdrive.api import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 
 from agent0 import AccountKeyConfig
 from agent0.base.make_key import make_private_key

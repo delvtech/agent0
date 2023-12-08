@@ -24,7 +24,7 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
-    from ethpy.hyperdrive.api import HyperdriveInterface
+    from ethpy.hyperdrive.interface import HyperdriveInterface
     from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 
 

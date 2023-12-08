@@ -6,7 +6,7 @@ import random
 import sys
 
 import rollbar
-from ethpy.hyperdrive.api import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hyperlogs.rollbar_utilities import initialize_rollbar
 from web3.types import RPCEndpoint

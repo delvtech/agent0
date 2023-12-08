@@ -13,7 +13,7 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive.api import HyperdriveInterface
+    from ethpy.hyperdrive.interface import HyperdriveInterface
     from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet

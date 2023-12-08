@@ -12,7 +12,7 @@ from typing import NamedTuple, Sequence
 
 from eth_typing import BlockNumber
 from ethpy import build_eth_config
-from ethpy.hyperdrive.api import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from hyperlogs import ExtendedJSONEncoder, setup_logging

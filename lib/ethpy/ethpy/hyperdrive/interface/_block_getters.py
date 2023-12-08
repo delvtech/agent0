@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from eth_typing import BlockNumber
     from web3.types import BlockData, BlockIdentifier, Timestamp
 
-    from .api import HyperdriveInterface
+    from .interface import HyperdriveInterface
 
 
 def _get_block(interface: HyperdriveInterface, block_identifier: BlockIdentifier) -> BlockData:

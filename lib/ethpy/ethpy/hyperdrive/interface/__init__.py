@@ -1,2 +1,2 @@
 """High-level interface for the Hyperdrive market."""
-from .api import HyperdriveInterface
+from .interface import HyperdriveInterface
