@@ -77,24 +77,18 @@ def acquire_data(
     # Get last entry of pool info in db
     data_latest_block_number = get_latest_block_number_from_pool_info_table(db_session)
     # Using max of latest block in database or specified start block
-    block_number: BlockNumber = BlockNumber(max(start_block, data_latest_block_number))
-    # Make sure to not grab current block, as the current block is subject to change
-    # Current block is still being built
-    latest_mined_block = hyperdrive.get_block_number(hyperdrive.get_current_block())
-    lookback_block_limit = BlockNumber(lookback_block_limit)
-    if (latest_mined_block - block_number) > lookback_block_limit:
-        block_number = BlockNumber(latest_mined_block - lookback_block_limit)
+    curr_write_block = max(start_block, data_latest_block_number + 1)
+
+    latest_mined_block = int(hyperdrive.get_block_number(hyperdrive.get_current_block()))
+    if (latest_mined_block - curr_write_block) > lookback_block_limit:
+        curr_write_block = latest_mined_block - lookback_block_limit
         logging.warning(
             "Starting block is past lookback block limit, starting at block %s",
-            block_number,
+            curr_write_block,
         )
 
     ## Collect initial data
     init_data_chain_to_db(hyperdrive, db_session)
-    # This if statement executes only on initial run (based on data_latest_block_number check),
-    # and if the chain has executed until start_block (based on latest_mined_block check)
-    if data_latest_block_number < block_number < latest_mined_block:
-        data_chain_to_db(hyperdrive, hyperdrive.get_block(block_number), db_session)
 
     # Main data loop
     # monitor for new blocks & add pool info per block
@@ -103,7 +97,7 @@ def acquire_data(
     while True:
         latest_mined_block = hyperdrive.web3.eth.get_block_number()
         # Only execute if we are on a new block
-        if latest_mined_block <= block_number:
+        if latest_mined_block < curr_write_block:
             exit_callable = False
             if exit_callback_fn is not None:
                 exit_callable = exit_callback_fn()
@@ -112,7 +106,7 @@ def acquire_data(
             time.sleep(_SLEEP_AMOUNT)
             continue
         # Backfilling for blocks that need updating
-        for block_int in range(block_number + 1, latest_mined_block + 1):
+        for block_int in range(curr_write_block, latest_mined_block + 1):
             block_number: BlockNumber = BlockNumber(block_int)
             # Only print every 10 blocks
             if not suppress_logs and (block_number % 10) == 0:
@@ -131,6 +125,7 @@ def acquire_data(
                 )
                 continue
             data_chain_to_db(hyperdrive, hyperdrive.get_block(block_number), db_session)
+        curr_write_block = latest_mined_block + 1
 
     # Clean up resources on clean exit
     # If this function made the db session, we close it here
