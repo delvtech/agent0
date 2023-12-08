@@ -1,5 +1,6 @@
 """Tests for hyperdrive/api.py."""
 from __future__ import annotations
+from copy import deepcopy
 
 from dataclasses import fields
 from typing import cast
@@ -82,11 +83,11 @@ class TestHyperdriveInterface:
         bond_reserves: FixedPoint = pool_info.bond_reserves
         # test spot price
         spot_price = ((init_share_price * share_reserves) / bond_reserves) ** time_stretch
-        assert abs(spot_price - interface.calc_spot_price()) <= FixedPoint(scaled_value=1)
+        assert abs(spot_price - interface.calc_spot_price()) <= FixedPoint(1e-18)
         # test fixed rate (rounding issues can cause it to be off by 1e-18)
         # TODO: This should be exact up to 1e-18, but is not
         fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * interface.calc_position_duration_in_years())
-        assert abs(fixed_rate - interface.calc_fixed_rate()) <= FixedPoint(scaled_value=100)
+        assert abs(fixed_rate - interface.calc_fixed_rate()) <= FixedPoint(1e-16)
 
     def test_misc(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Miscellaneous tests only verify that the attributes exist and functions can be called."""
@@ -100,36 +101,29 @@ class TestHyperdriveInterface:
         _ = interface.calc_max_long(FixedPoint(1000))
         _ = interface.calc_max_short(FixedPoint(1000))
 
+    def test_deployed_fixed_rate(self, local_hyperdrive_pool: DeployedHyperdrivePool):
+        """Check that the bonds calculated actually hit the target rate."""
+        interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
+        assert abs(interface.calc_fixed_rate() - FixedPoint(0.05)) < FixedPoint(1e-16)
+
     def test_bonds_given_shares_and_rate(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Check that the bonds calculated actually hit the target rate."""
-        # pylint: disable=too-many-locals
         interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
-        # get pool config variables
-        pool_config = interface.pool_config
-        init_share_price: FixedPoint = pool_config.initial_share_price
-        time_stretch: FixedPoint = pool_config.time_stretch
-        position_duration_years = pool_config.position_duration / FixedPoint(60 * 60 * 24 * 365)
-        # get pool info variables
-        pool_info = interface.current_pool_state.pool_info
-        share_reserves: FixedPoint = pool_info.share_reserves
-        share_adjustment: FixedPoint = pool_info.share_adjustment
-        effective_share_reserves = share_reserves - share_adjustment
-        bond_reserves: FixedPoint = pool_info.bond_reserves
-        # check current rate
-        spot_price = ((init_share_price * effective_share_reserves) / bond_reserves) ** time_stretch
-        fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * position_duration_years)
-        assert abs(fixed_rate - FixedPoint(0.05)) < FixedPoint(scaled_value=100)
+
+        # get pool state so we can modify them to run what-if scenarios
+        pool_state = deepcopy(interface.current_pool_state)
+        pool_info = pool_state.pool_info
+
         # test hitting target of 10%
         target_apr = FixedPoint("0.10")
-        bonds_needed = interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
-        spot_price = ((init_share_price * effective_share_reserves) / bonds_needed) ** time_stretch
-        fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * position_duration_years)
+        pool_info.bond_reserves = interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
+        fixed_rate = interface.calc_fixed_rate(pool_state=pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
+
         # test hitting target of 1%
         target_apr = FixedPoint("0.01")
-        bonds_needed = interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
-        spot_price = ((init_share_price * effective_share_reserves) / bonds_needed) ** time_stretch
-        fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * position_duration_years)
+        pool_info.bond_reserves = interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
+        fixed_rate = interface.calc_fixed_rate(pool_state=pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
 
     def test_deployed_values(self, local_hyperdrive_pool: DeployedHyperdrivePool):
