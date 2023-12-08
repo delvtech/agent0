@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from ethpy.base import retry_call
 from ethpy.hyperdrive import ReceiptBreakdown
-from ethpy.hyperdrive.api import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 from web3.types import Nonce
 
 from agent0.base import Quantity, TokenType, Trade

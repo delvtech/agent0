@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from ethpy.base import fetch_contract_transactions_for_block
-from ethpy.hyperdrive.api import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3.types import BlockData

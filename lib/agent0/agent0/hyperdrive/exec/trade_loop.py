@@ -5,7 +5,7 @@ import asyncio
 import logging
 from datetime import datetime
 
-from ethpy.hyperdrive.api import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 from web3 import Web3
 from web3.types import RPCEndpoint
 

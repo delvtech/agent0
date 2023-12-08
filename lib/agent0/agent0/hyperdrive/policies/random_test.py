@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, cast
 import pytest
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.hyperdrive.api import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 

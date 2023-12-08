@@ -5,7 +5,7 @@ import logging
 from typing import TypeVar
 
 from eth_account.signers.local import LocalAccount
-from ethpy.hyperdrive.api import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade

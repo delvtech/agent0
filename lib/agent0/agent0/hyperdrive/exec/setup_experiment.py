@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
-from ethpy.hyperdrive.api import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 from hyperlogs import setup_logging
 
 from agent0 import AccountKeyConfig

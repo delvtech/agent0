@@ -12,7 +12,7 @@ from chainsync.db.api import balance_of, register_username
 from eth_typing import BlockNumber
 from ethpy import build_eth_config
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
-from ethpy.hyperdrive.api import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 

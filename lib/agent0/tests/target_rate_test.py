@@ -9,7 +9,7 @@ import pytest
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
-from ethpy.hyperdrive.api.api import HyperdriveInterface
+from ethpy.hyperdrive.interface.interface import HyperdriveInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider

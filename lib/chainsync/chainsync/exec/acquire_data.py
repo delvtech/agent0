@@ -15,7 +15,7 @@ from chainsync.db.hyperdrive import (
 from eth_typing import BlockNumber
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses
-from ethpy.hyperdrive.api import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1

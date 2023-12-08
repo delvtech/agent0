@@ -20,7 +20,7 @@ from ethpy import EthConfig
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 
-from .api import HyperdriveInterface
+from .interface import HyperdriveInterface
 
 
 class TestHyperdriveInterface:
