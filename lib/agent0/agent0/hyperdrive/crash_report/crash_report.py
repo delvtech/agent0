@@ -63,13 +63,13 @@ def build_crash_trade_result(
     ---------
     exception: BaseException
         The exception that was thrown
-    agent: HyperdriveAgent
-        Object containing a wallet address and Agent for determining trades
     interface: HyperdriveInterface
         An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
-    trade_object: Trade[HyperdriveMarketAction], optional
+    agent: HyperdriveAgent | None, optional.
+        Object containing a wallet address and Agent for determining trades. If None, won't report the agent.
+    trade_object: Trade[HyperdriveMarketAction] | None, optional
         A trade provided by a HyperdriveAgent. If None, won't report the trade object.
-    additional_info: dict[str, Any], optional
+    additional_info: dict[str, Any] | None, optional
         Additional information used for crash reporting, optional
 
     Returns
