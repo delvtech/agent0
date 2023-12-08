@@ -12,13 +12,6 @@ from agent0.interactive_fuzz import (
 )
 
 
-def _filename_to_payload(log_filename: str):
-    out = {}
-    with open(log_filename, "r", encoding="utf-8") as f:
-        out["logs"] = f.read()
-    return out
-
-
 def main():
     """Runs all fuzz tests"""
     initialize_rollbar("interactivefuzz")
