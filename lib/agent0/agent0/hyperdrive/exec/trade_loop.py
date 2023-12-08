@@ -114,6 +114,7 @@ def check_result(
             # If successful, log the successful trade
             case TradeStatus.SUCCESS:
                 assert trade_result.trade_object is not None
+                assert trade_result.agent is not None
                 logging.info(
                     "AGENT %s (%s) performed %s for %g",
                     str(trade_result.agent.checksum_address),

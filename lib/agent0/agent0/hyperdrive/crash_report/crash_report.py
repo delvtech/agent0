@@ -219,6 +219,11 @@ def log_hyperdrive_crash_report(
     if trade_result.orig_exception is not None:
         orig_traceback = trade_result.orig_exception.__traceback__
 
+    if trade_result.agent is not None:
+        agent_wallet = trade_result.agent.wallet
+    else:
+        agent_wallet = None
+
     dump_obj = OrderedDict(
         [
             ("log_time", time_str),
@@ -228,7 +233,7 @@ def log_hyperdrive_crash_report(
             ("orig_exception", trade_result.orig_exception),
             ("trade", _hyperdrive_trade_obj_to_dict(trade_result.trade_object)),
             ("contract_call", trade_result.contract_call),
-            ("wallet", _hyperdrive_wallet_to_dict(trade_result.agent.wallet)),
+            ("wallet", _hyperdrive_wallet_to_dict(agent_wallet)),
             ("agent_info", _hyperdrive_agent_to_dict(trade_result.agent)),
             # TODO Once pool_info and pool_config are objects,
             # we need to add a conversion function to convert to dict
@@ -289,7 +294,7 @@ def log_hyperdrive_crash_report(
             log_rollbar_exception(trade_result.orig_exception, log_level, logging_crash_report, env_details)
 
 
-def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
+def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet | None) -> dict[str, Any]:
     """Helper function to convert hyperdrive wallet object to a dict keyed by token, valued by amount
 
     Arguments
@@ -304,6 +309,8 @@ def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet) -> dict[str, Any]:
         In the case of longs and shorts, valued by a dictionary keyed by maturity_time and balance
     """
     # Keeping amounts here as FixedPoints for json to handle
+    if wallet is None:
+        return {}
     return {
         wallet.balance.unit.value: wallet.balance.amount,
         "longs": [
@@ -343,7 +350,9 @@ def _hyperdrive_trade_obj_to_dict(trade_obj: Trade[HyperdriveMarketAction] | Non
     }
 
 
-def _hyperdrive_agent_to_dict(agent: HyperdriveAgent):
+def _hyperdrive_agent_to_dict(agent: HyperdriveAgent | None):
+    if agent is None:
+        return {}
     return {"address": agent.checksum_address, "policy": agent.policy.name}
 
 
