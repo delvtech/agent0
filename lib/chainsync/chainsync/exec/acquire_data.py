@@ -66,7 +66,7 @@ def acquire_data(
     # TODO implement logger instead of global logging to suppress based on module name.
 
     ## Initialization
-    hyperdrive = HyperdriveInterface(eth_config, contract_addresses)
+    interface = HyperdriveInterface(eth_config, contract_addresses)
     # postgres session
     db_session_init = False
     if db_session is None:
@@ -79,7 +79,7 @@ def acquire_data(
     # Using max of latest block in database or specified start block
     curr_write_block = max(start_block, data_latest_block_number + 1)
 
-    latest_mined_block = int(hyperdrive.get_block_number(hyperdrive.get_current_block()))
+    latest_mined_block = int(interface.get_block_number(interface.get_current_block()))
     if (latest_mined_block - curr_write_block) > lookback_block_limit:
         curr_write_block = latest_mined_block - lookback_block_limit
         logging.warning(
@@ -88,14 +88,14 @@ def acquire_data(
         )
 
     ## Collect initial data
-    init_data_chain_to_db(hyperdrive, db_session)
+    init_data_chain_to_db(interface, db_session)
 
     # Main data loop
     # monitor for new blocks & add pool info per block
     if not suppress_logs:
         logging.info("Monitoring for pool info updates...")
     while True:
-        latest_mined_block = hyperdrive.web3.eth.get_block_number()
+        latest_mined_block = interface.web3.eth.get_block_number()
         # Only execute if we are on a new block
         if latest_mined_block < curr_write_block:
             exit_callable = False
@@ -124,7 +124,7 @@ def acquire_data(
                     latest_mined_block,
                 )
                 continue
-            data_chain_to_db(hyperdrive, hyperdrive.get_block(block_number), db_session)
+            data_chain_to_db(interface, interface.get_block(block_number), db_session)
         curr_write_block = latest_mined_block + 1
 
     # Clean up resources on clean exit
