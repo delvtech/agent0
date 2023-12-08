@@ -178,6 +178,7 @@ def build_crash_trade_result(
     return trade_result
 
 
+# pylint: disable=too-many-locals
 def log_hyperdrive_crash_report(
     trade_result: TradeResult,
     log_level: int | None = None,
