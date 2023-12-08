@@ -196,6 +196,12 @@ class Chain:
                 assert time_after_checkpoints is not None
                 offset = time_after_checkpoints - time_before_checkpoints
 
+                # TODO advancing times can mine lots of blocks and make the data pipeline fall behind
+                # hence, we explicitly wait for db to catch up here to slow down this function
+                # Need a way to speed the data pipeline up or do this smarter.
+                for pool in self._deployed_hyperdrive_pools:
+                    pool._ensure_data_caught_up()  # pylint: disable=protected-access
+
             # Final advance time to advance the remainder
             # Best effort, if offset is larger than the remainder, don't advance time again.
             if last_advance_time - offset > 0:

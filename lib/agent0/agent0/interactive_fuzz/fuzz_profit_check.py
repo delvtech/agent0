@@ -2,19 +2,19 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import sys
-from dataclasses import asdict
-from typing import NamedTuple, Sequence
+from typing import Any, NamedTuple, Sequence
 
 import numpy as np
 from fixedpointmath import FixedPoint
-from hyperlogs import ExtendedJSONEncoder
 from numpy.random._generator import Generator
 
+from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.interactive_fuzz.helpers import setup_fuzz
+
+# pylint: disable=too-many-locals
 
 
 def main(argv: Sequence[str] | None = None):
@@ -29,13 +29,16 @@ def main(argv: Sequence[str] | None = None):
     fuzz_profit_check(*parsed_args)
 
 
-def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
+def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdout: bool = False):
     """Fuzzes invariant checks for profit from long and short positions.
 
     Parameters
     ----------
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
+    log_to_stdout: bool, optional
+        If True, log to stdout in addition to a file.
+        Defaults to False.
 
     Raises
     ------
@@ -45,7 +48,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
 
     # Setup the environment
     log_filename = ".logging/fuzz_profit_check.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout)
 
     # Get a random trade amount
     trade_amount = FixedPoint(
@@ -62,11 +65,14 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
     # Generate funded trading agent
     long_agent = interactive_hyperdrive.init_agent(base=trade_amount, eth=FixedPoint(100), name="alice")
     # Open a long
+    logging.info("Open a long...")
     open_long_event = long_agent.open_long(base=trade_amount)
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
+    logging.info("Advance time...")
     advance_time_before_checkpoint(chain, rng, interactive_hyperdrive)
     # Close the long
+    logging.info("Close the long...")
     close_long_event = long_agent.close_long(
         maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
     )
@@ -75,16 +81,20 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
     short_agent = interactive_hyperdrive.init_agent(base=trade_amount, eth=FixedPoint(100), name="bob")
     # Open a short
     # Set trade amount to the new wallet position (due to losing money from the previous open/close)
+    logging.info("Open a short...")
     trade_amount = short_agent.wallet.balance.amount
     open_short_event = short_agent.open_short(bonds=trade_amount)
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
+    logging.info("Advance time...")
     advance_time_before_checkpoint(chain, rng, interactive_hyperdrive)
     # Close the short
+    logging.info("Close the short...")
     close_short_event = short_agent.close_short(
         maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
     )
 
+    logging.info("Check invariants...")
     # Ensure that the prior trades did not result in a profit
     check_data = {
         "trade_amount": trade_amount,
@@ -93,10 +103,28 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
         "long_events": {"open": open_long_event, "close": close_long_event},
         "short_events": {"open": open_short_event, "close": close_short_event},
     }
-    if invariant_check_failed(check_data, random_seed, interactive_hyperdrive, chain):
+    try:
+        invariant_check(check_data)
+    except AssertionError as error:
+        dump_state_dir = chain.save_state(save_prefix="fuzz_profit_check")
+        additional_info = {
+            "fuzz_random_seed": random_seed,
+            "dump_state_dir": dump_state_dir,
+        }
+        # TODO do better checking here or make agent optional in build_crash_trade_result
+        if "LONG" in error.args[0]:
+            agent = long_agent.agent
+        else:
+            agent = short_agent.agent
+        report = build_crash_trade_result(
+            error, agent, interactive_hyperdrive.hyperdrive_interface, additional_info=additional_info
+        )
+        # Crash reporting already going to file in logging
+        log_hyperdrive_crash_report(report, crash_report_to_file=False, log_to_rollbar=True)
         chain.cleanup()
-        raise AssertionError(f"Testing failed; see logs in {log_filename}")
+        raise error
     chain.cleanup()
+    logging.info("Test passed!")
 
 
 def advance_time_before_checkpoint(
@@ -128,7 +156,7 @@ def advance_time_before_checkpoint(
             rng.integers(low=0, high=advance_upper_bound),
             create_checkpoints=True,  # we don't want to create one, but only because we haven't advanced enough
         )
-        # do a final check to make sure that the checkpoint didn't happen
+        # Do a final check to make sure that the checkpoint didn't happen
         assert len(checkpoint_info[interactive_hyperdrive]) == 0, "Checkpoint was created when it should not have been."
 
 
@@ -136,6 +164,7 @@ class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
     chain_config: LocalChain.Config
+    log_to_stdout: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -153,6 +182,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     """
     return Args(
         chain_config=LocalChain.Config(chain_port=namespace.chain_port),
+        log_to_stdout=namespace.log_to_stdout,
     )
 
 
@@ -176,98 +206,70 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         default=10000,
         help="The number of random trades to open.",
     )
+    parser.add_argument(
+        "--log_to_stdout",
+        type=bool,
+        default=False,
+        help="If True, log to stdout in addition to a file.",
+    )
     # Use system arguments if none were passed
     if argv is None:
         argv = sys.argv
     return namespace_to_args(parser.parse_args())
 
 
-def invariant_check_failed(
-    check_data,
-    random_seed,
-    interactive_hyperdrive,
-    chain: LocalChain,
-):
+def invariant_check(
+    check_data: dict[str, Any],
+) -> None:
     """Check the pool state invariants.
 
     Arguments
     ---------
     check_data: dict[str, Any]
         The trade data to check.
-    random_seed: int
-        Random seed used to run the experiment.
-    interactive_hyperdrive: InteractiveHyperdrive
-        An instantiated InteractiveHyperdrive object.
-    chain: LocalChain
-        An instantiated LocalChain object.
-
-    Returns
-    -------
-    bool
-        If true, at least one of the checks failed.
     """
     failed = False
-    if check_data["long_events"]["close"].base_amount >= check_data["long_events"]["open"].base_amount:
-        logging.critical(
-            (
-                "LONG: Amount returned on closing was too large.\n"
-                "base_amount_returned=%s should not be >= base_amount_proided=%s"
-            ),
-            check_data["long_events"]["close"].base_amount,
-            check_data["long_events"]["open"].base_amount,
+    exception_message: list[str] = ["Fuzz Profit Check Invariant Check"]
+
+    base_amount_returned = check_data["long_events"]["close"].base_amount
+    base_amount_provided = check_data["long_events"]["open"].base_amount
+    if base_amount_returned >= base_amount_provided:
+        exception_message.append(
+            f"LONG: Amount returned on closing was too large.\n"
+            f"{base_amount_returned=} should not be >= {base_amount_provided=}"
         )
         failed = True
-    if check_data["long_agent"].wallet.balance.amount >= check_data["trade_amount"]:
-        logging.critical(
-            "LONG: Agent made a profit when the should not have.\nagent_balance=%s should not be >= trade_amount=%s",
-            check_data["long_agent"].wallet.balance.amount,
-            check_data["trade_amount"],
+
+    agent_balance = check_data["long_agent"].wallet.balance.amount
+    trade_amount = check_data["trade_amount"]
+    if agent_balance >= trade_amount:
+        exception_message.append(
+            f"LONG: Agent made a profit when the should not have.\n"
+            f"{agent_balance=} should not be >= {trade_amount=}",
         )
         failed = True
-    if check_data["short_events"]["close"].base_amount >= check_data["short_events"]["open"].base_amount:
-        logging.critical(
-            (
-                "SHORT: Amount returned on closing was too large.\n"
-                "base_amount_returned=%s should not be >= base_amount_proided=%s"
-            ),
-            check_data["short_events"]["close"].base_amount,
-            check_data["short_events"]["open"].base_amount,
+
+    base_amount_returned = check_data["short_events"]["close"].base_amount
+    base_amount_provided = check_data["short_events"]["open"].base_amount
+    if base_amount_returned >= base_amount_provided:
+        exception_message.append(
+            f"SHORT: Amount returned on closing was too large.\n"
+            f"{base_amount_returned=} should not be >= {base_amount_provided=}"
         )
         failed = True
-    if check_data["short_agent"].wallet.balance.amount >= check_data["trade_amount"]:
-        logging.critical(
-            "SHORT: Agent made a profit when the should not have.\nagent_balance=%s should not be >= trade_amount=%s",
-            check_data["short_agent"].wallet.balance.amount,
-            check_data["trade_amount"],
+
+    agent_balance = check_data["short_agent"].wallet.balance.amount
+    trade_amount = check_data["trade_amount"]
+    if agent_balance >= trade_amount:
+        exception_message.append(
+            f"SHORT: Agent made a profit when the should not have.\n"
+            f"{agent_balance=} should not be >= {trade_amount=}"
         )
         failed = True
 
     if failed:
-        dump_state_dir = chain.save_state(save_prefix="fuzz_profit_check")
-
-        pool_state = interactive_hyperdrive.hyperdrive_interface.current_pool_state
-        logging.info(
-            "random_seed = %s\npool_config = %s\n\npool_info = %s\n\nlatest_checkpoint = %s\n\nadditional_info = %s",
-            random_seed,
-            json.dumps(asdict(pool_state.pool_config), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(asdict(pool_state.pool_info), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(asdict(pool_state.checkpoint), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(
-                {
-                    "dump_state_dir": dump_state_dir,
-                    "hyperdrive_address": interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract.address,
-                    "base_token_address": interactive_hyperdrive.hyperdrive_interface.base_token_contract.address,
-                    "spot_price": interactive_hyperdrive.hyperdrive_interface.calc_spot_price(pool_state),
-                    "fixed_rate": interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate(pool_state),
-                    "variable_rate": pool_state.variable_rate,
-                    "vault_shares": pool_state.vault_shares,
-                },
-                indent=2,
-                cls=ExtendedJSONEncoder,
-            ),
-        )
-
-    return failed
+        logging.critical("\n".join(exception_message))
+        raise AssertionError(*exception_message)
 
 
 if __name__ == "__main__":

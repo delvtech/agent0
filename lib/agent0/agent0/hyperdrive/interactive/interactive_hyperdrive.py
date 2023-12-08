@@ -244,11 +244,13 @@ class InteractiveHyperdrive:
             target=acquire_data,
             kwargs={
                 "start_block": self._deploy_block_number,  # Start block is the block hyperdrive was deployed
+                "lookback_block_limit": 10000,
                 "eth_config": self.eth_config,
                 "postgres_config": self.postgres_config,
                 "contract_addresses": self.hyperdrive_interface.addresses,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
+                "suppress_logs": True,
             },
         )
         self._analysis_thread = Thread(
@@ -260,6 +262,7 @@ class InteractiveHyperdrive:
                 "contract_addresses": self.hyperdrive_interface.addresses,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
+                "suppress_logs": True,
             },
         )
         self._data_thread.start()

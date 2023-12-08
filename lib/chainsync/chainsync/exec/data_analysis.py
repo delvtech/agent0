@@ -16,15 +16,17 @@ from chainsync.db.hyperdrive import (
     get_pool_config,
 )
 from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri, get_web3_and_hyperdrive_contracts
+from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from ethpy.hyperdrive.api import HyperdriveInterface
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
 
 
-# Lots of arguments
+# TODO cleanup
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
+# pylint: disable=too-many-branches
 def data_analysis(
     start_block: int = 0,
     eth_config: EthConfig | None = None,
@@ -33,6 +35,7 @@ def data_analysis(
     contract_addresses: HyperdriveAddresses | None = None,
     exit_on_catch_up: bool = False,
     exit_callback_fn: Callable[[], bool] | None = None,
+    suppress_logs: bool = False,
 ):
     """Execute the data acquisition pipeline.
 
@@ -57,7 +60,11 @@ def data_analysis(
         A function that returns a boolean to call to determine if the script should exit.
         The function should return False if the script should continue, or True if the script should exit.
         Defaults to not set.
+    suppress_logs: bool, optional
+        If true, will suppress info logging from this function. Defaults to False.
     """
+    # TODO implement logger instead of global logging to suppress based on module name.
+
     ## Initialization
     # eth config
     if eth_config is None:
@@ -74,14 +81,17 @@ def data_analysis(
     if contract_addresses is None:
         contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
 
+    # create hyperdrive interface
+    interface = HyperdriveInterface(eth_config, contract_addresses)
+
     # Get hyperdrive contract
-    _, _, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
+    hyperdrive_contract = interface.hyperdrive_contract
 
     ## Get starting point for restarts
     analysis_latest_block_number = get_latest_block_number_from_analysis_table(db_session)
 
     # Using max of latest block in database or specified start block
-    block_number = max(start_block, analysis_latest_block_number)
+    curr_start_write_block = max(start_block, analysis_latest_block_number + 1)
 
     # Get pool config
     # TODO this likely should return a pd.Series, not dataframe
@@ -101,11 +111,12 @@ def data_analysis(
 
     # Main data loop
     # monitor for new blocks & add pool info per block
-    logging.info("Monitoring database for updates...")
+    if not suppress_logs:
+        logging.info("Monitoring database for updates...")
     while True:
         latest_data_block_number = get_latest_data_block(db_session)
         # Only execute if we are on a new block
-        if latest_data_block_number <= block_number:
+        if latest_data_block_number < curr_start_write_block:
             exit_callable = False
             if exit_callback_fn is not None:
                 exit_callable = exit_callback_fn()
@@ -114,12 +125,14 @@ def data_analysis(
             time.sleep(_SLEEP_AMOUNT)
             continue
         # Does batch analysis on range(analysis_start_block, latest_data_block_number) blocks
+        # i.e., [start_block, end_block)
         # TODO do regular batching to sample for wallet information
-        analysis_start_block = block_number + 1
+        analysis_start_block = curr_start_write_block
         analysis_end_block = latest_data_block_number + 1
-        logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
+        if not suppress_logs:
+            logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
         data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
-        block_number = latest_data_block_number
+        curr_start_write_block = latest_data_block_number + 1
 
     # Clean up resources on clean exit
     # If this function made the db session, we close it here
