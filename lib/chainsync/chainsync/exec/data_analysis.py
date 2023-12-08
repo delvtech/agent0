@@ -22,9 +22,10 @@ from sqlalchemy.orm import Session
 _SLEEP_AMOUNT = 1
 
 
-# Lots of arguments
+# TODO cleanup
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
+# pylint: disable=too-many-branches
 def data_analysis(
     start_block: int = 0,
     eth_config: EthConfig | None = None,
@@ -33,6 +34,7 @@ def data_analysis(
     contract_addresses: HyperdriveAddresses | None = None,
     exit_on_catch_up: bool = False,
     exit_callback_fn: Callable[[], bool] | None = None,
+    suppress_logs: bool = False,
 ):
     """Execute the data acquisition pipeline.
 
@@ -57,7 +59,11 @@ def data_analysis(
         A function that returns a boolean to call to determine if the script should exit.
         The function should return False if the script should continue, or True if the script should exit.
         Defaults to not set.
+    suppress_logs: bool, optional
+        If true, will suppress info logging from this function. Defaults to False.
     """
+    # TODO implement logger instead of global logging to suppress based on module name.
+
     ## Initialization
     # eth config
     if eth_config is None:
@@ -101,7 +107,8 @@ def data_analysis(
 
     # Main data loop
     # monitor for new blocks & add pool info per block
-    logging.info("Monitoring database for updates...")
+    if not suppress_logs:
+        logging.info("Monitoring database for updates...")
     while True:
         latest_data_block_number = get_latest_data_block(db_session)
         # Only execute if we are on a new block
@@ -117,7 +124,8 @@ def data_analysis(
         # TODO do regular batching to sample for wallet information
         analysis_start_block = block_number + 1
         analysis_end_block = latest_data_block_number + 1
-        logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
+        if not suppress_logs:
+            logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
         data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
         block_number = latest_data_block_number
 

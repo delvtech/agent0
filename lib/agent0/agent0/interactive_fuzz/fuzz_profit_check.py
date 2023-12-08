@@ -2,19 +2,18 @@
 from __future__ import annotations
 
 import argparse
-import json
-import logging
 import sys
-from dataclasses import asdict
-from typing import NamedTuple, Sequence
+from typing import Any, NamedTuple, Sequence
 
 import numpy as np
 from fixedpointmath import FixedPoint
-from hyperlogs import ExtendedJSONEncoder
 from numpy.random._generator import Generator
 
+from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.interactive_fuzz.helpers import setup_fuzz
+
+# pylint: disable=too-many-locals
 
 
 def main(argv: Sequence[str] | None = None):
@@ -93,9 +92,26 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
         "long_events": {"open": open_long_event, "close": close_long_event},
         "short_events": {"open": open_short_event, "close": close_short_event},
     }
-    if invariant_check_failed(check_data, random_seed, interactive_hyperdrive, chain):
+    try:
+        invariant_check(check_data)
+    except AssertionError as error:
+        dump_state_dir = chain.save_state(save_prefix="fuzz_profit_check")
+        additional_info = {
+            "fuzz_random_seed": random_seed,
+            "dump_state_dir": dump_state_dir,
+        }
+        # TODO do better checking here or make agent optional in build_crash_trade_result
+        if "LONG" in error.args[0]:
+            agent = long_agent.agent
+        else:
+            agent = short_agent.agent
+        report = build_crash_trade_result(
+            error, agent, interactive_hyperdrive.hyperdrive_interface, additional_info=additional_info
+        )
+        # Crash reporting already going to file in logging
+        log_hyperdrive_crash_report(report, crash_report_to_file=False, log_to_rollbar=True)
         chain.cleanup()
-        raise AssertionError(f"Testing failed; see logs in {log_filename}")
+        raise error
     chain.cleanup()
 
 
@@ -182,92 +198,57 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     return namespace_to_args(parser.parse_args())
 
 
-def invariant_check_failed(
-    check_data,
-    random_seed,
-    interactive_hyperdrive,
-    chain: LocalChain,
-):
+def invariant_check(
+    check_data: dict[str, Any],
+) -> None:
     """Check the pool state invariants.
 
     Arguments
     ---------
     check_data: dict[str, Any]
         The trade data to check.
-    random_seed: int
-        Random seed used to run the experiment.
-    interactive_hyperdrive: InteractiveHyperdrive
-        An instantiated InteractiveHyperdrive object.
-    chain: LocalChain
-        An instantiated LocalChain object.
-
-    Returns
-    -------
-    bool
-        If true, at least one of the checks failed.
     """
     failed = False
-    if check_data["long_events"]["close"].base_amount >= check_data["long_events"]["open"].base_amount:
-        logging.critical(
-            (
-                "LONG: Amount returned on closing was too large.\n"
-                "base_amount_returned=%s should not be >= base_amount_proided=%s"
-            ),
-            check_data["long_events"]["close"].base_amount,
-            check_data["long_events"]["open"].base_amount,
+    exception_message: list[str] = ["Fuzz Profit Check Invariant Check"]
+
+    base_amount_returned = check_data["long_events"]["close"].base_amount
+    base_amount_provided = check_data["long_events"]["open"].base_amount
+    if base_amount_returned >= base_amount_provided:
+        exception_message.append(
+            f"LONG: Amount returned on closing was too large.\n"
+            f"{base_amount_returned=} should not be >= {base_amount_provided=}"
         )
         failed = True
-    if check_data["long_agent"].wallet.balance.amount >= check_data["trade_amount"]:
-        logging.critical(
-            "LONG: Agent made a profit when the should not have.\nagent_balance=%s should not be >= trade_amount=%s",
-            check_data["long_agent"].wallet.balance.amount,
-            check_data["trade_amount"],
+
+    agent_balance = check_data["long_agent"].wallet.balance.amount
+    trade_amount = check_data["trade_amount"]
+    if agent_balance >= trade_amount:
+        exception_message.append(
+            f"LONG: Agent made a profit when the should not have.\n"
+            f"{agent_balance=} should not be >= {trade_amount=}",
         )
         failed = True
-    if check_data["short_events"]["close"].base_amount >= check_data["short_events"]["open"].base_amount:
-        logging.critical(
-            (
-                "SHORT: Amount returned on closing was too large.\n"
-                "base_amount_returned=%s should not be >= base_amount_proided=%s"
-            ),
-            check_data["short_events"]["close"].base_amount,
-            check_data["short_events"]["open"].base_amount,
+
+    base_amount_returned = check_data["short_events"]["close"].base_amount
+    base_amount_provided = check_data["short_events"]["open"].base_amount
+    if base_amount_returned >= base_amount_provided:
+        exception_message.append(
+            f"SHORT: Amount returned on closing was too large.\n"
+            f"{base_amount_returned=} should not be >= {base_amount_provided=}"
         )
         failed = True
-    if check_data["short_agent"].wallet.balance.amount >= check_data["trade_amount"]:
-        logging.critical(
-            "SHORT: Agent made a profit when the should not have.\nagent_balance=%s should not be >= trade_amount=%s",
-            check_data["short_agent"].wallet.balance.amount,
-            check_data["trade_amount"],
+
+    agent_balance = check_data["short_agent"].wallet.balance.amount
+    trade_amount = check_data["trade_amount"]
+    if agent_balance >= trade_amount:
+        exception_message.append(
+            f"SHORT: Agent made a profit when the should not have.\n"
+            f"{agent_balance=} should not be >= {trade_amount=}"
         )
         failed = True
 
     if failed:
-        dump_state_dir = chain.save_state(save_prefix="fuzz_profit_check")
-
-        pool_state = interactive_hyperdrive.hyperdrive_interface.current_pool_state
-        logging.info(
-            "random_seed = %s\npool_config = %s\n\npool_info = %s\n\nlatest_checkpoint = %s\n\nadditional_info = %s",
-            random_seed,
-            json.dumps(asdict(pool_state.pool_config), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(asdict(pool_state.pool_info), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(asdict(pool_state.checkpoint), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(
-                {
-                    "dump_state_dir": dump_state_dir,
-                    "hyperdrive_address": interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract.address,
-                    "base_token_address": interactive_hyperdrive.hyperdrive_interface.base_token_contract.address,
-                    "spot_price": interactive_hyperdrive.hyperdrive_interface.calc_spot_price(pool_state),
-                    "fixed_rate": interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate(pool_state),
-                    "variable_rate": pool_state.variable_rate,
-                    "vault_shares": pool_state.vault_shares,
-                },
-                indent=2,
-                cls=ExtendedJSONEncoder,
-            ),
-        )
-
-    return failed
+        raise AssertionError(*exception_message)
 
 
 if __name__ == "__main__":

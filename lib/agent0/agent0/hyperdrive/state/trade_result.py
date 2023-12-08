@@ -50,7 +50,7 @@ class TradeResult:
 
     status: TradeStatus
     agent: HyperdriveAgent
-    trade_object: Trade[HyperdriveMarketAction]
+    trade_object: Trade[HyperdriveMarketAction] | None = None
     tx_receipt: ReceiptBreakdown | None = None
     contract_call: dict[str, Any] | None = None
     # Flags for known errors
