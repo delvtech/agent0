@@ -188,7 +188,8 @@ def run_invariant_checks(
         # If any transaction is to hyperdrive then assert a checkpoint happened
         for transaction in transactions:
             if isinstance(transaction, HexBytes):
-                raise TypeError("Transaction should not be hexbytes.")
+                # If hexbytes, there was no trade
+                continue
             txn_to = transaction.get("to", None)
             if txn_to is None:
                 raise AssertionError("Transaction did not have a 'to' key.")
@@ -292,11 +293,6 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     # Use system arguments if none were passed
     if argv is None:
         argv = sys.argv
-
-    # If no arguments were passed, display the help message and exit
-    if len(argv) == 1:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
 
     return namespace_to_args(parser.parse_args())
 
