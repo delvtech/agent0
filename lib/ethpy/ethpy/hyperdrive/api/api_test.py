@@ -47,78 +47,72 @@ class TestHyperdriveInterface:
         All arguments are fixtures.
         """
         # TODO: remove cast when pypechain consolidates dataclasses.
-        hyperdrive_interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
-        pool_config = cast(PoolConfig, hyperdrive_interface.hyperdrive_contract.functions.getPoolConfig().call())
-        assert pool_config_to_fixedpoint(pool_config) == hyperdrive_interface.current_pool_state.pool_config
+        interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
+        pool_config = cast(PoolConfig, interface.hyperdrive_contract.functions.getPoolConfig().call())
+        assert pool_config_to_fixedpoint(pool_config) == interface.current_pool_state.pool_config
 
     def test_pool_info(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Checks that the Hyperdrive pool_info matches what is returned from the smart contract.
 
         All arguments are fixtures.
         """
-        hyperdrive_interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
-        pool_info = hyperdrive_interface.hyperdrive_contract.functions.getPoolInfo().call()
-        assert pool_info_to_fixedpoint(pool_info) == hyperdrive_interface.current_pool_state.pool_info
+        interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
+        pool_info = interface.hyperdrive_contract.functions.getPoolInfo().call()
+        assert pool_info_to_fixedpoint(pool_info) == interface.current_pool_state.pool_info
 
     def test_checkpoint(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Checks that the Hyperdrive checkpoint matches what is returned from the smart contract.
 
         All arguments are fixtures.
         """
-        hyperdrive_interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
-        checkpoint_id = hyperdrive_interface.calc_checkpoint_id(
-            block_timestamp=hyperdrive_interface.current_pool_state.block_time
-        )
+        interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
+        checkpoint_id = interface.calc_checkpoint_id(block_timestamp=interface.current_pool_state.block_time)
         # TODO: remove cast when pypechain consolidates dataclasses.
-        checkpoint = cast(
-            Checkpoint, hyperdrive_interface.hyperdrive_contract.functions.getCheckpoint(checkpoint_id).call()
-        )
-        assert checkpoint_to_fixedpoint(checkpoint) == hyperdrive_interface.current_pool_state.checkpoint
+        checkpoint = cast(Checkpoint, interface.hyperdrive_contract.functions.getCheckpoint(checkpoint_id).call())
+        assert checkpoint_to_fixedpoint(checkpoint) == interface.current_pool_state.checkpoint
 
     def test_spot_price_and_fixed_rate(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Checks that the Hyperdrive spot price and fixed rate match computing it by hand."""
-        hyperdrive_interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
+        interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
         # get pool config variables
-        pool_config = hyperdrive_interface.current_pool_state.pool_config
+        pool_config = interface.current_pool_state.pool_config
         init_share_price: FixedPoint = pool_config.initial_share_price
         time_stretch: FixedPoint = pool_config.time_stretch
         # get pool info variables
-        pool_info = hyperdrive_interface.current_pool_state.pool_info
+        pool_info = interface.current_pool_state.pool_info
         share_reserves: FixedPoint = pool_info.share_reserves
         bond_reserves: FixedPoint = pool_info.bond_reserves
         # test spot price
         spot_price = ((init_share_price * share_reserves) / bond_reserves) ** time_stretch
-        assert abs(spot_price - hyperdrive_interface.calc_spot_price()) <= FixedPoint(scaled_value=1)
+        assert abs(spot_price - interface.calc_spot_price()) <= FixedPoint(scaled_value=1)
         # test fixed rate (rounding issues can cause it to be off by 1e-18)
         # TODO: This should be exact up to 1e-18, but is not
-        fixed_rate = (FixedPoint(1) - spot_price) / (
-            spot_price * hyperdrive_interface.calc_position_duration_in_years()
-        )
-        assert abs(fixed_rate - hyperdrive_interface.calc_fixed_rate()) <= FixedPoint(scaled_value=100)
+        fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * interface.calc_position_duration_in_years())
+        assert abs(fixed_rate - interface.calc_fixed_rate()) <= FixedPoint(scaled_value=100)
 
     def test_misc(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Miscellaneous tests only verify that the attributes exist and functions can be called."""
-        hyperdrive_interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
-        _ = hyperdrive_interface.current_pool_state
-        _ = hyperdrive_interface.current_pool_state.variable_rate
-        _ = hyperdrive_interface.current_pool_state.vault_shares
-        _ = hyperdrive_interface.calc_open_long(FixedPoint(100))
-        _ = hyperdrive_interface.calc_open_short(FixedPoint(100))
-        _ = hyperdrive_interface.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
-        _ = hyperdrive_interface.calc_max_long(FixedPoint(1000))
-        _ = hyperdrive_interface.calc_max_short(FixedPoint(1000))
+        interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
+        _ = interface.current_pool_state
+        _ = interface.current_pool_state.variable_rate
+        _ = interface.current_pool_state.vault_shares
+        _ = interface.calc_open_long(FixedPoint(100))
+        _ = interface.calc_open_short(FixedPoint(100))
+        _ = interface.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
+        _ = interface.calc_max_long(FixedPoint(1000))
+        _ = interface.calc_max_short(FixedPoint(1000))
 
     def test_bonds_given_shares_and_rate(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Check that the bonds calculated actually hit the target rate."""
         # pylint: disable=too-many-locals
-        hyperdrive_interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
+        interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
         # get pool config variables
-        pool_config = hyperdrive_interface.pool_config
+        pool_config = interface.pool_config
         init_share_price: FixedPoint = pool_config.initial_share_price
         time_stretch: FixedPoint = pool_config.time_stretch
         position_duration_years = pool_config.position_duration / FixedPoint(60 * 60 * 24 * 365)
         # get pool info variables
-        pool_info = hyperdrive_interface.current_pool_state.pool_info
+        pool_info = interface.current_pool_state.pool_info
         share_reserves: FixedPoint = pool_info.share_reserves
         share_adjustment: FixedPoint = pool_info.share_adjustment
         effective_share_reserves = share_reserves - share_adjustment
@@ -129,13 +123,13 @@ class TestHyperdriveInterface:
         assert abs(fixed_rate - FixedPoint(0.05)) < FixedPoint(scaled_value=100)
         # test hitting target of 10%
         target_apr = FixedPoint("0.10")
-        bonds_needed = hyperdrive_interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
+        bonds_needed = interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
         spot_price = ((init_share_price * effective_share_reserves) / bonds_needed) ** time_stretch
         fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * position_duration_years)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
         # test hitting target of 1%
         target_apr = FixedPoint("0.01")
-        bonds_needed = hyperdrive_interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
+        bonds_needed = interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
         spot_price = ((init_share_price * effective_share_reserves) / bonds_needed) ** time_stretch
         fixed_rate = (FixedPoint(1) - spot_price) / (spot_price * position_duration_years)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
@@ -143,7 +137,7 @@ class TestHyperdriveInterface:
     def test_deployed_values(self, local_hyperdrive_pool: DeployedHyperdrivePool):
         """Test the hyperdrive interface versus expected values."""
         # pylint: disable=too-many-locals
-        hyperdrive_interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
+        interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
 
         initial_fixed_rate = FixedPoint("0.05")
         expected_timestretch_fp = FixedPoint(1) / (
@@ -171,7 +165,7 @@ class TestHyperdriveInterface:
             governance=FixedPoint("0.15"),  # 1%
         )
 
-        api_pool_config = hyperdrive_interface.current_pool_state.pool_config
+        api_pool_config = interface.current_pool_state.pool_config
 
         # Existence test
         assert len(fields(api_pool_config)) > 0, "API pool config must have length greater than 0"
@@ -206,7 +200,7 @@ class TestHyperdriveInterface:
             "withdrawal_shares_proceeds",
         }
 
-        api_pool_info = hyperdrive_interface.current_pool_state.pool_info
+        api_pool_info = interface.current_pool_state.pool_info
 
         # Ensure keys and fields match (ignoring linker_factory and linker_code_hash)
         api_keys = [n.name for n in fields(api_pool_info)]
@@ -216,13 +210,13 @@ class TestHyperdriveInterface:
             assert key in expected_pool_info_keys, f"Key {key} in API not in expected."
 
         # Check spot price and fixed rate
-        api_spot_price = hyperdrive_interface.calc_spot_price()
+        api_spot_price = interface.calc_spot_price()
         effective_share_reserves = api_pool_info.share_reserves - api_pool_info.share_adjustment
         expected_spot_price = (
             (api_pool_config.initial_share_price * effective_share_reserves) / api_pool_info.bond_reserves
         ) ** api_pool_config.time_stretch
 
-        api_fixed_rate = hyperdrive_interface.calc_fixed_rate()
+        api_fixed_rate = interface.calc_fixed_rate()
         expected_fixed_rate = (1 - expected_spot_price) / (
             expected_spot_price * (api_pool_config.position_duration / FixedPoint(365 * 24 * 60 * 60))
         )
