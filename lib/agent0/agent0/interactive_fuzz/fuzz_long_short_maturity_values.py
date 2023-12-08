@@ -2,17 +2,15 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import sys
-from dataclasses import asdict
 from typing import NamedTuple, Sequence
 
 import numpy as np
 from fixedpointmath import FixedPoint
-from hyperlogs import ExtendedJSONEncoder
 from hypertypes.fixedpoint_types import CheckpointFP
 
+from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort, OpenLong, OpenShort
 from agent0.interactive_fuzz.helpers import generate_trade_list, open_random_trades, setup_fuzz
@@ -103,11 +101,18 @@ def fuzz_long_short_maturity_values(num_trades: int, chain_config: LocalChain.Co
         else:
             assert False
 
-        if invariant_check_failed(
-            trade, close_event, starting_checkpoint, maturity_checkpoint, random_seed, interactive_hyperdrive, chain
-        ):
+        try:
+            invariant_check(trade, close_event, starting_checkpoint, maturity_checkpoint, interactive_hyperdrive)
+        except AssertionError as error:
+            dump_state_dir = chain.save_state(save_prefix="fuzz_long_short_maturity_values")
+            additional_info = {"fuzz_random_seed": random_seed, "dump_state_dir": dump_state_dir}
+            report = build_crash_trade_result(
+                error, agent.agent, interactive_hyperdrive.hyperdrive_interface, additional_info=additional_info
+            )
+            # Crash reporting already going to file in logging
+            log_hyperdrive_crash_report(report, crash_report_to_file=False, log_to_rollbar=True)
             chain.cleanup()
-            raise AssertionError(f"Testing failed; see logs in {log_filename}")
+            raise error
 
     chain.cleanup()
 
@@ -169,16 +174,14 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 
 
 # pylint: disable=too-many-arguments
-def invariant_check_failed(
+def invariant_check(
     open_trade_event: OpenLong | OpenShort,
     close_trade_event: CloseLong | CloseShort,
     starting_checkpoint: CheckpointFP,
     maturity_checkpoint: CheckpointFP,
-    random_seed: int,
     interactive_hyperdrive: InteractiveHyperdrive,
-    chain: LocalChain,
-) -> bool:
-    """Check the pool state invariants.
+) -> None:
+    """Check the pool state invariants and throws an assertion exception if fails.
 
     Arguments
     ---------
@@ -190,20 +193,12 @@ def invariant_check_failed(
         The starting checkpoint.
     maturity_checkpoint: CheckpointFP
         The maturity checkpoint.
-    random_seed: int
-        Random seed used to run the experiment.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
-    chain: LocalChain
-        An instantiated LocalChain object.
-
-    Returns
-    -------
-    bool
-        If true, at least one of the checks failed.
     """
     failed = False
-    pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
+
+    exception_message: list[str] = ["Fuzz Long/Short Maturity Values Invariant Check"]
 
     if isinstance(open_trade_event, OpenLong) and isinstance(close_trade_event, CloseLong):
         # 0.05 would be a 5% fee.
@@ -217,21 +212,17 @@ def invariant_check_failed(
         )
         # assert with event values
         if actual_base_amount != expected_base_amount_from_event:
-            logging.critical(
-                "actual_base_amount=%s != expected_base_amount_from_close_event=%s, difference_in_wei=%s",
-                actual_base_amount,
-                expected_base_amount_from_event,
-                abs(actual_base_amount.scaled_value - expected_base_amount_from_event.scaled_value),
+            difference_in_wei = abs(actual_base_amount.scaled_value - expected_base_amount_from_event.scaled_value)
+            exception_message.append(
+                f"{actual_base_amount=} != {expected_base_amount_from_event=}, {difference_in_wei=}"
             )
             failed = True
 
         expected_base_amount_from_trade = open_trade_event.bond_amount - open_trade_event.bond_amount * flat_fee_percent
         if actual_base_amount != expected_base_amount_from_trade:
-            logging.critical(
-                "actual_base_amount=%s != expected_base_amount_from_trade=%s, difference_in_wei=%s",
-                actual_base_amount,
-                expected_base_amount_from_trade,
-                abs(actual_base_amount.scaled_value - expected_base_amount_from_trade.scaled_value),
+            difference_in_wei = abs(actual_base_amount.scaled_value - expected_base_amount_from_trade.scaled_value)
+            exception_message.append(
+                f"{actual_base_amount=} != {expected_base_amount_from_trade=}, {difference_in_wei=}"
             )
             failed = True
 
@@ -256,40 +247,14 @@ def invariant_check_failed(
 
         actual_base_amount = close_trade_event.base_amount
         if actual_base_amount != interest_accrued:
-            logging.critical(
-                "actual_base_amount=%s != interest_accrued=%s, difference_in_wei=%s",
-                actual_base_amount,
-                interest_accrued,
-                abs(actual_base_amount.scaled_value - interest_accrued.scaled_value),
-            )
+            difference_in_wei = abs(actual_base_amount.scaled_value - interest_accrued.scaled_value)
+            exception_message.append(f"{actual_base_amount=} != {interest_accrued=}, {difference_in_wei=}")
             failed = True
     else:
         raise ValueError("Invalid types for open/close trade events")
 
     if failed:
-        dump_state_dir = chain.save_state(save_prefix="fuzz_long_short_maturity_values")
-        logging.info(
-            "random_seed = %s\npool_config = %s\n\npool_info = %s\n\nlatest_checkpoint = %s\n\nadditional_info = %s",
-            random_seed,
-            json.dumps(asdict(pool_state.pool_config), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(asdict(pool_state.pool_info), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(asdict(pool_state.checkpoint), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(
-                {
-                    "dump_state_dir": dump_state_dir,
-                    "hyperdrive_address": interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract.address,
-                    "base_token_address": interactive_hyperdrive.hyperdrive_interface.base_token_contract.address,
-                    "spot_price": interactive_hyperdrive.hyperdrive_interface.calc_spot_price(pool_state),
-                    "fixed_rate": interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate(pool_state),
-                    "variable_rate": pool_state.variable_rate,
-                    "vault_shares": pool_state.vault_shares,
-                },
-                indent=2,
-                cls=ExtendedJSONEncoder,
-            ),
-        )
-
-    return failed
+        raise AssertionError(*exception_message)
 
 
 if __name__ == "__main__":

@@ -1,9 +1,6 @@
 """Runs all fuzz tests forever."""
 from __future__ import annotations
 
-import sys
-
-import rollbar
 from hyperlogs.rollbar_utilities import initialize_rollbar
 
 from agent0.hyperdrive.interactive.chain import LocalChain
@@ -34,29 +31,25 @@ def main():
             chain_config = LocalChain.Config(db_port=5433, chain_port=10000)
             fuzz_hyperdrive_balance(num_trades, chain_config)
         except AssertionError:
-            log_filename = ".logging/fuzz_hyperdrive_balance.log"
-            rollbar.report_exc_info(sys.exc_info(), "error", payload=_filename_to_payload(log_filename))
+            pass
 
         try:
             chain_config = LocalChain.Config(db_port=5434, chain_port=10001)
             fuzz_long_short_maturity_values(num_trades, chain_config)
         except AssertionError:
-            log_filename = ".logging/fuzz_long_short_maturity_values.log"
-            rollbar.report_exc_info(sys.exc_info(), "error", payload=_filename_to_payload(log_filename))
+            pass
 
         try:
             chain_config = LocalChain.Config(db_port=5435, chain_port=10002)
             fuzz_path_independence(num_trades, num_paths_checked, chain_config)
         except AssertionError:
-            log_filename = ".logging/fuzz_path_independence.log"
-            rollbar.report_exc_info(sys.exc_info(), "error", payload=_filename_to_payload(log_filename))
+            pass
 
         try:
             chain_config = LocalChain.Config(db_port=5436, chain_port=10003)
             fuzz_profit_check(chain_config)
         except AssertionError:
-            log_filename = ".logging/fuzz_profit_check.log"
-            rollbar.report_exc_info(sys.exc_info(), "error", payload=_filename_to_payload(log_filename))
+            pass
 
 
 if __name__ == "__main__":

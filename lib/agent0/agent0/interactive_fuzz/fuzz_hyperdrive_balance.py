@@ -2,17 +2,17 @@
 from __future__ import annotations
 
 import argparse
-import json
-import logging
 import sys
-from dataclasses import asdict
 from typing import NamedTuple, Sequence
 
 from fixedpointmath import FixedPoint
-from hyperlogs import ExtendedJSONEncoder
 
+from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.interactive_fuzz.helpers import close_random_trades, generate_trade_list, open_random_trades, setup_fuzz
+
+# main script has a lot of stuff going on
+# pylint: disable=too-many-locals
 
 
 def main(argv: Sequence[str] | None = None):
@@ -60,10 +60,22 @@ def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config):
     # Close the trades
     close_random_trades(trade_events, rng)
 
+    assert len(trade_list) > 0
+    agent = trade_list[0][0]
+
     # Check the reserve amounts; they should be unchanged now that all of the trades are closed
-    if invariant_check_failed(initial_vault_shares, random_seed, interactive_hyperdrive, chain):
+    try:
+        invariant_check(initial_vault_shares, interactive_hyperdrive)
+    except AssertionError as error:
+        dump_state_dir = chain.save_state(save_prefix="fuzz_long_short_maturity_values")
+        additional_info = {"fuzz_random_seed": random_seed, "dump_state_dir": dump_state_dir}
+        report = build_crash_trade_result(
+            error, agent.agent, interactive_hyperdrive.hyperdrive_interface, additional_info=additional_info
+        )
+        # Crash reporting already going to file in logging
+        log_hyperdrive_crash_report(report, crash_report_to_file=False, log_to_rollbar=True)
         chain.cleanup()
-        raise AssertionError(f"Testing failed; see logs in {log_filename}")
+        raise error
     chain.cleanup()
 
 
@@ -122,67 +134,37 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     return namespace_to_args(parser.parse_args())
 
 
-def invariant_check_failed(
+def invariant_check(
     initial_vault_shares: FixedPoint,
-    random_seed: int,
     interactive_hyperdrive: InteractiveHyperdrive,
-    chain: LocalChain,
-) -> bool:
-    """Check the pool state invariants.
+) -> None:
+    """Check the pool state invariants and throws an assertion exception if fails.
 
     Arguments
     ---------
     initial_vault_shares: FixedPoint
         The number of vault shares owned by the Hyperdrive pool when it was deployed.
-    random_seed: int
-        Random seed used to run the experiment.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
-    chain: LocalChain
-        An instantiated LocalChain object.
-
-    Returns
-    -------
-    bool
-        If true, at least one of the checks failed.
     """
     failed = False
+    exception_message: list[str] = ["Fuzz Hyperdrive Balance Invariant Check"]
+
     pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-    if pool_state.vault_shares != initial_vault_shares:
-        logging.critical("vault_shares=%s != initial_vault_shares=%s", pool_state.vault_shares, initial_vault_shares)
+    vault_shares = pool_state.vault_shares
+    if vault_shares != initial_vault_shares:
+        difference_in_wei = abs(vault_shares.scaled_value - initial_vault_shares.scaled_value)
+        exception_message.append(f"{vault_shares=} != {initial_vault_shares=}, {difference_in_wei=}")
         failed = True
-    if pool_state.pool_info.share_reserves < pool_state.pool_config.minimum_share_reserves:
-        logging.critical(
-            "share_reserves=%s < minimum_share_reserves=%s",
-            pool_state.pool_info.share_reserves,
-            pool_state.pool_config.minimum_share_reserves,
-        )
+
+    share_reserves = pool_state.pool_info.share_reserves
+    minimum_share_reserves = pool_state.pool_config.minimum_share_reserves
+    if share_reserves < minimum_share_reserves:
+        exception_message.append(f"{share_reserves=} < {minimum_share_reserves=}")
         failed = True
 
     if failed:
-        dump_state_dir = chain.save_state(save_prefix="fuzz_hyperdrive_balance")
-        logging.info(
-            "random_seed = %s\npool_config = %s\n\npool_info = %s\n\nlatest_checkpoint = %s\n\nadditional_info = %s",
-            random_seed,
-            json.dumps(asdict(pool_state.pool_config), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(asdict(pool_state.pool_info), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(asdict(pool_state.checkpoint), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(
-                {
-                    "dump_state_dir": dump_state_dir,
-                    "hyperdrive_address": interactive_hyperdrive.hyperdrive_interface.hyperdrive_contract.address,
-                    "base_token_address": interactive_hyperdrive.hyperdrive_interface.base_token_contract.address,
-                    "spot_price": interactive_hyperdrive.hyperdrive_interface.calc_spot_price(pool_state),
-                    "fixed_rate": interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate(pool_state),
-                    "variable_rate": pool_state.variable_rate,
-                    "vault_shares": pool_state.vault_shares,
-                },
-                indent=2,
-                cls=ExtendedJSONEncoder,
-            ),
-        )
-
-    return failed
+        raise AssertionError(*exception_message)
 
 
 if __name__ == "__main__":
