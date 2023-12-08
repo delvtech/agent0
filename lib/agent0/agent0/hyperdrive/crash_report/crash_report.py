@@ -52,8 +52,8 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
 # pylint: disable=too-many-branches
 def build_crash_trade_result(
     exception: BaseException,
-    agent: HyperdriveAgent,
     interface: HyperdriveInterface,
+    agent: HyperdriveAgent | None = None,
     trade_object: Trade[HyperdriveMarketAction] | None = None,
     additional_info: dict[str, Any] | None = None,
 ) -> TradeResult:

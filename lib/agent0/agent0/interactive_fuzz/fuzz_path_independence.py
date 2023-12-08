@@ -125,7 +125,7 @@ def fuzz_path_independence(
                     "dump_state_dir": dump_state_dir,
                 }
                 report = build_crash_trade_result(
-                    error, agent.agent, interactive_hyperdrive.hyperdrive_interface, additional_info=additional_info
+                    error, interactive_hyperdrive.hyperdrive_interface, agent.agent, additional_info=additional_info
                 )
                 # Crash reporting already going to file in logging
                 log_hyperdrive_crash_report(report, crash_report_to_file=False, log_to_rollbar=True)
