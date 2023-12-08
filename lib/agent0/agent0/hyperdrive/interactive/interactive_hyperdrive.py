@@ -844,7 +844,6 @@ class InteractiveHyperdrive:
                 while True:
                     latest_mined_block = self.hyperdrive_interface.web3.eth.get_block_number()
                     analysis_latest_block_number = get_latest_block_number_from_analysis_table(self.db_session)
-                    print(f"{latest_mined_block=}, {analysis_latest_block_number=}")
                     if latest_mined_block > analysis_latest_block_number:
                         _timeout.sleep(polling_interval)
                     else:
