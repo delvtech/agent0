@@ -231,7 +231,18 @@ class InteractiveHyperdrive:
             except ValueError:
                 time.sleep(1)
 
-    def _launch_data_pipeline(self):
+    def _launch_data_pipeline(self, start_block: int | None = None):
+        """Launches the data pipeline in background threads.
+
+        Arguments
+        ---------
+        start_block: int | None
+            The starting block to gather data. If None, will use the pool's deployed block.
+        """
+
+        if start_block is None:
+            start_block = self._deploy_block_number
+
         # Run the data pipeline in background threads
         # Ensure the stop flag is set to false
         # This ensures no other threads are running when launching data pipeline
@@ -243,7 +254,7 @@ class InteractiveHyperdrive:
         self._data_thread = Thread(
             target=acquire_data,
             kwargs={
-                "start_block": self._deploy_block_number,  # Start block is the block hyperdrive was deployed
+                "start_block": start_block,
                 "lookback_block_limit": 10000,
                 "eth_config": self.eth_config,
                 "postgres_config": self.postgres_config,
@@ -256,7 +267,7 @@ class InteractiveHyperdrive:
         self._analysis_thread = Thread(
             target=data_analysis,
             kwargs={
-                "start_block": self._deploy_block_number,
+                "start_block": start_block,
                 "eth_config": self.eth_config,
                 "postgres_config": self.postgres_config,
                 "contract_addresses": self.hyperdrive_interface.addresses,
@@ -833,6 +844,7 @@ class InteractiveHyperdrive:
                 while True:
                     latest_mined_block = self.hyperdrive_interface.web3.eth.get_block_number()
                     analysis_latest_block_number = get_latest_block_number_from_analysis_table(self.db_session)
+                    print(f"{latest_mined_block=}, {analysis_latest_block_number=}")
                     if latest_mined_block > analysis_latest_block_number:
                         _timeout.sleep(polling_interval)
                     else:

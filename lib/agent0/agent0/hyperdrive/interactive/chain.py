@@ -151,6 +151,12 @@ class Chain:
         if (not create_checkpoints) or (len(self._deployed_hyperdrive_pools) == 0):
             self._advance_chain_time(time_delta)
         else:
+            # Creating checkpoints mines blocks very fast, which then makes the data pipeline not be able to keep up.
+            # We avoid this by skipping all the intermediate blocks in the database when advancing time.
+            for pool in self._deployed_hyperdrive_pools:
+                pool._ensure_data_caught_up()  # pylint: disable=protected-access
+                pool._stop_data_pipeline()  # pylint: disable=protected-access
+
             # For every pool, check the checkpoint duration and advance the chain for that amount of time,
             # followed by creating a checkpoint for that pool.
             # TODO support multiple pools with different checkpoint durations
@@ -196,16 +202,15 @@ class Chain:
                 assert time_after_checkpoints is not None
                 offset = time_after_checkpoints - time_before_checkpoints
 
-                # TODO advancing times can mine lots of blocks and make the data pipeline fall behind
-                # hence, we explicitly wait for db to catch up here to slow down this function
-                # Need a way to speed the data pipeline up or do this smarter.
-                for pool in self._deployed_hyperdrive_pools:
-                    pool._ensure_data_caught_up()  # pylint: disable=protected-access
-
             # Final advance time to advance the remainder
             # Best effort, if offset is larger than the remainder, don't advance time again.
             if last_advance_time - offset > 0:
                 self._advance_chain_time(last_advance_time - offset)
+
+            # Restart the data pipeline on the current block time.
+            curr_block = self._web3.eth.get_block_number()
+            for pool in self._deployed_hyperdrive_pools:
+                pool._launch_data_pipeline(curr_block)  # pylint: disable=protected-access
 
         return out_dict
 
