@@ -108,6 +108,7 @@ class Chain:
         if "result" not in response:
             raise KeyError("Response did not have a result.")
 
+    # pylint: disable=too-many-branches
     def advance_time(
         self, time_delta: int | timedelta, create_checkpoints: bool = True
     ) -> dict[InteractiveHyperdrive, list[CreateCheckpoint]]:
@@ -441,6 +442,8 @@ class LocalChain(Chain):
             str(config.chain_port),
             "--code-size-limit",
             "9999999999",
+            "--transaction-block-keeper",
+            "100",
         ]
         if config.block_time is not None:
             anvil_launch_args.extend(("--block-time", str(config.block_time)))
