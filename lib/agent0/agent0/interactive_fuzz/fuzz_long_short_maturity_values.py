@@ -66,34 +66,39 @@ def fuzz_long_short_maturity_values(num_trades: int, chain_config: LocalChain.Co
     # Add a small amount to ensure we're not at the edge of a checkpoint
     # This prevents the latter step of `chain.advance_time(position_duration+30)` advancing past a checkpoint
     # Also prevents `open_random_trades` from passing the create checkpoint barrier
+    logging.info("Advance time...")
     chain.advance_time(time_to_next_checkpoint + 100, create_checkpoints=True)
 
     # Generate a list of agents that execute random trades
     trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
 
     # Open some trades
+    logging.info("Open random trades...")
     trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=False)
 
     # Starting checkpoint is automatically created by sending transactions
     starting_checkpoint = interactive_hyperdrive.hyperdrive_interface.current_pool_state.checkpoint
 
     # Advance the time to a little more than the position duration
+    logging.info("Advance time...")
     position_duration = interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration
     chain.advance_time(position_duration + 30, create_checkpoints=False)
 
     # Create a checkpoint
+    logging.info("Create a checkpoint...")
     interactive_hyperdrive.hyperdrive_interface.create_checkpoint(signer.agent)
 
     # Get the maturity checkpoint for the previously created checkpoint
     maturity_checkpoint = interactive_hyperdrive.hyperdrive_interface.current_pool_state.checkpoint
 
     # Advance time again
+    logging.info("Advance time...")
     extra_time = int(np.floor(rng.uniform(low=0, high=position_duration)))
     chain.advance_time(extra_time, create_checkpoints=False)
 
     # Close the trades one at a time, check invariants
     for index, (agent, trade) in enumerate(trade_events):
-        logging.info("index=%s\n", index)
+        logging.info("closing trade %s out of %s\n", index, len(trade_events) - 1)
         if isinstance(trade, OpenLong):
             close_event = agent.close_long(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
         elif isinstance(trade, OpenShort):
@@ -115,6 +120,7 @@ def fuzz_long_short_maturity_values(num_trades: int, chain_config: LocalChain.Co
             raise error
 
     chain.cleanup()
+    logging.info("Test passed!")
 
 
 class Args(NamedTuple):

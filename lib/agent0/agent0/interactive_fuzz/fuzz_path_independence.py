@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from typing import Any, NamedTuple, Sequence
 
@@ -50,11 +51,13 @@ def fuzz_path_independence(num_trades: int, num_paths_checked: int, chain_config
     trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
 
     # Open some trades
+    logging.info("Open random trades...")
     trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=True)
     assert len(trade_events) > 0
     agent = trade_events[0][0]
 
     # Snapshot the chain, so we can load the snapshot & close in different orders
+    logging.info("Save chain snapshot...")
     chain.save_snapshot()
 
     # List of columns in pool info to check between the initial pool info and the latest pool info.
@@ -69,10 +72,12 @@ def fuzz_path_independence(num_trades: int, num_paths_checked: int, chain_config
     ]
 
     # Close the trades randomly & verify that the final state is unchanged
+    logging.info("Close trades in random order; check final state...")
     check_data: dict[str, Any] | None = None
     first_run_state_dump_dir: str | None = None
     for iteration in range(num_paths_checked):
         print(f"{iteration=}")
+        logging.info("iteration %s out of %s", iteration, num_paths_checked - 1)
         # Load the snapshot
         chain.load_snapshot()
 
@@ -119,6 +124,7 @@ def fuzz_path_independence(num_trades: int, num_paths_checked: int, chain_config
                 chain.cleanup()
                 raise error
     chain.cleanup()
+    logging.info("Test passed!")
 
 
 class Args(NamedTuple):
@@ -174,6 +180,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=10,
         help="The port to use for the local chain.",
+    )
+    parser.add_argument(
+        "--chain_port",
+        type=int,
+        default=10000,
+        help="The number of random trades to open.",
     )
     # Use system arguments if none were passed
     if argv is None:
