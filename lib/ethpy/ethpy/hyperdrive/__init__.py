@@ -3,7 +3,6 @@ from .addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
 from .assets import BASE_TOKEN_SYMBOL, AssetIdPrefix, decode_asset_id, encode_asset_id
 from .deploy import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 from .errors import HyperdriveErrors, lookup_hyperdrive_error_selector
-from .get_web3_and_hyperdrive_contracts import get_web3_and_hyperdrive_contracts
 from .receipt_breakdown import ReceiptBreakdown
 from .transactions import (
     get_event_history_from_chain,

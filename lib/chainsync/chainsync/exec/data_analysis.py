@@ -16,7 +16,8 @@ from chainsync.db.hyperdrive import (
     get_pool_config,
 )
 from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri, get_web3_and_hyperdrive_contracts
+from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from ethpy.hyperdrive.api import HyperdriveInterface
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
@@ -80,8 +81,11 @@ def data_analysis(
     if contract_addresses is None:
         contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
 
+    # create hyperdrive interface
+    interface = HyperdriveInterface(eth_config, contract_addresses)
+
     # Get hyperdrive contract
-    _, _, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
+    hyperdrive_contract = interface.hyperdrive_contract
 
     ## Get starting point for restarts
     analysis_latest_block_number = get_latest_block_number_from_analysis_table(db_session)
