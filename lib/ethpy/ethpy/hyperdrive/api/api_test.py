@@ -46,7 +46,6 @@ class TestHyperdriveInterface:
 
         All arguments are fixtures.
         """
-        # TODO: remove cast when pypechain consolidates dataclasses.
         interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
         pool_config = cast(PoolConfig, interface.hyperdrive_contract.functions.getPoolConfig().call())
         assert pool_config_to_fixedpoint(pool_config) == interface.current_pool_state.pool_config
@@ -67,7 +66,6 @@ class TestHyperdriveInterface:
         """
         interface = self.setup_hyperdrive_interface(local_hyperdrive_pool)
         checkpoint_id = interface.calc_checkpoint_id(block_timestamp=interface.current_pool_state.block_time)
-        # TODO: remove cast when pypechain consolidates dataclasses.
         checkpoint = cast(Checkpoint, interface.hyperdrive_contract.functions.getCheckpoint(checkpoint_id).call())
         assert checkpoint_to_fixedpoint(checkpoint) == interface.current_pool_state.checkpoint
 
