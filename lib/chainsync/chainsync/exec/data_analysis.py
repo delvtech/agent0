@@ -91,7 +91,7 @@ def data_analysis(
     analysis_latest_block_number = get_latest_block_number_from_analysis_table(db_session)
 
     # Using max of latest block in database or specified start block
-    block_number = max(start_block, analysis_latest_block_number)
+    curr_start_write_block = max(start_block, analysis_latest_block_number + 1)
 
     # Get pool config
     # TODO this likely should return a pd.Series, not dataframe
@@ -116,7 +116,7 @@ def data_analysis(
     while True:
         latest_data_block_number = get_latest_data_block(db_session)
         # Only execute if we are on a new block
-        if latest_data_block_number <= block_number:
+        if latest_data_block_number < curr_start_write_block:
             exit_callable = False
             if exit_callback_fn is not None:
                 exit_callable = exit_callback_fn()
@@ -125,13 +125,14 @@ def data_analysis(
             time.sleep(_SLEEP_AMOUNT)
             continue
         # Does batch analysis on range(analysis_start_block, latest_data_block_number) blocks
+        # i.e., [start_block, end_block)
         # TODO do regular batching to sample for wallet information
-        analysis_start_block = block_number + 1
+        analysis_start_block = curr_start_write_block
         analysis_end_block = latest_data_block_number + 1
         if not suppress_logs:
             logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
         data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
-        block_number = latest_data_block_number
+        curr_start_write_block = latest_data_block_number + 1
 
     # Clean up resources on clean exit
     # If this function made the db session, we close it here

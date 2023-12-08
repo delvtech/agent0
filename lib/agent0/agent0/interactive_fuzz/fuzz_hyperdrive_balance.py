@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from typing import NamedTuple, Sequence
 
@@ -28,7 +29,7 @@ def main(argv: Sequence[str] | None = None):
     fuzz_hyperdrive_balance(*parsed_args)
 
 
-def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config):
+def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config, log_to_stdout: bool = False):
     """Does fuzzy invariant checks on the hyperdrive contract's balances.
 
     Parameters
@@ -37,6 +38,9 @@ def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config):
         Number of trades to perform during the fuzz tests.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
+    log_to_stdout: bool, optional
+        If True, log to stdout in addition to a file.
+        Defaults to False.
 
     Raises
     ------
@@ -45,7 +49,7 @@ def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config):
     """
 
     log_filename = ".logging/fuzz_hyperdrive_balance.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout)
 
     # Get initial vault shares
     pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
@@ -84,6 +88,7 @@ class Args(NamedTuple):
 
     num_trades: int
     chain_config: LocalChain.Config
+    log_to_stdout: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -99,7 +104,11 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     Args
         Formatted arguments
     """
-    return Args(num_trades=namespace.num_trades, chain_config=LocalChain.Config(chain_port=namespace.chain_port))
+    return Args(
+        num_trades=namespace.num_trades,
+        chain_config=LocalChain.Config(chain_port=namespace.chain_port),
+        log_to_stdout=namespace.log_to_stdout,
+    )
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> Args:
@@ -127,6 +136,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=10000,
         help="The port to use for the local chain.",
+    )
+    parser.add_argument(
+        "--log_to_stdout",
+        type=bool,
+        default=False,
+        help="If True, log to stdout in addition to a file.",
     )
     # Use system arguments if none were passed
     if argv is None:
@@ -164,6 +179,7 @@ def invariant_check(
         failed = True
 
     if failed:
+        logging.critical("\n".join(exception_message))
         raise AssertionError(*exception_message)
 
 
