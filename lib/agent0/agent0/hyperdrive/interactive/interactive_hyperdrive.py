@@ -236,7 +236,7 @@ class InteractiveHyperdrive:
 
         Arguments
         ---------
-        start_block: int | None
+        start_block: int | None, optional
             The starting block to gather data. If None, will use the pool's deployed block.
         """
 
