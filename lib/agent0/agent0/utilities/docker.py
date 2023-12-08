@@ -43,7 +43,16 @@ def check_docker(infra_folder: Path, restart: bool = False) -> None:
     logging.info(dockerps)
 
 
-def _start_docker(startup_str: str, infra_folder: Path):
+def _start_docker(startup_str: str, infra_folder: Path) -> None:
+    """Bring down docker compose, including volume, pull images, then bring up docker compose.
+
+    Arguments
+    ---------
+    startup_str : str
+        String to log at start.
+    infra_folder : Path
+        Path to infra repo folder.
+    """
     logging.info(startup_str)
     _run_cmd(infra_folder, " && docker-compose down -v", "Shut down docker in ")
     cmd = "docker images | awk 'NR>1 && $2 !~ /none/ && $1 ~ /^ghcr\\.io\\// {print $1 \":\" $2}'"
@@ -56,15 +65,36 @@ def _start_docker(startup_str: str, infra_folder: Path):
     _run_cmd(infra_folder, " && docker-compose up -d", "Started docker in ")
 
 
-def _run_cmd(infra_folder: Path, cmd: str, timing_str: str):
-    result = time.time()
+def _run_cmd(infra_folder: Path, cmd: str, timing_str: str) -> None:
+    """Run a command inside infra_folder, printing out the timing.
+    
+    Arguments
+    ---------
+    infra_folder : Path
+        Path to folder in which to run the command.
+    cmd : str
+        Command to run.
+    timing_str : str
+        String to print out alonside timing.
+        
+    Returns
+    -------
+    None
+    """
+    start_time = time.time()
     os.system(f"cd {infra_folder}{cmd}")
-    formatted_str = f"{timing_str}{time.time() - result:.2f}s"
+    formatted_str = f"{timing_str}{time.time() - start_time:.2f}s"
     logging.info(formatted_str)
-    return result
 
 
 def _get_docker_ps_and_log() -> str:
+    """Get docker ps using custom table format and log it.
+    
+    Returns
+    -------
+    str
+        The command line output of docker ps.
+    """
     dockerps = os.popen("docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'").read()
     logging.info(dockerps)
     return dockerps
