@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import NamedTuple, Sequence
+from typing import Any, NamedTuple, Sequence
 
 import numpy as np
 from fixedpointmath import FixedPoint
@@ -12,6 +12,8 @@ from numpy.random._generator import Generator
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.interactive_fuzz.helpers import setup_fuzz
+
+# pylint: disable=too-many-locals
 
 
 def main(argv: Sequence[str] | None = None):
@@ -197,7 +199,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 
 
 def invariant_check(
-    check_data,
+    check_data: dict[str, Any],
 ) -> None:
     """Check the pool state invariants.
 
@@ -205,8 +207,6 @@ def invariant_check(
     ---------
     check_data: dict[str, Any]
         The trade data to check.
-    interactive_hyperdrive: InteractiveHyperdrive
-        An instantiated InteractiveHyperdrive object.
     """
     failed = False
     exception_message: list[str] = ["Fuzz Profit Check Invariant Check"]
