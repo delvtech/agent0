@@ -4,15 +4,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from agent0.base import freezable
-from elfpy.markets.base import BaseMarketAction
 from fixedpointmath import FixedPoint
+
+from agent0.base.state import BaseMarketAction
 
 from .hyperdrive_wallet import HyperdriveWallet
 
 
 class HyperdriveActionType(Enum):
-    r"""The descriptor of an action in a market"""
+    r"""The descriptor of an action in a market."""
+
     INITIALIZE_MARKET = "initialize_market"
 
     OPEN_LONG = "open_long"
@@ -26,10 +27,10 @@ class HyperdriveActionType(Enum):
     REDEEM_WITHDRAW_SHARE = "redeem_withdraw_share"
 
 
-@freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class HyperdriveMarketAction(BaseMarketAction):
-    r"""Market action specification"""
+class HyperdriveMarketAction(BaseMarketAction[HyperdriveActionType, HyperdriveWallet]):
+    r"""Market action specification."""
+
     # these two variables are required to be set by the strategy
     action_type: HyperdriveActionType
     # amount to supply for the action
@@ -40,3 +41,6 @@ class HyperdriveMarketAction(BaseMarketAction):
     slippage_tolerance: FixedPoint | None = None
     # maturity time is set only for trades that act on existing positions (close long or close short)
     maturity_time: int | None = None
+    # min_apr and max_apr used only for add_liquidity trades to control slippage
+    min_apr: FixedPoint = FixedPoint(scaled_value=1)
+    max_apr: FixedPoint = FixedPoint(scaled_value=2**256 - 1)

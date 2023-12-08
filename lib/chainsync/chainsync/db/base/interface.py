@@ -14,6 +14,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql import text
+from sqlalchemy_utils import create_database, database_exists
 
 from .schema import AddrToUsername, Base, UsernameToUser
 
@@ -26,7 +27,7 @@ def query_tables(session: Session) -> list[str]:
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
 
     Returns
@@ -44,9 +45,9 @@ def drop_table(session: Session, table_name: str) -> None:
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    table_name : str
+    table_name: str
         The name of the table to be dropped
     """
     metadata = MetaData()
@@ -57,8 +58,15 @@ def drop_table(session: Session, table_name: str) -> None:
     table.drop(checkfirst=True, bind=bind)
 
 
-def initialize_engine(postgres_config: PostgresConfig | None = None) -> Engine:
-    """Initializes the postgres engine from config
+def initialize_engine(postgres_config: PostgresConfig | None = None, ensure_database_created: bool = False) -> Engine:
+    """Initialize the postgres engine from config.
+
+    Arguments
+    ---------
+    postgres_config: PostgresConfig | None, optional
+        The postgres config. If none, will set from `postgres.env` file or set to defaults.
+    ensure_database_created: bool, optional
+        If true, will create the database within postgres if it doesn't exist. Defaults to false.
 
     Returns
     -------
@@ -77,6 +85,23 @@ def initialize_engine(postgres_config: PostgresConfig | None = None) -> Engine:
         database=postgres_config.POSTGRES_DB,
     )
     engine = create_engine(url_object)
+
+    if ensure_database_created:
+        exception = None
+        for _ in range(10):
+            try:
+                if not database_exists(engine.url):
+                    logging.info("Database %s does not exist, creating", postgres_config.POSTGRES_DB)
+                    create_database(engine.url)
+                exception = None
+                break
+            except OperationalError as ex:
+                logging.warning("No postgres connection, retrying")
+                exception = ex
+                time.sleep(1)
+        if exception is not None:
+            raise exception
+
     exception = None
     for _ in range(10):
         try:
@@ -90,24 +115,31 @@ def initialize_engine(postgres_config: PostgresConfig | None = None) -> Engine:
             time.sleep(1)
     if exception is not None:
         raise exception
+
     return engine
 
 
-def initialize_session(drop: bool = False) -> Session:
-    """Initialize the database if not already initialized.
+def initialize_session(
+    postgres_config: PostgresConfig | None = None, drop: bool = False, ensure_database_created: bool = False
+) -> Session:
+    """Initialize the postgres session.
 
     Arguments
     ---------
-    drop: bool
-        If true, will drop all tables in the database before doing anything for debugging
+    postgres_config: PostgresConfig | None, optional
+        The postgres config. If none, will set from `postgres.env` file or set to defaults.
+    drop: bool, optional
+        If true, will drop all tables in the database before doing anything for debugging.
+        Defaults to false.
+    ensure_database_created: bool, optional
+        If true, will create the database within postgres if it doesn't exist. Defaults to false.
 
     Returns
     -------
-    session : Session
+    Session
         The initialized session object
     """
-
-    engine = initialize_engine()
+    engine = initialize_engine(postgres_config, ensure_database_created)
 
     # create a configured "Session" class
     session_class = sessionmaker(bind=engine)
@@ -165,13 +197,13 @@ def add_addr_to_username(
 
     Arguments
     ---------
-    username : str
+    username: str
         The logical username to attach to the wallet address
-    addresses : list[str] | str
+    addresses: list[str] | str
         A single or list of wallet addresses to map to the username
-    session : Session
+    session: Session
         The initialized session object
-    user_suffix : str
+    user_suffix: str
         An optional suffix to add to the username mapping
     force_update: bool
         If true and an existing username is found, will overwrite
@@ -212,18 +244,15 @@ def add_username_to_user(user: str, username: str, session: Session, force_updat
 
     Arguments
     ---------
-    user : str
+    user: str
         The single user to attach a username to
     username: str
         A single or list of wallet addresses to map to the username
-    session : Session
+    session: Session
         The initialized session object
-    user_suffix : str
-        An optional suffix to add to the username mapping
     force_update: bool
         If true and an existing username is found, will overwrite
     """
-
     # Below is a best effort check against the database to see if the address is registered to another username
     # This is best effort because there's a race condition here, e.g.,
     # I read (address_1, user_1), someone else writes (address_1, user_2), I write (address_1, user_1)
@@ -255,9 +284,9 @@ def get_addr_to_username(session: Session, address: str | None = None) -> pd.Dat
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    address : str | None, optional
+    address: str | None, optional
         The wallet address to filter the results on. Return all if None
 
     Returns
@@ -276,10 +305,10 @@ def get_username_to_user(session: Session, username: str | None = None) -> pd.Da
 
     Arguments
     ---------
-    session : Session
+    session: Session
         The initialized session object
-    address : str | None, optional
-        The wallet address to filter the results on. Return all if None
+    username: str | None, optional
+        The username to filter the results on. Return all if None
 
     Returns
     -------
@@ -293,15 +322,19 @@ def get_username_to_user(session: Session, username: str | None = None) -> pd.Da
 
 
 class TableWithBlockNumber(Base):
-    """An abstract table that has blockNumber"""
+    """An abstract table that has block_number"""
 
     __abstract__ = True
 
     @declared_attr
-    # has to be camelCase to match table column name
-    # pylint: disable=invalid-name
-    def blockNumber(self):
-        """Stubbed blockNumber column."""
+    def block_number(self) -> Column:
+        """Stubbed block_number column.
+
+        Returns
+        -------
+        Column
+            The sqlalchemy Column object for the block number
+        """
         return Column(String)
 
 
@@ -310,9 +343,9 @@ def get_latest_block_number_from_table(table_obj: Type[Base], session: Session) 
 
     Arguments
     ---------
-    table_obj : Type[Base]
-        The sqlalchemy class that contains the blockNumber column
-    session : Session
+    table_obj: Type[Base]
+        The sqlalchemy class that contains the block_number column
+    session: Session
         The initialized session object
 
     Returns
@@ -320,14 +353,13 @@ def get_latest_block_number_from_table(table_obj: Type[Base], session: Session) 
     int
         The latest block number from the specified table
     """
-
-    if not hasattr(table_obj, "blockNumber"):
-        raise ValueError("Table does not have a blockNumber column")
+    if not hasattr(table_obj, "block_number"):
+        raise ValueError("Table does not have a block_number column")
 
     table = cast(TableWithBlockNumber, table_obj)
 
     # For some reason, pylint doesn't like func.max from sqlalchemy
-    result = session.query(func.max(table.blockNumber)).first()  # pylint: disable=not-callable
+    result = session.query(func.max(table.block_number)).first()  # pylint: disable=not-callable
     # If table doesn't exist
     if result is None:
         return 0

@@ -22,8 +22,7 @@ with-dependencies = [
     "chainsync[base, lateral]"
 ]
 base = [
-    "fixedpointmath @ git+https://github.com/delvtech/agent_0.git/#subdirectory=lib/fixedpointmath",
-    # TODO figure out the dependencies below
+    "fixedpointmath @ git+https://github.com/delvtech/fixedpointmath.git/#subdirectory=lib/fixedpointmath",
     "matplotlib",
     "numpy",
     "pandas",
@@ -34,13 +33,14 @@ base = [
     "flask-expects-json",
     "psycopg[binary]",
     "sqlalchemy",
+    "sqlalchemy-utils",
     "pandas-stubs",
     "requests",
 ]
 lateral = [
     # Lateral dependencies across subpackages are pointing to github
-    "elfpy @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/elfpy",
-    "ethpy @ git+https://github.com/delvtech/elf-simulations.git/#subdirectory=lib/ethpy",
+    "hyperlogs[with-dependencies] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/hyperlogs",
+    "ethpy[with-dependencies] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/ethpy",
 ]
 
 [build-system]
@@ -48,5 +48,5 @@ requires = ["flit_core>=3.2"]
 build-backend = "flit_core.buildapi"
 
 [project.urls]
-"Homepage" = "https://github.com/delvtech/elf-simulations"
-"Bug Tracker" = "https://github.com/delvtech/elf-simulations/issues"
+"Homepage" = "https://github.com/delvtech/agent0"
+"Bug Tracker" = "https://github.com/delvtech/agent0/issues"

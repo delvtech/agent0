@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from chainsync.exec import data_analysis
-from elfpy.utils import logs as log_utils
+from hyperlogs import setup_logging
 
 if __name__ == "__main__":
-    log_utils.setup_logging(".logging/data_analysis.log", log_stdout=True)
+    setup_logging(".logging/data_analysis.log", log_stdout=True)
     data_analysis()

@@ -1,2 +1,8 @@
-codecov:
-  token: 6eaf54eb-03d4-45bd-a312-2eb79abbc7dd
+# ignore test files themselves
+ignore:
+  - "**/*_test.py"
+  - "**/test_*.py"
+  - "tests/"
+  - "icons/"
+  - "**/*.svg"
+  - "**/hypertypes/types/*.py"

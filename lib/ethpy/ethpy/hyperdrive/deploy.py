@@ -10,7 +10,7 @@ from eth_typing import ChecksumAddress
 from ethpy.base import get_transaction_logs, initialize_web3_with_http_provider, load_all_abis, smart_contract_transact
 from ethpy.base.contract import deploy_contract
 from fixedpointmath import FixedPoint
-from hypertypes.IHyperdriveTypes import Fees, PoolConfig
+from hypertypes import Fees, PoolConfig
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
@@ -18,7 +18,7 @@ from web3.types import TxReceipt
 
 from .addresses import HyperdriveAddresses
 
-# Deploying a Hyperdrive pool requires a long sequence of contract and RPC calls,
+# Deploying a Hyperdrive pool requires a long sequence of contract and RPCs,
 # resulting in long functions with many parameter arguments.
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
@@ -33,6 +33,7 @@ class DeployedHyperdrivePool(NamedTuple):
     hyperdrive_contract: Contract
     hyperdrive_factory_contract: Contract
     base_token_contract: Contract
+    deploy_block_number: int
 
 
 def deploy_hyperdrive_from_factory(
@@ -49,40 +50,42 @@ def deploy_hyperdrive_from_factory(
 
     Arguments
     ---------
-    rpc_uri : str
+    rpc_uri: str
         The URI of the local RPC node.
-    abi_folder : str
+    abi_folder: str
         The local directory that contains all ABI JSON files.
-    deployer_private_key : str
+    deployer_private_key: str
         Private key for the funded wallet for deploying Hyperdrive.
-    initial_liquidity : FixedPoint
+    initial_liquidity: FixedPoint
         The amount of money to be provided by the `deploy_account` for initial pool liquidity.
     initial_variable_rate: FixedPoint
         The starting variable rate for an underlying yield source.
-    initial_fixed_rate : FixedPoint
+    initial_fixed_rate: FixedPoint
         The fixed rate of the pool on initialization.
-    pool_config : PoolConfig
+    pool_config: PoolConfig
         The configuration for initializing hyperdrive.
         The type is generated from the Hyperdrive ABI using Pypechain.
-    max_fees : Fees
+    max_fees: Fees
         The maximum value for the setup fees.
 
     Returns
     -------
     LocalHyperdriveChain
         A named tuple with the following fields:
-            web3 : Web3
+            web3: Web3
                 Web3 provider object.
-            deploy_account : LocalAccount
+            deploy_account: LocalAccount
                 The local account that deploys and initializes hyperdrive.
             hyperdrive_contract_addresses: HyperdriveAddresses
                 The hyperdrive contract addresses.
-            hyperdrive_contract : Contract
+            hyperdrive_contract: Contract
                 Web3 contract instance for the hyperdrive contract.
-            hyperdrive_factory_contract : Contract
+            hyperdrive_factory_contract: Contract
                 Web3 contract instance for the hyperdrive factory contract.
-            base_token_contract : Contract
+            base_token_contract: Contract
                 Web3 contract instance for the base token contract.
+            deploy_block_number: int
+                The block number hyperdrive was deployed at.
     """
     # Contract calls use the web3.py interface
     web3 = initialize_web3_with_http_provider(rpc_uri, reset_provider=False)
@@ -97,7 +100,7 @@ def deploy_hyperdrive_from_factory(
     # ERC20Mintable, MockERC4626, ForwarderFactory, ERC4626HyperdriveDeployer, ERC4626HyperdriveFactory
     abis, bytecodes = load_all_abis(abi_folder, return_bytecode=True)
     # Deploy the factory and base token contracts
-    base_token_contract, factory_contract = _deploy_hyperdrive_factory(
+    base_token_contract, factory_contract, pool_contract_addr = _deploy_hyperdrive_factory(
         web3,
         deploy_account_addr,
         abis,
@@ -122,10 +125,12 @@ def deploy_hyperdrive_from_factory(
             deploy_account,
             initial_liquidity,
             initial_fixed_rate,
+            pool_contract_addr,
             pool_config,
             factory_contract,
         )
     )
+    # Get block number when hyperdrive was deployed
     return DeployedHyperdrivePool(
         web3,
         deploy_account=deploy_account,
@@ -135,9 +140,10 @@ def deploy_hyperdrive_from_factory(
             mock_hyperdrive=hyperdrive_checksum_address,
             mock_hyperdrive_math=None,
         ),
-        hyperdrive_contract=web3.eth.contract(address=hyperdrive_checksum_address, abi=abis["IHyperdrive"]),
+        hyperdrive_contract=web3.eth.contract(address=hyperdrive_checksum_address, abi=abis["IERC4626Hyperdrive"]),
         hyperdrive_factory_contract=factory_contract,
         base_token_contract=base_token_contract,
+        deploy_block_number=web3.eth.block_number,
     )
 
 
@@ -150,7 +156,7 @@ def _dataclass_to_tuple(instance: Any) -> tuple:
 
     Arguments
     ---------
-    instance : dataclass
+    instance: dataclass
         A dataclass, whose fields could contain other dataclasses.
 
     Returns
@@ -168,9 +174,9 @@ def _initialize_deployment_account(web3: Web3, account_private_key: str) -> Loca
 
     Arguments
     ---------
-    web3 : Web3
+    web3: Web3
         Web3 provider object.
-    account_private_key : str
+    account_private_key: str
         Private key for the funded wallet for deploying Hyperdrive.
 
     Returns
@@ -180,7 +186,7 @@ def _initialize_deployment_account(web3: Web3, account_private_key: str) -> Loca
 
     .. todo::
         get private key for `account_private_key` of this account programmatically
-        https://github.com/delvtech/elf-simulations/issues/816
+        https://github.com/delvtech/agent0/issues/816
         This is the private key of account 0 of the anvil pre-funded account
     """
     account: LocalAccount = Account().from_key(account_private_key)
@@ -197,31 +203,31 @@ def _deploy_hyperdrive_factory(
     initial_variable_rate: FixedPoint,
     pool_config: PoolConfig,
     max_fees: Fees,
-) -> tuple[Contract, Contract]:
+) -> tuple[Contract, Contract, ChecksumAddress]:
     """Deploys the hyperdrive factory contract on the rpc_uri chain.
 
     Arguments
     ---------
-    web3 : Web3
+    web3: Web3
         Web3 provider object.
-    deploy_account_addr : ChecksumAddress
+    deploy_account_addr: ChecksumAddress
         The address of the account that's deploying the contract.
-    abis : dict
+    abis: dict
         A dictionary, keyed by the Hyperdrive ABI filename, containing the ABI JSON dictionary for each file.
-    bytecodes : dict
+    bytecodes: dict
         A dictionary, keyed by the Hyperdrive ABI filename, containing the contract bytecode for each file.
-    initial_variable_rate : FixedPoint
+    initial_variable_rate: FixedPoint
         The starting variable rate for an underlying yield source.
-    pool_config : PoolConfig
+    pool_config: PoolConfig
         The configuration for initializing hyperdrive.
         The type is generated from the Hyperdrive ABI using Pypechain.
-    max_fees : Fees
+    max_fees: Fees
         The maximum value for the setup fees.
 
     Returns
     -------
-    (base_token_contract, factory_token_contract) : tuple[Contract, Contract]
-        Containing he deployed base token and factory contracts.
+    (base_token_contract, factory_token_contract, pool_contract_address): tuple[Contract, Contract, ChecksumAddress]
+        Containing the deployed base token, factory, and the pool contracts/addresses.
     """
     # args = [name, symbol, decimals, admin_addr, isCompetitionMode]
     args = ["Base", "BASE", 18, ADDRESS_ZERO, False]
@@ -259,8 +265,20 @@ def _deploy_hyperdrive_factory(
         abi=abis["ERC4626HyperdriveDeployer"],
         bytecode=bytecodes["ERC4626HyperdriveDeployer"],
         deploy_account_addr=deploy_account_addr,
-        args=[pool_contract_addr],
     )
+    target_0_deployer_addr, _ = deploy_contract(
+        web3,
+        abi=abis["ERC4626Target0Deployer"],
+        bytecode=bytecodes["ERC4626Target0Deployer"],
+        deploy_account_addr=deploy_account_addr,
+    )
+    target_1_deployer_addr, _ = deploy_contract(
+        web3,
+        abi=abis["ERC4626Target1Deployer"],
+        bytecode=bytecodes["ERC4626Target1Deployer"],
+        deploy_account_addr=deploy_account_addr,
+    )
+
     _, factory_contract = deploy_contract(
         web3,
         abi=abis["ERC4626HyperdriveFactory"],
@@ -270,19 +288,20 @@ def _deploy_hyperdrive_factory(
             (  # factory config
                 deploy_account_addr,  # governance
                 deploy_account_addr,  # hyperdriveGovernance
+                [],  # defaultPausers (new address[](1))
                 deploy_account_addr,  # feeCollector
                 _dataclass_to_tuple(pool_config.fees),  # curve, flat, governance
                 _dataclass_to_tuple(max_fees),  # max_curve, max_flat, max_governance
-                [],  # defaultPausers (new address[](1))
+                deployer_contract_addr,  # Hyperdrive deployer
+                target_0_deployer_addr,
+                target_1_deployer_addr,
+                forwarder_factory_contract_addr,  # Linker factory
+                forwarder_factory_contract.functions.ERC20LINK_HASH().call(),  # linkerCodeHash
             ),
-            deployer_contract_addr,
-            forwarder_factory_contract_addr,
-            forwarder_factory_contract.functions.ERC20LINK_HASH().call(),
-            pool_contract_addr,
             [],  # new address[](0)
         ],
     )
-    return base_token_contract, factory_contract
+    return base_token_contract, factory_contract, pool_contract_addr
 
 
 def _mint_and_approve(
@@ -296,15 +315,15 @@ def _mint_and_approve(
 
     Arguments
     ---------
-    web3 : Web3
+    web3: Web3
         Web3 provider object.
-    funding_account : LocalAccount
+    funding_account: LocalAccount
         A Web3 LocalAccount for the given private key.
-    funding_contract : Contract
+    funding_contract: Contract
         Web3 contract instance for the contract used to mint tokens.
-    contract_to_approve : Contract
+    contract_to_approve: Contract
         Web3 contract instance for the contract that needs approval from the funding contract.
-    mint_amount : FixedPoint
+    mint_amount: FixedPoint
         The amount to mint and approve.
 
     Returns
@@ -338,6 +357,7 @@ def _deploy_and_initialize_hyperdrive_pool(
     deploy_account: LocalAccount,
     initial_liquidity: FixedPoint,
     initial_fixed_rate: FixedPoint,
+    pool_contract_addr: ChecksumAddress,
     pool_config: PoolConfig,
     factory_contract: Contract,
 ) -> str:
@@ -345,18 +365,20 @@ def _deploy_and_initialize_hyperdrive_pool(
 
     Arguments
     ---------
-    web3 : Web3
+    web3: Web3
         Web3 provider object.
-    deploy_account : LocalAccount
+    deploy_account: LocalAccount
         A Web3 LocalAccount for the given private key.
-    initial_liquidity : FixedPoint
+    initial_liquidity: FixedPoint
         The amount of money to be provided by the `deploy_account` for initial pool liquidity.
-    initial_fixed_rate : FixedPoint
+    initial_fixed_rate: FixedPoint
         The fixed rate of the pool on initialization.
-    pool_config : PoolConfig
+    pool_contract_addr: ChecksumAddress
+        The address of the pool contract.
+    pool_config: PoolConfig
         The configuration for initializing hyperdrive.
         The type is generated from the Hyperdrive ABI using Pypechain.
-    factory_contract : Contract
+    factory_contract: Contract
         The hyperdrive factory contract.
 
     Returns
@@ -366,9 +388,11 @@ def _deploy_and_initialize_hyperdrive_pool(
     """
     fn_args = (
         _dataclass_to_tuple(pool_config),
-        [],  # new bytes[](0)
         initial_liquidity.scaled_value,
         initial_fixed_rate.scaled_value,
+        bytes(0),  # new bytes(0)
+        [],  # new bytes32[](0)
+        pool_contract_addr,
     )
     tx_receipt = smart_contract_transact(
         web3,  # web3

@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import logging
-import re
 import time
 
 import attr
 import requests
 from eth_typing import Address, ChecksumAddress
+
+from hypertypes.utilities.conversions import camel_to_snake
 
 
 @attr.s
@@ -23,7 +24,18 @@ class HyperdriveAddresses:
 
 
 def fetch_hyperdrive_address_from_uri(contracts_uri: str) -> HyperdriveAddresses:
-    """Fetch addresses for deployed contracts in the Hyperdrive system."""
+    """Fetch addresses for deployed contracts in the Hyperdrive system.
+
+    Arguments
+    ---------
+    contracts_uri: str
+        The URI for the artifacts endpoint.
+
+    Returns
+    -------
+    HyperdriveAddresses
+        The addresses for deployed Hyperdrive contracts.
+    """
     response = None
     for _ in range(100):
         response = requests.get(contracts_uri, timeout=60)
@@ -44,9 +56,6 @@ def fetch_hyperdrive_address_from_uri(contracts_uri: str) -> HyperdriveAddresses
     if response.status_code != 200:
         raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
     addresses_json = response.json()
-
-    def camel_to_snake(snake_string: str) -> str:
-        return re.sub(r"(?<!^)(?=[A-Z])", "_", snake_string).lower()
 
     addresses = HyperdriveAddresses(**{camel_to_snake(key): value for key, value in addresses_json.items()})
     return addresses

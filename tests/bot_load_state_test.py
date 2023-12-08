@@ -1,4 +1,4 @@
-"""System test for end to end testing of elf-simulations"""
+"""System test for end to end usage of agent0 libraries."""
 from __future__ import annotations
 
 import logging
@@ -6,30 +6,35 @@ import os
 from dataclasses import dataclass
 from typing import cast
 
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
+import pytest
 from chainsync.exec import acquire_data, data_analysis
-from elfpy.types import MarketType, Trade
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.hyperdrive import HyperdriveInterface
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
+from ethpy.hyperdrive.api import HyperdriveInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator as NumpyGenerator
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base import MarketType, Trade
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import setup_and_run_agent_loop
+from agent0.hyperdrive.policies import HyperdrivePolicy
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
+
 
 class WalletTestPolicy(HyperdrivePolicy):
-    """A agent that simply cycles through all trades"""
+    """An agent that simply cycles through all trades."""
 
-    @dataclass
+    COUNTER_ADD_LIQUIDITY = 0
+    COUNTER_OPEN_LONG = 1
+    COUNTER_OPEN_SHORT = 2
+
+    @dataclass(kw_only=True)
     class Config(HyperdrivePolicy.Config):
-        """Custom config arguments for this policy
+        """Custom config arguments for this policy.
 
         Attributes
         ----------
@@ -43,24 +48,34 @@ class WalletTestPolicy(HyperdrivePolicy):
     # Using default parameters
     def __init__(
         self,
-        budget: FixedPoint,
-        rng: NumpyGenerator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        policy_config: Config | None = None,
+        policy_config: Config,
     ):
-        if policy_config is None:
-            policy_config = self.Config()
+        """Initialize config and set counter to 0."""
 
         # We want to do a sequence of trades one at a time, so we keep an internal counter based on
         # how many times `action` has been called.
         self.counter = 0
         self.rerun = policy_config.rerun
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(policy_config)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """This agent simply opens all trades for a fixed amount and closes them after, one at a time"""
+        """Open all trades for a fixed amount and closes them after, one at a time.
+
+        Arguments
+        ---------
+        interface: HyperdriveInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -77,7 +92,7 @@ class WalletTestPolicy(HyperdrivePolicy):
             # We want this bot to exit and crash after it's done the trades it needs to do
             done_trading = True
 
-        if self.counter == 0:
+        if self.counter == self.COUNTER_ADD_LIQUIDITY:
             # Add liquidity
             action_list.append(
                 Trade(
@@ -89,7 +104,7 @@ class WalletTestPolicy(HyperdrivePolicy):
                     ),
                 )
             )
-        elif self.counter == 1:
+        elif self.counter == self.COUNTER_OPEN_LONG:
             # Open Long
             action_list.append(
                 Trade(
@@ -101,7 +116,7 @@ class WalletTestPolicy(HyperdrivePolicy):
                     ),
                 )
             )
-        elif self.counter == 2:
+        elif self.counter == self.COUNTER_OPEN_SHORT:
             # Open Short
             action_list.append(
                 Trade(
@@ -120,19 +135,18 @@ class WalletTestPolicy(HyperdrivePolicy):
 
 
 class TestBotToDb:
-    """Tests pipeline from bots making trades to viewing the trades in the db"""
+    """Test pipeline from bots making trades to viewing the trades in the db."""
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
+    @pytest.mark.anvil
     def test_bot_to_db(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
         db_session: Session,
         db_api: str,
     ):
-        """Runs the entire pipeline and checks the database at the end.
-        All arguments are fixtures.
-        """
+        """Runs the entire pipeline and checks the database at the end. All arguments are fixtures."""
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
 
@@ -148,7 +162,7 @@ class TestBotToDb:
             log_filename="system_test",
             log_level=logging.INFO,
             log_stdout=True,
-            random_seed=1234,
+            global_random_seed=1234,
             username="test",
         )
 
@@ -157,10 +171,12 @@ class TestBotToDb:
             AgentConfig(
                 policy=WalletTestPolicy,
                 number_of_agents=1,
-                slippage_tolerance=FixedPoint("0.0001"),
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=WalletTestPolicy.Config(rerun=False),
+                policy_config=WalletTestPolicy.Config(
+                    slippage_tolerance=FixedPoint("0.0001"),
+                    rerun=False,
+                ),
             ),
         ]
 
@@ -176,7 +192,7 @@ class TestBotToDb:
             # Using default abi dir
         )
 
-        run_agents(
+        setup_and_run_agent_loop(
             env_config,
             agent_config,
             account_key_config,
@@ -186,7 +202,7 @@ class TestBotToDb:
 
         # Run acquire data to get data from chain to db
         acquire_data(
-            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -196,7 +212,7 @@ class TestBotToDb:
 
         # Run data analysis to calculate various analysis values
         data_analysis(
-            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -211,14 +227,16 @@ class TestBotToDb:
             AgentConfig(
                 policy=WalletTestPolicy,
                 number_of_agents=1,
-                slippage_tolerance=FixedPoint("0.0001"),
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=WalletTestPolicy.Config(rerun=False),
+                policy_config=WalletTestPolicy.Config(
+                    slippage_tolerance=FixedPoint("0.0001"),
+                    rerun=False,
+                ),
             ),
         ]
 
-        run_agents(
+        setup_and_run_agent_loop(
             env_config,
             agent_config,
             account_key_config,

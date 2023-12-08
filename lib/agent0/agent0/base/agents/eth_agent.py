@@ -3,14 +3,15 @@ from __future__ import annotations
 
 from typing import Generic, TypeVar
 
-from agent0.base import Quantity, TokenType
-from agent0.base.policies import BasePolicy, NoActionPolicy
-from agent0.base.state import EthWallet
-from elfpy.types import Trade
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
+from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
+
+from agent0.base import Quantity, TokenType, Trade
+from agent0.base.policies import BasePolicy, NoActionPolicy
+from agent0.base.state import EthWallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 MarketInterface = TypeVar("MarketInterface")
@@ -20,15 +21,17 @@ MarketAction = TypeVar("MarketAction")
 class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
     r"""Enact policies on smart contracts and tracks wallet state"""
 
-    def __init__(self, account: LocalAccount, policy: Policy | None = None):
+    def __init__(self, account: LocalAccount, initial_budget: FixedPoint | None = None, policy: Policy | None = None):
         """Initialize an agent and wallet account
 
         Arguments
-        ----------
-        account : LocalAccount
+        ---------
+        account: LocalAccount
             A Web3 local account for storing addresses & signing transactions.
-        policy : Policy
-            Elfpy policy for producing agent actions.
+        initial_budget: FixedPoint | None, optional
+            The initial budget for the wallet bookkeeping.
+        policy: Policy | None, optional
+            Policy for producing agent actions.
             If None, then a policy that executes no actions is used.
 
         Note
@@ -38,7 +41,7 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
         .. code-block:: python
 
             >>> from eth_account.account import Account
-            >>> from elfpy.eth.accounts.eth_account import EthAgent
+            >>> from agent0.base.agents import EthAgent
             >>> agent = EthAgent(Account().create("CHECKPOINT_BOT"))
 
         Alternatively, you can also use the Account api to provide a pre-generated key:
@@ -46,7 +49,7 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
         .. code-block:: python
 
             >>> from eth_account.account import Account
-            >>> from elfpy.eth.accounts.eth_account import EthAgent
+            >>> from agent0.base.agents import EthAgent
             >>> agent = EthAgent(Account().from_key(agent_private_key))
 
         The EthAgent has the same properties as a Web3 LocalAgent.
@@ -61,15 +64,22 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
 
         """
         if policy is None:
-            self.policy = NoActionPolicy()
+            self.policy = NoActionPolicy(NoActionPolicy.Config())
         else:
             self.policy = policy
+
+        # TODO budget should have a flag to allow for "the budget is however much this wallet has"
+        # https://github.com/delvtech/agent0/issues/827
+        if initial_budget is None:
+            initial_budget = FixedPoint(0)
+
         # State variable defining if this agent is done trading
         self.done_trading = False
         super().__init__(account._key_obj, account._publicapi)  # pylint: disable=protected-access
+
         self.wallet = EthWallet(
             address=HexBytes(self.address),
-            balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE),
+            balance=Quantity(amount=initial_budget, unit=TokenType.BASE),
         )
 
     @property
@@ -81,8 +91,8 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
         """Helper function for computing a agent trade
 
         Arguments
-        ----------
-        interface : MarketInterface
+        ---------
+        interface: MarketInterface
             Interface for the market on which this agent will be executing trades (MarketActions)
 
         Returns

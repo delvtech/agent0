@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from chainsync.exec import acquire_data
-from elfpy.utils import logs as log_utils
+from hyperlogs import setup_logging
 
 if __name__ == "__main__":
-    log_utils.setup_logging(".logging/acquire_data.log", log_stdout=True)
+    setup_logging(".logging/acquire_data.log", log_stdout=True)
     acquire_data()

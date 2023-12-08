@@ -4,11 +4,11 @@ from __future__ import annotations
 from typing import overload
 
 import pandas as pd
-from chainsync.db.base import get_addr_to_username, get_username_to_user
-from sqlalchemy.orm import Session
 
 
-def build_user_mapping(session: Session, addresses: pd.Series) -> pd.DataFrame:
+def build_user_mapping(
+    addresses: pd.Series, addr_to_username: pd.DataFrame, username_to_user: pd.DataFrame
+) -> pd.DataFrame:
     """Given a pd.Series of wallet addresses, we build a corresponding dataframe that contains
     the mapping between that wallet address and any additional aliases that address may have.
     Specifically, the output dataframe contains the following columns:
@@ -22,10 +22,12 @@ def build_user_mapping(session: Session, addresses: pd.Series) -> pd.DataFrame:
 
     Arguments
     ---------
-    session: Session
-        The initialized postgres session object
     addresses: pd.Series
         The list of addresses to build the user map for.
+    addr_to_username: pd.DataFrame
+        The mapping of addresses to username returned from `get_addr_to_username`.
+    username_to_user: pd.DataFrame
+        The mapping of usernames to user returned from `get_username_to_user`.
 
     Returns
     -------
@@ -36,9 +38,6 @@ def build_user_mapping(session: Session, addresses: pd.Series) -> pd.DataFrame:
     out = addresses.to_frame().copy()
     out.columns = ["address"]
     out["abbr_address"] = abbreviate_address(out["address"])
-
-    addr_to_username = get_addr_to_username(session)
-    username_to_user = get_username_to_user(session)
 
     out = out.merge(addr_to_username, how="left", left_on="address", right_on="address")
     out = out.merge(username_to_user, how="left", left_on="username", right_on="username")
@@ -119,5 +118,4 @@ def abbreviate_address(addresses: pd.Series) -> pd.Series:
     pd.Series
         The corresponding abbreviated addresses in the same order (with the same indices)
     """
-
     return addresses.str[:6] + "..." + addresses.str[-4:]

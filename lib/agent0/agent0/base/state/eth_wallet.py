@@ -3,13 +3,41 @@ from __future__ import annotations
 
 import copy
 import logging
+from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Generic, TypeVar
 
-from agent0.base import Quantity, TokenType, freezable
-from elfpy import check_non_zero
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
+
+from agent0.base import Quantity, TokenType, freezable
+
+
+def check_non_zero(data: Any) -> None:
+    r"""Performs a general non-zero check on a dictionary or class that has a __dict__ attribute.
+
+    Arguments
+    ---------
+    data: Any
+        The data to check for non-zero values.
+        If it is a FixedPoint then it will be checked.
+        If it is dict-like then each key/value in the dict will be checked.
+        Otherwise it will not be checked.
+    """
+    if isinstance(data, FixedPoint) and data < FixedPoint(0):
+        raise AssertionError(f"{data=} >= 0")
+    if hasattr(data, "__dict__"):  # can be converted to a dict
+        check_non_zero(data.__dict__)
+    if isinstance(data, (dict, defaultdict)):
+        for key, value in data.items():
+            if isinstance(value, FixedPoint) and value < FixedPoint(0):
+                raise AssertionError(f"{key} attribute with {value=} must be >= 0")
+            if isinstance(value, dict):
+                check_non_zero(value)
+            elif hasattr(value, "__dict__"):  # can be converted to a dict
+                check_non_zero(value.__dict__)
+            else:
+                continue  # noop; frozen, etc
 
 
 @freezable()
@@ -18,31 +46,42 @@ class EthWalletDeltas:
     r"""Stores changes for an agent's wallet
 
     Arguments
-    ----------
-    balance : Quantity
+    ---------
+    balance: Quantity
         The base assets that held by the trader.
     """
+
     # fungible
     balance: Quantity = field(default_factory=lambda: Quantity(amount=FixedPoint(0), unit=TokenType.BASE))
 
     # TODO: Support multiple typed balances:
     #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
     def copy(self) -> EthWalletDeltas:
-        """Returns a new copy of self"""
+        """Returns a new copy of self.
+
+        Returns
+        -------
+        EthWalletDeltas
+            A deepcopy of the deltas.
+        """
         return EthWalletDeltas(**copy.deepcopy(self.__dict__))
 
 
+T = TypeVar("T", bound=EthWalletDeltas)
+
+
 @dataclass(kw_only=True)
-class EthWallet:
+class EthWallet(Generic[T]):
     r"""Stateful variable for storing what is in the agent's wallet
 
     Arguments
-    ----------
-    address : HexBytes
+    ---------
+    address: HexBytes
         The associated agent's eth address
-    balance : Quantity
+    balance: Quantity
         The base assets that held by the trader.
     """
+
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
     address: HexBytes
@@ -57,15 +96,21 @@ class EthWallet:
         setattr(self, key, value)
 
     def copy(self) -> EthWallet:
-        """Returns a new copy of self"""
+        """Returns a new copy of self.
+
+        Returns
+        -------
+        EthWallet
+            A deepcopy of the wallet.
+        """
         return EthWallet(**copy.deepcopy(self.__dict__))
 
-    def update(self, wallet_deltas: EthWalletDeltas) -> None:
+    def update(self, wallet_deltas: T) -> None:
         """Update the agent's wallet in-place
 
         Arguments
-        ----------
-        wallet_deltas : AgentDeltas
+        ---------
+        wallet_deltas: AgentDeltas
             The agent's wallet that tracks the amount of assets this agent holds
         """
         # track over time the agent's weighted average spend, for return calculation
@@ -90,7 +135,14 @@ class EthWallet:
             self.check_valid_wallet_state(self.__dict__)
 
     def check_valid_wallet_state(self, dictionary: dict | None = None) -> None:
-        """Test that all wallet state variables are greater than zero"""
+        """Test that all wallet state variables are greater than zero.
+
+        Arguments
+        ---------
+        dictionary: dict | None, optional
+            The dictionary to check.
+            If not provided, it will use `self.__dict__`.
+        """
         if dictionary is None:
             dictionary = self.__dict__
         check_non_zero(dictionary)

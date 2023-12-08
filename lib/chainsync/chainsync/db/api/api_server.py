@@ -5,7 +5,7 @@ import logging
 
 from chainsync.db.base import add_addr_to_username, close_session, initialize_session
 from chainsync.db.hyperdrive import get_current_wallet
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, request
 from flask_expects_json import expects_json
 
 app = Flask(__name__)
@@ -20,8 +20,14 @@ register_agents_json_schema = {
 
 @app.route("/register_agents", methods=["POST"])
 @expects_json(register_agents_json_schema)
-def register_agents():
-    """Registers a list of wallet addresses to a username via post request"""
+def register_agents() -> tuple[Response, int]:
+    """Registers a list of wallet addresses to a username via post request.
+
+    Returns
+    -------
+    tuple[Response, int]
+        A tuple containing the response and status code of the request.
+    """
     # TODO: validate the json
     data = request.json
     if data is not None:
@@ -55,10 +61,15 @@ balance_of_json_schema = {
 
 @app.route("/balance_of", methods=["POST"])
 @expects_json(balance_of_json_schema)
-def balance_of():
+def balance_of() -> tuple[Response, int]:
     """Retrieves the balance of a given wallet address from the db.
     Note that this only takes into account token differences from opening and closing
     longs and shorts, not any transfer events between wallets.
+
+    Returns
+    -------
+    tuple[Response, int]
+        A tuple containing the response and status code of the request.
     """
     # TODO: validate the json
     data = request.json
@@ -72,8 +83,13 @@ def balance_of():
     session = initialize_session()
     try:
         logging.debug("Querying wallet_addrs=%s for balances}", wallet_addrs)
-        current_wallet = get_current_wallet(session, wallet_address=wallet_addrs, coerce_float=False)
-        # Cast decimal to string, then convert to json and return
+        current_wallet = get_current_wallet(session, wallet_address=wallet_addrs, coerce_float=False).copy()
+        # Avoid exp notation for value field
+        # Need a function here to pass to apply, so we use format instead of f-string
+        current_wallet["value"] = current_wallet["value"].apply(
+            "{:f}".format  # pylint: disable=consider-using-f-string
+        )
+        # Convert everything else to strings, then convert to json
         data = current_wallet.astype(str).to_json()
 
         # Convert dataframe to json
@@ -91,11 +107,11 @@ def launch_flask(host: str | None = None, port: int | None = None):
 
     Arguments
     ---------
-    db_session: Session | None
-        Session object for connecting to db. If None, will initialize a new session based on
-        postgres.env.
+    host: str | None, optional
+        The host to launch the api server on. Defaults to 0.0.0.0.
+    port: int | None, optional
+        The port to launch the api server on. Defaults to 5002
     """
-
     if host is None:
         host = "0.0.0.0"
     if port is None:

@@ -4,14 +4,14 @@ from __future__ import annotations
 import logging
 from typing import TypeVar
 
-from agent0.base import Quantity, TokenType
+from eth_account.signers.local import LocalAccount
+from ethpy.hyperdrive.api import HyperdriveInterface
+from fixedpointmath import FixedPoint
+
+from agent0.base import MarketType, Trade
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
-from elfpy.types import MarketType, Trade
-from eth_account.signers.local import LocalAccount
-from ethpy.hyperdrive import HyperdriveInterface
-from hexbytes import HexBytes
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 
@@ -23,51 +23,23 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         should be able to get the HyperdriveMarketAction type from the HyperdriveInterface
     """
 
-    def __init__(self, account: LocalAccount, policy: Policy | None = None):
+    def __init__(self, account: LocalAccount, initial_budget: FixedPoint | None = None, policy: Policy | None = None):
         """Initialize an agent and wallet account
 
         Arguments
-        ----------
-        account : LocalAccount
+        ---------
+        account: LocalAccount
             A Web3 local account for storing addresses & signing transactions.
-        policy : Policy
-            Elfpy policy for producing agent actions.
+        initial_budget: FixedPoint | None, optional
+            The initial budget for the wallet bookkeeping.
+        policy: Policy | None, optional
+            Policy for producing agent actions.
             If None, then a policy that executes no actions is used.
 
-        Note
-        ----
-        If you wish for your private key to be generated, then you can do so with:
-
-        .. code-block:: python
-
-            >>> from eth_account.account import Account
-            >>> from elfpy.eth.accounts.eth_account import EthAgent
-            >>> agent = EthAgent(Account().create("CHECKPOINT_BOT"))
-
-        Alternatively, you can also use the Account api to provide a pre-generated key:
-
-        .. code-block:: python
-
-            >>> from eth_account.account import Account
-            >>> from elfpy.eth.accounts.eth_account import EthAgent
-            >>> agent = EthAgent(Account().from_key(agent_private_key))
-
-        The EthAgent has the same properties as a Web3 LocalAgent.
-        For example, you can get public and private keys as well as the address:
-
-            .. code-block:: python
-
-                >>> address = agent.address
-                >>> checksum_address = agent.checksum_address
-                >>> public_key = agent.key
-                >>> private_key = bytes(agent)
-
         """
-        super().__init__(account, policy)
-        self.wallet = HyperdriveWallet(
-            address=HexBytes(self.address),
-            balance=Quantity(amount=self.policy.budget, unit=TokenType.BASE),
-        )
+        super().__init__(account, initial_budget, policy)
+        # Reinitialize the wallet to the subclass
+        self.wallet = HyperdriveWallet(address=self.wallet.address, balance=self.wallet.balance)
 
     def get_liquidation_trades(self) -> list[Trade[HyperdriveMarketAction]]:
         """List of trades that liquidate all open positions
@@ -93,7 +65,11 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
                     )
                 )
         for maturity_time, short in self.wallet.shorts.items():
-            logging.debug("closing short: maturity_time=%g, balance=%s", maturity_time, short.balance)
+            logging.debug(
+                "closing short: maturity_time=%g, balance=%s",
+                maturity_time,
+                short.balance,
+            )
             if short.balance > 0:
                 action_list.append(
                     Trade(
@@ -141,8 +117,8 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         """Helper function for computing a agent trade
 
         Arguments
-        ----------
-        interface : HyperdriveInterface
+        ---------
+        interface: HyperdriveInterface
             The market on which this agent will be executing trades (MarketActions)
 
         Returns
@@ -158,10 +134,6 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
         # edit each action in place
         for action in actions:
             if action.market_type == MarketType.HYPERDRIVE and action.market_action.maturity_time is None:
-                # TODO market latest_checkpoint_time and position_duration should be in ints
-                action.market_action.maturity_time = (
-                    interface.seconds_since_latest_checkpoint + interface.pool_config["positionDuration"]
-                )
                 if action.market_action.trade_amount <= 0:
                     raise ValueError("Trade amount cannot be zero or negative.")
         return actions

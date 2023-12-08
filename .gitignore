@@ -19,16 +19,18 @@ __pypackages__/
 # default logging directory
 .logging
 
+# Crash reporting directory
+.crash_report
+
+# Interactive snapshot state directory
+.interactive_state
+
 # build directories
 .build
 *.egg-info
 
 # output directory for saved notebook figures
 figs
-
-# other Delv packages
-hyperdrive_solidity
-agent_0
 
 # ape, compiler, pytest cache
 .cache
@@ -66,7 +68,7 @@ dmypy.json
 # pycharm
 .idea
 
-# elfpy files for data used for testing
+# files used for testing
 random_seed.txt
 no_crash.txt
 *.gif

@@ -28,7 +28,13 @@ class DropMe(DummyBase):
 
 @pytest.fixture(scope="function")
 def dummy_session() -> Iterator[Session]:
-    """Dummy session fixture for tests"""
+    """Dummy session fixture for tests.
+
+    Yields
+    -------
+    Session
+        A sqlalchemy session object
+    """
     engine = create_engine("sqlite:///:memory:")  # in-memory SQLite database for testing
     session = sessionmaker(bind=engine)
     DummyBase.metadata.create_all(engine)  # create tables

@@ -18,25 +18,38 @@ class EthConfig:
         The uri of the artifacts server from which we get addresses.
     rpc_uri: URI | str
         The uri to the ethereum node.
+    database_api_uri: URI | str
+        The uri to the database server.
     abi_dir: str
         The path to the abi directory.
+    preview_before_trade: bool, optional
+        Whether to preview the trade before submitting it. Defaults to False.
     """
 
     artifacts_uri: URI | str = URI("http://localhost:8080")
     rpc_uri: URI | str = URI("http://localhost:8545")
-    database_api_uri: str = URI("http://localhost:5002")
+    database_api_uri: URI | str = URI("http://localhost:5002")
     abi_dir: str = "./packages/hyperdrive/src/abis"
+    preview_before_trade: bool = False
 
     def __post_init__(self):
         if isinstance(self.artifacts_uri, str):
             self.artifacts_uri = URI(self.artifacts_uri)
         if isinstance(self.rpc_uri, str):
             self.rpc_uri = URI(self.rpc_uri)
+        if isinstance(self.database_api_uri, str):
+            self.database_api_uri = URI(self.database_api_uri)
 
 
-def build_eth_config() -> EthConfig:
+def build_eth_config(dotenv_file: str = "eth.env") -> EthConfig:
     """Build an eth config that looks for environmental variables.
     If env var exists, use that, otherwise, default.
+
+    Arguments
+    ---------
+    dotenv_file: str, optional
+        The path location of the dotenv file to load from.
+        Defaults to "eth.env".
 
     Returns
     -------
@@ -44,20 +57,24 @@ def build_eth_config() -> EthConfig:
         Config settings required to connect to the eth node
     """
     # Look for and load local config if it exists
-    load_dotenv("eth.env")
+    if os.path.exists(dotenv_file):
+        load_dotenv(dotenv_file)
 
     artifacts_uri = os.getenv("ARTIFACTS_URI")
     rpc_uri = os.getenv("RPC_URI")
     database_api_uri = os.getenv("DATABASE_API_URI")
     abi_dir = os.getenv("ABI_DIR")
+    preview_before_trade = os.getenv("PREVIEW_BEFORE_TRADE")
 
     arg_dict = {}
     if artifacts_uri is not None:
         arg_dict["artifacts_uri"] = artifacts_uri
     if rpc_uri is not None:
         arg_dict["rpc_uri"] = rpc_uri
-    if abi_dir is not None:
-        arg_dict["abi_dir"] = abi_dir
     if database_api_uri is not None:
         arg_dict["database_api_uri"] = database_api_uri
+    if abi_dir is not None:
+        arg_dict["abi_dir"] = abi_dir
+    if preview_before_trade is not None:
+        arg_dict["preview_before_trade"] = preview_before_trade
     return EthConfig(**arg_dict)

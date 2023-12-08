@@ -1,10 +1,12 @@
-# Documentation
+# Contributing to agent0
+
+## Documentation
 
 We strive for verbose and readable comments and docstrings.
-Our documentation follows the [Numpy format](https://numpydoc.readthedocs.io/en/latest/format.html).
+All code and documentation should follow our [style guide](STYLEGUIDE.md).
 The hosted docs are automatically generated using [Sphinx](https://www.sphinx-doc.org/en/master/tutorial/automatic-doc-generation.html).
 
-# Contributor git workflow
+## Contributor git workflow
 
 We follow a standard [feature branch rebase workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow) that prioritizes short PRs with isolated improvements.
 Commits to `main` should **only** be made in the form of squash-merges from pull requests.
@@ -29,7 +31,7 @@ Once the PR is approved, we perform a final rebase, if necessary, and then a _sq
 This means each PR results in a single commit to `main`.
 Please provide a brief description of the PR in the summary, as opposed to a list of commit strings.
 
-# Contributing a new bot policy
+## Contributing a new bot policy
 
 We welcome contributions of new bot policies, alongside those in `lib/agent0/agent0/hyperdrive/policies`.
 

@@ -1,9 +1,14 @@
 """Hyperdrive AssetId classes and methods"""
 from enum import IntEnum
 
+# TODO get this value from the deployed pool, putting this here now for reference
+# across everything
+BASE_TOKEN_SYMBOL = "WETH"
+
 
 class AssetIdPrefix(IntEnum):
     r"""The asset ID is used to encode the trade type in a transaction receipt"""
+
     LP = 0
     LONG = 1
     SHORT = 2
@@ -20,10 +25,10 @@ def encode_asset_id(prefix: int, timestamp: int) -> int:
     then bitwise-or-ing the result with the timestamp.
 
     Arguments
-    --------
-    prefix : int
+    ---------
+    prefix: int
         A one byte prefix that specifies the asset type.
-    timestamp : int
+    timestamp: int
         A timestamp associated with the asset.
 
     Returns
@@ -47,7 +52,7 @@ def decode_asset_id(asset_id: int) -> tuple[int, int]:
 
     Arguments
     ---------
-    asset_id : int
+    asset_id: int
         Encoded ID from a transaction. It is a concatenation, [identifier: 8 bits][timestamp: 248 bits]
 
     Returns

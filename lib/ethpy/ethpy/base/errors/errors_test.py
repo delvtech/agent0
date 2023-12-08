@@ -1,4 +1,5 @@
 """Tests for errors.py"""
+from __future__ import annotations
 import pytest
 
 from .errors import decode_error_selector_for_contract
@@ -9,7 +10,13 @@ class TestDecodeErrorSelector:
 
     @pytest.fixture
     def mock_contract(self):
-        """Fixture that returns a MockContract."""
+        """Fixture that returns a MockContract.
+
+        Returns
+        -------
+        MockContract
+            Mock contract for testing.
+        """
 
         class MockContract:
             """Mock contract for testing."""

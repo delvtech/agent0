@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from fixedpointmath import FixedPoint, FixedPointMath
-from numpy.random._generator import Generator as NumpyGenerator
+from numpy.random._generator import Generator
 
 
 @dataclass
@@ -21,7 +21,7 @@ class Budget:
     min_wei: int
     max_wei: int
 
-    def sample_budget(self, rng: NumpyGenerator) -> FixedPoint:
+    def sample_budget(self, rng: Generator) -> FixedPoint:
         """Return a sample from a clipped normal distribution.
 
         Sample from normal distribution with mean of mean_wei and standard deviation of std_wei.
@@ -29,8 +29,8 @@ class Budget:
 
         Arguments
         ---------
-        rng : NumpyGenerator
-            The NumpyGenerator provides access to a wide range of distributions, and stores the random state.
+        rng: `Generator <https://numpy.org/doc/stable/reference/random/generator.html>`_
+            The numpy Generator provides access to a wide range of distributions, and stores the random state.
 
         Returns
         -------

@@ -1,6 +1,7 @@
 """Utilities for handling transaction receipts"""
 from __future__ import annotations
 
+import warnings
 from typing import Any, Sequence, cast
 
 from web3 import Web3
@@ -15,11 +16,11 @@ def get_transaction_logs(
 
     Arguments
     ---------
-    contract : Contract
+    contract: Contract
         The contract that emitted the receipt
-    tx_receipt : TxReceipt
+    tx_receipt: TxReceipt
         The emitted receipt after a transaction was completed
-    event_names : Sequence[str] | None
+    event_names: Sequence[str] | None
         If not None, then only return logs with matching event names
 
 
@@ -50,9 +51,9 @@ def get_event_object(
 
     Arguments
     ---------
-    contract : Contract
+    contract: Contract
         The contract that emitted the receipt
-    log : LogReceipt
+    log: LogReceipt
         A TypedDict parsed out of the transaction receipt
     tx_receipt: TxReceipt
         The emitted receipt after a transaction was completed
@@ -76,6 +77,10 @@ def get_event_object(
         if event_signature_hex == receipt_event_signature_hex and name is not None:
             # Decode matching log
             contract_event = contract.events[name]()
-            event_data: EventData = contract_event.process_receipt(tx_receipt)[0]
+            # TODO web3 is throwing a warning on mismatched ABI for events here, fix
+            # https://github.com/delvtech/agent0/issues/1130
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                event_data: EventData = contract_event.process_receipt(tx_receipt)[0]
             return event_data, event
     return (None, None)

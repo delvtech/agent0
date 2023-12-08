@@ -5,9 +5,6 @@ import asyncio
 import logging
 import os
 
-from agent0 import AccountKeyConfig
-from agent0.hyperdrive.agents import HyperdriveAgent
-from elfpy.utils import logs as log_utils
 from eth_account.account import Account
 from ethpy import EthConfig
 from ethpy.base import (
@@ -17,10 +14,13 @@ from ethpy.base import (
     initialize_web3_with_http_provider,
     load_abi_from_file,
     retry_call,
-    smart_contract_read,
 )
 from ethpy.hyperdrive import HyperdriveAddresses
+from hyperlogs import setup_logging
 from web3.types import Nonce, TxReceipt
+
+from agent0 import AccountKeyConfig
+from agent0.hyperdrive.agents import HyperdriveAgent
 
 RETRY_COUNT = 5
 
@@ -37,7 +37,7 @@ async def async_fund_agents(
 
     Arguments
     ---------
-    user_account : HyperdriveAgent
+    user_account: HyperdriveAgent
         The HyperdriveAgent corresponding to the user account to fund the agents.
     eth_config: EthConfig
         Configuration for URIs to the rpc and artifacts.
@@ -47,9 +47,8 @@ async def async_fund_agents(
     contract_addresses: HyperdriveAddresses
         Configuration for defining various contract addresses.
     """
-
     # Funding contains its own logging as this is typically run from a script or in debug mode
-    log_utils.setup_logging(".logging/fund_accounts.log", log_stdout=True, delete_previous_logs=True)
+    setup_logging(".logging/fund_accounts.log", log_stdout=True, delete_previous_logs=True)
 
     agent_accounts = [
         HyperdriveAgent(Account().from_key(agent_private_key)) for agent_private_key in account_key_config.AGENT_KEYS
@@ -79,11 +78,7 @@ async def async_fund_agents(
             f"which must be >= {total_agent_eth_budget=}"
         )
 
-    user_base_balance = smart_contract_read(
-        base_token_contract,
-        "balanceOf",
-        user_account.checksum_address,
-    )["value"]
+    user_base_balance = base_token_contract.functions.balanceOf(user_account.checksum_address).call()
     if user_base_balance < total_agent_base_budget:
         raise AssertionError(
             f"User account {user_account.checksum_address=} has {user_base_balance=}, "
@@ -117,7 +112,9 @@ async def async_fund_agents(
             )
             for i, (agent_account, agent_eth_budget) in enumerate(accounts_left)
         ]
-        gather_results: list[TxReceipt | Exception] = await asyncio.gather(*eth_funding_calls, return_exceptions=True)
+        gather_results: list[TxReceipt | BaseException] = await asyncio.gather(
+            *eth_funding_calls, return_exceptions=True
+        )
 
         # Rebuild accounts_left list if the result errored out for next iteration
         accounts_left = []
@@ -161,7 +158,9 @@ async def async_fund_agents(
             )
             for i, (agent_account, agent_base_budget) in enumerate(accounts_left)
         ]
-        gather_results: list[TxReceipt | Exception] = await asyncio.gather(*base_funding_calls, return_exceptions=True)
+        gather_results: list[TxReceipt | BaseException] = await asyncio.gather(
+            *base_funding_calls, return_exceptions=True
+        )
 
         # Rebuild accounts_left list if the result errored out for next iteration
         accounts_left = []

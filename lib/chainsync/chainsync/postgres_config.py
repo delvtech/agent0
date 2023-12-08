@@ -1,4 +1,5 @@
 """Defines the postgres configuration from env vars."""
+from __future__ import annotations
 
 import os
 from dataclasses import dataclass
@@ -14,15 +15,15 @@ class PostgresConfig:
 
     Attributes
     ----------
-    POSTGRES_USER : str
+    POSTGRES_USER: str
         The username to authenticate with
-    POSTGRES_PASSWORD : str
+    POSTGRES_PASSWORD: str
         The password to authenticate with
-    POSTGRES_DB : str
+    POSTGRES_DB: str
         The name of the database
-    POSTGRES_HOST : str
+    POSTGRES_HOST: str
         The hostname to connect to
-    POSTGRES_PORT : int
+    POSTGRES_PORT: int
         The port to connect to
     """
 
@@ -34,17 +35,17 @@ class PostgresConfig:
     POSTGRES_DB: str = "postgres_db"
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
+    POSTGRES_VERSION: str | None = None
 
 
 def build_postgres_config() -> PostgresConfig:
     """Build a PostgresConfig that looks for environmental variables.
-
-    If env var exists, use that, otherwise, default
+    If env var exists, use that, otherwise, use default.
 
     Returns
     -------
-    config : PostgresConfig
-        Config settings required to connect to and use the database
+    PostgresConfig
+        Config settings required to connect to and use the database.
     """
     # Look for and load local config if it exists
     load_dotenv("postgres.env")

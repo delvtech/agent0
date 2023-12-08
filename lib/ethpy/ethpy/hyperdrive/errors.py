@@ -9,8 +9,7 @@ def lookup_hyperdrive_error_selector(error_selector: str) -> str:
 
     Arguments
     ---------
-
-    error_selector : str
+    error_selector: str
         A 3 byte hex string obtained from a keccak256 has of the error signature, i.e.
         'InvalidToken()' would yield '0xc1ab6dc1'.
 

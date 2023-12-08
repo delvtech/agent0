@@ -1,7 +1,6 @@
 """Base policy class. Subclasses of BasicPolicy will implement trade actions."""
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from textwrap import dedent, indent
 from typing import TYPE_CHECKING, Generic, TypeVar
@@ -10,44 +9,63 @@ from fixedpointmath import FixedPoint
 from numpy.random import default_rng
 
 if TYPE_CHECKING:
+    from numpy.random._generator import Generator
+
+    from agent0.base import Trade
     from agent0.base.state import EthWallet
-    from elfpy.types import Trade
-    from ethpy.base import BaseInterface
-    from numpy.random._generator import Generator as NumpyGenerator
 
 Wallet = TypeVar("Wallet", bound="EthWallet")
-MarketInterface = TypeVar("MarketInterface", bound="BaseInterface")
+MarketInterface = TypeVar("MarketInterface")
 
 
 class BasePolicy(Generic[MarketInterface, Wallet]):
     """Base class policy."""
 
-    @dataclass
+    # Because we're inheriting from this config, we need to set
+    # kw_only so that we can mix and match defaults and non-defaults
+    @dataclass(kw_only=True)
     class Config:
-        """Config data class for policy specific configuration"""
+        """Config data class for policy specific configuration
 
-    def __init__(
-        self,
-        budget: FixedPoint,
-        rng: NumpyGenerator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        # TODO should we pass in policy_config here in the base class constructor?
-    ):
-        # TODO budget should have a flag to allow for "the budget is however much this wallet has"
-        # https://github.com/delvtech/elf-simulations/issues/827
-        if not isinstance(budget, FixedPoint):
-            raise TypeError(f"{budget=} must be of type `FixedPoint`")
-        self.budget: FixedPoint = budget
-        self.slippage_tolerance = slippage_tolerance
-        if rng is None:  # TODO: Check that multiple agent.rng derefs to the same rng object
-            logging.warning("Policy random number generator (rng) argument not set, using seed of `123`.")
-            self.rng: NumpyGenerator = default_rng(123)
-        else:
-            self.rng: NumpyGenerator = rng
+        Attributes
+        ----------
+        rng_seed: int | None, optional
+            The seed for the random number generator. Defaults to None
+        rng: Generator | None, optional
+            The experiment's stateful random number generator. Defaults to a spawn of the global rng.
+        """
+
+        rng_seed: int | None = None
+        rng: Generator | None = None
+        slippage_tolerance: FixedPoint | None = None
+
+        def __post_init__(self):
+            if self.rng is None:
+                # If seed is None, should just be random
+                self.rng = default_rng(self.rng_seed)
+
+    def __init__(self, policy_config: Config):
+        """Initialize the policy.
+
+        Arguments
+        ---------
+        policy_config: Config
+            The configuration for the policy.
+        """
+        self.slippage_tolerance = policy_config.slippage_tolerance
+        # config.rng should be set in post_init in config
+        assert policy_config.rng is not None
+        self.rng: Generator = policy_config.rng
 
     @property
-    def name(self):
-        """Return the class name"""
+    def name(self) -> str:
+        """Return the class name.
+
+        Returns
+        -------
+        str
+            The class name.
+        """
         return self.__class__.__name__
 
     def action(self, interface: MarketInterface, wallet: Wallet) -> tuple[list[Trade], bool]:
@@ -55,32 +73,33 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
 
         Arguments
         ---------
-        market : HyperdriveMarketState
-            the trading market
-        wallet : HyperdriveWallet
-            agent's wallet
+        interface: MarketInterface
+            The trading market interface.
+        wallet: Wallet
+            The agent's wallet.
 
         Returns
         -------
-        tuple[list[MarketAction], bool]
+        tuple[list[Trade], bool]
             A tuple where the first element is a list of actions,
-            and the second element defines if the agent is done trading
+            and the second element defines if the agent is done trading.
         """
         raise NotImplementedError
 
     @classmethod
-    def describe(cls, raw_description: str | None = None) -> str:
+    def describe(cls, raw_description: str) -> str:
         """Describe the policy in a user friendly manner that allows newcomers to decide whether to use it.
+
+        Arguments
+        ---------
+        raw_description: str
+            The description of the policy's action plan.
 
         Returns
         -------
         str
             A description of the policy.
         """
-        if raw_description is None:
-            raise NotImplementedError(
-                "This method is meant to be called only by subclasses which provide a `raw_description`."
-            )
         dedented_text = dedent(raw_description).strip()
         indented_text = indent(dedented_text, "  ")  # Adding 2-space indent
         return indented_text

@@ -6,9 +6,10 @@ import logging
 from dataclasses import dataclass, field
 from typing import Iterable
 
+from fixedpointmath import FixedPoint
+
 from agent0.base import freezable
 from agent0.base.state import EthWallet, EthWalletDeltas
-from fixedpointmath import FixedPoint
 
 
 @freezable()
@@ -17,16 +18,17 @@ class HyperdriveWalletDeltas(EthWalletDeltas):
     r"""Stores changes for an agent's wallet
 
     Arguments
-    ----------
-    lp_tokens : FixedPoint
+    ---------
+    lp_tokens: FixedPoint
         The LP tokens held by the trader.
-    longs : Dict[int, Long]
+    longs: Dict[int, Long]
         The long positions held by the trader.
-    shorts : Dict[int, Short]
+    shorts: Dict[int, Short]
         The short positions held by the trader.
     withdraw_shares: FixedPoint
         The withdraw shares held by the trader.
     """
+
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
 
@@ -37,7 +39,13 @@ class HyperdriveWalletDeltas(EthWalletDeltas):
     withdraw_shares: FixedPoint = FixedPoint(0)
 
     def copy(self) -> HyperdriveWalletDeltas:
-        """Returns a new copy of self"""
+        """Returns a new copy of self.
+
+        Returns
+        -------
+        HyperdriveWalletDeltas
+            A deepcopy of the wallet deltas.
+        """
         return HyperdriveWalletDeltas(**copy.deepcopy(self.__dict__))
 
 
@@ -46,14 +54,15 @@ class Long:
     r"""An open long position.
 
     Arguments
-    ----------
-    balance : FixedPoint
+    ---------
+    balance: FixedPoint
         The amount of bonds that the position is long.
 
     .. todo:: make balance a Quantity to enforce units
     """
 
     balance: FixedPoint  # bonds
+    maturity_time: int
 
 
 @dataclass
@@ -61,32 +70,33 @@ class Short:
     r"""An open short position.
 
     Arguments
-    ----------
-    balance : FixedPoint
+    ---------
+    balance: FixedPoint
         The amount of bonds that the position is short.
     """
 
     balance: FixedPoint
+    maturity_time: int
 
 
 @dataclass(kw_only=True)
-class HyperdriveWallet(EthWallet):
+class HyperdriveWallet(EthWallet[HyperdriveWalletDeltas]):
     r"""Stateful variable for storing what is in the agent's wallet.
 
     Arguments
     ---------
-    address : HexBytes
+    address: HexBytes
         The associated agent's eth address
-    balance : Quantity
+    balance: Quantity
         The base assets that held by the trader.
-    lp_tokens : FixedPoint
+    lp_tokens: FixedPoint
         The LP tokens held by the trader.
-    withdraw_shares : FixedPoint
+    withdraw_shares: FixedPoint
         The amount of unclaimed withdraw shares held by the agent.
-    longs : Dict[int, Long]
+    longs: Dict[int, Long]
         The long positions held by the trader.
         The dictionary is keyed by the maturity time in seconds.
-    shorts : Dict[int, Short]
+    shorts: Dict[int, Short]
         The short positions held by the trader.
         The dictionary is keyed by the maturity time in seconds.
     """
@@ -103,7 +113,7 @@ class HyperdriveWallet(EthWallet):
 
         Arguments
         ---------
-        longs : Iterable[tuple[int, Long]]
+        longs: Iterable[tuple[int, Long]]
             A list (or other Iterable type) of tuples that contain a Long object
             and its market-relative maturity time
         """
@@ -132,7 +142,7 @@ class HyperdriveWallet(EthWallet):
 
         Arguments
         ---------
-        shorts : Iterable[tuple[int, Short]]
+        shorts: Iterable[tuple[int, Short]]
             A list (or other Iterable type) of tuples that contain a Short object
             and its market-relative mint time
         """
@@ -157,7 +167,13 @@ class HyperdriveWallet(EthWallet):
                 raise AssertionError(f"wallet balance should be >= 0, not {self.shorts[maturity_time]}")
 
     def copy(self) -> HyperdriveWallet:
-        """Returns a new copy of self."""
+        """Returns a new copy of self.
+
+        Returns
+        -------
+        HyperdriveWallet
+            A deep copy of the wallet.
+        """
         return HyperdriveWallet(**copy.deepcopy(self.__dict__))
 
     def update(self, wallet_deltas: HyperdriveWalletDeltas) -> None:
@@ -165,7 +181,7 @@ class HyperdriveWallet(EthWallet):
 
         Arguments
         ---------
-        wallet_deltas : AgentDeltas
+        wallet_deltas: AgentDeltas
             The agent's wallet that tracks the amount of assets this agent holds
         """
         # track over time the agent's weighted average spend, for return calculation

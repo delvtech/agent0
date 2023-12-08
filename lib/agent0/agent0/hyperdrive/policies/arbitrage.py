@@ -4,16 +4,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
-from elfpy.types import MarketType, Trade
 from fixedpointmath import FixedPoint
+
+from agent0.base import MarketType, Trade
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
+    from ethpy.hyperdrive.api import HyperdriveInterface
+    from numpy.random._generator import Generator
+
     from agent0.hyperdrive.state import HyperdriveWallet
-    from ethpy.hyperdrive import HyperdriveInterface
-    from numpy.random._generator import Generator as NumpyGenerator
 
 
 class Arbitrage(HyperdrivePolicy):
@@ -48,7 +50,7 @@ class Arbitrage(HyperdrivePolicy):
         """
         return super().describe(raw_description)
 
-    @dataclass
+    @dataclass(kw_only=True)
     class Config(HyperdrivePolicy.Config):
         """Custom config arguments for this policy
 
@@ -66,33 +68,16 @@ class Arbitrage(HyperdrivePolicy):
         high_fixed_rate_thresh: FixedPoint = FixedPoint("0.1")
         low_fixed_rate_thresh: FixedPoint = FixedPoint("0.02")
 
-    def __init__(
-        self,
-        budget: FixedPoint,
-        rng: NumpyGenerator | None = None,
-        slippage_tolerance: FixedPoint | None = None,
-        policy_config: Config | None = None,
-    ):
+    def __init__(self, policy_config: Config):
         """Initializes the bot
 
         Arguments
         ---------
-        budget: FixedPoint
-            The budget of this policy
-        rng: NumpyGenerator | None
-            Random number generator
-        slippage_tolerance: FixedPoint | None
-            Slippage tolerance of trades
-        policy_config: Config | None
+        policy_config: Config
             The custom arguments for this policy
         """
-
-        # Defaults
-        if policy_config is None:
-            policy_config = self.Config()
         self.policy_config = policy_config
-
-        super().__init__(budget, rng, slippage_tolerance)
+        super().__init__(policy_config)
 
     def action(
         self, interface: HyperdriveInterface, wallet: HyperdriveWallet
@@ -101,47 +86,49 @@ class Arbitrage(HyperdrivePolicy):
 
         Arguments
         ---------
-        market : HyperdriveMarketState
-            the trading market
-        wallet : HyperdriveWallet
-            agent's wallet
+        interface: HyperdriveInterface
+            Interface for the market on which this agent will be executing trades (MarketActions).
+        wallet: HyperdriveWallet
+            The agent's wallet.
 
         Returns
         -------
         tuple[list[MarketAction], bool]
             A tuple where the first element is a list of actions,
-            and the second element defines if the agent is done trading
+            and the second element defines if the agent is done trading.
         """
-        # Get fixed rate
-        fixed_rate = interface.fixed_rate
-
+        pool_state = interface.current_pool_state
+        fixed_rate = interface.calc_fixed_rate(pool_state)
         action_list = []
 
         # Close longs if matured
         for maturity_time, long in wallet.longs.items():
             # If matured
-            if maturity_time < interface.current_block_time:
+            if maturity_time < pool_state.block_time:
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                             maturity_time=maturity_time,
                         ),
                     )
                 )
+
         # Close shorts if matured
         for maturity_time, short in wallet.shorts.items():
             # If matured
-            if maturity_time < interface.current_block_time:
+            if maturity_time < pool_state.block_time:
                 action_list.append(
                     Trade(
                         market_type=MarketType.HYPERDRIVE,
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
+                            slippage_tolerance=self.slippage_tolerance,
                             wallet=wallet,
                             maturity_time=maturity_time,
                         ),
@@ -159,6 +146,7 @@ class Arbitrage(HyperdrivePolicy):
                             market_action=HyperdriveMarketAction(
                                 action_type=HyperdriveActionType.CLOSE_SHORT,
                                 trade_amount=short.balance,
+                                slippage_tolerance=self.slippage_tolerance,
                                 wallet=wallet,
                                 maturity_time=maturity_time,
                             ),
@@ -171,6 +159,7 @@ class Arbitrage(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_LONG,
                         trade_amount=self.policy_config.trade_amount,
+                        slippage_tolerance=self.slippage_tolerance,
                         wallet=wallet,
                     ),
                 )
@@ -187,6 +176,7 @@ class Arbitrage(HyperdrivePolicy):
                             market_action=HyperdriveMarketAction(
                                 action_type=HyperdriveActionType.CLOSE_LONG,
                                 trade_amount=long.balance,
+                                slippage_tolerance=self.slippage_tolerance,
                                 wallet=wallet,
                                 maturity_time=maturity_time,
                             ),
@@ -199,6 +189,7 @@ class Arbitrage(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_SHORT,
                         trade_amount=self.policy_config.trade_amount,
+                        slippage_tolerance=self.slippage_tolerance,
                         wallet=wallet,
                     ),
                 )

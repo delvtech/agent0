@@ -1,4 +1,4 @@
-"""System test for end to end testing of elf-simulations"""
+"""System test for end to end usage of agent0 libraries."""
 from __future__ import annotations
 
 import logging
@@ -8,10 +8,7 @@ from typing import Type, cast
 
 import numpy as np
 import pandas as pd
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import run_agents
-from agent0.test_fixtures import CycleTradesPolicy
+import pytest
 from chainsync.db.hyperdrive.interface import (
     get_current_wallet,
     get_pool_analysis,
@@ -24,12 +21,18 @@ from chainsync.exec import acquire_data, data_analysis
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.hyperdrive import HyperdriveInterface
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
+from ethpy.hyperdrive.api import HyperdriveInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
+
+from agent0 import build_account_key_config_from_agent_config
+from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive.exec import setup_and_run_agent_loop
+from agent0.test_utils import CycleTradesPolicy
 
 
 def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
@@ -37,10 +40,12 @@ def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
 
 
 class TestBotToDb:
-    """Tests pipeline from bots making trades to viewing the trades in the db"""
+    """Test pipeline from bots making trades to viewing the trades in the db."""
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
+    # ruff: noqa: PLR0915 (Too many statements)
+    @pytest.mark.anvil
     def test_bot_to_db(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
@@ -48,9 +53,7 @@ class TestBotToDb:
         db_session: Session,
         db_api: str,
     ):
-        """Runs the entire pipeline and checks the database at the end.
-        All arguments are fixtures.
-        """
+        """Run the entire pipeline and checks the database at the end. All arguments are fixtures."""
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
         # Get hyperdrive chain info
@@ -66,7 +69,7 @@ class TestBotToDb:
             log_filename="system_test",
             log_level=logging.INFO,
             log_stdout=True,
-            random_seed=1234,
+            global_random_seed=1234,
             username="test",
         )
 
@@ -75,10 +78,11 @@ class TestBotToDb:
             AgentConfig(
                 policy=cycle_trade_policy,
                 number_of_agents=1,
-                slippage_tolerance=FixedPoint("0.0001"),
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=cycle_trade_policy.Config(),
+                policy_config=cycle_trade_policy.Config(
+                    slippage_tolerance=FixedPoint("0.0001"),
+                ),
             ),
         ]
 
@@ -95,7 +99,7 @@ class TestBotToDb:
         )
 
         # Run bots
-        run_agents(
+        setup_and_run_agent_loop(
             env_config,
             agent_config,
             account_key_config,
@@ -105,7 +109,7 @@ class TestBotToDb:
 
         # Run acquire data to get data from chain to db
         acquire_data(
-            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -115,7 +119,7 @@ class TestBotToDb:
 
         # Run data analysis to calculate various analysis values
         data_analysis(
-            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -130,14 +134,16 @@ class TestBotToDb:
             AgentConfig(
                 policy=cycle_trade_policy,
                 number_of_agents=1,
-                slippage_tolerance=FixedPoint("0.0001"),
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=cycle_trade_policy.Config(max_trades=3),
+                policy_config=cycle_trade_policy.Config(
+                    slippage_tolerance=FixedPoint("0.0001"),
+                    max_trades=3,
+                ),
             ),
         ]
 
-        run_agents(
+        setup_and_run_agent_loop(
             env_config,
             agent_config,
             account_key_config,
@@ -147,7 +153,7 @@ class TestBotToDb:
 
         # Run acquire data to get data from chain to db
         acquire_data(
-            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -157,7 +163,7 @@ class TestBotToDb:
 
         # Run data analysis to calculate various analysis values
         data_analysis(
-            start_block=8,  # First 7 blocks are deploying hyperdrive, ignore
+            start_block=local_hyperdrive_pool.deploy_block_number,
             eth_config=eth_config,
             db_session=db_session,
             contract_addresses=hyperdrive_contract_addresses,
@@ -177,8 +183,6 @@ class TestBotToDb:
         # 8. addLiquidity of 11111 base
         # 9. openLong of 22222 base
         # 10. openShort of 33333 bonds
-        # 11. removeLiquidity of all LP tokens
-        # The last trade here won't show up in the database, due to data lag of one block
 
         # Test db entries are what we expect
         # We don't coerce to float because we want exact values in decimal
@@ -193,23 +197,25 @@ class TestBotToDb:
         expected_timestretch = _to_unscaled_decimal(expected_timestretch_fp)
         expected_inv_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
 
+        # Ignore linker factory since we don't know the target address
+        db_pool_config_df = db_pool_config_df.drop(columns=["linker_factory"])
+
         expected_pool_config = {
-            "contractAddress": hyperdrive_contract_addresses.mock_hyperdrive,
-            "baseToken": hyperdrive_contract_addresses.base_token,
-            "initialSharePrice": _to_unscaled_decimal(FixedPoint("1")),
-            "minimumShareReserves": _to_unscaled_decimal(FixedPoint("10")),
-            "minimumTransactionAmount": _to_unscaled_decimal(FixedPoint("0.001")),
-            "positionDuration": 604800,  # 1 week
-            "checkpointDuration": 3600,  # 1 hour
-            "timeStretch": expected_timestretch,
+            "contract_address": hyperdrive_contract_addresses.mock_hyperdrive,
+            "base_token": hyperdrive_contract_addresses.base_token,
+            "initial_share_price": _to_unscaled_decimal(FixedPoint("1")),
+            "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
+            "minimum_transaction_amount": _to_unscaled_decimal(FixedPoint("0.001")),
+            "precision_threshold": int(1e14),
+            "position_duration": 604800,  # 1 week
+            "checkpoint_duration": 3600,  # 1 hour
+            "time_stretch": expected_timestretch,
             "governance": deploy_account.address,
-            "feeCollector": deploy_account.address,
-            "curveFee": _to_unscaled_decimal(FixedPoint("0.1")),  # 10%
-            "flatFee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05%
-            "governanceFee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%
-            "oracleSize": 10,
-            "updateGap": 3600,  # TODO don't know where this is getting set
-            "invTimeStretch": expected_inv_timestretch,
+            "fee_collector": deploy_account.address,
+            "curve_fee": _to_unscaled_decimal(FixedPoint("0.1")),  # 10%
+            "flat_fee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05%
+            "governance_fee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%
+            "inv_time_stretch": expected_inv_timestretch,
         }
 
         # Existence test
@@ -231,25 +237,25 @@ class TestBotToDb:
         db_pool_info: pd.DataFrame = get_pool_info(db_session, coerce_float=False)
         expected_pool_info_keys = [
             # Keys from contract call
-            "blockNumber",
-            "shareReserves",
-            "bondReserves",
-            "lpTotalSupply",
-            "sharePrice",
-            "shareAdjustment",
-            "lpSharePrice",
-            "longExposure",
-            "longsOutstanding",
-            "longAverageMaturityTime",
-            "shortsOutstanding",
-            "shortAverageMaturityTime",
-            "withdrawalSharesReadyToWithdraw",
-            "withdrawalSharesProceeds",
+            "block_number",
+            "share_reserves",
+            "bond_reserves",
+            "lp_total_supply",
+            "share_price",
+            "share_adjustment",
+            "lp_share_price",
+            "long_exposure",
+            "longs_outstanding",
+            "long_average_maturity_time",
+            "shorts_outstanding",
+            "short_average_maturity_time",
+            "withdrawal_shares_ready_to_withdraw",
+            "withdrawal_shares_proceeds",
             # Added keys
             "timestamp",
-            "variableRate",
+            "variable_rate",
             # Calculated keys
-            "totalSupplyWithdrawalShares",
+            "total_supply_withdrawal_shares",
         ]
         # Convert to sets and compare
         assert set(db_pool_info.columns) == set(expected_pool_info_keys)
@@ -262,7 +268,8 @@ class TestBotToDb:
 
         # Ensure trades exist in database
         # Should be 10 total transactions
-        assert len(db_transaction_info) == 10
+        expected_number_of_transactions = 10
+        assert len(db_transaction_info) == expected_number_of_transactions
         np.testing.assert_array_equal(
             db_transaction_info["input_method"],
             [
@@ -280,9 +287,9 @@ class TestBotToDb:
         )
 
         # 10 total trades in wallet deltas
-        assert db_wallet_delta["blockNumber"].nunique() == 10
+        assert db_wallet_delta["block_number"].nunique() == expected_number_of_transactions
         # 21 different wallet deltas (2 token deltas per trade except for withdraw shares, which is 3)
-        assert len(db_wallet_delta) == 21
+        assert len(db_wallet_delta) == 2 * expected_number_of_transactions + 1
 
         actual_num_longs = Decimal("nan")
         actual_num_shorts = Decimal("nan")
@@ -291,23 +298,31 @@ class TestBotToDb:
         # Go through each trade and ensure wallet deltas are correct
         # The asserts here are equality because they are either int -> Decimal, which is lossless,
         # or they're comparing values after the lossy conversion
+        expected_number_of_deltas = 2
         for _, txn in db_transaction_info.iterrows():
             # TODO differentiate between the first and second addLiquidity
-            block_number = txn["blockNumber"]
+            block_number = txn["block_number"]
             if txn["input_method"] == "addLiquidity":
                 assert txn["input_params_contribution"] == Decimal(11111)
                 # Filter for all deltas of this trade
-                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 # Ensure number of token deltas
-                assert len(block_wallet_deltas) == 2
-                lp_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LP"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                assert len(block_wallet_deltas) == expected_number_of_deltas
+                lp_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "LP"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
                 assert len(lp_delta_df) == 1
                 assert len(base_delta_df) == 1
                 lp_delta = lp_delta_df.iloc[0]
                 base_delta = base_delta_df.iloc[0]
                 # 11111 base for...
-                assert base_delta["delta"] == -Decimal(11111)
+                # TODO there's a bug in Hyperdrive's emitted event for addLiquidity
+                # that introduces a rounding issue in the base amount spent for this
+                # Change this back to direct equality check when this gets fixed
+                # https://github.com/delvtech/agent0/issues/1077
+
+                # assert base_delta["delta"] == -Decimal(11111)
+                assert abs(base_delta["delta"] - (-Decimal(11111))) < Decimal("1e-14")
+
                 # TODO check LP delta
                 # TODO check wallet info matches the deltas
                 # TODO check pool info after this tx
@@ -316,13 +331,13 @@ class TestBotToDb:
 
             # TODO differentiate between the first and second openLong
             if txn["input_method"] == "openLong":
-                assert txn["input_params_baseAmount"] == Decimal(22222)
+                assert txn["input_params_base_amount"] == Decimal(22222)
                 # Filter for all deltas of this trade
-                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 # Ensure number of token deltas
-                assert len(block_wallet_deltas) == 2
-                long_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LONG"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                assert len(block_wallet_deltas) == expected_number_of_deltas
+                long_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "LONG"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
                 assert len(long_delta_df) == 1
                 assert len(base_delta_df) == 1
                 long_delta = long_delta_df.iloc[0]
@@ -330,7 +345,7 @@ class TestBotToDb:
                 # 22222 base for...
                 assert base_delta["delta"] == -Decimal(22222)
                 # TODO check long delta
-                # TODO check maturity time and tokenType
+                # TODO check maturity time and token_type
                 # TODO check current wallet matches the deltas
                 # TODO check pool info after this tx
 
@@ -338,11 +353,11 @@ class TestBotToDb:
 
             # TODO differentiate between the first and second openShort
             if txn["input_method"] == "openShort":
-                assert txn["input_params_bondAmount"] == Decimal(33333)
-                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
-                assert len(block_wallet_deltas) == 2
-                short_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "SHORT"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                assert txn["input_params_bond_amount"] == Decimal(33333)
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
+                assert len(block_wallet_deltas) == expected_number_of_deltas
+                short_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "SHORT"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
                 assert len(short_delta_df) == 1
                 assert len(base_delta_df) == 1
                 short_delta = short_delta_df.iloc[0]
@@ -350,7 +365,7 @@ class TestBotToDb:
                 # 33333 bonds for...
                 assert short_delta["delta"] == Decimal(33333)
                 # TODO check base delta
-                # TODO check maturity time and tokenType
+                # TODO check maturity time and token_type
                 # TODO check pool info after this tx
 
                 actual_num_shorts = short_delta["delta"]
@@ -358,11 +373,11 @@ class TestBotToDb:
             if txn["input_method"] == "removeLiquidity":
                 # TODO change this to expected num lp
                 assert txn["input_params_shares"] == actual_num_lp
-                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
-                assert len(block_wallet_deltas) == 3
-                lp_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LP"]
-                withdrawal_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "WITHDRAWAL_SHARE"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
+                assert len(block_wallet_deltas) == expected_number_of_deltas + 1  # 3 deltas for withdraw shares
+                lp_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "LP"]
+                withdrawal_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "WITHDRAWAL_SHARE"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
                 assert len(lp_delta_df) == 1
                 assert len(withdrawal_delta_df) == 1
                 assert len(base_delta_df) == 1
@@ -380,11 +395,11 @@ class TestBotToDb:
 
             if txn["input_method"] == "closeLong":
                 # TODO change this to expected long amount
-                assert txn["input_params_bondAmount"] == actual_num_longs
-                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
-                assert len(block_wallet_deltas) == 2
-                long_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "LONG"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                assert txn["input_params_bond_amount"] == actual_num_longs
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
+                assert len(block_wallet_deltas) == expected_number_of_deltas
+                long_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "LONG"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
                 assert len(long_delta_df) == 1
                 assert len(base_delta_df) == 1
                 long_delta = long_delta_df.iloc[0]
@@ -392,16 +407,16 @@ class TestBotToDb:
                 # TODO check against expected longs
                 assert long_delta["delta"] == -actual_num_longs
                 # TODO check base delta
-                # TODO check maturity time and tokenType
+                # TODO check maturity time and token_type
                 # TODO check wallet info matches the deltas
                 # TODO check pool info after this tx
 
             if txn["input_method"] == "closeShort":
-                assert txn["input_params_bondAmount"] == Decimal(33333)
-                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
-                assert len(block_wallet_deltas) == 2
-                short_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "SHORT"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                assert txn["input_params_bond_amount"] == Decimal(33333)
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
+                assert len(block_wallet_deltas) == expected_number_of_deltas
+                short_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "SHORT"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
                 assert len(short_delta_df) == 1
                 assert len(base_delta_df) == 1
                 short_delta = short_delta_df.iloc[0]
@@ -409,17 +424,17 @@ class TestBotToDb:
                 # TODO check against expected shorts
                 assert short_delta["delta"] == -actual_num_shorts
                 # TODO check base delta
-                # TODO check maturity time and tokenType
+                # TODO check maturity time and token_type
                 # TODO check wallet info matches the deltas
                 # TODO check pool info after this tx
 
             if txn["input_method"] == "redeemWithdrawalShares":
                 # TODO change this to expected withdrawal shares
                 assert txn["input_params_shares"] == actual_num_withdrawal
-                block_wallet_deltas = db_wallet_delta[db_wallet_delta["blockNumber"] == block_number]
-                assert len(block_wallet_deltas) == 2
-                withdrawal_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "WITHDRAWAL_SHARE"]
-                base_delta_df = block_wallet_deltas[block_wallet_deltas["baseTokenType"] == "BASE"]
+                block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
+                assert len(block_wallet_deltas) == expected_number_of_deltas
+                withdrawal_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "WITHDRAWAL_SHARE"]
+                base_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == BASE_TOKEN_SYMBOL]
                 assert len(withdrawal_delta_df) == 1
                 assert len(base_delta_df) == 1
                 withdrawal_delta = withdrawal_delta_df.iloc[0]
@@ -434,25 +449,25 @@ class TestBotToDb:
         db_current_wallet: pd.DataFrame = get_current_wallet(db_session, coerce_float=False)
         # TODO currently only shorts are not dependent on poolinfo, so we only check shorts here
         # Eventually we want to double check all token types
-        short_pos = db_current_wallet[db_current_wallet["baseTokenType"] == "SHORT"]
+        short_pos = db_current_wallet[db_current_wallet["base_token_type"] == "SHORT"]
         assert short_pos.iloc[0]["value"] == Decimal(33333)
 
         # Check spot price and fixed rate
         db_pool_analysis: pd.DataFrame = get_pool_analysis(db_session, coerce_float=False)
         # Compare last value to what hyperdrive interface is reporting
-        hyperdrive_interface = HyperdriveInterface(
+        hyperdrive = HyperdriveInterface(
             eth_config=eth_config,
             addresses=hyperdrive_contract_addresses,
         )
         latest_pool_analysis = db_pool_analysis.iloc[-1]
 
         latest_spot_price = FixedPoint(str(latest_pool_analysis["spot_price"]))
-        expected_spot_price = hyperdrive_interface.spot_price
+        expected_spot_price = hyperdrive.calc_spot_price()
 
         latest_fixed_rate = FixedPoint(str(latest_pool_analysis["fixed_rate"]))
-        expected_fixed_rate = hyperdrive_interface.fixed_rate
+        expected_fixed_rate = hyperdrive.calc_fixed_rate()
 
-        assert latest_pool_analysis["blockNumber"] == hyperdrive_interface.current_block_number
+        assert latest_pool_analysis["block_number"] == hyperdrive.current_pool_state.block_number
         # TODO there's rounding errors between db spot price and fixed rates
         assert abs(latest_spot_price - expected_spot_price) <= FixedPoint(1e-16)
         assert abs(latest_fixed_rate - expected_fixed_rate) <= FixedPoint(1e-16)

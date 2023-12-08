@@ -16,9 +16,9 @@ import requests
 import tomli
 
 # list all packages
-packages = ["agent0", "chainsync", "elfpy", "ethpy"]
+packages = ["agent0", "chainsync", "ethpy", "hypertypes", "hyperlogs"]
 
-# indicate where the elfpy Python package lives
+# indicate where the Python packages lives
 package_root = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 sys.path.insert(0, os.path.abspath("."))
 for package in packages:
@@ -53,7 +53,7 @@ version = str(pkg_meta["version"])
 release = version
 github_url = "https://github.com"
 github_repo_org = "delvtech"
-github_repo_name = "elf-simulations"
+github_repo_name = "agent0"
 github_repo_slug = f"{github_repo_org}/{github_repo_name}"
 github_repo_url = f"{github_url}/{github_repo_slug}"
 extlinks = {

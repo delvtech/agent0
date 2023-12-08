@@ -60,10 +60,9 @@ class AccountKeyConfig:
 def initialize_accounts(
     agent_config: list[AgentConfig],
     env_file: str | None = None,
-    random_seed: int = 1,
+    random_seed: int | None = None,
 ) -> AccountKeyConfig:
-    """
-    Build or load an accounts environment file.
+    """Build or load an accounts environment file.
     If it doesn't exist, create it based on agent_config.
     (if develop is off, print instructions on adding in user private key and running script to fund agents).
     If it does exist, read it in and use it.
@@ -74,7 +73,7 @@ def initialize_accounts(
         The list of agent configs that define policies and arguments.
     env_file: str | None
         The path to the env file to write/load from. Defaults to `accounts.env`.
-    random_seed: int
+    random_seed: int | None, optional
         Random seed to use for initializing budgets.
 
     Returns
@@ -121,15 +120,15 @@ def initialize_accounts(
 
 
 def build_account_key_config_from_agent_config(
-    agent_configs: list[AgentConfig], random_seed: int = 1, user_key: str | None = None
+    agent_configs: list[AgentConfig], random_seed: int | None = None, user_key: str | None = None
 ) -> AccountKeyConfig:
     """Build an Account Config from a provided agent config.
 
     Arguments
-    --------
-    agent_config: list[AgentConfig]
+    ---------
+    agent_configs: list[AgentConfig]
         The list of agent configs that define policies and arguments.
-    random_seed: int
+    random_seed: int | None, optional
         The seed to initialize the random generator to pass for each bot
     user_key: str
         The provided user key to use
@@ -173,7 +172,7 @@ def build_account_config_from_env(env_file: str | None = None, user_key: str | N
     """Build an Account Config from environmental variables.
 
     Arguments
-    --------
+    ---------
     env_file: str | None
         The path to the env file to load from. Defaults to `accounts.env`.
     user_key: str
