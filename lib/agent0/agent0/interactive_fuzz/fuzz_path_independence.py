@@ -27,7 +27,12 @@ def main(argv: Sequence[str] | None = None):
     fuzz_path_independence(*parsed_args)
 
 
-def fuzz_path_independence(num_trades: int, num_paths_checked: int, chain_config: LocalChain.Config):
+def fuzz_path_independence(
+    num_trades: int,
+    num_paths_checked: int,
+    chain_config: LocalChain.Config,
+    log_to_stdout: bool = False,
+):
     """Does fuzzy invariant checks for opening and closing longs and shorts.
 
     Parameters
@@ -38,6 +43,9 @@ def fuzz_path_independence(num_trades: int, num_paths_checked: int, chain_config
         Number of paths (order of operations for opening/closing) to perform.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
+    log_to_stdout: bool, optional
+        If True, log to stdout in addition to a file.
+        Defaults to False.
 
     Raises
     ------
@@ -45,7 +53,7 @@ def fuzz_path_independence(num_trades: int, num_paths_checked: int, chain_config
         If the invariant checks fail during the tests an error will be raised.
     """
     log_filename = ".logging/fuzz_path_independence.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout)
 
     # Generate a list of agents that execute random trades
     trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
@@ -133,6 +141,7 @@ class Args(NamedTuple):
     num_trades: int
     num_paths_checked: int
     chain_config: LocalChain.Config
+    log_to_stdout: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -152,6 +161,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         num_trades=namespace.num_trades,
         num_paths_checked=namespace.num_paths_checked,
         chain_config=LocalChain.Config(chain_port=namespace.chain_port),
+        log_to_stdout=namespace.log_to_stdout,
     )
 
 
@@ -186,6 +196,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=10000,
         help="The number of random trades to open.",
+    )
+    parser.add_argument(
+        "--log_to_stdout",
+        type=bool,
+        default=False,
+        help="If True, log to stdout in addition to a file.",
     )
     # Use system arguments if none were passed
     if argv is None:

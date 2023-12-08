@@ -29,13 +29,16 @@ def main(argv: Sequence[str] | None = None):
     fuzz_profit_check(*parsed_args)
 
 
-def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
+def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdout: bool = False):
     """Fuzzes invariant checks for profit from long and short positions.
 
     Parameters
     ----------
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
+    log_to_stdout: bool, optional
+        If True, log to stdout in addition to a file.
+        Defaults to False.
 
     Raises
     ------
@@ -45,7 +48,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
 
     # Setup the environment
     log_filename = ".logging/fuzz_profit_check.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout)
 
     # Get a random trade amount
     trade_amount = FixedPoint(
@@ -161,6 +164,7 @@ class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
     chain_config: LocalChain.Config
+    log_to_stdout: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -178,6 +182,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     """
     return Args(
         chain_config=LocalChain.Config(chain_port=namespace.chain_port),
+        log_to_stdout=namespace.log_to_stdout,
     )
 
 
@@ -200,6 +205,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=10000,
         help="The number of random trades to open.",
+    )
+    parser.add_argument(
+        "--log_to_stdout",
+        type=bool,
+        default=False,
+        help="If True, log to stdout in addition to a file.",
     )
     # Use system arguments if none were passed
     if argv is None:

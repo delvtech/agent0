@@ -32,7 +32,9 @@ def main(argv: Sequence[str] | None = None):
     fuzz_long_short_maturity_values(*parsed_args)
 
 
-def fuzz_long_short_maturity_values(num_trades: int, chain_config: LocalChain.Config | None = None):
+def fuzz_long_short_maturity_values(
+    num_trades: int, chain_config: LocalChain.Config | None = None, log_to_stdout: bool = False
+):
     """Does fuzzy invariant checks on closing longs and shorts past maturity.
 
     Parameters
@@ -41,6 +43,9 @@ def fuzz_long_short_maturity_values(num_trades: int, chain_config: LocalChain.Co
         Number of trades to perform during the fuzz tests.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
+    log_to_stdout: bool, optional
+        If True, log to stdout in addition to a file.
+        Defaults to False.
 
     Raises
     ------
@@ -53,7 +58,7 @@ def fuzz_long_short_maturity_values(num_trades: int, chain_config: LocalChain.Co
     # set a large block time so i can manually control when it ticks
     # TODO: set block time really high after contracts deployed:
     # chain_config = LocalChain.Config(block_time=1_000_000)
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config=chain_config)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout)
     signer = interactive_hyperdrive.init_agent(eth=FixedPoint(100))
 
     # Advance time to ensure current time is in the middle of a checkpoint
@@ -128,6 +133,7 @@ class Args(NamedTuple):
 
     num_trades: int
     chain_config: LocalChain.Config
+    log_to_stdout: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -144,7 +150,11 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         Formatted arguments
     """
     # TODO: replace this func with Args(**namespace)?
-    return Args(num_trades=namespace.num_trades, chain_config=LocalChain.Config(chain_port=namespace.chain_port))
+    return Args(
+        num_trades=namespace.num_trades,
+        chain_config=LocalChain.Config(chain_port=namespace.chain_port),
+        log_to_stdout=namespace.log_to_stdout,
+    )
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> Args:
@@ -172,6 +182,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=10000,
         help="The number of random trades to open.",
+    )
+    parser.add_argument(
+        "--log_to_stdout",
+        type=bool,
+        default=False,
+        help="If True, log to stdout in addition to a file.",
     )
     # Use system arguments if none were passed
     if argv is None:
