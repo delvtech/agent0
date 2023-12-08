@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from typing import Any, NamedTuple, Sequence
 
@@ -26,7 +27,12 @@ def main(argv: Sequence[str] | None = None):
     fuzz_path_independence(*parsed_args)
 
 
-def fuzz_path_independence(num_trades: int, num_paths_checked: int, chain_config: LocalChain.Config):
+def fuzz_path_independence(
+    num_trades: int,
+    num_paths_checked: int,
+    chain_config: LocalChain.Config,
+    log_to_stdout: bool = False,
+):
     """Does fuzzy invariant checks for opening and closing longs and shorts.
 
     Parameters
@@ -37,6 +43,9 @@ def fuzz_path_independence(num_trades: int, num_paths_checked: int, chain_config
         Number of paths (order of operations for opening/closing) to perform.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
+    log_to_stdout: bool, optional
+        If True, log to stdout in addition to a file.
+        Defaults to False.
 
     Raises
     ------
@@ -44,17 +53,19 @@ def fuzz_path_independence(num_trades: int, num_paths_checked: int, chain_config
         If the invariant checks fail during the tests an error will be raised.
     """
     log_filename = ".logging/fuzz_path_independence.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout)
 
     # Generate a list of agents that execute random trades
     trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
 
     # Open some trades
+    logging.info("Open random trades...")
     trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=True)
     assert len(trade_events) > 0
     agent = trade_events[0][0]
 
     # Snapshot the chain, so we can load the snapshot & close in different orders
+    logging.info("Save chain snapshot...")
     chain.save_snapshot()
 
     # List of columns in pool info to check between the initial pool info and the latest pool info.
@@ -69,10 +80,12 @@ def fuzz_path_independence(num_trades: int, num_paths_checked: int, chain_config
     ]
 
     # Close the trades randomly & verify that the final state is unchanged
+    logging.info("Close trades in random order; check final state...")
     check_data: dict[str, Any] | None = None
     first_run_state_dump_dir: str | None = None
     for iteration in range(num_paths_checked):
         print(f"{iteration=}")
+        logging.info("iteration %s out of %s", iteration, num_paths_checked - 1)
         # Load the snapshot
         chain.load_snapshot()
 
@@ -119,6 +132,7 @@ def fuzz_path_independence(num_trades: int, num_paths_checked: int, chain_config
                 chain.cleanup()
                 raise error
     chain.cleanup()
+    logging.info("Test passed!")
 
 
 class Args(NamedTuple):
@@ -127,6 +141,7 @@ class Args(NamedTuple):
     num_trades: int
     num_paths_checked: int
     chain_config: LocalChain.Config
+    log_to_stdout: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -146,6 +161,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         num_trades=namespace.num_trades,
         num_paths_checked=namespace.num_paths_checked,
         chain_config=LocalChain.Config(chain_port=namespace.chain_port),
+        log_to_stdout=namespace.log_to_stdout,
     )
 
 
@@ -174,6 +190,18 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=10,
         help="The port to use for the local chain.",
+    )
+    parser.add_argument(
+        "--chain_port",
+        type=int,
+        default=10000,
+        help="The number of random trades to open.",
+    )
+    parser.add_argument(
+        "--log_to_stdout",
+        type=bool,
+        default=False,
+        help="If True, log to stdout in addition to a file.",
     )
     # Use system arguments if none were passed
     if argv is None:
@@ -231,6 +259,7 @@ def invariant_check(
         failed = True
 
     if failed:
+        logging.critical("\n".join(exception_message))
         raise AssertionError(*exception_message)
 
 

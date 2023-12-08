@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from typing import Any, NamedTuple, Sequence
 
@@ -28,13 +29,16 @@ def main(argv: Sequence[str] | None = None):
     fuzz_profit_check(*parsed_args)
 
 
-def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
+def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdout: bool = False):
     """Fuzzes invariant checks for profit from long and short positions.
 
     Parameters
     ----------
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
+    log_to_stdout: bool, optional
+        If True, log to stdout in addition to a file.
+        Defaults to False.
 
     Raises
     ------
@@ -44,7 +48,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
 
     # Setup the environment
     log_filename = ".logging/fuzz_profit_check.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout)
 
     # Get a random trade amount
     trade_amount = FixedPoint(
@@ -61,11 +65,14 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
     # Generate funded trading agent
     long_agent = interactive_hyperdrive.init_agent(base=trade_amount, eth=FixedPoint(100), name="alice")
     # Open a long
+    logging.info("Open a long...")
     open_long_event = long_agent.open_long(base=trade_amount)
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
+    logging.info("Advance time...")
     advance_time_before_checkpoint(chain, rng, interactive_hyperdrive)
     # Close the long
+    logging.info("Close the long...")
     close_long_event = long_agent.close_long(
         maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
     )
@@ -74,16 +81,20 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
     short_agent = interactive_hyperdrive.init_agent(base=trade_amount, eth=FixedPoint(100), name="bob")
     # Open a short
     # Set trade amount to the new wallet position (due to losing money from the previous open/close)
+    logging.info("Open a short...")
     trade_amount = short_agent.wallet.balance.amount
     open_short_event = short_agent.open_short(bonds=trade_amount)
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
+    logging.info("Advance time...")
     advance_time_before_checkpoint(chain, rng, interactive_hyperdrive)
     # Close the short
+    logging.info("Close the short...")
     close_short_event = short_agent.close_short(
         maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
     )
 
+    logging.info("Check invariants...")
     # Ensure that the prior trades did not result in a profit
     check_data = {
         "trade_amount": trade_amount,
@@ -113,6 +124,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
         chain.cleanup()
         raise error
     chain.cleanup()
+    logging.info("Test passed!")
 
 
 def advance_time_before_checkpoint(
@@ -144,7 +156,7 @@ def advance_time_before_checkpoint(
             rng.integers(low=0, high=advance_upper_bound),
             create_checkpoints=True,  # we don't want to create one, but only because we haven't advanced enough
         )
-        # do a final check to make sure that the checkpoint didn't happen
+        # Do a final check to make sure that the checkpoint didn't happen
         assert len(checkpoint_info[interactive_hyperdrive]) == 0, "Checkpoint was created when it should not have been."
 
 
@@ -152,6 +164,7 @@ class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
     chain_config: LocalChain.Config
+    log_to_stdout: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -169,6 +182,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     """
     return Args(
         chain_config=LocalChain.Config(chain_port=namespace.chain_port),
+        log_to_stdout=namespace.log_to_stdout,
     )
 
 
@@ -191,6 +205,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=10000,
         help="The number of random trades to open.",
+    )
+    parser.add_argument(
+        "--log_to_stdout",
+        type=bool,
+        default=False,
+        help="If True, log to stdout in addition to a file.",
     )
     # Use system arguments if none were passed
     if argv is None:
@@ -248,6 +268,7 @@ def invariant_check(
         failed = True
 
     if failed:
+        logging.critical("\n".join(exception_message))
         raise AssertionError(*exception_message)
 
 

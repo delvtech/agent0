@@ -9,7 +9,7 @@ from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 
 
 def setup_fuzz(
-    log_filename: str, chain_config: LocalChain.Config | None = None
+    log_filename: str, chain_config: LocalChain.Config | None = None, log_to_stdout: bool = False
 ) -> tuple[LocalChain, int, Generator, InteractiveHyperdrive]:
     """Setup the fuzz experiment.
 
@@ -20,6 +20,9 @@ def setup_fuzz(
         which will include state information if the test fails.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
+    log_to_stdout: bool, optional
+        If True, log to stdout in addition to a file.
+        Defaults to False.
 
     Returns
     -------
@@ -36,8 +39,8 @@ def setup_fuzz(
     """
     setup_logging(
         log_filename=log_filename,
-        delete_previous_logs=True,
-        log_stdout=False,
+        delete_previous_logs=False,
+        log_stdout=log_to_stdout,
     )
 
     # Setup local chain
