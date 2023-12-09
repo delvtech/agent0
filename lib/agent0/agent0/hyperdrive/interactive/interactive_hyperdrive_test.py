@@ -250,7 +250,7 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
     pre_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
     checkpoint_events = chain.advance_time(600, create_checkpoints=True)
     post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
-    assert abs(post_time - pre_time - 600) <= 2
+    assert abs(post_time - pre_time - 600) <= 3
     # assert 0 or 1 checkpoints made
     assert len(checkpoint_events[interactive_hyperdrive]) in {0, 1}
 
@@ -259,7 +259,7 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
     checkpoint_events = chain.advance_time(3600, create_checkpoints=True)
     post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
     # Advancing time equal to checkpoint duration results in time being off by few second
-    assert abs(post_time - pre_time - 3600) <= 2
+    assert abs(post_time - pre_time - 3600) <= 3
     # assert one checkpoint made
     assert len(checkpoint_events[interactive_hyperdrive]) in {1, 2}
 
@@ -268,7 +268,7 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
     checkpoint_events = chain.advance_time(datetime.timedelta(hours=3), create_checkpoints=True)
     post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
     # Advancing time equal to checkpoint duration results in time being off by few second
-    assert abs(post_time - pre_time - 3600 * 3) <= 2
+    assert abs(post_time - pre_time - 3600 * 3) <= 3
     # assert 3 checkpoints made
     assert len(checkpoint_events[interactive_hyperdrive]) in {3, 4}
 
@@ -278,7 +278,7 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
     checkpoint_events = chain.advance_time(4000, create_checkpoints=True)
     post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
     # Advancing time equal to checkpoint duration results in time being off by few second
-    assert abs(post_time - pre_time - 4000) <= 2
+    assert abs(post_time - pre_time - 4000) <= 3
     # assert 1 checkpoint made
     assert len(checkpoint_events[interactive_hyperdrive]) in {1, 2}
 

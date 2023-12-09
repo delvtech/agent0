@@ -30,6 +30,8 @@ class EnvironmentConfig(FrozenClass):
     # Since crash reports are timestamped, we set this default to false
     # to avoid using lots of disk space
     crash_report_to_file: bool = False
+    # The string prefix to prepend to crash reports
+    crash_report_file_prefix: str = ""
     # optional output filename for logging
     log_filename: str = ".logging/agent0_logs.log"
     # log level; should be in [logging.DEBUG, logging.INFO, logging.WARNING]

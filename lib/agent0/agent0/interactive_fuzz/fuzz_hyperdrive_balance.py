@@ -74,10 +74,12 @@ def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config, lo
         dump_state_dir = chain.save_state(save_prefix="fuzz_long_short_maturity_values")
         additional_info = {"fuzz_random_seed": random_seed, "dump_state_dir": dump_state_dir}
         report = build_crash_trade_result(
-            error, agent.agent, interactive_hyperdrive.hyperdrive_interface, additional_info=additional_info
+            error, interactive_hyperdrive.hyperdrive_interface, agent.agent, additional_info=additional_info
         )
         # Crash reporting already going to file in logging
-        log_hyperdrive_crash_report(report, crash_report_to_file=False, log_to_rollbar=True)
+        log_hyperdrive_crash_report(
+            report, crash_report_to_file=True, crash_report_file_prefix="fuzz_hyperdrive_balance", log_to_rollbar=True
+        )
         chain.cleanup()
         raise error
     chain.cleanup()

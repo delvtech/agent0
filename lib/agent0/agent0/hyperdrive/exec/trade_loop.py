@@ -27,6 +27,7 @@ def trade_if_new_block(
     halt_on_errors: bool,
     halt_on_slippage: bool,
     crash_report_to_file: bool,
+    crash_report_file_prefix: str,
     log_to_rollbar: bool,
     last_executed_block: int,
     liquidate: bool,
@@ -46,6 +47,8 @@ def trade_if_new_block(
         If halt_on_errors is true and halt_on_slippage is false, don't raise an exception if slippage happens.
     crash_report_to_file: bool
         Whether or not to save the crash report to a file.
+    crash_report_file_prefix: str
+        The string prefix to prepend to crash reports
     log_to_rollbar: bool
         Whether or not to log to rollbar.
     last_executed_block: int
@@ -79,7 +82,15 @@ def trade_if_new_block(
         trade_results: list[TradeResult] = asyncio.run(async_execute_agent_trades(interface, agent_accounts, liquidate))
         last_executed_block = latest_block_number
 
-        check_result(trade_results, interface, halt_on_errors, halt_on_slippage, crash_report_to_file, log_to_rollbar)
+        check_result(
+            trade_results,
+            interface,
+            halt_on_errors,
+            halt_on_slippage,
+            crash_report_to_file,
+            crash_report_file_prefix,
+            log_to_rollbar,
+        )
     return last_executed_block
 
 
@@ -89,6 +100,7 @@ def check_result(
     halt_on_errors: bool,
     halt_on_slippage: bool,
     crash_report_to_file: bool,
+    crash_report_file_prefix: str,
     log_to_rollbar: bool,
 ) -> None:
     """Check and handle SUCCESS or FAILURE status from each trade_result.
@@ -106,6 +118,8 @@ def check_result(
         If halt_on_errors is true and halt_on_slippage is false, don't raise an exception if slippage happens.
     crash_report_to_file: bool
         Whether or not to save the crash report to a file.
+    crash_report_file_prefix: str
+        The string prefix to prepend to crash reports
     log_to_rollbar: bool
         Whether or not to log to rollbar.
     """
@@ -114,6 +128,7 @@ def check_result(
             # If successful, log the successful trade
             case TradeStatus.SUCCESS:
                 assert trade_result.trade_object is not None
+                assert trade_result.agent is not None
                 logging.info(
                     "AGENT %s (%s) performed %s for %g",
                     str(trade_result.agent.checksum_address),
@@ -141,7 +156,10 @@ def check_result(
                         trade_result.anvil_state = get_anvil_state_dump(interface.web3)
                     # Defaults to CRITICAL
                     log_hyperdrive_crash_report(
-                        trade_result, crash_report_to_file=crash_report_to_file, log_to_rollbar=log_to_rollbar
+                        trade_result,
+                        crash_report_to_file=crash_report_to_file,
+                        crash_report_file_prefix=crash_report_file_prefix,
+                        log_to_rollbar=log_to_rollbar,
                     )
 
                 if halt_on_errors:

@@ -90,7 +90,7 @@ async def async_execute_single_agent_trade(
     trade_results = []
     for result, trade_object in zip(wallet_deltas_or_exception, trades):
         if isinstance(result, BaseException):
-            trade_result = build_crash_trade_result(result, agent, interface, trade_object)
+            trade_result = build_crash_trade_result(result, interface, agent, trade_object)
         else:
             assert isinstance(result, tuple)
             assert len(result) == 2

@@ -2,11 +2,9 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import sys
 import time
-from dataclasses import asdict
 from math import isclose
 from typing import NamedTuple, Sequence
 
@@ -15,10 +13,12 @@ from ethpy import build_eth_config
 from ethpy.hyperdrive.interface import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
-from hyperlogs import ExtendedJSONEncoder, setup_logging
+from hyperlogs import setup_logging
+from hyperlogs.rollbar_utilities import initialize_rollbar
 from web3.types import BlockData
 
 from agent0.base.config import EnvironmentConfig
+from agent0.hyperdrive.crash_report import build_crash_trade_result, get_anvil_state_dump, log_hyperdrive_crash_report
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -29,6 +29,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     argv: Sequence[str]
         A sequnce containing the uri to the database server and the test epsilon.
     """
+
+    initialize_rollbar("localfuzzbotsinvariantcheck")
+
     # Setup the experiment
     parsed_args, interface = setup_fuzz(argv)
     # Run the loop forever
@@ -44,7 +47,17 @@ def main(argv: Sequence[str] | None = None) -> None:
             continue
         # Update block number
         last_executed_block_number = latest_block_number
-        run_invariant_checks(latest_block, latest_block_number, interface, parsed_args.test_epsilon)
+        try:
+            run_invariant_checks(latest_block, latest_block_number, interface, parsed_args.test_epsilon)
+        except AssertionError as error:
+            report = build_crash_trade_result(error, interface)
+            report.anvil_state = get_anvil_state_dump(interface.web3)
+            log_hyperdrive_crash_report(
+                report,
+                crash_report_to_file=True,
+                crash_report_file_prefix="fuzz_bots_invariant_checks",
+                log_to_rollbar=True,
+            )
 
 
 def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveInterface]:
@@ -111,39 +124,35 @@ def run_invariant_checks(
     # Check each invariant
     failed = False
 
+    exception_message: list[str] = ["Continuous Fuzz Bots Invariant Checks"]
+
     # Hyperdrive base & eth balances should always be zero
     if pool_state.hyperdrive_base_balance != FixedPoint(0):
-        logging.critical(
-            "hyperdrive_base_balance=%s != 0. Test failed at block %s",
-            pool_state.hyperdrive_base_balance,
-            latest_block_number,
+        exception_message.append(
+            f"{pool_state.hyperdrive_base_balance=} != 0. Test failed at block {latest_block_number}"
         )
         failed = True
     if pool_state.hyperdrive_eth_balance != FixedPoint(0):
-        logging.critical(
-            "hyperdrive_eth_balance=%s != 0. Test failed at block %s",
-            pool_state.hyperdrive_eth_balance,
-            latest_block_number,
+        exception_message.append(
+            f"{pool_state.hyperdrive_eth_balance=} != 0. Test failed at block {latest_block_number}"
         )
         failed = True
 
     # Total shares is correctly calculated
-    if not isclose(
-        pool_state.vault_shares,
+    vault_shares_expected = (
         pool_state.pool_info.share_reserves
         + pool_state.pool_info.shorts_outstanding / pool_state.pool_info.share_price
         + pool_state.gov_fees_accrued
-        + pool_state.pool_info.withdrawal_shares_proceeds,
+        + pool_state.pool_info.withdrawal_shares_proceeds
+    )
+    if not isclose(
+        pool_state.vault_shares,
+        vault_shares_expected,
         abs_tol=epsilon,
     ):
-        logging.critical(
-            "total_shares=%s is incorrect, should be %s. Test failed at block %s.",
-            pool_state.vault_shares,
-            pool_state.pool_info.share_reserves
-            + pool_state.pool_info.shorts_outstanding / pool_state.pool_info.share_price
-            + pool_state.gov_fees_accrued
-            + pool_state.pool_info.withdrawal_shares_proceeds,
-            latest_block_number,
+        exception_message.append(
+            f"{pool_state.vault_shares=} is incorrect, should be {vault_shares_expected}. "
+            "Test failed at block {latest_block_number}."
         )
         failed = True
 
@@ -153,79 +162,57 @@ def run_invariant_checks(
         - pool_state.pool_info.long_exposure
         - pool_state.pool_config.minimum_share_reserves
     )
-    if not isclose(solvency, FixedPoint(0), abs_tol=epsilon):
-        logging.critical(
-            "solvency=share_reserves - global_exposure - minimum_share_reserves=%s != 0. Test failed at block %s",
-            solvency,
-            latest_block_number,
+    if not solvency > FixedPoint(0):
+        exception_message.append(
+            f"{solvency=} <= 0. "
+            f"({pool_state.pool_info.share_reserves=} - {pool_state.pool_info.long_exposure=} - "
+            f"{pool_state.pool_config.minimum_share_reserves=}). Test failed at block {latest_block_number}."
         )
         failed = True
 
     # The pool has more than the minimum share reserves
+    expected_minimum_share_reserves = (
+        pool_state.pool_info.share_reserves * pool_state.pool_info.share_price - pool_state.pool_info.long_exposure
+    )
     if not isclose(
         pool_state.pool_config.minimum_share_reserves,
-        pool_state.pool_info.share_reserves * pool_state.pool_info.share_price - pool_state.pool_info.long_exposure,
+        expected_minimum_share_reserves,
         abs_tol=epsilon,
     ):
-        logging.critical(
-            (
-                "minimum_share_reserves=%s != share_reserves * share_price - global_exposure = %s. "
-                "Test failed at block %s"
-            ),
-            pool_state.pool_config.minimum_share_reserves,
-            pool_state.pool_info.share_reserves * pool_state.pool_info.share_price - pool_state.pool_info.long_exposure,
-            latest_block_number,
+        exception_message.append(
+            f"{pool_state.pool_config.minimum_share_reserves=} != {expected_minimum_share_reserves=}. "
+            f"({pool_state.pool_info.share_reserves=} * "
+            f"{pool_state.pool_info.share_price=} - "
+            f"{pool_state.pool_info.long_exposure=}). "
+            f"Test failed at block {latest_block_number}."
         )
         failed = True
 
     # Creating a checkpoint should never fail
     # TODO: add get_block_transactions() to interface
     transactions = latest_block.get("transactions", None)
-    if transactions is None:
-        raise AssertionError("Latest block did not have transactions.")
-    # TODO: if not, decode the hexbytes
-    if isinstance(transactions, Sequence):
+    if transactions is not None and isinstance(transactions, Sequence):
         # If any transaction is to hyperdrive then assert a checkpoint happened
         for transaction in transactions:
             if isinstance(transaction, HexBytes):
-                raise TypeError("Transaction should not be hexbytes.")
+                # If hexbytes, there was no trade
+                continue
             txn_to = transaction.get("to", None)
             if txn_to is None:
                 raise AssertionError("Transaction did not have a 'to' key.")
             if txn_to == interface.hyperdrive_contract.address and pool_state.checkpoint.share_price <= 0:
-                logging.critical(
-                    (
-                        "A transaction was created but no checkpoint was minted.\n"
-                        "checkpoint.share_price=%s\n"
-                        "transaction=%s\n"
-                        "block_number=%s"
-                    ),
-                    pool_state.checkpoint.share_price,
-                    transaction,
-                    latest_block_number,
+                exception_message.append(
+                    f"A transaction was created but no checkpoint was minted.\n"
+                    f"{pool_state.checkpoint.share_price=}\n"
+                    f"{transaction=}\n"
+                    f"{latest_block_number=}"
                 )
                 failed = True
 
     # Log additional information if any test failed
     if failed:
-        logging.info(
-            "pool_config = %s\n\npool_info = %s\n\nlatest_checkpoint = %s\n\nadditional_info = %s",
-            json.dumps(asdict(pool_state.pool_config), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(asdict(pool_state.pool_info), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(asdict(pool_state.checkpoint), indent=2, cls=ExtendedJSONEncoder),
-            json.dumps(
-                {
-                    "hyperdrive_address": interface.hyperdrive_contract.address,
-                    "base_token_address": interface.base_token_contract.address,
-                    "spot_price": interface.calc_spot_price(pool_state),
-                    "fixed_rate": interface.calc_fixed_rate(pool_state),
-                    "variable_rate": pool_state.variable_rate,
-                    "vault_shares": pool_state.vault_shares,
-                },
-                indent=2,
-                cls=ExtendedJSONEncoder,
-            ),
-        )
+        logging.critical("\n".join(exception_message))
+        raise AssertionError(*exception_message)
 
 
 class Args(NamedTuple):
@@ -292,11 +279,6 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     # Use system arguments if none were passed
     if argv is None:
         argv = sys.argv
-
-    # If no arguments were passed, display the help message and exit
-    if len(argv) == 1:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
 
     return namespace_to_args(parser.parse_args())
 
