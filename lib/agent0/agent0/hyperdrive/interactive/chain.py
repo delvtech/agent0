@@ -48,7 +48,7 @@ class Chain:
         remove_existing_db_container: bool = True
         snapshot_dir: str = ".interactive_state/snapshot/"
         saved_state_dir: str = ".interactive_state/"
-        experimental: bool = True
+        experimental: bool = False
 
     def __init__(self, rpc_uri: str, config: Config | None = None):
         """Initialize the Chain class that connects to an existing chain.
