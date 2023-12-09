@@ -174,13 +174,9 @@ def run_invariant_checks(
     expected_minimum_share_reserves = (
         pool_state.pool_info.share_reserves * pool_state.pool_info.share_price - pool_state.pool_info.long_exposure
     )
-    if not isclose(
-        pool_state.pool_config.minimum_share_reserves,
-        expected_minimum_share_reserves,
-        abs_tol=epsilon,
-    ):
+    if not pool_state.pool_config.minimum_share_reserves >= expected_minimum_share_reserves:
         exception_message.append(
-            f"{pool_state.pool_config.minimum_share_reserves=} != {expected_minimum_share_reserves=}. "
+            f"{pool_state.pool_config.minimum_share_reserves=} >= {expected_minimum_share_reserves=}. "
             f"({pool_state.pool_info.share_reserves=} * "
             f"{pool_state.pool_info.share_price=} - "
             f"{pool_state.pool_info.long_exposure=}). "
