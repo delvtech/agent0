@@ -30,7 +30,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         A sequnce containing the uri to the database server and the test epsilon.
     """
 
-    initialize_rollbar("localfuzzbotsinvariantcheck")
+    log_to_rollbar = initialize_rollbar("fuzzbots_invariantcheck")
 
     # Setup the experiment
     parsed_args, interface = setup_fuzz(argv)
@@ -56,7 +56,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 report,
                 crash_report_to_file=True,
                 crash_report_file_prefix="fuzz_bots_invariant_checks",
-                log_to_rollbar=True,
+                log_to_rollbar=log_to_rollbar,
             )
 
 
@@ -171,16 +171,12 @@ def run_invariant_checks(
         failed = True
 
     # The pool has more than the minimum share reserves
-    expected_minimum_share_reserves = (
+    current_share_reserves = (
         pool_state.pool_info.share_reserves * pool_state.pool_info.share_price - pool_state.pool_info.long_exposure
     )
-    if not isclose(
-        pool_state.pool_config.minimum_share_reserves,
-        expected_minimum_share_reserves,
-        abs_tol=epsilon,
-    ):
+    if not current_share_reserves >= pool_state.pool_config.minimum_share_reserves:
         exception_message.append(
-            f"{pool_state.pool_config.minimum_share_reserves=} != {expected_minimum_share_reserves=}. "
+            f"{current_share_reserves} < {pool_state.pool_config.minimum_share_reserves=}. "
             f"({pool_state.pool_info.share_reserves=} * "
             f"{pool_state.pool_info.share_price=} - "
             f"{pool_state.pool_info.long_exposure=}). "
