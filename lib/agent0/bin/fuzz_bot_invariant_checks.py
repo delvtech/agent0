@@ -30,7 +30,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         A sequnce containing the uri to the database server and the test epsilon.
     """
 
-    initialize_rollbar("localfuzzbotsinvariantcheck")
+    log_to_rollbar = initialize_rollbar("fuzzbots_invariantcheck")
 
     # Setup the experiment
     parsed_args, interface = setup_fuzz(argv)
@@ -56,7 +56,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 report,
                 crash_report_to_file=True,
                 crash_report_file_prefix="fuzz_bots_invariant_checks",
-                log_to_rollbar=True,
+                log_to_rollbar=log_to_rollbar,
             )
 
 

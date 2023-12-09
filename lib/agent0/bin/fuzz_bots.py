@@ -78,7 +78,11 @@ account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random
 try:
     minimum_avg_agent_base = BASE_BUDGET_PER_BOT / FixedPoint(10)
     setup_and_run_agent_loop(
-        env_config, agent_config, account_key_config, liquidate=LIQUIDATE, minimum_avg_agent_base=minimum_avg_agent_base
+        env_config,
+        agent_config,
+        account_key_config,
+        liquidate=LIQUIDATE,
+        minimum_avg_agent_base=minimum_avg_agent_base,
     )
 # Don't stop chain if the user interrupts
 except KeyboardInterrupt:
