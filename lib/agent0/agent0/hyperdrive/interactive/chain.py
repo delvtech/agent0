@@ -48,6 +48,7 @@ class Chain:
         remove_existing_db_container: bool = True
         snapshot_dir: str = ".interactive_state/snapshot/"
         saved_state_dir: str = ".interactive_state/"
+        experimental: bool = True
 
     def __init__(self, rpc_uri: str, config: Config | None = None):
         """Initialize the Chain class that connects to an existing chain.
@@ -81,6 +82,7 @@ class Chain:
         self._saved_snapshot_id: str
         self._has_saved_snapshot = False
         self._deployed_hyperdrive_pools: list[InteractiveHyperdrive] = []
+        self.experimental = config.experimental
 
     def cleanup(self):
         """Kills the postgres container in this class."""

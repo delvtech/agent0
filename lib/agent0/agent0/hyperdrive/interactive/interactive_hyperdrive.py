@@ -864,6 +864,12 @@ class InteractiveHyperdrive:
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
+
+        # Experimental changes assume data is always up to date,
+        # Turn that off here to run in slow, but won't crash mode
+        if not self.chain.experimental:
+            self._ensure_data_caught_up()
+
         tx_receipt = self._handle_trade_result(trade_results)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_LONG, tx_receipt)
 
@@ -875,6 +881,12 @@ class InteractiveHyperdrive:
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
+
+        # Experimental changes assume data is always up to date,
+        # Turn that off here to run in slow, but won't crash mode
+        if not self.chain.experimental:
+            self._ensure_data_caught_up()
+
         tx_receipt = self._handle_trade_result(trade_results)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_LONG, tx_receipt)
 
@@ -886,6 +898,12 @@ class InteractiveHyperdrive:
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
+
+        # Experimental changes assume data is always up to date,
+        # Turn that off here to run in slow, but won't crash mode
+        if not self.chain.experimental:
+            self._ensure_data_caught_up()
+
         tx_receipt = self._handle_trade_result(trade_results)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_SHORT, tx_receipt)
 
@@ -897,6 +915,12 @@ class InteractiveHyperdrive:
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
+
+        # Experimental changes assume data is always up to date,
+        # Turn that off here to run in slow, but won't crash mode
+        if not self.chain.experimental:
+            self._ensure_data_caught_up()
+
         tx_receipt = self._handle_trade_result(trade_results)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_SHORT, tx_receipt)
 
@@ -908,6 +932,12 @@ class InteractiveHyperdrive:
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
+
+        # Experimental changes assume data is always up to date,
+        # Turn that off here to run in slow, but won't crash mode
+        if not self.chain.experimental:
+            self._ensure_data_caught_up()
+
         tx_receipt = self._handle_trade_result(trade_results)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.ADD_LIQUIDITY, tx_receipt)
 
@@ -919,6 +949,12 @@ class InteractiveHyperdrive:
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
+
+        # Experimental changes assume data is always up to date,
+        # Turn that off here to run in slow, but won't crash mode
+        if not self.chain.experimental:
+            self._ensure_data_caught_up()
+
         tx_receipt = self._handle_trade_result(trade_results)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REMOVE_LIQUIDITY, tx_receipt)
 
@@ -930,6 +966,12 @@ class InteractiveHyperdrive:
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
+
+        # Experimental changes assume data is always up to date,
+        # Turn that off here to run in slow, but won't crash mode
+        if not self.chain.experimental:
+            self._ensure_data_caught_up()
+
         tx_receipt = self._handle_trade_result(trade_results)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
 
@@ -945,6 +987,12 @@ class InteractiveHyperdrive:
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
         )
+
+        # Experimental changes assume data is always up to date,
+        # Turn that off here to run in slow, but won't crash mode
+        if not self.chain.experimental:
+            self._ensure_data_caught_up()
+
         out_events = []
         # The underlying policy can execute multiple actions in one step
         for trade_result in trade_results:
