@@ -3,15 +3,26 @@ from __future__ import annotations
 
 import subprocess
 import time
-from typing import Callable, Iterator
+from typing import Callable, Iterator, cast
 
 import pytest
 from ethpy.base import initialize_web3_with_http_provider
-from ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
+from ethpy.eth_config import EthConfig
+from ethpy.hyperdrive import (
+    DeployedHyperdrivePool,
+    deploy_hyperdrive_from_factory,
+    HyperdriveInterface,
+    HyperdriveAddresses,
+)
+from eth_typing import URI
 from fixedpointmath import FixedPoint
 from hypertypes import Fees, PoolConfig
+from web3 import HTTPProvider
 from web3.constants import ADDRESS_ZERO
 from web3.types import RPCEndpoint
+
+# we need to use the outer name for fixtures
+# pylint: disable=redefined-outer-name
 
 
 def launch_local_chain(anvil_port: int = 9999, host: str = "127.0.0.1") -> Iterator[str]:
@@ -213,3 +224,36 @@ def local_hyperdrive_pool(
 
     # Revert to snapshot
     reset(snapshot_id)
+
+
+def create_hyperdrive_interface(_local_hyperdrive_pool: DeployedHyperdrivePool) -> HyperdriveInterface:
+    """Set up the hyperdrive interface to access a deployed hyperdrive pool.
+
+    All arguments are fixtures.
+
+    Returns
+    -------
+        HyperdriveInterface
+            The interface to access the deployed hyperdrive pool.
+    """
+    rpc_uri = cast(HTTPProvider, _local_hyperdrive_pool.web3.provider).endpoint_uri or URI("http://localhost:8545")
+    hyperdrive_contract_addresses: HyperdriveAddresses = _local_hyperdrive_pool.hyperdrive_contract_addresses
+    eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir="./packages/hyperdrive/src/abis")
+    return HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
+
+
+@pytest.fixture(scope="function")
+def hyperdrive_interface(local_hyperdrive_pool: DeployedHyperdrivePool) -> Iterator[HyperdriveInterface]:
+    """Fixture representing a hyperdrive interface to a deployed hyperdrive pool.
+
+    Arguments
+    ---------
+    local_hyperdrive_pool: DeployedHyperdrivePool
+        Fixture representing the deployed hyperdrive pool
+
+    Yields
+    ------
+    HyperdriveInterface
+        The interface to access the deployed hyperdrive pool.
+    """
+    yield create_hyperdrive_interface(local_hyperdrive_pool)
