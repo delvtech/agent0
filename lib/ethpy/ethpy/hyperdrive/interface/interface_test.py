@@ -14,7 +14,7 @@ from hypertypes.utilities.conversions import (
     pool_info_to_fixedpoint,
 )
 
-from ethpy.hyperdrive import HyperdriveInterface
+from .interface import HyperdriveInterface
 
 # we need to use the outer name for fixtures
 # pylint: disable=redefined-outer-name
