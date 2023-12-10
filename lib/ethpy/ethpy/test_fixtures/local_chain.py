@@ -11,9 +11,9 @@ from ethpy.eth_config import EthConfig
 from ethpy.hyperdrive import (
     DeployedHyperdrivePool,
     deploy_hyperdrive_from_factory,
-    HyperdriveInterface,
     HyperdriveAddresses,
 )
+from ethpy.hyperdrive.interface import HyperdriveInterface
 from eth_typing import URI
 from fixedpointmath import FixedPoint
 from hypertypes import Fees, PoolConfig
