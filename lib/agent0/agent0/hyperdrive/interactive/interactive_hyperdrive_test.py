@@ -1,14 +1,8 @@
 """Tests interactive hyperdrive end to end."""
 import datetime
-import logging
-import os
 from decimal import Decimal
-from pathlib import Path
-from typing import Iterator
 
-import docker
 import pytest
-from docker.errors import DockerException
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from fixedpointmath import FixedPoint
 from pandas import Series
@@ -21,44 +15,6 @@ from .interactive_hyperdrive import InteractiveHyperdrive
 # needed to pass in fixtures
 # pylint: disable=redefined-outer-name
 # ruff: noqa: PLR2004 (comparison against magic values (literals like numbers))
-
-
-@pytest.fixture
-def chain() -> Iterator[LocalChain]:
-    """Local chain connected to a local database hosted in docker.
-
-    Yield
-    -----
-    LocalChain
-        local chain instance.
-    """
-    # Attempt to determine if docker is installed
-    try:
-        try:
-            _ = docker.from_env()
-        except Exception:  # pylint: disable=broad-exception-caught
-            home_dir = os.path.expanduser("~")
-            socket_path = Path(f"{home_dir}") / ".docker" / "desktop" / "docker.sock"
-            if socket_path.exists():
-                logging.debug("Docker not found at default socket, using %s..", socket_path)
-                _ = docker.DockerClient(base_url=f"unix://{socket_path}")
-            else:
-                logging.debug("Docker not found.")
-                _ = docker.from_env()
-    # Skip this test if docker isn't installed
-    except DockerException as exc:
-        # This env variable gets set when running tests in CI
-        # Hence, we don't want to skip this test if we're in CI
-        in_ci = os.getenv("IN_CI")
-        if in_ci is None:
-            pytest.skip("Docker engine not found, skipping")
-        else:
-            raise exc
-
-    local_chain_config = LocalChain.Config()
-    chain = LocalChain(local_chain_config)
-    yield chain
-    chain.cleanup()
 
 
 @pytest.mark.anvil
