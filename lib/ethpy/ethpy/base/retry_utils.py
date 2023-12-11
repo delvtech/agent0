@@ -5,16 +5,21 @@ import asyncio
 import inspect
 import logging
 import time
-from typing import Awaitable, Callable, ParamSpec, TypeVar
+from typing import Awaitable, Callable, NamedTuple, ParamSpec, TypeVar
 
 from web3._utils.threads import Timeout
 
 P = ParamSpec("P")
 R = TypeVar("R")
 
-# we need lots of arguments for the exponential backoff
-# pylint: disable=too-many-arguments
-# ruff: noqa: PLR0913
+RetryCallOptions = NamedTuple(
+    "RetryCallOptions",
+    [
+        ("timeout", float),
+        ("start_latency", float),
+        ("backoff_multiplier", float),
+    ],
+)
 
 
 async def async_retry_call(
@@ -22,6 +27,7 @@ async def async_retry_call(
     retry_exception_check: Callable[[Exception], bool] | None,
     func: Callable[P, Awaitable[R]],
     *args: P.args,
+    options: RetryCallOptions = RetryCallOptions(timeout=2, start_latency=0.01, backoff_multiplier=2),  # type: ignore
     **kwargs: P.kwargs,
 ) -> R:
     """Retry an async function call.
@@ -37,6 +43,8 @@ async def async_retry_call(
         The function to call.
     *args: P.args
         The positional arguments to call func with
+    options: RetryCallOptions
+        Parameters for the exponential backoff.
     **kwargs: P.kwargs
         The keyword arguments to call the func with
 
@@ -47,13 +55,10 @@ async def async_retry_call(
     """
     # TODO can't make a default for `retry_exception_check` due to *args and **kwargs,
     # so we need to explicitly pass in this parameter
-    timeout = kwargs.pop("timeout", 2)
-    start_latency = kwargs.pop("start_latency", 0.01)
-    backoff_multiplier = kwargs.pop("backoff_multiplier", 2)
     exception = None
     for attempt_number in range(retry_count):
         try:
-            with Timeout(timeout) as _timeout:
+            with Timeout(options.timeout) as _timeout:
                 out = await func(*args, **kwargs)
             return out
         # Catching general exception but throwing if fails
@@ -72,7 +77,7 @@ async def async_retry_call(
                 repr(exc),
             )
             exception = exc
-            await asyncio.sleep(start_latency * backoff_multiplier**attempt_number)
+            await asyncio.sleep(options.start_latency * options.backoff_multiplier**attempt_number)
     assert exception is not None
     raise exception
 
@@ -80,8 +85,9 @@ async def async_retry_call(
 def retry_call(
     retry_count: int,
     retry_exception_check: Callable[[Exception], bool] | None,
-    func: Callable[..., R],
+    func: Callable[P, R],
     *args: P.args,
+    options: RetryCallOptions = RetryCallOptions(timeout=2, start_latency=0.01, backoff_multiplier=2),  # type: ignore
     **kwargs: P.kwargs,
 ) -> R:
     """Retry a function call.
@@ -97,6 +103,8 @@ def retry_call(
         The function to call.
     *args: P.args
         The positional arguments to call func with
+    options: RetryCallOptions
+        Parameters for the exponential backoff.
     **kwargs: P.kwargs
         The keyword arguments to call the func with
 
@@ -109,13 +117,10 @@ def retry_call(
     # pylint: disable=too-many-arguments
     # TODO can't make a default for `retry_exception_check` due to *args and **kwargs,
     # so we need to explicitly pass in this parameter
-    timeout = kwargs.pop("timeout", 2)
-    start_latency = kwargs.pop("start_latency", 0.01)
-    backoff_multiplier = kwargs.pop("backoff_multiplier", 2)
     exception = None
     for attempt_number in range(retry_count):
         try:
-            with Timeout(timeout) as _timeout:
+            with Timeout(options.timeout) as _timeout:
                 out = func(*args, **kwargs)
             return out
         # Catching general exception but throwing if fails
@@ -134,6 +139,6 @@ def retry_call(
                 repr(exc),
             )
             exception = exc
-            time.sleep(start_latency * backoff_multiplier**attempt_number)
+            time.sleep(options.start_latency * options.backoff_multiplier**attempt_number)
     assert exception is not None
     raise exception
