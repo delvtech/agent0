@@ -27,6 +27,7 @@ _SLEEP_AMOUNT = 1
 def acquire_data(
     start_block: int = 0,
     lookback_block_limit: int = 1000,
+    interface: HyperdriveInterface | None = None,
     eth_config: EthConfig | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
@@ -43,6 +44,9 @@ def acquire_data(
         The starting block to filter the query on
     lookback_block_limit: int
         The maximum number of blocks to look back when filling in missing data
+    interface: HyperdriveInterface | None, optional
+        An initialized HyperdriveInterface object. If not set, will initialize one based on
+        eth_config and contract_addresses.
     eth_config: EthConfig | None
         Configuration for URIs to the rpc and artifacts. If not set, will look for addresses
         in eth.env.
@@ -66,7 +70,9 @@ def acquire_data(
     # TODO implement logger instead of global logging to suppress based on module name.
 
     ## Initialization
-    interface = HyperdriveInterface(eth_config, contract_addresses)
+    if interface is None:
+        interface = HyperdriveInterface(eth_config, contract_addresses)
+
     # postgres session
     db_session_init = False
     if db_session is None:

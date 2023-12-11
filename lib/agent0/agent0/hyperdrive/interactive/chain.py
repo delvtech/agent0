@@ -156,9 +156,10 @@ class Chain:
         else:
             # Creating checkpoints mines blocks very fast, which then makes the data pipeline not be able to keep up.
             # We avoid this by skipping all the intermediate blocks in the database when advancing time.
-            for pool in self._deployed_hyperdrive_pools:
-                pool._ensure_data_caught_up()  # pylint: disable=protected-access
-                pool._stop_data_pipeline()  # pylint: disable=protected-access
+            if self.experimental:
+                for pool in self._deployed_hyperdrive_pools:
+                    pool._ensure_data_caught_up()  # pylint: disable=protected-access
+                    pool._stop_data_pipeline()  # pylint: disable=protected-access
 
             # For every pool, check the checkpoint duration and advance the chain for that amount of time,
             # followed by creating a checkpoint for that pool.
@@ -210,10 +211,14 @@ class Chain:
             if last_advance_time - offset > 0:
                 self._advance_chain_time(last_advance_time - offset)
 
-            # Restart the data pipeline on the current block time.
             curr_block = self._web3.eth.get_block_number()
-            for pool in self._deployed_hyperdrive_pools:
-                pool._launch_data_pipeline(curr_block)  # pylint: disable=protected-access
+            if self.experimental:
+                # Restart the data pipeline on the current block time.
+                for pool in self._deployed_hyperdrive_pools:
+                    pool._launch_data_pipeline(curr_block)  # pylint: disable=protected-access
+            else:
+                for pool in self._deployed_hyperdrive_pools:
+                    pool._run_blocking_data_pipeline(curr_block)  # pylint: disable=protected-access
 
         return out_dict
 
@@ -382,8 +387,9 @@ class Chain:
     def _dump_db(self, save_dir: str):
         # TODO parameterize the save path
         for pool in self._deployed_hyperdrive_pools:
-            # Need to ensure data has caught up before snapshot
-            pool._ensure_data_caught_up()  # pylint: disable=protected-access
+            if self.experimental:
+                # Need to ensure data has caught up before snapshot
+                pool._ensure_data_caught_up()  # pylint: disable=protected-access
             export_path = str(Path(save_dir) / pool._db_name)  # pylint: disable=protected-access
             os.makedirs(export_path, exist_ok=True)
             export_db_to_file(export_path, pool.db_session, raw=True)
@@ -391,11 +397,13 @@ class Chain:
     def _load_db(self, load_dir: str):
         # TODO parameterize the load path
         for pool in self._deployed_hyperdrive_pools:
-            # We need to stop the underlying data pipeline before updating the underlying database
-            pool._stop_data_pipeline()  # pylint: disable=protected-access
+            if self.experimental:
+                # We need to stop the underlying data pipeline before updating the underlying database
+                pool._stop_data_pipeline()  # pylint: disable=protected-access
             import_path = str(Path(load_dir) / pool._db_name)  # pylint: disable=protected-access
             import_to_db(pool.db_session, import_path, drop=True)
-            pool._launch_data_pipeline()  # pylint: disable=protected-access
+            if self.experimental:
+                pool._launch_data_pipeline()  # pylint: disable=protected-access
 
 
 class LocalChain(Chain):
