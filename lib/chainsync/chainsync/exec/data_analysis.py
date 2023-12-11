@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import time
 from typing import Callable
 
@@ -15,8 +14,8 @@ from chainsync.db.hyperdrive import (
     get_latest_block_number_from_table,
     get_pool_config,
 )
-from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from ethpy import EthConfig
+from ethpy.hyperdrive import HyperdriveAddresses
 from ethpy.hyperdrive.interface import HyperdriveInterface
 from sqlalchemy.orm import Session
 
@@ -29,6 +28,7 @@ _SLEEP_AMOUNT = 1
 # pylint: disable=too-many-branches
 def data_analysis(
     start_block: int = 0,
+    interface: HyperdriveInterface | None = None,
     eth_config: EthConfig | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
@@ -43,6 +43,9 @@ def data_analysis(
     ---------
     start_block: int
         The starting block to filter the query on
+    interface: HyperdriveInterface | None, optional
+        An initialized HyperdriveInterface object. If not set, will initialize one based on
+        eth_config and contract_addresses.
     eth_config: EthConfig | None
         Configuration for URIs to the rpc and artifacts. If not set, will look for addresses
         in eth.env.
@@ -66,23 +69,15 @@ def data_analysis(
     # TODO implement logger instead of global logging to suppress based on module name.
 
     ## Initialization
-    # eth config
-    if eth_config is None:
-        # Load parameters from env vars if they exist
-        eth_config = build_eth_config()
+    # create hyperdrive interface
+    if interface is None:
+        interface = HyperdriveInterface(eth_config, contract_addresses)
 
     # postgres session
     db_session_init = False
     if db_session is None:
         db_session_init = True
         db_session = initialize_session(postgres_config=postgres_config, ensure_database_created=True)
-
-    # Get addresses either from artifacts URI defined in eth_config or from contract_addresses
-    if contract_addresses is None:
-        contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
-
-    # create hyperdrive interface
-    interface = HyperdriveInterface(eth_config, contract_addresses)
 
     # Get hyperdrive contract
     hyperdrive_contract = interface.hyperdrive_contract
