@@ -229,6 +229,7 @@ def invariant_check(
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
     """
+    # pylint: disable=too-many-statements
     failed = False
     exception_message: list[str] = ["Fuzz Path Independence Invariant Check"]
     exception_data: dict[str, Any] = {}

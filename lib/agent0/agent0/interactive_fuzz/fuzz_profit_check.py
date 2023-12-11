@@ -39,11 +39,6 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     log_to_stdout: bool, optional
         If True, log to stdout in addition to a file.
         Defaults to False.
-
-    Raises
-    ------
-    AssertionError
-        If the invariant checks fail during the tests an error will be raised.
     """
 
     # Setup the environment
