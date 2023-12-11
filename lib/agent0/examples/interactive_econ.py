@@ -24,6 +24,10 @@ else:
 
 # pylint: disable=bare-except
 # ruff: noqa: A001 (allow shadowing a python builtin)
+# using the variable "max"
+# pylint: disable=redefined-builtin
+# don't make me use upper case variable names
+# pylint: disable=invalid-name
 
 
 # %%
@@ -116,7 +120,7 @@ def get_max(
     Returns
     -------
     GetMax
-    A NamedTuple containing the max long in base, max long in bonds, max short in bonds, and max short in base.
+        A NamedTuple containing the max long in base, max long in bonds, max short in bonds, and max short in base.
     """
     _max_long_base = _interactive_hyperdrive.hyperdrive_interface.calc_max_long(budget=_current_base)
     _max_long_shares = _interactive_hyperdrive.hyperdrive_interface.calc_shares_out_given_bonds_in_down(_max_long_base)
@@ -136,7 +140,8 @@ def get_max(
     )
 
 
-# sourcery skip: avoid-builtin-shadow, do-not-use-bare-except, invert-any-all, remove-unnecessary-else, swap-if-else-branches
+# sourcery skip: avoid-builtin-shadow, do-not-use-bare-except, invert-any-all,
+# remove-unnecessary-else, swap-if-else-branches
 for day in range(exp.term_days):
     amount_to_trade_base = FixedPoint(exp.amount_of_liquidity * exp.daily_volume_percentage_of_liquidity)
     while amount_to_trade_base > MINIMUM_TRANSACTION_AMOUNT:

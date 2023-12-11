@@ -31,6 +31,7 @@ from .calc_ticker import calc_ticker
 pd.set_option("display.max_columns", None)
 
 MAX_BATCH_SIZE = 10000
+USE_SPOT_PNL = False
 
 
 def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
@@ -177,7 +178,6 @@ def data_to_analysis(
     """
     # Get data
     pool_info = get_pool_info(db_session, start_block, end_block, coerce_float=False)
-    checkpoint_info = get_checkpoint_info(db_session, 1, end_block, coerce_float=False)
 
     # TODO calculate current wallet positions for this block
     # This should be done from the deltas, not queries from chain
@@ -198,8 +198,11 @@ def data_to_analysis(
         # We can set a sample rate by doing batch processing on this function
         # since we only get the current wallet for the end_block
         wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
-        # pnl_df = calc_closeout_pnl(wallet_pnl, checkpoint_info, hyperdrive_contract, hyperdrive_interface)
-        # pnl_df = calc_spot_pnl(wallet_pnl, pool_info, pool_config)
+        if USE_SPOT_PNL:
+            pnl_df = calc_spot_pnl(wallet_pnl, pool_info, pool_config)
+        else:
+            checkpoint_info = get_checkpoint_info(db_session, 1, end_block, coerce_float=False)
+            pnl_df = calc_closeout_pnl(wallet_pnl, checkpoint_info, hyperdrive_contract, hyperdrive_interface)
 
         # This sets the pnl to the current wallet dataframe, but there may be scaling issues here.
         # This is because the `CurrentWallet` table has one entry per change in wallet position,
@@ -212,8 +215,7 @@ def data_to_analysis(
         # the sampling rate. Otherwise, the e.g., ticker updates will also be on the sampling rate (won't miss data,
         # just lower frequency updates)
         # TODO do scaling tests to see the limit of this
-        # wallet_pnl["pnl"] = pnl_df
-        wallet_pnl["pnl"] = np.nan
+        wallet_pnl["pnl"] = pnl_df
         # Add wallet_pnl to the database
         _df_to_db(wallet_pnl, WalletPNL, db_session)
 

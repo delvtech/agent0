@@ -5,9 +5,9 @@ import logging
 from decimal import Decimal
 from ethpy.hyperdrive.interface import HyperdriveInterface
 from ethpy.hyperdrive.state.pool_state import PoolState
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 import pandas as pd
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from fixedpointmath import FixedPoint
 from web3.contract.contract import Contract
 
@@ -118,7 +118,8 @@ def calculate_short_proceeds(bond_amount, share_amount, open_share_price, share_
 
 
 def calc_single_closeout(position: pd.Series, interface: HyperdriveInterface, checkpoint_info: pd.DataFrame) -> Decimal:
-    # sourcery skip: extract-duplicate-method, extract-method, inline-immediately-returned-variable, move-assign-in-block, remove-redundant-if, split-or-ifs, switch
+    # sourcery skip: extract-duplicate-method, extract-method, inline-immediately-returned-variable,
+    # move-assign-in-block, remove-redundant-if, split-or-ifs, switch
     """Calculate the closeout pnl for a single position.
 
     Arguments
