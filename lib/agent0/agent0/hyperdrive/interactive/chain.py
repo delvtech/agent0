@@ -153,6 +153,10 @@ class Chain:
         # or there are no deployed pools
         if (not create_checkpoints) or (len(self._deployed_hyperdrive_pools) == 0):
             self._advance_chain_time(time_delta)
+            # Advancing time mines a block, so we update data pipeline here
+            if not self.experimental:
+                for pool in self._deployed_hyperdrive_pools:
+                    pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         else:
             # Creating checkpoints mines blocks very fast, which then makes the data pipeline not be able to keep up.
             # We avoid this by skipping all the intermediate blocks in the database when advancing time.

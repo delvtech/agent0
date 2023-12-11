@@ -224,6 +224,8 @@ class InteractiveHyperdrive:
 
         if self.chain.experimental:
             self._launch_data_pipeline()
+        else:
+            self._run_blocking_data_pipeline()
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
@@ -303,6 +305,29 @@ class InteractiveHyperdrive:
         # Dereference thread variables
         self._data_thread = None
         self._analysis_thread = None
+
+    def _ensure_data_caught_up(self, polling_interval: int = 1) -> None:
+        # Sanity check, callers is responsible for determining experimental mode,
+        # but we add a catch here to make sure
+        assert self.chain.experimental
+
+        latest_mined_block: BlockNumber | None = None
+        analysis_latest_block_number: int | None = None
+
+        try:
+            with Timeout(self.data_pipeline_timeout) as _timeout:
+                while True:
+                    latest_mined_block = self.hyperdrive_interface.web3.eth.get_block_number()
+                    analysis_latest_block_number = get_latest_block_number_from_analysis_table(self.db_session)
+                    if latest_mined_block > analysis_latest_block_number:
+                        _timeout.sleep(polling_interval)
+                    else:
+                        break
+        except Timeout as exc:
+            raise TimeExhausted(
+                f"Data pipeline didn't catch up after {self.data_pipeline_timeout} seconds",
+                f"{latest_mined_block=}, {analysis_latest_block_number=}",
+            ) from exc
 
     def _run_blocking_data_pipeline(self, start_block: int | None = None) -> None:
         # Sanity check, callers is responsible for determining experimental mode for clarity,
@@ -404,6 +429,9 @@ class InteractiveHyperdrive:
             The new variable rate for the pool.
         """
         self.hyperdrive_interface.set_variable_rate(self._deployed_hyperdrive.deploy_account, variable_rate)
+        # Setting the variable rate mines a block, so we run data pipeline here
+        if not self.chain.experimental:
+            self._run_blocking_data_pipeline()
 
     def _create_checkpoint(
         self, checkpoint_time: int | None = None, check_if_exists: bool = True
@@ -858,6 +886,10 @@ class InteractiveHyperdrive:
             else:
                 self._initial_funds[agent.address] = base
 
+        # Adding funds mines a block, so we run data pipeline here
+        if not self.chain.experimental:
+            self._run_blocking_data_pipeline()
+
         # TODO do we want to report a status here?
 
     def _handle_trade_result(self, trade_results: list[TradeResult] | TradeResult) -> ReceiptBreakdown:
@@ -886,29 +918,6 @@ class InteractiveHyperdrive:
         tx_receipt = trade_result.tx_receipt
         assert tx_receipt is not None
         return tx_receipt
-
-    def _ensure_data_caught_up(self, polling_interval: int = 1) -> None:
-        # Sanity check, callers is responsible for determining experimental mode,
-        # but we add a catch here to make sure
-        assert self.chain.experimental
-
-        latest_mined_block: BlockNumber | None = None
-        analysis_latest_block_number: int | None = None
-
-        try:
-            with Timeout(self.data_pipeline_timeout) as _timeout:
-                while True:
-                    latest_mined_block = self.hyperdrive_interface.web3.eth.get_block_number()
-                    analysis_latest_block_number = get_latest_block_number_from_analysis_table(self.db_session)
-                    if latest_mined_block > analysis_latest_block_number:
-                        _timeout.sleep(polling_interval)
-                    else:
-                        break
-        except Timeout as exc:
-            raise TimeExhausted(
-                f"Data pipeline didn't catch up after {self.data_pipeline_timeout} seconds",
-                f"{latest_mined_block=}, {analysis_latest_block_number=}",
-            ) from exc
 
     def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
         # Set the next action to open a long
