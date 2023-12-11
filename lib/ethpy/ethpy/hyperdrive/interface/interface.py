@@ -9,9 +9,11 @@ import copy
 import os
 from typing import TYPE_CHECKING, cast
 
+from eth_account import Account
 from ethpy import build_eth_config
 from ethpy.base import initialize_web3_with_http_provider
 from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 from ethpy.hyperdrive.state import PoolState
 from ethpy.hyperdrive.transactions import (
     get_hyperdrive_checkpoint,
@@ -20,7 +22,7 @@ from ethpy.hyperdrive.transactions import (
 )
 from fixedpointmath import FixedPoint
 from hypertypes import IERC4626HyperdriveContract
-from hypertypes.types import ERC20MintableContract, MockERC4626Contract
+from hypertypes.types import ERC20MintableContract, ERC4626HyperdriveFactoryContract, MockERC4626Contract
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
@@ -84,6 +86,8 @@ if TYPE_CHECKING:
 class HyperdriveInterface:
     """End-point API for interfacing with a deployed Hyperdrive pool."""
 
+    _deployed_hyperdrive_pool: DeployedHyperdrivePool | None = None
+
     def __init__(
         self,
         eth_config: EthConfig | None = None,
@@ -122,7 +126,7 @@ class HyperdriveInterface:
         self.base_token_contract: ERC20MintableContract = ERC20MintableContract.factory(w3=self.web3)(
             web3.to_checksum_address(self.addresses.base_token)
         )
-        # Setup Hyperdrive and Yield (variable rate) contracts.
+        # Setup Hyperdrive, Yield (variable rate), and Hyperdrive Factory contracts.
         self.hyperdrive_contract: IERC4626HyperdriveContract = IERC4626HyperdriveContract.factory(w3=self.web3)(
             web3.to_checksum_address(self.addresses.mock_hyperdrive)
         )
@@ -130,6 +134,9 @@ class HyperdriveInterface:
         self.yield_contract: MockERC4626Contract = MockERC4626Contract.factory(w3=self.web3)(
             address=web3.to_checksum_address(self.yield_address)
         )
+        self.hyperdrive_factory_contract: ERC4626HyperdriveFactoryContract = ERC4626HyperdriveFactoryContract.factory(
+            w3=self.web3
+        )(web3.to_checksum_address(self.addresses.hyperdrive_factory))
         # Fill in the initial state cache.
         self._current_pool_state = self.get_hyperdrive_state()
         self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
@@ -139,6 +146,27 @@ class HyperdriveInterface:
         # and uses defaults for other smart_contract_read functions, e.g., get_pool_info.
         self.read_retry_count = read_retry_count
         self.write_retry_count = write_retry_count
+
+    def __post_init__(self) -> None:
+        self._deployed_hyperdrive_pool = self._create_deployed_hyperdrive_pool()
+
+    def _create_deployed_hyperdrive_pool(self) -> DeployedHyperdrivePool:
+        return DeployedHyperdrivePool(
+            web3=self.web3,
+            deploy_account=Account().from_key("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"),
+            hyperdrive_contract_addresses=self.addresses,
+            hyperdrive_contract=self.hyperdrive_contract,
+            hyperdrive_factory_contract=self.hyperdrive_factory_contract,
+            base_token_contract=self.base_token_contract,
+            deploy_block_number=0,  # don't have access to this here, use at your own risk
+        )
+
+    @property
+    def deployed_hyperdrive_pool(self) -> DeployedHyperdrivePool:
+        """Retrieve the deployed hyperdrive pool to which the interface is connected."""
+        if self._deployed_hyperdrive_pool is None:
+            self._deployed_hyperdrive_pool = self._create_deployed_hyperdrive_pool()
+        return self._deployed_hyperdrive_pool
 
     @property
     def current_pool_state(self) -> PoolState:
