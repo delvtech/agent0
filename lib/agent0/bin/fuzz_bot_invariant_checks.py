@@ -5,7 +5,6 @@ import argparse
 import logging
 import sys
 import time
-from math import isclose
 from typing import Any, NamedTuple, Sequence
 
 from eth_typing import BlockNumber
@@ -19,7 +18,7 @@ from web3.types import BlockData
 
 from agent0.base.config import EnvironmentConfig
 from agent0.hyperdrive.crash_report import build_crash_trade_result, get_anvil_state_dump, log_hyperdrive_crash_report
-from agent0.interactive_fuzz.helpers import FuzzAssertionException
+from agent0.interactive_fuzz.helpers import FuzzAssertionException, fp_isclose
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -118,6 +117,10 @@ def run_invariant_checks(
     test_epsilon: float
         The tolerance for the invariance checks.
     """
+
+    # TODO
+    # pylint: disable=too-many-locals
+
     # Get the variables to check
     pool_state = interface.get_hyperdrive_state(latest_block)
     epsilon = FixedPoint(str(test_epsilon))
@@ -149,7 +152,7 @@ def run_invariant_checks(
         + pool_state.pool_info.withdrawal_shares_proceeds
     )
     actual_vault_shares = pool_state.vault_shares
-    if not isclose(expected_vault_shares, actual_vault_shares, abs_tol=epsilon):
+    if not fp_isclose(expected_vault_shares, actual_vault_shares, abs_tol=epsilon):
         difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
         exception_message.append(
             f"{actual_vault_shares=} is incorrect, should be {expected_vault_shares}. "
