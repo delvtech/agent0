@@ -6,7 +6,6 @@ import logging
 import sys
 from typing import Any, NamedTuple, Sequence
 
-import pandas as pd
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
@@ -53,11 +52,6 @@ def fuzz_path_independence(
     log_to_stdout: bool, optional
         If True, log to stdout in addition to a file.
         Defaults to False.
-
-    Raises
-    ------
-    AssertionError
-        If the invariant checks fail during the tests an error will be raised.
     """
     log_filename = ".logging/fuzz_path_independence.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout)
