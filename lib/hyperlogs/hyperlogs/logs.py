@@ -8,7 +8,7 @@ from logging.handlers import RotatingFileHandler
 
 # Logging defaults
 DEFAULT_LOG_LEVEL = logging.INFO
-DEFAULT_LOG_FORMATTER = "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s"
+DEFAULT_LOG_FORMATTER = "\n%(asctime)s: %(levelname)s: %(filename)s:%(lineno)s::%(module)s::%(funcName)s:\n%(message)s"
 DEFAULT_LOG_DATETIME = "%y-%m-%d %H:%M:%S"
 DEFAULT_LOG_MAXBYTES = int(2e6)  # 2MB
 
