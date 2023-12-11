@@ -241,9 +241,9 @@ def invariant_check(
             exception_message.append(
                 f"{actual_base_amount=} != {expected_base_amount_from_event=}, {difference_in_wei=}"
             )
-            exception_data["actual_base_amount"] = actual_base_amount
-            exception_data["expected_base_amount_from_event"] = expected_base_amount_from_event
-            exception_data["base_amount_from_event_difference_in_wei"] = difference_in_wei
+            exception_data["invariance_check:actual_base_amount"] = actual_base_amount
+            exception_data["invariance_check:expected_base_amount_from_event"] = expected_base_amount_from_event
+            exception_data["invariance_check:base_amount_from_event_difference_in_wei"] = difference_in_wei
             failed = True
 
         expected_base_amount_from_trade = open_trade_event.bond_amount - open_trade_event.bond_amount * flat_fee_percent
@@ -252,9 +252,9 @@ def invariant_check(
             exception_message.append(
                 f"{actual_base_amount=} != {expected_base_amount_from_trade=}, {difference_in_wei=}"
             )
-            exception_data["actual_base_amount"] = actual_base_amount
-            exception_data["expected_base_amount_from_trade"] = expected_base_amount_from_trade
-            exception_data["base_amount_from_trade_difference_in_wei"] = difference_in_wei
+            exception_data["invariance_check:actual_base_amount"] = actual_base_amount
+            exception_data["invariance_check:expected_base_amount_from_trade"] = expected_base_amount_from_trade
+            exception_data["invariance_check:base_amount_from_trade_difference_in_wei"] = difference_in_wei
             failed = True
 
     elif isinstance(open_trade_event, OpenShort) and isinstance(close_trade_event, CloseShort):
@@ -280,9 +280,9 @@ def invariant_check(
         if actual_base_amount != interest_accrued:
             difference_in_wei = abs(actual_base_amount.scaled_value - interest_accrued.scaled_value)
             exception_message.append(f"{actual_base_amount=} != {interest_accrued=}, {difference_in_wei=}")
-            exception_data["actual_base_amount"] = actual_base_amount
-            exception_data["interest_accured"] = interest_accrued
-            exception_data["short_base_amount_difference_in_wei"] = difference_in_wei
+            exception_data["invariance_check:actual_base_amount"] = actual_base_amount
+            exception_data["invariance_check:interest_accured"] = interest_accrued
+            exception_data["invariance_check:short_base_amount_difference_in_wei"] = difference_in_wei
             failed = True
     else:
         raise ValueError("Invalid types for open/close trade events")

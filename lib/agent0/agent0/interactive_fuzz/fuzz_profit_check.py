@@ -244,9 +244,9 @@ def invariant_check(
             f"{base_amount_returned=} should not be >= {base_amount_provided=}. "
             f"{difference_in_wei=}"
         )
-        exception_data["long_base_amount_returned"] = base_amount_returned
-        exception_data["long_base_amount_provided"] = base_amount_provided
-        exception_data["long_base_amount_difference_in_wei"] = difference_in_wei
+        exception_data["invariance_check:long_base_amount_returned"] = base_amount_returned
+        exception_data["invariance_check:long_base_amount_provided"] = base_amount_provided
+        exception_data["invariance_check:long_base_amount_difference_in_wei"] = difference_in_wei
         failed = True
 
     agent_balance = check_data["long_agent"].wallet.balance.amount
@@ -258,9 +258,9 @@ def invariant_check(
             f"{agent_balance=} should not be >= {trade_amount=}. "
             f"{difference_in_wei=}"
         )
-        exception_data["long_agent_balance"] = agent_balance
-        exception_data["long_trade_amount"] = trade_amount
-        exception_data["long_agent_balance_difference_in_wei"] = difference_in_wei
+        exception_data["invariance_check:long_agent_balance"] = agent_balance
+        exception_data["invariance_check:long_trade_amount"] = trade_amount
+        exception_data["invariance_check:long_agent_balance_difference_in_wei"] = difference_in_wei
         failed = True
 
     base_amount_returned = check_data["short_events"]["close"].base_amount
@@ -272,9 +272,9 @@ def invariant_check(
             f"{base_amount_returned=} should not be >= {base_amount_provided=}. "
             f"{difference_in_wei=}"
         )
-        exception_data["short_base_amount_returned"] = base_amount_returned
-        exception_data["short_base_amount_provided"] = base_amount_provided
-        exception_data["short_base_amount_difference_in_wei"] = difference_in_wei
+        exception_data["invariance_check:short_base_amount_returned"] = base_amount_returned
+        exception_data["invariance_check:short_base_amount_provided"] = base_amount_provided
+        exception_data["invariance_check:short_base_amount_difference_in_wei"] = difference_in_wei
         failed = True
 
     agent_balance = check_data["short_agent"].wallet.balance.amount
@@ -286,9 +286,9 @@ def invariant_check(
             f"{agent_balance=} should not be >= {trade_amount=}. "
             f"{difference_in_wei=}"
         )
-        exception_data["short_agent_balance"] = agent_balance
-        exception_data["short_trade_amount"] = trade_amount
-        exception_data["short_agent_balance_difference_in_wei"] = difference_in_wei
+        exception_data["invariance_check:short_agent_balance"] = agent_balance
+        exception_data["invariance_check:short_trade_amount"] = trade_amount
+        exception_data["invariance_check:short_agent_balance_difference_in_wei"] = difference_in_wei
         failed = True
 
     if failed:

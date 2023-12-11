@@ -135,13 +135,13 @@ def run_invariant_checks(
     actual_hyperdrive_base_balance = pool_state.hyperdrive_base_balance
     if actual_hyperdrive_base_balance > FixedPoint(0):
         exception_message.append(f"{actual_hyperdrive_base_balance} <= 0. Test failed at block {latest_block_number}")
-        exception_data["actual_hyperdrive_base_balance"] = actual_hyperdrive_base_balance
+        exception_data["invariance_check:actual_hyperdrive_base_balance"] = actual_hyperdrive_base_balance
         failed = True
 
     actual_hyperdrive_eth_balance = pool_state.hyperdrive_eth_balance
     if actual_hyperdrive_eth_balance > FixedPoint(0):
         exception_message.append(f"{actual_hyperdrive_eth_balance} <= 0. Test failed at block {latest_block_number}")
-        exception_data["actual_hyperdrive_base_balance"] = actual_hyperdrive_eth_balance
+        exception_data["invariance_check:actual_hyperdrive_base_balance"] = actual_hyperdrive_eth_balance
         failed = True
 
     # Total shares is correctly calculated
@@ -159,9 +159,9 @@ def run_invariant_checks(
             f"{difference_in_wei=}. "
             f"Test failed at block {latest_block_number}."
         )
-        exception_data["expected_vault_shares"] = expected_vault_shares
-        exception_data["actual_vault_shares"] = actual_vault_shares
-        exception_data["vault_shares_difference_in_wei"] = difference_in_wei
+        exception_data["invariance_check:expected_vault_shares"] = expected_vault_shares
+        exception_data["invariance_check:actual_vault_shares"] = actual_vault_shares
+        exception_data["invariance_check:vault_shares_difference_in_wei"] = difference_in_wei
         failed = True
 
     # The system should always be solvent
@@ -176,7 +176,7 @@ def run_invariant_checks(
             f"({pool_state.pool_info.share_reserves=} - {pool_state.pool_info.long_exposure=} - "
             f"{pool_state.pool_config.minimum_share_reserves=}). Test failed at block {latest_block_number}."
         )
-        exception_data["solvency"] = solvency
+        exception_data["invariance_check:solvency"] = solvency
         failed = True
 
     # The pool has more than the minimum share reserves
@@ -192,8 +192,8 @@ def run_invariant_checks(
             f"{pool_state.pool_info.long_exposure=}). "
             f"Test failed at block {latest_block_number}."
         )
-        exception_data["current_share_reserves"] = current_share_reserves
-        exception_data["minimum_share_reserves"] = minimum_share_reserves
+        exception_data["invariance_check:current_share_reserves"] = current_share_reserves
+        exception_data["invariance_check:minimum_share_reserves"] = minimum_share_reserves
         failed = True
 
     # Creating a checkpoint should never fail

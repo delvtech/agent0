@@ -240,9 +240,9 @@ def invariant_check(
     if expected_base_balance != actual_base_balance:
         difference_in_wei = abs(expected_base_balance.scaled_value - actual_base_balance.scaled_value)
         exception_message.append(f"{expected_base_balance=} != {actual_base_balance=}, {difference_in_wei=}")
-        exception_data["expected_base_balance"] = expected_base_balance
-        exception_data["actual_base_balance"] = actual_base_balance
-        exception_data["base_balance_difference_in_wei"] = difference_in_wei
+        exception_data["invariance_check:expected_base_balance"] = expected_base_balance
+        exception_data["invariance_check:actual_base_balance"] = actual_base_balance
+        exception_data["invariance_check:base_balance_difference_in_wei"] = difference_in_wei
         failed = True
 
     # Effective share reserves
@@ -251,9 +251,9 @@ def invariant_check(
     if expected_share_reserves != actual_share_reserves:
         difference_in_wei = abs(expected_share_reserves.scaled_value - actual_share_reserves.scaled_value)
         exception_message.append(f"{expected_share_reserves=} != {actual_share_reserves=}, {difference_in_wei=}")
-        exception_data["expected_share_reserves"] = expected_share_reserves
-        exception_data["actual_share_reserves"] = actual_share_reserves
-        exception_data["share_reserves_difference_in_wei"] = difference_in_wei
+        exception_data["invariance_check:expected_share_reserves"] = expected_share_reserves
+        exception_data["invariance_check:actual_share_reserves"] = actual_share_reserves
+        exception_data["invariance_check:share_reserves_difference_in_wei"] = difference_in_wei
         failed = True
 
     # Vault shares (Hyperdrive balance of vault contract)
@@ -262,9 +262,9 @@ def invariant_check(
     if expected_vault_shares != actual_vault_shares:
         difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
         exception_message.append(f"{expected_vault_shares} != {actual_vault_shares}, {difference_in_wei=}")
-        exception_data["expected_vault_shares"] = expected_vault_shares
-        exception_data["actual_share_shares"] = actual_vault_shares
-        exception_data["vault_shares_difference_in_wei"] = difference_in_wei
+        exception_data["invariance_check:expected_vault_shares"] = expected_vault_shares
+        exception_data["invariance_check:actual_share_shares"] = actual_vault_shares
+        exception_data["invariance_check:vault_shares_difference_in_wei"] = difference_in_wei
         failed = True
 
     # Minimum share reserves
@@ -275,9 +275,9 @@ def invariant_check(
         exception_message.append(
             f"{expected_minimum_share_reserves} != {actual_minimum_share_reserves}, {difference_in_wei=}"
         )
-        exception_data["expected_minimum_share_reserves"] = expected_minimum_share_reserves
-        exception_data["actual_minimum_share_reserves"] = actual_minimum_share_reserves
-        exception_data["minimum_share_reserves_difference_in_wei"] = difference_in_wei
+        exception_data["invariance_check:expected_minimum_share_reserves"] = expected_minimum_share_reserves
+        exception_data["invariance_check:actual_minimum_share_reserves"] = actual_minimum_share_reserves
+        exception_data["invariance_check:minimum_share_reserves_difference_in_wei"] = difference_in_wei
         failed = True
 
     # Check that the subset of columns in initial db pool state and the latest pool state are equal
@@ -297,9 +297,9 @@ def invariant_check(
             exception_message.append(
                 f"expected_{field_name}={expected_val}, actual_{field_name}={actual_val}, {difference_in_wei=}"
             )
-            exception_data["expected_" + field_name] = expected_val
-            exception_data["actual_" + field_name] = actual_val
-            exception_data[field_name + "_difference_in_wei"] = difference_in_wei
+            exception_data["invariance_check:expected_" + field_name] = expected_val
+            exception_data["invariance_check:actual_" + field_name] = actual_val
+            exception_data["invariance_check:" + field_name + "_difference_in_wei"] = difference_in_wei
         failed = True
 
     if failed:
