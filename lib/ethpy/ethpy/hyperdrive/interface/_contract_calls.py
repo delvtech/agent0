@@ -188,14 +188,6 @@ async def _async_open_long(
             read_retry_count=interface.read_retry_count,
         )
     if slippage_tolerance is not None:
-        preview_result = smart_contract_preview_transaction(
-            interface.hyperdrive_contract,
-            agent_checksum_address,
-            "openLong",
-            *fn_args,
-            block_number=current_block,
-            read_retry_count=interface.read_retry_count,
-        )
         min_output = (
             FixedPoint(scaled_value=preview_result["bondProceeds"]) * (FixedPoint(1) - slippage_tolerance)
         ).scaled_value

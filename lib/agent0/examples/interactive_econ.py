@@ -1,5 +1,13 @@
 # %%
-"""Run experiments of economic activity."""
+"""Run experiments of economic activity.
+
+We want to better understand return profiles of participants in Hyperdrive.
+To do so, we run various scenarios of plausible economic activity.
+We target a certain amount of daily activity, as a percentage of the liquidity provided.
+That trading activity is executed by a random agent named Rob.
+The liquidity is provided by anagent named Larry.
+At the end, we close out all positions, and evaluate results based off the WETH in their wallets.
+"""
 # Variables by themselves print out dataframes in a nice format in interactive mode
 # pylint: disable=pointless-statement
 
@@ -81,6 +89,7 @@ class ExperimentConfig:  # pylint: disable=too-many-instance-attributes
     curve_fee: FixedPoint = FixedPoint("0.01")  # 1%, 10% default
     flat_fee: FixedPoint = FixedPoint("0.0001")  # 1bps, 5bps default
     governance_fee: FixedPoint = FixedPoint("0.1")  # 10%, 15% default
+    randseed: int = 0
 
     def __post_init__(self):
         """Calculate parameters for the experiment."""
@@ -96,6 +105,7 @@ exp = ExperimentConfig()
 for key in os.environ:
     if key in fields(exp):
         setattr(exp, key, os.environ[key])
+rng = np.random.default_rng(seed=exp.randseed)
 
 # %%
 # set up chain
@@ -125,7 +135,8 @@ print(f"spot price = {interactive_hyperdrive.hyperdrive_interface.calc_spot_pric
 larry = interactive_hyperdrive.init_agent(base=FixedPoint(exp.amount_of_liquidity), name="larry")
 larry.add_liquidity(base=FixedPoint(exp.amount_of_liquidity))  # 10 million
 rob = interactive_hyperdrive.init_agent(base=FixedPoint(exp.amount_of_liquidity), name="rob")
-print(f"spot price = {interactive_hyperdrive.hyperdrive_interface.calc_spot_price()}")
+# this verifies that spot price does not change after adding liquidity
+print(f"spot price after adding liquidity = {interactive_hyperdrive.hyperdrive_interface.calc_spot_price()}")
 
 # %%
 # do some trades
@@ -145,21 +156,19 @@ def get_max(
     GetMax
         A NamedTuple containing the max long in base, max long in bonds, max short in bonds, and max short in base.
     """
-    _max_long_base = _interactive_hyperdrive.hyperdrive_interface.calc_max_long(budget=_current_base)
-    _max_long_shares = _interactive_hyperdrive.hyperdrive_interface.calc_shares_out_given_bonds_in_down(_max_long_base)
-    _max_long_bonds = _max_long_shares * _share_price
-    _max_short_bonds = FixedPoint(0)
+    max_long_base = _interactive_hyperdrive.hyperdrive_interface.calc_max_long(budget=_current_base)
+    max_long_shares = _interactive_hyperdrive.hyperdrive_interface.calc_shares_out_given_bonds_in_down(max_long_base)
+    max_long_bonds = max_long_shares * _share_price
+    max_short_bonds = FixedPoint(0)
     try:  # sourcery skip: do-not-use-bare-except
-        _max_short_bonds = _interactive_hyperdrive.hyperdrive_interface.calc_max_short(budget=_current_base)
+        max_short_bonds = _interactive_hyperdrive.hyperdrive_interface.calc_max_short(budget=_current_base)
     except:  # pylint: disable=bare-except
         pass
-    max_short_shares = _interactive_hyperdrive.hyperdrive_interface.calc_shares_out_given_bonds_in_down(
-        _max_short_bonds
-    )
-    _max_short_base = max_short_shares * _share_price
+    max_short_shares = _interactive_hyperdrive.hyperdrive_interface.calc_shares_out_given_bonds_in_down(max_short_bonds)
+    max_short_base = max_short_shares * _share_price
     return GetMax(
-        Max(_max_long_base, _max_long_bonds),
-        Max(_max_short_base, _max_short_bonds),
+        Max(max_long_base, max_long_bonds),
+        Max(max_short_base, max_short_bonds),
     )
 
 
@@ -168,13 +177,12 @@ def get_max(
 for day in range(exp.term_days):
     amount_to_trade_base = FixedPoint(exp.amount_of_liquidity * exp.daily_volume_percentage_of_liquidity)
     while amount_to_trade_base > MINIMUM_TRANSACTION_AMOUNT:
-        randnum = np.random.randint(0, 2)
         spot_price = interactive_hyperdrive.hyperdrive_interface.calc_spot_price()
         share_price = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_price
         max = None
         wallet = rob.wallet
         event = None
-        if randnum == 0:  # go long
+        if rng.random() < 0.5:  # go long 50% of the time
             if len(wallet.shorts) > 0:  # check if we have shorts, and close them if we do
                 for maturity_time, short in wallet.shorts.copy().items():
                     max = get_max(interactive_hyperdrive, share_price, rob.wallet.balance.amount)
@@ -195,7 +203,7 @@ for day in range(exp.term_days):
                 if trade_size_base > MINIMUM_TRANSACTION_AMOUNT:
                     event = rob.open_long(trade_size_base)
                     amount_to_trade_base -= event.base_amount
-        else:  # go short
+        else:  # go short 50% of the time
             if len(wallet.longs) > 0:  # check if we have longs, and close them if we do
                 for maturity_time, long in wallet.longs.copy().items():
                     max = get_max(interactive_hyperdrive, share_price, rob.wallet.balance.amount)
@@ -230,7 +238,6 @@ print(f"experiment finished in {(time.time() - start_time):,.2f} seconds")
 CLOSE_LONG_FIRST = True
 RETRIES = 50
 for attempt in range(RETRIES):
-    # while len(rob.wallet.longs) > 0 or len(rob.wallet.shorts) > 0:
     position_values = list(rob.wallet.longs.values()) + list(rob.wallet.shorts.values())
     material_positions = [p for p in position_values if p.balance > MINIMUM_TRANSACTION_AMOUNT]
     print(f"closeout attempt {attempt:3} of {RETRIES}: open positions: {len(material_positions)=}")
@@ -271,41 +278,6 @@ for attempt in range(RETRIES):
 larry.remove_liquidity(shares=larry.wallet.lp_tokens)
 
 # %%
-# prepare data
-latest_block = chain._web3.eth.get_block("latest")  # pylint: disable=protected-access
-print(f"{latest_block.number=}")  # type: ignore
-# run data pipeline now, if it wasn't run as part of interactive hyperdrive
-# if config.use_data_pipeline is False:
-#     from chainsync.exec import acquire_data, data_analysis
-
-#     interactive_hyperdrive.initialize_database()
-#     print(f"{interactive_hyperdrive.db_session.is_active=}")
-#     kwargs = {
-#         "start_block": interactive_hyperdrive._deploy_block_number,  # pylint: disable=protected-access
-#         "db_session": interactive_hyperdrive.db_session,
-#         "eth_config": interactive_hyperdrive.eth_config,
-#         "postgres_config": interactive_hyperdrive.postgres_config,
-#         "contract_addresses": interactive_hyperdrive.hyperdrive_interface.addresses,
-#         "exit_on_catch_up": True,
-#         "suppress_logs": False,
-#     }
-#     acquire_data(**kwargs | {"lookback_block_limit": 9999})
-#     data_analysis(**kwargs)
-# else:  # wait for chainsync to catch up
-#     from chainsync.db.hyperdrive import get_latest_block_number_from_pool_info_table
-
-#     latest_db_block = get_latest_block_number_from_pool_info_table(interactive_hyperdrive.db_session)
-#     print(f"{get_latest_block_number_from_pool_info_table(interactive_hyperdrive.db_session)=}")
-#     attempt = 0  # pylint: disable=invalid-name
-#     while latest_db_block < latest_block.number:  # type: ignore
-#         time.sleep(1)
-#         attempt += 1
-#         latest_db_block = get_latest_block_number_from_pool_info_table(
-#             interactive_hyperdrive.db_session
-#         )  # pylint: disable=invalid-name
-#         print(f"{attempt=:4,.0f}, {latest_db_block=} vs. {latest_block.number=}")  # type: ignore
-
-# %%
 # show wallets at end
 current_wallet = interactive_hyperdrive.get_current_wallet()
 current_wallet.loc[current_wallet.token_type != "WETH", exp.display_cols].style.format(
@@ -316,7 +288,6 @@ current_wallet.loc[current_wallet.token_type != "WETH", exp.display_cols].style.
 # %%
 # show WETH balance after closing all positions
 pool_info = interactive_hyperdrive.get_pool_state()
-# fixed_rate=interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate()
 print(f"starting fixed rate is {float(pool_info.fixed_rate.iloc[1]):7.2%}")
 print(f"  ending fixed rate is {float(pool_info.fixed_rate.iloc[-1]):7.2%}")
 governance_fees = float(interactive_hyperdrive.hyperdrive_interface.get_gov_fees_accrued(block_number=None))

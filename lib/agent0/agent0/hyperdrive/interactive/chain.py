@@ -430,7 +430,7 @@ class LocalChain(Chain):
         chain_port: int
             The port to bind for the anvil chain. Will fail if this port is being used.
         transaction_block_keeper: int
-            The number of blocks to keep transaction records for.
+            The number of blocks to keep transaction records for. Undocumented in Anvil, we're being optimistic here.
         """
 
         block_time: int | None = None
