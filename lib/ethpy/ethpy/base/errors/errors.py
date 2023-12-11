@@ -19,6 +19,7 @@ class ContractCallType(Enum):
     READ = "read"
 
 
+# TODO python docs say we should subclass from Exception, not BaseException, fix
 class ContractCallException(BaseException):
     """Custom contract call exception wrapper that contains additional information on the function call"""
 

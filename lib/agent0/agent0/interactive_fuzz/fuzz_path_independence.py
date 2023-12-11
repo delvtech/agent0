@@ -7,10 +7,17 @@ import sys
 from typing import Any, NamedTuple, Sequence
 
 import pandas as pd
+from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.interactive_fuzz.helpers import close_random_trades, generate_trade_list, open_random_trades, setup_fuzz
+from agent0.interactive_fuzz.helpers import (
+    FuzzAssertionException,
+    close_random_trades,
+    generate_trade_list,
+    open_random_trades,
+    setup_fuzz,
+)
 
 
 # pylint: disable=too-many-locals
@@ -117,13 +124,14 @@ def fuzz_path_independence(
             assert first_run_state_dump_dir is not None
             try:
                 invariant_check(check_data, interactive_hyperdrive)
-            except AssertionError as error:
+            except FuzzAssertionException as error:
                 dump_state_dir = chain.save_state(save_prefix="fuzz_path_independence")
                 additional_info = {
                     "fuzz_random_seed": random_seed,
                     "first_run_state_dump_dir": first_run_state_dump_dir,
                     "dump_state_dir": dump_state_dir,
                 }
+                additional_info.update(error.exception_data)
                 report = build_crash_trade_result(
                     error, interactive_hyperdrive.hyperdrive_interface, agent.agent, additional_info=additional_info
                 )
@@ -229,43 +237,80 @@ def invariant_check(
     """
     failed = False
     exception_message: list[str] = ["Fuzz Path Independence Invariant Check"]
+    exception_data: dict[str, Any] = {}
     pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
 
     # Base balance
-    if check_data["hyperdrive_base_balance"] != pool_state.hyperdrive_base_balance:
-        exception_message.append(f"{check_data['hyperdrive_base_balance']=} != {pool_state.hyperdrive_base_balance=}")
+    expected_base_balance = FixedPoint(check_data["hyperdrive_base_balance"])
+    actual_base_balance = pool_state.hyperdrive_base_balance
+    if expected_base_balance != actual_base_balance:
+        difference_in_wei = abs(expected_base_balance.scaled_value - actual_base_balance.scaled_value)
+        exception_message.append(f"{expected_base_balance=} != {actual_base_balance=}, {difference_in_wei=}")
+        exception_data["expected_base_balance"] = expected_base_balance
+        exception_data["actual_base_balance"] = actual_base_balance
+        exception_data["base_balance_difference_in_wei"] = difference_in_wei
+        failed = True
 
     # Effective share reserves
-    effective_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state)
-    if check_data["effective_share_reserves"] != effective_share_reserves:
-        exception_message.append(f"{check_data['effective_share_reserves']=} != {effective_share_reserves=}")
+    expected_share_reserves = FixedPoint(check_data["effective_share_reserves"])
+    actual_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state)
+    if expected_share_reserves != actual_share_reserves:
+        difference_in_wei = abs(expected_share_reserves.scaled_value - actual_share_reserves.scaled_value)
+        exception_message.append(f"{expected_share_reserves=} != {actual_share_reserves=}, {difference_in_wei=}")
+        exception_data["expected_share_reserves"] = expected_share_reserves
+        exception_data["actual_share_reserves"] = actual_share_reserves
+        exception_data["share_reserves_difference_in_wei"] = difference_in_wei
         failed = True
 
     # Vault shares (Hyperdrive balance of vault contract)
-    if check_data["vault_shares"] != pool_state.vault_shares:
-        exception_message.append(f"{check_data['vault_shares']=} != {pool_state.vault_shares=}")
+    expected_vault_shares = FixedPoint(check_data["vault_shares"])
+    actual_vault_shares = pool_state.vault_shares
+    if expected_vault_shares != actual_vault_shares:
+        difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
+        exception_message.append(f"{expected_vault_shares} != {actual_vault_shares}, {difference_in_wei=}")
+        exception_data["expected_vault_shares"] = expected_vault_shares
+        exception_data["actual_share_shares"] = actual_vault_shares
+        exception_data["vault_shares_difference_in_wei"] = difference_in_wei
         failed = True
 
     # Minimum share reserves
-    if check_data["minimum_share_reserves"] != pool_state.pool_config.minimum_share_reserves:
+    expected_minimum_share_reserves = check_data["minimum_share_reserves"]
+    actual_minimum_share_reserves = pool_state.pool_config.minimum_share_reserves
+    if expected_minimum_share_reserves != actual_minimum_share_reserves:
+        difference_in_wei = abs(expected_minimum_share_reserves - actual_minimum_share_reserves)
         exception_message.append(
-            f"{check_data['minimum_share_reserves']=} != {pool_state.pool_config.minimum_share_reserves=}"
+            f"{expected_minimum_share_reserves} != {actual_minimum_share_reserves}, {difference_in_wei=}"
         )
+        exception_data["expected_minimum_share_reserves"] = expected_minimum_share_reserves
+        exception_data["actual_minimum_share_reserves"] = actual_minimum_share_reserves
+        exception_data["minimum_share_reserves_difference_in_wei"] = difference_in_wei
         failed = True
 
     # Check that the subset of columns in initial db pool state and the latest pool state are equal
-    if not check_data["initial_pool_state_df"].equals(check_data["final_pool_state_df"]):
-        try:
-            pd.testing.assert_series_equal(
-                check_data["initial_pool_state_df"], check_data["final_pool_state_df"], check_names=False
+    expected_pool_state_df = check_data["initial_pool_state_df"]
+    actual_pool_state_df = check_data["final_pool_state_df"]
+    # Fill values fill nan values with 0 for equality check
+    eq_vals = expected_pool_state_df.eq(actual_pool_state_df, fill_value=0)
+    if not eq_vals.all():
+        # Get rows where values are not equal
+        expected_pool_state_df = expected_pool_state_df[~eq_vals]
+        actual_pool_state_df = actual_pool_state_df[~eq_vals]
+        # Iterate and build exception message and data
+        for field_name, expected_val in expected_pool_state_df.items():
+            expected_val = FixedPoint(expected_val)
+            actual_val = FixedPoint(actual_pool_state_df[field_name])
+            difference_in_wei = abs(expected_val.scaled_value - actual_val.scaled_value)
+            exception_message.append(
+                f"expected_{field_name}={expected_val}, actual_{field_name}={actual_val}, {difference_in_wei=}"
             )
-        except AssertionError as err:
-            exception_message.append(f"Database pool info is not equal\n{err=}")
+            exception_data["expected_" + field_name] = expected_val
+            exception_data["actual_" + field_name] = actual_val
+            exception_data[field_name + "_difference_in_wei"] = difference_in_wei
         failed = True
 
     if failed:
         logging.critical("\n".join(exception_message))
-        raise AssertionError(*exception_message)
+        raise FuzzAssertionException(*exception_message, exception_data=exception_data)
 
 
 if __name__ == "__main__":
