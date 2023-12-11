@@ -177,7 +177,6 @@ def calc_single_closeout(position: pd.Series, interface: HyperdriveInterface, ch
             open_share_price = checkpoint_info.loc[
                 (checkpoints == mint_time) & (checkpoint_info.share_price != 0), "share_price"
             ].values[0]
-            print(f"{open_share_price=}")
             assert isinstance(open_share_price, Decimal)
             out_pnl = calculate_short_proceeds(
                 amount,
@@ -199,7 +198,6 @@ def calc_single_closeout(position: pd.Series, interface: HyperdriveInterface, ch
 def calc_closeout_pnl(
     current_wallet: pd.DataFrame,
     checkpoint_info: pd.DataFrame,
-    hyperdrive_contract: Contract,
     hyperdrive_interface: HyperdriveInterface,
 ) -> pd.DataFrame:
     """Calculate closeout value of agent positions.
@@ -210,8 +208,6 @@ def calc_closeout_pnl(
         A dataframe resulting from `get_current_wallet` that describes the current wallet position.
     checkpoint_info: pd.DataFrame
         A dataframe containing information about each checkpoint.
-    hyperdrive_contract: Contract
-        The hyperdrive contract object.
     hyperdrive_interface: HyperdriveInterface
         The Hyperdrive interface object.
 

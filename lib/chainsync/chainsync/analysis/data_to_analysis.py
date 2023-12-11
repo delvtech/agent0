@@ -155,7 +155,6 @@ def data_to_analysis(
     end_block: int,
     pool_config: pd.Series,
     db_session: Session,
-    hyperdrive_contract: Contract,
     hyperdrive_interface: HyperdriveInterface,
 ) -> None:
     """Function to query postgres data tables and insert to analysis tables.
@@ -171,8 +170,6 @@ def data_to_analysis(
         The pool config data.
     db_session: Session
         The initialized db session.
-    hyperdrive_contract: Contract
-        The hyperdrive contract.
     hyperdrive_interface: HyperdriveInterface
         The hyperdrive interface.
     """
@@ -202,7 +199,7 @@ def data_to_analysis(
             pnl_df = calc_spot_pnl(wallet_pnl, pool_info, pool_config)
         else:
             checkpoint_info = get_checkpoint_info(db_session, 1, end_block, coerce_float=False)
-            pnl_df = calc_closeout_pnl(wallet_pnl, checkpoint_info, hyperdrive_contract, hyperdrive_interface)
+            pnl_df = calc_closeout_pnl(wallet_pnl, checkpoint_info, hyperdrive_interface)
 
         # This sets the pnl to the current wallet dataframe, but there may be scaling issues here.
         # This is because the `CurrentWallet` table has one entry per change in wallet position,
