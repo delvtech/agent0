@@ -86,6 +86,8 @@ if TYPE_CHECKING:
 class HyperdriveInterface:
     """End-point API for interfacing with a deployed Hyperdrive pool."""
 
+    _deployed_hyperdrive_pool: DeployedHyperdrivePool | None = None
+
     def __init__(
         self,
         eth_config: EthConfig | None = None,
@@ -145,9 +147,10 @@ class HyperdriveInterface:
         self.read_retry_count = read_retry_count
         self.write_retry_count = write_retry_count
 
-    @property
-    def deployed_hyperdrive_pool(self) -> DeployedHyperdrivePool:
-        """Retrieve the deployed hyperdrive pool to which the interface is connected."""
+    def __post_init__(self) -> None:
+        self._deployed_hyperdrive_pool = self._create_deployed_hyperdrive_pool()
+
+    def _create_deployed_hyperdrive_pool(self) -> DeployedHyperdrivePool:
         return DeployedHyperdrivePool(
             web3=self.web3,
             deploy_account=Account().from_key("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"),
@@ -157,6 +160,13 @@ class HyperdriveInterface:
             base_token_contract=self.base_token_contract,
             deploy_block_number=0,  # don't have access to this here, use at your own risk
         )
+
+    @property
+    def deployed_hyperdrive_pool(self) -> DeployedHyperdrivePool:
+        """Retrieve the deployed hyperdrive pool to which the interface is connected."""
+        if self._deployed_hyperdrive_pool is None:
+            self._deployed_hyperdrive_pool = self._create_deployed_hyperdrive_pool()
+        return self._deployed_hyperdrive_pool
 
     @property
     def current_pool_state(self) -> PoolState:
