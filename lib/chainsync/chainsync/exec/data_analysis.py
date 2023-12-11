@@ -79,6 +79,9 @@ def data_analysis(
         db_session_init = True
         db_session = initialize_session(postgres_config=postgres_config, ensure_database_created=True)
 
+    # Get hyperdrive contract
+    hyperdrive_contract = interface.hyperdrive_contract
+
     ## Get starting point for restarts
     analysis_latest_block_number = get_latest_block_number_from_analysis_table(db_session)
 
@@ -123,7 +126,7 @@ def data_analysis(
         analysis_end_block = latest_data_block_number + 1
         if not suppress_logs:
             logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
-        data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, interface)
+        data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
         curr_start_write_block = latest_data_block_number + 1
 
     # Clean up resources on clean exit
@@ -149,4 +152,6 @@ def get_latest_data_block(db_session: Session) -> int:
         The latest block number from the PoolInfo table.
     """
     # Note to avoid race condition, we add pool info as the last update for the block
-    return get_latest_block_number_from_table(PoolInfo, db_session)
+    latest_pool_info = get_latest_block_number_from_table(PoolInfo, db_session)
+
+    return latest_pool_info

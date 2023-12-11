@@ -2,7 +2,6 @@
 import logging
 from decimal import Decimal
 from typing import Type
-from ethpy.hyperdrive.interface import HyperdriveInterface
 
 import numpy as np
 import pandas as pd
@@ -14,7 +13,6 @@ from chainsync.db.hyperdrive import (
     WalletPNL,
     get_current_wallet,
     get_pool_info,
-    get_checkpoint_info,
     get_transactions,
     get_wallet_deltas,
 )
@@ -24,14 +22,13 @@ from web3.contract.contract import Contract
 
 from .calc_base_buffer import calc_base_buffer
 from .calc_fixed_rate import calc_fixed_rate
-from .calc_pnl import calc_closeout_pnl, calc_spot_pnl
+from .calc_pnl import calc_closeout_pnl
 from .calc_spot_price import calc_spot_price
 from .calc_ticker import calc_ticker
 
 pd.set_option("display.max_columns", None)
 
 MAX_BATCH_SIZE = 10000
-USE_SPOT_PNL = False
 
 
 def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
@@ -155,7 +152,7 @@ def data_to_analysis(
     end_block: int,
     pool_config: pd.Series,
     db_session: Session,
-    hyperdrive_interface: HyperdriveInterface,
+    hyperdrive_contract: Contract,
 ) -> None:
     """Function to query postgres data tables and insert to analysis tables.
     Executes analysis on a batch of blocks, defined by start and end block.
@@ -170,8 +167,8 @@ def data_to_analysis(
         The pool config data.
     db_session: Session
         The initialized db session.
-    hyperdrive_interface: HyperdriveInterface
-        The hyperdrive interface.
+    hyperdrive_contract: Contract
+        The hyperdrive contract.
     """
     # Get data
     pool_info = get_pool_info(db_session, start_block, end_block, coerce_float=False)
@@ -195,11 +192,7 @@ def data_to_analysis(
         # We can set a sample rate by doing batch processing on this function
         # since we only get the current wallet for the end_block
         wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
-        if USE_SPOT_PNL:
-            pnl_df = calc_spot_pnl(wallet_pnl, pool_info, pool_config)
-        else:
-            checkpoint_info = get_checkpoint_info(db_session, 1, end_block, coerce_float=False)
-            pnl_df = calc_closeout_pnl(wallet_pnl, checkpoint_info, hyperdrive_interface)
+        pnl_df = calc_closeout_pnl(wallet_pnl, pool_info, hyperdrive_contract)
 
         # This sets the pnl to the current wallet dataframe, but there may be scaling issues here.
         # This is because the `CurrentWallet` table has one entry per change in wallet position,
