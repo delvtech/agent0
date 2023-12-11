@@ -222,7 +222,7 @@ class InteractiveHyperdrive:
         # Run the data pipeline in background threads if experimental mode
         self.data_pipeline_timeout = config.data_pipeline_timeout
 
-        if self.chain.experimental:
+        if self.chain.experimental_data_threading:
             self._launch_data_pipeline()
         else:
             self._run_blocking_data_pipeline()
@@ -237,7 +237,7 @@ class InteractiveHyperdrive:
         """
         # Sanity check, callers is responsible for determining experimental mode for clarity,
         # but we add a catch here to make sure
-        assert self.chain.experimental
+        assert self.chain.experimental_data_threading
 
         if start_block is None:
             start_block = self._deploy_block_number
@@ -292,7 +292,7 @@ class InteractiveHyperdrive:
     def _stop_data_pipeline(self):
         # Sanity check, callers is responsible for determining experimental mode for clarity,
         # but we add a catch here to make sure
-        assert self.chain.experimental
+        assert self.chain.experimental_data_threading
 
         if self._data_thread is None or self._analysis_thread is None:
             raise ValueError("Data pipeline not running")
@@ -309,7 +309,7 @@ class InteractiveHyperdrive:
     def _ensure_data_caught_up(self, polling_interval: int = 1) -> None:
         # Sanity check, callers is responsible for determining experimental mode,
         # but we add a catch here to make sure
-        assert self.chain.experimental
+        assert self.chain.experimental_data_threading
 
         latest_mined_block: BlockNumber | None = None
         analysis_latest_block_number: int | None = None
@@ -332,7 +332,7 @@ class InteractiveHyperdrive:
     def _run_blocking_data_pipeline(self, start_block: int | None = None) -> None:
         # Sanity check, callers is responsible for determining experimental mode for clarity,
         # but we add a catch here to make sure
-        assert not self.chain.experimental
+        assert not self.chain.experimental_data_threading
 
         # TODO these functions are not thread safe, need to fix if we expose async functions
         # Runs the data pipeline synchronously
@@ -361,7 +361,7 @@ class InteractiveHyperdrive:
 
     def _cleanup(self):
         """Cleans up resources used by this object."""
-        if self.chain.experimental:
+        if self.chain.experimental_data_threading:
             self._stop_data_pipeline()
         self.db_session.close()
 
@@ -430,7 +430,7 @@ class InteractiveHyperdrive:
         """
         self.hyperdrive_interface.set_variable_rate(self._deployed_hyperdrive.deploy_account, variable_rate)
         # Setting the variable rate mines a block, so we run data pipeline here
-        if not self.chain.experimental:
+        if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
     def _create_checkpoint(
@@ -561,7 +561,7 @@ class InteractiveHyperdrive:
             A pandas dataframe that consists of the pool info per block.
         """
         # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental:
+        if self.chain.experimental_data_threading:
             self._ensure_data_caught_up()
 
         pool_info = get_pool_info(self.db_session, coerce_float=coerce_float)
@@ -583,7 +583,7 @@ class InteractiveHyperdrive:
             A pandas dataframe that consists of the checkpoint info per block.
         """
         # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental:
+        if self.chain.experimental_data_threading:
             self._ensure_data_caught_up()
         out = get_checkpoint_info(self.db_session, coerce_float=coerce_float)
         return out
@@ -641,7 +641,7 @@ class InteractiveHyperdrive:
                 The last block number that the position was updated.
         """
         # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental:
+        if self.chain.experimental_data_threading:
             self._ensure_data_caught_up()
 
         # TODO potential improvement is to pivot the table so that columns are the token type
@@ -697,7 +697,7 @@ class InteractiveHyperdrive:
                 A list of token diffs for each trade. Each token diff is encoded as "<base_token_type>: <amount>"
         """
         # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental:
+        if self.chain.experimental_data_threading:
             self._ensure_data_caught_up()
         out = get_ticker(self.db_session, coerce_float=coerce_float).drop("id", axis=1)
         out = self._add_username_to_dataframe(out, "wallet_address")
@@ -747,7 +747,7 @@ class InteractiveHyperdrive:
                 The transaction hash that resulted in the deltas.
         """
         # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental:
+        if self.chain.experimental_data_threading:
             self._ensure_data_caught_up()
         # We gather all deltas and calculate the current positions here
         # If computing this is too slow, we can get current positions from
@@ -800,7 +800,7 @@ class InteractiveHyperdrive:
                 The total pnl of the agent at the specified block number.
         """
         # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental:
+        if self.chain.experimental_data_threading:
             self._ensure_data_caught_up()
         out = get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
         out = self._add_username_to_dataframe(out, "wallet_address")
@@ -887,7 +887,7 @@ class InteractiveHyperdrive:
                 self._initial_funds[agent.address] = base
 
         # Adding funds mines a block, so we run data pipeline here
-        if not self.chain.experimental:
+        if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
         # TODO do we want to report a status here?
@@ -930,7 +930,7 @@ class InteractiveHyperdrive:
 
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental:
+        if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
         tx_receipt = self._handle_trade_result(trade_results)
@@ -947,7 +947,7 @@ class InteractiveHyperdrive:
 
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental:
+        if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
         tx_receipt = self._handle_trade_result(trade_results)
@@ -964,7 +964,7 @@ class InteractiveHyperdrive:
 
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental:
+        if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
         tx_receipt = self._handle_trade_result(trade_results)
@@ -981,7 +981,7 @@ class InteractiveHyperdrive:
 
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental:
+        if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
         tx_receipt = self._handle_trade_result(trade_results)
@@ -998,7 +998,7 @@ class InteractiveHyperdrive:
 
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental:
+        if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
         tx_receipt = self._handle_trade_result(trade_results)
@@ -1015,7 +1015,7 @@ class InteractiveHyperdrive:
 
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental:
+        if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
         tx_receipt = self._handle_trade_result(trade_results)
@@ -1032,7 +1032,7 @@ class InteractiveHyperdrive:
 
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental:
+        if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
         tx_receipt = self._handle_trade_result(trade_results)
@@ -1053,7 +1053,7 @@ class InteractiveHyperdrive:
 
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental:
+        if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
         out_events = []
