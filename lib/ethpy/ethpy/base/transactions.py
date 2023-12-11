@@ -251,7 +251,11 @@ def smart_contract_preview_transaction(
 
 
 def wait_for_transaction_receipt(
-    web3: Web3, transaction_hash: HexBytes, timeout: float = 2, start_latency: float = 0.01, backoff: float = 2
+    web3: Web3,
+    transaction_hash: HexBytes,
+    timeout: float = 2,
+    start_latency: float = 0.01,
+    backoff_multiplier: float = 2,
 ) -> TxReceipt:
     """Retrieves the transaction receipt, retrying with exponential backoff.
 
@@ -267,7 +271,7 @@ def wait_for_transaction_receipt(
         The amount of time in seconds to time out the connection
     start_latency: float
         The starting amount of time in seconds to wait between polls
-    backoff: float
+    backoff_multiplier: float
         The backoff factor for the exponential backoff
 
     Returns
@@ -277,7 +281,7 @@ def wait_for_transaction_receipt(
     """
     try:
         with Timeout(timeout) as _timeout:
-            poll_latency = start_latency + random.uniform(0, 1)
+            poll_latency = start_latency
             while True:
                 try:
                     tx_receipt = web3.eth.get_transaction_receipt(transaction_hash)
@@ -286,10 +290,10 @@ def wait_for_transaction_receipt(
                 if tx_receipt is not None:
                     break
                 _timeout.sleep(poll_latency)
-                # Exp backoff
-                poll_latency *= backoff
+                # Exponential backoff
+                poll_latency *= backoff_multiplier
                 # Add random latency to avoid collisions
-                poll_latency += random.uniform(0, 1)
+                poll_latency += random.uniform(0, 0.1)
         return tx_receipt
 
     except Timeout as exc:
@@ -340,6 +344,8 @@ async def async_wait_for_transaction_receipt(
                 await _timeout.async_sleep(poll_latency)
                 # Exponential backoff
                 poll_latency *= backoff_multiplier
+                # Add random latency to avoid collisions
+                poll_latency += random.uniform(0, 0.1)
         return tx_receipt
 
     except Timeout as exc:

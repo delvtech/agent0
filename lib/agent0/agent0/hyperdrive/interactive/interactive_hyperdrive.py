@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import sys
 import time
 from dataclasses import asdict, dataclass
 from decimal import Decimal
@@ -75,28 +74,6 @@ nest_asyncio.apply()
 # However, this makes the agent less barebones, and the agent requires lots of resources
 # from InteractiveHyperdrive.
 # pylint: disable=too-many-lines
-
-
-def running_interactive():
-    """Check if we are running in interactive mode.
-
-    Returns
-    -------
-    bool
-        Whether we are running in interactive mode.
-    """
-    try:
-        from IPython.core.getipython import get_ipython  # pylint: disable=import-outside-toplevel
-
-        return bool("ipykernel" in sys.modules and get_ipython())
-    except ImportError:
-        return False
-
-
-if RUNNING_INTERACTIVE := running_interactive():
-    print("Running in interactive mode.")
-else:
-    print("Running in non-interactive mode.")
 
 
 class InteractiveHyperdrive:

@@ -5,6 +5,7 @@
 
 import datetime
 import os
+import sys
 import time
 from copy import deepcopy
 from dataclasses import dataclass, field, fields
@@ -15,12 +16,7 @@ import pandas as pd
 from fixedpointmath import FixedPoint
 from matplotlib import pyplot as plt
 
-from agent0.hyperdrive.interactive import RUNNING_INTERACTIVE, InteractiveHyperdrive, LocalChain
-
-if RUNNING_INTERACTIVE is False:
-    display = print  # pylint: disable=redefined-builtin,unused-import
-else:
-    from IPython.display import display
+from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 
 # pylint: disable=bare-except
 # ruff: noqa: A001 (allow shadowing a python builtin)
@@ -28,6 +24,33 @@ else:
 # pylint: disable=redefined-builtin
 # don't make me use upper case variable names
 # pylint: disable=invalid-name
+
+
+# %%
+# check interactive status
+def running_interactive():
+    """Check if we are running in interactive mode.
+
+    Returns
+    -------
+    bool
+        Whether we are running in interactive mode.
+    """
+    try:
+        from IPython.core.getipython import get_ipython  # pylint: disable=import-outside-toplevel
+
+        return bool("ipykernel" in sys.modules and get_ipython())
+    except ImportError:
+        return False
+
+
+if RUNNING_INTERACTIVE := running_interactive():
+    from IPython.display import display  # pylint: disable=import-outside-toplevel
+
+    print("Running in interactive mode.")
+else:  # being run from the terminal or something similar
+    display = print  # pylint: disable=redefined-builtin,unused-import
+    print("Running in non-interactive mode.")
 
 
 # %%
