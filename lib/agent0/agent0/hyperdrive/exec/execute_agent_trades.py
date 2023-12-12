@@ -156,8 +156,7 @@ async def async_execute_agent_trades(
             trade_result = check_for_invalid_balance(trade_result)
             trade_result = check_for_slippage(trade_result)
             trade_result = check_for_min_txn_amount(trade_result)
-            out_trade_results.append(trade_result)
-
+        out_trade_results.append(trade_result)
     return out_trade_results
 
 
