@@ -11,7 +11,7 @@ from ethpy import EthConfig
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
-from web3.exceptions import ContractCustomError, ContractLogicError, ContractPanicError
+from web3.exceptions import ContractCustomError
 
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base import MarketType, Trade
