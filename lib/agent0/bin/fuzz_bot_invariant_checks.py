@@ -141,7 +141,7 @@ def run_invariant_checks(
     actual_hyperdrive_eth_balance = pool_state.hyperdrive_eth_balance
     if actual_hyperdrive_eth_balance != FixedPoint(0):
         exception_message.append(f"{actual_hyperdrive_eth_balance} != 0. Test failed at block {latest_block_number}")
-        exception_data["invariance_check:actual_hyperdrive_base_balance"] = actual_hyperdrive_eth_balance
+        exception_data["invariance_check:actual_hyperdrive_eth_balance"] = actual_hyperdrive_eth_balance
         failed = True
 
     # Total shares is correctly calculated
