@@ -447,3 +447,18 @@ def test_get_config_with_transactions(chain: LocalChain):
     agent0.open_long(base=FixedPoint(11111))
     pool_config = interactive_hyperdrive.get_pool_config()
     assert isinstance(pool_config, Series)
+
+
+@pytest.mark.anvil
+def test_liquidate(chain: LocalChain):
+    """Test liquidation."""
+    interactive_hyperdrive = InteractiveHyperdrive(chain)
+    alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), name="alice")
+    alice.open_long(base=FixedPoint(100))
+    alice.open_short(bonds=FixedPoint(100))
+    alice.add_liquidity(base=FixedPoint(100))
+    current_wallet = interactive_hyperdrive.get_current_wallet()
+    assert current_wallet.shape[0] == 4  # we have 4 open positions, including base
+    alice.liquidate()
+    current_wallet = interactive_hyperdrive.get_current_wallet()
+    assert current_wallet.shape[0] == 1  # we have 1 open position, including base
