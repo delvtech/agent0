@@ -7,7 +7,6 @@ from ethpy.base import retry_call
 from ethpy.base.errors.errors import ContractCallException
 from ethpy.hyperdrive.interface import HyperdriveInterface
 from fixedpointmath import FixedPoint
-from hyperlogs import setup_logging
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 
@@ -15,7 +14,6 @@ from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 @pytest.mark.anvil
 def test_retry_call_success(hyperdrive_interface: HyperdriveInterface, caplog: pytest.LogCaptureFixture):
     """Verify that a bogus call produces the correct number of retries."""
-    setup_logging()
     retry_count = 5
     # getting the block should always work
     _ = retry_call(retry_count, None, hyperdrive_interface.web3.eth.get_block, "latest", full_transactions=True)
@@ -23,25 +21,29 @@ def test_retry_call_success(hyperdrive_interface: HyperdriveInterface, caplog: p
     assert len(retries) == 0
 
 
-# @pytest.mark.anvil
-# def test_retry_call_fail(caplog: pytest.LogCaptureFixture):
-#     """Verify that a bogus call produces the correct number of retries."""
-#
-#     def fail_func():
-#         raise AssertionError("Failed function")
-#
-#     for read_retry_count in [0, 1, 4]:
-#         # getting the block should always work
-#         with pytest.raises(AssertionError):
-#             _ = retry_call(read_retry_count, None, fail_func)
-#         retries = [r for r in caplog.records if r.message.startswith("Retry")]
-#         assert len(retries) == 5
+@pytest.mark.anvil
+def test_retry_call_fail(caplog: pytest.LogCaptureFixture):
+    """Verify that a bogus call produces the correct number of retries."""
+
+    def fail_func():
+        raise AssertionError("Failed function")
+
+    with pytest.raises(ValueError):
+        _ = retry_call(0, None, fail_func)
+
+    for read_retry_count in [1, 4, 8]:
+        # getting the block should always work
+        with pytest.raises(AssertionError):
+            _ = retry_call(read_retry_count, None, fail_func)
+        retries = [r for r in caplog.records if r.message.startswith("Retry")]
+        assert len(retries) == read_retry_count
+        caplog.clear()
 
 
 @pytest.mark.anvil
 def test_retry_hyperdrive_action(chain: LocalChain, caplog: pytest.LogCaptureFixture):
     # TODO: We should not be hard-coding this so often, but at least this test will break if we change the value.
-    NUM_RETRIES = 5
+    num_retries = 5
     interactive_hyperdrive = InteractiveHyperdrive(chain)
     larry = interactive_hyperdrive.init_agent(base=FixedPoint(100), name="larry")
     # This should fail, larry has no liquidity
@@ -51,7 +53,7 @@ def test_retry_hyperdrive_action(chain: LocalChain, caplog: pytest.LogCaptureFix
     end_time = time.time()
     # Check the captured log messages
     retries = [r for r in caplog.records if r.message.startswith("Retry")]
-    assert len(retries) == NUM_RETRIES
+    assert len(retries) == num_retries
     logging.info("")
     for retry in retries:
         logging.info("%s: %s", retry.created, retry.message)
