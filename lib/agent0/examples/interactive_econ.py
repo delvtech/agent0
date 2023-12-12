@@ -5,7 +5,7 @@ We want to better understand return profiles of participants in Hyperdrive.
 To do so, we run various scenarios of plausible economic activity.
 We target a certain amount of daily activity, as a percentage of the liquidity provided.
 That trading activity is executed by a random agent named Rob.
-The liquidity is provided by anagent named Larry.
+The liquidity is provided by an agent named Larry.
 At the end, we close out all positions, and evaluate results based off the WETH in their wallets.
 """
 # Variables by themselves print out dataframes in a nice format in interactive mode
@@ -68,7 +68,7 @@ class ExperimentConfig:  # pylint: disable=too-many-instance-attributes
     """Everything needed for my experiment."""
 
     daily_volume_percentage_of_liquidity: float = 0.01  # 1%
-    term_days: int = 365
+    term_days: int = 20
     float_fmt: str = ",.0f"
     display_cols: list[str] = field(
         default_factory=lambda: ["block_number", "username", "position", "pnl", "base_token_type", "maturity_time"]
@@ -79,8 +79,8 @@ class ExperimentConfig:  # pylint: disable=too-many-instance-attributes
             "username",
             "position",
             "pnl",
-            "HPR",
-            "APR",
+            "hpr",
+            "apr",
             "base_token_type",
             "maturity_time",
         ]
@@ -93,12 +93,14 @@ class ExperimentConfig:  # pylint: disable=too-many-instance-attributes
 
     def __post_init__(self):
         """Calculate parameters for the experiment."""
-        self.rate_required_for_same_price: float = min(
-            1, 0.035 * 365 / self.term_days
-        )  # get same price for shorter term
-        self.starting_fixed_rate: FixedPoint = FixedPoint(self.rate_required_for_same_price)  # equivalent of 3.5%
-        self.starting_variable_rate: FixedPoint = FixedPoint(self.rate_required_for_same_price)  # equivalent of 3.5%
         self.term_seconds: int = 60 * 60 * 24 * self.term_days
+
+        # used to scale up to the equivalent of a year
+        scaling_ratio = 365 / self.term_days
+        # this interest rate gives us the same price as a 3.% fixed rate for 1 year
+        rate_required_for_same_price: float = min(1, 0.035 * scaling_ratio)
+        self.starting_fixed_rate: FixedPoint = FixedPoint(rate_required_for_same_price)
+        self.starting_variable_rate: FixedPoint = FixedPoint(rate_required_for_same_price)
 
 
 exp = ExperimentConfig()
@@ -162,8 +164,8 @@ def get_max(
     max_short_bonds = FixedPoint(0)
     try:  # sourcery skip: do-not-use-bare-except
         max_short_bonds = _interactive_hyperdrive.hyperdrive_interface.calc_max_short(budget=_current_base)
-    except:  # pylint: disable=bare-except
-        pass
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        print("Error calculating max short bonds: %s. ", exc)
     max_short_shares = _interactive_hyperdrive.hyperdrive_interface.calc_shares_out_given_bonds_in_down(max_short_bonds)
     max_short_base = max_short_shares * _share_price
     return GetMax(
@@ -235,60 +237,33 @@ print(f"experiment finished in {(time.time() - start_time):,.2f} seconds")
 
 # %%
 # close all positions
-CLOSE_LONG_FIRST = True
-RETRIES = 50
-for attempt in range(RETRIES):
-    position_values = list(rob.wallet.longs.values()) + list(rob.wallet.shorts.values())
-    material_positions = [p for p in position_values if p.balance > MINIMUM_TRANSACTION_AMOUNT]
-    print(f"closeout attempt {attempt:3} of {RETRIES}: open positions: {len(material_positions)=}")
-    if any(position.balance > MINIMUM_TRANSACTION_AMOUNT for position in position_values):
-        if CLOSE_LONG_FIRST:
-            for maturity_time, long in rob.wallet.longs.copy().items():
-                if long.balance > MINIMUM_TRANSACTION_AMOUNT:
-                    try:
-                        rob.close_long(maturity_time, long.balance)
-                    except:
-                        break
-                    break
-            for maturity_time, short in rob.wallet.shorts.copy().items():
-                if short.balance > MINIMUM_TRANSACTION_AMOUNT:
-                    try:
-                        rob.close_short(maturity_time, short.balance)
-                    except:
-                        break
-                    break
-        else:  # close short first
-            for maturity_time, short in rob.wallet.shorts.copy().items():
-                if short.balance > MINIMUM_TRANSACTION_AMOUNT:
-                    try:
-                        rob.close_short(maturity_time, short.balance)
-                    except:
-                        break
-                    break
-            for maturity_time, long in rob.wallet.longs.copy().items():
-                if long.balance > MINIMUM_TRANSACTION_AMOUNT:
-                    try:
-                        rob.close_long(maturity_time, long.balance)
-                    except:
-                        break
-                    break
-        CLOSE_LONG_FIRST = not CLOSE_LONG_FIRST
-    else:
-        break
-larry.remove_liquidity(shares=larry.wallet.lp_tokens)
-
-# %%
-# show wallets at end
+print("wallets before liquidation:")
 current_wallet = interactive_hyperdrive.get_current_wallet()
-current_wallet.loc[current_wallet.token_type != "WETH", exp.display_cols].style.format(
-    subset=[col for col in current_wallet.columns if current_wallet.dtypes[col] == "float64"],
-    formatter="{:" + exp.float_fmt + "}",
-).hide(axis="index")
+display(
+    current_wallet.loc[current_wallet.token_type != "WETH", exp.display_cols]
+    .style.format(
+        subset=[col for col in current_wallet.columns if current_wallet.dtypes[col] == "float64"],
+        formatter="{:" + exp.float_fmt + "}",
+    )
+    .hide(axis="index")
+)
+rob.liquidate()
+larry.remove_liquidity(shares=larry.wallet.lp_tokens)
+print("wallets after liquidation:")
+current_wallet = interactive_hyperdrive.get_current_wallet()
+display(
+    current_wallet.loc[current_wallet.token_type != "WETH", exp.display_cols]
+    .style.format(
+        subset=[col for col in current_wallet.columns if current_wallet.dtypes[col] == "float64"],
+        formatter="{:" + exp.float_fmt + "}",
+    )
+    .hide(axis="index")
+)
 
 # %%
 # show WETH balance after closing all positions
 pool_info = interactive_hyperdrive.get_pool_state()
-print(f"starting fixed rate is {float(pool_info.fixed_rate.iloc[1]):7.2%}")
+print(f"starting fixed rate is {float(pool_info.fixed_rate.iloc[0]):7.2%}")
 print(f"  ending fixed rate is {float(pool_info.fixed_rate.iloc[-1]):7.2%}")
 governance_fees = float(interactive_hyperdrive.hyperdrive_interface.get_gov_fees_accrued(block_number=None))
 current_wallet = deepcopy(interactive_hyperdrive.get_current_wallet())
@@ -299,7 +274,7 @@ weth_index = current_wallet.token_type == "WETH"
 # simple PNL based on WETH balance
 current_wallet.loc[weth_index, ["pnl"]] = current_wallet.loc[weth_index, ["position"]].values - exp.amount_of_liquidity
 # add HPR
-current_wallet.loc[:, ["HPR"]] = current_wallet["pnl"] / (current_wallet["position"] - current_wallet["pnl"])
+current_wallet.loc[:, ["hpr"]] = current_wallet["pnl"] / (current_wallet["position"] - current_wallet["pnl"])
 
 wallet_positions = deepcopy(interactive_hyperdrive.get_wallet_positions())
 wallet_positions_by_block = (
@@ -341,7 +316,7 @@ if RUNNING_INTERACTIVE:
     plt.show()
 idx = weth_index & (current_wallet.username == "rob")
 current_wallet.loc[idx, ["position"]] = average_by_time  # type: ignore
-current_wallet.loc[idx, ["HPR"]] = (
+current_wallet.loc[idx, ["hpr"]] = (
     current_wallet.loc[idx, ["pnl"]].astype("float").iloc[0].values
     / current_wallet.loc[idx, ["position"]].astype("float").iloc[0].values
 )  # type: ignore
@@ -350,7 +325,7 @@ current_wallet.loc[idx, ["HPR"]] = (
 new_row = current_wallet.iloc[len(current_wallet) - 1].copy()
 new_row["username"] = "governance"
 new_row["position"], new_row["pnl"] = governance_fees, governance_fees
-new_row["HPR"] = np.inf
+new_row["hpr"] = np.inf
 new_row["token_type"] = "WETH"
 current_wallet = pd.concat([current_wallet, new_row.to_frame().T], ignore_index=True)
 
@@ -359,7 +334,7 @@ new_row = current_wallet.iloc[len(current_wallet) - 1].copy()
 new_row["username"] = "total"
 new_row["position"] = float(current_wallet["position"].values.sum())  # type: ignore
 new_row["pnl"] = current_wallet.loc[current_wallet.token_type.values == "WETH", ["pnl"]].values.sum()  # type: ignore
-new_row["HPR"] = new_row["pnl"] / (new_row["position"] - new_row["pnl"])
+new_row["hpr"] = new_row["pnl"] / (new_row["position"] - new_row["pnl"])
 new_row["token_type"] = "WETH"
 current_wallet = pd.concat([current_wallet, new_row.to_frame().T], ignore_index=True)
 
@@ -368,7 +343,7 @@ new_row = current_wallet.iloc[len(current_wallet) - 1].copy()
 new_row["username"] = "share price"
 new_row["position"] = pool_info.share_price.iloc[-1] * 1e7
 new_row["pnl"] = pool_info.share_price.iloc[-1] * 1e7 - pool_info.share_price.iloc[0] * 1e7
-new_row["HPR"] = pool_info.share_price.iloc[-1] / pool_info.share_price.iloc[0] - 1
+new_row["hpr"] = pool_info.share_price.iloc[-1] / pool_info.share_price.iloc[0] - 1
 new_row["token_type"] = "WETH"
 current_wallet = pd.concat([current_wallet, new_row.to_frame().T], ignore_index=True)
 
@@ -384,8 +359,9 @@ time_passed_days = (pool_info.timestamp.iloc[-1] - pool_info.timestamp.iloc[0]).
 print(f"time passed = {time_passed_days:.2f} days")
 apr_factor = 365 / time_passed_days
 print(f"to scale APR from HPR we multiply by {apr_factor:,.0f} (365/{time_passed_days:.2f})")
+print(f"share price went from {pool_info.share_price.iloc[0]:.4f} to {pool_info.share_price.iloc[-1]:.4f}")
 # add APR
-current_wallet.loc[:, ["APR"]] = current_wallet.loc[:, ["HPR"]].values * apr_factor
+current_wallet.loc[:, ["apr"]] = current_wallet.loc[:, ["hpr"]].values * apr_factor
 
 results1 = current_wallet.loc[non_weth_index, exp.display_cols]
 results2 = current_wallet.loc[weth_index, exp.display_cols_with_hpr]
@@ -407,13 +383,13 @@ if RUNNING_INTERACTIVE:
             subset=[
                 col
                 for col in current_wallet.columns
-                if current_wallet.dtypes[col] == "float64" and col not in ["HPR", "APR"]
+                if current_wallet.dtypes[col] == "float64" and col not in ["hpr", "apr"]
             ],
             formatter="{:" + exp.float_fmt + "}",
         )
         .hide(axis="index")
         .format(
-            subset=["HPR", "APR"],
+            subset=["hpr", "apr"],
             formatter="{:.2%}",
         )
         .hide(axis="columns", subset=["base_token_type", "maturity_time"])
