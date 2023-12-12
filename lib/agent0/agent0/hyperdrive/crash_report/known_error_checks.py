@@ -50,8 +50,8 @@ def check_for_invalid_balance(trade_result: TradeResult) -> TradeResult:
                 )
             # Long exists but not enough balance
             else:
-                invalid_balance = True
                 if trade_amount > wallet.longs[maturity_time].balance:
+                    invalid_balance = True
                     add_arg = (
                         f"Invalid balance: {trade_type.name} for {trade_amount} long-{maturity_time}, "
                         f"balance of {wallet.longs[maturity_time].balance} long-{maturity_time}."
@@ -71,6 +71,10 @@ def check_for_invalid_balance(trade_result: TradeResult) -> TradeResult:
                 and ("ERC20: transfer amount exceeds balance" in trade_result.exception.args[0])
             ):
                 invalid_balance = True
+                add_arg = (
+                    f"Invalid balance: {trade_type.name} for {trade_amount} bonds, ",
+                    f"balance of {wallet.balance.amount} {wallet.balance.unit.name}.",
+                )
 
         case HyperdriveActionType.CLOSE_SHORT:
             # Short doesn't exist
