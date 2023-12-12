@@ -146,22 +146,19 @@ async def async_execute_agent_trades(
     trade_results = [item for sublist in gathered_trade_results for item in sublist]
 
     # Iterate through trade results, checking for known errors
+    out_trade_results = []
     for trade_result in trade_results:
         if trade_result.status == TradeStatus.FAIL:
             # Here, we check for common errors and allow for custom handling of various errors
 
             # These functions adjust the trade_result.exception object to add
             # additional arguments describing these detected errors for crash reporting
-            # These functions also return a boolean to determine if they detected
-            # these issues
-            is_invalid_balance, trade_result = check_for_invalid_balance(trade_result)
-            is_slippage, trade_result = check_for_slippage(trade_result)
-            is_min_txn_amount, trade_result = check_for_min_txn_amount(trade_result)
-            trade_result.is_invalid_balance = is_invalid_balance
-            trade_result.is_slippage = is_slippage
-            trade_result.is_min_txn_amount = is_min_txn_amount
+            trade_result = check_for_invalid_balance(trade_result)
+            trade_result = check_for_slippage(trade_result)
+            trade_result = check_for_min_txn_amount(trade_result)
+            out_trade_results.append(trade_result)
 
-    return trade_results
+    return out_trade_results
 
 
 async def async_match_contract_call_to_trade(
