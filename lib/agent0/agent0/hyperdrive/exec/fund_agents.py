@@ -22,7 +22,8 @@ from web3.types import Nonce, TxReceipt
 from agent0 import AccountKeyConfig
 from agent0.hyperdrive.agents import HyperdriveAgent
 
-RETRY_COUNT = 5
+FUND_RETRY_COUNT = 5
+DEFAULT_READ_RETRY_COUNT = 5
 
 
 # TODO break up this function
@@ -96,12 +97,14 @@ async def async_fund_agents(
     logging.info("Funding Eth")
     # Prepare accounts and eth budgets
     accounts_left = list(zip(agent_accounts, account_key_config.AGENT_ETH_BUDGETS))
-    for attempt in range(RETRY_COUNT):
+    for attempt in range(FUND_RETRY_COUNT):
         # Fund agents async from a single account.
         # To do this, we need to manually set the nonce, so we get the base transaction count here
         # and pass in an incrementing nonce per call
         # TODO figure out which exception here to retry on
-        base_nonce = retry_call(5, None, web3.eth.get_transaction_count, user_account.checksum_address)
+        base_nonce = retry_call(
+            DEFAULT_READ_RETRY_COUNT, None, web3.eth.get_transaction_count, user_account.checksum_address
+        )
 
         # Gather all async function calls in a list
         # Running with retries
@@ -124,7 +127,7 @@ async def async_fund_agents(
                 logging.warning(
                     "Retry attempt %s out of %s: Eth transfer failed with exception %s",
                     attempt,
-                    RETRY_COUNT,
+                    FUND_RETRY_COUNT,
                     repr(result),
                 )
         # If all accounts funded, break retry loop
@@ -136,12 +139,14 @@ async def async_fund_agents(
     logging.info("Funding Base")
     # Prepare accounts and eth budgets
     accounts_left = list(zip(agent_accounts, account_key_config.AGENT_BASE_BUDGETS))
-    for attempt in range(RETRY_COUNT):
+    for attempt in range(FUND_RETRY_COUNT):
         # Fund agents async from a single account.
         # To do this, we need to manually set the nonce, so we get the base transaction count here
         # and pass in an incrementing nonce per call
         # TODO figure out which exception here to retry on
-        base_nonce = retry_call(5, None, web3.eth.get_transaction_count, user_account.checksum_address)
+        base_nonce = retry_call(
+            DEFAULT_READ_RETRY_COUNT, None, web3.eth.get_transaction_count, user_account.checksum_address
+        )
 
         # Gather all async function calls in a list
         # Running with retries
@@ -170,7 +175,7 @@ async def async_fund_agents(
                 logging.warning(
                     "Retry attempt %s out of %s: Base transfer failed with exception %s",
                     attempt,
-                    RETRY_COUNT,
+                    FUND_RETRY_COUNT,
                     repr(result),
                 )
         # If all accounts funded, break retry loop
