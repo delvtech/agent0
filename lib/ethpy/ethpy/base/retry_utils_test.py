@@ -54,7 +54,6 @@ def test_retry_hyperdrive_action(chain: LocalChain, caplog: pytest.LogCaptureFix
     # Check the captured log messages
     retries = [r for r in caplog.records if r.message.startswith("Retry")]
     assert len(retries) == num_retries
-    logging.info("")
     for retry in retries:
         logging.info("%s: %s", retry.created, retry.message)
     attempt_timestamps = [r.created for r in retries]
