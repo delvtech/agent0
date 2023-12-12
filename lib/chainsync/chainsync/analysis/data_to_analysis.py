@@ -2,6 +2,7 @@
 import logging
 from decimal import Decimal
 from typing import Type
+from ethpy.hyperdrive.interface.interface import HyperdriveInterface
 
 import numpy as np
 import pandas as pd
@@ -153,6 +154,7 @@ def data_to_analysis(
     pool_config: pd.Series,
     db_session: Session,
     hyperdrive_contract: Contract,
+    hyperdrive_interface: HyperdriveInterface,
 ) -> None:
     """Function to query postgres data tables and insert to analysis tables.
     Executes analysis on a batch of blocks, defined by start and end block.
@@ -192,7 +194,7 @@ def data_to_analysis(
         # We can set a sample rate by doing batch processing on this function
         # since we only get the current wallet for the end_block
         wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
-        pnl_df = calc_closeout_pnl(wallet_pnl, pool_info, hyperdrive_contract)
+        pnl_df = calc_closeout_pnl(wallet_pnl, pool_info, hyperdrive_contract, hyperdrive_interface)
 
         # This sets the pnl to the current wallet dataframe, but there may be scaling issues here.
         # This is because the `CurrentWallet` table has one entry per change in wallet position,
