@@ -96,7 +96,7 @@ def calc_single_closeout(position: pd.Series, contract: Contract, pool_info: pd.
             amount,
             min_output,
             (  # IHyperdrive.Options
-                sender,  # destination
+                address,  # destination
                 True,  # asBase
                 bytes(0),  # extraData
             ),
