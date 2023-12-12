@@ -5,7 +5,6 @@ import logging
 import random
 import sys
 
-import rollbar
 from ethpy.hyperdrive.interface import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hyperlogs.rollbar_utilities import initialize_rollbar
