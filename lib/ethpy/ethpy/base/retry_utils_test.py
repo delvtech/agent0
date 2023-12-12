@@ -1,4 +1,4 @@
-"""Test executing transactions."""
+"""Test retry utils."""
 import logging
 import time
 
