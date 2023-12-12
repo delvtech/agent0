@@ -178,7 +178,11 @@ def smart_contract_preview_transaction(
 
     # This is the additional transaction argument passed into function.call
     # that may contain additional call arguments such as max_gas, nonce, etc.
-    transaction_kwargs = {"from": signer_address}
+    # transaction_args = []
+    # transaction_kwargs = {"from": signer_address}
+    transaction_kwargs = {}
+    transaction_args = [signer_address]
+    transaction_args = []
 
     raw_txn = {}
     # We build the raw transaction here in case of error, where we want to attach the raw txn to the crash report.
@@ -193,12 +197,15 @@ def smart_contract_preview_transaction(
     except Exception:  # pylint: disable=broad-except
         pass
 
+    # for k, v in transaction_kwargs.items():
+    #     print(f"{k:20}: {v}")
     try:
         return_values = retry_call(
             read_retry_count,
             _retry_preview_check,
             function.call,
-            transaction_kwargs,
+            *transaction_args,
+            **transaction_kwargs,
             block_identifier=block_number,
         )
     # Wraps the exception with a contract call exception, adding additional information
