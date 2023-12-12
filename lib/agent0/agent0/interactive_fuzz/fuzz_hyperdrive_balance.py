@@ -163,8 +163,8 @@ def invariant_check(
 
     Arguments
     ---------
-    initial_vault_shares: FixedPoint
-        The number of vault shares owned by the Hyperdrive pool when it was deployed.
+    initial_effective_share_reserves: FixedPoint
+        The effective share reserves of the Hyperdrive pool when it was deployed.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
     """
