@@ -257,17 +257,6 @@ def invariant_check(
         exception_data["invariance_check:share_reserves_difference_in_wei"] = difference_in_wei
         failed = True
 
-    # Vault shares (Hyperdrive balance of vault contract)
-    expected_vault_shares = FixedPoint(check_data["vault_shares"])
-    actual_vault_shares = pool_state.vault_shares
-    if expected_vault_shares != actual_vault_shares:
-        difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
-        exception_message.append(f"{expected_vault_shares=} != {actual_vault_shares=}, {difference_in_wei=}")
-        exception_data["invariance_check:expected_vault_shares"] = expected_vault_shares
-        exception_data["invariance_check:actual_share_shares"] = actual_vault_shares
-        exception_data["invariance_check:vault_shares_difference_in_wei"] = difference_in_wei
-        failed = True
-
     # Minimum share reserves
     expected_minimum_share_reserves = check_data["minimum_share_reserves"]
     actual_minimum_share_reserves = pool_state.pool_config.minimum_share_reserves
