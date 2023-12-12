@@ -25,7 +25,7 @@ from agent0.test_utils import assert_never
 if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
 
-NUM_RETRY_CALLS = 5
+DEFAULT_READ_RETRY_COUNT = 5
 
 
 async def async_execute_single_agent_trade(
@@ -59,7 +59,9 @@ async def async_execute_single_agent_trade(
     # To do this, we need to manually set the nonce, so we get the base transaction count here
     # and pass in an incrementing nonce per call
     # TODO figure out which exception here to retry on
-    base_nonce = retry_call(NUM_RETRY_CALLS, None, interface.web3.eth.get_transaction_count, agent.checksum_address)
+    base_nonce = retry_call(
+        DEFAULT_READ_RETRY_COUNT, None, interface.web3.eth.get_transaction_count, agent.checksum_address
+    )
 
     # TODO preliminary search shows async tasks has very low overhead:
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
