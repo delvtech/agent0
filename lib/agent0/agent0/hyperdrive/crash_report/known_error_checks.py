@@ -6,7 +6,7 @@ from agent0.hyperdrive.state import HyperdriveActionType, TradeResult
 from agent0.test_utils import assert_never
 
 
-def check_for_invalid_balance(trade_result: TradeResult) -> tuple[bool, TradeResult]:
+def check_for_invalid_balance(trade_result: TradeResult) -> TradeResult:
     """Detects invalid balance errors in trade_result and adds additional information to the
     exception in trade_result
 
@@ -17,9 +17,8 @@ def check_for_invalid_balance(trade_result: TradeResult) -> tuple[bool, TradeRes
 
     Returns
     -------
-    tuple(bool, TradeResult)
-        A tuple of a flag for detecting invalid balance and
-        a modified trade_result that has a custom exception argument message prepended
+    TradeResult
+        A modified trade_result that has a custom exception argument message prepended
     """
     assert trade_result.agent is not None
     wallet = trade_result.agent.wallet
@@ -127,14 +126,17 @@ def check_for_invalid_balance(trade_result: TradeResult) -> tuple[bool, TradeRes
         case _:
             assert_never(trade_type)
 
-    assert trade_result.exception is not None
     # Prepend balance error argument to exception args
-    if add_arg is not None:
+    if invalid_balance:
+        assert trade_result.exception is not None
+        assert add_arg is not None
         trade_result.exception.args = (add_arg,) + trade_result.exception.args
-    return invalid_balance, trade_result
+        trade_result.is_invalid_balance = True
+
+    return trade_result
 
 
-def check_for_slippage(trade_result: TradeResult) -> tuple[bool, TradeResult]:
+def check_for_slippage(trade_result: TradeResult) -> TradeResult:
     """Detects slippage errors in trade_result and adds additional information to the
     exception in trade_result
 
@@ -145,9 +147,8 @@ def check_for_slippage(trade_result: TradeResult) -> tuple[bool, TradeResult]:
 
     Returns
     -------
-    tuple(bool, TradeResult)
-        A tuple of a flag for detecting slippage and
-        a modified trade_result that has a custom exception argument message prepended
+    TradeResult
+        A modified trade_result that has a custom exception argument message prepended
     """
     # To detect slippage, we first look for the wrapper that defines a contract call exception.
     # We then look for the `OutputLimit` exception thrown as the original exception.
@@ -155,7 +156,6 @@ def check_for_slippage(trade_result: TradeResult) -> tuple[bool, TradeResult]:
     # that the trade here is open/close long/short.
     # TODO this error is not guaranteed to be exclusive for slippage in the future.
     assert trade_result.trade_object is not None
-    assert trade_result.exception is not None
     is_slippage = (
         isinstance(trade_result.exception, ContractCallException)
         and isinstance(trade_result.exception.orig_exception, ContractCustomError)
@@ -171,14 +171,16 @@ def check_for_slippage(trade_result: TradeResult) -> tuple[bool, TradeResult]:
         )
     )
     if is_slippage:
+        assert trade_result.exception is not None
         # Prepend slippage argument to exception args
         trade_result.exception.args = ("Slippage detected",) + trade_result.exception.args
+        trade_result.is_slippage = True
 
-    return is_slippage, trade_result
+    return trade_result
 
 
-def check_for_min_txn_amount(trade_result: TradeResult) -> tuple[bool, TradeResult]:
-    """Detects minimum tranasaction amount errors in trade_result and adds additional information to the
+def check_for_min_txn_amount(trade_result: TradeResult) -> TradeResult:
+    """Detects minimum transaction amount errors in trade_result and adds additional information to the
     exception in trade_result
 
     Arguments
@@ -188,14 +190,12 @@ def check_for_min_txn_amount(trade_result: TradeResult) -> tuple[bool, TradeResu
 
     Returns
     -------
-    tuple(bool, TradeResult)
-        A tuple of a flag for detecting slippage and
-        a modified trade_result that has a custom exception argument message prepended
+    TradeResult
+        A modified trade_result that has a custom exception argument message prepended
     """
 
     assert trade_result.pool_config is not None
     assert trade_result.trade_object is not None
-    assert trade_result.exception is not None
 
     trade_type = trade_result.trade_object.market_action.action_type
     add_arg = None
@@ -213,6 +213,10 @@ def check_for_min_txn_amount(trade_result: TradeResult) -> tuple[bool, TradeResu
             is_min_txn_amount = True
 
     # Prepend balance error argument to exception args
-    if add_arg is not None:
+    if is_min_txn_amount:
+        assert add_arg is not None
+        assert trade_result.exception is not None
         trade_result.exception.args = (add_arg,) + trade_result.exception.args
-    return is_min_txn_amount, trade_result
+        trade_result.is_min_txn_amount = True
+
+    return trade_result
