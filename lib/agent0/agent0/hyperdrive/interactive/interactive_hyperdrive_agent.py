@@ -213,6 +213,16 @@ class InteractiveHyperdriveAgent:
         Returns
         -------
         list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]
-            Emits the list of events of the executed action
+            Events of the executed actions.
         """
         return self._pool._execute_policy_action(self.agent)
+
+    def liquidate(self) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
+        """Liquidate all of the agent's positions.
+
+        Returns
+        -------
+        list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]
+            Events of the executed actions.
+        """
+        return self._pool._liquidate(self.agent)
