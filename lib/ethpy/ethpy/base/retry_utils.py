@@ -22,7 +22,7 @@ def retry_call(
     Arguments
     ---------
     retry_count: int
-        The number of times to retry the function
+        The number of times to retry the function. Must be > 0.
     retry_exception_check: Callable[[type[Exception]], bool] | None
         A function that takes as an argument an exception and returns True if we want to retry on that exception
         If None, will retry for all exceptions
@@ -40,6 +40,8 @@ def retry_call(
     """
     # TODO can't make a default for `retry_exception_check` due to *args and **kwargs,
     # so we need to explicitly pass in this parameter
+    if retry_count <= 0:
+        raise ValueError("retry_count must be greater than zero.")
     exception = None
     for attempt_number in range(retry_count):
         try:
