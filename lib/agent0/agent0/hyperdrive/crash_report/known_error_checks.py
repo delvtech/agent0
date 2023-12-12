@@ -117,7 +117,7 @@ def check_for_invalid_balance(trade_result: TradeResult) -> TradeResult:
                 )
             # Also checking that there are enough withdrawal shares ready to withdraw
             elif trade_amount > ready_to_withdraw:
-                # This isn't really an invalid balance error, so we won't set the flag here
+                invalid_balance = True
                 add_arg = (
                     f"Invalid balance: {trade_type.name} for {trade_amount} withdraw shares, "
                     f"not enough ready to withdraw shares in pool ({ready_to_withdraw})."
