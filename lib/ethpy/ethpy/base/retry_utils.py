@@ -6,6 +6,8 @@ import logging
 import time
 from typing import Callable, ParamSpec, TypeVar
 
+from eth_typing import ChecksumAddress
+
 P = ParamSpec("P")
 R = TypeVar("R")
 
@@ -43,10 +45,15 @@ def retry_call(
     if retry_count <= 0:
         raise ValueError("retry_count must be greater than zero.")
     exception = None
+    for arg in args:
+        print(arg)
+    for k,v  in kwargs.items():
+        print("KWARGS")
+        print(f"  {k}: {v}")
+    print(f"{kwargs=}")
     for attempt_number in range(retry_count):
         try:
-            out = func(*args, **kwargs)
-            return out
+            return func(*args, **kwargs)
         # Catching general exception but throwing if fails
         except Exception as exc:  # pylint: disable=broad-exception-caught
             # Raise exception immediately if exception check fails

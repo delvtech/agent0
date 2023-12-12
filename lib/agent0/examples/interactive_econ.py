@@ -8,8 +8,6 @@ That trading activity is executed by a random agent named Rob.
 The liquidity is provided by an agent named Larry.
 At the end, we close out all positions, and evaluate results based off the WETH in their wallets.
 """
-# Variables by themselves print out dataframes in a nice format in interactive mode
-# pylint: disable=pointless-statement
 
 import datetime
 import os
@@ -32,18 +30,13 @@ from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 # pylint: disable=redefined-builtin
 # don't make me use upper case variable names
 # pylint: disable=invalid-name
+# don't need docstrings in scripts
+# pylint: disable=missing-function-docstring,missing-return-doc,missing-return-type-doc
 
 
 # %%
-# check interactive status
+# check what environment we're running in
 def running_interactive():
-    """Check if we are running in interactive mode.
-
-    Returns
-    -------
-    bool
-        Whether we are running in interactive mode.
-    """
     try:
         from IPython.core.getipython import get_ipython  # pylint: disable=import-outside-toplevel
 
@@ -68,7 +61,7 @@ class ExperimentConfig:  # pylint: disable=too-many-instance-attributes
     """Everything needed for my experiment."""
 
     daily_volume_percentage_of_liquidity: float = 0.01  # 1%
-    term_days: int = 20
+    term_days: int = 365
     float_fmt: str = ",.0f"
     display_cols: list[str] = field(
         default_factory=lambda: ["block_number", "username", "position", "pnl", "base_token_type", "maturity_time"]
@@ -86,28 +79,53 @@ class ExperimentConfig:  # pylint: disable=too-many-instance-attributes
         ]
     )
     amount_of_liquidity: int = 10_000_000
+    fixed_rate: float = 0.035  # 3.5%
     curve_fee: FixedPoint = FixedPoint("0.01")  # 1%, 10% default
     flat_fee: FixedPoint = FixedPoint("0.0001")  # 1bps, 5bps default
     governance_fee: FixedPoint = FixedPoint("0.1")  # 10%, 15% default
     randseed: int = 0
+    term_seconds: int = 0
+    starting_fixed_rate: FixedPoint = FixedPoint(0)
+    starting_variable_rate: FixedPoint = FixedPoint(0)
 
-    def __post_init__(self):
+    def calculate_values(self):
         """Calculate parameters for the experiment."""
         self.term_seconds: int = 60 * 60 * 24 * self.term_days
 
         # used to scale up to the equivalent of a year
         scaling_ratio = 365 / self.term_days
         # this interest rate gives us the same price as a 3.% fixed rate for 1 year
-        rate_required_for_same_price: float = min(1, 0.035 * scaling_ratio)
+        rate_required_for_same_price: float = min(1, self.fixed_rate * scaling_ratio)
         self.starting_fixed_rate: FixedPoint = FixedPoint(rate_required_for_same_price)
         self.starting_variable_rate: FixedPoint = FixedPoint(rate_required_for_same_price)
 
 
+def safe_cast(type_: type, value: str):
+    print(f"trying to cast {value} to {type_}")
+    return_value = value
+    if type_ == int:
+        return_value = int(value)
+    if type_ == float:
+        return_value = float(value)
+    if type_ == bool:
+        return_value = value.lower() in {"true", "1", "yes"}
+    if type_ == FixedPoint:
+        return_value = FixedPoint(value)
+    print(f"  result: {value} of {type(return_value)}")
+    return return_value
+
+
 exp = ExperimentConfig()
+field_names = [f.name for f in fields(exp)]
+# update initial values from environment
 for key in os.environ:
-    if key in fields(exp):
-        setattr(exp, key, os.environ[key])
-rng = np.random.default_rng(seed=exp.randseed)
+    if key in field_names:
+        print(f"setting experiment config.{key} = {os.environ[key]}")
+        attribute_type = exp.__annotations__[key]  # pylint: disable=no-member
+        setattr(exp, key, safe_cast(attribute_type, os.environ[key]))
+# update calculated values
+exp.calculate_values()
+rng = np.random.default_rng(seed=int(exp.randseed))
 
 # %%
 # set up chain
