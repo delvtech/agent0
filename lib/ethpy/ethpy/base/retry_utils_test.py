@@ -4,7 +4,7 @@ import time
 
 import pytest
 from ethpy.base import retry_call
-from ethpy.base.errors.errors import ContractCallException
+from ethpy.base.errors import ContractCallException
 from ethpy.hyperdrive.interface import HyperdriveInterface
 from fixedpointmath import FixedPoint
 
