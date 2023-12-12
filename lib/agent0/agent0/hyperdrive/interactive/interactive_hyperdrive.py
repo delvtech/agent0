@@ -1059,7 +1059,29 @@ class InteractiveHyperdrive:
         out_events = []
         # The underlying policy can execute multiple actions in one step
         for trade_result in trade_results:
-            tx_receipt = self._handle_trade_result(trade_results)
+            tx_receipt = self._handle_trade_result(trade_result)
+            assert trade_result.trade_object is not None
+            action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
+            out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
+        # Build event from tx_receipt
+        return out_events
+
+    def _liquidate(
+        self, agent: HyperdriveAgent
+    ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
+        trade_results: list[TradeResult] = asyncio.run(
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=True)
+        )
+
+        # Experimental changes runs data pipeline in thread
+        # Turn that off here to run in slow, but won't crash mode
+        if not self.chain.experimental_data_threading:
+            self._run_blocking_data_pipeline()
+
+        out_events = []
+        # The underlying policy can execute multiple actions in one step
+        for trade_result in trade_results:
+            tx_receipt = self._handle_trade_result(trade_result)
             assert trade_result.trade_object is not None
             action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
             out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
