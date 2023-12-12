@@ -5,8 +5,7 @@ import argparse
 import logging
 import sys
 import time
-from math import isclose
-from typing import NamedTuple, Sequence
+from typing import Any, NamedTuple, Sequence
 
 from eth_typing import BlockNumber
 from ethpy import build_eth_config
@@ -19,6 +18,7 @@ from web3.types import BlockData
 
 from agent0.base.config import EnvironmentConfig
 from agent0.hyperdrive.crash_report import build_crash_trade_result, get_anvil_state_dump, log_hyperdrive_crash_report
+from agent0.interactive_fuzz.helpers import FuzzAssertionException, fp_isclose
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -49,8 +49,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         last_executed_block_number = latest_block_number
         try:
             run_invariant_checks(latest_block, latest_block_number, interface, parsed_args.test_epsilon)
-        except AssertionError as error:
-            report = build_crash_trade_result(error, interface)
+        except FuzzAssertionException as error:
+            report = build_crash_trade_result(error, interface, additional_info=error.exception_data)
             report.anvil_state = get_anvil_state_dump(interface.web3)
             log_hyperdrive_crash_report(
                 report,
@@ -117,6 +117,10 @@ def run_invariant_checks(
     test_epsilon: float
         The tolerance for the invariance checks.
     """
+
+    # TODO
+    # pylint: disable=too-many-locals
+
     # Get the variables to check
     pool_state = interface.get_hyperdrive_state(latest_block)
     epsilon = FixedPoint(str(test_epsilon))
@@ -125,35 +129,39 @@ def run_invariant_checks(
     failed = False
 
     exception_message: list[str] = ["Continuous Fuzz Bots Invariant Checks"]
+    exception_data: dict[str, Any] = {}
 
     # Hyperdrive base & eth balances should always be zero
-    if pool_state.hyperdrive_base_balance != FixedPoint(0):
-        exception_message.append(
-            f"{pool_state.hyperdrive_base_balance=} != 0. Test failed at block {latest_block_number}"
-        )
+    actual_hyperdrive_base_balance = pool_state.hyperdrive_base_balance
+    if actual_hyperdrive_base_balance != FixedPoint(0):
+        exception_message.append(f"{actual_hyperdrive_base_balance} != 0. Test failed at block {latest_block_number}")
+        exception_data["invariance_check:actual_hyperdrive_base_balance"] = actual_hyperdrive_base_balance
         failed = True
-    if pool_state.hyperdrive_eth_balance != FixedPoint(0):
-        exception_message.append(
-            f"{pool_state.hyperdrive_eth_balance=} != 0. Test failed at block {latest_block_number}"
-        )
+
+    actual_hyperdrive_eth_balance = pool_state.hyperdrive_eth_balance
+    if actual_hyperdrive_eth_balance != FixedPoint(0):
+        exception_message.append(f"{actual_hyperdrive_eth_balance} != 0. Test failed at block {latest_block_number}")
+        exception_data["invariance_check:actual_hyperdrive_eth_balance"] = actual_hyperdrive_eth_balance
         failed = True
 
     # Total shares is correctly calculated
-    vault_shares_expected = (
+    expected_vault_shares = (
         pool_state.pool_info.share_reserves
         + pool_state.pool_info.shorts_outstanding / pool_state.pool_info.share_price
         + pool_state.gov_fees_accrued
         + pool_state.pool_info.withdrawal_shares_proceeds
     )
-    if not isclose(
-        pool_state.vault_shares,
-        vault_shares_expected,
-        abs_tol=epsilon,
-    ):
+    actual_vault_shares = pool_state.vault_shares
+    if not fp_isclose(expected_vault_shares, actual_vault_shares, abs_tol=epsilon):
+        difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
         exception_message.append(
-            f"{pool_state.vault_shares=} is incorrect, should be {vault_shares_expected}. "
-            "Test failed at block {latest_block_number}."
+            f"{actual_vault_shares=} is incorrect, should be {expected_vault_shares}. "
+            f"{difference_in_wei=}. "
+            f"Test failed at block {latest_block_number}."
         )
+        exception_data["invariance_check:expected_vault_shares"] = expected_vault_shares
+        exception_data["invariance_check:actual_vault_shares"] = actual_vault_shares
+        exception_data["invariance_check:vault_shares_difference_in_wei"] = difference_in_wei
         failed = True
 
     # The system should always be solvent
@@ -168,20 +176,24 @@ def run_invariant_checks(
             f"({pool_state.pool_info.share_reserves=} - {pool_state.pool_info.long_exposure=} - "
             f"{pool_state.pool_config.minimum_share_reserves=}). Test failed at block {latest_block_number}."
         )
+        exception_data["invariance_check:solvency"] = solvency
         failed = True
 
     # The pool has more than the minimum share reserves
     current_share_reserves = (
         pool_state.pool_info.share_reserves * pool_state.pool_info.share_price - pool_state.pool_info.long_exposure
     )
-    if not current_share_reserves >= pool_state.pool_config.minimum_share_reserves:
+    minimum_share_reserves = pool_state.pool_config.minimum_share_reserves
+    if not current_share_reserves >= minimum_share_reserves:
         exception_message.append(
-            f"{current_share_reserves} < {pool_state.pool_config.minimum_share_reserves=}. "
+            f"{current_share_reserves} < {minimum_share_reserves=}. "
             f"({pool_state.pool_info.share_reserves=} * "
             f"{pool_state.pool_info.share_price=} - "
             f"{pool_state.pool_info.long_exposure=}). "
             f"Test failed at block {latest_block_number}."
         )
+        exception_data["invariance_check:current_share_reserves"] = current_share_reserves
+        exception_data["invariance_check:minimum_share_reserves"] = minimum_share_reserves
         failed = True
 
     # Creating a checkpoint should never fail
@@ -208,7 +220,7 @@ def run_invariant_checks(
     # Log additional information if any test failed
     if failed:
         logging.critical("\n".join(exception_message))
-        raise AssertionError(*exception_message)
+        raise FuzzAssertionException(*exception_message, exception_data=exception_data)
 
 
 class Args(NamedTuple):

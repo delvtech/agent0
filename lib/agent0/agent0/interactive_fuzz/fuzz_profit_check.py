@@ -12,7 +12,7 @@ from numpy.random._generator import Generator
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.interactive_fuzz.helpers import setup_fuzz
+from agent0.interactive_fuzz.helpers import FuzzAssertionException, setup_fuzz
 
 # pylint: disable=too-many-locals
 
@@ -39,11 +39,6 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     log_to_stdout: bool, optional
         If True, log to stdout in addition to a file.
         Defaults to False.
-
-    Raises
-    ------
-    AssertionError
-        If the invariant checks fail during the tests an error will be raised.
     """
 
     # Setup the environment
@@ -105,12 +100,13 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     }
     try:
         invariant_check(check_data)
-    except AssertionError as error:
+    except FuzzAssertionException as error:
         dump_state_dir = chain.save_state(save_prefix="fuzz_profit_check")
         additional_info = {
             "fuzz_random_seed": random_seed,
             "dump_state_dir": dump_state_dir,
         }
+        additional_info.update(error.exception_data)
         # TODO do better checking here or make agent optional in build_crash_trade_result
         if "LONG" in error.args[0]:
             agent = long_agent.agent
@@ -232,46 +228,67 @@ def invariant_check(
     """
     failed = False
     exception_message: list[str] = ["Fuzz Profit Check Invariant Check"]
+    exception_data: dict[str, Any] = {}
 
     base_amount_returned = check_data["long_events"]["close"].base_amount
     base_amount_provided = check_data["long_events"]["open"].base_amount
     if base_amount_returned >= base_amount_provided:
+        difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)
         exception_message.append(
             f"LONG: Amount returned on closing was too large.\n"
-            f"{base_amount_returned=} should not be >= {base_amount_provided=}"
+            f"{base_amount_returned=} should not be >= {base_amount_provided=}. "
+            f"{difference_in_wei=}"
         )
+        exception_data["invariance_check:long_base_amount_returned"] = base_amount_returned
+        exception_data["invariance_check:long_base_amount_provided"] = base_amount_provided
+        exception_data["invariance_check:long_base_amount_difference_in_wei"] = difference_in_wei
         failed = True
 
     agent_balance = check_data["long_agent"].wallet.balance.amount
     trade_amount = check_data["trade_amount"]
     if agent_balance >= trade_amount:
+        difference_in_wei = abs(agent_balance.scaled_value - trade_amount.scaled_value)
         exception_message.append(
             f"LONG: Agent made a profit when the should not have.\n"
-            f"{agent_balance=} should not be >= {trade_amount=}",
+            f"{agent_balance=} should not be >= {trade_amount=}. "
+            f"{difference_in_wei=}"
         )
+        exception_data["invariance_check:long_agent_balance"] = agent_balance
+        exception_data["invariance_check:long_trade_amount"] = trade_amount
+        exception_data["invariance_check:long_agent_balance_difference_in_wei"] = difference_in_wei
         failed = True
 
     base_amount_returned = check_data["short_events"]["close"].base_amount
     base_amount_provided = check_data["short_events"]["open"].base_amount
     if base_amount_returned >= base_amount_provided:
+        difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)
         exception_message.append(
             f"SHORT: Amount returned on closing was too large.\n"
-            f"{base_amount_returned=} should not be >= {base_amount_provided=}"
+            f"{base_amount_returned=} should not be >= {base_amount_provided=}. "
+            f"{difference_in_wei=}"
         )
+        exception_data["invariance_check:short_base_amount_returned"] = base_amount_returned
+        exception_data["invariance_check:short_base_amount_provided"] = base_amount_provided
+        exception_data["invariance_check:short_base_amount_difference_in_wei"] = difference_in_wei
         failed = True
 
     agent_balance = check_data["short_agent"].wallet.balance.amount
     trade_amount = check_data["trade_amount"]
     if agent_balance >= trade_amount:
+        difference_in_wei = abs(agent_balance.scaled_value - trade_amount.scaled_value)
         exception_message.append(
             f"SHORT: Agent made a profit when the should not have.\n"
-            f"{agent_balance=} should not be >= {trade_amount=}"
+            f"{agent_balance=} should not be >= {trade_amount=}. "
+            f"{difference_in_wei=}"
         )
+        exception_data["invariance_check:short_agent_balance"] = agent_balance
+        exception_data["invariance_check:short_trade_amount"] = trade_amount
+        exception_data["invariance_check:short_agent_balance_difference_in_wei"] = difference_in_wei
         failed = True
 
     if failed:
         logging.critical("\n".join(exception_message))
-        raise AssertionError(*exception_message)
+        raise FuzzAssertionException(*exception_message, exception_data=exception_data)
 
 
 if __name__ == "__main__":

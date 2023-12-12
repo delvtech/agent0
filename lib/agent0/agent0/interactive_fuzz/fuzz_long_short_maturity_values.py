@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from typing import NamedTuple, Sequence
+from typing import Any, NamedTuple, Sequence
 
 import numpy as np
 from fixedpointmath import FixedPoint
@@ -13,7 +13,7 @@ from hypertypes.fixedpoint_types import CheckpointFP
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort, OpenLong, OpenShort
-from agent0.interactive_fuzz.helpers import generate_trade_list, open_random_trades, setup_fuzz
+from agent0.interactive_fuzz.helpers import FuzzAssertionException, generate_trade_list, open_random_trades, setup_fuzz
 
 # main script has a lot of stuff going on
 # pylint: disable=too-many-locals
@@ -46,11 +46,6 @@ def fuzz_long_short_maturity_values(
     log_to_stdout: bool, optional
         If True, log to stdout in addition to a file.
         Defaults to False.
-
-    Raises
-    ------
-    AssertionError
-        If the invariant checks fail during the tests an error will be raised.
     """
 
     log_filename = ".logging/fuzz_long_short_maturity_values.log"
@@ -113,9 +108,10 @@ def fuzz_long_short_maturity_values(
 
         try:
             invariant_check(trade, close_event, starting_checkpoint, maturity_checkpoint, interactive_hyperdrive)
-        except AssertionError as error:
+        except FuzzAssertionException as error:
             dump_state_dir = chain.save_state(save_prefix="fuzz_long_short_maturity_values")
             additional_info = {"fuzz_random_seed": random_seed, "dump_state_dir": dump_state_dir}
+            additional_info.update(error.exception_data)
             report = build_crash_trade_result(
                 error, interactive_hyperdrive.hyperdrive_interface, agent.agent, additional_info=additional_info
             )
@@ -226,6 +222,7 @@ def invariant_check(
     failed = False
 
     exception_message: list[str] = ["Fuzz Long/Short Maturity Values Invariant Check"]
+    exception_data: dict[str, Any] = {}
 
     if isinstance(open_trade_event, OpenLong) and isinstance(close_trade_event, CloseLong):
         # 0.05 would be a 5% fee.
@@ -237,12 +234,16 @@ def invariant_check(
         expected_base_amount_from_event = (
             close_trade_event.bond_amount - close_trade_event.bond_amount * flat_fee_percent
         )
+
         # assert with event values
         if actual_base_amount != expected_base_amount_from_event:
             difference_in_wei = abs(actual_base_amount.scaled_value - expected_base_amount_from_event.scaled_value)
             exception_message.append(
                 f"{actual_base_amount=} != {expected_base_amount_from_event=}, {difference_in_wei=}"
             )
+            exception_data["invariance_check:actual_base_amount"] = actual_base_amount
+            exception_data["invariance_check:expected_base_amount_from_event"] = expected_base_amount_from_event
+            exception_data["invariance_check:base_amount_from_event_difference_in_wei"] = difference_in_wei
             failed = True
 
         expected_base_amount_from_trade = open_trade_event.bond_amount - open_trade_event.bond_amount * flat_fee_percent
@@ -251,6 +252,9 @@ def invariant_check(
             exception_message.append(
                 f"{actual_base_amount=} != {expected_base_amount_from_trade=}, {difference_in_wei=}"
             )
+            exception_data["invariance_check:actual_base_amount"] = actual_base_amount
+            exception_data["invariance_check:expected_base_amount_from_trade"] = expected_base_amount_from_trade
+            exception_data["invariance_check:base_amount_from_trade_difference_in_wei"] = difference_in_wei
             failed = True
 
     elif isinstance(open_trade_event, OpenShort) and isinstance(close_trade_event, CloseShort):
@@ -276,13 +280,16 @@ def invariant_check(
         if actual_base_amount != interest_accrued:
             difference_in_wei = abs(actual_base_amount.scaled_value - interest_accrued.scaled_value)
             exception_message.append(f"{actual_base_amount=} != {interest_accrued=}, {difference_in_wei=}")
+            exception_data["invariance_check:actual_base_amount"] = actual_base_amount
+            exception_data["invariance_check:interest_accured"] = interest_accrued
+            exception_data["invariance_check:short_base_amount_difference_in_wei"] = difference_in_wei
             failed = True
     else:
         raise ValueError("Invalid types for open/close trade events")
 
     if failed:
         logging.critical("\n".join(exception_message))
-        raise AssertionError(*exception_message)
+        raise FuzzAssertionException(*exception_message, exception_data=exception_data)
 
 
 if __name__ == "__main__":

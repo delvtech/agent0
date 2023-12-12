@@ -4,13 +4,19 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from typing import NamedTuple, Sequence
+from typing import Any, NamedTuple, Sequence
 
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.interactive_fuzz.helpers import close_random_trades, generate_trade_list, open_random_trades, setup_fuzz
+from agent0.interactive_fuzz.helpers import (
+    FuzzAssertionException,
+    close_random_trades,
+    generate_trade_list,
+    open_random_trades,
+    setup_fuzz,
+)
 
 # main script has a lot of stuff going on
 # pylint: disable=too-many-locals
@@ -41,11 +47,6 @@ def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config, lo
     log_to_stdout: bool, optional
         If True, log to stdout in addition to a file.
         Defaults to False.
-
-    Raises
-    ------
-    AssertionError
-        If the invariant checks fail during the tests an error will be raised.
     """
 
     log_filename = ".logging/fuzz_hyperdrive_balance.log"
@@ -70,9 +71,10 @@ def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config, lo
     # Check the reserve amounts; they should be unchanged now that all of the trades are closed
     try:
         invariant_check(initial_vault_shares, interactive_hyperdrive)
-    except AssertionError as error:
+    except FuzzAssertionException as error:
         dump_state_dir = chain.save_state(save_prefix="fuzz_long_short_maturity_values")
         additional_info = {"fuzz_random_seed": random_seed, "dump_state_dir": dump_state_dir}
+        additional_info.update(error.exception_data)
         report = build_crash_trade_result(
             error, interactive_hyperdrive.hyperdrive_interface, agent.agent, additional_info=additional_info
         )
@@ -166,23 +168,32 @@ def invariant_check(
     """
     failed = False
     exception_message: list[str] = ["Fuzz Hyperdrive Balance Invariant Check"]
+    exception_data: dict[str, Any] = {}
 
     pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
     vault_shares = pool_state.vault_shares
     if vault_shares != initial_vault_shares:
         difference_in_wei = abs(vault_shares.scaled_value - initial_vault_shares.scaled_value)
         exception_message.append(f"{vault_shares=} != {initial_vault_shares=}, {difference_in_wei=}")
+        exception_data["invariance_check:vault_shares"] = vault_shares
+        exception_data["invariance_check:initial_vault_shares"] = initial_vault_shares
+        exception_data["invariance_check:vault_shares_difference_in_wei"] = difference_in_wei
         failed = True
 
     share_reserves = pool_state.pool_info.share_reserves
     minimum_share_reserves = pool_state.pool_config.minimum_share_reserves
     if share_reserves < minimum_share_reserves:
+        difference_in_wei = abs(share_reserves.scaled_value - minimum_share_reserves.scaled_value)
         exception_message.append(f"{share_reserves=} < {minimum_share_reserves=}")
+        exception_data["invariance_check:share_reserves"] = share_reserves
+        exception_data["invariance_check:minimum_share_reserves"] = minimum_share_reserves
+        exception_data["invariance_check:share_reserves_difference_in_wei"] = difference_in_wei
+
         failed = True
 
     if failed:
         logging.critical("\n".join(exception_message))
-        raise AssertionError(*exception_message)
+        raise FuzzAssertionException(*exception_message, exception_data=exception_data)
 
 
 if __name__ == "__main__":

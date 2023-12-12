@@ -5,7 +5,6 @@ import logging
 import random
 import sys
 
-import rollbar
 from ethpy.hyperdrive.interface import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hyperlogs.rollbar_utilities import initialize_rollbar
@@ -92,6 +91,4 @@ except Exception as exc:  # pylint: disable=broad-exception-caught
     if STOP_CHAIN_ON_CRASH:
         hyperdrive = HyperdriveInterface()
         hyperdrive.web3.provider.make_request(method=RPCEndpoint("evm_setIntervalMining"), params=[0])
-    if log_to_rollbar:
-        rollbar.report_exc_info(sys.exc_info())
     raise exc
