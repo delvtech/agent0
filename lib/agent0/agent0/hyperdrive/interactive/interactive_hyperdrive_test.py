@@ -462,3 +462,21 @@ def test_liquidate(chain: LocalChain):
     alice.liquidate()
     current_wallet = interactive_hyperdrive.get_current_wallet()
     assert current_wallet.shape[0] == 1  # we have 1 open position, including base
+
+
+@pytest.mark.anvil
+def test_add_liquidity(chain: LocalChain):
+    """Test adding liquidity."""
+    config = InteractiveHyperdrive.Config(
+        position_duration=60 * 60 * 24 * 365,  # 365 days
+        checkpoint_duration=60 * 60 * 24,  # 1 day
+        initial_liquidity=FixedPoint(20),
+        initial_fixed_rate=FixedPoint(0.035),  # 3.5%
+        initial_variable_rate=FixedPoint(0.035),  # 3.5%
+        curve_fee=FixedPoint("0.01"),
+        flat_fee=FixedPoint("0.0001"),
+        governance_fee=FixedPoint("0.1"),
+    )
+    interactive_hyperdrive = InteractiveHyperdrive(chain, config)
+    alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000_000), name="alice")
+    alice.add_liquidity(base=FixedPoint(10_000_000))
