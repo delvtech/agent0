@@ -429,11 +429,14 @@ class LocalChain(Chain):
             Number of seconds to advance time for every mined block. Uses real time if None.
         chain_port: int
             The port to bind for the anvil chain. Will fail if this port is being used.
+        transaction_block_keeper: int
+            The number of blocks to keep transaction records for. Undocumented in Anvil, we're being optimistic here.
         """
 
         block_time: int | None = None
         block_timestamp_interval: int | None = None
-        chain_port: int = 10000
+        chain_port: int = 10_000
+        transaction_block_keeper: int = 10_000
 
     def __init__(self, config: Config | None = None):
         """Initialize the Chain class that connects to an existing chain.
@@ -457,7 +460,7 @@ class LocalChain(Chain):
             "--code-size-limit",
             "9999999999",
             "--transaction-block-keeper",
-            "100",
+            str(config.transaction_block_keeper),
         ]
         if config.block_time is not None:
             anvil_launch_args.extend(("--block-time", str(config.block_time)))

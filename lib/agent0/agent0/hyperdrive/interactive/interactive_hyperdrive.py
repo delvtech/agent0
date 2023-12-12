@@ -14,9 +14,8 @@ import pandas as pd
 from chainsync import PostgresConfig
 from chainsync.dashboard.usernames import build_user_mapping
 from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
-from chainsync.db.hyperdrive import get_checkpoint_info
-from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.db.hyperdrive import (
+    get_checkpoint_info,
     get_latest_block_number_from_analysis_table,
     get_pool_analysis,
     get_pool_config,
@@ -26,6 +25,7 @@ from chainsync.db.hyperdrive import (
     get_wallet_deltas,
     get_wallet_pnl,
 )
+from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_typing import BlockNumber, ChecksumAddress
@@ -87,6 +87,10 @@ class InteractiveHyperdrive:
 
         Attributes
         ----------
+        data_pipeline_timeout: int
+            The timeout for the data pipeline. Defaults to 60 seconds.
+        preview_before_trade: bool, optional
+            Whether to preview the position before executing a trade. Defaults to False.
         initial_liquidity: FixedPoint
             The amount of money to be provided by the `deploy_account` for initial pool liquidity.
         initial_variable_rate: FixedPoint
@@ -119,8 +123,6 @@ class InteractiveHyperdrive:
             The upper bound on the flat fee that governance can set.
         max_governance_fee: FixedPoint
             The upper bound on the governance fee that governance can set.
-        preview_before_trade: bool, optional
-            Whether to preview the position before executing a trade. Defaults to False.
         """
 
         # Environment variables
@@ -134,17 +136,16 @@ class InteractiveHyperdrive:
         initial_share_price: FixedPoint = FixedPoint(1)
         minimum_share_reserves: FixedPoint = FixedPoint(10)
         minimum_transaction_amount: FixedPoint = FixedPoint("0.001")
-        # TODO this likely should be FixedPoint
-        precision_threshold: int = int(1e14)
+        precision_threshold: int = int(1e14)  # TODO this likely should be FixedPoint
         position_duration: int = 604800  # 1 week
         checkpoint_duration: int = 3600  # 1 hour
         time_stretch: FixedPoint | None = None
-        curve_fee = FixedPoint("0.1")  # 10%
-        flat_fee = FixedPoint("0.0005")  # 0.05%
-        governance_fee = FixedPoint("0.15")  # 15%
-        max_curve_fee = FixedPoint("0.3")  # 30%
-        max_flat_fee = FixedPoint("0.0015")  # 0.15%
-        max_governance_fee = FixedPoint("0.30")  # 30%
+        curve_fee: FixedPoint = FixedPoint("0.1")  # 10%
+        flat_fee: FixedPoint = FixedPoint("0.0005")  # 0.05%
+        governance_fee: FixedPoint = FixedPoint("0.15")  # 15%
+        max_curve_fee: FixedPoint = FixedPoint("0.3")  # 30%
+        max_flat_fee: FixedPoint = FixedPoint("0.0015")  # 0.15%
+        max_governance_fee: FixedPoint = FixedPoint("0.30")  # 30%
 
         def __post_init__(self):
             if self.time_stretch is None:
@@ -439,7 +440,6 @@ class InteractiveHyperdrive:
         """Internal function without safeguard checks for creating a checkpoint.
         Creating checkpoints is called by the chain's `advance_time`.
         """
-
         if checkpoint_time is None:
             block_timestamp = self.hyperdrive_interface.get_block_timestamp(
                 self.hyperdrive_interface.get_current_block()
