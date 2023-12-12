@@ -127,112 +127,6 @@ class InvalidRemoveLiquidity(HyperdrivePolicy):
         return action_list, done_trading
 
 
-class InvalidRedeemWithdraw(HyperdrivePolicy):
-    """An agent that submits an invalid redeem withdrawal share due to min txn amount."""
-
-    counter = 0
-
-    def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
-    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Redeems withdrawal shares
-
-        Arguments
-        ---------
-        interface: HyperdriveInterface
-            The trading market interface.
-        wallet: Wallet
-            The agent's wallet.
-
-        Returns
-        -------
-        tuple[list[HyperdriveMarketAction], bool]
-            A tuple where the first element is a list of actions,
-            and the second element defines if the agent is done trading
-        """
-        # pylint: disable=unused-argument
-        action_list = []
-        done_trading = False
-        # We make various trades to ensure the wallet has a non-zero withdrawal share
-        # Valid add liquidity
-        if self.counter == 0:
-            # Add liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=FixedPoint(10000),
-                        wallet=wallet,
-                    ),
-                )
-            )
-        # Valid open long
-        elif self.counter == 1:
-            # Open Long
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=FixedPoint(10000),
-                        slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
-                    ),
-                ),
-            )
-        # Valid remove liquidity
-        elif self.counter == 2:
-            # Remove all liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
-                        trade_amount=wallet.lp_tokens,
-                        wallet=wallet,
-                    ),
-                )
-            )
-        # Valid close long to free up withdrawal shares
-        elif self.counter == 3:
-            # Closing existent long
-            assert len(wallet.longs) == 1
-            for long_time, long_value in wallet.longs.items():
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_LONG,
-                            trade_amount=long_value.balance,
-                            slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
-                            maturity_time=long_time,
-                        ),
-                    )
-                )
-
-        elif self.counter == 4:
-            # Redeem withdrawal shares too small
-            # since the open trades are not closed
-            assert wallet.withdraw_shares > FixedPoint(0)
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
-                        trade_amount=SMALL_TRADE_AMOUNT,
-                        wallet=wallet,
-                    ),
-                )
-            )
-            # Last trade, set flag
-            done_trading = True
-        self.counter += 1
-
-        return action_list, done_trading
-
-
 class InvalidOpenLong(HyperdrivePolicy):
     """An agent that submits an invalid open long due to min txn amount."""
 
@@ -519,25 +413,7 @@ class TestInvalidTrades:
             assert isinstance(exc.orig_exception, ContractCustomError)
             assert exc.orig_exception.args[1] == "ContractCustomError MinimumTransactionAmount raised."
 
-    @pytest.mark.anvil
-    def test_invalid_redeem_withdraw_share_min_txn(
-        self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
-    ):
-        # TODO
-        pass
-        # try:
-        #    self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidRedeemWithdraw)
-        # except ContractCallException as exc:
-        #    # Expected error due to illegal trade
-        #    # We do add an argument for invalid balance to the args, so check for that here
-        #    assert "Minimum Transaction Amount:" in exc.args[0]
-        #    # Fails on remove liquidity
-        #    assert exc.function_name_or_signature == "redeemWithdrawalShares"
-        #    # This throws ContractCallException under the hood
-        #    assert exc.orig_exception is not None
-        #    assert isinstance(exc.orig_exception, ContractCustomError)
-        #    assert exc.orig_exception.args[1] == "ContractCustomError MinimumTransactionAmount raised."
+    # We don't test withdrawal shares because redeeming withdrawal shares are not subject to min_txn_amount
 
     @pytest.mark.anvil
     def test_invalid_open_long_min_txn(
