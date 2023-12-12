@@ -75,6 +75,7 @@ def fuzz_long_short_maturity_values(
     # Open some trades
     logging.info("Open random trades...")
     trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=False)
+    # TODO ensure all longs and shorts are within one checkpoint
 
     # Starting checkpoint is automatically created by sending transactions
     starting_checkpoint = interactive_hyperdrive.hyperdrive_interface.current_pool_state.checkpoint
@@ -90,6 +91,8 @@ def fuzz_long_short_maturity_values(
 
     # Get the maturity checkpoint for the previously created checkpoint
     maturity_checkpoint = interactive_hyperdrive.hyperdrive_interface.current_pool_state.checkpoint
+
+    # TODO ensure this maturity checkpoint is the maturity of all open positions
 
     # Advance time again
     logging.info("Advance time...")

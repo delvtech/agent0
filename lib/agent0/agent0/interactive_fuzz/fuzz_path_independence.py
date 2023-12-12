@@ -262,7 +262,7 @@ def invariant_check(
     actual_vault_shares = pool_state.vault_shares
     if expected_vault_shares != actual_vault_shares:
         difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
-        exception_message.append(f"{expected_vault_shares} != {actual_vault_shares}, {difference_in_wei=}")
+        exception_message.append(f"{expected_vault_shares=} != {actual_vault_shares=}, {difference_in_wei=}")
         exception_data["invariance_check:expected_vault_shares"] = expected_vault_shares
         exception_data["invariance_check:actual_share_shares"] = actual_vault_shares
         exception_data["invariance_check:vault_shares_difference_in_wei"] = difference_in_wei
@@ -274,7 +274,7 @@ def invariant_check(
     if expected_minimum_share_reserves != actual_minimum_share_reserves:
         difference_in_wei = abs(expected_minimum_share_reserves - actual_minimum_share_reserves)
         exception_message.append(
-            f"{expected_minimum_share_reserves} != {actual_minimum_share_reserves}, {difference_in_wei=}"
+            f"{expected_minimum_share_reserves=} != {actual_minimum_share_reserves=}, {difference_in_wei=}"
         )
         exception_data["invariance_check:expected_minimum_share_reserves"] = expected_minimum_share_reserves
         exception_data["invariance_check:actual_minimum_share_reserves"] = actual_minimum_share_reserves
