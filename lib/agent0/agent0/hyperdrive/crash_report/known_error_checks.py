@@ -134,7 +134,7 @@ def check_for_invalid_balance(trade_result: TradeResult) -> tuple[bool, TradeRes
     return invalid_balance, trade_result
 
 
-def check_for_slippage(trade_result) -> tuple[bool, TradeResult]:
+def check_for_slippage(trade_result: TradeResult) -> tuple[bool, TradeResult]:
     """Detects slippage errors in trade_result and adds additional information to the
     exception in trade_result
 
@@ -154,6 +154,8 @@ def check_for_slippage(trade_result) -> tuple[bool, TradeResult]:
     # Since this exception is used elsewhere (e.g., in redeem withdraw shares), we also explicitly check
     # that the trade here is open/close long/short.
     # TODO this error is not guaranteed to be exclusive for slippage in the future.
+    assert trade_result.trade_object is not None
+    assert trade_result.exception is not None
     is_slippage = (
         isinstance(trade_result.exception, ContractCallException)
         and isinstance(trade_result.exception.orig_exception, ContractCustomError)
@@ -173,3 +175,40 @@ def check_for_slippage(trade_result) -> tuple[bool, TradeResult]:
         trade_result.exception.args = ("Slippage detected",) + trade_result.exception.args
 
     return is_slippage, trade_result
+
+
+def check_for_min_txn_amount(trade_result: TradeResult) -> tuple[bool, TradeResult]:
+    """Detects minimum tranasaction amount errors in trade_result and adds additional information to the
+    exception in trade_result
+
+    Arguments
+    ---------
+    trade_result: TradeResult
+        The trade result object from trading
+
+    Returns
+    -------
+    tuple(bool, TradeResult)
+        A tuple of a flag for detecting slippage and
+        a modified trade_result that has a custom exception argument message prepended
+    """
+
+    assert trade_result.pool_config is not None
+    assert trade_result.trade_object is not None
+    min_txn_amount = trade_result.pool_config["minimum_transaction_amount"]
+    trade_amount = trade_result.trade_object.market_action.trade_amount
+    trade_type = trade_result.trade_object.market_action.action_type
+    is_min_txn_amount = False
+    add_arg = None
+    if trade_amount < min_txn_amount:
+        add_arg = (
+            f"Minimum Transaction Amount: {trade_type.name} for {trade_amount}, "
+            f"minimum transaction amount is {min_txn_amount}."
+        )
+        is_min_txn_amount = True
+
+    assert trade_result.exception is not None
+    # Prepend balance error argument to exception args
+    if add_arg is not None:
+        trade_result.exception.args = (add_arg,) + trade_result.exception.args
+    return is_min_txn_amount, trade_result

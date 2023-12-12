@@ -56,6 +56,7 @@ class TradeResult:
     # Flags for known errors
     is_slippage: bool = False
     is_invalid_balance: bool = False
+    is_min_txn_amount: bool = False
     # Optional fields for crash reporting
     # These fields are typically set as human readable versions
     block_number: int | None = None

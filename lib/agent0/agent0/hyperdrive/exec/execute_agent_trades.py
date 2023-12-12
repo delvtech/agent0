@@ -10,7 +10,12 @@ from ethpy.hyperdrive.interface import HyperdriveInterface
 from web3.types import Nonce
 
 from agent0.base import Quantity, TokenType, Trade
-from agent0.hyperdrive.crash_report import build_crash_trade_result, check_for_invalid_balance, check_for_slippage
+from agent0.hyperdrive.crash_report import (
+    build_crash_trade_result,
+    check_for_invalid_balance,
+    check_for_min_txn_amount,
+    check_for_slippage,
+)
 from agent0.hyperdrive.state import (
     HyperdriveActionType,
     HyperdriveMarketAction,
@@ -151,8 +156,10 @@ async def async_execute_agent_trades(
             # these issues
             is_invalid_balance, trade_result = check_for_invalid_balance(trade_result)
             is_slippage, trade_result = check_for_slippage(trade_result)
+            is_min_txn_amount, trade_result = check_for_min_txn_amount(trade_result)
             trade_result.is_invalid_balance = is_invalid_balance
             trade_result.is_slippage = is_slippage
+            trade_result.is_min_txn_amount = is_min_txn_amount
 
     return trade_results
 
