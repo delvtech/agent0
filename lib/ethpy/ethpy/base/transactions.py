@@ -253,7 +253,7 @@ def smart_contract_preview_transaction(
 def wait_for_transaction_receipt(
     web3: Web3,
     transaction_hash: HexBytes,
-    timeout: float = 2,
+    timeout: float = 30,
     start_latency: float = 0.01,
     backoff_multiplier: float = 2,
 ) -> TxReceipt:
@@ -305,7 +305,7 @@ def wait_for_transaction_receipt(
 async def async_wait_for_transaction_receipt(
     web3: Web3,
     transaction_hash: HexBytes,
-    timeout: float = 2,
+    timeout: float = 30,
     start_latency: float = 0.01,
     backoff_multiplier: float = 2,
 ) -> TxReceipt:
