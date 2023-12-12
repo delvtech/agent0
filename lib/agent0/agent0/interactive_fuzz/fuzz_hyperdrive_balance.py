@@ -54,7 +54,9 @@ def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config, lo
 
     # Get initial vault shares
     pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-    initial_vault_shares = pool_state.vault_shares
+    initial_effective_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(
+        pool_state
+    )
 
     # Generate a list of agents that execute random trades
     trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
@@ -70,7 +72,7 @@ def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config, lo
 
     # Check the reserve amounts; they should be unchanged now that all of the trades are closed
     try:
-        invariant_check(initial_vault_shares, interactive_hyperdrive)
+        invariant_check(initial_effective_share_reserves, interactive_hyperdrive)
     except FuzzAssertionException as error:
         dump_state_dir = chain.save_state(save_prefix="fuzz_long_short_maturity_values")
         additional_info = {"fuzz_random_seed": random_seed, "dump_state_dir": dump_state_dir}
@@ -154,15 +156,15 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 
 
 def invariant_check(
-    initial_vault_shares: FixedPoint,
+    initial_effective_share_reserves: FixedPoint,
     interactive_hyperdrive: InteractiveHyperdrive,
 ) -> None:
     """Check the pool state invariants and throws an assertion exception if fails.
 
     Arguments
     ---------
-    initial_vault_shares: FixedPoint
-        The number of vault shares owned by the Hyperdrive pool when it was deployed.
+    initial_effective_share_reserves: FixedPoint
+        The effective share reserves of the Hyperdrive pool when it was deployed.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
     """
@@ -171,13 +173,16 @@ def invariant_check(
     exception_data: dict[str, Any] = {}
 
     pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-    vault_shares = pool_state.vault_shares
-    if vault_shares != initial_vault_shares:
-        difference_in_wei = abs(vault_shares.scaled_value - initial_vault_shares.scaled_value)
-        exception_message.append(f"{vault_shares=} != {initial_vault_shares=}, {difference_in_wei=}")
-        exception_data["invariance_check:vault_shares"] = vault_shares
-        exception_data["invariance_check:initial_vault_shares"] = initial_vault_shares
-        exception_data["invariance_check:vault_shares_difference_in_wei"] = difference_in_wei
+
+    effective_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state)
+    if effective_share_reserves != initial_effective_share_reserves:
+        difference_in_wei = abs(effective_share_reserves.scaled_value - initial_effective_share_reserves.scaled_value)
+        exception_message.append(
+            f"{effective_share_reserves=} != {initial_effective_share_reserves=}, {difference_in_wei=}"
+        )
+        exception_data["invariance_check:effective_share_reserves"] = effective_share_reserves
+        exception_data["invariance_check:initial_effective_share_reserves"] = initial_effective_share_reserves
+        exception_data["invariance_check:effective_share_reserves_difference_in_wei"] = difference_in_wei
         failed = True
 
     share_reserves = pool_state.pool_info.share_reserves

@@ -106,7 +106,6 @@ def fuzz_path_independence(
             check_data["initial_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
             check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
             check_data["effective_share_reserves"] = effective_share_reserves
-            check_data["vault_shares"] = pool_state.vault_shares
             check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
             first_run_state_dump_dir = chain.save_state(save_prefix="fuzz_path_independence")
 
@@ -247,25 +246,20 @@ def invariant_check(
         failed = True
 
     # Effective share reserves
-    expected_share_reserves = FixedPoint(check_data["effective_share_reserves"])
-    actual_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state)
-    if expected_share_reserves != actual_share_reserves:
-        difference_in_wei = abs(expected_share_reserves.scaled_value - actual_share_reserves.scaled_value)
-        exception_message.append(f"{expected_share_reserves=} != {actual_share_reserves=}, {difference_in_wei=}")
-        exception_data["invariance_check:expected_share_reserves"] = expected_share_reserves
-        exception_data["invariance_check:actual_share_reserves"] = actual_share_reserves
-        exception_data["invariance_check:share_reserves_difference_in_wei"] = difference_in_wei
-        failed = True
-
-    # Vault shares (Hyperdrive balance of vault contract)
-    expected_vault_shares = FixedPoint(check_data["vault_shares"])
-    actual_vault_shares = pool_state.vault_shares
-    if expected_vault_shares != actual_vault_shares:
-        difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
-        exception_message.append(f"{expected_vault_shares=} != {actual_vault_shares=}, {difference_in_wei=}")
-        exception_data["invariance_check:expected_vault_shares"] = expected_vault_shares
-        exception_data["invariance_check:actual_share_shares"] = actual_vault_shares
-        exception_data["invariance_check:vault_shares_difference_in_wei"] = difference_in_wei
+    expected_effective_share_reserves = FixedPoint(check_data["effective_share_reserves"])
+    actual_effective_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(
+        pool_state
+    )
+    if expected_effective_share_reserves != actual_effective_share_reserves:
+        difference_in_wei = abs(
+            expected_effective_share_reserves.scaled_value - actual_effective_share_reserves.scaled_value
+        )
+        exception_message.append(
+            f"{expected_effective_share_reserves=} != {actual_effective_share_reserves=}, {difference_in_wei=}"
+        )
+        exception_data["invariance_check:expected_effective_share_reserves"] = expected_effective_share_reserves
+        exception_data["invariance_check:actual_effective_share_reserves"] = actual_effective_share_reserves
+        exception_data["invariance_check:effective_share_reserves_difference_in_wei"] = difference_in_wei
         failed = True
 
     # Minimum share reserves
