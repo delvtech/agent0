@@ -19,8 +19,7 @@ class ContractCallType(Enum):
     READ = "read"
 
 
-# TODO python docs say we should subclass from Exception, not BaseException, fix
-class ContractCallException(BaseException):
+class ContractCallException(Exception):
     """Custom contract call exception wrapper that contains additional information on the function call"""
 
     # We'd like to pass in these optional kwargs to this exception
@@ -30,7 +29,7 @@ class ContractCallException(BaseException):
         *args,
         # Explicitly passing these arguments as kwargs to allow for multiple `args` to be passed in
         # similar for other types of exceptions
-        orig_exception: BaseException | None = None,
+        orig_exception: Exception | None = None,
         contract_call_type: ContractCallType | None = None,
         function_name_or_signature: str | None = None,
         fn_args: tuple | None = None,

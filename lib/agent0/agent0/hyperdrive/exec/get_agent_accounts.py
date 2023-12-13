@@ -125,12 +125,14 @@ async def set_max_approval(
             )
             for agent in agents_left
         ]
+        # We expect the type here to be BaseException (due to the return type of asyncio.gather),
+        # but the underlying exception should be subclassed from Exception.
         gather_results: list[TxReceipt | BaseException] = await asyncio.gather(*approval_calls, return_exceptions=True)
 
         # Rebuild accounts_left list if the result errored out for next iteration
         out_agents_left = []
         for agent, result in zip(agents_left, gather_results):
-            if isinstance(result, BaseException):
+            if isinstance(result, Exception):
                 out_agents_left.append(agent)
                 logging.warning(
                     "Retry attempt %s out of %s: Base approval failed with exception %s",

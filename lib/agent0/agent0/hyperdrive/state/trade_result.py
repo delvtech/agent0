@@ -34,7 +34,7 @@ class TradeResult:
         The status of the trade
     agent: HyperdriveAgent
         The agent that was executing the trade
-    exception: BaseException | None
+    exception: Exception | None
         The exception that was thrown
     pool_config: dict[str, Any]
         The configuration of the pool
@@ -61,8 +61,8 @@ class TradeResult:
     # These fields are typically set as human readable versions
     block_number: int | None = None
     block_timestamp: int | None = None
-    exception: BaseException | None = None
-    orig_exception: BaseException | None = None
+    exception: Exception | None = None
+    orig_exception: Exception | None = None
     pool_config: dict[str, Any] | None = None
     pool_info: dict[str, Any] | None = None
     checkpoint_info: dict[str, Any] | None = None

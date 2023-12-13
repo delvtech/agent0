@@ -70,6 +70,8 @@ async def async_execute_single_agent_trade(
         DEFAULT_READ_RETRY_COUNT, None, interface.web3.eth.get_transaction_count, agent.checksum_address
     )
 
+    # We expect the type here to be BaseException (due to the return type of asyncio.gather),
+    # but the underlying exception should be subclassed from Exception.
     # TODO preliminary search shows async tasks has very low overhead:
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
     # However, should probably test what the limit number of trades an agent can make in one block
@@ -100,7 +102,7 @@ async def async_execute_single_agent_trade(
     # as long as the transaction went through.
     trade_results = []
     for result, trade_object in zip(wallet_deltas_or_exception, trades):
-        if isinstance(result, BaseException):
+        if isinstance(result, Exception):
             trade_result = build_crash_trade_result(result, interface, agent, trade_object)
         else:
             assert isinstance(result, tuple)
