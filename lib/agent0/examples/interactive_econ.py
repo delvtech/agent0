@@ -17,10 +17,12 @@ from copy import deepcopy
 from dataclasses import dataclass, field, fields
 from typing import NamedTuple
 
+from dotenv import load_dotenv
 import numpy as np
 import pandas as pd
 from fixedpointmath import FixedPoint
 from matplotlib import pyplot as plt
+import wandb
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 
@@ -31,7 +33,7 @@ from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 # don't make me use upper case variable names
 # pylint: disable=invalid-name
 # don't need docstrings in scripts
-# pylint: disable=missing-function-docstring,missing-return-doc,missing-return-type-doc
+# pylint: disable=missing-function-docstring,missing-return-doc,missing-return-type-doc,bad-docstring-quotes
 
 
 # %%
@@ -45,6 +47,12 @@ def running_interactive():
         return False
 
 
+def running_wandb():
+    # Check for a specific wandb environment variable
+    # For example, 'WANDB_RUN_ID' is set by wandb during a run
+    return "WANDB_RUN_ID" in os.environ
+
+
 if RUNNING_INTERACTIVE := running_interactive():
     from IPython.display import display  # pylint: disable=import-outside-toplevel
 
@@ -53,31 +61,26 @@ else:  # being run from the terminal or something similar
     display = print  # pylint: disable=redefined-builtin,unused-import
     print("Running in non-interactive mode.")
 
+if RUNNING_WANDB := running_wandb():
+    print("Running inside a wandb environment.")
+else:
+    print("Not running inside a wandb environment.")
+
 
 # %%
 # config
-@dataclass
-class ExperimentConfig:  # pylint: disable=too-many-instance-attributes
-    """Everything needed for my experiment."""
+cols = ["block_number", "username", "position", "pnl"]
 
+
+@dataclass
+class ExperimentConfig:  # pylint: disable=too-many-instance-attributes,missing-class-docstring
+    db_port: int = 5_433
+    chain_port: int = 10_000
     daily_volume_percentage_of_liquidity: float = 0.01  # 1%
     term_days: int = 365
     float_fmt: str = ",.0f"
-    display_cols: list[str] = field(
-        default_factory=lambda: ["block_number", "username", "position", "pnl", "base_token_type", "maturity_time"]
-    )
-    display_cols_with_hpr: list[str] = field(
-        default_factory=lambda: [
-            "block_number",
-            "username",
-            "position",
-            "pnl",
-            "hpr",
-            "apr",
-            "base_token_type",
-            "maturity_time",
-        ]
-    )
+    display_cols: list[str] = field(default_factory=lambda: cols + ["base_token_type", "maturity_time"])
+    display_cols_with_hpr: list[str] = field(default_factory=lambda: cols + ["hpr", "apr"])
     amount_of_liquidity: int = 10_000_000
     fixed_rate: float = 0.035  # 3.5%
     curve_fee: FixedPoint = FixedPoint("0.01")  # 1%, 10% default
@@ -89,9 +92,7 @@ class ExperimentConfig:  # pylint: disable=too-many-instance-attributes
     starting_variable_rate: FixedPoint = FixedPoint(0)
 
     def calculate_values(self):
-        """Calculate parameters for the experiment."""
         self.term_seconds: int = 60 * 60 * 24 * self.term_days
-
         # used to scale up to the equivalent of a year
         scaling_ratio = 365 / self.term_days
         # this interest rate gives us the same price as a 3.% fixed rate for 1 year
@@ -100,36 +101,46 @@ class ExperimentConfig:  # pylint: disable=too-many-instance-attributes
         self.starting_variable_rate: FixedPoint = FixedPoint(rate_required_for_same_price)
 
 
-def safe_cast(type_: type, value: str):
-    print(f"trying to cast {value} to {type_}")
-    return_value = value
-    if type_ == int:
-        return_value = int(value)
-    if type_ == float:
-        return_value = float(value)
-    if type_ == bool:
-        return_value = value.lower() in {"true", "1", "yes"}
-    if type_ == FixedPoint:
-        return_value = FixedPoint(value)
-    print(f"  result: {value} of {type(return_value)}")
+def safe_cast(_type: type, _value: str, _debug: bool = False):
+    if _debug:
+        print(f"trying to cast {_value} to {_type}")
+    return_value = _value
+    if _type == int:
+        return_value = int(_value)
+    if _type == float:
+        return_value = float(_value)
+    if _type == bool:
+        return_value = _value.lower() in {"true", "1", "yes"}
+    if _type == FixedPoint:
+        return_value = FixedPoint(_value)
+    if _debug:
+        print(f"  result: {_value} of {type(return_value)}")
     return return_value
 
 
 exp = ExperimentConfig()
 field_names = [f.name for f in fields(exp)]
 # update initial values from environment
-for key in os.environ:
-    if key in field_names:
-        print(f"setting experiment config.{key} = {os.environ[key]}")
-        attribute_type = exp.__annotations__[key]  # pylint: disable=no-member
-        setattr(exp, key, safe_cast(attribute_type, os.environ[key]))
+print("=== START IMPORTING ENVIRONMENT ===")
+load_dotenv("parameters.env")
+for key, value in os.environ.items():
+    lkey = key.lower()
+    if lkey in field_names:
+        attribute_type = exp.__annotations__[lkey]  # pylint: disable=no-member
+        setattr(exp, lkey, safe_cast(attribute_type, value))
+        # check that it worked
+        print(f"  {lkey} = {getattr(exp, lkey)}")
+        assert getattr(exp, lkey) == safe_cast(attribute_type, value)
+print("=== DONE IMPORTING ENVIRONMENT ===")
+
 # update calculated values
 exp.calculate_values()
 rng = np.random.default_rng(seed=int(exp.randseed))
 
 # %%
 # set up chain
-chain = LocalChain(LocalChain.Config())
+print(f"Experiment ID {exp.chain_port-10_000}")
+chain = LocalChain(LocalChain.Config(db_port=exp.db_port, chain_port=exp.chain_port))
 
 # %%
 # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
@@ -177,7 +188,7 @@ def get_max(
         A NamedTuple containing the max long in base, max long in bonds, max short in bonds, and max short in base.
     """
     max_long_base = _interactive_hyperdrive.hyperdrive_interface.calc_max_long(budget=_current_base)
-    max_long_shares = _interactive_hyperdrive.hyperdrive_interface.calc_shares_out_given_bonds_in_down(max_long_base)
+    max_long_shares = _interactive_hyperdrive.hyperdrive_interface.calc_shares_in_given_bonds_out_down(max_long_base)
     max_long_bonds = max_long_shares * _share_price
     max_short_bonds = FixedPoint(0)
     try:  # sourcery skip: do-not-use-bare-except
@@ -247,7 +258,12 @@ for day in range(exp.term_days):
                 if trade_size_bonds > MINIMUM_TRANSACTION_AMOUNT:
                     event = rob.open_short(trade_size_bonds)
                     amount_to_trade_base -= event.base_amount
-        print(f"day {day}: {event}")  # type: ignore (PossiblyUnboundVariable)
+        lp_share_price = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.lp_share_price
+        lp_value = larry.wallet.lp_tokens * lp_share_price
+        print(f"day {day}: pnl={float(lp_value-exp.amount_of_liquidity):,.0f}", end="\r", flush=True)
+        if RUNNING_WANDB:
+            wandb.log({"day": day})
+            wandb.log({"lp_value": float(lp_value - exp.amount_of_liquidity)})
         if amount_to_trade_base <= 0:
             break  # end the day if we've traded enough
     chain.advance_time(datetime.timedelta(days=1), create_checkpoints=False)
@@ -281,8 +297,10 @@ display(
 # %%
 # show WETH balance after closing all positions
 pool_info = interactive_hyperdrive.get_pool_state()
-print(f"starting fixed rate is {float(pool_info.fixed_rate.iloc[0]):7.2%}")
-print(f"  ending fixed rate is {float(pool_info.fixed_rate.iloc[-1]):7.2%}")
+starting_fixed_rate = float(pool_info.fixed_rate.iloc[0])
+ending_fixed_rate = float(pool_info.fixed_rate.iloc[-1])
+print(f"starting fixed rate is {starting_fixed_rate:7.2%}")
+print(f"  ending fixed rate is {ending_fixed_rate:7.2%}")
 governance_fees = float(interactive_hyperdrive.hyperdrive_interface.get_gov_fees_accrued(block_number=None))
 current_wallet = deepcopy(interactive_hyperdrive.get_current_wallet())
 
@@ -295,6 +313,12 @@ current_wallet.loc[weth_index, ["pnl"]] = current_wallet.loc[weth_index, ["posit
 current_wallet.loc[:, ["hpr"]] = current_wallet["pnl"] / (current_wallet["position"] - current_wallet["pnl"])
 
 wallet_positions = deepcopy(interactive_hyperdrive.get_wallet_positions())
+weth_changes = wallet_positions.loc[wallet_positions.token_type == "WETH", :].copy()
+weth_changes.loc[:, "absDelta"] = abs(weth_changes["delta"])
+weth_changes.loc[:, "day"] = (weth_changes.timestamp - weth_changes.timestamp.min()).dt.days + 1
+weth_changes_agg = weth_changes[["day", "absDelta"]].groupby("day").sum().reset_index()
+total_volume = weth_changes_agg.absDelta.sum()
+print(f"  total volume is {total_volume:,.0f}")
 wallet_positions_by_block = (
     wallet_positions.loc[wallet_positions.token_type == "WETH", :]
     .pivot(
@@ -323,7 +347,7 @@ wallet_positions_by_block["block_number_delta"] = wallet_positions_by_block["blo
 wallet_positions_by_time["timestamp_delta"] = wallet_positions_by_time["timestamp"].diff().dt.total_seconds().fillna(0)
 average_by_block = np.average(wallet_positions_by_block["rob"], weights=wallet_positions_by_block["block_number_delta"])
 average_by_time = np.average(wallet_positions_by_time["rob"], weights=wallet_positions_by_time["timestamp_delta"])
-if RUNNING_INTERACTIVE:
+if RUNNING_INTERACTIVE or RUNNING_WANDB:
     fig, ax = plt.subplots(2, 1, figsize=(8, 8))
     ax[0].step(wallet_positions_by_block["block_number"], wallet_positions_by_block["rob"], label="rob's WETH spend")
     ax[0].axhline(y=average_by_block, color="red", label=f"weighted average by block = {average_by_block:,.0f}")
@@ -331,7 +355,10 @@ if RUNNING_INTERACTIVE:
     ax[1].step(wallet_positions_by_time["timestamp"], wallet_positions_by_time["rob"], label="rob's WETH spend")
     ax[1].axhline(y=average_by_time, color="red", label=f"weighted average by time = {average_by_time:,.0f}")
     ax[1].legend()
-    plt.show()
+    if RUNNING_INTERACTIVE:
+        plt.show()
+    else:
+        wandb.log({"wallet_positions": wandb.Image(fig)})
 idx = weth_index & (current_wallet.username == "rob")
 current_wallet.loc[idx, ["position"]] = average_by_time  # type: ignore
 current_wallet.loc[idx, ["hpr"]] = (
@@ -383,8 +410,18 @@ current_wallet.loc[:, ["apr"]] = current_wallet.loc[:, ["hpr"]].values * apr_fac
 
 results1 = current_wallet.loc[non_weth_index, exp.display_cols]
 results2 = current_wallet.loc[weth_index, exp.display_cols_with_hpr]
-results1.to_csv("results1.csv", index=False)
-results2.to_csv("results2.csv", index=False)
+wandb.log({"lp_value": results2.loc[results2.username == "larry", "pnl"].values[0]})
+results2.loc[:, "total_volume"] = total_volume
+if RUNNING_WANDB:
+    wandb.log({"results1": wandb.Table(dataframe=results1)})
+    wandb.log({"results2": wandb.Table(dataframe=results2)})
+    wandb.log({"wallet_positions": wandb.Table(dataframe=wallet_positions)})
+    wandb.log({"current_wallet": wandb.Table(dataframe=current_wallet)})
+else:
+    results1.to_parquet("results1.parquet", index=False)
+    results2.to_parquet("results2.parquet", index=False)
+    wallet_positions.to_parquet("wallet_positions.parquet", index=False)
+    current_wallet.to_parquet("current_wallet.parquet", index=False)
 # display final results
 if non_weth_index.sum() > 0:
     print("material non-WETH positions:")
@@ -410,7 +447,6 @@ if RUNNING_INTERACTIVE:
             subset=["hpr", "apr"],
             formatter="{:.2%}",
         )
-        .hide(axis="columns", subset=["base_token_type", "maturity_time"])
     )
 else:
     print(results2)
