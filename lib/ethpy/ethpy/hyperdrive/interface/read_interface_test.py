@@ -74,6 +74,7 @@ class TestHyperdriveReadInterface:
         _ = hyperdrive_read_interface.current_pool_state.variable_rate
         _ = hyperdrive_read_interface.current_pool_state.vault_shares
         _ = hyperdrive_read_interface.calc_open_long(FixedPoint(100))
+        _ = hyperdrive_read_interface.calc_close_long(FixedPoint(100), FixedPoint(1.0))
         _ = hyperdrive_read_interface.calc_open_short(FixedPoint(100))
         _ = hyperdrive_read_interface.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
         _ = hyperdrive_read_interface.calc_max_long(FixedPoint(1000))

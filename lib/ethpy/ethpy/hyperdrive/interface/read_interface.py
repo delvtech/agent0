@@ -38,20 +38,19 @@ from ._mock_contract import (
     _calc_bonds_given_shares_and_rate,
     _calc_bonds_out_given_shares_in_down,
     _calc_checkpoint_id,
+    _calc_close_long,
     _calc_effective_share_reserves,
     _calc_fees_out_given_bonds_in,
     _calc_fees_out_given_shares_in,
     _calc_fixed_rate,
-    _calc_long_amount,
-    _calc_max_buy,
     _calc_max_long,
-    _calc_max_sell,
     _calc_max_short,
+    _calc_open_long,
+    _calc_open_short,
     _calc_position_duration_in_years,
     _calc_shares_in_given_bonds_out_down,
     _calc_shares_in_given_bonds_out_up,
     _calc_shares_out_given_bonds_in_down,
-    _calc_short_deposit,
     _calc_spot_price,
 )
 
@@ -741,7 +740,31 @@ class HyperdriveReadInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_long_amount(pool_state, base_amount)
+        return _calc_open_long(pool_state, base_amount)
+
+    def calc_close_long(
+        self, bond_amount: FixedPoint, normalized_time_remaining: FixedPoint, pool_state: PoolState | None = None
+    ) -> FixedPoint:
+        """Calculates the amount of shares that will be returned after fees for closing a long.
+
+        Arguments
+        ---------
+        bond_amount: FixedPoint
+            The amount of bonds to sell.
+        normalized_time_remaining: FixedPoint
+            The time remaining before the long reaches maturity, normalized such that 0 is at opening and 1 is at maturity.
+        pool_state: PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The amount of shares returned.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_close_long(pool_state, bond_amount, normalized_time_remaining)
 
     def calc_open_short(self, bond_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the amount of base the trader will need to deposit for a short of a given size, after fees.
@@ -764,9 +787,7 @@ class HyperdriveReadInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_short_deposit(
-            pool_state, bond_amount, _calc_spot_price(pool_state), pool_state.pool_info.share_price
-        )
+        return _calc_open_short(pool_state, bond_amount, _calc_spot_price(pool_state), pool_state.pool_info.share_price)
 
     def calc_bonds_out_given_shares_in_down(
         self, amount_in: FixedPoint, pool_state: PoolState | None = None
@@ -875,54 +896,6 @@ class HyperdriveReadInterface:
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_shares_out_given_bonds_in_down(pool_state, amount_in)
-
-    def calc_max_buy(self, pool_state: PoolState | None = None) -> FixedPoint:
-        """Calculates the maximum amount of bonds that can be purchased with the
-        specified reserves. We round so that the max buy amount is
-        underestimated.
-
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
-        to simulate the contract outputs.
-
-        Arguments
-        ---------
-        pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
-
-        Returns
-        -------
-        FixedPoint
-            The maximum buy amount
-        """
-        if pool_state is None:
-            pool_state = self.current_pool_state
-        return _calc_max_buy(pool_state)
-
-    def calc_max_sell(self, minimum_share_reserves: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
-        """Calculates the maximum amount of bonds that can be sold with the
-        specified reserves. We round so that the max sell amount is
-        underestimated.
-
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
-        to simulate the contract outputs.
-
-        Arguments
-        ---------
-        minimum_share_reserves: FixedPoint
-            The minimum share reserves to target
-        pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
-            If not provided, use the current pool state.
-
-        Returns
-        -------
-        FixedPoint
-            The maximum sell amount
-        """
-        if pool_state is None:
-            pool_state = self.current_pool_state
-        return _calc_max_sell(pool_state, minimum_share_reserves)
 
     def calc_fees_out_given_bonds_in(
         self, bonds_in: FixedPoint, maturity_time: int | None = None, pool_state: PoolState | None = None
