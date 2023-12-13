@@ -292,7 +292,7 @@ def log_hyperdrive_crash_report(
         # Don't log anvil dump state to rollbar
         dump_obj["anvil_dump_state"] = None  # type: ignore
         logging_crash_report = json.loads(json.dumps(dump_obj, indent=2, cls=ExtendedJSONEncoder))
-        log_rollbar_exception(trade_result.exception, log_level, logging_crash_report, env_details)
+        log_rollbar_exception(trade_result.exception, log_level, logging_crash_report)
 
 
 def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet | None) -> dict[str, Any]:
