@@ -51,7 +51,7 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-branches
 def build_crash_trade_result(
-    exception: BaseException,
+    exception: Exception,
     interface: HyperdriveInterface,
     agent: HyperdriveAgent | None = None,
     trade_object: Trade[HyperdriveMarketAction] | None = None,
@@ -61,7 +61,7 @@ def build_crash_trade_result(
 
     Arguments
     ---------
-    exception: BaseException
+    exception: Exception
         The exception that was thrown
     interface: HyperdriveInterface
         An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
@@ -293,8 +293,6 @@ def log_hyperdrive_crash_report(
         dump_obj["anvil_dump_state"] = None  # type: ignore
         logging_crash_report = json.loads(json.dumps(dump_obj, indent=2, cls=ExtendedJSONEncoder))
         log_rollbar_exception(trade_result.exception, log_level, logging_crash_report, env_details)
-        if trade_result.orig_exception:
-            log_rollbar_exception(trade_result.orig_exception, log_level, logging_crash_report, env_details)
 
 
 def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet | None) -> dict[str, Any]:

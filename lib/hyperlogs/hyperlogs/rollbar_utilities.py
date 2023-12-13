@@ -69,12 +69,12 @@ def log_rollbar_message(message: str, log_level: int, payload: dict, extra_data:
     rollbar.report_message(message, log_level_name, payload_data=payload, extra_data=extra_data)
 
 
-def log_rollbar_exception(exception: BaseException, log_level: int, payload: dict, extra_data: dict | None = None):
+def log_rollbar_exception(exception: Exception, log_level: int, payload: dict, extra_data: dict | None = None):
     """Logs an exception to the rollbar service.
 
     Arguments
     ---------
-    exception: BaseException
+    exception: Exception
         The exception to log.
     log_level: int
         The logging level enum value.

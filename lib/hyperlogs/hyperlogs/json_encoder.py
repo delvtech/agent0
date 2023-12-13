@@ -52,7 +52,7 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return str(o)
         if isinstance(o, TracebackType):
             return format_tb(o)
-        if isinstance(o, BaseException):
+        if isinstance(o, Exception):
             return repr(o)
         if isinstance(o, Enum):
             return o.name
