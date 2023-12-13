@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+from fixedpointmath import FixedPoint
 from hyperlogs import setup_logging
 from numpy.random._generator import Generator
 
@@ -9,7 +10,10 @@ from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 
 
 def setup_fuzz(
-    log_filename: str, chain_config: LocalChain.Config | None = None, log_to_stdout: bool = False
+    log_filename: str,
+    chain_config: LocalChain.Config | None = None,
+    log_to_stdout: bool = False,
+    fees=True,
 ) -> tuple[LocalChain, int, Generator, InteractiveHyperdrive]:
     """Setup the fuzz experiment.
 
@@ -54,6 +58,14 @@ def setup_fuzz(
     # Parameters for pool initialization.
     # Using a day for checkpoint duration to speed things up
     initial_pool_config = InteractiveHyperdrive.Config(preview_before_trade=True, checkpoint_duration=86400)
+    if not fees:
+        initial_pool_config.curve_fee = FixedPoint(0)
+        initial_pool_config.flat_fee = FixedPoint(0)
+        initial_pool_config.governance_fee = FixedPoint(0)
+        initial_pool_config.max_curve_fee = FixedPoint(0)
+        initial_pool_config.max_flat_fee = FixedPoint(0)
+        initial_pool_config.max_governance_fee = FixedPoint(0)
+
     interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 
     return chain, random_seed, rng, interactive_hyperdrive
