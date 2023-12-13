@@ -13,20 +13,23 @@ NEXT_EXPERIMENT_ID=$(find "$EXPERIMENTS_DIR" -mindepth 1 -maxdepth 1 -type d | w
 EXPERIMENT_DIR="$EXPERIMENTS_DIR/exp_$NEXT_EXPERIMENT_ID"
 mkdir -p "$EXPERIMENT_DIR"
 
-# Set fixed environment variables
-export TERM_DAYS=365
-export AMOUNT_OF_LIQUIDITY=10000000
-export FIXED_RATE=0.035
+# File to store environment variables
+ENV_FILE="$EXPERIMENT_DIR/parameters.env"
 
-# Generate random values within given ranges
-export DAILY_VOLUME_PERCENTAGE_OF_LIQUIDITY=$(awk -v min=0.1 -v max=0.10 'BEGIN{srand(); print min+rand()*(max-min)}')
-export CURVE_FEE=$(awk -v min=0.001 -v max=0.01 'BEGIN{srand(); print min+rand()*(max-min)}')
+# Write fixed environment variables to the file
+echo "TERM_DAYS=365" > "$ENV_FILE"
+echo "AMOUNT_OF_LIQUIDITY=10000000" >> "$ENV_FILE"
+echo "FIXED_RATE=0.035" >> "$ENV_FILE"
 
-export FLAT_FEE=0.0001
-export GOVERNANCE_FEE=0.1
+# Generate random values within given ranges and append them to the file
+echo "DAILY_VOLUME_PERCENTAGE_OF_LIQUIDITY=$(awk -v min=0.1 -v max=0.10 'BEGIN{srand(); print min+rand()*(max-min)}')" >> "$ENV_FILE"
+echo "CURVE_FEE=$(awk -v min=0.001 -v max=0.01 'BEGIN{srand(); print min+rand()*(max-min)}')" >> "$ENV_FILE"
 
-# Set RANDSEED to the experiment ID
-export RANDSEED=$NEXT_EXPERIMENT_ID
+echo "FLAT_FEE=0.0001" >> "$ENV_FILE"
+echo "GOVERNANCE_FEE=0.1" >> "$ENV_FILE"
+
+# Set RANDSEED to the experiment ID and append it to the file
+echo "RANDSEED=$NEXT_EXPERIMENT_ID" >> "$ENV_FILE"
 
 # Run the experiment script within the experiment directory
-(cd "$EXPERIMENT_DIR" && python ../../lib/agent0/examples/interactive_econ.py)
+(cd "$EXPERIMENT_DIR" && source "$ENV_FILE" && python ../../lib/agent0/examples/interactive_econ.py)

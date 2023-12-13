@@ -383,8 +383,8 @@ current_wallet.loc[:, ["apr"]] = current_wallet.loc[:, ["hpr"]].values * apr_fac
 
 results1 = current_wallet.loc[non_weth_index, exp.display_cols]
 results2 = current_wallet.loc[weth_index, exp.display_cols_with_hpr]
-results1.to_csv("results1.csv")
-results2.to_csv("results2.csv")
+results1.to_csv("results1.csv", index=False)
+results2.to_csv("results2.csv", index=False)
 # display final results
 if non_weth_index.sum() > 0:
     print("material non-WETH positions:")
