@@ -49,6 +49,7 @@ from ._mock_contract import (
     _calc_open_long,
     _calc_open_short,
     _calc_position_duration_in_years,
+    _calc_present_value,
     _calc_shares_in_given_bonds_out_down,
     _calc_shares_in_given_bonds_out_up,
     _calc_shares_out_given_bonds_in_down,
@@ -612,7 +613,7 @@ class HyperdriveReadInterface:
         Arguments
         ---------
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -666,7 +667,7 @@ class HyperdriveReadInterface:
         Arguments
         ---------
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -687,7 +688,7 @@ class HyperdriveReadInterface:
         Arguments
         ---------
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -708,7 +709,7 @@ class HyperdriveReadInterface:
         Arguments
         ---------
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -731,7 +732,7 @@ class HyperdriveReadInterface:
         base_amount: FixedPoint
             The amount to spend, in base.
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -755,7 +756,7 @@ class HyperdriveReadInterface:
         normalized_time_remaining: FixedPoint
             The time remaining before the long reaches maturity, normalized such that 0 is at opening and 1 is at maturity.
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -778,7 +779,7 @@ class HyperdriveReadInterface:
         bond_amount: FixedPoint
             The amount to of bonds to short.
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -811,7 +812,7 @@ class HyperdriveReadInterface:
         normalized_time_remaining: FixedPoint
             The time remaining before the short reaches maturity, normalized such that 0 is at opening and 1 is at maturity.
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -840,7 +841,7 @@ class HyperdriveReadInterface:
         amount_in: FixedPoint
             The amount of shares going into the pool.
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -867,7 +868,7 @@ class HyperdriveReadInterface:
         amount_in: FixedPoint
             The amount of bonds to target.
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -894,7 +895,7 @@ class HyperdriveReadInterface:
         amount_in: FixedPoint
             The amount of bonds to target.
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not provided, use the current pool state.
 
         Returns
@@ -921,7 +922,7 @@ class HyperdriveReadInterface:
         amount_in: FixedPoint
             The amount of bonds in.
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not provided, use the current pool state.
 
         Returns
@@ -955,7 +956,7 @@ class HyperdriveReadInterface:
         maturity_time: int, optional
             The maturity timestamp of the open position, in epoch seconds.
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -994,7 +995,7 @@ class HyperdriveReadInterface:
         maturity_time: int, optional
             The maturity timestamp of the open position, in epoch seconds.
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -1036,7 +1037,7 @@ class HyperdriveReadInterface:
         target_shares: FixedPoint, optional
             The target share reserves for the pool
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -1059,7 +1060,7 @@ class HyperdriveReadInterface:
         budget: FixedPoint
             How much money the agent is able to spend, in base.
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -1082,7 +1083,7 @@ class HyperdriveReadInterface:
         budget: FixedPoint
             How much money the agent is able to spend, in base.
         pool_state: PoolState, optional
-            The current state of the pool, which includes block details, pool config, and pool info.
+            The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
         Returns
@@ -1093,3 +1094,21 @@ class HyperdriveReadInterface:
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_max_short(pool_state, budget)
+
+    def calc_present_value(self, pool_state: PoolState | None) -> FixedPoint:
+        """Calculates the present value of LPs capital in the pool.
+
+        Arguments
+        ---------
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The present value of all LP capital in the pool.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_present_value(pool_state, pool_state.block_time)

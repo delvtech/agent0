@@ -271,3 +271,16 @@ def _calc_max_short(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
             )
         )
     )
+
+
+def _calc_present_value(pool_state: PoolState, current_block_timestamp: int) -> FixedPoint:
+    """See API for documentation."""
+    return FixedPoint(
+        scaled_value=int(
+            hyperdrivepy.calculate_present_value(
+                pool_config=fixedpoint_to_pool_config(pool_state.pool_config),
+                pool_info=fixedpoint_to_pool_info(pool_state.pool_info),
+                current_block_timestamp=str(current_block_timestamp),
+            )
+        )
+    )
