@@ -4,10 +4,9 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Union
 
+from chainsync.db.base import Base
 from sqlalchemy import ARRAY, BigInteger, Boolean, DateTime, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
-
-from chainsync.db.base import Base
 
 # pylint: disable=invalid-name
 
@@ -34,7 +33,6 @@ class PoolConfig(Base):
     initial_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     minimum_share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     minimum_transaction_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    precision_threshold: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
     position_duration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     checkpoint_duration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     time_stretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -68,6 +66,7 @@ class PoolInfo(Base):
     block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime)
     share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    zombie_share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     bond_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     lp_total_supply: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)

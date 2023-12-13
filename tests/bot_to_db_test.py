@@ -206,7 +206,6 @@ class TestBotToDb:
             "initial_share_price": _to_unscaled_decimal(FixedPoint("1")),
             "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
             "minimum_transaction_amount": _to_unscaled_decimal(FixedPoint("0.001")),
-            "precision_threshold": int(1e14),
             "position_duration": 604800,  # 1 week
             "checkpoint_duration": 3600,  # 1 hour
             "time_stretch": expected_timestretch,
