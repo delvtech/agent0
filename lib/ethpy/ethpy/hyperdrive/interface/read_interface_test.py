@@ -82,6 +82,7 @@ class TestHyperdriveReadInterface:
         _ = hyperdrive_read_interface.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
         _ = hyperdrive_read_interface.calc_max_long(FixedPoint(1000))
         _ = hyperdrive_read_interface.calc_max_short(FixedPoint(1000))
+        _ = hyperdrive_read_interface.calc_present_value()
 
     def test_deployed_fixed_rate(self, hyperdrive_read_interface: HyperdriveReadInterface):
         """Check that the bonds calculated actually hit the target rate."""
@@ -122,7 +123,6 @@ class TestHyperdriveReadInterface:
             "initial_share_price": FixedPoint("1"),
             "minimum_share_reserves": FixedPoint("10"),
             "minimum_transaction_amount": FixedPoint("0.001"),
-            "precision_threshold": int(1e14),
             "position_duration": 604800,  # 1 week
             "checkpoint_duration": 3600,  # 1 hour
             "time_stretch": expected_timestretch_fp,
@@ -157,6 +157,7 @@ class TestHyperdriveReadInterface:
         expected_pool_info_keys = {
             "share_reserves",
             "bond_reserves",
+            "zombie_share_reserves",
             "lp_total_supply",
             "share_price",
             "share_adjustment",
