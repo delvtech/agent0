@@ -39,6 +39,7 @@ from ._mock_contract import (
     _calc_bonds_out_given_shares_in_down,
     _calc_checkpoint_id,
     _calc_close_long,
+    _calc_close_short,
     _calc_effective_share_reserves,
     _calc_fees_out_given_bonds_in,
     _calc_fees_out_given_shares_in,
@@ -788,6 +789,41 @@ class HyperdriveReadInterface:
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_open_short(pool_state, bond_amount, _calc_spot_price(pool_state), pool_state.pool_info.share_price)
+
+    def calc_close_short(
+        self,
+        bond_amount: FixedPoint,
+        open_share_price: FixedPoint,
+        close_share_price: FixedPoint,
+        normalized_time_remaining: FixedPoint,
+        pool_state: PoolState | None = None,
+    ) -> FixedPoint:
+        """Gets the amount of shares the trader will receive from closing a short.
+
+        Arguments
+        ---------
+        bond_amount: FixedPoint
+            The amount to of bonds provided.
+        open_share_price: FixedPoint
+            The share price when the short was opened.
+        close_share_price: FixedPoint
+            The share price when the short was closed.
+        normalized_time_remaining: FixedPoint
+            The time remaining before the short reaches maturity, normalized such that 0 is at opening and 1 is at maturity.
+        pool_state: PoolState, optional
+            The current state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The amount of shares the trader will receive for closing the short.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_close_short(
+            pool_state, bond_amount, open_share_price, close_share_price, normalized_time_remaining
+        )
 
     def calc_bonds_out_given_shares_in_down(
         self, amount_in: FixedPoint, pool_state: PoolState | None = None

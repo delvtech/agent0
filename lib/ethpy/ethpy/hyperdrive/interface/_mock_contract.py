@@ -98,6 +98,25 @@ def _calc_open_short(
     return FixedPoint(scaled_value=int(short_deposit))
 
 
+def _calc_close_short(
+    pool_state: PoolState,
+    bond_amount: FixedPoint,
+    open_share_price: FixedPoint,
+    close_share_price: FixedPoint,
+    normalized_time_remaining: FixedPoint,
+) -> FixedPoint:
+    """See API for documentation."""
+    short_returns = hyperdrivepy.calculate_close_short(
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
+        str(bond_amount.scaled_value),
+        str(open_share_price.scaled_value),
+        str(close_share_price.scaled_value),
+        str(normalized_time_remaining.scaled_value),
+    )
+    return FixedPoint(scaled_value=int(short_returns))
+
+
 def _calc_bonds_out_given_shares_in_down(
     pool_state: PoolState,
     amount_in: FixedPoint,
