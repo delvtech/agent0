@@ -53,9 +53,9 @@ def _calc_spot_price(pool_state: PoolState):
     return FixedPoint(scaled_value=int(spot_price))
 
 
-def _calc_long_amount(pool_state: PoolState, base_amount: FixedPoint) -> FixedPoint:
+def _calc_open_long(pool_state: PoolState, base_amount: FixedPoint) -> FixedPoint:
     """See API for documentation."""
-    long_amount = hyperdrivepy.get_long_amount(
+    long_amount = hyperdrivepy.calculate_open_long(
         fixedpoint_to_pool_config(pool_state.pool_config),
         fixedpoint_to_pool_info(pool_state.pool_info),
         str(base_amount.scaled_value),
@@ -63,7 +63,20 @@ def _calc_long_amount(pool_state: PoolState, base_amount: FixedPoint) -> FixedPo
     return FixedPoint(scaled_value=int(long_amount))
 
 
-def _calc_short_deposit(
+def _calc_close_long(
+    pool_state: PoolState, bond_amount: FixedPoint, normalized_time_remaining: FixedPoint
+) -> FixedPoint:
+    """See API for documentation."""
+    long_returns = hyperdrivepy.calculate_close_long(
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
+        str(bond_amount.scaled_value),
+        str(normalized_time_remaining.scaled_value),
+    )
+    return FixedPoint(scaled_value=int(long_returns))
+
+
+def _calc_open_short(
     pool_state: PoolState,
     short_amount: FixedPoint,
     spot_price: FixedPoint,
@@ -75,7 +88,7 @@ def _calc_short_deposit(
         open_share_price_str = None
     else:  # convert FixedPoint to string
         open_share_price_str = str(open_share_price.scaled_value)
-    short_deposit = hyperdrivepy.get_short_deposit(
+    short_deposit = hyperdrivepy.calculate_open_short(
         fixedpoint_to_pool_config(pool_state.pool_config),
         fixedpoint_to_pool_info(pool_state.pool_info),
         str(short_amount.scaled_value),
@@ -134,30 +147,6 @@ def _calc_shares_out_given_bonds_in_down(
         fixedpoint_to_pool_config(pool_state.pool_config),
         fixedpoint_to_pool_info(pool_state.pool_info),
         str(amount_in.scaled_value),
-    )
-    return FixedPoint(scaled_value=int(amount_out))
-
-
-def _calc_max_buy(
-    pool_state: PoolState,
-) -> FixedPoint:
-    """See API for documentation."""
-    amount_out = hyperdrivepy.calculate_max_buy(
-        fixedpoint_to_pool_config(pool_state.pool_config),
-        fixedpoint_to_pool_info(pool_state.pool_info),
-    )
-    return FixedPoint(scaled_value=int(amount_out))
-
-
-def _calc_max_sell(
-    pool_state: PoolState,
-    minimum_share_reserves: FixedPoint,
-) -> FixedPoint:
-    """See API for documentation."""
-    amount_out = hyperdrivepy.calculate_max_sell(
-        fixedpoint_to_pool_config(pool_state.pool_config),
-        fixedpoint_to_pool_info(pool_state.pool_info),
-        str(minimum_share_reserves.scaled_value),
     )
     return FixedPoint(scaled_value=int(amount_out))
 
