@@ -18,3 +18,5 @@ from .ERC20MintableContract import *
 from .ERC20MintableTypes import *
 from .MockERC4626Contract import *
 from .MockERC4626Types import *
+from .ERC4626HyperdriveCoreDeployerContract import *
+from .ERC4626HyperdriveCoreDeployerTypes import *
