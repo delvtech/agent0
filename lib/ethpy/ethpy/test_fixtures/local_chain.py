@@ -173,7 +173,6 @@ def launch_local_hyperdrive_pool(
         initial_share_price.scaled_value,
         minimum_share_reserves.scaled_value,
         minimum_transaction_amount.scaled_value,
-        precision_threshold,
         position_duration,
         checkpoint_duration,
         time_stretch.scaled_value,
