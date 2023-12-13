@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import copy
 import os
 from typing import TYPE_CHECKING, cast
@@ -174,6 +175,22 @@ class HyperdriveInterface:
 
         Each time this is accessed we use an RPC to check that the pool state is synced with the current block.
         """
+        # TODO implement a better fix here, this won't be able to utilize caching in async modes
+        is_in_event_loop = False
+        # The function below will throw a runtime error if this function is being called synchronously.
+        # NOTE this check method will throw a false positive when running in an inherent async environment
+        # e.g., Jupyter notebooks. The result of this is that there will be no caching.
+        try:
+            asyncio.get_event_loop()
+            is_in_event_loop = True
+        except RuntimeError:
+            pass
+
+        # Only use cached version if we're running synchronously
+        # Otherwise, we always grab the pool state from the chain
+        if is_in_event_loop:
+            current_block = self.get_current_block()
+            return self.get_hyperdrive_state(current_block)
         _ = self._ensure_current_state()
         return self._current_pool_state
 
