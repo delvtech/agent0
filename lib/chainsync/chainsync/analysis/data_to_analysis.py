@@ -194,7 +194,7 @@ def data_to_analysis(
         # We can set a sample rate by doing batch processing on this function
         # since we only get the current wallet for the end_block
         wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
-        pnl_df = calc_closeout_pnl(wallet_pnl, pool_info, hyperdrive_contract, hyperdrive_interface)
+        # pnl_df = calc_closeout_pnl(wallet_pnl, pool_info, hyperdrive_contract, hyperdrive_interface)
 
         # This sets the pnl to the current wallet dataframe, but there may be scaling issues here.
         # This is because the `CurrentWallet` table has one entry per change in wallet position,
@@ -207,7 +207,7 @@ def data_to_analysis(
         # the sampling rate. Otherwise, the e.g., ticker updates will also be on the sampling rate (won't miss data,
         # just lower frequency updates)
         # TODO do scaling tests to see the limit of this
-        wallet_pnl["pnl"] = pnl_df
+        wallet_pnl["pnl"] = np.nan
         # Add wallet_pnl to the database
         _df_to_db(wallet_pnl, WalletPNL, db_session)
 
