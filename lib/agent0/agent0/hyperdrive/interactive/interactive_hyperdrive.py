@@ -110,8 +110,6 @@ class InteractiveHyperdrive:
             The minimum share reserves
         minimum_transaction_amount: FixedPoint
             The minimum amount of tokens that a position can be opened or closed with.
-        precision_threshold: int
-            The amount of precision expected to lose due to exponentiation implementation.
         position_duration: int
             The duration of a position prior to maturity (in seconds)
         checkpoint_duration: int
@@ -146,7 +144,6 @@ class InteractiveHyperdrive:
         initial_share_price: FixedPoint = FixedPoint(1)
         minimum_share_reserves: FixedPoint = FixedPoint(10)
         minimum_transaction_amount: FixedPoint = FixedPoint("0.001")
-        precision_threshold: int = int(1e14)  # TODO this likely should be FixedPoint
         position_duration: int = 604800  # 1 week
         checkpoint_duration: int = 3600  # 1 hour
         time_stretch: FixedPoint | None = None
@@ -417,7 +414,6 @@ class InteractiveHyperdrive:
             config.initial_share_price.scaled_value,
             config.minimum_share_reserves.scaled_value,
             config.minimum_transaction_amount.scaled_value,
-            config.precision_threshold,
             config.position_duration,
             config.checkpoint_duration,
             config.time_stretch.scaled_value,

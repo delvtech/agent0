@@ -199,7 +199,6 @@ def fixedpoint_to_pool_config(
         initialSharePrice=dict_pool_config["initialSharePrice"],
         minimumShareReserves=dict_pool_config["minimumShareReserves"],
         minimumTransactionAmount=dict_pool_config["minimumTransactionAmount"],
-        precisionThreshold=dict_pool_config["precisionThreshold"],
         positionDuration=dict_pool_config["positionDuration"],
         checkpointDuration=dict_pool_config["checkpointDuration"],
         timeStretch=dict_pool_config["timeStretch"],

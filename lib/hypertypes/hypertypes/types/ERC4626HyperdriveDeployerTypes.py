@@ -39,7 +39,6 @@ class PoolConfig:
     initialSharePrice: int
     minimumShareReserves: int
     minimumTransactionAmount: int
-    precisionThreshold: int
     positionDuration: int
     checkpointDuration: int
     timeStretch: int

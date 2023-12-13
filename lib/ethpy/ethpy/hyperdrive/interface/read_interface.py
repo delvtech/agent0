@@ -1095,7 +1095,7 @@ class HyperdriveReadInterface:
             pool_state = self.current_pool_state
         return _calc_max_short(pool_state, budget)
 
-    def calc_present_value(self, pool_state: PoolState | None) -> FixedPoint:
+    def calc_present_value(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculates the present value of LPs capital in the pool.
 
         Arguments

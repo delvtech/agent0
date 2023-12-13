@@ -32,6 +32,7 @@ class PoolInfoFP:
 
     share_reserves: FixedPoint
     share_adjustment: FixedPoint
+    zombie_share_reserves: FixedPoint
     bond_reserves: FixedPoint
     lp_total_supply: FixedPoint
     share_price: FixedPoint
@@ -55,7 +56,6 @@ class PoolConfigFP:
     initial_share_price: FixedPoint
     minimum_share_reserves: FixedPoint
     minimum_transaction_amount: FixedPoint
-    precision_threshold: int
     position_duration: int
     checkpoint_duration: int
     time_stretch: FixedPoint
