@@ -27,6 +27,8 @@ def setup_fuzz(
     log_to_stdout: bool, optional
         If True, log to stdout in addition to a file.
         Defaults to False.
+    fees: bool, optional
+        If False, will turn off fees when deploying hyperdrive. Defaults to True.
 
     Returns
     -------
