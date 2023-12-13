@@ -51,7 +51,7 @@ def initialize_rollbar(environment_name: str) -> bool:
     return log_to_rollbar
 
 
-def log_rollbar_message(message: str, log_level: int, payload: dict, extra_data: dict | None = None):
+def log_rollbar_message(message: str, log_level: int, extra_data: dict | None = None):
     """Logs a message to the rollbar service.
 
     Arguments
@@ -60,16 +60,14 @@ def log_rollbar_message(message: str, log_level: int, payload: dict, extra_data:
         The message to send to rollbar.
     log_level: int
         The logging level enum value.
-    payload: dict
-        Payload data to send to rollbar.  This is usually informaion about the error itself.
     extra_data: dict, optional.
-        Extra data to send to rollbar.  This is usually evironment or metadata.
+        Extra data to send to rollbar.  This is usually the custom crash report data.
     """
     log_level_name = logging.getLevelName(log_level)
-    rollbar.report_message(message, log_level_name, payload_data=payload, extra_data=extra_data)
+    rollbar.report_message(message, log_level_name, extra_data=extra_data)
 
 
-def log_rollbar_exception(exception: Exception, log_level: int, payload: dict, extra_data: dict | None = None):
+def log_rollbar_exception(exception: Exception, log_level: int, extra_data: dict | None = None):
     """Logs an exception to the rollbar service.
 
     Arguments
@@ -78,13 +76,11 @@ def log_rollbar_exception(exception: Exception, log_level: int, payload: dict, e
         The exception to log.
     log_level: int
         The logging level enum value.
-    payload: dict, optional.
-        Payload data to send to rollbar.  This is usually informaion about the error itself.
     extra_data: dict, optional.
-        Extra data to send to rollbar.  This is usually evironment or metadata.
+        Extra data to send to rollbar. This usually contains the custom crash report json
     """
     log_level_name = logging.getLevelName(log_level)
     try:
         raise exception
     except Exception:  # pylint: disable=broad-exception-caught
-        rollbar.report_exc_info(sys.exc_info(), log_level_name, payload_data=payload, extra_data=extra_data)
+        rollbar.report_exc_info(sys.exc_info(), log_level_name, extra_data=extra_data)
