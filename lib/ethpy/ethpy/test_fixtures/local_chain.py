@@ -160,7 +160,6 @@ def launch_local_hyperdrive_pool(
     initial_share_price = FixedPoint(1)
     minimum_share_reserves = FixedPoint(10)
     minimum_transaction_amount = FixedPoint("0.001")
-    precision_threshold = int(1e14)
     position_duration = 604800  # 1 week
     checkpoint_duration = 3600  # 1 hour
     time_stretch = FixedPoint(1) / (
