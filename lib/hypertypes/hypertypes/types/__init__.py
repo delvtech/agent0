@@ -6,12 +6,12 @@ https://github.com/delvtech/pypechain"""
 from .ERC4626Target0DeployerContract import *
 from .ERC4626Target0DeployerTypes import *
 from .ForwarderFactoryContract import *
-from .ERC4626HyperdriveFactoryContract import *
-from .ERC4626HyperdriveFactoryTypes import *
 from .IERC4626HyperdriveContract import *
 from .IERC4626HyperdriveTypes import *
 from .ERC4626HyperdriveDeployerContract import *
 from .ERC4626HyperdriveDeployerTypes import *
+from .HyperdriveFactoryContract import *
+from .HyperdriveFactoryTypes import *
 from .ERC4626Target1DeployerContract import *
 from .ERC4626Target1DeployerTypes import *
 from .ERC20MintableContract import *
