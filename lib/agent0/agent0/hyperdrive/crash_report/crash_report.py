@@ -154,8 +154,9 @@ def build_crash_trade_result(
         trade_result.raw_checkpoint = None
     if trade_result.raw_checkpoint is not None and trade_result.block_timestamp is not None:
         trade_result.checkpoint_info = asdict(pool_state.checkpoint)
-        trade_result.checkpoint_info["block_number"] = trade_result.block_number
-        trade_result.checkpoint_info["timestamp"] = datetime.fromtimestamp(int(trade_result.block_timestamp))
+        trade_result.checkpoint_info["checkpoint_id"] = interface.calc_checkpoint_id(
+            block_timestamp=pool_state.block.get("timestamp")
+        )
     else:
         trade_result.checkpoint_info = None
 
