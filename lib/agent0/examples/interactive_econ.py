@@ -77,7 +77,7 @@ class ExperimentConfig:  # pylint: disable=too-many-instance-attributes,missing-
     db_port: int = 5_433
     chain_port: int = 10_000
     daily_volume_percentage_of_liquidity: float = 0.01  # 1%
-    term_days: int = 365
+    term_days: int = 20  # 20 days for quick testing purposes. actual experiment are 365 days.
     float_fmt: str = ",.0f"
     display_cols: list[str] = field(default_factory=lambda: cols + ["base_token_type", "maturity_time"])
     display_cols_with_hpr: list[str] = field(default_factory=lambda: cols + ["hpr", "apr"])
@@ -90,6 +90,7 @@ class ExperimentConfig:  # pylint: disable=too-many-instance-attributes,missing-
     term_seconds: int = 0
     starting_fixed_rate: FixedPoint = FixedPoint(0)
     starting_variable_rate: FixedPoint = FixedPoint(0)
+    calc_pnl: bool = False
 
     def calculate_values(self):
         self.term_seconds: int = 60 * 60 * 24 * self.term_days
@@ -153,6 +154,7 @@ config = InteractiveHyperdrive.Config(
     curve_fee=exp.curve_fee,
     flat_fee=exp.flat_fee,
     governance_lp_fee=exp.governance_fee,
+    calc_pnl=exp.calc_pnl,
 )
 MINIMUM_TRANSACTION_AMOUNT = config.minimum_transaction_amount
 for k, v in config.__dict__.items():
@@ -410,13 +412,13 @@ current_wallet.loc[:, ["apr"]] = current_wallet.loc[:, ["hpr"]].values * apr_fac
 
 results1 = current_wallet.loc[non_weth_index, exp.display_cols]
 results2 = current_wallet.loc[weth_index, exp.display_cols_with_hpr]
-wandb.log({"lp_value": results2.loc[results2.username == "larry", "pnl"].values[0]})
 results2.loc[:, "total_volume"] = total_volume
 if RUNNING_WANDB:
     wandb.log({"results1": wandb.Table(dataframe=results1)})
     wandb.log({"results2": wandb.Table(dataframe=results2)})
     wandb.log({"wallet_positions": wandb.Table(dataframe=wallet_positions)})
     wandb.log({"current_wallet": wandb.Table(dataframe=current_wallet)})
+    wandb.log({"lp_value": results2.loc[results2.username == "larry", "pnl"].values[0]})
 else:
     results1.to_parquet("results1.parquet", index=False)
     results2.to_parquet("results2.parquet", index=False)
