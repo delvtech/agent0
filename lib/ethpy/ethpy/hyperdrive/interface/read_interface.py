@@ -18,7 +18,7 @@ from ethpy.hyperdrive.transactions import (
 )
 from fixedpointmath import FixedPoint
 from hypertypes import IERC4626HyperdriveContract
-from hypertypes.types import ERC20MintableContract, ERC4626HyperdriveFactoryContract, MockERC4626Contract
+from hypertypes.types import ERC20MintableContract, HyperdriveFactoryContract, MockERC4626Contract
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.base import MarketType, Trade
@@ -123,9 +123,9 @@ class HyperdriveReadInterface:
         self.yield_contract: MockERC4626Contract = MockERC4626Contract.factory(w3=self.web3)(
             address=web3.to_checksum_address(self.yield_address)
         )
-        self.hyperdrive_factory_contract: ERC4626HyperdriveFactoryContract = ERC4626HyperdriveFactoryContract.factory(
-            w3=self.web3
-        )(web3.to_checksum_address(self.addresses.hyperdrive_factory))
+        self.hyperdrive_factory_contract: HyperdriveFactoryContract = HyperdriveFactoryContract.factory(w3=self.web3)(
+            web3.to_checksum_address(self.addresses.hyperdrive_factory)
+        )
         # Fill in the initial state cache.
         self._current_pool_state = self.get_hyperdrive_state()
         self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
