@@ -75,4 +75,3 @@ class CheckpointFP:
     """Checkpoint struct."""
 
     share_price: FixedPoint
-    exposure: FixedPoint
