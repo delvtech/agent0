@@ -20,8 +20,8 @@ from .hyperdrive_read_interface import HyperdriveReadInterface
 # pylint: disable=redefined-outer-name
 
 
-class TestHyperdriveInterface:
-    """Tests for the HyperdriveInterface api class."""
+class TestHyperdriveReadInterface:
+    """Tests for the HyperdriveReadInterface api class."""
 
     def test_pool_config(self, hyperdrive_interface: HyperdriveReadInterface):
         """Checks that the Hyperdrive pool_config matches what is returned from the smart contract."""
