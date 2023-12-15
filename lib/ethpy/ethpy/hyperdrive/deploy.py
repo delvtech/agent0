@@ -19,6 +19,7 @@ from hypertypes.types import (
     ERC4626Target0DeployerContract,
     ERC4626Target1DeployerContract,
     ForwarderFactoryContract,
+    IERC4626HyperdriveContract,
     MockERC4626Contract,
 )
 from hypertypes.types.ERC4626HyperdriveFactoryTypes import FactoryConfig
@@ -142,7 +143,7 @@ def deploy_hyperdrive_from_factory(
             mock_hyperdrive=hyperdrive_checksum_address,
             mock_hyperdrive_math=None,
         ),
-        hyperdrive_contract=web3.eth.contract(address=hyperdrive_checksum_address, abi=abis["IERC4626Hyperdrive"]),
+        hyperdrive_contract=IERC4626HyperdriveContract.factory(web3)(hyperdrive_checksum_address),
         hyperdrive_factory_contract=factory_contract,
         base_token_contract=base_token_contract,
         deploy_block_number=web3.eth.block_number,
