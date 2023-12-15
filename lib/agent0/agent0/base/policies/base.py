@@ -39,11 +39,6 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         rng: Generator | None = None
         slippage_tolerance: FixedPoint | None = None
 
-        def __post_init__(self):
-            if self.rng is None:
-                # If seed is None, should just be random
-                self.rng = default_rng(self.rng_seed)
-
     def __init__(self, policy_config: Config):
         """Initialize the policy.
 
@@ -53,9 +48,11 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
             The configuration for the policy.
         """
         self.slippage_tolerance = policy_config.slippage_tolerance
-        # config.rng should be set in post_init in config
-        assert policy_config.rng is not None
-        self.rng: Generator = policy_config.rng
+        # Generate rng if not set in config
+        if policy_config.rng is None:
+            self.rng: Generator = default_rng(policy_config.rng_seed)
+        else:
+            self.rng: Generator = policy_config.rng
 
     @property
     def name(self) -> str:

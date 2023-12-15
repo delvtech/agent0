@@ -31,6 +31,7 @@ def trade_if_new_block(
     log_to_rollbar: bool,
     last_executed_block: int,
     liquidate: bool,
+    randomize_liquidation: bool,
 ) -> int:
     """Execute trades if there is a new block.
 
@@ -55,6 +56,8 @@ def trade_if_new_block(
         The block number when a trade last happened.
     liquidate: bool
         If set, will ignore all policy settings and liquidate all open positions.
+    randomize_liquidation: bool
+        If set, will randomize the order of liquidation trades
 
     Returns
     -------
@@ -79,7 +82,9 @@ def trade_if_new_block(
         )
         # To avoid jumbled print statements due to asyncio, we handle all logging and crash reporting
         # here, with inner functions returning trade results.
-        trade_results: list[TradeResult] = asyncio.run(async_execute_agent_trades(interface, agent_accounts, liquidate))
+        trade_results: list[TradeResult] = asyncio.run(
+            async_execute_agent_trades(interface, agent_accounts, liquidate, randomize_liquidation)
+        )
         last_executed_block = latest_block_number
 
         check_result(

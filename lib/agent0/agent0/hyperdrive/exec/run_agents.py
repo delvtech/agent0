@@ -261,6 +261,7 @@ def run_agents(
             environment_config.log_to_rollbar,
             last_executed_block,
             liquidate,
+            environment_config.randomize_liquidation,
         )
         if minimum_avg_agent_base is not None:
             if (
