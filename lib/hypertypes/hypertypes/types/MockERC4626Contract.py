@@ -17,110 +17,33 @@ https://github.com/delvtech/pypechain"""
 # This file is bound to get very long depending on contract sizes.
 # pylint: disable=too-many-lines
 
+# methods are overriden with specific arguments instead of generic *args, **kwargs
+# pylint: disable=arguments-differ
+
 from __future__ import annotations
 
-from dataclasses import fields, is_dataclass
-from typing import Any, Iterable, Sequence, Tuple, Type, TypeVar, cast
+from typing import Any, Iterable, NamedTuple, Sequence, Type, cast
 
+from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
 from typing_extensions import Self
 from web3 import Web3
 from web3._utils.filters import LogFilter
-from web3.contract.contract import Contract, ContractEvent, ContractEvents, ContractFunction, ContractFunctions
+from web3.contract.contract import (
+    Contract,
+    ContractConstructor,
+    ContractEvent,
+    ContractEvents,
+    ContractFunction,
+    ContractFunctions,
+)
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, EventData, TxParams
 
-T = TypeVar("T")
+from .utilities import dataclass_to_tuple, rename_returned_types
 
 structs = {}
-
-
-def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
-    """
-    Converts a tuple (including nested tuples) to a dataclass instance.  If cls is not a dataclass,
-    then the data will just be passed through this function.
-
-    Arguments
-    ---------
-    cls: type[T]
-        The dataclass type to which the tuple data is to be converted.
-    tuple_data: Any | Tuple[Any, ...]
-        A tuple (or nested tuple) of values to convert into a dataclass instance.
-
-    Returns
-    -------
-    T
-        Either an instance of cls populated with data from tuple_data or tuple_data itself.
-    """
-    if not is_dataclass(cls):
-        return cast(T, tuple_data)
-
-    field_types = {field.name: field.type for field in fields(cls)}
-    field_values = {}
-
-    for (field_name, field_type), value in zip(field_types.items(), tuple_data):
-        field_type = structs.get(field_type, field_type)
-        if is_dataclass(field_type):
-            # Recursively convert nested tuples to nested dataclasses
-            field_values[field_name] = tuple_to_dataclass(field_type, value)
-        elif isinstance(value, tuple) and not getattr(field_type, "_name", None) == "Tuple":
-            # If it's a tuple and the field is not intended to be a tuple, assume it's a nested dataclass
-            field_values[field_name] = tuple_to_dataclass(field_type, value)
-        else:
-            # Otherwise, set the primitive value directly
-            field_values[field_name] = value
-
-    return cls(**field_values)
-
-
-def dataclass_to_tuple(instance: Any) -> Any:
-    """Convert a dataclass instance to a tuple, handling nested dataclasses.
-    If the input is not a dataclass, return the original value.
-    """
-    if not is_dataclass(instance):
-        return instance
-
-    def convert_value(value: Any) -> Any:
-        """Convert nested dataclasses to tuples recursively, or return the original value."""
-        if is_dataclass(value):
-            return dataclass_to_tuple(value)
-        return value
-
-    return tuple(convert_value(getattr(instance, field.name)) for field in fields(instance))
-
-
-def rename_returned_types(return_types, raw_values) -> Any:
-    """_summary_
-
-    Parameters
-    ----------
-    return_types : _type_
-        _description_
-    raw_values : _type_
-        _description_
-
-    Returns
-    -------
-    tuple
-        _description_
-    """
-    # cover case of multiple return values
-    if isinstance(return_types, list):
-        # Ensure raw_values is a tuple for consistency
-        if not isinstance(raw_values, list):
-            raw_values = (raw_values,)
-
-        # Convert the tuple to the dataclass instance using the utility function
-        converted_values = tuple(
-            tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values)
-        )
-
-        return converted_values
-
-    # cover case of single return value
-    converted_value = tuple_to_dataclass(return_types, raw_values)
-    return converted_value
 
 
 class MockERC4626DOMAIN_SEPARATORContractFunction(ContractFunction):
@@ -147,7 +70,7 @@ class MockERC4626DOMAIN_SEPARATORContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bytes, rename_returned_types(return_types, raw_values))
+        return cast(bytes, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626AllowanceContractFunction(ContractFunction):
@@ -174,7 +97,7 @@ class MockERC4626AllowanceContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626ApproveContractFunction(ContractFunction):
@@ -201,7 +124,7 @@ class MockERC4626ApproveContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bool, rename_returned_types(return_types, raw_values))
+        return cast(bool, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626AssetContractFunction(ContractFunction):
@@ -228,7 +151,7 @@ class MockERC4626AssetContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626AuthorityContractFunction(ContractFunction):
@@ -255,7 +178,7 @@ class MockERC4626AuthorityContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626BalanceOfContractFunction(ContractFunction):
@@ -282,7 +205,7 @@ class MockERC4626BalanceOfContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626CanCallContractFunction(ContractFunction):
@@ -309,7 +232,7 @@ class MockERC4626CanCallContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bool, rename_returned_types(return_types, raw_values))
+        return cast(bool, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626ConvertToAssetsContractFunction(ContractFunction):
@@ -336,7 +259,7 @@ class MockERC4626ConvertToAssetsContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626ConvertToSharesContractFunction(ContractFunction):
@@ -363,7 +286,7 @@ class MockERC4626ConvertToSharesContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626DecimalsContractFunction(ContractFunction):
@@ -390,7 +313,7 @@ class MockERC4626DecimalsContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626DepositContractFunction(ContractFunction):
@@ -417,7 +340,7 @@ class MockERC4626DepositContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626DoesRoleHaveCapabilityContractFunction(ContractFunction):
@@ -444,7 +367,7 @@ class MockERC4626DoesRoleHaveCapabilityContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bool, rename_returned_types(return_types, raw_values))
+        return cast(bool, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626DoesUserHaveRoleContractFunction(ContractFunction):
@@ -471,7 +394,7 @@ class MockERC4626DoesUserHaveRoleContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bool, rename_returned_types(return_types, raw_values))
+        return cast(bool, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626GetRateContractFunction(ContractFunction):
@@ -498,7 +421,7 @@ class MockERC4626GetRateContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626GetRolesWithCapabilityContractFunction(ContractFunction):
@@ -525,7 +448,7 @@ class MockERC4626GetRolesWithCapabilityContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bytes, rename_returned_types(return_types, raw_values))
+        return cast(bytes, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626GetTargetCustomAuthorityContractFunction(ContractFunction):
@@ -552,7 +475,7 @@ class MockERC4626GetTargetCustomAuthorityContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626GetUserRolesContractFunction(ContractFunction):
@@ -579,7 +502,7 @@ class MockERC4626GetUserRolesContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bytes, rename_returned_types(return_types, raw_values))
+        return cast(bytes, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626IsCapabilityPublicContractFunction(ContractFunction):
@@ -606,7 +529,7 @@ class MockERC4626IsCapabilityPublicContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bool, rename_returned_types(return_types, raw_values))
+        return cast(bool, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626IsCompetitionModeContractFunction(ContractFunction):
@@ -633,7 +556,7 @@ class MockERC4626IsCompetitionModeContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bool, rename_returned_types(return_types, raw_values))
+        return cast(bool, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626MaxDepositContractFunction(ContractFunction):
@@ -660,7 +583,7 @@ class MockERC4626MaxDepositContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626MaxMintContractFunction(ContractFunction):
@@ -687,7 +610,7 @@ class MockERC4626MaxMintContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626MaxRedeemContractFunction(ContractFunction):
@@ -714,7 +637,7 @@ class MockERC4626MaxRedeemContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626MaxWithdrawContractFunction(ContractFunction):
@@ -741,7 +664,7 @@ class MockERC4626MaxWithdrawContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626MintContractFunction(ContractFunction):
@@ -768,7 +691,7 @@ class MockERC4626MintContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626NameContractFunction(ContractFunction):
@@ -795,7 +718,7 @@ class MockERC4626NameContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626NoncesContractFunction(ContractFunction):
@@ -822,7 +745,7 @@ class MockERC4626NoncesContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626OwnerContractFunction(ContractFunction):
@@ -849,7 +772,7 @@ class MockERC4626OwnerContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626PermitContractFunction(ContractFunction):
@@ -906,7 +829,7 @@ class MockERC4626PreviewDepositContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626PreviewMintContractFunction(ContractFunction):
@@ -933,7 +856,7 @@ class MockERC4626PreviewMintContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626PreviewRedeemContractFunction(ContractFunction):
@@ -960,7 +883,7 @@ class MockERC4626PreviewRedeemContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626PreviewWithdrawContractFunction(ContractFunction):
@@ -987,7 +910,7 @@ class MockERC4626PreviewWithdrawContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626RedeemContractFunction(ContractFunction):
@@ -1014,7 +937,7 @@ class MockERC4626RedeemContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626SetAuthorityContractFunction(ContractFunction):
@@ -1173,7 +1096,7 @@ class MockERC4626SymbolContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626TotalAssetsContractFunction(ContractFunction):
@@ -1200,7 +1123,7 @@ class MockERC4626TotalAssetsContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626TotalSupplyContractFunction(ContractFunction):
@@ -1227,7 +1150,7 @@ class MockERC4626TotalSupplyContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626TransferContractFunction(ContractFunction):
@@ -1254,7 +1177,7 @@ class MockERC4626TransferContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bool, rename_returned_types(return_types, raw_values))
+        return cast(bool, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626TransferFromContractFunction(ContractFunction):
@@ -1281,7 +1204,7 @@ class MockERC4626TransferFromContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bool, rename_returned_types(return_types, raw_values))
+        return cast(bool, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626TransferOwnershipContractFunction(ContractFunction):
@@ -1330,7 +1253,7 @@ class MockERC4626WithdrawContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockERC4626ContractFunctions(ContractFunctions):
@@ -3189,16 +3112,52 @@ class MockERC4626Contract(Contract):
 
     functions: MockERC4626ContractFunctions
 
+    class ConstructorArgs(NamedTuple):
+        """Arguments to pass the contract's constructor function."""
+
+        asset: str
+
+        name: str
+
+        symbol: str
+
+        initialRate: int
+
+        admin: str
+
+        isCompetitionMode: bool
+
     @classmethod
-    def deploy(cls, w3: Web3, signer: ChecksumAddress) -> Self:
+    def constructor(cls, asset: str, name: str, symbol: str, initialRate: int, admin: str, isCompetitionMode: bool) -> ContractConstructor:  # type: ignore
+        """Creates a transaction with the contract's constructor function.
+
+        Parameters
+        ----------
+
+        w3 : Web3
+            A web3 instance.
+        account : LocalAccount
+            The account to use to deploy the contract.
+
+        Returns
+        -------
+        Self
+            A deployed instance of the contract.
+
+        """
+
+        return super().constructor(asset, name, symbol, initialRate, admin, isCompetitionMode)
+
+    @classmethod
+    def deploy(cls, w3: Web3, account: LocalAccount | ChecksumAddress, constructorArgs: ConstructorArgs) -> Self:
         """Deploys and instance of the contract.
 
         Parameters
         ----------
         w3 : Web3
             A web3 instance.
-        signer : ChecksumAddress
-            The address to deploy the contract from.
+        account : LocalAccount
+            The account to use to deploy the contract.
 
         Returns
         -------
@@ -3206,13 +3165,47 @@ class MockERC4626Contract(Contract):
             A deployed instance of the contract.
         """
         deployer = cls.factory(w3=w3)
-        tx_hash = deployer.constructor().transact({"from": signer})
+        constructor_fn = deployer.constructor(*constructorArgs)
+
+        # if an address is supplied, try to use a web3 default account
+        if isinstance(account, str):
+            tx_hash = constructor_fn.transact({"from": account})
+            tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+
+            deployed_contract = deployer(address=tx_receipt.contractAddress)  # type: ignore
+            return deployed_contract
+
+        # otherwise use the account provided.
+        deployment_tx = constructor_fn.build_transaction()
+        current_nonce = w3.eth.get_transaction_count(account.address)
+        deployment_tx.update({"nonce": current_nonce})
+
+        # Sign the transaction with local account private key
+        signed_tx = account.sign_transaction(deployment_tx)
+
+        # Send the signed transaction and wait for receipt
+        tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
         tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+
         deployed_contract = deployer(address=tx_receipt.contractAddress)  # type: ignore
         return deployed_contract
 
     @classmethod
     def factory(cls, w3: Web3, class_name: str | None = None, **kwargs: Any) -> Type[Self]:
+        """Deploys and instance of the contract.
+
+        Parameters
+        ----------
+        w3 : Web3
+            A web3 instance.
+        class_name: str | None
+            The instance class name.
+
+        Returns
+        -------
+        Self
+            A deployed instance of the contract.
+        """
         contract = super().factory(w3, class_name, **kwargs)
         contract.functions = MockERC4626ContractFunctions(mockerc4626_abi, w3, None)
 

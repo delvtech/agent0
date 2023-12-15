@@ -17,116 +17,38 @@ https://github.com/delvtech/pypechain"""
 # This file is bound to get very long depending on contract sizes.
 # pylint: disable=too-many-lines
 
+# methods are overriden with specific arguments instead of generic *args, **kwargs
+# pylint: disable=arguments-differ
+
 from __future__ import annotations
 
-from dataclasses import fields, is_dataclass
-from typing import Any, Iterable, NamedTuple, Sequence, Tuple, Type, TypeVar, cast
+from typing import Any, Iterable, NamedTuple, Sequence, Type, cast
 
+from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
 from typing_extensions import Self
 from web3 import Web3
 from web3._utils.filters import LogFilter
-from web3.contract.contract import Contract, ContractEvent, ContractEvents, ContractFunction, ContractFunctions
+from web3.contract.contract import (
+    Contract,
+    ContractConstructor,
+    ContractEvent,
+    ContractEvents,
+    ContractFunction,
+    ContractFunctions,
+)
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, EventData, TxParams
 
 from .ERC4626HyperdriveFactoryTypes import FactoryConfig, Fees, PoolConfig
-
-T = TypeVar("T")
+from .utilities import dataclass_to_tuple, rename_returned_types
 
 structs = {
     "Fees": Fees,
     "FactoryConfig": FactoryConfig,
     "PoolConfig": PoolConfig,
 }
-
-
-def tuple_to_dataclass(cls: type[T], tuple_data: Any | Tuple[Any, ...]) -> T:
-    """
-    Converts a tuple (including nested tuples) to a dataclass instance.  If cls is not a dataclass,
-    then the data will just be passed through this function.
-
-    Arguments
-    ---------
-    cls: type[T]
-        The dataclass type to which the tuple data is to be converted.
-    tuple_data: Any | Tuple[Any, ...]
-        A tuple (or nested tuple) of values to convert into a dataclass instance.
-
-    Returns
-    -------
-    T
-        Either an instance of cls populated with data from tuple_data or tuple_data itself.
-    """
-    if not is_dataclass(cls):
-        return cast(T, tuple_data)
-
-    field_types = {field.name: field.type for field in fields(cls)}
-    field_values = {}
-
-    for (field_name, field_type), value in zip(field_types.items(), tuple_data):
-        field_type = structs.get(field_type, field_type)
-        if is_dataclass(field_type):
-            # Recursively convert nested tuples to nested dataclasses
-            field_values[field_name] = tuple_to_dataclass(field_type, value)
-        elif isinstance(value, tuple) and not getattr(field_type, "_name", None) == "Tuple":
-            # If it's a tuple and the field is not intended to be a tuple, assume it's a nested dataclass
-            field_values[field_name] = tuple_to_dataclass(field_type, value)
-        else:
-            # Otherwise, set the primitive value directly
-            field_values[field_name] = value
-
-    return cls(**field_values)
-
-
-def dataclass_to_tuple(instance: Any) -> Any:
-    """Convert a dataclass instance to a tuple, handling nested dataclasses.
-    If the input is not a dataclass, return the original value.
-    """
-    if not is_dataclass(instance):
-        return instance
-
-    def convert_value(value: Any) -> Any:
-        """Convert nested dataclasses to tuples recursively, or return the original value."""
-        if is_dataclass(value):
-            return dataclass_to_tuple(value)
-        return value
-
-    return tuple(convert_value(getattr(instance, field.name)) for field in fields(instance))
-
-
-def rename_returned_types(return_types, raw_values) -> Any:
-    """_summary_
-
-    Parameters
-    ----------
-    return_types : _type_
-        _description_
-    raw_values : _type_
-        _description_
-
-    Returns
-    -------
-    tuple
-        _description_
-    """
-    # cover case of multiple return values
-    if isinstance(return_types, list):
-        # Ensure raw_values is a tuple for consistency
-        if not isinstance(raw_values, list):
-            raw_values = (raw_values,)
-
-        # Convert the tuple to the dataclass instance using the utility function
-        converted_values = tuple(
-            tuple_to_dataclass(return_type, value) for return_type, value in zip(return_types, raw_values)
-        )
-
-        return converted_values
-
-    # cover case of single return value
-    converted_value = tuple_to_dataclass(return_types, raw_values)
-    return converted_value
 
 
 class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(ContractFunction):
@@ -160,7 +82,7 @@ class ERC4626HyperdriveFactoryDeployAndInitializeContractFunction(ContractFuncti
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryFeeCollectorContractFunction(ContractFunction):
@@ -187,7 +109,7 @@ class ERC4626HyperdriveFactoryFeeCollectorContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryFeesContractFunction(ContractFunction):
@@ -221,7 +143,7 @@ class ERC4626HyperdriveFactoryFeesContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return self.ReturnValues(*rename_returned_types(return_types, raw_values))
+        return self.ReturnValues(*rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(ContractFunction):
@@ -248,7 +170,7 @@ class ERC4626HyperdriveFactoryGetDefaultPausersContractFunction(ContractFunction
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(list[str], rename_returned_types(return_types, raw_values))
+        return cast(list[str], rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction(ContractFunction):
@@ -275,7 +197,7 @@ class ERC4626HyperdriveFactoryGetInstanceAtIndexContractFunction(ContractFunctio
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction(ContractFunction):
@@ -302,7 +224,7 @@ class ERC4626HyperdriveFactoryGetInstancesInRangeContractFunction(ContractFuncti
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(list[str], rename_returned_types(return_types, raw_values))
+        return cast(list[str], rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryGetNumberOfInstancesContractFunction(ContractFunction):
@@ -329,7 +251,7 @@ class ERC4626HyperdriveFactoryGetNumberOfInstancesContractFunction(ContractFunct
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryGetSweepTargetsContractFunction(ContractFunction):
@@ -356,7 +278,7 @@ class ERC4626HyperdriveFactoryGetSweepTargetsContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(list[str], rename_returned_types(return_types, raw_values))
+        return cast(list[str], rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryGovernanceContractFunction(ContractFunction):
@@ -383,7 +305,7 @@ class ERC4626HyperdriveFactoryGovernanceContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(ContractFunction):
@@ -410,7 +332,7 @@ class ERC4626HyperdriveFactoryHyperdriveDeployerContractFunction(ContractFunctio
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(ContractFunction):
@@ -437,7 +359,7 @@ class ERC4626HyperdriveFactoryHyperdriveGovernanceContractFunction(ContractFunct
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryIsInstanceContractFunction(ContractFunction):
@@ -464,7 +386,7 @@ class ERC4626HyperdriveFactoryIsInstanceContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bool, rename_returned_types(return_types, raw_values))
+        return cast(bool, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryIsOfficialContractFunction(ContractFunction):
@@ -491,7 +413,7 @@ class ERC4626HyperdriveFactoryIsOfficialContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryLinkerCodeHashContractFunction(ContractFunction):
@@ -518,7 +440,7 @@ class ERC4626HyperdriveFactoryLinkerCodeHashContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bytes, rename_returned_types(return_types, raw_values))
+        return cast(bytes, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryLinkerFactoryContractFunction(ContractFunction):
@@ -545,7 +467,7 @@ class ERC4626HyperdriveFactoryLinkerFactoryContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryTarget0DeployerContractFunction(ContractFunction):
@@ -572,7 +494,7 @@ class ERC4626HyperdriveFactoryTarget0DeployerContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryTarget1DeployerContractFunction(ContractFunction):
@@ -599,7 +521,7 @@ class ERC4626HyperdriveFactoryTarget1DeployerContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryUpdateDefaultPausersContractFunction(ContractFunction):
@@ -824,7 +746,7 @@ class ERC4626HyperdriveFactoryVersionCounterContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveFactoryContractFunctions(ContractFunctions):
@@ -2125,16 +2047,44 @@ class ERC4626HyperdriveFactoryContract(Contract):
 
     functions: ERC4626HyperdriveFactoryContractFunctions
 
+    class ConstructorArgs(NamedTuple):
+        """Arguments to pass the contract's constructor function."""
+
+        factoryConfig: FactoryConfig
+
+        sweepTargets: list[str]
+
     @classmethod
-    def deploy(cls, w3: Web3, signer: ChecksumAddress) -> Self:
+    def constructor(cls, factoryConfig: FactoryConfig, sweepTargets: list[str]) -> ContractConstructor:  # type: ignore
+        """Creates a transaction with the contract's constructor function.
+
+        Parameters
+        ----------
+
+        w3 : Web3
+            A web3 instance.
+        account : LocalAccount
+            The account to use to deploy the contract.
+
+        Returns
+        -------
+        Self
+            A deployed instance of the contract.
+
+        """
+
+        return super().constructor(factoryConfig, sweepTargets)
+
+    @classmethod
+    def deploy(cls, w3: Web3, account: LocalAccount | ChecksumAddress, constructorArgs: ConstructorArgs) -> Self:
         """Deploys and instance of the contract.
 
         Parameters
         ----------
         w3 : Web3
             A web3 instance.
-        signer : ChecksumAddress
-            The address to deploy the contract from.
+        account : LocalAccount
+            The account to use to deploy the contract.
 
         Returns
         -------
@@ -2142,13 +2092,47 @@ class ERC4626HyperdriveFactoryContract(Contract):
             A deployed instance of the contract.
         """
         deployer = cls.factory(w3=w3)
-        tx_hash = deployer.constructor().transact({"from": signer})
+        constructor_fn = deployer.constructor(*constructorArgs)
+
+        # if an address is supplied, try to use a web3 default account
+        if isinstance(account, str):
+            tx_hash = constructor_fn.transact({"from": account})
+            tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+
+            deployed_contract = deployer(address=tx_receipt.contractAddress)  # type: ignore
+            return deployed_contract
+
+        # otherwise use the account provided.
+        deployment_tx = constructor_fn.build_transaction()
+        current_nonce = w3.eth.get_transaction_count(account.address)
+        deployment_tx.update({"nonce": current_nonce})
+
+        # Sign the transaction with local account private key
+        signed_tx = account.sign_transaction(deployment_tx)
+
+        # Send the signed transaction and wait for receipt
+        tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
         tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+
         deployed_contract = deployer(address=tx_receipt.contractAddress)  # type: ignore
         return deployed_contract
 
     @classmethod
     def factory(cls, w3: Web3, class_name: str | None = None, **kwargs: Any) -> Type[Self]:
+        """Deploys and instance of the contract.
+
+        Parameters
+        ----------
+        w3 : Web3
+            A web3 instance.
+        class_name: str | None
+            The instance class name.
+
+        Returns
+        -------
+        Self
+            A deployed instance of the contract.
+        """
         contract = super().factory(w3, class_name, **kwargs)
         contract.functions = ERC4626HyperdriveFactoryContractFunctions(erc4626hyperdrivefactory_abi, w3, None)
 
