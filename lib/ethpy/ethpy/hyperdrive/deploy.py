@@ -7,10 +7,21 @@ from typing import Any, NamedTuple
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
-from ethpy.base import get_transaction_logs, initialize_web3_with_http_provider, load_all_abis, smart_contract_transact
-from ethpy.base.contract import deploy_contract
+from ethpy.base import initialize_web3_with_http_provider, load_all_abis
+from ethpy.base.receipts import get_transaction_logs
+from ethpy.base.transactions import smart_contract_transact
 from fixedpointmath import FixedPoint
 from hypertypes import Fees, PoolConfig
+from hypertypes.types import (
+    ERC20MintableContract,
+    ERC4626HyperdriveDeployerContract,
+    ERC4626HyperdriveFactoryContract,
+    ERC4626Target0DeployerContract,
+    ERC4626Target1DeployerContract,
+    ForwarderFactoryContract,
+    MockERC4626Contract,
+)
+from hypertypes.types.ERC4626HyperdriveFactoryTypes import FactoryConfig
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
@@ -230,78 +241,63 @@ def _deploy_hyperdrive_factory(
         Containing the deployed base token, factory, and the pool contracts/addresses.
     """
     # args = [name, symbol, decimals, admin_addr, isCompetitionMode]
-    args = ["Base", "BASE", 18, ADDRESS_ZERO, False]
-    base_token_contract_addr, base_token_contract = deploy_contract(
-        web3,
-        abi=abis["ERC20Mintable"],
-        bytecode=bytecodes["ERC20Mintable"],
-        deploy_account_addr=deploy_account_addr,
-        args=args,
-    )
+    args = ERC20MintableContract.ConstructorArgs("Base", "BASE", 18, ADDRESS_ZERO, False)
+    base_token_contract = ERC20MintableContract.deploy(w3=web3, account=deploy_account_addr, constructorArgs=args)
     # args = [erc20_contract_addr, name, symbol, initial_apr, admin_addr, isCompetitionMode]
-    args = [
-        base_token_contract_addr,
+    args = MockERC4626Contract.ConstructorArgs(
+        base_token_contract.address,
         "Delvnet Yield Source",
         "DELV",
         initial_variable_rate.scaled_value,
         ADDRESS_ZERO,
         False,
-    ]
-    pool_contract_addr, _ = deploy_contract(
-        web3,
-        abi=abis["MockERC4626"],
-        bytecode=bytecodes["MockERC4626"],
-        deploy_account_addr=deploy_account_addr,
-        args=args,
     )
-    forwarder_factory_contract_addr, forwarder_factory_contract = deploy_contract(
-        web3,
-        abi=abis["ForwarderFactory"],
-        bytecode=bytecodes["ForwarderFactory"],
-        deploy_account_addr=deploy_account_addr,
-    )
-    deployer_contract_addr, _ = deploy_contract(
-        web3,
-        abi=abis["ERC4626HyperdriveDeployer"],
-        bytecode=bytecodes["ERC4626HyperdriveDeployer"],
-        deploy_account_addr=deploy_account_addr,
-    )
-    target_0_deployer_addr, _ = deploy_contract(
-        web3,
-        abi=abis["ERC4626Target0Deployer"],
-        bytecode=bytecodes["ERC4626Target0Deployer"],
-        deploy_account_addr=deploy_account_addr,
-    )
-    target_1_deployer_addr, _ = deploy_contract(
-        web3,
-        abi=abis["ERC4626Target1Deployer"],
-        bytecode=bytecodes["ERC4626Target1Deployer"],
-        deploy_account_addr=deploy_account_addr,
+    pool = MockERC4626Contract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        constructorArgs=args,
     )
 
-    _, factory_contract = deploy_contract(
-        web3,
-        abi=abis["ERC4626HyperdriveFactory"],
-        bytecode=bytecodes["ERC4626HyperdriveFactory"],
-        deploy_account_addr=deploy_account_addr,
-        args=[
-            (  # factory config
+    forwarder_factory_contract = ForwarderFactoryContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+    )
+    deployer_contract = ERC4626HyperdriveDeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+    )
+    target0_contract = ERC4626Target0DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+    )
+    target1_contract = ERC4626Target1DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+    )
+
+    factory_contract = ERC4626HyperdriveFactoryContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        constructorArgs=ERC4626HyperdriveFactoryContract.ConstructorArgs(
+            FactoryConfig(
+                # factory config
                 deploy_account_addr,  # governance
                 deploy_account_addr,  # hyperdriveGovernance
                 [],  # defaultPausers (new address[](1))
                 deploy_account_addr,  # feeCollector
-                _dataclass_to_tuple(pool_config.fees),  # curve, flat, governance
-                _dataclass_to_tuple(max_fees),  # max_curve, max_flat, max_governance
-                deployer_contract_addr,  # Hyperdrive deployer
-                target_0_deployer_addr,
-                target_1_deployer_addr,
-                forwarder_factory_contract_addr,  # Linker factory
+                # TODO: consolidate pypechain dataclasses so we don't have to type ignore here
+                pool_config.fees,  # curve, flat, governance # type: ignore
+                max_fees,  # max_curve, max_flat, max_governance # type: ignore
+                deployer_contract.address,  # Hyperdrive deployer
+                target0_contract.address,
+                target1_contract.address,
+                forwarder_factory_contract.address,  # Linker factory
                 forwarder_factory_contract.functions.ERC20LINK_HASH().call(),  # linkerCodeHash
             ),
-            [],  # new address[](0)
-        ],
+            [],  # sweepTargets
+        ),
     )
-    return base_token_contract, factory_contract, pool_contract_addr
+    return base_token_contract, factory_contract, pool.address
 
 
 def _mint_and_approve(
