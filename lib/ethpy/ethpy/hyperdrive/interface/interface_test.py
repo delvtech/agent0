@@ -1,8 +1,8 @@
 """Tests for Hyperdrive interface inheritance."""
 from __future__ import annotations
 
-from .hyperdrive_read_interface import HyperdriveReadInterface
-from .hyperdrive_read_write_interface import HyperdriveReadWriteInterface
+from .read_interface import HyperdriveReadInterface
+from .read_write_interface import HyperdriveReadWriteInterface
 
 # we need to use the outer name for fixtures
 # pylint: disable=redefined-outer-name

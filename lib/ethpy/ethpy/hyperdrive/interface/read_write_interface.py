@@ -14,7 +14,7 @@ from ._contract_calls import (
     _create_checkpoint,
     _set_variable_rate,
 )
-from .hyperdrive_read_interface import HyperdriveReadInterface
+from .read_interface import HyperdriveReadInterface
 
 # We have no control over the number of arguments since it is specified by the smart contracts
 # pylint: disable=too-many-arguments

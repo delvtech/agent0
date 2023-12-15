@@ -22,8 +22,8 @@ if TYPE_CHECKING:
     from ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
     from web3.types import Nonce
 
-    from .hyperdrive_read_interface import HyperdriveReadInterface
-    from .hyperdrive_read_write_interface import HyperdriveReadWriteInterface
+    from .read_interface import HyperdriveReadInterface
+    from .read_write_interface import HyperdriveReadWriteInterface
 
 # Number of arguments is influenced by the underlying solidity contract
 # pylint: disable=too-many-arguments

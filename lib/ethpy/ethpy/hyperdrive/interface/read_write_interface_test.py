@@ -11,7 +11,7 @@ from eth_utils.curried import text_if_str
 from ethpy.base import set_anvil_account_balance
 from web3 import Web3
 
-from .hyperdrive_read_write_interface import HyperdriveReadWriteInterface
+from .read_write_interface import HyperdriveReadWriteInterface
 
 # we need to use the outer name for fixtures
 # pylint: disable=redefined-outer-name
