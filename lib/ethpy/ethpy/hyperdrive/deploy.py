@@ -7,7 +7,7 @@ from typing import Any, NamedTuple
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
-from ethpy.base import initialize_web3_with_http_provider, load_all_abis
+from ethpy.base import initialize_web3_with_http_provider
 from ethpy.base.receipts import get_transaction_logs
 from ethpy.base.transactions import smart_contract_transact
 from fixedpointmath import FixedPoint
@@ -49,7 +49,6 @@ class DeployedHyperdrivePool(NamedTuple):
 
 def deploy_hyperdrive_from_factory(
     rpc_uri: str,
-    abi_folder: str,
     deployer_private_key: str,
     initial_liquidity: FixedPoint,
     initial_variable_rate: FixedPoint,
@@ -63,8 +62,6 @@ def deploy_hyperdrive_from_factory(
     ---------
     rpc_uri: str
         The URI of the local RPC node.
-    abi_folder: str
-        The local directory that contains all ABI JSON files.
     deployer_private_key: str
         Private key for the funded wallet for deploying Hyperdrive.
     initial_liquidity: FixedPoint
@@ -106,16 +103,10 @@ def deploy_hyperdrive_from_factory(
     # Fill in the pool config information for the deployer account address
     pool_config.governance = deploy_account_addr
     pool_config.feeCollector = deploy_account_addr
-    # Load the ABI and Bytecode information for all files in the ABI folder
-    # This must include the following:
-    # ERC20Mintable, MockERC4626, ForwarderFactory, ERC4626HyperdriveDeployer, ERC4626HyperdriveFactory
-    abis, bytecodes = load_all_abis(abi_folder, return_bytecode=True)
     # Deploy the factory and base token contracts
     base_token_contract, factory_contract, pool_contract_addr = _deploy_hyperdrive_factory(
         web3,
         deploy_account_addr,
-        abis,
-        bytecodes,
         initial_variable_rate,
         pool_config,
         max_fees,
@@ -209,8 +200,6 @@ def _initialize_deployment_account(web3: Web3, account_private_key: str) -> Loca
 def _deploy_hyperdrive_factory(
     web3: Web3,
     deploy_account_addr: ChecksumAddress,
-    abis: dict,
-    bytecodes: dict,
     initial_variable_rate: FixedPoint,
     pool_config: PoolConfig,
     max_fees: Fees,
@@ -223,10 +212,6 @@ def _deploy_hyperdrive_factory(
         Web3 provider object.
     deploy_account_addr: ChecksumAddress
         The address of the account that's deploying the contract.
-    abis: dict
-        A dictionary, keyed by the Hyperdrive ABI filename, containing the ABI JSON dictionary for each file.
-    bytecodes: dict
-        A dictionary, keyed by the Hyperdrive ABI filename, containing the contract bytecode for each file.
     initial_variable_rate: FixedPoint
         The starting variable rate for an underlying yield source.
     pool_config: PoolConfig
@@ -240,22 +225,20 @@ def _deploy_hyperdrive_factory(
     (base_token_contract, factory_token_contract, pool_contract_address): tuple[Contract, Contract, ChecksumAddress]
         Containing the deployed base token, factory, and the pool contracts/addresses.
     """
-    # args = [name, symbol, decimals, admin_addr, isCompetitionMode]
-    args = ERC20MintableContract.ConstructorArgs("Base", "BASE", 18, ADDRESS_ZERO, False)
-    base_token_contract = ERC20MintableContract.deploy(w3=web3, account=deploy_account_addr, constructorArgs=args)
-    # args = [erc20_contract_addr, name, symbol, initial_apr, admin_addr, isCompetitionMode]
-    args = MockERC4626Contract.ConstructorArgs(
-        base_token_contract.address,
-        "Delvnet Yield Source",
-        "DELV",
-        initial_variable_rate.scaled_value,
-        ADDRESS_ZERO,
-        False,
-    )
+    erc20args = ERC20MintableContract.ConstructorArgs("Base", "BASE", 18, ADDRESS_ZERO, False)
+    base_token_contract = ERC20MintableContract.deploy(w3=web3, account=deploy_account_addr, constructorArgs=erc20args)
+
     pool = MockERC4626Contract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        constructorArgs=args,
+        constructorArgs=MockERC4626Contract.ConstructorArgs(
+            base_token_contract.address,
+            "Delvnet Yield Source",
+            "DELV",
+            initial_variable_rate.scaled_value,
+            ADDRESS_ZERO,
+            False,
+        ),
     )
 
     forwarder_factory_contract = ForwarderFactoryContract.deploy(
