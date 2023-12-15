@@ -332,7 +332,7 @@ class HyperdriveReadInterface:
             block_number = self.get_block_number(self.get_current_block())
         return _get_vault_shares(self.yield_contract, self.hyperdrive_contract, block_number)
 
-    def get_variable_rate(self, block_number: BlockNumber | None) -> FixedPoint:
+    def get_variable_rate(self, block_number: BlockNumber | None = None) -> FixedPoint:
         """Use an RPC to get the yield source variable rate.
 
         Arguments
@@ -375,7 +375,7 @@ class HyperdriveReadInterface:
         """
         return _get_hyperdrive_eth_balance(self.web3, self.hyperdrive_contract.address)
 
-    def get_hyperdrive_base_balance(self, block_number: BlockNumber | None) -> FixedPoint:
+    def get_hyperdrive_base_balance(self, block_number: BlockNumber | None = None) -> FixedPoint:
         """Get the current Hyperdrive balance in the base contract.
 
         Arguments
