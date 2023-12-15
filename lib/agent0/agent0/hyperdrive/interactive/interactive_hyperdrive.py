@@ -14,18 +14,11 @@ import pandas as pd
 from chainsync import PostgresConfig
 from chainsync.dashboard.usernames import build_user_mapping
 from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
-from chainsync.db.hyperdrive import (
-    get_checkpoint_info,
-    get_latest_block_number_from_analysis_table,
-    get_pool_analysis,
-    get_pool_config,
-    get_pool_info,
-    get_ticker,
-    get_total_wallet_pnl_over_time,
-    get_wallet_deltas,
-    get_wallet_pnl,
-)
+from chainsync.db.hyperdrive import get_checkpoint_info
 from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
+from chainsync.db.hyperdrive import (get_latest_block_number_from_analysis_table, get_pool_analysis, get_pool_config,
+                                     get_pool_info, get_ticker, get_total_wallet_pnl_over_time, get_wallet_deltas,
+                                     get_wallet_pnl)
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_typing import BlockNumber, ChecksumAddress
@@ -49,16 +42,8 @@ from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStat
 from agent0.test_utils import assert_never
 
 from .chain import Chain
-from .event_types import (
-    AddLiquidity,
-    CloseLong,
-    CloseShort,
-    CreateCheckpoint,
-    OpenLong,
-    OpenShort,
-    RedeemWithdrawalShares,
-    RemoveLiquidity,
-)
+from .event_types import (AddLiquidity, CloseLong, CloseShort, CreateCheckpoint, OpenLong, OpenShort,
+                          RedeemWithdrawalShares, RemoveLiquidity)
 from .interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
 
@@ -152,6 +137,10 @@ class InteractiveHyperdrive:
                 self.time_stretch = FixedPoint(1) / (
                     FixedPoint("5.24592") / (FixedPoint("0.04665") * (self.initial_fixed_rate * FixedPoint(100)))
                 )
+            if self.checkpoint_duration > self.position_duration:
+                raise ValueError("Checkpoint duration must be less than or equal to position duration")
+            if self.position_duration % self.checkpoint_duration != 0:
+                raise ValueError("Position duration must be a multiple of checkpoint duration")
 
     def __init__(self, chain: Chain, config: Config | None = None):
         """Constructor for the interactive hyperdrive agent.
