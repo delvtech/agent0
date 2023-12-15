@@ -1,0 +1,32 @@
+"""Tests for Hyperdrive interface inheritance."""
+from __future__ import annotations
+
+from .hyperdrive_read_interface import HyperdriveReadInterface
+from .hyperdrive_read_write_interface import HyperdriveReadWriteInterface
+
+# we need to use the outer name for fixtures
+# pylint: disable=redefined-outer-name
+
+
+class TestHyperdriveInterface:
+    """Tests for the Hyperdrive interface inheritence system."""
+
+    def test_inheritance(
+        self,
+        hyperdrive_read_interface: HyperdriveReadInterface,
+        hyperdrive_read_write_interface: HyperdriveReadWriteInterface,
+    ):
+        # child class should inherit type from parent class
+        assert isinstance(hyperdrive_read_write_interface, HyperdriveReadInterface)
+        # parent class is not the same type as the child class
+        assert not isinstance(hyperdrive_read_interface, HyperdriveReadWriteInterface)
+        # child class can convert to parent class, and then would not be the same type as child class
+        assert not isinstance(hyperdrive_read_write_interface.get_read_interface(), HyperdriveReadWriteInterface)
+        # parent class has read attributes
+        assert hasattr(hyperdrive_read_interface, "read_retry_count")
+        # parent class does not have write attributes
+        assert not hasattr(hyperdrive_read_interface, "write_retry_count")
+        # child class has write attributes
+        assert hasattr(hyperdrive_read_write_interface, "write_retry_count")
+        # child class can convert to parent class, then it would not have write attributes
+        assert not hasattr(hyperdrive_read_write_interface.get_read_interface(), "write_retry_count")
