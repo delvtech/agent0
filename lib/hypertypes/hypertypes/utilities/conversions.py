@@ -62,10 +62,7 @@ def pool_info_to_fixedpoint(hypertypes_pool_info: PoolInfo) -> PoolInfoFP:
           - FixedPoint types are used if the type was FixedPoint in the underlying contract.
     """
     return PoolInfoFP(
-        **{
-            camel_to_snake(key): FixedPoint(scaled_value=value)
-            for (key, value) in asdict(hypertypes_pool_info).items()
-        }
+        **{camel_to_snake(key): FixedPoint(scaled_value=value) for (key, value) in asdict(hypertypes_pool_info).items()}
     )
 
 
@@ -83,10 +80,7 @@ def fixedpoint_to_pool_info(fixedpoint_pool_info: PoolInfoFP) -> PoolInfo:
         A dataclass containing the Hyperdrive pool info with derived types from Pypechain.
     """
     return PoolInfo(
-        **{
-            snake_to_camel(key): value.scaled_value
-            for (key, value) in asdict(fixedpoint_pool_info).items()
-        }
+        **{snake_to_camel(key): value.scaled_value for (key, value) in asdict(fixedpoint_pool_info).items()}
     )
 
 
@@ -106,10 +100,7 @@ def checkpoint_to_fixedpoint(
         A dataclass containing the checkpoint share_price and exposure fields converted to FixedPoint.
     """
     return CheckpointFP(
-        **{
-            camel_to_snake(key): FixedPoint(scaled_value=value)
-            for key, value in asdict(hypertypes_checkpoint).items()
-        }
+        **{camel_to_snake(key): FixedPoint(scaled_value=value) for key, value in asdict(hypertypes_checkpoint).items()}
     )
 
 
@@ -129,10 +120,7 @@ def fixedpoint_to_checkpoint(
         A dataclass containing the checkpoint share_price and exposure fields converted to integers.
     """
     return Checkpoint(
-        **{
-            snake_to_camel(key): value.scaled_value
-            for key, value in asdict(fixedpoint_checkpoint).items()
-        }
+        **{snake_to_camel(key): value.scaled_value for key, value in asdict(fixedpoint_checkpoint).items()}
     )
 
 
@@ -154,10 +142,7 @@ def pool_config_to_fixedpoint(
           - The attribute names are converted to snake_case.
           - FixedPoint types are used if the type was FixedPoint in the underlying contract.
     """
-    dict_pool_config = {
-        camel_to_snake(key): value
-        for key, value in asdict(hypertypes_pool_config).items()
-    }
+    dict_pool_config = {camel_to_snake(key): value for key, value in asdict(hypertypes_pool_config).items()}
     fixedpoint_keys = [
         "initial_share_price",
         "minimum_share_reserves",
@@ -191,10 +176,7 @@ def fixedpoint_to_pool_config(
     PoolConfig
         A dataclass containing the Hyperdrive PoolConfig with types specified by the ABI via Pypechain
     """
-    dict_pool_config = {
-        snake_to_camel(key): value
-        for key, value in asdict(fixedpoint_pool_config).items()
-    }
+    dict_pool_config = {snake_to_camel(key): value for key, value in asdict(fixedpoint_pool_config).items()}
     fixedpoint_keys = [
         "initialSharePrice",
         "minimumShareReserves",
