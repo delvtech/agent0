@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
     from web3.types import Nonce
 
-    from .interface import HyperdriveReadInterface
+    from .hyperdrive_read_interface import HyperdriveReadInterface
 
 # async calls now have 6 arguments after adding preview_before_trade
 # pylint: disable=too-many-arguments
