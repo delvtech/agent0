@@ -16,7 +16,7 @@ from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive.interface import HyperdriveInterface
+    from ethpy.hyperdrive.interface import HyperdriveReadInterface
     from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
@@ -67,7 +67,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
         super().__init__(policy_config)
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time
 

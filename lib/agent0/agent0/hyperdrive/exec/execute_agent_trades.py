@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from ethpy.base import retry_call
 from ethpy.hyperdrive import ReceiptBreakdown
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from web3.types import Nonce
 
 from agent0.base import Quantity, TokenType, Trade
@@ -34,7 +34,7 @@ DEFAULT_READ_RETRY_COUNT = 5
 
 
 async def async_execute_single_agent_trade(
-    agent: HyperdriveAgent, interface: HyperdriveInterface, liquidate: bool
+    agent: HyperdriveAgent, interface: HyperdriveReadInterface, liquidate: bool
 ) -> list[TradeResult]:
     """Executes a single agent's trade. This function is async as
     `match_contract_call_to_trade` waits for a transaction receipt.
@@ -120,7 +120,7 @@ async def async_execute_single_agent_trade(
 
 
 async def async_execute_agent_trades(
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadInterface,
     agents: list[HyperdriveAgent],
     liquidate: bool,
 ) -> list[TradeResult]:
@@ -166,7 +166,7 @@ async def async_execute_agent_trades(
 
 async def async_match_contract_call_to_trade(
     agent: HyperdriveAgent,
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadInterface,
     trade_envelope: Trade[HyperdriveMarketAction],
     nonce: Nonce,
 ) -> tuple[HyperdriveWalletDeltas, ReceiptBreakdown]:

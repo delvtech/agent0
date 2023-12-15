@@ -16,7 +16,7 @@ from agent0.hyperdrive.policies.hyperdrive_policy import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive.interface import HyperdriveInterface
+    from ethpy.hyperdrive.interface import HyperdriveReadInterface
     from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
@@ -29,7 +29,7 @@ MAX_ITER = 50
 
 
 def calc_shares_needed_for_bonds(
-    bonds_needed: FixedPoint, pool_state: PoolState, interface: HyperdriveInterface
+    bonds_needed: FixedPoint, pool_state: PoolState, interface: HyperdriveReadInterface
 ) -> tuple[FixedPoint, FixedPoint]:
     """Calculate the shares needed to trade a certain amount of bonds, and the associate governance fee.
 
@@ -62,7 +62,7 @@ def calc_shares_needed_for_bonds(
 
 
 def calc_reserves_to_hit_target_rate(
-    target_rate: FixedPoint, interface: HyperdriveInterface
+    target_rate: FixedPoint, interface: HyperdriveReadInterface
 ) -> tuple[FixedPoint, FixedPoint, int, float]:
     """Calculate the bonds and shares needed to hit the target fixed rate.
 
@@ -246,7 +246,7 @@ class LPandArb(HyperdrivePolicy):
 
     # pylint: disable=too-many-branches
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Specify actions.
 

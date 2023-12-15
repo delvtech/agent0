@@ -24,7 +24,7 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
-    from ethpy.hyperdrive.interface import HyperdriveInterface
+    from ethpy.hyperdrive.interface import HyperdriveReadInterface
     from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 
 
@@ -35,7 +35,7 @@ class MultiTradePolicy(HyperdrivePolicy):
     made_trade = False
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Open all trades for a fixed amount and closes them after, one at a time.
 

@@ -16,7 +16,7 @@ from chainsync.db.hyperdrive import (
 )
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
@@ -28,7 +28,7 @@ _SLEEP_AMOUNT = 1
 # pylint: disable=too-many-branches
 def data_analysis(
     start_block: int = 0,
-    interface: HyperdriveInterface | None = None,
+    interface: HyperdriveReadInterface | None = None,
     eth_config: EthConfig | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
@@ -71,7 +71,7 @@ def data_analysis(
     ## Initialization
     # create hyperdrive interface
     if interface is None:
-        interface = HyperdriveInterface(eth_config, contract_addresses)
+        interface = HyperdriveReadInterface(eth_config, contract_addresses)
 
     # postgres session
     db_session_init = False

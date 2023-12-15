@@ -33,7 +33,7 @@ from eth_utils.address import to_checksum_address
 from ethpy import EthConfig
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, DeployedHyperdrivePool, ReceiptBreakdown, deploy_hyperdrive_from_factory
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 from hypertypes import Fees, PoolConfig
 from web3._utils.threads import Timeout
@@ -187,7 +187,7 @@ class InteractiveHyperdrive:
         )
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(config, chain, self.eth_config.abi_dir)
-        self.hyperdrive_interface = HyperdriveInterface(
+        self.hyperdrive_interface = HyperdriveReadInterface(
             self.eth_config,
             self._deployed_hyperdrive.hyperdrive_contract_addresses,
             web3=chain._web3,

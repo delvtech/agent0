@@ -83,8 +83,8 @@ if TYPE_CHECKING:
     from ..receipt_breakdown import ReceiptBreakdown
 
 
-class HyperdriveInterface:
-    """End-point API for interfacing with a deployed Hyperdrive pool."""
+class HyperdriveReadInterface:
+    """Read-only end-point API for interfacing with a deployed Hyperdrive pool."""
 
     _deployed_hyperdrive_pool: DeployedHyperdrivePool | None = None
 
@@ -96,9 +96,8 @@ class HyperdriveInterface:
         read_retry_count: int | None = None,
         write_retry_count: int | None = None,
     ) -> None:
-        """The HyperdriveInterface API.
-        This is the primary endpoint for users to simulate as well as execute transactions on
-        the Hyperdrive smart contracts.
+        """The HyperdriveReadInterface API. This is the primary endpoint for
+        users to simulate transactions on Hyperdrive smart contracts.
 
         Arguments
         ---------

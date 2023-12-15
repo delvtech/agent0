@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from ethpy.base import fetch_contract_transactions_for_block
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3.types import BlockData
@@ -19,7 +19,7 @@ from .interface import add_checkpoint_infos, add_pool_config, add_pool_infos, ad
 
 
 def init_data_chain_to_db(
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadInterface,
     session: Session,
 ) -> None:
     """Function to query and insert pool config to dashboard.
@@ -42,7 +42,7 @@ def init_data_chain_to_db(
     add_pool_config(pool_config_db_obj, session)
 
 
-def data_chain_to_db(interface: HyperdriveInterface, block: BlockData, session: Session) -> None:
+def data_chain_to_db(interface: HyperdriveReadInterface, block: BlockData, session: Session) -> None:
     """Function to query and insert data to dashboard.
 
     Arguments

@@ -1,7 +1,7 @@
 """Tests for hyperdrive/api.py."""
 from __future__ import annotations
-from copy import deepcopy
 
+from copy import deepcopy
 from dataclasses import fields
 from typing import cast
 
@@ -14,7 +14,7 @@ from hypertypes.utilities.conversions import (
     pool_info_to_fixedpoint,
 )
 
-from .interface import HyperdriveInterface
+from .interface import HyperdriveReadInterface
 
 # we need to use the outer name for fixtures
 # pylint: disable=redefined-outer-name
@@ -23,22 +23,22 @@ from .interface import HyperdriveInterface
 class TestHyperdriveInterface:
     """Tests for the HyperdriveInterface api class."""
 
-    def test_pool_config(self, hyperdrive_interface: HyperdriveInterface):
+    def test_pool_config(self, hyperdrive_interface: HyperdriveReadInterface):
         """Checks that the Hyperdrive pool_config matches what is returned from the smart contract."""
         pool_config = cast(PoolConfig, hyperdrive_interface.hyperdrive_contract.functions.getPoolConfig().call())
         assert pool_config_to_fixedpoint(pool_config) == hyperdrive_interface.current_pool_state.pool_config
 
-    def test_pool_config_deployed(self, hyperdrive_interface: HyperdriveInterface):
+    def test_pool_config_deployed(self, hyperdrive_interface: HyperdriveReadInterface):
         """Checks that the Hyperdrive pool_config matches what is returned from the smart contract."""
         pool_config = cast(PoolConfig, hyperdrive_interface.hyperdrive_contract.functions.getPoolConfig().call())
         assert pool_config_to_fixedpoint(pool_config) == hyperdrive_interface.current_pool_state.pool_config
 
-    def test_pool_info(self, hyperdrive_interface: HyperdriveInterface):
+    def test_pool_info(self, hyperdrive_interface: HyperdriveReadInterface):
         """Checks that the Hyperdrive pool_info matches what is returned from the smart contract."""
         pool_info = hyperdrive_interface.hyperdrive_contract.functions.getPoolInfo().call()
         assert pool_info_to_fixedpoint(pool_info) == hyperdrive_interface.current_pool_state.pool_info
 
-    def test_checkpoint(self, hyperdrive_interface: HyperdriveInterface):
+    def test_checkpoint(self, hyperdrive_interface: HyperdriveReadInterface):
         """Checks that the Hyperdrive checkpoint matches what is returned from the smart contract."""
         checkpoint_id = hyperdrive_interface.calc_checkpoint_id(
             block_timestamp=hyperdrive_interface.current_pool_state.block_time
@@ -48,7 +48,7 @@ class TestHyperdriveInterface:
         )
         assert checkpoint_to_fixedpoint(checkpoint) == hyperdrive_interface.current_pool_state.checkpoint
 
-    def test_spot_price_and_fixed_rate(self, hyperdrive_interface: HyperdriveInterface):
+    def test_spot_price_and_fixed_rate(self, hyperdrive_interface: HyperdriveReadInterface):
         """Checks that the Hyperdrive spot price and fixed rate match computing it by hand."""
         # get pool config variables
         pool_config = hyperdrive_interface.current_pool_state.pool_config
@@ -68,7 +68,7 @@ class TestHyperdriveInterface:
         )
         assert abs(fixed_rate - hyperdrive_interface.calc_fixed_rate()) <= FixedPoint(1e-16)
 
-    def test_misc(self, hyperdrive_interface: HyperdriveInterface):
+    def test_misc(self, hyperdrive_interface: HyperdriveReadInterface):
         """Miscellaneous tests only verify that the attributes exist and functions can be called."""
         _ = hyperdrive_interface.current_pool_state
         _ = hyperdrive_interface.current_pool_state.variable_rate
@@ -79,11 +79,11 @@ class TestHyperdriveInterface:
         _ = hyperdrive_interface.calc_max_long(FixedPoint(1000))
         _ = hyperdrive_interface.calc_max_short(FixedPoint(1000))
 
-    def test_deployed_fixed_rate(self, hyperdrive_interface: HyperdriveInterface):
+    def test_deployed_fixed_rate(self, hyperdrive_interface: HyperdriveReadInterface):
         """Check that the bonds calculated actually hit the target rate."""
         assert abs(hyperdrive_interface.calc_fixed_rate() - FixedPoint(0.05)) < FixedPoint(1e-16)
 
-    def test_bonds_given_shares_and_rate(self, hyperdrive_interface: HyperdriveInterface):
+    def test_bonds_given_shares_and_rate(self, hyperdrive_interface: HyperdriveReadInterface):
         """Check that the bonds calculated actually hit the target rate."""
         # get pool state so we can modify them to run what-if scenarios
         pool_state = deepcopy(hyperdrive_interface.current_pool_state)
@@ -101,7 +101,7 @@ class TestHyperdriveInterface:
         fixed_rate = hyperdrive_interface.calc_fixed_rate(pool_state=pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
 
-    def test_deployed_values(self, hyperdrive_interface: HyperdriveInterface):
+    def test_deployed_values(self, hyperdrive_interface: HyperdriveReadInterface):
         """Test the hyperdrive interface versus expected values."""
         # pylint: disable=too-many-locals
         local_hyperdrive_pool = hyperdrive_interface.deployed_hyperdrive_pool

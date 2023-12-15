@@ -5,14 +5,14 @@ import time
 import pytest
 from ethpy.base import retry_call
 from ethpy.base.errors import ContractCallException
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 
 
 @pytest.mark.anvil
-def test_retry_call_success(hyperdrive_interface: HyperdriveInterface, caplog: pytest.LogCaptureFixture):
+def test_retry_call_success(hyperdrive_interface: HyperdriveReadInterface, caplog: pytest.LogCaptureFixture):
     """Verify that a bogus call produces the correct number of retries."""
     retry_count = 5
     # getting the block should always work

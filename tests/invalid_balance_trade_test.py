@@ -22,7 +22,7 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
-    from ethpy.hyperdrive.interface import HyperdriveInterface
+    from ethpy.hyperdrive.interface import HyperdriveReadInterface
     from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 
 # ruff: noqa: PLR2004 (magic values used for counter)
@@ -35,7 +35,7 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
     """An agent that submits a remove liquidity with a zero wallet."""
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Remove liquidity.
 
@@ -72,7 +72,7 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
     """An agent that submits a close long with a zero wallet."""
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Close long.
 
@@ -111,7 +111,7 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
     """An agent that submits a close short with a zero wallet."""
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Close short.
 
@@ -150,7 +150,7 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
     """An agent that submits a redeem withdrawal share with a zero wallet."""
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Redeem withdraw shares.
 
@@ -189,7 +189,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
     counter = 0
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Alternate between adding and removing liquidity.
 
@@ -244,7 +244,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
     counter = 0
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Alternate between open and close long.
 
@@ -304,7 +304,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
     counter = 0
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Alternate between open and close short.
 
@@ -364,7 +364,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
     counter = 0
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Alternate between add liquidity, open long, remove liquidity, and redeem withdrawal shares.
 
@@ -452,7 +452,7 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
     counter = 0
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Alternate between add liquidity, open long, remove liquidity, and redeem withdrawal shares.
 

@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass
 from typing import Type
 
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade
@@ -97,7 +97,7 @@ class InteractiveHyperdrivePolicy(HyperdrivePolicy):
         self.use_sub_policy_for_next_action = True
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Specify actions.
 

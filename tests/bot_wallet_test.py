@@ -10,7 +10,7 @@ from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
@@ -23,7 +23,7 @@ from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 
 
-def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, interface: HyperdriveInterface) -> None:
+def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, interface: HyperdriveReadInterface) -> None:
     """Check that the agent's wallet matches what's reported from the chain.
 
     Will assert that balances match.
@@ -83,7 +83,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
     counter = 0
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Open all trades for a fixed amount and closes them after, one at a time.
 

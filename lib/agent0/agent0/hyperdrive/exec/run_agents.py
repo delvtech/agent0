@@ -12,7 +12,7 @@ from chainsync.db.api import balance_of, register_username
 from eth_typing import BlockNumber
 from ethpy import build_eth_config
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
@@ -114,7 +114,7 @@ def setup_agents(
     contract_addresses: HyperdriveAddresses | None = None,
     load_wallet_state: bool = True,
     liquidate: bool = False,
-) -> tuple[HyperdriveInterface, list[HyperdriveAgent], EthConfig, HyperdriveAddresses]:
+) -> tuple[HyperdriveReadInterface, list[HyperdriveAgent], EthConfig, HyperdriveAddresses]:
     """Entrypoint to setup agents for automated trading.
 
     Arguments
@@ -158,7 +158,7 @@ def setup_agents(
         contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
 
     # create hyperdrive interface object
-    interface = HyperdriveInterface(
+    interface = HyperdriveReadInterface(
         eth_config,
         contract_addresses,
         read_retry_count=environment_config.read_retry_count,
@@ -214,7 +214,7 @@ def run_agents(
     eth_config: EthConfig,
     account_key_config: AccountKeyConfig,
     contract_addresses: HyperdriveAddresses,
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadInterface,
     agent_accounts: list[HyperdriveAgent],
     liquidate: bool = False,
     minimum_avg_agent_base: FixedPoint | None = None,
@@ -282,7 +282,7 @@ def async_fund_agents_with_fake_user(
     eth_config: EthConfig,
     account_key_config: AccountKeyConfig,
     contract_addresses: HyperdriveAddresses,
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadInterface,
 ) -> HyperdriveAgent:
     """Create a fake account, fund it with eth, and then use that to fund the agent wallets.
 

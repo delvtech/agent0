@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Type
 
 import pytest
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade
@@ -42,7 +42,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
         super().__init__(policy_config)
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """This agent simply opens all trades for a fixed amount and closes them after, one at a time
 

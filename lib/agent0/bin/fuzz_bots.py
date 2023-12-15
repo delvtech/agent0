@@ -5,7 +5,7 @@ import logging
 import random
 import sys
 
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 from hyperlogs.rollbar_utilities import initialize_rollbar
 from web3.types import RPCEndpoint
@@ -89,6 +89,6 @@ except KeyboardInterrupt:
 except Exception as exc:  # pylint: disable=broad-exception-caught
     # create hyperdrive interface object
     if STOP_CHAIN_ON_CRASH:
-        hyperdrive = HyperdriveInterface()
+        hyperdrive = HyperdriveReadInterface()
         hyperdrive.web3.provider.make_request(method=RPCEndpoint("evm_setIntervalMining"), params=[0])
     raise exc
