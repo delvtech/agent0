@@ -69,6 +69,16 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         self.write_retry_count = write_retry_count
         super().__init__(eth_config, addresses, web3, read_retry_count)
 
+    def get_read_interface(self) -> HyperdriveReadInterface:
+        """Return the current instance as an instance of the parent (HyperdriveReadInterface) class.
+
+        Returns
+        -------
+        HyperdriveReadInterface
+            This instantiated object, but as a ReadInterface.
+        """
+        return super()
+
     def create_checkpoint(
         self, sender: LocalAccount, block_number: BlockNumber | None = None, checkpoint_time: int | None = None
     ) -> ReceiptBreakdown:

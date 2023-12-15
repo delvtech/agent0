@@ -60,7 +60,7 @@ async def async_execute_single_agent_trade(
             interface.pool_config.minimum_transaction_amount
         )
     else:
-        trades: list[Trade[HyperdriveMarketAction]] = agent.get_trades(interface=interface)
+        trades: list[Trade[HyperdriveMarketAction]] = agent.get_trades(interface=interface.get_read_interface())
 
     # Make trades async for this agent. This way, an agent can submit multiple trades for a single block
     # To do this, we need to manually set the nonce, so we get the base transaction count here
