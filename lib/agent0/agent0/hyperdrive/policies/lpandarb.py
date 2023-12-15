@@ -39,7 +39,7 @@ def calc_shares_needed_for_bonds(
         The given amount of bonds that is going to be traded.
     pool_state: PoolState
         The hyperdrive pool state.
-    interface: HyperdriveInterface
+    interface: HyperdriveReadInterface
         The Hyperdrive API interface object.
 
 
@@ -70,7 +70,7 @@ def calc_reserves_to_hit_target_rate(
     ---------
     target_rate: FixedPoint
         The target rate the pool will have after the calculated change in bonds and shares.
-    interface: HyperdriveInterface
+    interface: HyperdriveReadInterface
         The Hyperdrive API interface object.
 
     Returns
@@ -252,7 +252,7 @@ class LPandArb(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             Interface for the market on which this agent will be executing trades (MarketActions).
         wallet: HyperdriveWallet
             The agent's wallet.

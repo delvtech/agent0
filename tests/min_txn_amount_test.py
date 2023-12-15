@@ -44,7 +44,7 @@ class InvalidAddLiquidity(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -83,7 +83,7 @@ class InvalidRemoveLiquidity(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -137,7 +137,7 @@ class InvalidOpenLong(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -175,7 +175,7 @@ class InvalidOpenShort(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -215,7 +215,7 @@ class InvalidCloseLong(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -275,7 +275,7 @@ class InvalidCloseShort(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.

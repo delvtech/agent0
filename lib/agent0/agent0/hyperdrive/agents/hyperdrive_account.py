@@ -123,7 +123,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The market on which this agent will be executing trades (MarketActions)
 
         Returns

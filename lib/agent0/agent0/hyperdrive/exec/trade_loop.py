@@ -5,7 +5,7 @@ import asyncio
 import logging
 from datetime import datetime
 
-from ethpy.hyperdrive.interface import HyperdriveReadInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from web3 import Web3
 from web3.types import RPCEndpoint
 
@@ -22,7 +22,7 @@ from .execute_agent_trades import async_execute_agent_trades
 # TODO cleanup this function
 # pylint: disable=too-many-arguments
 def trade_if_new_block(
-    interface: HyperdriveReadInterface,
+    interface: HyperdriveReadWriteInterface,
     agent_accounts: list[HyperdriveAgent],
     halt_on_errors: bool,
     halt_on_slippage: bool,
@@ -36,7 +36,7 @@ def trade_if_new_block(
 
     Arguments
     ---------
-    interface: HyperdriveInterface
+    interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object.
     agent_accounts: list[HyperdriveAgent]]
         A list of HyperdriveAgent objects that contain a wallet address and Agent for determining trades.
@@ -109,7 +109,7 @@ def check_result(
     ---------
     trade_results: list[TradeResult]
         A list of TradeResult dataclasses, one for each trade made by the agent.
-    interface: HyperdriveInterface
+    interface: HyperdriveReadInterface
         The Hyperdrive API interface object.
     halt_on_errors: bool
         If true, raise an exception if a trade reverts.

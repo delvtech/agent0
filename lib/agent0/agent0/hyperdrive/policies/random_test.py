@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, cast
 import pytest
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.hyperdrive.interface import HyperdriveReadInterface
+from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
@@ -79,7 +79,7 @@ class TestRandomPolicy:
         ]
 
         # Create Hyperdrive interface object
-        interface = HyperdriveReadInterface(
+        interface = HyperdriveReadWriteInterface(
             eth_config,
             hyperdrive_contract_addresses,
             read_retry_count=env_config.read_retry_count,
@@ -153,7 +153,7 @@ class TestRandomPolicy:
         ]
 
         # Create Hyperdrive interface object
-        interface = HyperdriveReadInterface(
+        interface = HyperdriveReadWriteInterface(
             eth_config,
             hyperdrive_contract_addresses,
             read_retry_count=env_config.read_retry_count,

@@ -48,7 +48,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market.
         wallet: HyperdriveWallet
             agent's wallet

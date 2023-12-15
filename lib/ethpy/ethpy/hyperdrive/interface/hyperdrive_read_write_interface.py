@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 
 class HyperdriveReadWriteInterface(HyperdriveReadInterface):
-    """Read-Write end-point API for interfacing with a deployed Hyperdrive pool."""
+    """Read-write end-point API for interfacing with a deployed Hyperdrive pool."""
 
     def __init__(
         self,
@@ -47,7 +47,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         write_retry_count: int | None = None,
     ) -> None:
         """The HyperdriveReadInterface API. This is the primary endpoint for
-        users to simulate transactions on Hyperdrive smart contracts.
+        users to execute transactions on Hyperdrive smart contracts.
 
         Arguments
         ---------

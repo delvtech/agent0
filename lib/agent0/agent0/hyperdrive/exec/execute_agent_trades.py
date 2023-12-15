@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from ethpy.base import retry_call
 from ethpy.hyperdrive import ReceiptBreakdown
-from ethpy.hyperdrive.interface import HyperdriveReadInterface
+from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from web3.types import Nonce
 
 from agent0.base import Quantity, TokenType, Trade
@@ -34,7 +34,7 @@ DEFAULT_READ_RETRY_COUNT = 5
 
 
 async def async_execute_single_agent_trade(
-    agent: HyperdriveAgent, interface: HyperdriveReadInterface, liquidate: bool
+    agent: HyperdriveAgent, interface: HyperdriveReadWriteInterface, liquidate: bool
 ) -> list[TradeResult]:
     """Executes a single agent's trade. This function is async as
     `match_contract_call_to_trade` waits for a transaction receipt.
@@ -43,7 +43,7 @@ async def async_execute_single_agent_trade(
     ---------
     agent: HyperdriveAgent
         The HyperdriveAgent that is conducting the trade
-    interface: HyperdriveInterface
+    interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object
     liquidate: bool
         If set, will ignore all policy settings and liquidate all open positions
@@ -120,7 +120,7 @@ async def async_execute_single_agent_trade(
 
 
 async def async_execute_agent_trades(
-    interface: HyperdriveReadInterface,
+    interface: HyperdriveReadWriteInterface,
     agents: list[HyperdriveAgent],
     liquidate: bool,
 ) -> list[TradeResult]:
@@ -128,7 +128,7 @@ async def async_execute_agent_trades(
 
     Arguments
     ---------
-    interface: HyperdriveInterface
+    interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object
     agents: list[HyperdriveAgent]
         A list of HyperdriveAgent that are conducting the trades
@@ -166,7 +166,7 @@ async def async_execute_agent_trades(
 
 async def async_match_contract_call_to_trade(
     agent: HyperdriveAgent,
-    interface: HyperdriveReadInterface,
+    interface: HyperdriveReadWriteInterface,
     trade_envelope: Trade[HyperdriveMarketAction],
     nonce: Nonce,
 ) -> tuple[HyperdriveWalletDeltas, ReceiptBreakdown]:
@@ -176,7 +176,7 @@ async def async_match_contract_call_to_trade(
     ---------
     agent: HyperdriveAgent
         Object containing a wallet address and Agent for determining trades.
-    interface: HyperdriveInterface
+    interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object.
     trade_envelope: Trade[HyperdriveMarketAction]
         A specific Hyperdrive trade requested by the given agent.

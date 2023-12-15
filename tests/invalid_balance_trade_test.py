@@ -41,7 +41,7 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -78,7 +78,7 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -117,7 +117,7 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -156,7 +156,7 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -195,7 +195,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -250,7 +250,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -310,7 +310,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -370,7 +370,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -458,7 +458,7 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterfac
             The trading market interface.
         wallet: Wallet
             The agent's wallet.

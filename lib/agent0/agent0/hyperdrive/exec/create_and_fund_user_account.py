@@ -82,7 +82,7 @@ def create_and_fund_user_account(
     account_key_config: AccountKeyConfig
         Configuration linking to the env file for storing private keys and initial budgets.
         Defines the agents to be funded.
-    interface: HyperdriveInterface
+    interface: HyperdriveReadInterface
         The market on which this agent will be executing trades (MarketActions)
 
     Returns

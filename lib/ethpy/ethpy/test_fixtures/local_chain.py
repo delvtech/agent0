@@ -229,7 +229,7 @@ def create_hyperdrive_interface(_local_hyperdrive_pool: DeployedHyperdrivePool) 
 
     Returns
     -------
-        HyperdriveInterface
+        HyperdriveReadInterface
             The interface to access the deployed hyperdrive pool.
     """
     rpc_uri = cast(HTTPProvider, _local_hyperdrive_pool.web3.provider).endpoint_uri or URI("http://localhost:8545")
@@ -249,7 +249,7 @@ def hyperdrive_interface(local_hyperdrive_pool: DeployedHyperdrivePool) -> Itera
 
     Yields
     ------
-    HyperdriveInterface
+    HyperdriveReadInterface
         The interface to access the deployed hyperdrive pool.
     """
     yield create_hyperdrive_interface(local_hyperdrive_pool)

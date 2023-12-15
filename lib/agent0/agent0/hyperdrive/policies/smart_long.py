@@ -81,7 +81,7 @@ class SmartLong(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             Interface for the market on which this agent will be executing trades (MarketActions).
         wallet: HyperdriveWallet
             The agent's wallet.

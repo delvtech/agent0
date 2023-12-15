@@ -126,7 +126,7 @@ class Random(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             Interface for the market on which this agent will be executing trades (MarketActions).
         pool_state: PoolState
             The current state of the pool, which includes block details, pool config, and pool info.
@@ -197,7 +197,7 @@ class Random(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             Interface for the market on which this agent will be executing trades (MarketActions).
         pool_state: PoolState
             The current state of the pool, which includes block details, pool config, and pool info.
@@ -377,7 +377,7 @@ class Random(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             Interface for the market on which this agent will be executing trades (MarketActions).
         wallet: HyperdriveWallet
             The agent's wallet.

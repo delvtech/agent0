@@ -26,7 +26,7 @@ def init_data_chain_to_db(
 
     Arguments
     ---------
-    interface: HyperdriveInterface
+    interface: HyperdriveReadInterface
         The hyperdrive interface object.
     session: Session
         The database session
@@ -47,7 +47,7 @@ def data_chain_to_db(interface: HyperdriveReadInterface, block: BlockData, sessi
 
     Arguments
     ---------
-    interface: HyperdriveInterface
+    interface: HyperdriveReadInterface
         Interface for the market on which this agent will be executing trades (MarketActions).
     block: BlockData
         The block to query.

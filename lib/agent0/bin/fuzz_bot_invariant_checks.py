@@ -70,7 +70,7 @@ def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveReadInterfac
 
     Returns
     -------
-    tuple[Args, HyperdriveInterface]
+    tuple[Args, HyperdriveReadInterface]
         The parsed arguments and interface constructed from those arguments.
     """
     parsed_args = parse_arguments(argv)
@@ -112,8 +112,8 @@ def run_invariant_checks(
         The current block to be tested.
     latest_block_number: BlockNumber
         The current block number.
-    interface: HyperdriveInterface
-        An instantiated HyperdriveInterface object constructed using the script arguments.
+    interface: HyperdriveReadInterface
+        An instantiated HyperdriveReadInterface object constructed using the script arguments.
     test_epsilon: float
         The tolerance for the invariance checks.
     """

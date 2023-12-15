@@ -32,7 +32,7 @@ def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, interface: Hyperdri
     ---------
     wallet: HyperdriveWallet
         The HyperdriveWallet object to check against the chain
-    interface: HyperdriveInterface
+    interface: HyperdriveReadInterface
         The Hyperdrive API interface object
     """
     # Check base
@@ -91,7 +91,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market.
         wallet: HyperdriveWallet
             agent's wallet

@@ -44,8 +44,8 @@ def acquire_data(
         The starting block to filter the query on
     lookback_block_limit: int
         The maximum number of blocks to look back when filling in missing data
-    interface: HyperdriveInterface | None, optional
-        An initialized HyperdriveInterface object. If not set, will initialize one based on
+    interface: HyperdriveReadInterface | None, optional
+        An initialized HyperdriveReadInterface object. If not set, will initialize one based on
         eth_config and contract_addresses.
     eth_config: EthConfig | None
         Configuration for URIs to the rpc and artifacts. If not set, will look for addresses

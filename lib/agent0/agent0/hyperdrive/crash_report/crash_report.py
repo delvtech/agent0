@@ -63,7 +63,7 @@ def build_crash_trade_result(
     ---------
     exception: Exception
         The exception that was thrown
-    interface: HyperdriveInterface
+    interface: HyperdriveReadInterface
         An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
     agent: HyperdriveAgent | None, optional.
         Object containing a wallet address and Agent for determining trades. If None, won't report the agent.

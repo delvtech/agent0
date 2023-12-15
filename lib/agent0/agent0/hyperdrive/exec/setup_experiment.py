@@ -29,7 +29,7 @@ def setup_experiment(
         The list of agent configurations.
     account_key_config: AccountKeyConfig
         Configuration linking to the env file for storing private keys and initial budgets.
-    interface: HyperdriveInterface
+    interface: HyperdriveReadInterface
         An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
 
     Returns

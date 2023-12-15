@@ -64,7 +64,7 @@ class WalletTestPolicy(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
