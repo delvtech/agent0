@@ -1,8 +1,4 @@
 """High-level interface for a Hyperdrive pool."""
-
-# API file is a single class with lots of options
-# pylint: disable=too-many-lines
-
 from __future__ import annotations
 
 import copy
@@ -27,14 +23,6 @@ from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
 from ._contract_calls import (
-    _async_add_liquidity,
-    _async_close_long,
-    _async_close_short,
-    _async_open_long,
-    _async_open_short,
-    _async_redeem_withdraw_shares,
-    _async_remove_liquidity,
-    _create_checkpoint,
     _get_eth_base_balances,
     _get_gov_fees_accrued,
     _get_hyperdrive_base_balance,
@@ -42,7 +30,6 @@ from ._contract_calls import (
     _get_total_supply_withdrawal_shares,
     _get_variable_rate,
     _get_vault_shares,
-    _set_variable_rate,
 )
 from ._mock_contract import (
     _calc_bonds_given_shares_and_rate,
@@ -78,9 +65,6 @@ if TYPE_CHECKING:
     from eth_typing import BlockNumber
     from ethpy import EthConfig
     from web3 import Web3
-    from web3.types import Nonce
-
-    from ..receipt_breakdown import ReceiptBreakdown
 
 
 class HyperdriveReadInterface:

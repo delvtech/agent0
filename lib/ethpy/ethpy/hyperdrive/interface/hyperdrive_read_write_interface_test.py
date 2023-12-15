@@ -2,9 +2,6 @@
 from __future__ import annotations
 
 import os
-from copy import deepcopy
-from dataclasses import fields
-from typing import cast
 
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
@@ -12,14 +9,6 @@ from eth_utils.conversions import to_bytes
 from eth_utils.crypto import keccak
 from eth_utils.curried import text_if_str
 from ethpy.base import set_anvil_account_balance
-from fixedpointmath import FixedPoint
-from hypertypes.fixedpoint_types import FeesFP
-from hypertypes.types import Checkpoint, PoolConfig
-from hypertypes.utilities.conversions import (
-    checkpoint_to_fixedpoint,
-    pool_config_to_fixedpoint,
-    pool_info_to_fixedpoint,
-)
 from web3 import Web3
 
 from .hyperdrive_read_write_interface import HyperdriveReadWriteInterface
