@@ -432,7 +432,6 @@ class InteractiveHyperdrive:
 
         return deploy_hyperdrive_from_factory(
             chain.rpc_uri,
-            abi_dir,
             chain.get_deployer_account_private_key(),
             config.initial_liquidity,
             config.initial_variable_rate,
