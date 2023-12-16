@@ -205,19 +205,21 @@ def _deploy_hyperdrive_factory(
     (base_token_contract, factory_token_contract, pool_contract_address): tuple[Contract, Contract, ChecksumAddress]
         Containing the deployed base token, factory, and the pool contracts/addresses.
     """
-    erc20args = ERC20MintableContract.ConstructorArgs("Base", "BASE", 18, ADDRESS_ZERO, False)
+    erc20args = ERC20MintableContract.ConstructorArgs(
+        name="Base", symbol="BASE", decimals=18, admin=ADDRESS_ZERO, isCompetitionMode_=False
+    )
     base_token_contract = ERC20MintableContract.deploy(w3=web3, account=deploy_account_addr, constructorArgs=erc20args)
 
     pool = MockERC4626Contract.deploy(
         w3=web3,
         account=deploy_account_addr,
         constructorArgs=MockERC4626Contract.ConstructorArgs(
-            base_token_contract.address,
-            "Delvnet Yield Source",
-            "DELV",
-            initial_variable_rate.scaled_value,
-            ADDRESS_ZERO,
-            False,
+            asset=base_token_contract.address,
+            name="Delvnet Yield Source",
+            symbol="DELV",
+            initialRate=initial_variable_rate.scaled_value,
+            admin=ADDRESS_ZERO,
+            isCompetitionMode=False,
         ),
     )
 
@@ -347,7 +349,12 @@ def _deploy_and_initialize_hyperdrive_pool(
     """
     # TODO: pypechiain - consolidate structs so we don't get poolconfig mismatch errors
     tx = factory_contract.functions.deployAndInitialize(
-        pool_config, initial_liquidity.scaled_value, initial_fixed_rate.scaled_value, bytes(0), [], pool_contract_addr  # type: ignore
+        pool_config,  # type: ignore
+        initial_liquidity.scaled_value,
+        initial_fixed_rate.scaled_value,
+        bytes(0),
+        [],
+        pool_contract_addr,
     ).build_transaction()
     signed_tx = deploy_account.sign_transaction(tx)
     tx_hash = web3.eth.send_raw_transaction(signed_tx)
