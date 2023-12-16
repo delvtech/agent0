@@ -9,7 +9,7 @@ from eth_utils.conversions import to_bytes
 from eth_utils.crypto import keccak
 from eth_utils.curried import text_if_str
 from ethpy.base import set_anvil_account_balance
-from web3 import Web3
+from fixedpointmath import FixedPoint
 
 from .read_write_interface import HyperdriveReadWriteInterface
 
@@ -20,14 +20,14 @@ from .read_write_interface import HyperdriveReadWriteInterface
 class TestHyperdriveReadWriteInterface:
     """Tests for the HyperdriveReadWriteInterface api class."""
 
-    def test_set_variable_rate(self, web3: Web3, hyperdrive_read_write_interface: HyperdriveReadWriteInterface):
+    def test_set_variable_rate(self, hyperdrive_read_write_interface: HyperdriveReadWriteInterface):
         variable_rate = hyperdrive_read_write_interface.get_variable_rate()
-        new_rate = variable_rate * 0.1
+        new_rate = variable_rate * FixedPoint(0.1)
         # TODO: Setup a fixture to create a funded local account
         extra_key_bytes = text_if_str(to_bytes, "extra_entropy")
         key_bytes = keccak(os.urandom(32) + extra_key_bytes)
         private_key = Account()._parsePrivateKey(key_bytes)  # pylint: disable=protected-access
         sender: LocalAccount = Account().from_key(private_key)
-        set_anvil_account_balance(web3, sender.address, 10**19)
+        set_anvil_account_balance(hyperdrive_read_write_interface.web3, sender.address, 10**19)
         hyperdrive_read_write_interface.set_variable_rate(sender, new_rate)
         assert hyperdrive_read_write_interface.get_variable_rate() == new_rate

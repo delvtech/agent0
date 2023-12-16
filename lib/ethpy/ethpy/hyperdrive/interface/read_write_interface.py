@@ -65,8 +65,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         write_retry_count: int | None, optional
             The number of times to retry the transact call if it fails. Defaults to no retries.
         """
-        self.write_retry_count = write_retry_count
         super().__init__(eth_config, addresses, web3, read_retry_count)
+        self.write_retry_count = write_retry_count
 
     def get_read_interface(self) -> HyperdriveReadInterface:
         """Return the current instance as an instance of the parent (HyperdriveReadInterface) class.

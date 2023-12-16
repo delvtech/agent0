@@ -30,3 +30,7 @@ class TestHyperdriveInterface:
         assert hasattr(hyperdrive_read_write_interface, "write_retry_count")
         # child class can convert to parent class, then it would not have write attributes
         assert not hasattr(hyperdrive_read_write_interface.get_read_interface(), "write_retry_count")
+        # write functions
+        assert not hasattr(hyperdrive_read_interface, "async_open_long")
+        assert hasattr(hyperdrive_read_write_interface, "async_open_long")
+        assert not hasattr(hyperdrive_read_write_interface.get_read_interface(), "async_open_long")
