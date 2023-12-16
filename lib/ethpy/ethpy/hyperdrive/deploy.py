@@ -1,8 +1,7 @@
 """Helper functions for deploying Hyperdrive contracts."""
 from __future__ import annotations
 
-from dataclasses import fields, is_dataclass
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
@@ -113,14 +112,16 @@ def deploy_hyperdrive_from_factory(
         max_fees,
     )
     pool_config.baseToken = base_token_contract.address
+
     # Mint base and approve the initial liquidity amount for the hyperdrive factory
-    _ = _mint_and_approve(
+    _mint_and_approve(
         web3=web3,
         funding_account=deploy_account,
         funding_contract=base_token_contract,
         contract_to_approve=factory_contract,
         mint_amount=initial_liquidity,
     )
+
     # Deploy the Hyperdrive contract and call the initialize function
     hyperdrive_checksum_address = Web3.to_checksum_address(
         _deploy_and_initialize_hyperdrive_pool(
@@ -148,28 +149,6 @@ def deploy_hyperdrive_from_factory(
         base_token_contract=base_token_contract,
         deploy_block_number=web3.eth.block_number,
     )
-
-
-def _dataclass_to_tuple(instance: Any) -> tuple:
-    """Resursively convert the input Dataclass to a tuple.
-
-    Iterate over the fields of the dataclass and compiles them into a tuple.
-    Check if the type of a field is also a dataclass, and if so, recursively convert it to a tuple.
-    This method preserves the attribute ordering.
-
-    Arguments
-    ---------
-    instance: dataclass
-        A dataclass, whose fields could contain other dataclasses.
-
-    Returns
-    -------
-    tuple
-        A nested tuple of all dataclass fields.
-    """
-    if not is_dataclass(instance):
-        return instance
-    return tuple(_dataclass_to_tuple(getattr(instance, field.name)) for field in fields(instance))
 
 
 def _initialize_deployment_account(web3: Web3, account_private_key: str) -> LocalAccount:
@@ -204,7 +183,7 @@ def _deploy_hyperdrive_factory(
     initial_variable_rate: FixedPoint,
     pool_config: PoolConfig,
     max_fees: Fees,
-) -> tuple[Contract, Contract, ChecksumAddress]:
+) -> tuple[ERC20MintableContract, ERC4626HyperdriveFactoryContract, ChecksumAddress]:
     """Deploys the hyperdrive factory contract on the rpc_uri chain.
 
     Arguments
@@ -339,7 +318,7 @@ def _deploy_and_initialize_hyperdrive_pool(
     initial_fixed_rate: FixedPoint,
     pool_contract_addr: ChecksumAddress,
     pool_config: PoolConfig,
-    factory_contract: Contract,
+    factory_contract: ERC4626HyperdriveFactoryContract,
 ) -> str:
     """Deploys the hyperdrive factory contract on the rpc_uri chain.
 
@@ -366,21 +345,14 @@ def _deploy_and_initialize_hyperdrive_pool(
     str
         The deployed hyperdrive contract address.
     """
-    fn_args = (
-        _dataclass_to_tuple(pool_config),
-        initial_liquidity.scaled_value,
-        initial_fixed_rate.scaled_value,
-        bytes(0),  # new bytes(0)
-        [],  # new bytes32[](0)
-        pool_contract_addr,
-    )
-    tx_receipt = smart_contract_transact(
-        web3,  # web3
-        factory_contract,  # contract
-        deploy_account,  # signer
-        "deployAndInitialize",  # function_name_or_signature
-        *fn_args,
-    )
+    # TODO: pypechiain - consolidate structs so we don't get poolconfig mismatch errors
+    tx = factory_contract.functions.deployAndInitialize(
+        pool_config, initial_liquidity.scaled_value, initial_fixed_rate.scaled_value, bytes(0), [], pool_contract_addr  # type: ignore
+    ).build_transaction()
+    signed_tx = deploy_account.sign_transaction(tx)
+    tx_hash = web3.eth.send_raw_transaction(signed_tx)
+    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+
     logs = get_transaction_logs(factory_contract, tx_receipt)
     hyperdrive_address: str | None = None
     for log in logs:
