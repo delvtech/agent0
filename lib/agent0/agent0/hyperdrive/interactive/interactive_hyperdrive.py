@@ -34,7 +34,7 @@ from eth_utils.address import to_checksum_address
 from ethpy import EthConfig
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, DeployedHyperdrivePool, ReceiptBreakdown, deploy_hyperdrive_from_factory
-from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
+from ethpy.hyperdrive.interface import HyperdriveInterface
 from fixedpointmath import FixedPoint
 from hypertypes import Fees, PoolConfig
 from numpy.random._generator import Generator
@@ -200,8 +200,8 @@ class InteractiveHyperdrive:
             preview_before_trade=config.preview_before_trade,
         )
         # Deploys a hyperdrive factory + pool on the chain
-        self._deployed_hyperdrive = self._deploy_hyperdrive(config, chain, self.eth_config.abi_dir)
-        self.hyperdrive_interface = HyperdriveReadWriteInterface(
+        self._deployed_hyperdrive = self._deploy_hyperdrive(config, chain)
+        self.hyperdrive_interface = HyperdriveInterface(
             self.eth_config,
             self._deployed_hyperdrive.hyperdrive_contract_addresses,
             web3=chain._web3,
@@ -406,7 +406,7 @@ class InteractiveHyperdrive:
             other._deployed_hyperdrive.hyperdrive_contract.address,
         )
 
-    def _deploy_hyperdrive(self, config: Config, chain: Chain, abi_dir) -> DeployedHyperdrivePool:
+    def _deploy_hyperdrive(self, config: Config, chain: Chain) -> DeployedHyperdrivePool:
         # sanity check (also for type checking), should get set in __post_init__
         assert config.time_stretch is not None
 
@@ -520,7 +520,7 @@ class InteractiveHyperdrive:
         Returns
         -------
         InteractiveHyperdriveAgent
-            An object that contains the HyperdriveReadWriteInterface, Agents,
+            An object that contains the HyperdriveInterface, Agents,
             and provides access to the interactive Hyperdrive API.
         """
         # pylint: disable=too-many-arguments
