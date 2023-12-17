@@ -129,8 +129,6 @@ class HyperdriveReadInterface:
         # TODO these parameters are currently only used for trades against hyperdrive
         # and uses defaults for other smart_contract_read functions, e.g., get_pool_info.
         self.read_retry_count = read_retry_count
-
-    def __post_init__(self) -> None:
         self._deployed_hyperdrive_pool = self._create_deployed_hyperdrive_pool()
 
     def _create_deployed_hyperdrive_pool(self) -> DeployedHyperdrivePool:
