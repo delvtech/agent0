@@ -415,7 +415,7 @@ class HyperdriveReadInterface:
         Returns
         -------
         Trade[HyperdriveMarketAction]
-            The trade object specifying adding liquidity on a Hyperdrive pool.
+            The trade object for adding liquidity to a Hyperdrive pool.
         """
         return Trade(
             market_type=MarketType.HYPERDRIVE,
@@ -424,6 +424,35 @@ class HyperdriveReadInterface:
                 trade_amount=trade_amount,
                 min_apr=min_apr,
                 max_apr=max_apr,
+            ),
+        )
+
+    def remove_liquidity_trade(
+        trade_amount: FixedPoint,
+        slippage_tolerance: FixedPoint | None = None,
+    ) -> Trade[HyperdriveMarketAction]:
+        """Return a trade object for adding liquidity.
+
+        Arguments
+        ---------
+        trade_amount: FixedPoint
+            The amount of liquidity you wish to remove from the pool.
+        slippage_tolerance: FixedPoint, optional
+            Amount of slippage allowed from the trade.
+            If given, then the trade will not execute unless the slippage is below this value.
+            If not given, then execute the trade regardless of the slippage.
+
+        Returns
+        -------
+        Trade[HyperdriveMarketAction]
+            The trade object for removing liquidity from a Hyperdrive pool.
+        """
+        return Trade(
+            market_type=MarketType.HYPERDRIVE,
+            market_action=HyperdriveMarketAction(
+                action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
+                trade_amount=trade_amount,
+                slippage_tolerance=slippage_tolerance,
             ),
         )
 

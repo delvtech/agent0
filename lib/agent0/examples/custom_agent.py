@@ -116,15 +116,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
             )
         elif self.counter == 3:
             # Remove All Liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
-                        trade_amount=wallet.lp_tokens,
-                    ),
-                )
-            )
+            action_list.append(interface.remove_liquidity_trade(wallet.lp_tokens))
         elif self.counter == 4:
             # Close All Longs
             assert len(wallet.longs) == 1

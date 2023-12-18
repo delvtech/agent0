@@ -55,15 +55,7 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
         # pylint: disable=unused-argument
         action_list = []
         # Remove non-existing Liquidity
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
-                    trade_amount=FixedPoint(20000),
-                ),
-            )
-        )
+        action_list.append(interface.remove_liquidity_trade(FixedPoint(20_000)))
         return action_list, True
 
 
@@ -210,15 +202,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
             action_list.append(interface.add_liquidity_trade(FixedPoint(10_000)))
         elif self.counter == 1:
             # Remove Liquidity for more than I have
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
-                        trade_amount=FixedPoint(20000),
-                    ),
-                )
-            )
+            action_list.append(interface.remove_liquidity_trade(FixedPoint(20_000)))
             done_trading = True
         self.counter += 1
         return action_list, done_trading
@@ -387,15 +371,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         # Valid remove liquidity
         elif self.counter == 2:
             # Remove all liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
-                        trade_amount=wallet.lp_tokens,
-                    ),
-                )
-            )
+            action_list.append(interface.remove_liquidity_trade(wallet.lp_tokens))
         elif self.counter == 3:
             # Attempt to redeem withdrawal shares that are not ready to withdrawal
             # since the open trades are not closed
@@ -463,15 +439,7 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
         # Valid remove liquidity
         elif self.counter == 2:
             # Remove all liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
-                        trade_amount=wallet.lp_tokens,
-                    ),
-                )
-            )
+            action_list.append(interface.remove_liquidity_trade(wallet.lp_tokens))
         elif self.counter == 3:
             # Attempt to redeem withdrawal shares that are not ready to withdrawal
             # since the open trades are not closed

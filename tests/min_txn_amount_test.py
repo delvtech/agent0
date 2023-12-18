@@ -91,15 +91,7 @@ class InvalidRemoveLiquidity(HyperdrivePolicy):
             action_list.append(interface.add_liquidity_trade(FixedPoint(10_000)))
         elif self.counter == 2:
             # Remove liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
-                        trade_amount=SMALL_TRADE_AMOUNT,
-                    ),
-                )
-            )
+            action_list.append(interface.remove_liquidity_trade(SMALL_TRADE_AMOUNT))
             done_trading = True
         self.counter += 1
         return action_list, done_trading

@@ -135,15 +135,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
             )
         elif self.counter == self.COUNTER_REMOVE_LIQUIDITY:
             # Remove All Liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
-                        trade_amount=wallet.lp_tokens,
-                    ),
-                )
-            )
+            action_list.append(interface.remove_liquidity_trade(wallet.lp_tokens))
         elif self.counter == self.COUNTER_CLOSE_LONGS:
             # Close All Longs
             assert len(wallet.longs) == 1
