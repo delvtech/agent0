@@ -9,7 +9,7 @@ from typing import Any, NamedTuple, Sequence
 
 from eth_typing import BlockNumber
 from ethpy import build_eth_config
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from hyperlogs import setup_logging
@@ -60,7 +60,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
 
 
-def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveInterface]:
+def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveReadInterface]:
     """Setup the fuzz config & interface.
 
     Arguments
@@ -70,7 +70,7 @@ def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveInterface]:
 
     Returns
     -------
-    tuple[Args, HyperdriveInterface]
+    tuple[Args, HyperdriveReadInterface]
         The parsed arguments and interface constructed from those arguments.
     """
     parsed_args = parse_arguments(argv)
@@ -94,14 +94,14 @@ def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveInterface]:
         log_format_string=env_config.log_formatter,
     )
     # Setup hyperdrive interface
-    interface = HyperdriveInterface(eth_config)
+    interface = HyperdriveReadInterface(eth_config)
     return parsed_args, interface
 
 
 def run_invariant_checks(
     latest_block: BlockData,
     latest_block_number: BlockNumber,
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadInterface,
     test_epsilon: float,
 ) -> None:
     """Run the invariant checks.
@@ -112,8 +112,8 @@ def run_invariant_checks(
         The current block to be tested.
     latest_block_number: BlockNumber
         The current block number.
-    interface: HyperdriveInterface
-        An instantiated HyperdriveInterface object constructed using the script arguments.
+    interface: HyperdriveReadInterface
+        An instantiated HyperdriveReadInterface object constructed using the script arguments.
     test_epsilon: float
         The tolerance for the invariance checks.
     """

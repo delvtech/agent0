@@ -11,7 +11,7 @@ from chainsync.exec import acquire_data, data_analysis
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
@@ -58,13 +58,13 @@ class WalletTestPolicy(HyperdrivePolicy):
         super().__init__(policy_config)
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Open all trades for a fixed amount and closes them after, one at a time.
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.

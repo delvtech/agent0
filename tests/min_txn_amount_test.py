@@ -22,7 +22,7 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
-    from ethpy.hyperdrive.interface import HyperdriveInterface
+    from ethpy.hyperdrive.interface import HyperdriveReadInterface
     from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 
 # ruff: noqa: PLR2004 (magic values used for counter)
@@ -38,13 +38,13 @@ class InvalidAddLiquidity(HyperdrivePolicy):
     """An agent that submits an invalid add liquidity due to min txn amount."""
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Add liquidity.
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -77,13 +77,13 @@ class InvalidRemoveLiquidity(HyperdrivePolicy):
     counter = 0
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Remove liquidity.
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -131,13 +131,13 @@ class InvalidOpenLong(HyperdrivePolicy):
     """An agent that submits an invalid open long due to min txn amount."""
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Open long.
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -169,13 +169,13 @@ class InvalidOpenShort(HyperdrivePolicy):
     """An agent that submits an invalid open short due to min txn amount."""
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Open short.
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -209,13 +209,13 @@ class InvalidCloseLong(HyperdrivePolicy):
     counter = 0
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Close long.
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.
@@ -269,13 +269,13 @@ class InvalidCloseShort(HyperdrivePolicy):
     counter = 0
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Close short.
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The trading market interface.
         wallet: HyperdriveWallet
             The agent's wallet.

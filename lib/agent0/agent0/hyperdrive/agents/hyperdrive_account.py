@@ -5,7 +5,7 @@ import logging
 from typing import TypeVar
 
 from eth_account.signers.local import LocalAccount
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade
@@ -16,7 +16,7 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 Policy = TypeVar("Policy", bound=BasePolicy)
 
 
-class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketAction]):
+class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarketAction]):
     r"""Enact policies on smart contracts and tracks wallet state
 
     .. todo::
@@ -118,12 +118,12 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveInterface, HyperdriveMarketActi
 
         return action_list
 
-    def get_trades(self, interface: HyperdriveInterface) -> list[Trade[HyperdriveMarketAction]]:
+    def get_trades(self, interface: HyperdriveReadInterface) -> list[Trade[HyperdriveMarketAction]]:
         """Helper function for computing a agent trade
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             The market on which this agent will be executing trades (MarketActions)
 
         Returns

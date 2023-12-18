@@ -6,15 +6,11 @@ import time
 from typing import Callable, Iterator, cast
 
 import pytest
+from eth_typing import URI
 from ethpy.base import initialize_web3_with_http_provider
 from ethpy.eth_config import EthConfig
-from ethpy.hyperdrive import (
-    DeployedHyperdrivePool,
-    deploy_hyperdrive_from_factory,
-    HyperdriveAddresses,
-)
-from ethpy.hyperdrive.interface import HyperdriveInterface
-from eth_typing import URI
+from ethpy.hyperdrive import DeployedHyperdrivePool, HyperdriveAddresses, deploy_hyperdrive_from_factory
+from ethpy.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from hypertypes import Fees, PoolConfig
 from web3 import HTTPProvider
@@ -226,24 +222,61 @@ def local_hyperdrive_pool(
     reset(snapshot_id)
 
 
-def create_hyperdrive_interface(_local_hyperdrive_pool: DeployedHyperdrivePool) -> HyperdriveInterface:
-    """Set up the hyperdrive interface to access a deployed hyperdrive pool.
+def create_hyperdrive_read_interface(_local_hyperdrive_pool: DeployedHyperdrivePool) -> HyperdriveReadInterface:
+    """Set up the hyperdrive read interface to access a deployed hyperdrive pool.
 
     All arguments are fixtures.
 
     Returns
     -------
-        HyperdriveInterface
+        HyperdriveReadInterface
             The interface to access the deployed hyperdrive pool.
     """
     rpc_uri = cast(HTTPProvider, _local_hyperdrive_pool.web3.provider).endpoint_uri or URI("http://localhost:8545")
     hyperdrive_contract_addresses: HyperdriveAddresses = _local_hyperdrive_pool.hyperdrive_contract_addresses
     eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir="./packages/hyperdrive/src/abis")
-    return HyperdriveInterface(eth_config, addresses=hyperdrive_contract_addresses)
+    return HyperdriveReadInterface(eth_config, addresses=hyperdrive_contract_addresses)
 
 
 @pytest.fixture(scope="function")
-def hyperdrive_interface(local_hyperdrive_pool: DeployedHyperdrivePool) -> Iterator[HyperdriveInterface]:
+def hyperdrive_read_interface(local_hyperdrive_pool: DeployedHyperdrivePool) -> Iterator[HyperdriveReadInterface]:
+    """Fixture representing a hyperdrive read interface to a deployed hyperdrive pool.
+
+    Arguments
+    ---------
+    local_hyperdrive_pool: DeployedHyperdrivePool
+        Fixture representing the deployed hyperdrive pool
+
+    Yields
+    ------
+    HyperdriveReadInterface
+        The interface to access the deployed hyperdrive pool.
+    """
+    yield create_hyperdrive_read_interface(local_hyperdrive_pool)
+
+
+def create_hyperdrive_read_write_interface(
+    _local_hyperdrive_pool: DeployedHyperdrivePool,
+) -> HyperdriveReadWriteInterface:
+    """Set up the hyperdrive read write interface to access a deployed hyperdrive pool.
+
+    All arguments are fixtures.
+
+    Returns
+    -------
+        HyperdriveReadWriteInterface
+            The interface to access and write to the deployed hyperdrive pool.
+    """
+    rpc_uri = cast(HTTPProvider, _local_hyperdrive_pool.web3.provider).endpoint_uri or URI("http://localhost:8545")
+    hyperdrive_contract_addresses: HyperdriveAddresses = _local_hyperdrive_pool.hyperdrive_contract_addresses
+    eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir="./packages/hyperdrive/src/abis")
+    return HyperdriveReadWriteInterface(eth_config, addresses=hyperdrive_contract_addresses)
+
+
+@pytest.fixture(scope="function")
+def hyperdrive_read_write_interface(
+    local_hyperdrive_pool: DeployedHyperdrivePool,
+) -> Iterator[HyperdriveReadWriteInterface]:
     """Fixture representing a hyperdrive interface to a deployed hyperdrive pool.
 
     Arguments
@@ -253,7 +286,7 @@ def hyperdrive_interface(local_hyperdrive_pool: DeployedHyperdrivePool) -> Itera
 
     Yields
     ------
-    HyperdriveInterface
-        The interface to access the deployed hyperdrive pool.
+    HyperdriveReadWriteInterface
+        The interface to access and write to the deployed hyperdrive pool.
     """
-    yield create_hyperdrive_interface(local_hyperdrive_pool)
+    yield create_hyperdrive_read_write_interface(local_hyperdrive_pool)

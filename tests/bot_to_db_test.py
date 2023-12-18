@@ -23,7 +23,7 @@ from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
@@ -455,7 +455,7 @@ class TestBotToDb:
         # Check spot price and fixed rate
         db_pool_analysis: pd.DataFrame = get_pool_analysis(db_session, coerce_float=False)
         # Compare last value to what hyperdrive interface is reporting
-        hyperdrive = HyperdriveInterface(
+        hyperdrive = HyperdriveReadInterface(
             eth_config=eth_config,
             addresses=hyperdrive_contract_addresses,
         )

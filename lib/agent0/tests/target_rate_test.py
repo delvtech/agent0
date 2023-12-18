@@ -9,7 +9,7 @@ import pytest
 from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
-from ethpy.hyperdrive.interface.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
@@ -97,7 +97,7 @@ def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, delta: f
         load_wallet_state=False,
     )
 
-    hyperdrive = HyperdriveInterface(eth_config=eth_config, addresses=hyperdrive_contract_addresses)
+    hyperdrive = HyperdriveReadInterface(eth_config=eth_config, addresses=hyperdrive_contract_addresses)
     fixed_rate = hyperdrive.calc_fixed_rate()
     variable_rate = hyperdrive.current_pool_state.variable_rate
     logging.log(10, "fixed rate is %s", fixed_rate)

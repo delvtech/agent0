@@ -12,7 +12,7 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive.interface import HyperdriveInterface
+    from ethpy.hyperdrive.interface import HyperdriveReadInterface
     from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
@@ -75,13 +75,13 @@ class SmartLong(HyperdrivePolicy):
         super().__init__(policy_config)
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Implement a Long Louie user strategy
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             Interface for the market on which this agent will be executing trades (MarketActions).
         wallet: HyperdriveWallet
             The agent's wallet.

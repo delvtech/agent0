@@ -12,7 +12,7 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive.interface import HyperdriveInterface
+    from ethpy.hyperdrive.interface import HyperdriveReadInterface
     from ethpy.hyperdrive.state import PoolState
     from numpy.random._generator import Generator
 
@@ -120,13 +120,13 @@ class Random(HyperdrivePolicy):
         return [action for action in all_available_actions if action in self.allowable_actions]
 
     def open_short_with_random_amount(
-        self, interface: HyperdriveInterface, pool_state: PoolState, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, pool_state: PoolState, wallet: HyperdriveWallet
     ) -> list[Trade[HyperdriveMarketAction]]:
         """Open a short with a random allowable amount.
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             Interface for the market on which this agent will be executing trades (MarketActions).
         pool_state: PoolState
             The current state of the pool, which includes block details, pool config, and pool info.
@@ -191,13 +191,13 @@ class Random(HyperdrivePolicy):
         ]
 
     def open_long_with_random_amount(
-        self, interface: HyperdriveInterface, pool_state: PoolState, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, pool_state: PoolState, wallet: HyperdriveWallet
     ) -> list[Trade[HyperdriveMarketAction]]:
         """Open a long with a random allowable amount.
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             Interface for the market on which this agent will be executing trades (MarketActions).
         pool_state: PoolState
             The current state of the pool, which includes block details, pool config, and pool info.
@@ -365,7 +365,7 @@ class Random(HyperdrivePolicy):
         ]
 
     def action(
-        self, interface: HyperdriveInterface, wallet: HyperdriveWallet
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
         """Implement a random user strategy.
 
@@ -377,7 +377,7 @@ class Random(HyperdrivePolicy):
 
         Arguments
         ---------
-        interface: HyperdriveInterface
+        interface: HyperdriveReadInterface
             Interface for the market on which this agent will be executing trades (MarketActions).
         wallet: HyperdriveWallet
             The agent's wallet.

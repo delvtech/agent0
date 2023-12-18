@@ -15,7 +15,7 @@ from chainsync.db.hyperdrive import (
 from eth_typing import BlockNumber
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
@@ -27,7 +27,7 @@ _SLEEP_AMOUNT = 1
 def acquire_data(
     start_block: int = 0,
     lookback_block_limit: int = 1000,
-    interface: HyperdriveInterface | None = None,
+    interface: HyperdriveReadInterface | None = None,
     eth_config: EthConfig | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
@@ -44,8 +44,8 @@ def acquire_data(
         The starting block to filter the query on
     lookback_block_limit: int
         The maximum number of blocks to look back when filling in missing data
-    interface: HyperdriveInterface | None, optional
-        An initialized HyperdriveInterface object. If not set, will initialize one based on
+    interface: HyperdriveReadInterface | None, optional
+        An initialized HyperdriveReadInterface object. If not set, will initialize one based on
         eth_config and contract_addresses.
     eth_config: EthConfig | None
         Configuration for URIs to the rpc and artifacts. If not set, will look for addresses
@@ -71,7 +71,7 @@ def acquire_data(
 
     ## Initialization
     if interface is None:
-        interface = HyperdriveInterface(eth_config, contract_addresses)
+        interface = HyperdriveReadInterface(eth_config, contract_addresses)
 
     # postgres session
     db_session_init = False

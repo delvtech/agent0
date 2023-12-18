@@ -1,4 +1,4 @@
-"""HyperdriveInterface functions that require a contract call."""
+"""Hyperdrive interface functions that require a contract call."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -22,9 +22,10 @@ if TYPE_CHECKING:
     from ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
     from web3.types import Nonce
 
-    from .interface import HyperdriveInterface
+    from .read_interface import HyperdriveReadInterface
+    from .read_write_interface import HyperdriveReadWriteInterface
 
-# async calls now have 6 arguments after adding preview_before_trade
+# Number of arguments is influenced by the underlying solidity contract
 # pylint: disable=too-many-arguments
 
 
@@ -57,7 +58,7 @@ def _get_vault_shares(
     return FixedPoint(scaled_value=vault_shares)
 
 
-def _get_eth_base_balances(interface: HyperdriveInterface, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
+def _get_eth_base_balances(interface: HyperdriveReadInterface, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     agent_eth_balance = get_account_balance(interface.web3, agent_checksum_address)
@@ -103,7 +104,7 @@ def _get_gov_fees_accrued(
 
 
 def _create_checkpoint(
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadWriteInterface,
     sender: LocalAccount,
     block_number: BlockNumber | None = None,
     checkpoint_time: int | None = None,
@@ -130,7 +131,7 @@ def _create_checkpoint(
 
 
 def _set_variable_rate(
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadWriteInterface,
     sender: LocalAccount,
     new_rate: FixedPoint,
 ) -> None:
@@ -147,7 +148,7 @@ def _set_variable_rate(
 
 
 async def _async_open_long(
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadWriteInterface,
     agent: LocalAccount,
     trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
@@ -222,7 +223,7 @@ async def _async_open_long(
 
 # pylint: disable=too-many-arguments
 async def _async_close_long(
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadWriteInterface,
     agent: LocalAccount,
     trade_amount: FixedPoint,
     maturity_time: int,
@@ -291,7 +292,7 @@ async def _async_close_long(
 
 
 async def _async_open_short(
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadWriteInterface,
     agent: LocalAccount,
     trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
@@ -363,9 +364,8 @@ async def _async_open_short(
     return trade_result
 
 
-# pylint: disable=too-many-arguments
 async def _async_close_short(
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadWriteInterface,
     agent: LocalAccount,
     trade_amount: FixedPoint,
     maturity_time: int,
@@ -433,9 +433,8 @@ async def _async_close_short(
     return trade_result
 
 
-# pylint: disable=too-many-arguments
 async def _async_add_liquidity(
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadWriteInterface,
     agent: LocalAccount,
     trade_amount: FixedPoint,
     min_apr: FixedPoint,
@@ -489,7 +488,7 @@ async def _async_add_liquidity(
 
 
 async def _async_remove_liquidity(
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadWriteInterface,
     agent: LocalAccount,
     trade_amount: FixedPoint,
     nonce: Nonce | None = None,
@@ -540,7 +539,7 @@ async def _async_remove_liquidity(
 
 
 async def _async_redeem_withdraw_shares(
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadWriteInterface,
     agent: LocalAccount,
     trade_amount: FixedPoint,
     nonce: Nonce | None = None,

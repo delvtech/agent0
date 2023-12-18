@@ -1,8 +1,4 @@
 """High-level interface for a Hyperdrive pool."""
-
-# API file is a single class with lots of options
-# pylint: disable=too-many-lines
-
 from __future__ import annotations
 
 import copy
@@ -27,14 +23,6 @@ from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
 from ._contract_calls import (
-    _async_add_liquidity,
-    _async_close_long,
-    _async_close_short,
-    _async_open_long,
-    _async_open_short,
-    _async_redeem_withdraw_shares,
-    _async_remove_liquidity,
-    _create_checkpoint,
     _get_eth_base_balances,
     _get_gov_fees_accrued,
     _get_hyperdrive_base_balance,
@@ -42,7 +30,6 @@ from ._contract_calls import (
     _get_total_supply_withdrawal_shares,
     _get_variable_rate,
     _get_vault_shares,
-    _set_variable_rate,
 )
 from ._mock_contract import (
     _calc_bonds_given_shares_and_rate,
@@ -78,13 +65,10 @@ if TYPE_CHECKING:
     from eth_typing import BlockNumber
     from ethpy import EthConfig
     from web3 import Web3
-    from web3.types import Nonce
-
-    from ..receipt_breakdown import ReceiptBreakdown
 
 
-class HyperdriveInterface:
-    """End-point API for interfacing with a deployed Hyperdrive pool."""
+class HyperdriveReadInterface:
+    """Read-only end-point API for interfacing with a deployed Hyperdrive pool."""
 
     _deployed_hyperdrive_pool: DeployedHyperdrivePool | None = None
 
@@ -94,11 +78,9 @@ class HyperdriveInterface:
         addresses: HyperdriveAddresses | None = None,
         web3: Web3 | None = None,
         read_retry_count: int | None = None,
-        write_retry_count: int | None = None,
     ) -> None:
-        """The HyperdriveInterface API.
-        This is the primary endpoint for users to simulate as well as execute transactions on
-        the Hyperdrive smart contracts.
+        """The HyperdriveReadInterface API. This is the primary endpoint for
+        users to simulate transactions on Hyperdrive smart contracts.
 
         Arguments
         ---------
@@ -112,6 +94,8 @@ class HyperdriveInterface:
         web3: Web3, optional
             web3 provider object, optional
             If given, a web3 object is constructed using the `eth_config.rpc_uri` as the http provider.
+        read_retry_count: int | None, optional
+            The number of times to retry the read call if it fails. Defaults to 5.
         """
         # Handle defaults for config and addresses.
         self.eth_config: EthConfig = build_eth_config() if eth_config is None else eth_config
@@ -145,9 +129,6 @@ class HyperdriveInterface:
         # TODO these parameters are currently only used for trades against hyperdrive
         # and uses defaults for other smart_contract_read functions, e.g., get_pool_info.
         self.read_retry_count = read_retry_count
-        self.write_retry_count = write_retry_count
-
-    def __post_init__(self) -> None:
         self._deployed_hyperdrive_pool = self._create_deployed_hyperdrive_pool()
 
     def _create_deployed_hyperdrive_pool(self) -> DeployedHyperdrivePool:
@@ -333,7 +314,7 @@ class HyperdriveInterface:
             block_number = self.get_block_number(self.get_current_block())
         return _get_vault_shares(self.yield_contract, self.hyperdrive_contract, block_number)
 
-    def get_variable_rate(self, block_number: BlockNumber | None) -> FixedPoint:
+    def get_variable_rate(self, block_number: BlockNumber | None = None) -> FixedPoint:
         """Use an RPC to get the yield source variable rate.
 
         Arguments
@@ -376,7 +357,7 @@ class HyperdriveInterface:
         """
         return _get_hyperdrive_eth_balance(self.web3, self.hyperdrive_contract.address)
 
-    def get_hyperdrive_base_balance(self, block_number: BlockNumber | None) -> FixedPoint:
+    def get_hyperdrive_base_balance(self, block_number: BlockNumber | None = None) -> FixedPoint:
         """Get the current Hyperdrive balance in the base contract.
 
         Arguments
@@ -407,257 +388,6 @@ class HyperdriveInterface:
             The result of hyperdrive_contract.functions.getUncollectedGovernanceFees
         """
         return _get_gov_fees_accrued(self.hyperdrive_contract, block_number)
-
-    def create_checkpoint(
-        self, sender: LocalAccount, block_number: BlockNumber | None = None, checkpoint_time: int | None = None
-    ) -> ReceiptBreakdown:
-        """Create a Hyperdrive checkpoint.
-
-        Arguments
-        ---------
-        sender: LocalAccount
-            The sender account that is executing and signing the trade transaction.
-        block_number: BlockNumber, optional
-            The number for any minted block.
-            Defaults to the current block number.
-        checkpoint_time: int, optional
-            The checkpoint time to use. Defaults to the corresponding checkpoint for the provided block_number
-
-        Returns
-        -------
-        ReceiptBreakdown
-            A dataclass containing the output event of the contract call.
-        """
-        return _create_checkpoint(self, sender, block_number, checkpoint_time)
-
-    def set_variable_rate(self, sender: LocalAccount, new_rate: FixedPoint) -> None:
-        """Set the variable rate for the yield source.
-
-        Arguments
-        ---------
-        sender: LocalAccount
-            The sender account that is executing and signing the trade transaction.
-        new_rate: FixedPoint
-            The new variable rate for the yield source.
-        """
-        _set_variable_rate(self, sender, new_rate)
-
-    async def async_open_long(
-        self,
-        agent: LocalAccount,
-        trade_amount: FixedPoint,
-        slippage_tolerance: FixedPoint | None = None,
-        nonce: Nonce | None = None,
-    ) -> ReceiptBreakdown:
-        """Contract call to open a long position.
-
-        Arguments
-        ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
-            The size of the position, in base.
-        slippage_tolerance: FixedPoint, optional
-            Amount of slippage allowed from the trade.
-            If given, then the trade will not execute unless the slippage is below this value.
-            If not given, then execute the trade regardless of the slippage.
-        nonce: Nonce, optional
-            An optional explicit nonce to set with the transaction.
-
-        Returns
-        -------
-        ReceiptBreakdown
-            A dataclass containing the maturity time and the absolute values for token quantities changed.
-        """
-        return await _async_open_long(
-            self, agent, trade_amount, slippage_tolerance, nonce, self.eth_config.preview_before_trade
-        )
-
-    # We do not control the number of arguments; this is set by hyperdrive-rs
-    # pylint: disable=too-many-arguments
-    async def async_close_long(
-        self,
-        agent: LocalAccount,
-        trade_amount: FixedPoint,
-        maturity_time: int,
-        slippage_tolerance: FixedPoint | None = None,
-        nonce: Nonce | None = None,
-    ) -> ReceiptBreakdown:
-        """Contract call to close a long position.
-
-        Arguments
-        ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
-            The size of the position, in base.
-        maturity_time: int
-            The token maturity time in seconds.
-        slippage_tolerance: FixedPoint, optional
-            Amount of slippage allowed from the trade.
-            If given, then the trade will not execute unless the slippage is below this value.
-            If not given, then execute the trade regardless of the slippage.
-        nonce: Nonce, optional
-            An optional explicit nonce to set with the transaction.
-
-        Returns
-        -------
-        ReceiptBreakdown
-            A dataclass containing the maturity time and the absolute values for token quantities changed.
-        """
-        return await _async_close_long(
-            self, agent, trade_amount, maturity_time, slippage_tolerance, nonce, self.eth_config.preview_before_trade
-        )
-
-    async def async_open_short(
-        self,
-        agent: LocalAccount,
-        trade_amount: FixedPoint,
-        slippage_tolerance: FixedPoint | None = None,
-        nonce: Nonce | None = None,
-    ) -> ReceiptBreakdown:
-        """Contract call to open a short position.
-
-        Arguments
-        ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
-            The size of the position, in base.
-        slippage_tolerance: FixedPoint, optional
-            Amount of slippage allowed from the trade.
-            If given, then the trade will not execute unless the slippage is below this value.
-            If not given, then execute the trade regardless of the slippage.
-        nonce: Nonce, optional
-            An explicit nonce to set with the transaction.
-
-        Returns
-        -------
-        ReceiptBreakdown
-            A dataclass containing the maturity time and the absolute values for token quantities changed.
-        """
-        return await _async_open_short(
-            self, agent, trade_amount, slippage_tolerance, nonce, self.eth_config.preview_before_trade
-        )
-
-    # We do not control the number of arguments; this is set by hyperdrive-rs
-    # pylint: disable=too-many-arguments
-    async def async_close_short(
-        self,
-        agent: LocalAccount,
-        trade_amount: FixedPoint,
-        maturity_time: int,
-        slippage_tolerance: FixedPoint | None = None,
-        nonce: Nonce | None = None,
-    ) -> ReceiptBreakdown:
-        """Contract call to close a short position.
-
-        Arguments
-        ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
-            The size of the position, in base.
-        maturity_time: int
-            The token maturity time in seconds.
-        slippage_tolerance: FixedPoint, optional
-            Amount of slippage allowed from the trade.
-            If given, then the trade will not execute unless the slippage is below this value.
-            If not given, then execute the trade regardless of the slippage.
-        nonce: Nonce, optional
-            An explicit nonce to set with the transaction.
-
-        Returns
-        -------
-        ReceiptBreakdown
-            A dataclass containing the maturity time and the absolute values for token quantities changed.
-        """
-        return await _async_close_short(
-            self, agent, trade_amount, maturity_time, slippage_tolerance, nonce, self.eth_config.preview_before_trade
-        )
-
-    # We do not control the number of arguments; this is set by hyperdrive-rs
-    # pylint: disable=too-many-arguments
-    async def async_add_liquidity(
-        self,
-        agent: LocalAccount,
-        trade_amount: FixedPoint,
-        min_apr: FixedPoint,
-        max_apr: FixedPoint,
-        nonce: Nonce | None = None,
-    ) -> ReceiptBreakdown:
-        """Contract call to add liquidity to the Hyperdrive pool.
-
-        Arguments
-        ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
-            The size of the position, in base.
-        min_apr: FixedPoint
-            The minimum allowable APR after liquidity is added.
-        max_apr: FixedPoint
-            The maximum allowable APR after liquidity is added.
-        nonce: Nonce, optional
-            An explicit nonce to set with the transaction.
-
-        Returns
-        -------
-        ReceiptBreakdown
-            A dataclass containing the absolute values for token quantities changed.
-        """
-        return await _async_add_liquidity(
-            self, agent, trade_amount, min_apr, max_apr, nonce, self.eth_config.preview_before_trade
-        )
-
-    async def async_remove_liquidity(
-        self, agent: LocalAccount, trade_amount: FixedPoint, nonce: Nonce | None = None
-    ) -> ReceiptBreakdown:
-        """Contract call to remove liquidity from the Hyperdrive pool.
-
-        Arguments
-        ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
-            The size of the position, in base.
-        nonce: Nonce, optional
-            An explicit nonce to set with the transaction.
-
-        Returns
-        -------
-        ReceiptBreakdown
-            A dataclass containing the absolute values for token quantities changed.
-        """
-        return await _async_remove_liquidity(self, agent, trade_amount, nonce, self.eth_config.preview_before_trade)
-
-    async def async_redeem_withdraw_shares(
-        self, agent: LocalAccount, trade_amount: FixedPoint, nonce: Nonce | None = None
-    ) -> ReceiptBreakdown:
-        """Contract call to redeem withdraw shares from Hyperdrive pool.
-        This should be done after closing liquidity.
-
-        .. note::
-            This is not guaranteed to redeem all shares. The pool will try to redeem as
-            many as possible, up to the withdrawPool.readyToRedeem limit, without reverting.
-            This will revert if the min_output is too high or the user is trying to withdraw
-            more shares than they have.
-
-        Arguments
-        ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
-        trade_amount: FixedPoint
-            The size of the position, in base.
-        nonce: Nonce | None, optional
-            An explicit nonce to set with the transaction.
-
-        Returns
-        -------
-        ReceiptBreakdown
-            A dataclass containing the absolute values for token quantities changed.
-        """
-        return await _async_redeem_withdraw_shares(self, agent, trade_amount, nonce)
 
     def calc_position_duration_in_years(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Returns the pool config position duration as a fraction of a year.

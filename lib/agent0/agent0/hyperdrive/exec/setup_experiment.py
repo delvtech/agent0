@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from hyperlogs import setup_logging
 
 from agent0 import AccountKeyConfig
@@ -17,7 +17,7 @@ def setup_experiment(
     environment_config: EnvironmentConfig,
     agent_config: list[AgentConfig],
     account_key_config: AccountKeyConfig,
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadInterface,
 ) -> list[HyperdriveAgent]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
@@ -29,7 +29,7 @@ def setup_experiment(
         The list of agent configurations.
     account_key_config: AccountKeyConfig
         Configuration linking to the env file for storing private keys and initial budgets.
-    interface: HyperdriveInterface
+    interface: HyperdriveReadInterface
         An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
 
     Returns

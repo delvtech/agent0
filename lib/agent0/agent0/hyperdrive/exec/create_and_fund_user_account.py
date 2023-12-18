@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from eth_account.account import Account
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
-from ethpy.hyperdrive.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 
 from agent0 import AccountKeyConfig
 from agent0.base.make_key import make_private_key
@@ -73,7 +73,7 @@ def fund_user_account(
 
 def create_and_fund_user_account(
     account_key_config: AccountKeyConfig,
-    interface: HyperdriveInterface,
+    interface: HyperdriveReadInterface,
 ) -> HyperdriveAgent:
     """Helper function for funding a fake user account.
 
@@ -82,7 +82,7 @@ def create_and_fund_user_account(
     account_key_config: AccountKeyConfig
         Configuration linking to the env file for storing private keys and initial budgets.
         Defines the agents to be funded.
-    interface: HyperdriveInterface
+    interface: HyperdriveReadInterface
         The market on which this agent will be executing trades (MarketActions)
 
     Returns
