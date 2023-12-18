@@ -268,22 +268,11 @@ class LPandArb(HyperdrivePolicy):
         lp_amount = self.policy_config.lp_portion * wallet.balance.amount
         if wallet.lp_tokens == FixedPoint(0) and lp_amount > FixedPoint(0):
             # Add liquidity
-            # action_list.append(
-            #     interface.add_liquidity_trade(
-            #         trade_amount=lp_amount,
-            #         min_apr=interface.calc_fixed_rate() - self.policy_config.rate_slippage,
-            #         max_apr=interface.calc_fixed_rate() + self.policy_config.rate_slippage,
-            #     )
-            # )
             action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=lp_amount,
-                        min_apr=interface.calc_fixed_rate() - self.policy_config.rate_slippage,
-                        max_apr=interface.calc_fixed_rate() + self.policy_config.rate_slippage,
-                    ),
+                interface.add_liquidity_trade(
+                    trade_amount=lp_amount,
+                    min_apr=interface.calc_fixed_rate() - self.policy_config.rate_slippage,
+                    max_apr=interface.calc_fixed_rate() + self.policy_config.rate_slippage,
                 )
             )
 

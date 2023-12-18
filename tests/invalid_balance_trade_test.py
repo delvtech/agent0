@@ -207,15 +207,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
         done_trading = False
         if self.counter == 0:
             # Add liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=FixedPoint(10000),
-                    ),
-                )
-            )
+            action_list.append(interface.add_liquidity_trade(FixedPoint(10_000)))
         elif self.counter == 1:
             # Remove Liquidity for more than I have
             action_list.append(
@@ -378,15 +370,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         # Valid add liquidity
         if self.counter == 0:
             # Add liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=FixedPoint(10000),
-                    ),
-                )
-            )
+            action_list.append(interface.add_liquidity_trade(FixedPoint(10_000)))
         # Valid open long
         elif self.counter == 1:
             # Open Long
@@ -462,15 +446,7 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
         # Valid add liquidity
         if self.counter == 0:
             # Add liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=FixedPoint(10000),
-                    ),
-                )
-            )
+            action_list.append(interface.add_liquidity_trade(FixedPoint(10_000)))
         # Valid open long
         elif self.counter == 1:
             # Open Long

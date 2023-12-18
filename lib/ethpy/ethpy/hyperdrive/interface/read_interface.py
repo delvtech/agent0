@@ -21,6 +21,9 @@ from hypertypes import IERC4626HyperdriveContract
 from hypertypes.types import ERC20MintableContract, ERC4626HyperdriveFactoryContract, MockERC4626Contract
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
+from agent0.base import MarketType, Trade
+from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
+
 from ._block_getters import _get_block, _get_block_number, _get_block_time
 from ._contract_calls import (
     _get_eth_base_balances,
@@ -388,6 +391,41 @@ class HyperdriveReadInterface:
             The result of hyperdrive_contract.functions.getUncollectedGovernanceFees
         """
         return _get_gov_fees_accrued(self.hyperdrive_contract, block_number)
+
+    def add_liquidity_trade(
+        trade_amount: FixedPoint,
+        min_apr: FixedPoint | None = None,
+        max_apr: FixedPoint | None = None,
+    ) -> Trade[HyperdriveMarketAction]:
+        """Return a trade object for adding liquidity.
+
+        Arguments
+        ---------
+        trade_amount: FixedPoint
+            The amount of liquidity you wish to add to the pool.
+        min_apr: FixedPoint, optional
+            Minimum allowable APR after liquidity is added.
+            If this is not met, the trade will not execute.
+            Defaults to no minimum.
+        max_apr: FixedPoint, optional
+            Maximum allowable APR after liquidity is added.
+            If this is not met, the trade will not execute.
+            Defaults to no maximum.
+
+        Returns
+        -------
+        Trade[HyperdriveMarketAction]
+            The trade object specifying adding liquidity on a Hyperdrive pool.
+        """
+        return Trade(
+            market_type=MarketType.HYPERDRIVE,
+            market_action=HyperdriveMarketAction(
+                action_type=HyperdriveActionType.ADD_LIQUIDITY,
+                trade_amount=trade_amount,
+                min_apr=min_apr,
+                max_apr=max_apr,
+            ),
+        )
 
     def calc_position_duration_in_years(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Returns the pool config position duration as a fraction of a year.

@@ -56,17 +56,7 @@ class InvalidAddLiquidity(HyperdrivePolicy):
             and the second element defines if the agent is done trading
         """
         # pylint: disable=unused-argument
-        action_list = []
-        # Remove non-existing Liquidity
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                    trade_amount=SMALL_TRADE_AMOUNT,
-                ),
-            )
-        )
+        action_list = [interface.add_liquidity_trade(SMALL_TRADE_AMOUNT)]
         return action_list, True
 
 
@@ -98,16 +88,7 @@ class InvalidRemoveLiquidity(HyperdrivePolicy):
         done_trading = False
         if self.counter == 0:
             # Add liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=FixedPoint(10000),
-                        slippage_tolerance=self.slippage_tolerance,
-                    ),
-                ),
-            )
+            action_list.append(interface.add_liquidity_trade(FixedPoint(10_000)))
         elif self.counter == 2:
             # Remove liquidity
             action_list.append(

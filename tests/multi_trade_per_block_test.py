@@ -64,15 +64,7 @@ class MultiTradePolicy(HyperdrivePolicy):
         # Adding in 4 trades at the same time:
 
         # Add liquidity
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                    trade_amount=FixedPoint(11111),
-                ),
-            )
-        )
+        action_list.append(interface.add_liquidity_trade(FixedPoint(11_111)))
 
         # Open Long
         action_list.append(

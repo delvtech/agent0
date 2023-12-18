@@ -70,15 +70,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
 
         if self.counter == 0:
             # Add liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=FixedPoint(11111),
-                    ),
-                )
-            )
+            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(11111)))
         elif self.counter == 1:
             # Open Long
             action_list.append(
