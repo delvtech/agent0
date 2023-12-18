@@ -159,15 +159,7 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
         # pylint: disable=unused-argument
         action_list = []
         # Redeem non-existent withdrawal shares
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
-                    trade_amount=FixedPoint(20000),
-                ),
-            )
-        )
+        action_list.append(interface.redeem_withdraw_shares_trade(FixedPoint(20_000)))
         return action_list, True
 
 
@@ -376,15 +368,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
             # Attempt to redeem withdrawal shares that are not ready to withdrawal
             # since the open trades are not closed
             assert wallet.withdraw_shares > FixedPoint(0)
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
-                        trade_amount=wallet.withdraw_shares,
-                    ),
-                )
-            )
+            action_list.append(interface.redeem_withdraw_shares_trade(wallet.withdraw_shares))
             # Last trade, set flag
             done_trading = True
         self.counter += 1
@@ -444,15 +428,7 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
             # Attempt to redeem withdrawal shares that are not ready to withdrawal
             # since the open trades are not closed
             assert wallet.withdraw_shares > FixedPoint(0)
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
-                        trade_amount=FixedPoint(20000),
-                    ),
-                )
-            )
+            action_list.append(interface.redeem_withdraw_shares_trade(FixedPoint(20_000)))
             # Last trade, set flag
             done_trading = True
         self.counter += 1

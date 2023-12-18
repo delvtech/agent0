@@ -168,15 +168,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                 )
         elif self.counter == self.COUNTER_REDEEM_WITHDRAW_SHARES:
             # Redeem all withdrawal shares
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
-                        trade_amount=wallet.withdraw_shares,
-                    ),
-                )
-            )
+            action_list.append(interface.redeem_withdraw_shares_trade(wallet.withdraw_shares))
         elif self.counter == self.COUNTER_CHECK:
             # One final check after the previous trade
             pass

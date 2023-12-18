@@ -91,15 +91,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
             action_list.append(interface.remove_liquidity_trade(self.wallet.lp_tokens))
         if self.wallet.withdraw_shares > minimum_transaction_amount:
             logging.debug("closing lp: lp_tokens=%s", self.wallet.lp_tokens)
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
-                        trade_amount=self.wallet.withdraw_shares,
-                    ),
-                )
-            )
+            action_list.append(interface.redeem_withdraw_shares_trade(self.wallet.withdraw_shares))
 
         # If no more trades in wallet, set the done trading flag
         if len(action_list) == 0:

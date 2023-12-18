@@ -393,9 +393,7 @@ class HyperdriveReadInterface:
         return _get_gov_fees_accrued(self.hyperdrive_contract, block_number)
 
     def add_liquidity_trade(
-        trade_amount: FixedPoint,
-        min_apr: FixedPoint | None = None,
-        max_apr: FixedPoint | None = None,
+        trade_amount: FixedPoint, min_apr: FixedPoint | None = None, max_apr: FixedPoint | None = None
     ) -> Trade[HyperdriveMarketAction]:
         """Return a trade object for adding liquidity.
 
@@ -428,10 +426,9 @@ class HyperdriveReadInterface:
         )
 
     def remove_liquidity_trade(
-        trade_amount: FixedPoint,
-        slippage_tolerance: FixedPoint | None = None,
+        trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None
     ) -> Trade[HyperdriveMarketAction]:
-        """Return a trade object for adding liquidity.
+        """Return a trade object for removing liquidity.
 
         Arguments
         ---------
@@ -453,6 +450,27 @@ class HyperdriveReadInterface:
                 action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                 trade_amount=trade_amount,
                 slippage_tolerance=slippage_tolerance,
+            ),
+        )
+
+    def redeem_withdraw_shares_trade(trade_amount: FixedPoint) -> Trade[HyperdriveMarketAction]:
+        """Return a trade object for redeeming withdraw shares.
+
+        Arguments
+        ---------
+        trade_amount: FixedPoint
+            The amount of withdraw shares you wish to redeem from the pool.
+
+        Returns
+        -------
+        Trade[HyperdriveMarketAction]
+            The trade object for redeeming withdraw shares from a Hyperdrive pool.
+        """
+        return Trade(
+            market_type=MarketType.HYPERDRIVE,
+            market_action=HyperdriveMarketAction(
+                action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
+                trade_amount=trade_amount,
             ),
         )
 

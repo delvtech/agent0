@@ -149,15 +149,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
                 )
         elif self.counter == 6:
             # Redeem all withdrawal shares
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
-                        trade_amount=wallet.withdraw_shares,
-                    ),
-                )
-            )
+            action_list.append(interface.redeem_withdraw_shares_trade(wallet.withdraw_shares))
 
         self.counter += 1
         return action_list, False

@@ -339,16 +339,7 @@ class Random(HyperdrivePolicy):
         # WEI <= trade_amount <= withdraw_shares
         trade_amount = max(WEI, min(shares_available_to_withdraw, initial_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
-        return [
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
-                    trade_amount=trade_amount,
-                    slippage_tolerance=self.slippage_tolerance,
-                ),
-            )
-        ]
+        return [interface.redeem_withdraw_shares_trade(trade_amount)]
 
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
