@@ -167,17 +167,7 @@ class Random(HyperdrivePolicy):
         # choose a random short time to close
         short_time = list(wallet.shorts)[self.rng.integers(len(wallet.shorts))]
         trade_amount = wallet.shorts[short_time].balance  # close the full trade
-        return [
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.CLOSE_SHORT,
-                    trade_amount=trade_amount,
-                    slippage_tolerance=self.slippage_tolerance,
-                    maturity_time=short_time,
-                ),
-            )
-        ]
+        return [interface.close_short_trade(trade_amount, short_time, self.slippage_tolerance)]
 
     def open_long_with_random_amount(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet

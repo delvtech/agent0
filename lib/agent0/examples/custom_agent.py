@@ -116,17 +116,7 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
             # Close All Shorts
             assert len(wallet.shorts) == 1
             for short_time, short in wallet.shorts.items():
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_SHORT,
-                            trade_amount=short.balance,
-                            slippage_tolerance=self.slippage_tolerance,
-                            maturity_time=short_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_short_trade(short.balance, short_time, self.slippage_tolerance))
         elif self.counter == 6:
             # Redeem all withdrawal shares
             action_list.append(interface.redeem_withdraw_shares_trade(wallet.withdraw_shares))

@@ -54,23 +54,17 @@ class MultiTradePolicy(HyperdrivePolicy):
         """
         # pylint: disable=unused-argument
 
-        action_list = []
-
         if self.made_trade:
             # We want this bot to exit and crash after it's done the trades it needs to do
             # In this case, if this exception gets thrown, this means an invalid trade went through
             raise AssertionError("This policy's action shouldn't get called again after failure")
 
         # Adding in 4 trades at the same time:
-
-        # Add liquidity
-        action_list.append(interface.add_liquidity_trade(FixedPoint(11_111)))
-
-        # Open Long
-        action_list.append(interface.open_long_trade(FixedPoint(22_222)))
-
-        # Open Short
-        action_list.append(interface.open_short_trade(FixedPoint(33_333)))
+        action_list: list[Trade[HyperdriveMarketAction]] = [
+            interface.add_liquidity_trade(FixedPoint(11_111)),
+            interface.open_long_trade(FixedPoint(22_222)),
+            interface.open_short_trade(FixedPoint(33_333)),
+        ]
 
         self.made_trade = True
         return action_list, True

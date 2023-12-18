@@ -479,6 +479,37 @@ class HyperdriveReadInterface:
             ),
         )
 
+    def close_short_trade(
+        trade_amount: FixedPoint, maturity_time: int, slippage_tolerance: FixedPoint | None = None
+    ) -> Trade[HyperdriveMarketAction]:
+        """Return a trade object for closing a short.
+
+        Arguments
+        ---------
+        trade_amount: FixedPoint
+            The amount of bonds you wish to close.
+        maturity_time: int
+            The token maturity time in seconds.
+        slippage_tolerance: FixedPoint, optional
+            Amount of slippage allowed from the trade.
+            If given, then the trade will not execute unless the slippage is below this value.
+            If not given, then execute the trade regardless of the slippage.
+
+        Returns
+        -------
+        Trade[HyperdriveMarketAction]
+            The trade object for closing a short in a Hyperdrive pool.
+        """
+        return Trade(
+            market_type=MarketType.HYPERDRIVE,
+            market_action=HyperdriveMarketAction(
+                action_type=HyperdriveActionType.CLOSE_SHORT,
+                trade_amount=trade_amount,
+                maturity_time=maturity_time,
+                slippage_tolerance=slippage_tolerance,
+            ),
+        )
+
     def add_liquidity_trade(
         trade_amount: FixedPoint, min_apr: FixedPoint | None = None, max_apr: FixedPoint | None = None
     ) -> Trade[HyperdriveMarketAction]:

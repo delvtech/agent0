@@ -114,17 +114,7 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
         # pylint: disable=unused-argument
         action_list = []
         # Closing non-existent short
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.CLOSE_SHORT,
-                    trade_amount=FixedPoint(20000),
-                    slippage_tolerance=self.slippage_tolerance,
-                    maturity_time=1699561146,
-                ),
-            )
-        )
+        action_list.append(FixedPoint(20_000), maturity_time=1699561146, slippage_tolerance=self.slippage_tolerance)
         return action_list, True
 
 
@@ -265,17 +255,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
             # Closing existent short for more than I have
             assert len(wallet.shorts) == 1
             for short_time in wallet.shorts.keys():
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_SHORT,
-                            trade_amount=FixedPoint(20000),
-                            slippage_tolerance=self.slippage_tolerance,
-                            maturity_time=short_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_short_trade(FixedPoint(20_000), short_time, self.slippage_tolerance))
             done_trading = True
         self.counter += 1
         return action_list, done_trading

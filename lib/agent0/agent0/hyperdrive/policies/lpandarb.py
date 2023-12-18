@@ -296,17 +296,7 @@ class LPandArb(HyperdrivePolicy):
         for maturity_time, short in wallet.shorts.items():
             # If matured
             if maturity_time < interface.current_pool_state.block_time:
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_SHORT,
-                            trade_amount=short.balance,
-                            slippage_tolerance=self.slippage_tolerance,
-                            maturity_time=maturity_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_short_trade(short.balance, maturity_time, self.slippage_tolerance))
 
         # calculate bonds and shares needed if we're arbitraging in either direction
         bonds_needed, shares_needed = FixedPoint(0), FixedPoint(0)
@@ -333,15 +323,7 @@ class LPandArb(HyperdrivePolicy):
                     bonds_needed -= reduce_short_amount
                     logging.debug("reducing short by %s", reduce_short_amount)
                     action_list.append(
-                        Trade(
-                            market_type=MarketType.HYPERDRIVE,
-                            market_action=HyperdriveMarketAction(
-                                action_type=HyperdriveActionType.CLOSE_SHORT,
-                                trade_amount=reduce_short_amount,
-                                slippage_tolerance=self.slippage_tolerance,
-                                maturity_time=maturity_time,
-                            ),
-                        )
+                        interface.close_short_trade(reduce_short_amount, maturity_time, self.slippage_tolerance)
                     )
             # Open a new long, if there's still a need, and we have money
             if we_have_money and bonds_needed > interface.current_pool_state.pool_config.minimum_transaction_amount:
@@ -365,16 +347,7 @@ class LPandArb(HyperdrivePolicy):
             if we_have_money and bonds_needed > interface.current_pool_state.pool_config.minimum_transaction_amount:
                 max_short_bonds = interface.calc_max_short(wallet.balance.amount)
                 amount = min(bonds_needed, max_short_bonds)
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.OPEN_SHORT,
-                            trade_amount=amount,
-                            slippage_tolerance=self.slippage_tolerance,
-                        ),
-                    )
-                )
+                action_list.append(interface.open_short_trade(amount, self.slippage_tolerance))
 
         if self.policy_config.done_on_empty and len(action_list) == 0:
             return [], True
