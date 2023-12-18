@@ -93,17 +93,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
             # Close All Longs
             assert len(wallet.longs) == 1
             for long_time, long in wallet.longs.items():
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_LONG,
-                            trade_amount=long.balance,
-                            slippage_tolerance=self.slippage_tolerance,
-                            maturity_time=long_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_long_trade(long.balance, long_time, self.slippage_tolerance))
         elif self.counter == 5:
             # Close All Shorts
             assert len(wallet.shorts) == 1

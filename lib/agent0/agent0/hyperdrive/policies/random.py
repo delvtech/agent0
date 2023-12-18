@@ -238,17 +238,7 @@ class Random(HyperdrivePolicy):
         # choose a random long time to close
         long_time = list(wallet.longs)[self.rng.integers(len(wallet.longs))]
         trade_amount = wallet.longs[long_time].balance  # close the full trade
-        return [
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.CLOSE_LONG,
-                    trade_amount=trade_amount,
-                    slippage_tolerance=self.slippage_tolerance,
-                    maturity_time=long_time,
-                ),
-            )
-        ]
+        return [interface.close_long_trade(trade_amount, long_time, self.slippage_tolerance)]
 
     def add_liquidity_with_random_amount(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet

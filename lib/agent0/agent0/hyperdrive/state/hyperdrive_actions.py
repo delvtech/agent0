@@ -33,10 +33,10 @@ class HyperdriveMarketAction(BaseMarketAction[HyperdriveActionType]):
     action_type: HyperdriveActionType
     # amount to supply for the action
     trade_amount: FixedPoint  # TODO: should this be a Quantity, not a float? Make sure, then delete fixme
-    # slippage tolerance percent where 0.01 would be a 1% tolerance
-    slippage_tolerance: FixedPoint | None = None
     # maturity time is set only for trades that act on existing positions (close long or close short)
     maturity_time: int | None = None
+    # slippage tolerance percent where 0.01 would be a 1% tolerance
+    slippage_tolerance: FixedPoint | None = None
     # min_apr and max_apr used only for add_liquidity trades to control slippage
     min_apr: FixedPoint = FixedPoint(scaled_value=1)
     max_apr: FixedPoint = FixedPoint(scaled_value=2**256 - 1)

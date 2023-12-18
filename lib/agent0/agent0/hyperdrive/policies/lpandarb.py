@@ -291,17 +291,7 @@ class LPandArb(HyperdrivePolicy):
         for maturity_time, long in wallet.longs.items():
             # If matured
             if maturity_time < interface.current_pool_state.block_time:
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_LONG,
-                            trade_amount=long.balance,
-                            slippage_tolerance=self.slippage_tolerance,
-                            maturity_time=maturity_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
         # Close shorts if matured
         for maturity_time, short in wallet.shorts.items():
             # If matured
@@ -369,15 +359,7 @@ class LPandArb(HyperdrivePolicy):
                     bonds_needed -= reduce_long_amount
                     logging.debug("reducing long by %s", reduce_long_amount)
                     action_list.append(
-                        Trade(
-                            market_type=MarketType.HYPERDRIVE,
-                            market_action=HyperdriveMarketAction(
-                                action_type=HyperdriveActionType.CLOSE_LONG,
-                                trade_amount=reduce_long_amount,
-                                slippage_tolerance=self.slippage_tolerance,
-                                maturity_time=maturity_time,
-                            ),
-                        )
+                        interface.close_long_trade(reduce_long_amount, maturity_time, self.slippage_tolerance)
                     )
             # Open a new short, if there's still a need, and we have money
             if we_have_money and bonds_needed > interface.current_pool_state.pool_config.minimum_transaction_amount:

@@ -104,17 +104,7 @@ class Arbitrage(HyperdrivePolicy):
         for maturity_time, long in wallet.longs.items():
             # If matured
             if maturity_time < pool_state.block_time:
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_LONG,
-                            trade_amount=long.balance,
-                            slippage_tolerance=self.slippage_tolerance,
-                            maturity_time=maturity_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
 
         # Close shorts if matured
         for maturity_time, short in wallet.shorts.items():
@@ -156,17 +146,7 @@ class Arbitrage(HyperdrivePolicy):
             # Close all open longs
             if len(wallet.longs) > 0:
                 for maturity_time, long in wallet.longs.items():
-                    action_list.append(
-                        Trade(
-                            market_type=MarketType.HYPERDRIVE,
-                            market_action=HyperdriveMarketAction(
-                                action_type=HyperdriveActionType.CLOSE_LONG,
-                                trade_amount=long.balance,
-                                slippage_tolerance=self.slippage_tolerance,
-                                maturity_time=maturity_time,
-                            ),
-                        )
-                    )
+                    action_list.append(interface.close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
             # Open a new short
             action_list.append(
                 Trade(

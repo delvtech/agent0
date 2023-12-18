@@ -400,7 +400,7 @@ class HyperdriveReadInterface:
         Arguments
         ---------
         trade_amount: FixedPoint
-            The amount of liquidity you wish to remove from the pool.
+            The amount of base you wish to use to open a long.
         slippage_tolerance: FixedPoint, optional
             Amount of slippage allowed from the trade.
             If given, then the trade will not execute unless the slippage is below this value.
@@ -416,6 +416,37 @@ class HyperdriveReadInterface:
             market_action=HyperdriveMarketAction(
                 action_type=HyperdriveActionType.OPEN_LONG,
                 trade_amount=trade_amount,
+                slippage_tolerance=slippage_tolerance,
+            ),
+        )
+
+    def close_long_trade(
+        trade_amount: FixedPoint, maturity_time: int, slippage_tolerance: FixedPoint | None = None
+    ) -> Trade[HyperdriveMarketAction]:
+        """Return a trade object for closing a long.
+
+        Arguments
+        ---------
+        trade_amount: FixedPoint
+            The amount of bonds you wish to close.
+        maturity_time: int
+            The token maturity time in seconds.
+        slippage_tolerance: FixedPoint, optional
+            Amount of slippage allowed from the trade.
+            If given, then the trade will not execute unless the slippage is below this value.
+            If not given, then execute the trade regardless of the slippage.
+
+        Returns
+        -------
+        Trade[HyperdriveMarketAction]
+            The trade object for closing a long in a Hyperdrive pool.
+        """
+        return Trade(
+            market_type=MarketType.HYPERDRIVE,
+            market_action=HyperdriveMarketAction(
+                action_type=HyperdriveActionType.CLOSE_LONG,
+                trade_amount=trade_amount,
+                maturity_time=maturity_time,
                 slippage_tolerance=slippage_tolerance,
             ),
         )

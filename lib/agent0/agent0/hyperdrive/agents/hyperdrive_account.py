@@ -59,16 +59,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
         for maturity_time, long in self.wallet.longs.items():
             logging.debug("closing long: maturity_time=%g, balance=%s", maturity_time, long)
             if long.balance > minimum_transaction_amount:
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_LONG,
-                            trade_amount=long.balance,
-                            maturity_time=maturity_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_long_trade(long.balance, maturity_time))
         for maturity_time, short in self.wallet.shorts.items():
             logging.debug(
                 "closing short: maturity_time=%g, balance=%s",

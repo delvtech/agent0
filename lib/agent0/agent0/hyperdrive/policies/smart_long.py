@@ -103,17 +103,7 @@ class SmartLong(HyperdrivePolicy):
             # how to intelligently pick the length? using PNL I guess.
             if (pool_state.block_time - FixedPoint(long_time)) >= pool_state.pool_config.position_duration:
                 trade_amount = wallet.longs[long_time].balance  # close the whole thing
-                action_list += [
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_LONG,
-                            trade_amount=trade_amount,
-                            slippage_tolerance=self.slippage_tolerance,
-                            maturity_time=long_time,
-                        ),
-                    )
-                ]
+                action_list.append(interface.close_long_trade(trade_amount, long_time, self.slippage_tolerance))
         long_balances = [long.balance for long in wallet.longs.values()]
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate

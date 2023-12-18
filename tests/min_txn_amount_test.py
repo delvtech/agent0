@@ -195,17 +195,7 @@ class InvalidCloseLong(HyperdrivePolicy):
             # Closing existent long for more than I have
             assert len(wallet.longs) == 1
             for long_time in wallet.longs.keys():
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_LONG,
-                            trade_amount=SMALL_TRADE_AMOUNT,
-                            slippage_tolerance=self.slippage_tolerance,
-                            maturity_time=long_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_long_trade(SMALL_TRADE_AMOUNT, long_time, self.slippage_tolerance))
             done_trading = True
         self.counter += 1
         return action_list, done_trading

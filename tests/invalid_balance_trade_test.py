@@ -81,19 +81,12 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
             and the second element defines if the agent is done trading
         """
         # pylint: disable=unused-argument
-        action_list = []
         # Closing non-existent long
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.CLOSE_LONG,
-                    trade_amount=FixedPoint(20000),
-                    slippage_tolerance=self.slippage_tolerance,
-                    maturity_time=1699561146,
-                ),
+        action_list = [
+            interface.close_long_trade(
+                FixedPoint(20_000), maturity_time=1699561146, slippage_tolerance=self.slippage_tolerance
             )
-        )
+        ]
         return action_list, True
 
 
@@ -233,17 +226,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
             # Closing existent long for more than I have
             assert len(wallet.longs) == 1
             for long_time in wallet.longs.keys():
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_LONG,
-                            trade_amount=FixedPoint(20000),
-                            slippage_tolerance=self.slippage_tolerance,
-                            maturity_time=long_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_long_trade(FixedPoint(20_000), long_time, self.slippage_tolerance))
             done_trading = True
         self.counter += 1
         return action_list, done_trading
