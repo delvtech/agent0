@@ -950,7 +950,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.OPEN_LONG, base)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -967,7 +967,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.CLOSE_LONG, bonds, maturity_time)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -984,7 +984,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.OPEN_SHORT, bonds)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1001,7 +1001,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.CLOSE_SHORT, bonds, maturity_time=maturity_time)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1018,7 +1018,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.ADD_LIQUIDITY, base)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1035,7 +1035,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.REMOVE_LIQUIDITY, shares)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1052,7 +1052,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, shares)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1073,7 +1073,7 @@ class InteractiveHyperdrive:
 
         agent.policy.set_next_action_from_sub_policy()
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], False)
+            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1096,7 +1096,11 @@ class InteractiveHyperdrive:
     ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(
-                self.hyperdrive_interface, [agent], liquidate=True, randomize_liquidation=randomize
+                self.hyperdrive_interface,
+                [agent],
+                liquidate=True,
+                randomize_liquidation=randomize,
+                interactive_mode=True,
             )
         )
 
