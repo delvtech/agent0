@@ -100,13 +100,8 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
         elif self.counter == 2:
             # Open Short
             action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_SHORT,
-                        trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
-                        slippage_tolerance=self.slippage_tolerance,
-                    ),
+                interface.open_short_trade(
+                    FixedPoint(scaled_value=self.static_trade_amount_wei), self.slippage_tolerance
                 )
             )
         elif self.counter == 3:

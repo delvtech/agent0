@@ -147,18 +147,8 @@ class InvalidOpenShort(HyperdrivePolicy):
             and the second element defines if the agent is done trading
         """
         # pylint: disable=unused-argument
-        action_list = []
-        # Closing non-existent long
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.OPEN_SHORT,
-                    trade_amount=SMALL_TRADE_AMOUNT,
-                    slippage_tolerance=self.slippage_tolerance,
-                ),
-            )
-        )
+        # Open a short for too few bonds
+        action_list = [interface.open_short_trade(SMALL_TRADE_AMOUNT, self.slippage_tolerance)]
         return action_list, True
 
 
@@ -229,16 +219,7 @@ class InvalidCloseShort(HyperdrivePolicy):
         done_trading = False
         if self.counter == 0:
             # Open Short
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_SHORT,
-                        trade_amount=FixedPoint(10000),
-                        slippage_tolerance=self.slippage_tolerance,
-                    ),
-                )
-            )
+            action_list.append(interface.open_short_trade(FixedPoint(10_000), self.slippage_tolerance))
         elif self.counter == 1:
             # Closing existent short for more than I have
             assert len(wallet.shorts) == 1

@@ -99,15 +99,7 @@ class WalletTestPolicy(HyperdrivePolicy):
             action_list.append(interface.open_long_trade(FixedPoint(22_222)))
         elif self.counter == self.COUNTER_OPEN_SHORT:
             # Open Short
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_SHORT,
-                        trade_amount=FixedPoint(33333),
-                    ),
-                )
-            )
+            action_list.append(interface.open_short_trade(FixedPoint(33_333)))
         else:
             done_trading = True
         self.counter += 1

@@ -145,17 +145,7 @@ class Random(HyperdrivePolicy):
         # WEI <= trade_amount <= max_short
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
-
-        return [
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.OPEN_SHORT,
-                    trade_amount=trade_amount,
-                    slippage_tolerance=self.slippage_tolerance,
-                ),
-            )
-        ]
+        return [interface.open_short_trade(trade_amount, self.slippage_tolerance)]
 
     def close_random_short(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet

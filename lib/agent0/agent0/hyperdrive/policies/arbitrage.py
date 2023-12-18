@@ -148,15 +148,6 @@ class Arbitrage(HyperdrivePolicy):
                 for maturity_time, long in wallet.longs.items():
                     action_list.append(interface.close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
             # Open a new short
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_SHORT,
-                        trade_amount=self.policy_config.trade_amount,
-                        slippage_tolerance=self.slippage_tolerance,
-                    ),
-                )
-            )
+            action_list.append(interface.open_short_trade(self.policy_config.trade_amount, self.slippage_tolerance))
 
         return action_list, False

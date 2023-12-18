@@ -70,18 +70,9 @@ class MultiTradePolicy(HyperdrivePolicy):
         action_list.append(interface.open_long_trade(FixedPoint(22_222)))
 
         # Open Short
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.OPEN_SHORT,
-                    trade_amount=FixedPoint(33333),
-                ),
-            )
-        )
+        action_list.append(interface.open_short_trade(FixedPoint(33_333)))
 
         self.made_trade = True
-
         return action_list, True
 
 
