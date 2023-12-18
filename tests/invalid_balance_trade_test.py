@@ -61,7 +61,6 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
                 market_action=HyperdriveMarketAction(
                     action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                     trade_amount=FixedPoint(20000),
-                    wallet=wallet,
                 ),
             )
         )
@@ -99,7 +98,6 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
                     action_type=HyperdriveActionType.CLOSE_LONG,
                     trade_amount=FixedPoint(20000),
                     slippage_tolerance=self.slippage_tolerance,
-                    wallet=wallet,
                     maturity_time=1699561146,
                 ),
             )
@@ -138,7 +136,6 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
                     action_type=HyperdriveActionType.CLOSE_SHORT,
                     trade_amount=FixedPoint(20000),
                     slippage_tolerance=self.slippage_tolerance,
-                    wallet=wallet,
                     maturity_time=1699561146,
                 ),
             )
@@ -176,7 +173,6 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
                 market_action=HyperdriveMarketAction(
                     action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
                     trade_amount=FixedPoint(20000),
-                    wallet=wallet,
                 ),
             )
         )
@@ -217,7 +213,6 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
                         trade_amount=FixedPoint(10000),
-                        wallet=wallet,
                     ),
                 )
             )
@@ -229,7 +224,6 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                         trade_amount=FixedPoint(20000),
-                        wallet=wallet,
                     ),
                 )
             )
@@ -273,7 +267,6 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
                         action_type=HyperdriveActionType.OPEN_LONG,
                         trade_amount=FixedPoint(10000),
                         slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
                     ),
                 ),
             )
@@ -288,7 +281,6 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=FixedPoint(20000),
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                             maturity_time=long_time,
                         ),
                     )
@@ -333,7 +325,6 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
                         action_type=HyperdriveActionType.OPEN_SHORT,
                         trade_amount=FixedPoint(10000),
                         slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
                     ),
                 )
             )
@@ -348,7 +339,6 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=FixedPoint(20000),
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                             maturity_time=short_time,
                         ),
                     )
@@ -394,7 +384,6 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
                         trade_amount=FixedPoint(10000),
-                        wallet=wallet,
                     ),
                 )
             )
@@ -408,7 +397,6 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
                         action_type=HyperdriveActionType.OPEN_LONG,
                         trade_amount=FixedPoint(10000),
                         slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
                     ),
                 ),
             )
@@ -421,7 +409,6 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                         trade_amount=wallet.lp_tokens,
-                        wallet=wallet,
                     ),
                 )
             )
@@ -435,7 +422,6 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
                         trade_amount=wallet.withdraw_shares,
-                        wallet=wallet,
                     ),
                 )
             )
@@ -482,7 +468,6 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
                         trade_amount=FixedPoint(10000),
-                        wallet=wallet,
                     ),
                 )
             )
@@ -496,7 +481,6 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
                         action_type=HyperdriveActionType.OPEN_LONG,
                         trade_amount=FixedPoint(10000),
                         slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
                     ),
                 ),
             )
@@ -509,7 +493,6 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                         trade_amount=wallet.lp_tokens,
-                        wallet=wallet,
                     ),
                 )
             )
@@ -523,7 +506,6 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
                         trade_amount=FixedPoint(20000),
-                        wallet=wallet,
                     ),
                 )
             )

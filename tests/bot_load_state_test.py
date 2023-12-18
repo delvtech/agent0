@@ -99,7 +99,6 @@ class WalletTestPolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
                         trade_amount=FixedPoint(11111),
-                        wallet=wallet,
                     ),
                 )
             )
@@ -111,7 +110,6 @@ class WalletTestPolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_LONG,
                         trade_amount=FixedPoint(22222),
-                        wallet=wallet,
                     ),
                 )
             )
@@ -123,7 +121,6 @@ class WalletTestPolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.OPEN_SHORT,
                         trade_amount=FixedPoint(33333),
-                        wallet=wallet,
                     ),
                 )
             )

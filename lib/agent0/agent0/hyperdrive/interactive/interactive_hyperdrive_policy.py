@@ -133,7 +133,6 @@ class InteractiveHyperdrivePolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=self.next_action,
                         trade_amount=self.next_trade_amount,
-                        wallet=wallet,
                         maturity_time=self.next_maturity_time,
                     ),
                 )

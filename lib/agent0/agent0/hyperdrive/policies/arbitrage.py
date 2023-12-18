@@ -13,7 +13,6 @@ from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.interface import HyperdriveReadInterface
-    from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
 
@@ -112,7 +111,6 @@ class Arbitrage(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                             maturity_time=maturity_time,
                         ),
                     )
@@ -129,7 +127,6 @@ class Arbitrage(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                             maturity_time=maturity_time,
                         ),
                     )
@@ -147,7 +144,6 @@ class Arbitrage(HyperdrivePolicy):
                                 action_type=HyperdriveActionType.CLOSE_SHORT,
                                 trade_amount=short.balance,
                                 slippage_tolerance=self.slippage_tolerance,
-                                wallet=wallet,
                                 maturity_time=maturity_time,
                             ),
                         )
@@ -160,7 +156,6 @@ class Arbitrage(HyperdrivePolicy):
                         action_type=HyperdriveActionType.OPEN_LONG,
                         trade_amount=self.policy_config.trade_amount,
                         slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
                     ),
                 )
             )
@@ -177,7 +172,6 @@ class Arbitrage(HyperdrivePolicy):
                                 action_type=HyperdriveActionType.CLOSE_LONG,
                                 trade_amount=long.balance,
                                 slippage_tolerance=self.slippage_tolerance,
-                                wallet=wallet,
                                 maturity_time=maturity_time,
                             ),
                         )
@@ -190,7 +184,6 @@ class Arbitrage(HyperdrivePolicy):
                         action_type=HyperdriveActionType.OPEN_SHORT,
                         trade_amount=self.policy_config.trade_amount,
                         slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
                     ),
                 )
             )

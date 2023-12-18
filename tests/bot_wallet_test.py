@@ -114,7 +114,6 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
                         trade_amount=FixedPoint(11111),
-                        wallet=wallet,
                     ),
                 )
             )
@@ -127,7 +126,6 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                         action_type=HyperdriveActionType.OPEN_LONG,
                         trade_amount=FixedPoint(22222),
                         slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
                     ),
                 )
             )
@@ -140,7 +138,6 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                         action_type=HyperdriveActionType.OPEN_SHORT,
                         trade_amount=FixedPoint(33333),
                         slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
                     ),
                 )
             )
@@ -152,7 +149,6 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                         trade_amount=wallet.lp_tokens,
-                        wallet=wallet,
                     ),
                 )
             )
@@ -167,7 +163,6 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                             maturity_time=long_time,
                         ),
                     )
@@ -183,7 +178,6 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                             maturity_time=short_time,
                         ),
                     )
@@ -196,7 +190,6 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
                         trade_amount=wallet.withdraw_shares,
-                        wallet=wallet,
                     ),
                 )
             )

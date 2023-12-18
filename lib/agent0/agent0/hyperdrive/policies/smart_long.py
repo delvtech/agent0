@@ -13,7 +13,6 @@ from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.interface import HyperdriveReadInterface
-    from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
 # pylint: disable=too-few-public-methods
@@ -111,7 +110,6 @@ class SmartLong(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                             maturity_time=long_time,
                         ),
                     )
@@ -146,7 +144,6 @@ class SmartLong(HyperdrivePolicy):
                             action_type=HyperdriveActionType.OPEN_LONG,
                             trade_amount=trade_amount,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                         ),
                     )
                 ]

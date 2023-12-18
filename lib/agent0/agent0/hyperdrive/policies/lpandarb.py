@@ -17,7 +17,6 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.interface import HyperdriveReadInterface
-    from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
 
@@ -269,13 +268,19 @@ class LPandArb(HyperdrivePolicy):
         lp_amount = self.policy_config.lp_portion * wallet.balance.amount
         if wallet.lp_tokens == FixedPoint(0) and lp_amount > FixedPoint(0):
             # Add liquidity
+            # action_list.append(
+            #     interface.add_liquidity_trade(
+            #         trade_amount=lp_amount,
+            #         min_apr=interface.calc_fixed_rate() - self.policy_config.rate_slippage,
+            #         max_apr=interface.calc_fixed_rate() + self.policy_config.rate_slippage,
+            #     )
+            # )
             action_list.append(
                 Trade(
                     market_type=MarketType.HYPERDRIVE,
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
                         trade_amount=lp_amount,
-                        wallet=wallet,
                         min_apr=interface.calc_fixed_rate() - self.policy_config.rate_slippage,
                         max_apr=interface.calc_fixed_rate() + self.policy_config.rate_slippage,
                     ),
@@ -304,7 +309,6 @@ class LPandArb(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                             maturity_time=maturity_time,
                         ),
                     )
@@ -320,7 +324,6 @@ class LPandArb(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                             maturity_time=maturity_time,
                         ),
                     )
@@ -357,7 +360,6 @@ class LPandArb(HyperdrivePolicy):
                                 action_type=HyperdriveActionType.CLOSE_SHORT,
                                 trade_amount=reduce_short_amount,
                                 slippage_tolerance=self.slippage_tolerance,
-                                wallet=wallet,
                                 maturity_time=maturity_time,
                             ),
                         )
@@ -374,7 +376,6 @@ class LPandArb(HyperdrivePolicy):
                             action_type=HyperdriveActionType.OPEN_LONG,
                             trade_amount=amount,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                         ),
                     )
                 )
@@ -394,7 +395,6 @@ class LPandArb(HyperdrivePolicy):
                                 action_type=HyperdriveActionType.CLOSE_LONG,
                                 trade_amount=reduce_long_amount,
                                 slippage_tolerance=self.slippage_tolerance,
-                                wallet=wallet,
                                 maturity_time=maturity_time,
                             ),
                         )
@@ -410,7 +410,6 @@ class LPandArb(HyperdrivePolicy):
                             action_type=HyperdriveActionType.OPEN_SHORT,
                             trade_amount=amount,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                         ),
                     )
                 )

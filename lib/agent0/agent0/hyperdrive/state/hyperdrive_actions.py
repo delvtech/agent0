@@ -8,8 +8,6 @@ from fixedpointmath import FixedPoint
 
 from agent0.base.state import BaseMarketAction
 
-from .hyperdrive_wallet import HyperdriveWallet
-
 
 class HyperdriveActionType(Enum):
     r"""The descriptor of an action in a market."""
@@ -28,15 +26,13 @@ class HyperdriveActionType(Enum):
 
 
 @dataclass
-class HyperdriveMarketAction(BaseMarketAction[HyperdriveActionType, HyperdriveWallet]):
+class HyperdriveMarketAction(BaseMarketAction[HyperdriveActionType]):
     r"""Market action specification."""
 
     # these two variables are required to be set by the strategy
     action_type: HyperdriveActionType
     # amount to supply for the action
     trade_amount: FixedPoint  # TODO: should this be a Quantity, not a float? Make sure, then delete fixme
-    # the agent's wallet
-    wallet: HyperdriveWallet
     # slippage tolerance percent where 0.01 would be a 1% tolerance
     slippage_tolerance: FixedPoint | None = None
     # maturity time is set only for trades that act on existing positions (close long or close short)

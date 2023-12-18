@@ -64,7 +64,6 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
-                            wallet=self.wallet,
                             maturity_time=maturity_time,
                         ),
                     )
@@ -82,7 +81,6 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
                         market_action=HyperdriveMarketAction(
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
-                            wallet=self.wallet,
                             maturity_time=maturity_time,
                         ),
                     )
@@ -95,7 +93,6 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
-                        wallet=self.wallet,
                     ),
                 )
             )
@@ -107,7 +104,6 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
                         trade_amount=self.wallet.withdraw_shares,
-                        wallet=self.wallet,
                     ),
                 )
             )

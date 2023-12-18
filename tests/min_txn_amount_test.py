@@ -64,7 +64,6 @@ class InvalidAddLiquidity(HyperdrivePolicy):
                 market_action=HyperdriveMarketAction(
                     action_type=HyperdriveActionType.ADD_LIQUIDITY,
                     trade_amount=SMALL_TRADE_AMOUNT,
-                    wallet=wallet,
                 ),
             )
         )
@@ -106,7 +105,6 @@ class InvalidRemoveLiquidity(HyperdrivePolicy):
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
                         trade_amount=FixedPoint(10000),
                         slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
                     ),
                 ),
             )
@@ -118,7 +116,6 @@ class InvalidRemoveLiquidity(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                         trade_amount=SMALL_TRADE_AMOUNT,
-                        wallet=wallet,
                     ),
                 )
             )
@@ -158,7 +155,6 @@ class InvalidOpenLong(HyperdrivePolicy):
                     action_type=HyperdriveActionType.OPEN_LONG,
                     trade_amount=SMALL_TRADE_AMOUNT,
                     slippage_tolerance=self.slippage_tolerance,
-                    wallet=wallet,
                 ),
             )
         )
@@ -196,7 +192,6 @@ class InvalidOpenShort(HyperdrivePolicy):
                     action_type=HyperdriveActionType.OPEN_SHORT,
                     trade_amount=SMALL_TRADE_AMOUNT,
                     slippage_tolerance=self.slippage_tolerance,
-                    wallet=wallet,
                 ),
             )
         )
@@ -238,7 +233,6 @@ class InvalidCloseLong(HyperdrivePolicy):
                         action_type=HyperdriveActionType.OPEN_LONG,
                         trade_amount=FixedPoint(10000),
                         slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
                     ),
                 ),
             )
@@ -253,7 +247,6 @@ class InvalidCloseLong(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=SMALL_TRADE_AMOUNT,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                             maturity_time=long_time,
                         ),
                     )
@@ -298,7 +291,6 @@ class InvalidCloseShort(HyperdrivePolicy):
                         action_type=HyperdriveActionType.OPEN_SHORT,
                         trade_amount=FixedPoint(10000),
                         slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
                     ),
                 )
             )
@@ -313,7 +305,6 @@ class InvalidCloseShort(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=SMALL_TRADE_AMOUNT,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                             maturity_time=short_time,
                         ),
                     )

@@ -14,7 +14,6 @@ from .hyperdrive_policy import HyperdrivePolicy
 if TYPE_CHECKING:
     from ethpy.hyperdrive.interface import HyperdriveReadInterface
     from ethpy.hyperdrive.state import PoolState
-    from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
 
@@ -156,7 +155,6 @@ class Random(HyperdrivePolicy):
                     action_type=HyperdriveActionType.OPEN_SHORT,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
-                    wallet=wallet,
                 ),
             )
         ]
@@ -184,7 +182,6 @@ class Random(HyperdrivePolicy):
                     action_type=HyperdriveActionType.CLOSE_SHORT,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
-                    wallet=wallet,
                     maturity_time=short_time,
                 ),
             )
@@ -226,7 +223,6 @@ class Random(HyperdrivePolicy):
                     action_type=HyperdriveActionType.OPEN_LONG,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
-                    wallet=wallet,
                 ),
             )
         ]
@@ -254,7 +250,6 @@ class Random(HyperdrivePolicy):
                     action_type=HyperdriveActionType.CLOSE_LONG,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
-                    wallet=wallet,
                     maturity_time=long_time,
                 ),
             )
@@ -287,7 +282,6 @@ class Random(HyperdrivePolicy):
                     action_type=HyperdriveActionType.ADD_LIQUIDITY,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
-                    wallet=wallet,
                 ),
             )
         ]
@@ -319,7 +313,6 @@ class Random(HyperdrivePolicy):
                     action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
-                    wallet=wallet,
                 ),
             )
         ]
@@ -359,7 +352,6 @@ class Random(HyperdrivePolicy):
                     action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
                     trade_amount=trade_amount,
                     slippage_tolerance=self.slippage_tolerance,
-                    wallet=wallet,
                 ),
             )
         ]

@@ -17,7 +17,6 @@ from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.interface import HyperdriveReadInterface
-    from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
 
@@ -94,7 +93,6 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.ADD_LIQUIDITY,
                         trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
-                        wallet=wallet,
                     ),
                 )
             )
@@ -107,7 +105,6 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
                         action_type=HyperdriveActionType.OPEN_LONG,
                         trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
                         slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
                     ),
                 )
             )
@@ -120,7 +117,6 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
                         action_type=HyperdriveActionType.OPEN_SHORT,
                         trade_amount=FixedPoint(scaled_value=self.static_trade_amount_wei),
                         slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
                     ),
                 )
             )
@@ -132,7 +128,6 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
                         trade_amount=wallet.lp_tokens,
-                        wallet=wallet,
                     ),
                 )
             )
@@ -147,7 +142,6 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                             maturity_time=long_time,
                         ),
                     )
@@ -163,7 +157,6 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
                             action_type=HyperdriveActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
                             maturity_time=short_time,
                         ),
                     )
@@ -176,7 +169,6 @@ class CustomCycleTradesPolicy(HyperdrivePolicy):
                     market_action=HyperdriveMarketAction(
                         action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
                         trade_amount=wallet.withdraw_shares,
-                        wallet=wallet,
                     ),
                 )
             )
