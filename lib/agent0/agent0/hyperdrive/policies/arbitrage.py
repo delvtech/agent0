@@ -149,16 +149,7 @@ class Arbitrage(HyperdrivePolicy):
                         )
                     )
             # Open a new long
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=self.policy_config.trade_amount,
-                        slippage_tolerance=self.slippage_tolerance,
-                    ),
-                )
-            )
+            action_list.append(interface.open_long_trade(self.policy_config.trade_amount, self.slippage_tolerance))
 
         # Low fixed rate detected
         if fixed_rate <= self.policy_config.low_fixed_rate_thresh:

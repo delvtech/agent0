@@ -137,14 +137,5 @@ class SmartLong(HyperdrivePolicy):
             # don't want to trade more than the agent has or more than the market can handle
             trade_amount = FixedPointMath.minimum(max_base, new_base_to_match_variable_apr)
             if trade_amount > WEI and wallet.balance.amount > WEI:
-                action_list += [
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.OPEN_LONG,
-                            trade_amount=trade_amount,
-                            slippage_tolerance=self.slippage_tolerance,
-                        ),
-                    )
-                ]
+                action_list.append(interface.open_long_trade(trade_amount, self.slippage_tolerance))
         return action_list, False

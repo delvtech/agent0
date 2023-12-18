@@ -228,16 +228,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
         done_trading = False
         if self.counter == 0:
             # Open Long
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=FixedPoint(10000),
-                        slippage_tolerance=self.slippage_tolerance,
-                    ),
-                ),
-            )
+            action_list.append(interface.open_long_trade(FixedPoint(10_000), self.slippage_tolerance))
         elif self.counter == 1:
             # Closing existent long for more than I have
             assert len(wallet.longs) == 1
@@ -350,16 +341,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         # Valid open long
         elif self.counter == 1:
             # Open Long
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=FixedPoint(10000),
-                        slippage_tolerance=self.slippage_tolerance,
-                    ),
-                ),
-            )
+            action_list.append(interface.open_long_trade(FixedPoint(10_000), self.slippage_tolerance))
         # Valid remove liquidity
         elif self.counter == 2:
             # Remove all liquidity
@@ -410,16 +392,7 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
         # Valid open long
         elif self.counter == 1:
             # Open Long
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=FixedPoint(10000),
-                        slippage_tolerance=self.slippage_tolerance,
-                    ),
-                ),
-            )
+            action_list.append(interface.open_long_trade(FixedPoint(10_000), self.slippage_tolerance))
         # Valid remove liquidity
         elif self.counter == 2:
             # Remove all liquidity

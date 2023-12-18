@@ -392,6 +392,34 @@ class HyperdriveReadInterface:
         """
         return _get_gov_fees_accrued(self.hyperdrive_contract, block_number)
 
+    def open_long_trade(
+        trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None
+    ) -> Trade[HyperdriveMarketAction]:
+        """Return a trade object for opening a long.
+
+        Arguments
+        ---------
+        trade_amount: FixedPoint
+            The amount of liquidity you wish to remove from the pool.
+        slippage_tolerance: FixedPoint, optional
+            Amount of slippage allowed from the trade.
+            If given, then the trade will not execute unless the slippage is below this value.
+            If not given, then execute the trade regardless of the slippage.
+
+        Returns
+        -------
+        Trade[HyperdriveMarketAction]
+            The trade object for opening a long in a Hyperdrive pool.
+        """
+        return Trade(
+            market_type=MarketType.HYPERDRIVE,
+            market_action=HyperdriveMarketAction(
+                action_type=HyperdriveActionType.OPEN_LONG,
+                trade_amount=trade_amount,
+                slippage_tolerance=slippage_tolerance,
+            ),
+        )
+
     def add_liquidity_trade(
         trade_amount: FixedPoint, min_apr: FixedPoint | None = None, max_apr: FixedPoint | None = None
     ) -> Trade[HyperdriveMarketAction]:
