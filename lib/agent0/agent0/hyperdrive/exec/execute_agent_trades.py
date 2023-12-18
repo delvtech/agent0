@@ -146,6 +146,8 @@ async def async_execute_agent_trades(
         If set, will ignore all policy settings and liquidate all open positions
     randomize_liquidation: bool
         If set, will randomize the order of liquidation trades
+    interactive_mode: bool
+        Defines if this function is being called in interactive mode
 
     Returns
     -------

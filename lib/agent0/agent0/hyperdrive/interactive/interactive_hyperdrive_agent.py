@@ -224,7 +224,7 @@ class InteractiveHyperdriveAgent:
 
         Arguments
         ---------
-        randomize_trades: bool, optional
+        randomize: bool, optional
             Whether to randomize liquidation trades. Defaults to False.
 
         Returns
