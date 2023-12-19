@@ -184,7 +184,6 @@ def launch_local_hyperdrive_pool(
     )
     return deploy_hyperdrive_from_factory(
         local_chain_uri,
-        abi_folder,
         deployer_private_key,
         initial_liquidity,
         initial_variable_rate,
