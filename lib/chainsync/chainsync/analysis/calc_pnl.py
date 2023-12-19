@@ -95,8 +95,8 @@ def calc_single_closeout(
             logging.warning("Exception caught, ignoring: %s", exception)
 
     elif tokentype in ["LP", "WITHDRAWAL_SHARE"]:
-        out_pnl = amount * lp_share_price
-        out_pnl = Decimal(out_pnl.scaled_value) / Decimal(1e18)
+        out_pnl = amount * float(lp_share_price)
+        out_pnl = Decimal(out_pnl) / Decimal(1e18)
     else:
         # Should never get here
         raise ValueError(f"Unexpected token type: {tokentype}")
