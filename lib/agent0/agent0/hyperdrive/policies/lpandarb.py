@@ -11,13 +11,12 @@ from typing import TYPE_CHECKING
 from ethpy.hyperdrive.state import PoolState
 from fixedpointmath import FixedPoint
 
-from agent0.base import MarketType, Trade
+from agent0.base import Trade
 from agent0.hyperdrive.policies.hyperdrive_policy import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
+from agent0.hyperdrive.state import HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.interface import HyperdriveReadInterface
-    from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
 
@@ -270,15 +269,10 @@ class LPandArb(HyperdrivePolicy):
         if wallet.lp_tokens == FixedPoint(0) and lp_amount > FixedPoint(0):
             # Add liquidity
             action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=lp_amount,
-                        wallet=wallet,
-                        min_apr=interface.calc_fixed_rate() - self.policy_config.rate_slippage,
-                        max_apr=interface.calc_fixed_rate() + self.policy_config.rate_slippage,
-                    ),
+                interface.add_liquidity_trade(
+                    trade_amount=lp_amount,
+                    min_apr=interface.calc_fixed_rate() - self.policy_config.rate_slippage,
+                    max_apr=interface.calc_fixed_rate() + self.policy_config.rate_slippage,
                 )
             )
 
@@ -297,34 +291,12 @@ class LPandArb(HyperdrivePolicy):
         for maturity_time, long in wallet.longs.items():
             # If matured
             if maturity_time < interface.current_pool_state.block_time:
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_LONG,
-                            trade_amount=long.balance,
-                            slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
-                            maturity_time=maturity_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
         # Close shorts if matured
         for maturity_time, short in wallet.shorts.items():
             # If matured
             if maturity_time < interface.current_pool_state.block_time:
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_SHORT,
-                            trade_amount=short.balance,
-                            slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
-                            maturity_time=maturity_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_short_trade(short.balance, maturity_time, self.slippage_tolerance))
 
         # calculate bonds and shares needed if we're arbitraging in either direction
         bonds_needed, shares_needed = FixedPoint(0), FixedPoint(0)
@@ -351,33 +323,14 @@ class LPandArb(HyperdrivePolicy):
                     bonds_needed -= reduce_short_amount
                     logging.debug("reducing short by %s", reduce_short_amount)
                     action_list.append(
-                        Trade(
-                            market_type=MarketType.HYPERDRIVE,
-                            market_action=HyperdriveMarketAction(
-                                action_type=HyperdriveActionType.CLOSE_SHORT,
-                                trade_amount=reduce_short_amount,
-                                slippage_tolerance=self.slippage_tolerance,
-                                wallet=wallet,
-                                maturity_time=maturity_time,
-                            ),
-                        )
+                        interface.close_short_trade(reduce_short_amount, maturity_time, self.slippage_tolerance)
                     )
             # Open a new long, if there's still a need, and we have money
             if we_have_money and bonds_needed > interface.current_pool_state.pool_config.minimum_transaction_amount:
                 max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                 max_long_shares = interface.calc_shares_in_given_bonds_out_down(max_long_bonds)
                 amount = min(shares_needed, max_long_shares) * interface.current_pool_state.pool_info.share_price
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.OPEN_LONG,
-                            trade_amount=amount,
-                            slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
-                        ),
-                    )
-                )
+                action_list.append(interface.open_long_trade(amount, self.slippage_tolerance))
 
         if low_fixed_rate_detected:
             # Reduce longs first, if we have them
@@ -388,32 +341,13 @@ class LPandArb(HyperdrivePolicy):
                     bonds_needed -= reduce_long_amount
                     logging.debug("reducing long by %s", reduce_long_amount)
                     action_list.append(
-                        Trade(
-                            market_type=MarketType.HYPERDRIVE,
-                            market_action=HyperdriveMarketAction(
-                                action_type=HyperdriveActionType.CLOSE_LONG,
-                                trade_amount=reduce_long_amount,
-                                slippage_tolerance=self.slippage_tolerance,
-                                wallet=wallet,
-                                maturity_time=maturity_time,
-                            ),
-                        )
+                        interface.close_long_trade(reduce_long_amount, maturity_time, self.slippage_tolerance)
                     )
             # Open a new short, if there's still a need, and we have money
             if we_have_money and bonds_needed > interface.current_pool_state.pool_config.minimum_transaction_amount:
                 max_short_bonds = interface.calc_max_short(wallet.balance.amount)
                 amount = min(bonds_needed, max_short_bonds)
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.OPEN_SHORT,
-                            trade_amount=amount,
-                            slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
-                        ),
-                    )
-                )
+                action_list.append(interface.open_short_trade(amount, self.slippage_tolerance))
 
         if self.policy_config.done_on_empty and len(action_list) == 0:
             return [], True

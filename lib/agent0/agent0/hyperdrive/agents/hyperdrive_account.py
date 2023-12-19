@@ -11,7 +11,7 @@ from fixedpointmath import FixedPoint
 from agent0.base import MarketType, Trade
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 
@@ -41,34 +41,25 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
         # Reinitialize the wallet to the subclass
         self.wallet = HyperdriveWallet(address=self.wallet.address, balance=self.wallet.balance)
 
-    def get_liquidation_trades(self, minimum_transaction_amount: FixedPoint) -> list[Trade[HyperdriveMarketAction]]:
+    def get_liquidation_trades(self, interface: HyperdriveReadInterface) -> list[Trade[HyperdriveMarketAction]]:
         """List of trades that liquidate all open positions
 
         Arguments
         ---------
-        minimum_transaction_amount: FixedPoint
-            The minimum transaction amount, below which we will not liquidate a position
+        interface: HyperdriveReadInterface
+            The interface for the market on which this agent will be executing trades (MarketActions)
 
         Returns
         -------
         list[Trade]
             List of trades to execute in order to liquidate positions where applicable
         """
+        minimum_transaction_amount = interface.pool_config.minimum_transaction_amount
         action_list = []
         for maturity_time, long in self.wallet.longs.items():
             logging.debug("closing long: maturity_time=%g, balance=%s", maturity_time, long)
             if long.balance > minimum_transaction_amount:
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_LONG,
-                            trade_amount=long.balance,
-                            wallet=self.wallet,
-                            maturity_time=maturity_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_long_trade(long.balance, maturity_time))
         for maturity_time, short in self.wallet.shorts.items():
             logging.debug(
                 "closing short: maturity_time=%g, balance=%s",
@@ -76,41 +67,13 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
                 short.balance,
             )
             if short.balance > minimum_transaction_amount:
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_SHORT,
-                            trade_amount=short.balance,
-                            wallet=self.wallet,
-                            maturity_time=maturity_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_short_trade(short.balance, maturity_time))
         if self.wallet.lp_tokens > minimum_transaction_amount:
             logging.debug("closing lp: lp_tokens=%s", self.wallet.lp_tokens)
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
-                        trade_amount=self.wallet.lp_tokens,
-                        wallet=self.wallet,
-                    ),
-                )
-            )
+            action_list.append(interface.remove_liquidity_trade(self.wallet.lp_tokens))
         if self.wallet.withdraw_shares > minimum_transaction_amount:
             logging.debug("closing lp: lp_tokens=%s", self.wallet.lp_tokens)
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
-                        trade_amount=self.wallet.withdraw_shares,
-                        wallet=self.wallet,
-                    ),
-                )
-            )
+            action_list.append(interface.redeem_withdraw_shares_trade(self.wallet.withdraw_shares))
 
         # If no more trades in wallet, set the done trading flag
         if len(action_list) == 0:
@@ -124,7 +87,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
         Arguments
         ---------
         interface: HyperdriveReadInterface
-            The market on which this agent will be executing trades (MarketActions)
+            The interface for the market on which this agent will be executing trades (MarketActions)
 
         Returns
         -------
@@ -135,7 +98,6 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
         # TODO: Deprecate the old wallet in favor of this new one
         actions: list[Trade[HyperdriveMarketAction]]
         actions, self.done_trading = self.policy.action(interface, self.wallet)
-
         # edit each action in place
         for action in actions:
             if action.market_type == MarketType.HYPERDRIVE and action.market_action.maturity_time is None:

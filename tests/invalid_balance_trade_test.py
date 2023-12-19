@@ -14,11 +14,11 @@ from web3 import HTTPProvider
 from web3.exceptions import ContractLogicError, ContractPanicError
 
 from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
+from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -55,16 +55,7 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
         # pylint: disable=unused-argument
         action_list = []
         # Remove non-existing Liquidity
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
-                    trade_amount=FixedPoint(20000),
-                    wallet=wallet,
-                ),
-            )
-        )
+        action_list.append(interface.remove_liquidity_trade(FixedPoint(20_000)))
         return action_list, True
 
 
@@ -90,20 +81,12 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
             and the second element defines if the agent is done trading
         """
         # pylint: disable=unused-argument
-        action_list = []
         # Closing non-existent long
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.CLOSE_LONG,
-                    trade_amount=FixedPoint(20000),
-                    slippage_tolerance=self.slippage_tolerance,
-                    wallet=wallet,
-                    maturity_time=1699561146,
-                ),
+        action_list = [
+            interface.close_long_trade(
+                FixedPoint(20_000), maturity_time=1699561146, slippage_tolerance=self.slippage_tolerance
             )
-        )
+        ]
         return action_list, True
 
 
@@ -129,20 +112,12 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
             and the second element defines if the agent is done trading
         """
         # pylint: disable=unused-argument
-        action_list = []
         # Closing non-existent short
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.CLOSE_SHORT,
-                    trade_amount=FixedPoint(20000),
-                    slippage_tolerance=self.slippage_tolerance,
-                    wallet=wallet,
-                    maturity_time=1699561146,
-                ),
+        action_list = [
+            interface.close_short_trade(
+                FixedPoint(20_000), maturity_time=1699561146, slippage_tolerance=self.slippage_tolerance
             )
-        )
+        ]
         return action_list, True
 
 
@@ -170,16 +145,7 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
         # pylint: disable=unused-argument
         action_list = []
         # Redeem non-existent withdrawal shares
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
-                    trade_amount=FixedPoint(20000),
-                    wallet=wallet,
-                ),
-            )
-        )
+        action_list.append(interface.redeem_withdraw_shares_trade(FixedPoint(20_000)))
         return action_list, True
 
 
@@ -211,28 +177,10 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
         done_trading = False
         if self.counter == 0:
             # Add liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=FixedPoint(10000),
-                        wallet=wallet,
-                    ),
-                )
-            )
+            action_list.append(interface.add_liquidity_trade(FixedPoint(10_000)))
         elif self.counter == 1:
             # Remove Liquidity for more than I have
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
-                        trade_amount=FixedPoint(20000),
-                        wallet=wallet,
-                    ),
-                )
-            )
+            action_list.append(interface.remove_liquidity_trade(FixedPoint(20_000)))
             done_trading = True
         self.counter += 1
         return action_list, done_trading
@@ -266,33 +214,12 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
         done_trading = False
         if self.counter == 0:
             # Open Long
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=FixedPoint(10000),
-                        slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
-                    ),
-                ),
-            )
+            action_list.append(interface.open_long_trade(FixedPoint(10_000), self.slippage_tolerance))
         elif self.counter == 1:
             # Closing existent long for more than I have
             assert len(wallet.longs) == 1
             for long_time in wallet.longs.keys():
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_LONG,
-                            trade_amount=FixedPoint(20000),
-                            slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
-                            maturity_time=long_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_long_trade(FixedPoint(20_000), long_time, self.slippage_tolerance))
             done_trading = True
         self.counter += 1
         return action_list, done_trading
@@ -326,33 +253,12 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
         done_trading = False
         if self.counter == 0:
             # Open Short
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_SHORT,
-                        trade_amount=FixedPoint(10000),
-                        slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
-                    ),
-                )
-            )
+            action_list.append(interface.open_short_trade(FixedPoint(10_000), self.slippage_tolerance))
         elif self.counter == 1:
             # Closing existent short for more than I have
             assert len(wallet.shorts) == 1
             for short_time in wallet.shorts.keys():
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_SHORT,
-                            trade_amount=FixedPoint(20000),
-                            slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
-                            maturity_time=short_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_short_trade(FixedPoint(20_000), short_time, self.slippage_tolerance))
             done_trading = True
         self.counter += 1
         return action_list, done_trading
@@ -388,57 +294,20 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         # Valid add liquidity
         if self.counter == 0:
             # Add liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=FixedPoint(10000),
-                        wallet=wallet,
-                    ),
-                )
-            )
+            action_list.append(interface.add_liquidity_trade(FixedPoint(10_000)))
         # Valid open long
         elif self.counter == 1:
             # Open Long
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=FixedPoint(10000),
-                        slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
-                    ),
-                ),
-            )
+            action_list.append(interface.open_long_trade(FixedPoint(10_000), self.slippage_tolerance))
         # Valid remove liquidity
         elif self.counter == 2:
             # Remove all liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
-                        trade_amount=wallet.lp_tokens,
-                        wallet=wallet,
-                    ),
-                )
-            )
+            action_list.append(interface.remove_liquidity_trade(wallet.lp_tokens))
         elif self.counter == 3:
             # Attempt to redeem withdrawal shares that are not ready to withdrawal
             # since the open trades are not closed
             assert wallet.withdraw_shares > FixedPoint(0)
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
-                        trade_amount=wallet.withdraw_shares,
-                        wallet=wallet,
-                    ),
-                )
-            )
+            action_list.append(interface.redeem_withdraw_shares_trade(wallet.withdraw_shares))
             # Last trade, set flag
             done_trading = True
         self.counter += 1
@@ -476,57 +345,20 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
         # Valid add liquidity
         if self.counter == 0:
             # Add liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                        trade_amount=FixedPoint(10000),
-                        wallet=wallet,
-                    ),
-                )
-            )
+            action_list.append(interface.add_liquidity_trade(FixedPoint(10_000)))
         # Valid open long
         elif self.counter == 1:
             # Open Long
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=FixedPoint(10000),
-                        slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
-                    ),
-                ),
-            )
+            action_list.append(interface.open_long_trade(FixedPoint(10_000), self.slippage_tolerance))
         # Valid remove liquidity
         elif self.counter == 2:
             # Remove all liquidity
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
-                        trade_amount=wallet.lp_tokens,
-                        wallet=wallet,
-                    ),
-                )
-            )
+            action_list.append(interface.remove_liquidity_trade(wallet.lp_tokens))
         elif self.counter == 3:
             # Attempt to redeem withdrawal shares that are not ready to withdrawal
             # since the open trades are not closed
             assert wallet.withdraw_shares > FixedPoint(0)
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
-                        trade_amount=FixedPoint(20000),
-                        wallet=wallet,
-                    ),
-                )
-            )
+            action_list.append(interface.redeem_withdraw_shares_trade(FixedPoint(20_000)))
             # Last trade, set flag
             done_trading = True
         self.counter += 1

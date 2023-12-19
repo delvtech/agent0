@@ -56,9 +56,7 @@ async def async_execute_single_agent_trade(
     """
     if liquidate:
         # TODO: test this option
-        trades: list[Trade[HyperdriveMarketAction]] = agent.get_liquidation_trades(
-            interface.pool_config.minimum_transaction_amount
-        )
+        trades: list[Trade[HyperdriveMarketAction]] = agent.get_liquidation_trades(interface)
     else:
         trades: list[Trade[HyperdriveMarketAction]] = agent.get_trades(interface=interface.get_read_interface())
 

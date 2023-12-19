@@ -16,11 +16,11 @@ from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
 from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
+from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -54,53 +54,19 @@ class MultiTradePolicy(HyperdrivePolicy):
         """
         # pylint: disable=unused-argument
 
-        action_list = []
-
         if self.made_trade:
             # We want this bot to exit and crash after it's done the trades it needs to do
             # In this case, if this exception gets thrown, this means an invalid trade went through
             raise AssertionError("This policy's action shouldn't get called again after failure")
 
         # Adding in 4 trades at the same time:
-
-        # Add liquidity
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.ADD_LIQUIDITY,
-                    trade_amount=FixedPoint(11111),
-                    wallet=wallet,
-                ),
-            )
-        )
-
-        # Open Long
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.OPEN_LONG,
-                    trade_amount=FixedPoint(22222),
-                    wallet=wallet,
-                ),
-            )
-        )
-
-        # Open Short
-        action_list.append(
-            Trade(
-                market_type=MarketType.HYPERDRIVE,
-                market_action=HyperdriveMarketAction(
-                    action_type=HyperdriveActionType.OPEN_SHORT,
-                    trade_amount=FixedPoint(33333),
-                    wallet=wallet,
-                ),
-            )
-        )
+        action_list: list[Trade[HyperdriveMarketAction]] = [
+            interface.add_liquidity_trade(FixedPoint(11_111)),
+            interface.open_long_trade(FixedPoint(22_222)),
+            interface.open_short_trade(FixedPoint(33_333)),
+        ]
 
         self.made_trade = True
-
         return action_list, True
 
 

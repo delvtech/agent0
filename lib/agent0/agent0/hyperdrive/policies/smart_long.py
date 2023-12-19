@@ -6,14 +6,13 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint, FixedPointMath
 
-from agent0.base import WEI, MarketType, Trade
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
+from agent0.base import WEI, Trade
+from agent0.hyperdrive.state import HyperdriveMarketAction
 
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.interface import HyperdriveReadInterface
-    from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
 # pylint: disable=too-few-public-methods
@@ -104,18 +103,7 @@ class SmartLong(HyperdrivePolicy):
             # how to intelligently pick the length? using PNL I guess.
             if (pool_state.block_time - FixedPoint(long_time)) >= pool_state.pool_config.position_duration:
                 trade_amount = wallet.longs[long_time].balance  # close the whole thing
-                action_list += [
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_LONG,
-                            trade_amount=trade_amount,
-                            slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
-                            maturity_time=long_time,
-                        ),
-                    )
-                ]
+                action_list.append(interface.close_long_trade(trade_amount, long_time, self.slippage_tolerance))
         long_balances = [long.balance for long in wallet.longs.values()]
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
@@ -139,15 +127,5 @@ class SmartLong(HyperdrivePolicy):
             # don't want to trade more than the agent has or more than the market can handle
             trade_amount = FixedPointMath.minimum(max_base, new_base_to_match_variable_apr)
             if trade_amount > WEI and wallet.balance.amount > WEI:
-                action_list += [
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.OPEN_LONG,
-                            trade_amount=trade_amount,
-                            slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
-                        ),
-                    )
-                ]
+                action_list.append(interface.open_long_trade(trade_amount, self.slippage_tolerance))
         return action_list, False

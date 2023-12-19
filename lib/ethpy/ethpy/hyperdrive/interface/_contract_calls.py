@@ -446,8 +446,8 @@ async def _async_add_liquidity(
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     fn_args = (
         trade_amount.scaled_value,
-        min_apr.scaled_value,
-        max_apr.scaled_value,
+        min_apr.scaled_value,  # trade will reject if liquidity pushes fixed apr below this amount
+        max_apr.scaled_value,  # trade will reject if liquidity pushes fixed apr above this amount
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
             True,  # asBase
@@ -467,7 +467,6 @@ async def _async_add_liquidity(
             block_number=current_block,
             read_retry_count=interface.read_retry_count,
         )
-    # TODO add slippage controls for add liquidity
     try:
         tx_receipt = await async_smart_contract_transact(
             interface.web3,

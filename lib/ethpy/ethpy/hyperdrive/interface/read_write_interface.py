@@ -160,7 +160,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         agent: LocalAccount
             The account for the agent that is executing and signing the trade transaction.
         trade_amount: FixedPoint
-            The size of the position, in base.
+            The amount of bonds you wish to close.
         maturity_time: int
             The token maturity time in seconds.
         slippage_tolerance: FixedPoint, optional

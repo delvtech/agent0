@@ -6,14 +6,13 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from agent0.base import MarketType, Trade
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
+from agent0.base import Trade
+from agent0.hyperdrive.state import HyperdriveMarketAction
 
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.interface import HyperdriveReadInterface
-    from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
 
@@ -105,35 +104,13 @@ class Arbitrage(HyperdrivePolicy):
         for maturity_time, long in wallet.longs.items():
             # If matured
             if maturity_time < pool_state.block_time:
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_LONG,
-                            trade_amount=long.balance,
-                            slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
-                            maturity_time=maturity_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
 
         # Close shorts if matured
         for maturity_time, short in wallet.shorts.items():
             # If matured
             if maturity_time < pool_state.block_time:
-                action_list.append(
-                    Trade(
-                        market_type=MarketType.HYPERDRIVE,
-                        market_action=HyperdriveMarketAction(
-                            action_type=HyperdriveActionType.CLOSE_SHORT,
-                            trade_amount=short.balance,
-                            slippage_tolerance=self.slippage_tolerance,
-                            wallet=wallet,
-                            maturity_time=maturity_time,
-                        ),
-                    )
-                )
+                action_list.append(interface.close_short_trade(short.balance, maturity_time, self.slippage_tolerance))
 
         # High fixed rate detected
         if fixed_rate >= self.policy_config.high_fixed_rate_thresh:
@@ -141,58 +118,18 @@ class Arbitrage(HyperdrivePolicy):
             if len(wallet.shorts) > 0:
                 for maturity_time, short in wallet.shorts.items():
                     action_list.append(
-                        Trade(
-                            market_type=MarketType.HYPERDRIVE,
-                            market_action=HyperdriveMarketAction(
-                                action_type=HyperdriveActionType.CLOSE_SHORT,
-                                trade_amount=short.balance,
-                                slippage_tolerance=self.slippage_tolerance,
-                                wallet=wallet,
-                                maturity_time=maturity_time,
-                            ),
-                        )
+                        interface.close_short_trade(short.balance, maturity_time, self.slippage_tolerance)
                     )
             # Open a new long
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_LONG,
-                        trade_amount=self.policy_config.trade_amount,
-                        slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
-                    ),
-                )
-            )
+            action_list.append(interface.open_long_trade(self.policy_config.trade_amount, self.slippage_tolerance))
 
         # Low fixed rate detected
         if fixed_rate <= self.policy_config.low_fixed_rate_thresh:
             # Close all open longs
             if len(wallet.longs) > 0:
                 for maturity_time, long in wallet.longs.items():
-                    action_list.append(
-                        Trade(
-                            market_type=MarketType.HYPERDRIVE,
-                            market_action=HyperdriveMarketAction(
-                                action_type=HyperdriveActionType.CLOSE_LONG,
-                                trade_amount=long.balance,
-                                slippage_tolerance=self.slippage_tolerance,
-                                wallet=wallet,
-                                maturity_time=maturity_time,
-                            ),
-                        )
-                    )
+                    action_list.append(interface.close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
             # Open a new short
-            action_list.append(
-                Trade(
-                    market_type=MarketType.HYPERDRIVE,
-                    market_action=HyperdriveMarketAction(
-                        action_type=HyperdriveActionType.OPEN_SHORT,
-                        trade_amount=self.policy_config.trade_amount,
-                        slippage_tolerance=self.slippage_tolerance,
-                        wallet=wallet,
-                    ),
-                )
-            )
+            action_list.append(interface.open_short_trade(self.policy_config.trade_amount, self.slippage_tolerance))
 
         return action_list, False

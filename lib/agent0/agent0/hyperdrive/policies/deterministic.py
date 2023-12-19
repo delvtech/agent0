@@ -14,7 +14,6 @@ from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.interface import HyperdriveReadInterface
-    from numpy.random._generator import Generator
 
     from agent0.hyperdrive.state import HyperdriveWallet
 
@@ -93,5 +92,5 @@ class Deterministic(HyperdrivePolicy):
             return [], True  # done trading
         action_type, amount = self.trade_list.pop(0)
         mint_time = next(iter({"close_long": wallet.longs, "close_short": wallet.shorts}.get(action_type, [])), None)
-        action = HyperdriveMarketAction(HyperdriveActionType(action_type), wallet, FixedPoint(amount), None, mint_time)
+        action = HyperdriveMarketAction(HyperdriveActionType(action_type), FixedPoint(amount), None, mint_time)
         return [Trade(market_type=MarketType.HYPERDRIVE, market_action=action)], False
