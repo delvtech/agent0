@@ -34,7 +34,11 @@ DEFAULT_READ_RETRY_COUNT = 5
 
 
 async def async_execute_single_agent_trade(
-    agent: HyperdriveAgent, interface: HyperdriveReadWriteInterface, liquidate: bool
+    agent: HyperdriveAgent,
+    interface: HyperdriveReadWriteInterface,
+    liquidate: bool,
+    randomize_liquidation: bool,
+    interactive_mode: bool,
 ) -> list[TradeResult]:
     """Executes a single agent's trade. This function is async as
     `match_contract_call_to_trade` waits for a transaction receipt.
@@ -47,6 +51,10 @@ async def async_execute_single_agent_trade(
         The Hyperdrive API interface object
     liquidate: bool
         If set, will ignore all policy settings and liquidate all open positions
+    randomize_liquidation: bool
+        If set, will randomize the order of liquidation trades
+    interactive_mode: bool
+        If set, running in interactive mode
 
     Returns
     -------
@@ -56,7 +64,9 @@ async def async_execute_single_agent_trade(
     """
     if liquidate:
         # TODO: test this option
-        trades: list[Trade[HyperdriveMarketAction]] = agent.get_liquidation_trades(interface)
+        trades: list[Trade[HyperdriveMarketAction]] = agent.get_liquidation_trades(
+            interface, randomize_liquidation, interactive_mode
+        )
     else:
         trades: list[Trade[HyperdriveMarketAction]] = agent.get_trades(interface=interface.get_read_interface())
 
@@ -121,6 +131,8 @@ async def async_execute_agent_trades(
     interface: HyperdriveReadWriteInterface,
     agents: list[HyperdriveAgent],
     liquidate: bool,
+    randomize_liquidation: bool = False,
+    interactive_mode: bool = False,
 ) -> list[TradeResult]:
     """Hyperdrive forever into the sunset.
 
@@ -132,6 +144,10 @@ async def async_execute_agent_trades(
         A list of HyperdriveAgent that are conducting the trades
     liquidate: bool
         If set, will ignore all policy settings and liquidate all open positions
+    randomize_liquidation: bool
+        If set, will randomize the order of liquidation trades
+    interactive_mode: bool
+        Defines if this function is being called in interactive mode
 
     Returns
     -------
@@ -142,7 +158,11 @@ async def async_execute_agent_trades(
     # Make calls per agent to execute_single_agent_trade
     # Await all trades to finish before continuing
     gathered_trade_results: list[list[TradeResult]] = await asyncio.gather(
-        *[async_execute_single_agent_trade(agent, interface, liquidate) for agent in agents if not agent.done_trading]
+        *[
+            async_execute_single_agent_trade(agent, interface, liquidate, randomize_liquidation, interactive_mode)
+            for agent in agents
+            if not agent.done_trading
+        ]
     )
     # Flatten list of lists, since agent information is already in TradeResult
     trade_results = [item for sublist in gathered_trade_results for item in sublist]

@@ -54,6 +54,8 @@ class EnvironmentConfig(FrozenClass):
     # 5 read retries, 1 write retry
     read_retry_count: int | None = None
     write_retry_count: int | None = None
+    # if true, will randomize liquidation trades when liquidating.
+    randomize_liquidation: bool = False
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)

@@ -462,3 +462,47 @@ def test_liquidate(chain: LocalChain):
     alice.liquidate()
     current_wallet = interactive_hyperdrive.get_current_wallet()
     assert current_wallet.shape[0] == 1  # we have 1 open position, including base
+
+
+@pytest.mark.anvil
+def test_random_liquidate(chain: LocalChain):
+    """Test random liquidation."""
+    # Explicitly setting a random seed to remove randomness in the test
+    interactive_config = InteractiveHyperdrive.Config(rng_seed=1234)
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), name="alice")
+
+    # We run the same trades 5 times, and ensure there's at least one difference
+    # between the 5 liquidations.
+    all_liquidate_events = []
+    for _ in range(5):
+        alice.open_long(base=FixedPoint(100))
+        alice.open_short(bonds=FixedPoint(100))
+        alice.add_liquidity(base=FixedPoint(100))
+        current_wallet = interactive_hyperdrive.get_current_wallet()
+        assert current_wallet.shape[0] == 4  # we have 4 open positions, including base
+        liquidate_events = alice.liquidate(randomize=True)
+        # We run liquidate here twice, as there's a chance the trades result in gaining withdrawal shares
+        # TODO write loop within liquidate to call this multiple times
+        # and also account for when no withdrawal shares are available to withdraw.
+        liquidate_events.extend(alice.liquidate(randomize=True))
+        current_wallet = interactive_hyperdrive.get_current_wallet()
+        all_liquidate_events.append(liquidate_events)
+        assert current_wallet.shape[0] == 1  # we have 1 open position, including base
+    assert len(all_liquidate_events) == 5
+    # We ensure not all trades are identical
+    is_different = False
+    check_events = all_liquidate_events[0]
+    for events in all_liquidate_events[1:]:
+        # Check length, if different we're done
+        # (due to withdrawal shares event)
+        if len(check_events) != len(events):
+            is_different = True
+            break
+        for check_event, event in zip(check_events, events):
+            if check_event != event:
+                is_different = True
+                break
+
+    if not is_different:
+        raise ValueError("Random liquidation resulted in the same trades")

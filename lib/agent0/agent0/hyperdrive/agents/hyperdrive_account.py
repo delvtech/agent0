@@ -41,13 +41,19 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
         # Reinitialize the wallet to the subclass
         self.wallet = HyperdriveWallet(address=self.wallet.address, balance=self.wallet.balance)
 
-    def get_liquidation_trades(self, interface: HyperdriveReadInterface) -> list[Trade[HyperdriveMarketAction]]:
+    def get_liquidation_trades(
+        self, interface: HyperdriveReadInterface, randomize_trades: bool, interactive_mode: bool
+    ) -> list[Trade[HyperdriveMarketAction]]:
         """List of trades that liquidate all open positions
 
         Arguments
         ---------
         interface: HyperdriveReadInterface
             The interface for the market on which this agent will be executing trades (MarketActions)
+        randomize_trades: bool
+            If True, will randomize the order of liquidation trades
+        interactive_mode: bool
+            If True, won't set the done trading flag
 
         Returns
         -------
@@ -71,12 +77,19 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
         if self.wallet.lp_tokens > minimum_transaction_amount:
             logging.debug("closing lp: lp_tokens=%s", self.wallet.lp_tokens)
             action_list.append(interface.remove_liquidity_trade(self.wallet.lp_tokens))
-        if self.wallet.withdraw_shares > minimum_transaction_amount:
-            logging.debug("closing lp: lp_tokens=%s", self.wallet.lp_tokens)
+
+        # We use the underlying policies rng object for randomizing liquidation trades
+        if randomize_trades:
+            action_list = self.policy.rng.permutation(action_list).tolist()
+
+        # Always set withdrawal shares to be last, as we need trades to close first before withdrawing
+        if self.wallet.withdraw_shares > 0:
+            logging.debug("closing withdrawal: withdrawal_tokens=%s", self.wallet.withdraw_shares)
             action_list.append(interface.redeem_withdraw_shares_trade(self.wallet.withdraw_shares))
 
+        # If interactive mode set to true, never set done_trading
         # If no more trades in wallet, set the done trading flag
-        if len(action_list) == 0:
+        if not interactive_mode and len(action_list) == 0:
             self.done_trading = True
 
         return action_list

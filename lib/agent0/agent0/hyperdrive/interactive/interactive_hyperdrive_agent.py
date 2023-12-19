@@ -217,12 +217,19 @@ class InteractiveHyperdriveAgent:
         """
         return self._pool._execute_policy_action(self.agent)
 
-    def liquidate(self) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
+    def liquidate(
+        self, randomize: bool = False
+    ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
         """Liquidate all of the agent's positions.
+
+        Arguments
+        ---------
+        randomize: bool, optional
+            Whether to randomize liquidation trades. Defaults to False.
 
         Returns
         -------
         list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]
             Events of the executed actions.
         """
-        return self._pool._liquidate(self.agent)
+        return self._pool._liquidate(self.agent, randomize)
