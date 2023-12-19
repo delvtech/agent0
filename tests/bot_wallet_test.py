@@ -16,11 +16,11 @@ from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
 from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
+from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
 
 
 def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, interface: HyperdriveReadInterface) -> None:
@@ -108,7 +108,7 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
 
         if self.counter == self.COUNTER_ADD_LIQUIDITY:
             # Add liquidity
-            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(11111)))
+            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(11_111)))
         elif self.counter == self.COUNTER_OPEN_LONG:
             # Open Long
             action_list.append(interface.open_long_trade(FixedPoint(22_222), self.slippage_tolerance))

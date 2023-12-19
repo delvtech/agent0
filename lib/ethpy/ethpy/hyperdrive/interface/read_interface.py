@@ -56,6 +56,7 @@ from ._mock_contract import (
 )
 
 # We expect to have many instance attributes & public methods since this is a large API.
+# pylint: disable=too-many-lines
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-public-methods
 # pylint: disable=too-many-arguments
@@ -392,6 +393,7 @@ class HyperdriveReadInterface:
         """
         return _get_gov_fees_accrued(self.hyperdrive_contract, block_number)
 
+    @staticmethod
     def open_long_trade(
         trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None
     ) -> Trade[HyperdriveMarketAction]:
@@ -420,6 +422,7 @@ class HyperdriveReadInterface:
             ),
         )
 
+    @staticmethod
     def close_long_trade(
         trade_amount: FixedPoint, maturity_time: int, slippage_tolerance: FixedPoint | None = None
     ) -> Trade[HyperdriveMarketAction]:
@@ -451,6 +454,7 @@ class HyperdriveReadInterface:
             ),
         )
 
+    @staticmethod
     def open_short_trade(
         trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None
     ) -> Trade[HyperdriveMarketAction]:
@@ -479,6 +483,7 @@ class HyperdriveReadInterface:
             ),
         )
 
+    @staticmethod
     def close_short_trade(
         trade_amount: FixedPoint, maturity_time: int, slippage_tolerance: FixedPoint | None = None
     ) -> Trade[HyperdriveMarketAction]:
@@ -510,8 +515,11 @@ class HyperdriveReadInterface:
             ),
         )
 
+    @staticmethod
     def add_liquidity_trade(
-        trade_amount: FixedPoint, min_apr: FixedPoint | None = None, max_apr: FixedPoint | None = None
+        trade_amount: FixedPoint,
+        min_apr: FixedPoint = FixedPoint(scaled_value=1),
+        max_apr: FixedPoint = FixedPoint(scaled_value=2**256 - 1),
     ) -> Trade[HyperdriveMarketAction]:
         """Return a trade object for adding liquidity.
 
@@ -522,11 +530,11 @@ class HyperdriveReadInterface:
         min_apr: FixedPoint, optional
             Minimum allowable APR after liquidity is added.
             If this is not met, the trade will not execute.
-            Defaults to no minimum.
+            Defaults to the minimum solidity FixedPoint (1e-18)
         max_apr: FixedPoint, optional
             Maximum allowable APR after liquidity is added.
             If this is not met, the trade will not execute.
-            Defaults to no maximum.
+            Defaults to the maximum solidity FixedPoint (2**256-1)
 
         Returns
         -------
@@ -543,6 +551,7 @@ class HyperdriveReadInterface:
             ),
         )
 
+    @staticmethod
     def remove_liquidity_trade(
         trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None
     ) -> Trade[HyperdriveMarketAction]:
@@ -571,6 +580,7 @@ class HyperdriveReadInterface:
             ),
         )
 
+    @staticmethod
     def redeem_withdraw_shares_trade(trade_amount: FixedPoint) -> Trade[HyperdriveMarketAction]:
         """Return a trade object for redeeming withdraw shares.
 

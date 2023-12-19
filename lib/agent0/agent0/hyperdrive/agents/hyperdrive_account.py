@@ -11,7 +11,7 @@ from fixedpointmath import FixedPoint
 from agent0.base import MarketType, Trade
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 

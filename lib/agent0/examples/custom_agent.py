@@ -9,11 +9,11 @@ from typing import TYPE_CHECKING
 from fixedpointmath import FixedPoint
 
 from agent0 import initialize_accounts
-from agent0.base import MarketType, Trade
+from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
+from agent0.hyperdrive.state import HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.interface import HyperdriveReadInterface

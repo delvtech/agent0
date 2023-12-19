@@ -8,9 +8,9 @@ import pytest
 from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 
-from agent0.base import MarketType, Trade
+from agent0.base import Trade
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
 
 
 # Build custom policy
@@ -70,7 +70,7 @@ class CycleTradesPolicy(HyperdrivePolicy):
 
         if self.counter == 0:
             # Add liquidity
-            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(11111)))
+            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(11_111)))
         elif self.counter == 1:
             # Open Long
             action_list.append(interface.open_long_trade(FixedPoint(22_222), self.slippage_tolerance))

@@ -18,11 +18,11 @@ from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
 from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
+from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
 
 
 class WalletTestPolicy(HyperdrivePolicy):
@@ -86,14 +86,14 @@ class WalletTestPolicy(HyperdrivePolicy):
             # TODO would like to check long and lp value here,
             # but the units there are in bonds and lp shares respectively,
             # where the known value of the trade is in units of base.
-            assert wallet.shorts[list(wallet.shorts.keys())[0]].balance == FixedPoint(33333)
+            assert wallet.shorts[list(wallet.shorts.keys())[0]].balance == FixedPoint(33_333)
 
             # We want this bot to exit and crash after it's done the trades it needs to do
             done_trading = True
 
         if self.counter == self.COUNTER_ADD_LIQUIDITY:
             # Add liquidity
-            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(11111)))
+            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(11_111)))
         elif self.counter == self.COUNTER_OPEN_LONG:
             # Open Long
             action_list.append(interface.open_long_trade(FixedPoint(22_222)))

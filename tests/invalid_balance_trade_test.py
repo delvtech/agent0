@@ -14,11 +14,11 @@ from web3 import HTTPProvider
 from web3.exceptions import ContractLogicError, ContractPanicError
 
 from agent0 import build_account_key_config_from_agent_config
-from agent0.base import MarketType, Trade
+from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -112,9 +112,12 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
             and the second element defines if the agent is done trading
         """
         # pylint: disable=unused-argument
-        action_list = []
         # Closing non-existent short
-        action_list.append(FixedPoint(20_000), maturity_time=1699561146, slippage_tolerance=self.slippage_tolerance)
+        action_list = [
+            interface.close_short_trade(
+                FixedPoint(20_000), maturity_time=1699561146, slippage_tolerance=self.slippage_tolerance
+            )
+        ]
         return action_list, True
 
 

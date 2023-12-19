@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING
 from ethpy.hyperdrive.state import PoolState
 from fixedpointmath import FixedPoint
 
-from agent0.base import MarketType, Trade
+from agent0.base import Trade
 from agent0.hyperdrive.policies.hyperdrive_policy import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
+from agent0.hyperdrive.state import HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.interface import HyperdriveReadInterface
