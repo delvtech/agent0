@@ -532,7 +532,7 @@ def test_random_liquidate(chain: LocalChain):
 
 @pytest.mark.anvil
 def test_policy_config_none_rng(chain: LocalChain):
-    """Test behavior when the policy config has rng set to None."""
+    """The policy config has rng set to None."""
     interactive_config = InteractiveHyperdrive.Config()
     interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
     agent_policy = Zoo.random.Config()
@@ -544,3 +544,16 @@ def test_policy_config_none_rng(chain: LocalChain):
         policy_config=agent_policy,
     )
     assert alice.agent.policy.rng is not None
+
+
+@pytest.mark.anvil
+def test_policy_config_forgotten(chain: LocalChain):
+    """The policy config is not passed in."""
+    interactive_config = InteractiveHyperdrive.Config()
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    alice = interactive_hyperdrive.init_agent(
+        base=FixedPoint(10_000),
+        name="alice",
+        policy=Zoo.random,
+    )
+    assert alice.agent.policy is not None
