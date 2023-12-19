@@ -50,7 +50,10 @@ def calc_shares_needed_for_bonds(
         _shares_to_gov: FixedPoint
             The associated shares going to governance.
     """
-    _shares_to_pool = interface.calc_shares_out_given_bonds_in_down(abs(bonds_needed), pool_state)
+    try:
+        _shares_to_pool = interface.calc_shares_out_given_bonds_in_down(abs(bonds_needed), pool_state)
+    except:  # pylint: disable=bare-except
+        _shares_to_pool = interface.calc_shares_in_given_bonds_out_down(abs(bonds_needed), pool_state)
     spot_price = interface.calc_spot_price(pool_state)
     price_discount = FixedPoint(1) - spot_price
     _shares_to_gov = (
@@ -104,14 +107,24 @@ def calc_reserves_to_hit_target_rate(
         # we modify bonds by only half of bonds_needed, knowing that an amount of equal
         # value will move shares in the other direction, toward our desired ratio.
         # this guess is very bad when slippage is high, so we check how bad, then scale accordingly.
-        bonds_needed = (target_bonds - pool_state.pool_info.bond_reserves) / FixedPoint(2)
-        shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
-        # save bad first guess to a temporary variable
-        temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool, shares_to_gov)
-        predicted_rate = interface.calc_fixed_rate(temp_pool_state)
+        # to avoid negative share reserves, we increase the divisor until they are no longer negative.
+        divisor = FixedPoint(2)
+        avoid_negative_share_reserves = False
+        while avoid_negative_share_reserves is False:
+            bonds_needed = (target_bonds - pool_state.pool_info.bond_reserves) / divisor
+            try:
+                shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
+                # save bad first guess to a temporary variable
+                temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool, shares_to_gov)
+                predicted_rate = interface.calc_fixed_rate(temp_pool_state)
+                avoid_negative_share_reserves = temp_pool_state.pool_info.share_reserves >= 0
+            except:
+                pass
+            divisor *= FixedPoint(2)
         # adjust guess up or down based on how much the first guess overshot or undershot
         overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
-        bonds_needed /= overshoot_or_undershoot
+        if overshoot_or_undershoot != FixedPoint(0):
+            bonds_needed = bonds_needed / overshoot_or_undershoot
         shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
         # update pool state with second guess and continue from there
         pool_state = apply_step(pool_state, bonds_needed, shares_to_pool, shares_to_gov)
