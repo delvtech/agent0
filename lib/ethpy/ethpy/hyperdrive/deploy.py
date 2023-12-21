@@ -348,17 +348,25 @@ def _deploy_and_initialize_hyperdrive_pool(
         The deployed hyperdrive contract address.
     """
     # TODO: pypechiain - consolidate structs so we don't get poolconfig mismatch errors
-    tx = factory_contract.functions.deployAndInitialize(
+    deploy_and_init_function = factory_contract.functions.deployAndInitialize(
         pool_config,  # type: ignore
         initial_liquidity.scaled_value,
         initial_fixed_rate.scaled_value,
         bytes(0),
         [],
         pool_contract_addr,
-    ).build_transaction()
-    signed_tx = deploy_account.sign_transaction(tx)
-    tx_hash = web3.eth.send_raw_transaction(signed_tx)
-    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    )
+
+    function_name = deploy_and_init_function.fn_name
+    function_args = deploy_and_init_function.args
+
+    tx_receipt = smart_contract_transact(
+        web3,
+        factory_contract,
+        deploy_account,
+        function_name,
+        *function_args,
+    )
 
     logs = get_transaction_logs(factory_contract, tx_receipt)
     hyperdrive_address: str | None = None
