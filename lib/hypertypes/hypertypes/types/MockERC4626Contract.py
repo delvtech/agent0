@@ -3146,7 +3146,14 @@ class MockERC4626Contract(Contract):
 
         """
 
-        return super().constructor(asset, name, symbol, initialRate, admin, isCompetitionMode)
+        return super().constructor(
+            dataclass_to_tuple(asset),
+            dataclass_to_tuple(name),
+            dataclass_to_tuple(symbol),
+            dataclass_to_tuple(initialRate),
+            dataclass_to_tuple(admin),
+            dataclass_to_tuple(isCompetitionMode),
+        )
 
     @classmethod
     def deploy(cls, w3: Web3, account: LocalAccount | ChecksumAddress, constructorArgs: ConstructorArgs) -> Self:

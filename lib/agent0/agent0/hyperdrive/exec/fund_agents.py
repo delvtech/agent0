@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 
 from eth_account.account import Account
 from ethpy import EthConfig
@@ -12,11 +11,11 @@ from ethpy.base import (
     async_smart_contract_transact,
     get_account_balance,
     initialize_web3_with_http_provider,
-    load_abi_from_file,
     retry_call,
 )
 from ethpy.hyperdrive import HyperdriveAddresses
 from hyperlogs import setup_logging
+from hypertypes.types import ERC20MintableContract
 from web3.types import Nonce, TxReceipt
 
 from agent0 import AccountKeyConfig
@@ -56,15 +55,7 @@ async def async_fund_agents(
     ]
 
     web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
-    abi_file_loc = os.path.join(
-        os.path.join(eth_config.abi_dir, "ERC20Mintable.sol"),
-        "ERC20Mintable.json",
-    )
-    base_contract_abi = load_abi_from_file(abi_file_loc)
-
-    base_token_contract = web3.eth.contract(
-        abi=base_contract_abi, address=web3.to_checksum_address(contract_addresses.base_token)
-    )
+    base_token_contract = ERC20MintableContract.factory(web3)(web3.to_checksum_address(contract_addresses.base_token))
 
     # Check for balances
     total_agent_eth_budget = sum((int(budget) for budget in account_key_config.AGENT_ETH_BUDGETS))

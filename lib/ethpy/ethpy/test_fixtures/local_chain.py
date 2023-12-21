@@ -144,7 +144,6 @@ def launch_local_hyperdrive_pool(
     deployer_private_key: str = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
     # ABI folder should contain JSON and Bytecode files for the following contracts:
     # ERC20Mintable, MockERC4626, ForwarderFactory, ERC4626HyperdriveDeployer, ERC4626HyperdriveFactory
-    abi_folder = "packages/hyperdrive/src/abis/"
     # Factory initialization parameters
     initial_variable_rate = FixedPoint("0.05")
     curve_fee = FixedPoint("0.1")  # 10%
@@ -184,7 +183,6 @@ def launch_local_hyperdrive_pool(
     )
     return deploy_hyperdrive_from_factory(
         local_chain_uri,
-        abi_folder,
         deployer_private_key,
         initial_liquidity,
         initial_variable_rate,

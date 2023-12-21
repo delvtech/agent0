@@ -2073,7 +2073,7 @@ class ERC4626HyperdriveFactoryContract(Contract):
 
         """
 
-        return super().constructor(factoryConfig, sweepTargets)
+        return super().constructor(dataclass_to_tuple(factoryConfig), dataclass_to_tuple(sweepTargets))
 
     @classmethod
     def deploy(cls, w3: Web3, account: LocalAccount | ChecksumAddress, constructorArgs: ConstructorArgs) -> Self:
