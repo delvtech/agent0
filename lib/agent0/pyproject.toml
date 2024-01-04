@@ -20,7 +20,7 @@ classifiers = [
 # This flag installs all dependencies and should be ran when installing this subpackage in isolation
 with-dependencies = ["agent0[base, lateral]"]
 base = [
-    "fixedpointmath @ git+https://github.com/delvtech/fixedpointmath.git/#subdirectory=lib/fixedpointmath",
+    "fixedpointmath",
     "numpy",
     "python-dotenv",
     # will include eth- packages
