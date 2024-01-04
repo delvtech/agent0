@@ -18,6 +18,7 @@ from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_us
 from chainsync.db.hyperdrive import get_checkpoint_info
 from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.db.hyperdrive import (
+    get_checkpoint_info,
     get_latest_block_number_from_analysis_table,
     get_pool_analysis,
     get_pool_config,
@@ -27,6 +28,7 @@ from chainsync.db.hyperdrive import (
     get_wallet_deltas,
     get_wallet_pnl,
 )
+from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_typing import BlockNumber, ChecksumAddress
@@ -623,8 +625,7 @@ class InteractiveHyperdrive:
         # DB read calls ensures data pipeline is caught up before returning
         if self.chain.experimental_data_threading:
             self._ensure_data_caught_up()
-        out = get_checkpoint_info(self.db_session, coerce_float=coerce_float)
-        return out
+        return get_checkpoint_info(self.db_session, coerce_float=coerce_float)
 
     def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
         addr_to_username = get_addr_to_username(self.db_session)

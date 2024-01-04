@@ -8,7 +8,7 @@ import pandas as pd
 from eth_typing import ChecksumAddress, HexAddress, HexStr
 from ethpy.base import smart_contract_preview_transaction
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
-from ethpy.hyperdrive.interface.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 from web3.contract.contract import Contract
 
@@ -106,7 +106,7 @@ def calc_single_closeout(
 def calc_closeout_pnl(
     current_wallet: pd.DataFrame,
     hyperdrive_contract: Contract,
-    hyperdrive_interface: HyperdriveInterface,
+    hyperdrive_interface: HyperdriveReadInterface,
 ) -> pd.DataFrame:
     """Calculate closeout value of agent positions.
 
@@ -116,7 +116,7 @@ def calc_closeout_pnl(
         A dataframe resulting from `get_current_wallet` that describes the current wallet position.
     hyperdrive_contract: Contract
         The hyperdrive contract object.
-    hyperdrive_interface: HyperdriveInterface
+    hyperdrive_interface: HyperdriveReadInterface
         The Hyperdrive interface object.
 
     Returns

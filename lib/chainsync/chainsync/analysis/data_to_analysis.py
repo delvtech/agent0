@@ -2,7 +2,7 @@
 import logging
 from decimal import Decimal
 from typing import Type
-from ethpy.hyperdrive.interface.interface import HyperdriveInterface
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 
 import numpy as np
 import pandas as pd
@@ -154,7 +154,7 @@ def data_to_analysis(
     pool_config: pd.Series,
     db_session: Session,
     hyperdrive_contract: Contract,
-    hyperdrive_interface: HyperdriveInterface,
+    hyperdrive_interface: HyperdriveReadInterface,
     calc_pnl: bool = True,
 ) -> None:
     """Function to query postgres data tables and insert to analysis tables.
@@ -172,7 +172,7 @@ def data_to_analysis(
         The initialized db session.
     hyperdrive_contract: Contract
         The hyperdrive contract.
-    hyperdrive_interface: HyperdriveInterface
+    hyperdrive_interface: HyperdriveReadInterface
         The hyperdrive interface.
     calc_pnl: bool
         Whether to calculate pnl. Defaults to True.

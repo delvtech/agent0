@@ -10,12 +10,13 @@ from typing import Iterator
 import docker
 import pytest
 from chainsync import PostgresConfig
-from chainsync.db.base import Base, initialize_engine
+from chainsync.db.base import Base, initialize_engine, _create_sequences_for_table
 from docker.errors import APIError, DockerException, NotFound
 from docker.models.containers import Container
 from pytest_postgresql.janitor import DatabaseJanitor
-from sqlalchemy import Engine
+from sqlalchemy import Engine, Integer
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.schema import Sequence, CreateSequence
 
 TEST_POSTGRES_NAME = "postgres_test"
 
@@ -157,9 +158,12 @@ def db_session(database_engine: Engine) -> Iterator[Session]:  # pylint: disable
         The sqlalchemy session object.
     """
     session = sessionmaker(bind=database_engine)
+    db_session_ = session()
+
+    for table in Base.metadata.tables.values():
+        _create_sequences_for_table(table, db_session_)
 
     Base.metadata.create_all(database_engine)  # create tables
-    db_session_ = session()
 
     yield db_session_
 
