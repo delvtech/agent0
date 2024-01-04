@@ -6,7 +6,6 @@ from typing import Any, cast
 from eth_typing import BlockNumber
 from ethpy.base import UnknownBlockError, get_transaction_logs
 from fixedpointmath import FixedPoint
-from hyperdrivepy import to_checkpoint
 from hypertypes import IERC4626HyperdriveContract
 from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
 from hypertypes.utilities.conversions import (

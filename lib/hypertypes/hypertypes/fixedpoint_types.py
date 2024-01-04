@@ -23,7 +23,8 @@ class FeesFP:
 
     curve: FixedPoint
     flat: FixedPoint
-    governance: FixedPoint
+    governance_lp: FixedPoint
+    governance_zombie: FixedPoint
 
 
 @dataclass
