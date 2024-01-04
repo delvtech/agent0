@@ -6,6 +6,7 @@ from typing import Any, cast
 from eth_typing import BlockNumber
 from ethpy.base import UnknownBlockError, get_transaction_logs
 from fixedpointmath import FixedPoint
+from hyperdrivepy import to_checkpoint
 from hypertypes import IERC4626HyperdriveContract
 from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
 from hypertypes.utilities.conversions import (
@@ -57,7 +58,7 @@ def get_hyperdrive_pool_info(hyperdrive_contract: IERC4626HyperdriveContract, bl
 
 
 def get_hyperdrive_checkpoint(
-    hyperdrive_contract: IERC4626HyperdriveContract, block_timestamp: Timestamp
+    hyperdrive_contract: IERC4626HyperdriveContract, checkpoint_time: Timestamp
 ) -> CheckpointFP:
     """Get the checkpoint info for the Hyperdrive contract at a given block.
 
@@ -65,7 +66,7 @@ def get_hyperdrive_checkpoint(
     ---------
     hyperdrive_contract: IERC4626HyperdriveContract
         The contract to query the pool info from.
-    block_timestamp: Timestamp
+    checkpoint_time: Timestamp
         The block timestamp that indexes the checkpoint to get.
 
     Returns
@@ -73,8 +74,30 @@ def get_hyperdrive_checkpoint(
     CheckpointFP
         The dataclass containing the checkpoint info in fixed point
     """
-    checkpoint = hyperdrive_contract.functions.getCheckpoint(block_timestamp).call()
+    checkpoint = hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call()
     return checkpoint_to_fixedpoint(checkpoint)
+
+
+def get_hyperdrive_checkpoint_exposure(
+    hyperdrive_contract: IERC4626HyperdriveContract, checkpoint_time: Timestamp
+) -> FixedPoint:
+    """Get the checkpoint exposure for the Hyperdrive contract at a given block.
+
+    Arguments
+    ---------
+    hyperdrive_contract: IERC4626HyperdriveContract
+        The contract to query the pool info from.
+    checkpoint_time: Timestamp
+        The block timestamp that indexes the checkpoint to get.
+        This must be an exact checkpoint time for the deployed pool.
+
+    Returns
+    -------
+    CheckpointFP
+        The dataclass containing the checkpoint info in fixed point.
+    """
+    exposure = hyperdrive_contract.functions.getCheckpointExposure(checkpoint_time).call()
+    return FixedPoint(scaled_value=exposure)
 
 
 def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> ReceiptBreakdown:

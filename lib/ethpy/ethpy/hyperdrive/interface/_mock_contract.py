@@ -249,7 +249,7 @@ def _calc_max_long(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
                 fixedpoint_to_pool_config(pool_state.pool_config),
                 fixedpoint_to_pool_info(pool_state.pool_info),
                 str(budget.scaled_value),
-                checkpoint_exposure=str(pool_state.checkpoint.exposure.scaled_value),
+                checkpoint_exposure=str(pool_state.exposure.scaled_value),
                 maybe_max_iterations=None,
             )
         )
@@ -265,7 +265,7 @@ def _calc_max_short(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
                 pool_info=fixedpoint_to_pool_info(pool_state.pool_info),
                 budget=str(budget.scaled_value),
                 open_share_price=str(pool_state.pool_info.share_price.scaled_value),
-                checkpoint_exposure=str(pool_state.checkpoint.exposure.scaled_value),
+                checkpoint_exposure=str(pool_state.exposure.scaled_value),
                 maybe_conservative_price=None,
                 maybe_max_iterations=None,
             )
