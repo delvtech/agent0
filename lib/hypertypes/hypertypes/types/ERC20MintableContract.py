@@ -2333,7 +2333,13 @@ class ERC20MintableContract(Contract):
 
         """
 
-        return super().constructor(name, symbol, decimals, admin, isCompetitionMode_)
+        return super().constructor(
+            dataclass_to_tuple(name),
+            dataclass_to_tuple(symbol),
+            dataclass_to_tuple(decimals),
+            dataclass_to_tuple(admin),
+            dataclass_to_tuple(isCompetitionMode_),
+        )
 
     @classmethod
     def deploy(cls, w3: Web3, account: LocalAccount | ChecksumAddress, constructorArgs: ConstructorArgs) -> Self:

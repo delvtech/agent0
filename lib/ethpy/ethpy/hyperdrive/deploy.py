@@ -1,16 +1,27 @@
 """Helper functions for deploying Hyperdrive contracts."""
 from __future__ import annotations
 
-from dataclasses import fields, is_dataclass
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
-from ethpy.base import get_transaction_logs, initialize_web3_with_http_provider, load_all_abis, smart_contract_transact
-from ethpy.base.contract import deploy_contract
+from ethpy.base import initialize_web3_with_http_provider
+from ethpy.base.receipts import get_transaction_logs
+from ethpy.base.transactions import smart_contract_transact
 from fixedpointmath import FixedPoint
 from hypertypes import Fees, PoolConfig
+from hypertypes.types import (
+    ERC20MintableContract,
+    ERC4626HyperdriveDeployerContract,
+    ERC4626HyperdriveFactoryContract,
+    ERC4626Target0DeployerContract,
+    ERC4626Target1DeployerContract,
+    ForwarderFactoryContract,
+    IERC4626HyperdriveContract,
+    MockERC4626Contract,
+)
+from hypertypes.types.ERC4626HyperdriveFactoryTypes import FactoryConfig
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
@@ -38,7 +49,6 @@ class DeployedHyperdrivePool(NamedTuple):
 
 def deploy_hyperdrive_from_factory(
     rpc_uri: str,
-    abi_folder: str,
     deployer_private_key: str,
     initial_liquidity: FixedPoint,
     initial_variable_rate: FixedPoint,
@@ -52,8 +62,6 @@ def deploy_hyperdrive_from_factory(
     ---------
     rpc_uri: str
         The URI of the local RPC node.
-    abi_folder: str
-        The local directory that contains all ABI JSON files.
     deployer_private_key: str
         Private key for the funded wallet for deploying Hyperdrive.
     initial_liquidity: FixedPoint
@@ -95,29 +103,25 @@ def deploy_hyperdrive_from_factory(
     # Fill in the pool config information for the deployer account address
     pool_config.governance = deploy_account_addr
     pool_config.feeCollector = deploy_account_addr
-    # Load the ABI and Bytecode information for all files in the ABI folder
-    # This must include the following:
-    # ERC20Mintable, MockERC4626, ForwarderFactory, ERC4626HyperdriveDeployer, ERC4626HyperdriveFactory
-    abis, bytecodes = load_all_abis(abi_folder, return_bytecode=True)
     # Deploy the factory and base token contracts
     base_token_contract, factory_contract, pool_contract_addr = _deploy_hyperdrive_factory(
         web3,
         deploy_account_addr,
-        abis,
-        bytecodes,
         initial_variable_rate,
         pool_config,
         max_fees,
     )
     pool_config.baseToken = base_token_contract.address
+
     # Mint base and approve the initial liquidity amount for the hyperdrive factory
-    _ = _mint_and_approve(
+    _mint_and_approve(
         web3=web3,
         funding_account=deploy_account,
         funding_contract=base_token_contract,
         contract_to_approve=factory_contract,
         mint_amount=initial_liquidity,
     )
+
     # Deploy the Hyperdrive contract and call the initialize function
     hyperdrive_checksum_address = Web3.to_checksum_address(
         _deploy_and_initialize_hyperdrive_pool(
@@ -140,33 +144,11 @@ def deploy_hyperdrive_from_factory(
             mock_hyperdrive=hyperdrive_checksum_address,
             mock_hyperdrive_math=None,
         ),
-        hyperdrive_contract=web3.eth.contract(address=hyperdrive_checksum_address, abi=abis["IERC4626Hyperdrive"]),
+        hyperdrive_contract=IERC4626HyperdriveContract.factory(web3)(hyperdrive_checksum_address),
         hyperdrive_factory_contract=factory_contract,
         base_token_contract=base_token_contract,
         deploy_block_number=web3.eth.block_number,
     )
-
-
-def _dataclass_to_tuple(instance: Any) -> tuple:
-    """Resursively convert the input Dataclass to a tuple.
-
-    Iterate over the fields of the dataclass and compiles them into a tuple.
-    Check if the type of a field is also a dataclass, and if so, recursively convert it to a tuple.
-    This method preserves the attribute ordering.
-
-    Arguments
-    ---------
-    instance: dataclass
-        A dataclass, whose fields could contain other dataclasses.
-
-    Returns
-    -------
-    tuple
-        A nested tuple of all dataclass fields.
-    """
-    if not is_dataclass(instance):
-        return instance
-    return tuple(_dataclass_to_tuple(getattr(instance, field.name)) for field in fields(instance))
 
 
 def _initialize_deployment_account(web3: Web3, account_private_key: str) -> LocalAccount:
@@ -198,12 +180,10 @@ def _initialize_deployment_account(web3: Web3, account_private_key: str) -> Loca
 def _deploy_hyperdrive_factory(
     web3: Web3,
     deploy_account_addr: ChecksumAddress,
-    abis: dict,
-    bytecodes: dict,
     initial_variable_rate: FixedPoint,
     pool_config: PoolConfig,
     max_fees: Fees,
-) -> tuple[Contract, Contract, ChecksumAddress]:
+) -> tuple[ERC20MintableContract, ERC4626HyperdriveFactoryContract, ChecksumAddress]:
     """Deploys the hyperdrive factory contract on the rpc_uri chain.
 
     Arguments
@@ -212,10 +192,6 @@ def _deploy_hyperdrive_factory(
         Web3 provider object.
     deploy_account_addr: ChecksumAddress
         The address of the account that's deploying the contract.
-    abis: dict
-        A dictionary, keyed by the Hyperdrive ABI filename, containing the ABI JSON dictionary for each file.
-    bytecodes: dict
-        A dictionary, keyed by the Hyperdrive ABI filename, containing the contract bytecode for each file.
     initial_variable_rate: FixedPoint
         The starting variable rate for an underlying yield source.
     pool_config: PoolConfig
@@ -229,79 +205,64 @@ def _deploy_hyperdrive_factory(
     (base_token_contract, factory_token_contract, pool_contract_address): tuple[Contract, Contract, ChecksumAddress]
         Containing the deployed base token, factory, and the pool contracts/addresses.
     """
-    # args = [name, symbol, decimals, admin_addr, isCompetitionMode]
-    args = ["Base", "BASE", 18, ADDRESS_ZERO, False]
-    base_token_contract_addr, base_token_contract = deploy_contract(
-        web3,
-        abi=abis["ERC20Mintable"],
-        bytecode=bytecodes["ERC20Mintable"],
-        deploy_account_addr=deploy_account_addr,
-        args=args,
+    erc20args = ERC20MintableContract.ConstructorArgs(
+        name="Base", symbol="BASE", decimals=18, admin=ADDRESS_ZERO, isCompetitionMode_=False
     )
-    # args = [erc20_contract_addr, name, symbol, initial_apr, admin_addr, isCompetitionMode]
-    args = [
-        base_token_contract_addr,
-        "Delvnet Yield Source",
-        "DELV",
-        initial_variable_rate.scaled_value,
-        ADDRESS_ZERO,
-        False,
-    ]
-    pool_contract_addr, _ = deploy_contract(
-        web3,
-        abi=abis["MockERC4626"],
-        bytecode=bytecodes["MockERC4626"],
-        deploy_account_addr=deploy_account_addr,
-        args=args,
-    )
-    forwarder_factory_contract_addr, forwarder_factory_contract = deploy_contract(
-        web3,
-        abi=abis["ForwarderFactory"],
-        bytecode=bytecodes["ForwarderFactory"],
-        deploy_account_addr=deploy_account_addr,
-    )
-    deployer_contract_addr, _ = deploy_contract(
-        web3,
-        abi=abis["ERC4626HyperdriveDeployer"],
-        bytecode=bytecodes["ERC4626HyperdriveDeployer"],
-        deploy_account_addr=deploy_account_addr,
-    )
-    target_0_deployer_addr, _ = deploy_contract(
-        web3,
-        abi=abis["ERC4626Target0Deployer"],
-        bytecode=bytecodes["ERC4626Target0Deployer"],
-        deploy_account_addr=deploy_account_addr,
-    )
-    target_1_deployer_addr, _ = deploy_contract(
-        web3,
-        abi=abis["ERC4626Target1Deployer"],
-        bytecode=bytecodes["ERC4626Target1Deployer"],
-        deploy_account_addr=deploy_account_addr,
+    base_token_contract = ERC20MintableContract.deploy(w3=web3, account=deploy_account_addr, constructorArgs=erc20args)
+
+    pool = MockERC4626Contract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        constructorArgs=MockERC4626Contract.ConstructorArgs(
+            asset=base_token_contract.address,
+            name="Delvnet Yield Source",
+            symbol="DELV",
+            initialRate=initial_variable_rate.scaled_value,
+            admin=ADDRESS_ZERO,
+            isCompetitionMode=False,
+        ),
     )
 
-    _, factory_contract = deploy_contract(
-        web3,
-        abi=abis["ERC4626HyperdriveFactory"],
-        bytecode=bytecodes["ERC4626HyperdriveFactory"],
-        deploy_account_addr=deploy_account_addr,
-        args=[
-            (  # factory config
+    forwarder_factory_contract = ForwarderFactoryContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+    )
+    deployer_contract = ERC4626HyperdriveDeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+    )
+    target0_contract = ERC4626Target0DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+    )
+    target1_contract = ERC4626Target1DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+    )
+
+    factory_contract = ERC4626HyperdriveFactoryContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        constructorArgs=ERC4626HyperdriveFactoryContract.ConstructorArgs(
+            FactoryConfig(
+                # factory config
                 deploy_account_addr,  # governance
                 deploy_account_addr,  # hyperdriveGovernance
                 [],  # defaultPausers (new address[](1))
                 deploy_account_addr,  # feeCollector
-                _dataclass_to_tuple(pool_config.fees),  # curve, flat, governance
-                _dataclass_to_tuple(max_fees),  # max_curve, max_flat, max_governance
-                deployer_contract_addr,  # Hyperdrive deployer
-                target_0_deployer_addr,
-                target_1_deployer_addr,
-                forwarder_factory_contract_addr,  # Linker factory
+                # TODO: consolidate pypechain dataclasses so we don't have to type ignore here
+                pool_config.fees,  # curve, flat, governance # type: ignore
+                max_fees,  # max_curve, max_flat, max_governance # type: ignore
+                deployer_contract.address,  # Hyperdrive deployer
+                target0_contract.address,
+                target1_contract.address,
+                forwarder_factory_contract.address,  # Linker factory
                 forwarder_factory_contract.functions.ERC20LINK_HASH().call(),  # linkerCodeHash
             ),
-            [],  # new address[](0)
-        ],
+            [],  # sweepTargets
+        ),
     )
-    return base_token_contract, factory_contract, pool_contract_addr
+    return base_token_contract, factory_contract, pool.address
 
 
 def _mint_and_approve(
@@ -359,7 +320,7 @@ def _deploy_and_initialize_hyperdrive_pool(
     initial_fixed_rate: FixedPoint,
     pool_contract_addr: ChecksumAddress,
     pool_config: PoolConfig,
-    factory_contract: Contract,
+    factory_contract: ERC4626HyperdriveFactoryContract,
 ) -> str:
     """Deploys the hyperdrive factory contract on the rpc_uri chain.
 
@@ -386,21 +347,27 @@ def _deploy_and_initialize_hyperdrive_pool(
     str
         The deployed hyperdrive contract address.
     """
-    fn_args = (
-        _dataclass_to_tuple(pool_config),
+    # TODO: pypechiain - consolidate structs so we don't get poolconfig mismatch errors
+    deploy_and_init_function = factory_contract.functions.deployAndInitialize(
+        pool_config,  # type: ignore
         initial_liquidity.scaled_value,
         initial_fixed_rate.scaled_value,
-        bytes(0),  # new bytes(0)
-        [],  # new bytes32[](0)
+        bytes(0),
+        [],
         pool_contract_addr,
     )
+
+    function_name = deploy_and_init_function.fn_name
+    function_args = deploy_and_init_function.args
+
     tx_receipt = smart_contract_transact(
-        web3,  # web3
-        factory_contract,  # contract
-        deploy_account,  # signer
-        "deployAndInitialize",  # function_name_or_signature
-        *fn_args,
+        web3,
+        factory_contract,
+        deploy_account,
+        function_name,
+        *function_args,
     )
+
     logs = get_transaction_logs(factory_contract, tx_receipt)
     hyperdrive_address: str | None = None
     for log in logs:
