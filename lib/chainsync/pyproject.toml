@@ -22,7 +22,7 @@ with-dependencies = [
     "chainsync[base, lateral]"
 ]
 base = [
-    "fixedpointmath @ git+https://github.com/delvtech/fixedpointmath.git/#subdirectory=lib/fixedpointmath",
+    "fixedpointmath",
     "matplotlib",
     "numpy",
     "pandas",

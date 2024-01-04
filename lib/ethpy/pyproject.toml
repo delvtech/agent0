@@ -22,7 +22,7 @@ with-dependencies = [
     "ethpy[base, lateral]"
 ]
 base = [
-    "fixedpointmath @ git+https://github.com/delvtech/fixedpointmath.git/#subdirectory=lib/fixedpointmath",
+    "fixedpointmath",
     "numpy",
     "python-dotenv",
     "web3",
