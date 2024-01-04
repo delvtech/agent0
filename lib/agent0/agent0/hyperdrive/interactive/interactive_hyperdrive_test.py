@@ -7,6 +7,7 @@ from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from fixedpointmath import FixedPoint
 from pandas import Series
 
+from agent0.hyperdrive.policies import Zoo
 from agent0.hyperdrive.state import HyperdriveWallet
 
 from .chain import LocalChain
@@ -93,21 +94,24 @@ def test_funding_and_trades(chain: LocalChain):
     assert (hyperdrive_agent1.wallet.balance.amount) == FixedPoint(222222)
     assert (hyperdrive_agent2.wallet.balance.amount) == FixedPoint(333333)
     # Ensure chain balances are as expected
-    (chain_eth_balance, chain_base_balance) = interactive_hyperdrive.hyperdrive_interface.get_eth_base_balances(
-        hyperdrive_agent0.agent
-    )
+    (
+        chain_eth_balance,
+        chain_base_balance,
+    ) = interactive_hyperdrive.hyperdrive_interface.get_eth_base_balances(hyperdrive_agent0.agent)
     assert chain_base_balance == FixedPoint(111111)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     assert (FixedPoint(111) - chain_eth_balance) < FixedPoint("0.0001")
-    (chain_eth_balance, chain_base_balance) = interactive_hyperdrive_2.hyperdrive_interface.get_eth_base_balances(
-        hyperdrive_agent1.agent
-    )
+    (
+        chain_eth_balance,
+        chain_base_balance,
+    ) = interactive_hyperdrive_2.hyperdrive_interface.get_eth_base_balances(hyperdrive_agent1.agent)
     assert chain_base_balance == FixedPoint(222222)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     assert (FixedPoint(222) - chain_eth_balance) < FixedPoint("0.0001")
-    (chain_eth_balance, chain_base_balance) = interactive_hyperdrive.hyperdrive_interface.get_eth_base_balances(
-        hyperdrive_agent2.agent
-    )
+    (
+        chain_eth_balance,
+        chain_base_balance,
+    ) = interactive_hyperdrive.hyperdrive_interface.get_eth_base_balances(hyperdrive_agent2.agent)
     assert chain_base_balance == FixedPoint(333333)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     # Since we initialized without parameters, and the default is 10 eth. We then added 333 eth.
@@ -277,7 +281,10 @@ def test_save_load_snapshot(chain: LocalChain):
     hyperdrive_agent.remove_liquidity(shares=FixedPoint(444))
 
     # Ensure state has changed
-    check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+    (
+        check_eth_on_chain,
+        check_base_on_chain,
+    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
@@ -293,7 +300,10 @@ def test_save_load_snapshot(chain: LocalChain):
     # Save snapshot and check for equality
     chain.load_snapshot()
 
-    check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+    (
+        check_eth_on_chain,
+        check_base_on_chain,
+    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
@@ -314,7 +324,10 @@ def test_save_load_snapshot(chain: LocalChain):
     hyperdrive_agent.remove_liquidity(shares=FixedPoint(555))
 
     # Ensure state has changed
-    check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+    (
+        check_eth_on_chain,
+        check_base_on_chain,
+    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
@@ -330,7 +343,10 @@ def test_save_load_snapshot(chain: LocalChain):
     # Save snapshot and check for equality
     chain.load_snapshot()
 
-    check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+    (
+        check_eth_on_chain,
+        check_base_on_chain,
+    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
@@ -351,7 +367,10 @@ def test_save_load_snapshot(chain: LocalChain):
     hyperdrive_agent.remove_liquidity(shares=FixedPoint(555))
 
     # Ensure state has changed
-    check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+    (
+        check_eth_on_chain,
+        check_base_on_chain,
+    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
@@ -367,7 +386,10 @@ def test_save_load_snapshot(chain: LocalChain):
     # Save snapshot and check for equality
     chain.load_snapshot()
 
-    check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+    (
+        check_eth_on_chain,
+        check_base_on_chain,
+    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
@@ -506,3 +528,32 @@ def test_random_liquidate(chain: LocalChain):
 
     if not is_different:
         raise ValueError("Random liquidation resulted in the same trades")
+
+
+@pytest.mark.anvil
+def test_policy_config_none_rng(chain: LocalChain):
+    """The policy config has rng set to None."""
+    interactive_config = InteractiveHyperdrive.Config()
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    agent_policy = Zoo.random.Config()
+    agent_policy.rng = None
+    alice = interactive_hyperdrive.init_agent(
+        base=FixedPoint(10_000),
+        name="alice",
+        policy=Zoo.random,
+        policy_config=agent_policy,
+    )
+    assert alice.agent.policy.rng is not None
+
+
+@pytest.mark.anvil
+def test_policy_config_forgotten(chain: LocalChain):
+    """The policy config is not passed in."""
+    interactive_config = InteractiveHyperdrive.Config()
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    alice = interactive_hyperdrive.init_agent(
+        base=FixedPoint(10_000),
+        name="alice",
+        policy=Zoo.random,
+    )
+    assert alice.agent.policy is not None
