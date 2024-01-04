@@ -190,11 +190,7 @@ def _deploy_hyperdrive_factory(
     initial_variable_rate: FixedPoint,
     pool_config: PoolConfig,
     max_fees: Fees,
-<<<<<<< HEAD
 ) -> tuple[ERC20MintableContract, ERC4626HyperdriveFactoryContract, ChecksumAddress, ChecksumAddress]:
-=======
-) -> tuple[Contract, Contract, ChecksumAddress, ChecksumAddress]:
->>>>>>> e5ca006 (finally fixed deployment)
     """Deploys the hyperdrive factory contract on the rpc_uri chain.
 
     Arguments
@@ -214,7 +210,6 @@ def _deploy_hyperdrive_factory(
     Returns
     -------
     tuple[Contract, Contract, ChecksumAddress, ChecksumAddress]
-<<<<<<< HEAD
         Containing the deployed base token, factory, the pool, and the deploy contracts/addresses.
     """
     erc20args = ERC20MintableContract.ConstructorArgs(
@@ -232,87 +227,6 @@ def _deploy_hyperdrive_factory(
             initialRate=initial_variable_rate.scaled_value,
             admin=ADDRESS_ZERO,
             isCompetitionMode=False,
-=======
-        Containing the deployed base token and factory contracts,
-        as well as the pool and deployer contract addresses.
-    """
-    args = [
-        "Base",  # name
-        "BASE",  # symbol
-        18,  # decimals
-        ADDRESS_ZERO,  # admin_addr
-        False,  # isCompetitionMode
-    ]
-    base_token_contract_addr, base_token_contract = deploy_contract(
-        web3,
-        abi=abis["ERC20Mintable"],
-        bytecode=bytecodes["ERC20Mintable"],
-        deploy_account_addr=deploy_account_addr,
-        args=args,
-    )
-    args = [
-        base_token_contract_addr,  # erc20_contract_addr
-        "Delvnet Yield Source",  # name
-        "DELV",  # symbol
-        initial_variable_rate.scaled_value,  # initial_apr
-        ADDRESS_ZERO,  # admin_addr
-        False,  # isCompetitionMode
-    ]
-    pool_contract_addr, _ = deploy_contract(
-        web3,
-        abi=abis["MockERC4626"],
-        bytecode=bytecodes["MockERC4626"],
-        deploy_account_addr=deploy_account_addr,
-        args=args,
-    )
-    forwarder_factory_contract_addr, forwarder_factory_contract = deploy_contract(
-        web3,
-        abi=abis["ForwarderFactory"],
-        bytecode=bytecodes["ForwarderFactory"],
-        deploy_account_addr=deploy_account_addr,
-    )
-    core_deployer_contract_addr, _ = deploy_contract(
-        web3,
-        abi=abis["ERC4626HyperdriveCoreDeployer"],
-        bytecode=bytecodes["ERC4626HyperdriveCoreDeployer"],
-        deploy_account_addr=deploy_account_addr,
-    )
-    target_0_deployer_addr, _ = deploy_contract(
-        web3,
-        abi=abis["ERC4626Target0Deployer"],
-        bytecode=bytecodes["ERC4626Target0Deployer"],
-        deploy_account_addr=deploy_account_addr,
-    )
-    target_1_deployer_addr, _ = deploy_contract(
-        web3,
-        abi=abis["ERC4626Target1Deployer"],
-        bytecode=bytecodes["ERC4626Target1Deployer"],
-        deploy_account_addr=deploy_account_addr,
-    )
-    deployer_contract_addr, _ = deploy_contract(
-        web3,
-        abi=abis["ERC4626HyperdriveDeployer"],
-        bytecode=bytecodes["ERC4626HyperdriveDeployer"],
-        deploy_account_addr=deploy_account_addr,
-        args=(core_deployer_contract_addr, target_0_deployer_addr, target_1_deployer_addr),
-    )
-    _, factory_contract = deploy_contract(
-        web3,
-        abi=abis["HyperdriveFactory"],
-        bytecode=bytecodes["HyperdriveFactory"],
-        deploy_account_addr=deploy_account_addr,
-        args=(
-            (  # factory config
-                deploy_account_addr,  # governance
-                deploy_account_addr,  # hyperdriveGovernance
-                [],  # defaultPausers (new address[](1))
-                deploy_account_addr,  # feeCollector
-                _dataclass_to_tuple(pool_config.fees),  # curve, flat, governance
-                _dataclass_to_tuple(max_fees),  # max_curve, max_flat, max_governance
-                forwarder_factory_contract_addr,  # Linker factory
-                forwarder_factory_contract.functions.ERC20LINK_HASH().call(),  # linkerCodeHash
-            ),
->>>>>>> e5ca006 (finally fixed deployment)
         ),
     )
     forwarder_factory_contract = ForwarderFactoryContract.deploy(
@@ -445,12 +359,8 @@ def _deploy_and_initialize_hyperdrive_pool(
     str
         The deployed hyperdrive contract address.
     """
-<<<<<<< HEAD
 
     deploy_and_init_function = factory_contract.functions.deployAndInitialize(
-=======
-    fn_args = (
->>>>>>> e5ca006 (finally fixed deployment)
         deploy_contract_address,  # hyperdriveDeployer
         pool_config,  # poolConfig
         encode(("address", "address[]"), (pool_contract_addr, [])),  # abi.encode(address(pool), new address[](0))

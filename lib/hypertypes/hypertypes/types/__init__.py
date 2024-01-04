@@ -12,8 +12,12 @@ from .ERC4626HyperdriveDeployerContract import *
 from .ERC4626HyperdriveDeployerTypes import *
 from .HyperdriveFactoryContract import *
 from .HyperdriveFactoryTypes import *
+from .ERC4626Target3DeployerContract import *
+from .ERC4626Target3DeployerTypes import *
 from .ERC4626Target1DeployerContract import *
 from .ERC4626Target1DeployerTypes import *
+from .ERC4626Target2DeployerContract import *
+from .ERC4626Target2DeployerTypes import *
 from .ERC20MintableContract import *
 from .ERC20MintableTypes import *
 from .MockERC4626Contract import *

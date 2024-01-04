@@ -383,7 +383,7 @@ class IERC4626HyperdriveGetCheckpointExposureContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class IERC4626HyperdriveGetMarketStateContractFunction(ContractFunction):
@@ -2984,7 +2984,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                             "components": [
                                 {"name": "curve", "type": "uint256", "internalType": "uint256"},
                                 {"name": "flat", "type": "uint256", "internalType": "uint256"},
-                                {"name": "governance", "type": "uint256", "internalType": "uint256"},
+                                {"name": "governanceLP", "type": "uint256", "internalType": "uint256"},
+                                {"name": "governanceZombie", "type": "uint256", "internalType": "uint256"},
                             ],
                         },
                     ],

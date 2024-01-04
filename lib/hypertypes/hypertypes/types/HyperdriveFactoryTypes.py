@@ -28,7 +28,8 @@ class Fees:
 
     curve: int
     flat: int
-    governance: int
+    governanceLP: int
+    governanceZombie: int
 
 
 @dataclass
@@ -46,13 +47,12 @@ class FactoryConfig:
 
 
 @dataclass
-class PoolConfig:
-    """PoolConfig struct."""
+class PoolDeployConfig:
+    """PoolDeployConfig struct."""
 
     baseToken: str
     linkerFactory: str
     linkerCodeHash: bytes
-    initialSharePrice: int
     minimumShareReserves: int
     minimumTransactionAmount: int
     positionDuration: int

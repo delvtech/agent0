@@ -22,7 +22,7 @@ https://github.com/delvtech/pypechain"""
 
 from __future__ import annotations
 
-from typing import Any, Type, cast
+from typing import Any, NamedTuple, Type, cast
 
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress, HexStr
@@ -33,20 +33,20 @@ from web3.contract.contract import Contract, ContractConstructor, ContractFuncti
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
 
-from .ERC4626HyperdriveDeployerTypes import Fees, PoolConfig
+from .ERC4626HyperdriveDeployerTypes import Fees, PoolDeployConfig
 from .utilities import dataclass_to_tuple, rename_returned_types
 
 structs = {
     "Fees": Fees,
-    "PoolConfig": PoolConfig,
+    "PoolDeployConfig": PoolDeployConfig,
 }
 
 
 class ERC4626HyperdriveDeployerDeployContractFunction(ContractFunction):
     """ContractFunction for the deploy method."""
 
-    def __call__(self, config: PoolConfig, extraData: bytes) -> ERC4626HyperdriveDeployerDeployContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(config), dataclass_to_tuple(extraData))
+    def __call__(self, deployConfig: PoolDeployConfig, extraData: bytes) -> ERC4626HyperdriveDeployerDeployContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(deployConfig), dataclass_to_tuple(extraData))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -66,7 +66,7 @@ class ERC4626HyperdriveDeployerDeployContractFunction(ContractFunction):
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveDeployerHyperdriveCoreDeployerContractFunction(ContractFunction):
@@ -93,7 +93,7 @@ class ERC4626HyperdriveDeployerHyperdriveCoreDeployerContractFunction(ContractFu
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveDeployerTarget0DeployerContractFunction(ContractFunction):
@@ -120,13 +120,67 @@ class ERC4626HyperdriveDeployerTarget0DeployerContractFunction(ContractFunction)
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(return_types, raw_values))
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
 class ERC4626HyperdriveDeployerTarget1DeployerContractFunction(ContractFunction):
     """ContractFunction for the target1Deployer method."""
 
     def __call__(self) -> ERC4626HyperdriveDeployerTarget1DeployerContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str."""
+        # Define the expected return types from the smart contract call
+
+        return_types = str
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
+
+
+class ERC4626HyperdriveDeployerTarget2DeployerContractFunction(ContractFunction):
+    """ContractFunction for the target2Deployer method."""
+
+    def __call__(self) -> ERC4626HyperdriveDeployerTarget2DeployerContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str."""
+        # Define the expected return types from the smart contract call
+
+        return_types = str
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
+
+
+class ERC4626HyperdriveDeployerTarget3DeployerContractFunction(ContractFunction):
+    """ContractFunction for the target3Deployer method."""
+
+    def __call__(self) -> ERC4626HyperdriveDeployerTarget3DeployerContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -160,6 +214,10 @@ class ERC4626HyperdriveDeployerContractFunctions(ContractFunctions):
     target0Deployer: ERC4626HyperdriveDeployerTarget0DeployerContractFunction
 
     target1Deployer: ERC4626HyperdriveDeployerTarget1DeployerContractFunction
+
+    target2Deployer: ERC4626HyperdriveDeployerTarget2DeployerContractFunction
+
+    target3Deployer: ERC4626HyperdriveDeployerTarget3DeployerContractFunction
 
     def __init__(
         self,
@@ -201,6 +259,22 @@ class ERC4626HyperdriveDeployerContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="target1Deployer",
         )
+        self.target2Deployer = ERC4626HyperdriveDeployerTarget2DeployerContractFunction.factory(
+            "target2Deployer",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="target2Deployer",
+        )
+        self.target3Deployer = ERC4626HyperdriveDeployerTarget3DeployerContractFunction.factory(
+            "target3Deployer",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="target3Deployer",
+        )
 
 
 erc4626hyperdrivedeployer_abi: ABI = cast(
@@ -212,6 +286,8 @@ erc4626hyperdrivedeployer_abi: ABI = cast(
                 {"name": "_hyperdriveCoreDeployer", "type": "address", "internalType": "address"},
                 {"name": "_target0Deployer", "type": "address", "internalType": "address"},
                 {"name": "_target1Deployer", "type": "address", "internalType": "address"},
+                {"name": "_target2Deployer", "type": "address", "internalType": "address"},
+                {"name": "_target3Deployer", "type": "address", "internalType": "address"},
             ],
             "stateMutability": "nonpayable",
         },
@@ -220,14 +296,13 @@ erc4626hyperdrivedeployer_abi: ABI = cast(
             "name": "deploy",
             "inputs": [
                 {
-                    "name": "_config",
+                    "name": "_deployConfig",
                     "type": "tuple",
-                    "internalType": "struct IHyperdrive.PoolConfig",
+                    "internalType": "struct IHyperdrive.PoolDeployConfig",
                     "components": [
                         {"name": "baseToken", "type": "address", "internalType": "contract IERC20"},
                         {"name": "linkerFactory", "type": "address", "internalType": "address"},
                         {"name": "linkerCodeHash", "type": "bytes32", "internalType": "bytes32"},
-                        {"name": "initialSharePrice", "type": "uint256", "internalType": "uint256"},
                         {"name": "minimumShareReserves", "type": "uint256", "internalType": "uint256"},
                         {"name": "minimumTransactionAmount", "type": "uint256", "internalType": "uint256"},
                         {"name": "positionDuration", "type": "uint256", "internalType": "uint256"},
@@ -242,7 +317,8 @@ erc4626hyperdrivedeployer_abi: ABI = cast(
                             "components": [
                                 {"name": "curve", "type": "uint256", "internalType": "uint256"},
                                 {"name": "flat", "type": "uint256", "internalType": "uint256"},
-                                {"name": "governance", "type": "uint256", "internalType": "uint256"},
+                                {"name": "governanceLP", "type": "uint256", "internalType": "uint256"},
+                                {"name": "governanceZombie", "type": "uint256", "internalType": "uint256"},
                             ],
                         },
                     ],
@@ -273,11 +349,25 @@ erc4626hyperdrivedeployer_abi: ABI = cast(
             "outputs": [{"name": "", "type": "address", "internalType": "address"}],
             "stateMutability": "view",
         },
+        {
+            "type": "function",
+            "name": "target2Deployer",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "address", "internalType": "address"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "target3Deployer",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "address", "internalType": "address"}],
+            "stateMutability": "view",
+        },
     ],
 )
 # pylint: disable=line-too-long
 erc4626hyperdrivedeployer_bytecode = HexStr(
-    "0x60e060405234801561001057600080fd5b506040516107c53803806107c583398101604081905261002f91610068565b6001600160a01b0392831660805290821660a0521660c0526100ab565b80516001600160a01b038116811461006357600080fd5b919050565b60008060006060848603121561007d57600080fd5b6100868461004c565b92506100946020850161004c565b91506100a26040850161004c565b90509250925092565b60805160a05160c0516106da6100eb600039600081816099015261018a01526000818160c0015260f50152600081816056015261023301526106da6000f3fe608060405234801561001057600080fd5b506004361061004c5760003560e01c80639d61bd3c14610051578063a085fa3014610094578063ab71905f146100bb578063d09b3b96146100e2575b600080fd5b6100787f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b03909116815260200160405180910390f35b6100787f000000000000000000000000000000000000000000000000000000000000000081565b6100787f000000000000000000000000000000000000000000000000000000000000000081565b6100786100f036600461040b565b6000807f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663d09b3b9685856040518363ffffffff1660e01b8152600401610141929190610615565b6020604051808303816000875af1158015610160573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906101849190610637565b905060007f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663d09b3b9686866040518363ffffffff1660e01b81526004016101d6929190610615565b6020604051808303816000875af11580156101f5573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906102199190610637565b6040516399bb2e7b60e01b81529091506001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016906399bb2e7b9061026e90889088908790879060040161065b565b6020604051808303816000875af115801561028d573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906102b19190610637565b95945050505050565b634e487b7160e01b600052604160045260246000fd5b604051610180810167ffffffffffffffff811182821017156102f4576102f46102ba565b60405290565b6001600160a01b038116811461030f57600080fd5b50565b803561031d816102fa565b919050565b60006060828403121561033457600080fd5b6040516060810181811067ffffffffffffffff82111715610357576103576102ba565b80604052508091508235815260208301356020820152604083013560408201525092915050565b600082601f83011261038f57600080fd5b813567ffffffffffffffff808211156103aa576103aa6102ba565b604051601f8301601f19908116603f011681019082821181831017156103d2576103d26102ba565b816040528381528660208588010111156103eb57600080fd5b836020870160208301376000602085830101528094505050505092915050565b6000808284036101e081121561042057600080fd5b6101c08082121561043057600080fd5b6104386102d0565b915061044385610312565b825261045160208601610312565b602083015260408501356040830152606085013560608301526080850135608083015260a085013560a083015260c085013560c083015260e085013560e08301526101008086013581840152506101206104ac818701610312565b908301526101406104be868201610312565b908301526101606104d187878301610322565b9083015290925083013567ffffffffffffffff8111156104f057600080fd5b6104fc8582860161037e565b9150509250929050565b80516001600160a01b03168252602081015161052d60208401826001600160a01b03169052565b5060408101516040830152606081015160608301526080810151608083015260a081015160a083015260c081015160c083015260e081015160e083015261010080820151818401525061012080820151610591828501826001600160a01b03169052565b5050610140818101516001600160a01b031690830152610160908101518051918301919091526020810151610180830152604001516101a090910152565b6000815180845260005b818110156105f5576020818501810151868301820152016105d9565b506000602082860101526020601f19601f83011685010191505092915050565b60006101e06106248386610506565b806101c08401526102b1818401856105cf565b60006020828403121561064957600080fd5b8151610654816102fa565b9392505050565b600061022061066a8388610506565b806101c084015261067d818401876105cf565b6001600160a01b039586166101e0850152939094166102009092019190915250939250505056fea2646970667358221220c63b566a7fbb83da5c9e4f9c543ff292b59783a3d1c778dec0cd31e8d6eeddd964736f6c63430008130033"
+    "0x61012060405234801561001157600080fd5b50604051610caf380380610caf83398101604081905261003091610075565b6001600160a01b0394851660805292841660a05290831660c052821660e05216610100526100da565b80516001600160a01b038116811461007057600080fd5b919050565b600080600080600060a0868803121561008d57600080fd5b61009686610059565b94506100a460208701610059565b93506100b260408701610059565b92506100c060608701610059565b91506100ce60808701610059565b90509295509295909350565b60805160a05160c05160e05161010051610b7161013e6000396000818160e901526103ba015260008181610137015261032501526000818160c201526102900152600081816101100152610210015260008181609b01526104630152610b716000f3fe608060405234801561001057600080fd5b50600436106100625760003560e01c8063188d212e146100675780639d61bd3c14610096578063a085fa30146100bd578063aa8cd6c4146100e4578063ab71905f1461010b578063b6cb111814610132575b600080fd5b61007a6100753660046107a7565b610159565b6040516001600160a01b03909116815260200160405180910390f35b61007a7f000000000000000000000000000000000000000000000000000000000000000081565b61007a7f000000000000000000000000000000000000000000000000000000000000000081565b61007a7f000000000000000000000000000000000000000000000000000000000000000081565b61007a7f000000000000000000000000000000000000000000000000000000000000000081565b61007a7f000000000000000000000000000000000000000000000000000000000000000081565b600080828060200190518101906101709190610896565b509050600061017e856104f2565b6040516303d1689d60e11b8152670de0b6b3a764000060048201529091506001600160a01b038316906307a2d13a90602401602060405180830381865afa1580156101cd573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906101f1919061095f565b6060820152604051635fd69b0560e01b81526000906001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001690635fd69b05906102479085908990600401610a92565b6020604051808303816000875af1158015610266573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061028a9190610abd565b905060007f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316635fd69b0584886040518363ffffffff1660e01b81526004016102dc929190610a92565b6020604051808303816000875af11580156102fb573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061031f9190610abd565b905060007f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316635fd69b0585896040518363ffffffff1660e01b8152600401610371929190610a92565b6020604051808303816000875af1158015610390573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906103b49190610abd565b905060007f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316635fd69b05868a6040518363ffffffff1660e01b8152600401610406929190610a92565b6020604051808303816000875af1158015610425573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906104499190610abd565b604051633e25054360e01b81529091506001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001690633e250543906104a29088908c908990899089908990600401610ae1565b6020604051808303816000875af11580156104c1573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906104e59190610abd565b9998505050505050505050565b6104fa610588565b81516001600160a01b03908116825260208084015182169083015260408084015190830152606083015160808084019190915283015160a08084019190915283015160c08084019190915283015160e0808401919091528301516101008084019190915283015181166101208084019190915283015116610140808301919091529091015161016082015290565b60405180610180016040528060006001600160a01b0316815260200160006001600160a01b031681526020016000801916815260200160008152602001600081526020016000815260200160008152602001600081526020016000815260200160006001600160a01b0316815260200160006001600160a01b031681526020016106336040518060800160405280600081526020016000815260200160008152602001600081525090565b905290565b634e487b7160e01b600052604160045260246000fd5b604051610160810167ffffffffffffffff8111828210171561067257610672610638565b60405290565b604051601f8201601f1916810167ffffffffffffffff811182821017156106a1576106a1610638565b604052919050565b6001600160a01b03811681146106be57600080fd5b50565b80356106cc816106a9565b919050565b6000608082840312156106e357600080fd5b6040516080810181811067ffffffffffffffff8211171561070657610706610638565b8060405250809150823581526020830135602082015260408301356040820152606083013560608201525092915050565b600082601f83011261074857600080fd5b813567ffffffffffffffff81111561076257610762610638565b610775601f8201601f1916602001610678565b81815284602083860101111561078a57600080fd5b816020850160208301376000918101602001919091529392505050565b6000808284036101e08112156107bc57600080fd5b6101c0808212156107cc57600080fd5b6107d461064e565b91506107df856106c1565b82526107ed602086016106c1565b602083015260408501356040830152606085013560608301526080850135608083015260a085013560a083015260c085013560c083015260e085013560e083015261010061083c8187016106c1565b9083015261012061084e8682016106c1565b90830152610140610861878783016106d1565b9083015290925083013567ffffffffffffffff81111561088057600080fd5b61088c85828601610737565b9150509250929050565b600080604083850312156108a957600080fd5b82516108b4816106a9565b8092505060208084015167ffffffffffffffff808211156108d457600080fd5b818601915086601f8301126108e857600080fd5b8151818111156108fa576108fa610638565b8060051b915061090b848301610678565b818152918301840191848101908984111561092557600080fd5b938501935b8385101561094f578451925061093f836106a9565b828252938501939085019061092a565b8096505050505050509250929050565b60006020828403121561097157600080fd5b5051919050565b80516001600160a01b03168252602081015161099f60208401826001600160a01b03169052565b5060408101516040830152606081015160608301526080810151608083015260a081015160a083015260c081015160c083015260e081015160e083015261010080820151818401525061012080820151610a03828501826001600160a01b03169052565b5050610140818101516001600160a01b03169083015261016090810151805191830191909152602081015161018083015260408101516101a0830152606001516101c090910152565b6000815180845260005b81811015610a7257602081850181015186830182015201610a56565b506000602082860101526020601f19601f83011685010191505092915050565b6000610200610aa18386610978565b806101e0840152610ab481840185610a4c565b95945050505050565b600060208284031215610acf57600080fd5b8151610ada816106a9565b9392505050565b6000610280610af0838a610978565b806101e0840152610b0381840189610a4c565b6001600160a01b039788166102008501529587166102208401525050918416610240830152909216610260909201919091529291505056fea2646970667358221220513bf2af19cdab3fff66931e310d762475b9379bd699e819ee506f742e8654d564736f6c63430008130033"
 )
 
 
@@ -298,8 +388,21 @@ class ERC4626HyperdriveDeployerContract(Contract):
 
     functions: ERC4626HyperdriveDeployerContractFunctions
 
+    class ConstructorArgs(NamedTuple):
+        """Arguments to pass the contract's constructor function."""
+
+        hyperdriveCoreDeployer: str
+
+        target0Deployer: str
+
+        target1Deployer: str
+
+        target2Deployer: str
+
+        target3Deployer: str
+
     @classmethod
-    def constructor(cls) -> ContractConstructor:  # type: ignore
+    def constructor(cls, hyperdriveCoreDeployer: str, target0Deployer: str, target1Deployer: str, target2Deployer: str, target3Deployer: str) -> ContractConstructor:  # type: ignore
         """Creates a transaction with the contract's constructor function.
 
         Parameters
@@ -317,10 +420,16 @@ class ERC4626HyperdriveDeployerContract(Contract):
 
         """
 
-        return super().constructor()
+        return super().constructor(
+            dataclass_to_tuple(hyperdriveCoreDeployer),
+            dataclass_to_tuple(target0Deployer),
+            dataclass_to_tuple(target1Deployer),
+            dataclass_to_tuple(target2Deployer),
+            dataclass_to_tuple(target3Deployer),
+        )
 
     @classmethod
-    def deploy(cls, w3: Web3, account: LocalAccount | ChecksumAddress) -> Self:
+    def deploy(cls, w3: Web3, account: LocalAccount | ChecksumAddress, constructorArgs: ConstructorArgs) -> Self:
         """Deploys and instance of the contract.
 
         Parameters
@@ -336,7 +445,7 @@ class ERC4626HyperdriveDeployerContract(Contract):
             A deployed instance of the contract.
         """
         deployer = cls.factory(w3=w3)
-        constructor_fn = deployer.constructor()
+        constructor_fn = deployer.constructor(*constructorArgs)
 
         # if an address is supplied, try to use a web3 default account
         if isinstance(account, str):
